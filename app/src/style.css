@@ -153,7 +153,7 @@ ul.rel.nested { padding-left: 1.6rem; width: 100%; }
 /* Title, type badge, aliases and tags on one line; room on the right for the Edit button. */
 .title-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem 1rem; margin: .2rem 0 .25rem; padding-right: 6rem; }
 .entry-head .sub { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; color: var(--muted); font-size: 13px; }
-.entry-grid { display: grid; grid-template-columns: minmax(0, 100ch) minmax(340px, 1fr); gap: 2rem; margin-top: 1.25rem; align-items: start; }
+.entry-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr); gap: 2rem; margin-top: 1.25rem; align-items: start; }
 .entry-side { columns: 320px; column-gap: 1rem; }
 .entry-side > * { break-inside: avoid; margin: 0 0 1rem; }
 .entry-main > section { margin-top: 2rem; }
@@ -161,7 +161,7 @@ ul.rel.nested { padding-left: 1.6rem; width: 100%; }
 .pager { display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 14px; }
 
 /* ---------- markdown ---------- */
-.md { max-width: 100ch; }
+.md { max-width: none; }
 .md h1, .md h2 { font-size: 1.45rem; color: var(--accent); font-variant: small-caps; letter-spacing: .03em; border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); padding-bottom: .2rem; margin-top: 1.8rem; }
 .md h3 { font-size: 1.15rem; margin-top: 1.4rem; }
 .md > :first-child { margin-top: 0; }

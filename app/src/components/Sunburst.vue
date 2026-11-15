@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Everything inside an entry as rings: the entry in the centre, one ring per level outward,
 // each slice as wide as the number of places it holds. Three rings show at a time.
-// Click a slice to zoom into it (or open it if it has nothing inside), click the centre to zoom out.
+// Clicking a slice opens that place (its page shows its own rings); clicking the centre goes up a level.
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { hierarchy, partition, type HierarchyRectangularNode } from 'd3-hierarchy'
 import { arc as d3arc } from 'd3-shape'
@@ -23,7 +23,7 @@ onUnmounted(() => ro?.disconnect())
 
 interface Node { id: Id; name: string; kids?: Node[] }
 interface Pos { x0: number; x1: number; y0: number; y1: number }
-type HNode = HierarchyRectangularNode<Node> & { cur: Pos; from: Pos; target: Pos }
+type HNode = HierarchyRectangularNode<Node> & { cur: Pos }
 
 const RINGS = 3
 const HUES = ['#e0835f', '#d9a441', '#7fb069', '#4fa3a5', '#6c8ed9', '#a07ad6', '#d6739b', '#c9785a']
@@ -39,12 +39,10 @@ const root = computed(() => {
   if (!e) return null
   const h = hierarchy(build(e), d => d.kids).sum(d => (d.kids ? 0 : 1)).sort((a, b) => b.value! - a.value! || a.data.name.localeCompare(b.data.name))
   const r = partition<Node>().size([2 * Math.PI, h.height + 1])(h) as HNode
-  r.each(d => { const n = d as HNode; n.cur = n.from = n.target = { x0: n.x0, x1: n.x1, y0: n.y0, y1: n.y1 } })
+  r.each(d => { (d as HNode).cur = { x0: d.x0, x1: d.x1, y0: d.y0, y1: d.y1 } })
   return r
 })
 const nodes = computed(() => (root.value?.descendants().slice(1) ?? []) as HNode[])
-const focus = ref<HNode | null>(null)
-watch(root, r => { focus.value = r }, { immediate: true })
 
 // Colours follow the slice's ring-1 ancestor (relative to the entry), paler further out.
 const panel = ref('#201c19')
@@ -80,46 +78,12 @@ const short = (s: string, p: Pos) => {
   return s.length > room ? s.slice(0, Math.max(1, room - 1)) + '…' : s
 }
 
-// ---- zoom with a short animation ----
-let raf = 0
-function zoomTo(f: HNode) {
-  focus.value = f
-  for (const d of [root.value!, ...nodes.value] as HNode[]) {
-    d.from = d.cur
-    d.target = {
-      x0: Math.max(0, Math.min(1, (d.x0 - f.x0) / (f.x1 - f.x0))) * 2 * Math.PI,
-      x1: Math.max(0, Math.min(1, (d.x1 - f.x0) / (f.x1 - f.x0))) * 2 * Math.PI,
-      y0: Math.max(0, d.y0 - f.depth),
-      y1: Math.max(0, d.y1 - f.depth),
-    }
-  }
-  const start = performance.now()
-  cancelAnimationFrame(raf)
-  // A hidden tab gets no animation frames: jump straight to the end.
-  if (document.visibilityState !== 'visible') { for (const d of nodes.value) d.cur = d.target; tick.value++; return }
-  const step = (now: number) => {
-    const t = Math.min(1, (now - start) / 450)
-    const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2
-    for (const d of nodes.value) {
-      d.cur = {
-        x0: d.from.x0 + (d.target.x0 - d.from.x0) * e, x1: d.from.x1 + (d.target.x1 - d.from.x1) * e,
-        y0: d.from.y0 + (d.target.y0 - d.from.y0) * e, y1: d.from.y1 + (d.target.y1 - d.from.y1) * e,
-      }
-    }
-    tick.value++
-    if (t < 1) raf = requestAnimationFrame(step)
-  }
-  raf = requestAnimationFrame(step)
-}
-onUnmounted(() => cancelAnimationFrame(raf))
-const tick = ref(0)
-const shown = computed(() => { void tick.value; return nodes.value.filter(d => visible(d.cur) || visible(d.target)) })
+const shown = computed(() => nodes.value.filter(d => visible(d.cur)))
 
-function click(d: HNode) {
-  if (d.children) zoomTo(d)
-  else go(hrefEntry(d.data.id))
-}
-function zoomOut() { if (focus.value?.parent) zoomTo(focus.value.parent as HNode) }
+const click = (d: HNode) => go(hrefEntry(d.data.id))
+// The centre is the entry itself: clicking it goes to the place it sits in.
+const up = computed(() => { const e = get(props.id); const p = e && get(e.fields.parent as string); return p && p.type === e.type ? p : null })
+function goUp() { if (up.value) go(hrefEntry(up.value.id)) }
 
 const hovered = ref<HNode | null>(null)
 const path = (d: HNode) => d.ancestors().reverse().slice(1).map(a => a.data.name).join(' › ')
@@ -131,7 +95,7 @@ const inside = (d: HNode) => d.descendants().length - 1
     <svg :viewBox="`${-R} ${-R} ${size} ${size}`" :width="size" :height="size" role="img" :aria-label="`Places inside ${root.data.name}, as rings`">
       <g @mouseleave="hovered = null">
         <path v-for="d in shown" :key="d.data.id + d.depth" :d="arcGen(d.cur) ?? ''" :fill="color(d)"
-              :fill-opacity="visible(d.cur) ? 1 : 0" class="sb-slice" :class="{ leaf: !d.children }"
+              class="sb-slice" :class="{ leaf: !d.children }"
               @mouseenter="hovered = d" @click="click(d)">
           <title>{{ path(d) }}{{ d.children ? ` · ${inside(d)} places` : '' }}</title>
         </path>
@@ -139,15 +103,12 @@ const inside = (d: HNode) => d.descendants().length - 1
       <g class="sb-labels" pointer-events="none">
         <text v-for="d in shown.filter(n => labelFits(n.cur))" :key="'t' + d.data.id + d.depth" :transform="labelTransform(d.cur)" dy="0.35em">{{ short(d.data.name, d.cur) }}</text>
       </g>
-      <circle :r="ringW - 2" class="sb-centre" :class="{ up: !!focus?.parent }" @click="zoomOut" />
-      <text class="sb-centre-label" dy="0.35em" pointer-events="none">{{ short(focus?.data.name ?? '', { x0: 0, x1: 7, y0: 0, y1: 1.15 }) }}</text>
+      <circle :r="ringW - 2" class="sb-centre" :class="{ up: !!up }" @click="goUp"><title v-if="up">Up to {{ up.name }}</title></circle>
+      <text class="sb-centre-label" dy="0.35em" pointer-events="none">{{ short(root.data.name, { x0: 0, x1: 7, y0: 0, y1: 1.15 }) }}</text>
     </svg>
     <div class="sb-info">
       <template v-if="hovered">{{ path(hovered) }}<span v-if="hovered.children" class="muted"> · {{ inside(hovered) }} places</span></template>
-      <template v-else-if="focus && focus.parent">
-        <a :href="hrefEntry(focus.data.id)">Open {{ focus.data.name }}</a> <span class="muted">· centre zooms out</span>
-      </template>
-      <span v-else class="muted">Click a ring to zoom in, a place without rings opens it.</span>
+      <span v-else class="muted">Click a place to open it<template v-if="up">, the centre to go up to {{ up.name }}</template>.</span>
     </div>
   </div>
 </template>

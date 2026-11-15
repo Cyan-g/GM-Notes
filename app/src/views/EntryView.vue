@@ -235,6 +235,13 @@ const siblings = computed(() => {
       </div>
 
       <aside class="entry-side">
+        <div v-if="children.length" class="card subregions">
+          <h3>{{ e.type === 'place' ? 'Subregions' : 'Part of this' }}
+            <button class="link-btn" :title="ui.treeAsList ? 'Show as rings' : 'Show as a list'" @click="ui.treeAsList = !ui.treeAsList">{{ ui.treeAsList ? '◎ Rings' : '☰ List' }}</button></h3>
+          <SubTree v-if="ui.treeAsList" :id="e.id" />
+          <Sunburst v-else :id="e.id" :key="'sb-' + e.id" />
+        </div>
+
         <div v-if="raceText" class="card warn">Race was typed as “{{ raceText }}” and doesn't match a race entry.</div>
 
         <div v-for="[g, fs] in groups" :key="g" class="card">
@@ -262,12 +269,6 @@ const siblings = computed(() => {
           </ul>
         </div>
 
-        <div v-if="children.length" class="card subregions">
-          <h3>{{ e.type === 'place' ? 'Subregions' : 'Part of this' }}
-            <button class="link-btn" :title="ui.treeAsList ? 'Show as rings' : 'Show as a list'" @click="ui.treeAsList = !ui.treeAsList">{{ ui.treeAsList ? '◎ Rings' : '☰ List' }}</button></h3>
-          <SubTree v-if="ui.treeAsList" :id="e.id" />
-          <Sunburst v-else :id="e.id" :key="'sb-' + e.id" />
-        </div>
 
         <div v-if="usedIn.length" class="card">
           <h3>Used in</h3>

@@ -10,14 +10,20 @@ import { effectiveColors } from '../theme'
 import { go, hrefEntry } from '../router'
 import type { Entry, Id } from '../model/types'
 
-const props = withDefaults(defineProps<{ id: Id; max?: number }>(), { max: 560 })
+const props = withDefaults(defineProps<{ id: Id; max?: number }>(), { max: 600 })
 
-// As wide as the card it sits in (up to `max`).
+// Sized to the card: with room, the rings sit beside a legend; on a narrow card the legend goes below.
+const LEGEND = 250
 const box = ref<HTMLElement | null>(null)
 const size = ref(300)
+const wide = ref(false)
 let ro: ResizeObserver | undefined
 onMounted(() => {
-  ro = new ResizeObserver(([e]) => { size.value = Math.max(220, Math.min(props.max, Math.floor(e.contentRect.width))) })
+  ro = new ResizeObserver(([e]) => {
+    const w = Math.floor(e.contentRect.width)
+    wide.value = w >= 620
+    size.value = Math.max(220, Math.min(props.max, wide.value ? w - LEGEND - 24 : w))
+  })
   if (box.value) ro.observe(box.value)
 })
 onUnmounted(() => ro?.disconnect())
@@ -94,12 +100,13 @@ const up = computed(() => { const e = get(props.id); const p = e && get(e.fields
 function goUp() { if (up.value) go(hrefEntry(up.value.id)) }
 
 const hovered = ref<HNode | null>(null)
+const ring1 = computed(() => (root.value?.children ?? []) as HNode[])
 const path = (d: HNode) => d.ancestors().reverse().slice(1).map(a => a.data.name).join(' › ')
 const inside = (d: HNode) => d.descendants().length - 1
 </script>
 
 <template>
-  <div v-if="root && root.children" ref="box" class="sunburst">
+  <div v-if="root && root.children" ref="box" class="sunburst" :class="{ wide }">
     <svg :viewBox="`${-R} ${-R} ${size} ${size}`" :width="size" :height="size" role="img" :aria-label="`Places inside ${root.data.name}, as rings`">
       <g @mouseleave="hovered = null">
         <path v-for="d in shown" :key="d.data.id + d.depth" :d="arcGen(d.cur) ?? ''" :fill="color(d)"
@@ -114,9 +121,18 @@ const inside = (d: HNode) => d.descendants().length - 1
       <circle :r="ringW - 2" class="sb-centre" :class="{ up: !!up }" @click="goUp"><title v-if="up">Up to {{ up.name }}</title></circle>
       <text class="sb-centre-label" dy="0.35em" pointer-events="none">{{ short(root.data.name, { x0: 0, x1: 7, y0: 0, y1: 1.15 }) }}</text>
     </svg>
-    <div class="sb-info">
-      <template v-if="hovered">{{ path(hovered) }}<span v-if="hovered.children" class="muted"> · {{ inside(hovered) }} places</span></template>
-      <span v-else class="muted">Click a place to open it<template v-if="up">, the centre to go up to {{ up.name }}</template>.</span>
+    <div class="sb-side">
+      <ul class="sb-legend">
+        <li v-for="d in ring1" :key="d.data.id" :class="{ on: hovered && hovered.ancestors().includes(d) }" @mouseenter="hovered = d" @mouseleave="hovered = null">
+          <span class="sb-swatch" :style="{ background: color(d) }" />
+          <a :href="hrefEntry(d.data.id)">{{ d.data.name }}</a>
+          <span v-if="d.children" class="sb-count">{{ inside(d) }}</span>
+        </li>
+      </ul>
+      <div class="sb-info">
+        <template v-if="hovered">{{ path(hovered) }}<span v-if="hovered.children" class="muted"> · {{ inside(hovered) }} places</span></template>
+        <span v-else class="muted">Click a place to open it<template v-if="up">, the centre to go up to {{ up.name }}</template>.</span>
+      </div>
     </div>
   </div>
 </template>

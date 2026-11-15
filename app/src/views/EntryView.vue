@@ -261,7 +261,7 @@ const siblings = computed(() => {
         </div>
 
         <div v-if="children.length" class="card">
-          <h3>{{ e.type === 'place' ? 'Places within' : 'Part of this' }}</h3>
+          <h3>{{ e.type === 'place' ? 'Subregions' : 'Part of this' }}</h3>
           <SubTree :id="e.id" />
         </div>
 

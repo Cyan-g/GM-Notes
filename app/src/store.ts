@@ -38,6 +38,22 @@ function upgrade(d: Database) {
   for (const e of Object.values(d.entries)) {
     if (e.type === 'place' && OLD_PLACE_SIZES.includes(e.fields.placeType as string)) { delete e.fields.placeType; changed = true }
   }
+  // Version 2: places whose map was a picture in the text (the import only took a picture at the very top)
+  // get it as their map banner. Runs once; afterwards pictures in the text stay where you put them.
+  if ((d.version ?? 1) < 2) {
+    for (const e of Object.values(d.entries)) {
+      if (e.type !== 'place' || e.fields.map || !e.body) continue
+      const m = e.body.match(/!\[[^\]]*\]\((images\/[^)]+)\)/)
+      if (!m) continue
+      e.fields.map = decodeURIComponent(m[1])
+      e.body = e.body.replace(m[0], '')
+        .replace(/\n{3,}/g, '\n\n')
+        .replace(/(\n|^)#+ [^\n]*\s*$/, '') // a heading left with nothing under it at the end
+        .trim()
+    }
+    d.version = 2
+    changed = true
+  }
   return changed
 }
 

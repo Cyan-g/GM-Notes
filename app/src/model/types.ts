@@ -143,7 +143,8 @@ export interface Tracker {
 }
 
 export interface Database {
-  version: 1
+  /** Data format version; upgrade() in store.ts brings older files up to date. */
+  version: number
   meta: {
     title: string
     today: WorldDate

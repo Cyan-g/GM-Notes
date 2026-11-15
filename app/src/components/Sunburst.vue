@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Everything inside an entry as rings: the entry in the centre, one ring per level outward,
-// each slice as wide as the number of places it holds. Three rings show at a time.
+// each slice as wide as the number of places it holds. Two rings show at a time; deeper places are on the next page.
 // Clicking a slice opens that place (its page shows its own rings); clicking the centre goes up a level.
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { hierarchy, partition, type HierarchyRectangularNode } from 'd3-hierarchy'
@@ -10,7 +10,7 @@ import { effectiveColors } from '../theme'
 import { go, hrefEntry } from '../router'
 import type { Entry, Id } from '../model/types'
 
-const props = withDefaults(defineProps<{ id: Id; max?: number }>(), { max: 600 })
+const props = withDefaults(defineProps<{ id: Id; max?: number }>(), { max: 460 })
 
 // Sized to the card: with room, the rings sit beside a legend; on a narrow card the legend goes below.
 const LEGEND = 250
@@ -32,7 +32,7 @@ interface Node { id: Id; name: string; kids?: Node[] }
 interface Pos { x0: number; x1: number; y0: number; y1: number }
 type HNode = HierarchyRectangularNode<Node> & { cur: Pos }
 
-const RINGS = 3
+const RINGS = 2
 
 function build(e: Entry, seen = new Set<Id>()): Node {
   seen.add(e.id)

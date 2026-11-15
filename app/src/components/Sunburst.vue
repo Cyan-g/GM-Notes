@@ -2,10 +2,11 @@
 // Everything inside an entry as rings: the entry in the centre, one ring per level outward,
 // each slice as wide as the number of places it holds. Three rings show at a time.
 // Clicking a slice opens that place (its page shows its own rings); clicking the centre goes up a level.
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { hierarchy, partition, type HierarchyRectangularNode } from 'd3-hierarchy'
 import { arc as d3arc } from 'd3-shape'
-import { childrenOf, get, state } from '../store'
+import { childrenOf, get } from '../store'
+import { effectiveColors } from '../theme'
 import { go, hrefEntry } from '../router'
 import type { Entry, Id } from '../model/types'
 
@@ -26,7 +27,6 @@ interface Pos { x0: number; x1: number; y0: number; y1: number }
 type HNode = HierarchyRectangularNode<Node> & { cur: Pos }
 
 const RINGS = 3
-const HUES = ['#e0835f', '#d9a441', '#7fb069', '#4fa3a5', '#6c8ed9', '#a07ad6', '#d6739b', '#c9785a']
 
 function build(e: Entry, seen = new Set<Id>()): Node {
   seen.add(e.id)
@@ -44,20 +44,28 @@ const root = computed(() => {
 })
 const nodes = computed(() => (root.value?.descendants().slice(1) ?? []) as HNode[])
 
-// Colours follow the slice's ring-1 ancestor (relative to the entry), paler further out.
-const panel = ref('#201c19')
-watch(() => JSON.stringify(state.db?.meta.theme), () => requestAnimationFrame(() => {
-  panel.value = getComputedStyle(document.documentElement).getPropertyValue('--panel').trim() || panel.value
-}), { immediate: true })
+// Colours come from the theme: a gradient around the circle through the accent, the link colour and a
+// deeper accent (back to the start, so there's no seam), each ring further out blending towards the card.
+const theme = computed(() => effectiveColors())
 const mix = (a: string, b: string, t: number) => {
   const p = (c: string) => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16))
   const x = p(a), y = p(b)
   return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join('')
 }
+const stops = computed(() => {
+  const { accent, link, ink, bg } = theme.value
+  return [accent, link, mix(accent, ink, 0.35), mix(link, bg, 0.3), accent]
+})
+function along(f: number) {
+  const s = stops.value, x = Math.min(0.9999, Math.max(0, f)) * (s.length - 1), i = Math.floor(x)
+  return mix(s[i], s[i + 1], x - i)
+}
 function color(d: HNode) {
-  const ring1 = d.ancestors().reverse()[1]
-  const i = root.value!.children!.indexOf(ring1)
-  return mix(HUES[i % HUES.length], /^#[0-9a-f]{6}$/i.test(panel.value) ? panel.value : '#201c19', Math.min(0.65, (d.depth - 1) * 0.2))
+  return mix(along((d.x0 + d.x1) / 2 / (2 * Math.PI)), theme.value.panel, Math.min(0.55, (d.depth - 1) * 0.18))
+}
+const textOn = (fill: string) => {
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(fill.slice(i, i + 2), 16) / 255)
+  return 0.299 * r + 0.587 * g + 0.114 * b > 0.55 ? '#1a1410' : '#fffaf2'
 }
 
 const R = computed(() => size.value / 2)
@@ -101,7 +109,7 @@ const inside = (d: HNode) => d.descendants().length - 1
         </path>
       </g>
       <g class="sb-labels" pointer-events="none">
-        <text v-for="d in shown.filter(n => labelFits(n.cur))" :key="'t' + d.data.id + d.depth" :transform="labelTransform(d.cur)" dy="0.35em">{{ short(d.data.name, d.cur) }}</text>
+        <text v-for="d in shown.filter(n => labelFits(n.cur))" :key="'t' + d.data.id + d.depth" :transform="labelTransform(d.cur)" :fill="textOn(color(d))" dy="0.35em">{{ short(d.data.name, d.cur) }}</text>
       </g>
       <circle :r="ringW - 2" class="sb-centre" :class="{ up: !!up }" @click="goUp"><title v-if="up">Up to {{ up.name }}</title></circle>
       <text class="sb-centre-label" dy="0.35em" pointer-events="none">{{ short(root.data.name, { x0: 0, x1: 7, y0: 0, y1: 1.15 }) }}</text>

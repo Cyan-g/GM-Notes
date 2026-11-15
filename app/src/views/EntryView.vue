@@ -6,6 +6,8 @@ import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, placePath,
 import { go, hrefEntry, hrefList, hrefMap } from '../router'
 import MapView from '../components/MapView.vue'
 import SubTree from '../components/SubTree.vue'
+import Sunburst from '../components/Sunburst.vue'
+import { ui } from '../ui'
 import type { Pin } from '../model/types'
 import { loadEncounter } from '../tracker'
 import EntryLink from '../components/EntryLink.vue'
@@ -260,9 +262,11 @@ const siblings = computed(() => {
           </ul>
         </div>
 
-        <div v-if="children.length" class="card">
-          <h3>{{ e.type === 'place' ? 'Subregions' : 'Part of this' }}</h3>
-          <SubTree :id="e.id" />
+        <div v-if="children.length" class="card subregions">
+          <h3>{{ e.type === 'place' ? 'Subregions' : 'Part of this' }}
+            <button class="link-btn" :title="ui.treeAsList ? 'Show as rings' : 'Show as a list'" @click="ui.treeAsList = !ui.treeAsList">{{ ui.treeAsList ? '◎ Rings' : '☰ List' }}</button></h3>
+          <SubTree v-if="ui.treeAsList" :id="e.id" />
+          <Sunburst v-else :id="e.id" :key="'sb-' + e.id" />
         </div>
 
         <div v-if="usedIn.length" class="card">

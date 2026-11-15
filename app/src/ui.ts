@@ -7,6 +7,8 @@ export const ui = reactive({
   newOpen: false,
   newType: undefined as EntryType | undefined,
   newFields: {} as Record<string, unknown>,
+  /** Subregions card: nested list instead of rings. */
+  treeAsList: false,
 })
 
 export function newEntry(type?: EntryType, fields: Record<string, unknown> = {}) {

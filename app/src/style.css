@@ -561,3 +561,19 @@ input.init { width: 4em; }
 .sub-tree details[open] > summary::before { transform: rotate(90deg); }
 .sub-tree .tree-leaf { padding-left: 1em; display: inline-block; }
 .sub-tree .tree-count { margin-left: .4rem; font-size: 11px; color: var(--muted); background: var(--chip); border-radius: 999px; padding: 0 .45em; }
+
+/* ---------- subregions as rings ---------- */
+/* The rings need room: the card spans every side column. */
+.entry-side > .subregions { column-span: all; }
+.subregions h3 { display: flex; justify-content: space-between; align-items: baseline; }
+.subregions h3 .link-btn { font: 12px var(--sans); font-variant: normal; letter-spacing: 0; }
+.sunburst { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.sb-slice { cursor: zoom-in; stroke: var(--panel); stroke-width: .5; transition: filter .12s; }
+.sb-slice.leaf { cursor: pointer; }
+.sb-slice:hover { filter: brightness(1.18); }
+.sb-labels text { font: 11px var(--sans); fill: #1a1410; text-anchor: middle; }
+.sb-centre { fill: var(--panel-2); }
+.sb-centre.up { cursor: zoom-out; }
+.sb-centre.up:hover { fill: var(--chip); }
+.sb-centre-label { font: 600 13px var(--serif); fill: var(--ink); text-anchor: middle; }
+.sb-info { min-height: 2.6em; margin-top: .3rem; font-size: 13px; text-align: center; color: var(--ink-2); }

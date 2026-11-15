@@ -164,19 +164,21 @@ const siblings = computed(() => {
       <a class="button edit-btn" :href="hrefEntry(e.id, true)" title="Edit (E)">✎ Edit</a>
       <DataImage v-if="e.image" :path="e.image" :alt="e.name" class="portrait head-portrait" />
       <div class="head-text">
-      <h1><span class="icon">{{ def.icon }}</span>{{ e.name }}</h1>
+      <div class="title-line">
+        <h1><span class="icon">{{ def.icon }}</span>{{ e.name }}</h1>
+        <div class="sub">
+          <span class="badge">{{ def.label }}</span>
+          <span v-if="e.visibility === 'secret'" class="badge dm-only" title="Players don't know this entry yet">DM only</span>
+          <span v-if="e.aliases.length" class="aliases">also: {{ e.aliases.join(' · ') }}</span>
+          <span v-for="t in e.tags" :key="t" class="tag">#{{ t }}</span>
+        </div>
+      </div>
       <p v-if="lead" class="lead">{{ lead }}</p>
       <div v-if="facts.length" class="facts">
         <span v-for="f in facts" :key="f.label" class="fact">
           <span class="fact-label">{{ f.label }}</span>
           <template v-for="(it, i) in f.items" :key="it.id"><template v-if="i">, </template><EntryLink :id="it.id" /><span v-if="it.note" class="role"> ({{ it.note }})</span></template>
         </span>
-      </div>
-      <div class="sub">
-        <span class="badge">{{ def.label }}</span>
-        <span v-if="e.visibility === 'secret'" class="badge secret" title="Players don't know this entry yet">DM only</span>
-        <span v-if="e.aliases.length" class="aliases">also: {{ e.aliases.join(' · ') }}</span>
-        <span v-for="t in e.tags" :key="t" class="tag">#{{ t }}</span>
       </div>
       </div>
     </header>

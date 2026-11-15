@@ -144,8 +144,11 @@ ul.rel.nested { padding-left: 1.6rem; width: 100%; }
 .wl.missing { color: var(--muted); border-bottom: 1px dashed var(--muted); }
 
 /* ---------- entry ---------- */
-.crumbs { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
-.crumbs .sep { opacity: .6; }
+/* Where the entry sits (Places › Eldoria › Ardenvale › …): the only place the hierarchy is spelled out, so it reads clearly. */
+.crumbs { font: 500 15px var(--serif); color: var(--ink-2); display: flex; flex-wrap: wrap; gap: .2rem .45rem; align-items: center; }
+.crumbs a { color: var(--link); }
+.crumbs .crumb-root { color: var(--muted); }
+.crumbs .sep { color: var(--accent); opacity: .7; font-size: 1.1em; }
 .entry-head h1 { font-size: 2.1rem; margin: 0; }
 /* Title, type badge, aliases and tags on one line; room on the right for the Edit button. */
 .title-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem 1rem; margin: .2rem 0 .25rem; padding-right: 6rem; }

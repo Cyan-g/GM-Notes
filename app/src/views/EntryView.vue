@@ -92,7 +92,8 @@ const onMaps = computed(() => {
   return entries.value.flatMap(p => ((p.fields.pins as Pin[] | undefined) ?? []).filter(pin => pin.entry === x.id).map(pin => ({ place: p, pin })))
 })
 
-const lead = computed(() => (e.value ? describe(e.value) : ''))
+// A place's kind shows as its badge, so a place has no lead line of its own.
+const lead = computed(() => (e.value && e.value.type !== 'place' ? describe(e.value, { parent: false }) : ''))
 
 /** The few facts that belong right under the name: affiliations, home, rulers, leaders. */
 const LEADER = /(leader|head|chief|duke|duchess|king|queen|abbess|abbot|master|captain|high priest|archbishop|matriarch|patriarch|lord|lady|commander|general|elder)/i
@@ -158,7 +159,7 @@ const siblings = computed(() => {
 <template>
   <article v-if="e && def" class="entry">
     <nav class="crumbs">
-      <a :href="hrefList(e.type)">{{ def.plural }}</a>
+      <a class="crumb-root" :href="hrefList(e.type)">{{ def.icon }} {{ def.plural }}</a>
       <template v-for="c in crumbs" :key="c.id"><span class="sep">›</span><EntryLink :id="c.id" /></template>
     </nav>
     <header class="entry-head" :class="{ 'has-portrait': e.image }">
@@ -168,7 +169,7 @@ const siblings = computed(() => {
       <div class="title-line">
         <h1><span class="icon">{{ def.icon }}</span>{{ e.name }}</h1>
         <div class="sub">
-          <span class="badge">{{ def.label }}</span>
+          <span class="badge">{{ (e.type === 'place' && e.fields.placeType) || def.label }}</span>
           <span v-if="e.visibility === 'secret'" class="badge dm-only" title="Players don't know this entry yet">DM only</span>
           <span v-if="e.aliases.length" class="aliases">also: {{ e.aliases.join(' · ') }}</span>
           <span v-for="t in e.tags" :key="t" class="tag">#{{ t }}</span>

@@ -7,13 +7,14 @@ const name = (id: unknown) => get(id as string)?.name
 const join = (...parts: unknown[]) => parts.filter(p => p != null && p !== '' && p !== false).join(' · ')
 const ord = (n: string) => ({ '1': '1st', '2': '2nd', '3': '3rd' } as Record<string, string>)[n] ?? `${n}th`
 
-export function describe(e: Entry): string {
+/** `parent: false` leaves out where the entry sits (the entry page shows that in its breadcrumbs). */
+export function describe(e: Entry, { parent = true } = {}): string {
   const f = e.fields
   switch (e.type) {
     case 'npc': return join([f.subrace, name(f.race) ?? f.raceText].filter(Boolean).join(' '), f.gender, f.age)
     case 'pc': return join([f.subrace, name(f.race)].filter(Boolean).join(' '), [f.class, f.level && `level ${f.level}`].filter(Boolean).join(' '), f.player && `played by ${f.player}`)
-    case 'organization': return join(f.orgType, f.parent && `part of ${name(f.parent)}`, f.seat && `seat: ${name(f.seat)}`)
-    case 'place': return join(f.placeType, f.parent && `in ${name(f.parent)}`)
+    case 'organization': return join(f.orgType, parent && f.parent && `part of ${name(f.parent)}`, f.seat && `seat: ${name(f.seat)}`)
+    case 'place': return join(f.placeType, parent && f.parent && `in ${name(f.parent)}`)
     case 'item': return join([f.rarity, f.magical && !f.rarity ? 'magical' : '', f.subtype || f.kind].filter(Boolean).join(' '), f.attunement && 'requires attunement')
     case 'spell': return f.level === 'Cantrip' ? join(`${f.school ?? ''} cantrip`.trim()) : join(f.level ? `${ord(String(f.level))}-level ${String(f.school ?? '').toLowerCase()}`.trim() : f.school)
     case 'creature': {

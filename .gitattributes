@@ -1,0 +1,2 @@
+# Store everything byte-for-byte: no line-ending conversion of the database or the built app.
+* -text

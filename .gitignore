@@ -1,0 +1,10 @@
+# Campaign data: protected by the app's backups (💾 Data & backups), not by git
+data/
+
+# Installed and built by npm; recreate with `npm install` / `npm run build`
+app/node_modules/
+app/dist/
+
+# macOS metadata files
+._*
+.DS_Store

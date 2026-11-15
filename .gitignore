@@ -8,3 +8,6 @@ app/dist/
 # macOS metadata files
 ._*
 .DS_Store
+
+# Personal todo notes
+TODO.md

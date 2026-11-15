@@ -547,3 +547,14 @@ input.init { width: 4em; }
 .font-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: .35rem; }
 .font-row button { padding: .35em .2em; font-size: 15px; }
 .font-row button.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+/* ---------- nested sub-places / sub-organizations ---------- */
+.sub-tree { list-style: none; margin: 0; padding: 0 0 0 1rem; border-left: 1px solid var(--line); }
+.sub-tree.top { padding-left: 0; border-left: none; }
+.sub-tree li { margin: .15rem 0; }
+.sub-tree summary { cursor: pointer; list-style: none; }
+.sub-tree summary::-webkit-details-marker { display: none; }
+.sub-tree summary::before { content: '▸'; display: inline-block; width: 1em; color: var(--muted); transition: transform .15s; }
+.sub-tree details[open] > summary::before { transform: rotate(90deg); }
+.sub-tree .tree-leaf { padding-left: 1em; display: inline-block; }
+.sub-tree .tree-count { margin-left: .4rem; font-size: 11px; color: var(--muted); background: var(--chip); border-radius: 999px; padding: 0 .45em; }

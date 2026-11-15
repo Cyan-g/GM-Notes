@@ -16,7 +16,9 @@ export interface Storage {
 // ---------- dev server (npm run dev) ----------
 
 export class HttpStorage implements Storage {
-  readonly label = 'dev server'
+  /** `?readonly` in the address: writes are dropped, for testing against the real data without changing it. */
+  private readonly ro = new URLSearchParams(location.search).has('readonly')
+  readonly label = this.ro ? 'dev server (read-only)' : 'dev server'
   private base = '/__data/'
   private enc(p: string) { return this.base + p.split('/').map(encodeURIComponent).join('/') }
 
@@ -29,10 +31,12 @@ export class HttpStorage implements Storage {
     return r.ok ? r.blob() : null
   }
   async writeText(path: string, text: string) {
+    if (this.ro) return
     const r = await fetch(this.enc(path), { method: 'PUT', body: text })
     if (!r.ok) throw new Error(`Saving ${path} failed (${r.status})`)
   }
   async writeBlob(path: string, blob: Blob) {
+    if (this.ro) return
     const r = await fetch(this.enc(path), { method: 'PUT', body: blob })
     if (!r.ok) throw new Error(`Saving ${path} failed (${r.status})`)
   }
@@ -40,7 +44,7 @@ export class HttpStorage implements Storage {
     const r = await fetch(this.enc(dir.replace(/\/?$/, '/')), { cache: 'no-store' })
     return r.ok ? (await r.json()) as string[] : []
   }
-  async remove(path: string) { await fetch(this.enc(path), { method: 'DELETE' }) }
+  async remove(path: string) { if (this.ro) return; await fetch(this.enc(path), { method: 'DELETE' }) }
   async fileUrl(path: string) { return this.enc(path) }
 }
 

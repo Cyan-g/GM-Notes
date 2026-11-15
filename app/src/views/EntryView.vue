@@ -5,6 +5,7 @@ import { TYPES, RELATION_KINDS, type FieldDef } from '../model/schema'
 import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, placePath, relationsOf, entries } from '../store'
 import { go, hrefEntry, hrefList, hrefMap } from '../router'
 import MapView from '../components/MapView.vue'
+import SubTree from '../components/SubTree.vue'
 import type { Pin } from '../model/types'
 import { loadEncounter } from '../tracker'
 import EntryLink from '../components/EntryLink.vue'
@@ -260,7 +261,7 @@ const siblings = computed(() => {
 
         <div v-if="children.length" class="card">
           <h3>{{ e.type === 'place' ? 'Places within' : 'Part of this' }}</h3>
-          <ul class="rel"><li v-for="c in children" :key="c.id"><EntryLink :id="c.id" icon /> <span class="role">{{ c.fields.placeType || c.fields.orgType }}</span></li></ul>
+          <SubTree :id="e.id" />
         </div>
 
         <div v-if="usedIn.length" class="card">

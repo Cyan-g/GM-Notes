@@ -2,6 +2,7 @@
 import { reactive, computed, shallowRef } from 'vue'
 import type { Database, Entry, EntryType, Id, Relation, WorldDate } from './model/types'
 import type { Storage } from './storage/storage'
+import { OLD_PLACE_SIZES } from './model/schema'
 
 const DB_FILE = 'eldoria.json'
 const BACKUP_DIR = 'backups'
@@ -28,6 +29,16 @@ export async function open(storage: Storage) {
   if (text == null) throw new Error(`No ${DB_FILE} found in "${storage.label}". Pick the app's data folder.`)
   state.db = JSON.parse(text) as Database
   state.dirty = false
+  if (upgrade(state.db)) touch()
+}
+
+/** Bring older saved data up to date. Returns true if anything changed (it's then saved). */
+function upgrade(d: Database) {
+  let changed = false
+  for (const e of Object.values(d.entries)) {
+    if (e.type === 'place' && OLD_PLACE_SIZES.includes(e.fields.placeType as string)) { delete e.fields.placeType; changed = true }
+  }
+  return changed
 }
 
 /** Save the database. Before overwriting, keep a copy of the previous file every 10 minutes. */

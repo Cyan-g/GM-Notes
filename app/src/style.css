@@ -479,6 +479,8 @@ input.init { width: 4em; }
 /* ---------- maps ---------- */
 .map-view { margin-bottom: 1.5rem; }
 .map-box { position: relative; height: 480px; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); cursor: grab; touch-action: none; user-select: none; }
+.map-view.banner { margin: 1.2rem 0 0; }
+.map-view.banner .map-box { height: clamp(300px, 50vh, 640px); }
 .map-view.tall .map-box { height: calc(100vh - 190px - var(--bar-h)); min-height: 360px; }
 .map-box:active { cursor: grabbing; }
 .map-view.placing .map-box { cursor: crosshair; }

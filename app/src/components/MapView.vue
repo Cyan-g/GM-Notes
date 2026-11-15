@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // A place's map: drag to pan, wheel or buttons to zoom, pins that link to entries.
 // With `editable`, pins can be added, dragged, linked and removed.
-import { computed, onUnmounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import type { Entry, Pin } from '../model/types'
 import { TYPES } from '../model/schema'
 import { childrenOf, get, state } from '../store'
@@ -9,7 +9,7 @@ import { changed } from '../edit'
 import { hrefEntry, hrefMap } from '../router'
 import EntryPicker from './edit/EntryPicker.vue'
 
-const props = withDefaults(defineProps<{ place: Entry; editable?: boolean; tall?: boolean; focusPin?: string }>(), { editable: false, tall: false })
+const props = withDefaults(defineProps<{ place: Entry; editable?: boolean; tall?: boolean; focusPin?: string; banner?: boolean }>(), { editable: false, tall: false, banner: false })
 
 const url = ref<string | null>(null)
 const natural = reactive({ w: 1, h: 1 })
@@ -36,12 +36,19 @@ const minScale = ref(0.1)
 function fit() {
   const el = box.value
   if (!el) return
-  const s = Math.min(el.clientWidth / natural.w, el.clientHeight / natural.h)
-  minScale.value = s * 0.8
+  const contain = Math.min(el.clientWidth / natural.w, el.clientHeight / natural.h)
+  // A banner is wide and short: fill its width (cut off top and bottom) instead of showing the whole map small.
+  const s = props.banner ? Math.max(el.clientWidth / natural.w, el.clientHeight / natural.h) : contain
+  minScale.value = contain * 0.8
   view.s = s
   view.x = (el.clientWidth - natural.w * s) / 2
   view.y = (el.clientHeight - natural.h * s) / 2
 }
+// The box changes size with the window (the banner is full width): fit the map again.
+let resizeTimer: number | undefined
+const onResize = () => { clearTimeout(resizeTimer); resizeTimer = window.setTimeout(fit, 150) }
+onMounted(() => window.addEventListener('resize', onResize))
+onUnmounted(() => { window.removeEventListener('resize', onResize); clearTimeout(resizeTimer) })
 function zoomAt(factor: number, cx: number, cy: number) {
   const s = Math.min(8, Math.max(minScale.value, view.s * factor))
   const k = s / view.s
@@ -138,7 +145,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 </script>
 
 <template>
-  <div class="map-view" :class="{ tall, editing: editable, placing: !!placing }">
+  <div class="map-view" :class="{ tall, banner, editing: editable, placing: !!placing }">
     <div ref="box" class="map-box" @wheel="onWheel" @pointerdown="down($event)" @pointermove="move" @pointerup="up">
       <div class="map-layer" :style="{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.s})`, width: natural.w + 'px', height: natural.h + 'px' }">
         <img v-if="url" :src="url" draggable="false" alt="" @load="onLoad" />

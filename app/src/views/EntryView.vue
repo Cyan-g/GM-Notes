@@ -181,6 +181,7 @@ const siblings = computed(() => {
       </div>
     </header>
 
+    <MapView v-if="e.fields.map" :place="e" banner />
     <div class="entry-grid">
       <div class="entry-main">
         <div v-if="siblings" class="pager">
@@ -193,7 +194,6 @@ const siblings = computed(() => {
         <ItemCard v-if="e.type === 'item'" :e="e" />
         <SpellCard v-if="e.type === 'spell'" :e="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
-        <MapView v-if="e.fields.map" :place="e" class="inline-map" />
         <MarkdownView v-if="e.body" :source="e.body" />
         <p v-else-if="!['item', 'spell', 'creature', 'encounter'].includes(e.type)" class="muted">No text yet.</p>
 

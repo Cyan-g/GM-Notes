@@ -40,7 +40,7 @@ The folder is a git repository for the app's code and `Eldoria.html`. `data/` is
 ```bash
 cd app
 npm install
-npm run dev        # http://localhost:5199, reads and writes ../data directly
+npm run dev        # http://localhost:5199, reads ../data; add ?write to the address to also save
 npm run build      # type-checks and writes ../Eldoria.html
 npm run migrate    # re-imports the Obsidian vault (../../Eldoria) into ../data/eldoria.json
 ```

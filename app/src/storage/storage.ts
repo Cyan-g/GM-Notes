@@ -16,8 +16,11 @@ export interface Storage {
 // ---------- dev server (npm run dev) ----------
 
 export class HttpStorage implements Storage {
-  /** `?readonly` in the address: writes are dropped, for testing against the real data without changing it. */
-  private readonly ro = new URLSearchParams(location.search).has('readonly')
+  /**
+   * The dev server reads the live data folder, so it's read-only unless the address has `?write`:
+   * a stray reload of a test tab must never save over edits made in the real app.
+   */
+  private readonly ro = !new URLSearchParams(location.search).has('write')
   readonly label = this.ro ? 'dev server (read-only)' : 'dev server'
   private base = '/__data/'
   private enc(p: string) { return this.base + p.split('/').map(encodeURIComponent).join('/') }

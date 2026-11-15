@@ -7,6 +7,7 @@ import { newEntry } from '../ui'
 import { route } from '../router'
 import { daysSince } from '../backup'
 import MenuPanel from './MenuPanel.vue'
+import ThemeMenu from './ThemeMenu.vue'
 
 defineEmits<{ search: [] }>()
 
@@ -65,6 +66,7 @@ const current = computed(() => {
       </span>
       <a href="#/data" class="data-link" :class="{ warn: backupAge == null || backupAge > 7 }"
          :title="backupAge == null ? 'Data & backups: never copied' : `Data & backups: last copy ${backupAge} days ago`">💾<span v-if="backupAge == null || backupAge > 7" class="data-warn">{{ backupAge == null ? 'no copy' : `${backupAge} d` }}</span></a>
+      <ThemeMenu />
     </div>
   </header>
 </template>

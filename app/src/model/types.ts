@@ -153,6 +153,8 @@ export interface Database {
     edited?: string
     /** When the data folder was last copied somewhere else with the Back up button. */
     externalBackup?: string
+    /** Colour theme and heading font (see theme.ts). */
+    theme?: import('../theme').ThemeSettings
   }
   entries: Record<Id, Entry>
   relations: Relation[]

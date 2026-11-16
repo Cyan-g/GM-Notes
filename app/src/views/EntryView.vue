@@ -56,6 +56,22 @@ const bigFields = computed(() => {
   if (!x || !def.value) return []
   return def.value.fields.filter(f => ['recipe', 'stock', 'combatants', 'ranks'].includes(f.kind) && shown(f, x) && !empty(x.fields[f.key]))
 })
+/** An organization's ranks sit at the end of its "Structure" section, where the table used to be in the text. */
+const rankSplit = computed(() => {
+  const x = e.value
+  if (x?.type !== 'organization' || empty(x.fields.ranks)) return null
+  const lines = x.body.split('\n')
+  const h = lines.findIndex(l => /^#{1,6}\s+structure\s*$/i.test(l.trim()))
+  if (h < 0) return null
+  const level = lines[h].trim().match(/^#+/)![0].length
+  let end = lines.findIndex((l, i) => i > h && /^#{1,6}\s/.test(l.trim()) && l.trim().match(/^#+/)![0].length <= level)
+  if (end < 0) end = lines.length
+  // Before another table in that section (the Iron Branch's services), else at its end.
+  const table = lines.findIndex((l, i) => i > h && i < end && l.trim().startsWith('|'))
+  if (table > 0) end = table
+  return { before: lines.slice(0, end).join('\n'), after: lines.slice(end).join('\n') }
+})
+const ranksDef = computed(() => def.value?.fields.find(f => f.kind === 'ranks'))
 const scrollSpell = computed(() => (e.value?.type === 'item' && e.value.fields.kind === 'Scroll' ? get(e.value.fields.spell as string) : undefined))
 const statblock = computed(() => e.value?.fields.statblock as Statblock | undefined)
 const raceText = computed(() => e.value?.fields.raceText as string | undefined)
@@ -230,10 +246,15 @@ const siblings = computed(() => {
         </section>
         <SpellCard v-if="e.type === 'spell'" :e="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
-        <MarkdownView v-if="e.body" :source="e.body" />
+        <template v-if="rankSplit && ranksDef">
+          <MarkdownView :source="rankSplit.before" />
+          <FieldValue :def="ranksDef" :value="e.fields.ranks" :entry="e" />
+          <MarkdownView v-if="rankSplit.after.trim()" :source="rankSplit.after" />
+        </template>
+        <MarkdownView v-else-if="e.body" :source="e.body" />
         <p v-else-if="!['item', 'spell', 'creature', 'encounter'].includes(e.type)" class="muted">No text yet.</p>
 
-        <section v-for="f in e.type === 'item' ? [] : bigFields" :key="f.key">
+        <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => !(rankSplit && f.kind === 'ranks'))" :key="f.key">
           <h2>{{ f.label }}</h2>
           <FieldValue :def="f" :value="e.fields[f.key]" :entry="e" />
         </section>

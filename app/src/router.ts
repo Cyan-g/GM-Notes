@@ -11,6 +11,7 @@ export type Route =
   | { name: 'tracker' }
   | { name: 'spellbook' }
   | { name: 'crafting' }
+  | { name: 'atlas' }
   | { name: 'data' }
   | { name: 'map'; id: Id; pin?: string }
   | { name: 'dashboard'; id: string; view?: string }
@@ -22,6 +23,7 @@ function parse(): Route {
   if (kind === 'tracker') return { name: 'tracker' }
   if (kind === 'spellbook') return { name: 'spellbook' }
   if (kind === 'crafting') return { name: 'crafting' }
+  if (kind === 'atlas') return { name: 'atlas' }
   if (kind === 'data') return { name: 'data' }
   if (kind === 'map' && arg) return { name: 'map', id: arg, pin: extra }
   if (kind === 'd' && arg) return { name: 'dashboard', id: arg, view: extra }

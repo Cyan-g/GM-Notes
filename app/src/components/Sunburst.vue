@@ -10,7 +10,8 @@ import { effectiveColors } from '../theme'
 import { go, hrefEntry } from '../router'
 import type { Entry, Id } from '../model/types'
 
-const props = withDefaults(defineProps<{ id: Id; max?: number }>(), { max: 460 })
+// `rings`: how many levels show at once (2 on place pages, more on the Atlas).
+const props = withDefaults(defineProps<{ id: Id; max?: number; rings?: number }>(), { max: 460, rings: 2 })
 
 // Sized to the card: with room, the rings sit beside a legend; on a narrow card the legend goes below.
 const LEGEND = 250
@@ -32,7 +33,7 @@ interface Node { id: Id; name: string; kids?: Node[] }
 interface Pos { x0: number; x1: number; y0: number; y1: number }
 type HNode = HierarchyRectangularNode<Node> & { cur: Pos }
 
-const RINGS = 2
+const RINGS = props.rings
 
 function build(e: Entry, seen = new Set<Id>()): Node {
   seen.add(e.id)

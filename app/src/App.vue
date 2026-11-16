@@ -16,6 +16,7 @@ import CalendarView from './views/CalendarView.vue'
 import TrackerView from './views/TrackerView.vue'
 import SpellbookView from './views/SpellbookView.vue'
 import CraftingView from './views/CraftingView.vue'
+import AtlasView from './views/AtlasView.vue'
 import MapPage from './views/MapPage.vue'
 import DataView from './views/DataView.vue'
 import NewEntryDialog from './components/NewEntryDialog.vue'
@@ -89,6 +90,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <TrackerView v-else-if="route.current.name === 'tracker'" />
       <SpellbookView v-else-if="route.current.name === 'spellbook'" />
       <CraftingView v-else-if="route.current.name === 'crafting'" />
+      <AtlasView v-else-if="route.current.name === 'atlas'" />
       <DataView v-else-if="route.current.name === 'data'" />
       <MapPage v-else-if="route.current.name === 'map'" :id="route.current.id" :pin="route.current.pin" :key="'map-' + route.current.id" />
       <DashboardView v-else-if="route.current.name === 'dashboard'" :id="route.current.id" :view="route.current.view" />

@@ -134,9 +134,10 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'World',
-    owns: r => ['place', 'npc', 'organization', 'event', 'deity', 'race'].includes(typeOf(r) ?? ''),
+    home: '#/atlas',
+    owns: r => r.name === 'atlas' || ['place', 'npc', 'organization', 'event', 'deity', 'race'].includes(typeOf(r) ?? ''),
     // The world's places first, cascading by "Located in" (Eldoria › Ardenvale › Desolation), then the lists.
-    items: () => [...entriesOf('place'), SEP, ...(['place', 'npc', 'organization', 'event', 'deity', 'race'] as EntryType[]).map(typeNode)],
+    items: () => [{ label: 'Atlas', icon: '🗺', href: '#/atlas' }, SEP, ...entriesOf('place'), SEP, ...(['place', 'npc', 'organization', 'event', 'deity', 'race'] as EntryType[]).map(typeNode)],
   },
   {
     title: 'Spells',

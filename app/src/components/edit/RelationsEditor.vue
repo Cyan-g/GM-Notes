@@ -3,7 +3,7 @@
 import { computed, ref } from 'vue'
 import type { Entry, EntryType, Relation, RelationKind } from '../../model/types'
 import { RELATION_KINDS } from '../../model/schema'
-import { relationsOf } from '../../store'
+import { formatDate, relationsOf } from '../../store'
 import { addRelation, relationChanged, removeRelation } from '../../edit'
 import EntryPicker from './EntryPicker.vue'
 import DateInput from './DateInput.vue'
@@ -23,6 +23,20 @@ const optionOf = (r: Relation) => `${r.kind}:${r.a === props.entry.id || RELATIO
 const otherOf = (r: Relation) => (r.a === props.entry.id ? r.b : r.a)
 
 const rels = computed(() => relationsOf.value.get(props.entry.id) ?? [])
+/** Relations grouped the way they read from this entry ("Member of", "Lives in", …), like on the page itself. */
+const groups = computed(() => {
+  const m = new Map<string, Relation[]>()
+  for (const r of rels.value) {
+    const label = ALL.find(o => o.value === optionOf(r))?.label ?? r.kind
+    if (!m.has(label)) m.set(label, [])
+    m.get(label)!.push(r)
+  }
+  return [...m.entries()].map(([label, list]) => ({ label: label[0].toUpperCase() + label.slice(1), list }))
+})
+/** Rows showing their kind and dates for editing. */
+const open = ref(new Set<string>())
+const toggle = (id: string) => { const s = new Set(open.value); s.has(id) ? s.delete(id) : s.add(id); open.value = s }
+const dates = (r: Relation) => (r.from || r.to ? `${r.from ? formatDate(r.from) : '…'} – ${r.to ? formatDate(r.to) : 'now'}` : '')
 
 function setOption(r: Relation, v: string) {
   const [kind, side] = v.split(':') as [RelationKind, 'a' | 'b']
@@ -55,27 +69,37 @@ function add(other: string) {
 
 <template>
   <div class="rel-edit">
-    <!-- The existing relations scroll inside the card; adding a new one stays in view below. -->
+    <!-- Grouped like the page reads; each row is the other entry, its role and dates. ⋯ opens the kind and dates. -->
     <div v-if="rels.length" class="rel-rows">
-    <div v-for="r in rels" :key="r.id" class="rel-row">
-      <select :value="optionOf(r)" @change="setOption(r, ($event.target as HTMLSelectElement).value)">
-        <option v-for="o in optionsFor(r)" :key="o.value" :value="o.value">{{ o.label }}</option>
-      </select>
-      <EntryPicker :model-value="otherOf(r)" :exclude="[entry.id]" @update:model-value="v => setOther(r, v)" />
-      <button type="button" class="x" title="Remove this relation" @click="removeRelation(r.id)">×</button>
-      <input class="role" :value="r.role ?? ''" placeholder="Role (optional)" @change="setField(r, 'role', ($event.target as HTMLInputElement).value.trim())" />
-      <div v-if="RELATION_KINDS[r.kind].dated" class="rel-dates">
-        <span class="muted small">from</span><DateInput :model-value="r.from" @update:model-value="v => setField(r, 'from', v)" />
-        <span class="muted small">until</span><DateInput :model-value="r.to" @update:model-value="v => setField(r, 'to', v)" />
-      </div>
-    </div>
+      <section v-for="g in groups" :key="g.label" class="rel-group">
+        <h4>{{ g.label }} <span class="muted">{{ g.list.length }}</span></h4>
+        <div v-for="r in g.list" :key="r.id" class="rel-row" :class="{ open: open.has(r.id) }">
+          <div class="rel-line">
+            <EntryPicker class="rel-who" :model-value="otherOf(r)" :exclude="[entry.id]" @update:model-value="v => setOther(r, v)" />
+            <input class="rel-role" :value="r.role ?? ''" placeholder="role" title="Role (optional)" @change="setField(r, 'role', ($event.target as HTMLInputElement).value.trim())" />
+            <button type="button" class="rel-more" :class="{ dated: !!dates(r) }" :title="open.has(r.id) ? 'Hide details' : 'Kind and dates'" @click="toggle(r.id)">{{ dates(r) || '⋯' }}</button>
+            <button type="button" class="x" title="Remove this relation" @click="removeRelation(r.id)">×</button>
+          </div>
+          <div v-if="open.has(r.id)" class="rel-details">
+            <label><span>Kind</span>
+              <select :value="optionOf(r)" @change="setOption(r, ($event.target as HTMLSelectElement).value)">
+                <option v-for="o in optionsFor(r)" :key="o.value" :value="o.value">{{ o.label }}</option>
+              </select>
+            </label>
+            <template v-if="RELATION_KINDS[r.kind].dated">
+              <label><span>From</span><DateInput :model-value="r.from" @update:model-value="v => setField(r, 'from', v)" /></label>
+              <label><span>Until</span><DateInput :model-value="r.to" @update:model-value="v => setField(r, 'to', v)" /></label>
+              <p class="muted small">Leave “from” empty if it was before records, “until” empty while it's still true.</p>
+            </template>
+          </div>
+        </div>
+      </section>
     </div>
     <div class="rel-add">
-      <select v-model="newKind">
+      <select v-model="newKind" title="What kind of relation">
         <option v-for="o in OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
       </select>
       <EntryPicker add :exclude="[entry.id]" :types="newOther" placeholder="Add: type a name…" @pick="add" />
     </div>
-    <p class="muted small">Leave “from” empty if it was before records; leave “until” empty while it's still true.</p>
   </div>
 </template>

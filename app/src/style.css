@@ -336,11 +336,19 @@ textarea { width: 100%; resize: vertical; }
 
 .rel-edit { display: flex; flex-direction: column; gap: .6rem; }
 /* Long relation lists scroll inside their card instead of stretching the page. */
-.rel-rows { display: flex; flex-direction: column; gap: .6rem; max-height: 26rem; overflow-y: auto; overscroll-behavior: contain; padding-right: .3rem; }
+.rel-rows { display: flex; flex-direction: column; gap: .2rem; max-height: 26rem; overflow-y: auto; overscroll-behavior: contain; padding-right: .3rem; }
 ul.rel-scroll { max-height: 22rem; overflow-y: auto; overscroll-behavior: contain; padding-right: .3rem; }
-.rel-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .3rem; padding-bottom: .6rem; border-bottom: 1px solid var(--line); }
-.rel-row .role, .rel-row .rel-dates { grid-column: 1 / -1; }
-.rel-dates { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
+.rel-group h4 { margin: .2rem 0 .3rem; font: 600 12px var(--sans); text-transform: uppercase; letter-spacing: .06em; color: var(--accent); }
+.rel-group h4 .muted { font-weight: 400; }
+.rel-group + .rel-group { margin-top: .4rem; }
+.rel-row { padding: .15rem 0; border-radius: 8px; }
+.rel-row.open { background: var(--panel-2); padding: .3rem; }
+.rel-line { display: grid; grid-template-columns: minmax(0, 1fr) 7rem auto auto; gap: .3rem; align-items: center; }
+.rel-line .rel-role { padding: .3em .5em; font-size: 13px; }
+.rel-more { padding: .25em .5em; font-size: 12px; color: var(--muted); white-space: nowrap; max-width: 11rem; overflow: hidden; text-overflow: ellipsis; }
+.rel-more.dated { color: var(--ink-2); }
+.rel-details { display: grid; gap: .4rem; margin: .4rem .2rem .2rem; }
+.rel-details label { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); align-items: center; gap: .5rem; font-size: 13px; color: var(--muted); }
 .rel-add { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .3rem; }
 
 .new-entry { padding: 1.2rem; display: flex; flex-direction: column; gap: .7rem; }

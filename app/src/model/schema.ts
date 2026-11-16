@@ -208,18 +208,22 @@ export const TYPES = Object.fromEntries(SCHEMA.map(t => [t.type, t])) as Record<
  * How each relation kind reads. `forward` is from a's side, `reverse` is the heading on b's page,
  * `verb` is how b's side reads in the editor. Symmetric kinds read the same from both sides.
  */
-export const RELATION_KINDS: Record<RelationKind, { forward: string; reverse: string; verb: string; symmetric?: boolean; dated: boolean }> = {
-  member: { forward: 'member of', reverse: 'members', verb: 'has member', dated: true },
-  parent: { forward: 'parent of', reverse: 'child of', verb: 'child of', dated: false },
-  sibling: { forward: 'sibling of', reverse: 'sibling of', verb: 'sibling of', symmetric: true, dated: false },
-  spouse: { forward: 'spouse of', reverse: 'spouse of', verb: 'spouse of', symmetric: true, dated: true },
-  ally: { forward: 'ally of', reverse: 'ally of', verb: 'ally of', symmetric: true, dated: true },
-  rival: { forward: 'rival of', reverse: 'rival of', verb: 'rival of', symmetric: true, dated: true },
-  mentor: { forward: 'mentor of', reverse: 'student of', verb: 'student of', dated: true },
-  'lives-in': { forward: 'lives in', reverse: 'residents', verb: 'home of', dated: true },
-  rules: { forward: 'rules', reverse: 'ruled by', verb: 'ruled by', dated: true },
-  owns: { forward: 'owns', reverse: 'owned by', verb: 'owned by', dated: true },
-  worships: { forward: 'worships', reverse: 'worshipped by', verb: 'worshipped by', dated: true },
-  involved: { forward: 'involved in', reverse: 'involved', verb: 'involves', dated: false },
+// Who can be on each side of a relation (left out = anything). The relation editor only offers
+// the kinds that fit the entry, so an item isn't asked whether it's a "member of" something.
+const PEOPLE: EntryType[] = ['npc', 'pc']
+const BEINGS: EntryType[] = ['npc', 'pc', 'deity', 'creature']
+export const RELATION_KINDS: Record<RelationKind, { forward: string; reverse: string; verb: string; symmetric?: boolean; dated: boolean; a?: EntryType[]; b?: EntryType[] }> = {
+  member: { forward: 'member of', reverse: 'members', verb: 'has member', dated: true, a: [...BEINGS, 'organization'], b: ['organization'] },
+  parent: { forward: 'parent of', reverse: 'child of', verb: 'child of', dated: false, a: BEINGS, b: BEINGS },
+  sibling: { forward: 'sibling of', reverse: 'sibling of', verb: 'sibling of', symmetric: true, dated: false, a: BEINGS, b: BEINGS },
+  spouse: { forward: 'spouse of', reverse: 'spouse of', verb: 'spouse of', symmetric: true, dated: true, a: BEINGS, b: BEINGS },
+  ally: { forward: 'ally of', reverse: 'ally of', verb: 'ally of', symmetric: true, dated: true, a: [...BEINGS, 'organization'], b: [...BEINGS, 'organization'] },
+  rival: { forward: 'rival of', reverse: 'rival of', verb: 'rival of', symmetric: true, dated: true, a: [...BEINGS, 'organization'], b: [...BEINGS, 'organization'] },
+  mentor: { forward: 'mentor of', reverse: 'student of', verb: 'student of', dated: true, a: BEINGS, b: BEINGS },
+  'lives-in': { forward: 'lives in', reverse: 'residents', verb: 'home of', dated: true, a: [...BEINGS, 'organization', 'race'], b: ['place'] },
+  rules: { forward: 'rules', reverse: 'ruled by', verb: 'ruled by', dated: true, a: [...BEINGS, 'organization'], b: ['place', 'organization'] },
+  owns: { forward: 'owns', reverse: 'owned by', verb: 'owned by', dated: true, a: [...PEOPLE, 'organization', 'deity', 'creature'], b: ['item', 'place', 'creature'] },
+  worships: { forward: 'worships', reverse: 'worshipped by', verb: 'worshipped by', dated: true, a: [...PEOPLE, 'organization', 'race', 'creature'], b: ['deity'] },
+  involved: { forward: 'involved in', reverse: 'involved', verb: 'involves', dated: false, b: ['event', 'session', 'campaign', 'encounter'] },
   related: { forward: 'related to', reverse: 'related to', verb: 'related to', symmetric: true, dated: false },
 }

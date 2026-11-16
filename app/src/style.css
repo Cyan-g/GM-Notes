@@ -766,21 +766,22 @@ input.init { width: 4em; }
 .fighter-name { font-weight: 600; font-size: 15px; color: var(--ink); text-align: left; }
 .fighter-name:hover { color: var(--accent); }
 .fighter-stat { display: inline-flex; align-items: center; gap: .25rem; font-size: 11px; color: var(--muted); text-transform: uppercase; }
-.fighter-stat input { width: 3.2em; padding: .1em .25em; text-align: center; font-weight: 600; }
+.fighter-stat input { width: 3.6em; height: 34px; padding: 0 .3em; text-align: center; font-size: 17px; font-weight: 700; }
 .fighter-stat.shield input { border-radius: 6px 6px 50% 50% / 6px 6px 40% 40%; }
 
 .hp-row { display: flex; align-items: center; gap: .3rem; margin: .5rem 0 .4rem; }
-.hp-bar { position: relative; flex: 1; height: 24px; border-radius: 6px; background: color-mix(in srgb, var(--ink) 10%, var(--panel)); border: 1px solid var(--line); overflow: hidden; }
+.hp-bar { position: relative; flex: 1; height: 34px; border-radius: 6px; background: color-mix(in srgb, var(--ink) 10%, var(--panel)); border: 1px solid var(--line); overflow: hidden; }
 .hp-fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(180deg, #6fbf5f, #3f8a3b); transition: width .3s; }
 .hp-bar.bloodied .hp-fill { background: linear-gradient(180deg, #f0b04a, #c47a1a); }
 .hp-bar.down .hp-fill { background: #8a2b2b; }
 .hp-temp { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, #5b8fd6, #5b8fd6 4px, #7aa7e6 4px, #7aa7e6 8px); transition: left .3s, width .3s; }
-.hp-text { position: relative; display: flex; align-items: center; justify-content: center; gap: .2rem; height: 100%; font-size: 13px; color: var(--ink);
+.hp-text { position: relative; display: flex; align-items: center; justify-content: center; gap: .2rem; height: 100%; font-size: 16px; color: var(--ink);
   text-shadow: 0 0 3px var(--panel), 0 0 3px var(--panel); }
-.hp-max { width: 3.4em; padding: 0 .2em; height: 18px; font-size: 12px; background: color-mix(in srgb, var(--panel) 70%, transparent); text-align: center; }
+.hp-max { width: 3.6em; padding: 0 .2em; height: 26px; font-size: 15px; font-weight: 600; background: color-mix(in srgb, var(--panel) 70%, transparent); text-align: center; }
 .hp-temp-text { color: #3a6fc4; font-weight: 600; }
-.hp-amount { width: 3.6em; text-align: center; }
-.hp-btn { padding: .15em .45em; }
+.hp-amount { width: 6.2em; height: 34px; text-align: center; font-size: 16px; }
+.hp-amount::placeholder { font-size: 13px; }
+.hp-btn { height: 34px; min-width: 38px; padding: 0 .5em; font-size: 16px; }
 .hp-btn.dmg:hover { border-color: #b33; }
 .hp-btn.heal { color: #3f8a3b; }
 .hp-btn.tmp:hover { border-color: #3a6fc4; }
@@ -949,3 +950,9 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 
 /* timeline inside the Atlas */
 .tl-count { margin: -.4rem 0 .6rem; }
+
+/* encounter numbers: no tiny spinner arrows (arrow keys and typing still work) */
+.fighter-stat input, .hp-max { -moz-appearance: textfield; appearance: textfield; }
+.fighter-stat input::-webkit-inner-spin-button, .fighter-stat input::-webkit-outer-spin-button,
+.hp-max::-webkit-inner-spin-button, .hp-max::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.fighter-stat span { font-size: 11px; }

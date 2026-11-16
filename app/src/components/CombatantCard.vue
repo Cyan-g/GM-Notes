@@ -33,6 +33,8 @@ function toggle(x: string) {
   c.value.conditions = list.includes(x) ? list.filter(y => y !== x) : [...list, x]
   touch()
 }
+/** Clicking into a box selects its number, so typing replaces it. */
+const selectAll = (ev: FocusEvent) => (ev.target as HTMLInputElement).select()
 function switchSide() { c.value.side = isParty(c.value) ? 'enemy' : 'party'; touch() }
 </script>
 
@@ -44,10 +46,10 @@ function switchSide() { c.value.side = isParty(c.value) ? 'enemy' : 'party'; tou
       <span v-if="c.isPlayer" class="badge">PC</span>
       <span class="spacer" />
       <label class="fighter-stat" title="Initiative"><span>Init</span>
-        <input type="number" :value="c.init ?? ''" :placeholder="(c.initMod >= 0 ? '+' : '') + c.initMod" @click.stop @change="setNum('init', ($event.target as HTMLInputElement).value)" />
+        <input type="number" :value="c.init ?? ''" :placeholder="(c.initMod >= 0 ? '+' : '') + c.initMod" @click.stop @focus="selectAll" @change="setNum('init', ($event.target as HTMLInputElement).value)" />
       </label>
       <label class="fighter-stat shield" title="Armour class"><span>AC</span>
-        <input type="number" :value="c.ac ?? ''" @click.stop @change="setNum('ac', ($event.target as HTMLInputElement).value)" />
+        <input type="number" :value="c.ac ?? ''" @click.stop @focus="selectAll" @change="setNum('ac', ($event.target as HTMLInputElement).value)" />
       </label>
       <button type="button" class="link-btn" :title="isParty(c) ? 'Move to the enemies' : 'Move to the party'" @click.stop="switchSide">⇄</button>
       <button type="button" class="x" title="Remove from the fight" @click.stop="removeCombatant(c.id)">×</button>
@@ -58,11 +60,11 @@ function switchSide() { c.value.side = isParty(c.value) ? 'enemy' : 'party'; tou
         <div class="hp-fill" :style="{ width: pct + '%' }" />
         <div v-if="tempPct" class="hp-temp" :style="{ left: pct + '%', width: tempPct + '%' }" />
         <span class="hp-text">
-          <b>{{ c.hp ?? '—' }}</b> / <input type="number" class="hp-max" :value="c.maxHp ?? ''" title="Max HP" placeholder="max" @click.stop @change="setNum('maxHp', ($event.target as HTMLInputElement).value)" />
+          <b>{{ c.hp ?? '—' }}</b> / <input type="number" class="hp-max" :value="c.maxHp ?? ''" title="Max HP" placeholder="max" @click.stop @focus="selectAll" @change="setNum('maxHp', ($event.target as HTMLInputElement).value)" />
           <span v-if="c.tempHp" class="hp-temp-text" title="Temporary HP">+{{ c.tempHp }}</span>
         </span>
       </div>
-      <input v-model="amount" class="hp-amount" placeholder="7" title="Amount. Enter = damage; or type +5 heal, =20 set, t5 temporary" @click.stop @keydown.enter="hp('')" />
+      <input v-model="amount" class="hp-amount" placeholder="dmg / heal" title="Amount. Enter = damage; or type +5 heal, =20 set, t5 temporary" @click.stop @focus="selectAll" @keydown.enter="hp('')" />
       <button type="button" class="hp-btn dmg" title="Damage" @click.stop="hp('-')">🗡</button>
       <button type="button" class="hp-btn heal" title="Heal" @click.stop="hp('+')">✚</button>
       <button type="button" class="hp-btn tmp" title="Temporary HP" @click.stop="hp('t')">🛡</button>

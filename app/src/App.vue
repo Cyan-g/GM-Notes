@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import { get, open, save, state } from './store'
+import { get, open, overwrite, save, state } from './store'
 import { ui } from './ui'
 import { FolderStorage, HttpStorage, folderApiAvailable, pickFolder, regrant, rememberedFolder } from './storage/storage'
 import { route } from './router'
@@ -78,6 +78,7 @@ function onKey(ev: KeyboardEvent) {
   }
 }
 // Warn before closing the tab while a save is still pending.
+const reload = () => location.reload()
 function beforeUnload(ev: BeforeUnloadEvent) { if (state.dirty || state.saving) { save(); ev.preventDefault() } }
 onMounted(() => { window.addEventListener('keydown', onKey); window.addEventListener('beforeunload', beforeUnload) })
 onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeEventListener('beforeunload', beforeUnload) })
@@ -86,6 +87,12 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
 <template>
   <div v-if="phase === 'ready' && state.db" class="shell">
     <TopBar @search="ui.switcher = true" />
+    <div v-if="state.readOnly || state.error" class="save-banner" :class="{ err: state.conflict || !!state.error }" role="alert">
+      <span>{{ state.readOnly ? '🔒 ' + state.readOnly : '⚠ ' + state.error }}</span>
+      <button @click="reload">Reload</button>
+      <button v-if="state.conflict" class="danger" @click="overwrite">Overwrite with this tab's version</button>
+      <button v-else-if="state.error" @click="save()">Try again</button>
+    </div>
     <main class="main">
       <HomeView v-if="route.current.name === 'home'" />
       <ListView v-else-if="route.current.name === 'list'" :type="route.current.type" />

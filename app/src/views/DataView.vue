@@ -71,7 +71,7 @@ const pretty = (n: string) => {
         <dl>
           <dt>Folder</dt><dd>{{ state.storage?.label }}</dd>
           <dt>Entries</dt><dd>{{ entries.length }}, with {{ db().relations.length }} relations</dd>
-          <dt>Saved</dt><dd>{{ state.saving ? 'saving…' : state.dirty ? 'unsaved changes' : state.savedAt ? new Date(state.savedAt).toLocaleTimeString() : 'nothing changed yet' }} <button v-if="state.dirty" class="link-btn" @click="save">Save now</button></dd>
+          <dt>Saved</dt><dd>{{ state.saving ? 'saving…' : state.dirty ? 'unsaved changes' : state.savedAt ? new Date(state.savedAt).toLocaleTimeString() : 'nothing changed yet' }} <button v-if="state.dirty" class="link-btn" @click="save()">Save now</button></dd>
           <dt>Last edit</dt><dd>{{ edited ? new Date(edited).toLocaleString() : 'none since the import from Obsidian' }}</dd>
         </dl>
       </section>

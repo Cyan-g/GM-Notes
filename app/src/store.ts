@@ -1,13 +1,14 @@
 // The loaded database plus lookups the pages need, and saving with backups.
 import { reactive, computed, shallowRef } from 'vue'
 import type { Database, Entry, EntryType, Id, Relation, WorldDate } from './model/types'
-import type { Storage } from './storage/storage'
+import type { FileStamp, Storage } from './storage/storage'
 import { OLD_PLACE_SIZES } from './model/schema'
 
 const DB_FILE = 'eldoria.json'
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
-const BACKUPS_KEPT = 40
+/** The newest data version this build understands (the last step in upgrade()). Newer files open read-only. */
+export const DATA_VERSION = 15
 
 export const state = reactive({
   storage: null as Storage | null,
@@ -19,17 +20,61 @@ export const state = reactive({
   /** Bumped on every change; lets a save notice edits made while it was writing. */
   changes: 0,
   savedAt: 0,
+  /** Why this tab doesn't save, if it doesn't (another tab is editing, the file changed elsewhere, newer data). */
+  readOnly: '' as string,
+  /** The file on disk was changed by something else since this tab loaded or saved it. */
+  conflict: false,
 })
+
+/** The data file as this tab last read or wrote it; a different one on disk means someone else saved. */
+let stamp: FileStamp | null = null
+/** How many entries the file had when this tab last read or wrote it. */
+let savedCount = 0
 
 export const db = () => state.db!
 
 export async function open(storage: Storage) {
   state.storage = storage
+  stamp = await storage.stat(DB_FILE)
   const text = await storage.readText(DB_FILE)
   if (text == null) throw new Error(`No ${DB_FILE} found in "${storage.label}". Pick the app's data folder.`)
-  state.db = JSON.parse(text) as Database
+  const d = JSON.parse(text) as Database
+  state.db = d
   state.dirty = false
-  if (upgrade(state.db)) touch()
+  savedCount = Object.keys(d.entries ?? {}).length
+  if ((d.version ?? 1) > DATA_VERSION) {
+    state.readOnly = `This data was saved by a newer version of the app (data version ${d.version}, this one knows up to ${DATA_VERSION}). Reload to get the newer app; until then nothing is saved here.`
+    return
+  }
+  if (!(await takeLock())) {
+    state.readOnly = 'The data is already open for editing in another tab or window. Changes here are not saved; close the other one and reload this one to edit here.'
+    return
+  }
+  if (upgrade(d)) touch()
+}
+
+/**
+ * Take over another database (restoring a backup): bring it up to date, accept its size as the new normal,
+ * and save it. Data from a newer app version is refused.
+ */
+export function adopt(d: Database) {
+  if ((d.version ?? 1) > DATA_VERSION) throw new Error(`That backup is from a newer version of the app (data version ${d.version}).`)
+  upgrade(d)
+  state.db = d
+  savedCount = Object.keys(d.entries ?? {}).length
+  touch()
+}
+
+/** Only one tab may edit at a time; it holds this lock until it closes. Without the Web Locks API, every tab may edit. */
+function takeLock(): Promise<boolean> {
+  const locks = (navigator as any).locks
+  if (!locks?.request) return Promise.resolve(true)
+  return new Promise(ok => {
+    locks.request('eldoria-data', { ifAvailable: true }, (lock: unknown) => {
+      ok(!!lock)
+      return lock ? new Promise(() => { /* held for the life of the tab */ }) : undefined
+    })
+  })
 }
 
 /** Bring older saved data up to date. Returns true if anything changed (it's then saved). */
@@ -356,28 +401,77 @@ function upgrade(d: Database) {
     d.version = 15
     changed = true
   }
+  // Adding a step? Raise DATA_VERSION at the top to match, or the new data opens read-only in this build.
   return changed
 }
 
-/** Save the database. Before overwriting, keep a copy of the previous file every 10 minutes. */
-export async function save() {
+/**
+ * What must hold before the database is written. A bug that wiped or mangled the data in memory must never
+ * reach the disk (and then, over time, the backups too).
+ */
+function checkBeforeSave(d: Database, text: string): string {
+  if (!d.meta || !d.entries || typeof d.entries !== 'object' || !Array.isArray(d.relations)) return 'the data is missing its main parts'
+  const n = Object.keys(d.entries).length
+  if (!n) return 'there would be no entries left'
+  const lost = savedCount - n
+  if (lost > 10) return `${lost} entries would disappear in one go (${savedCount} → ${n})`
+  try { JSON.parse(text) } catch { return 'the file would not read back' }
+  return ''
+}
+
+const stampOf = (t: Date) => { const p = (n: number) => String(n).padStart(2, '0'); return `${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}-${p(t.getHours())}-${p(t.getMinutes())}-${p(t.getSeconds())}` }
+const BACKUP_NAME = /^eldoria-(\d{4})-(\d\d)-(\d\d)-(\d\d)-(\d\d)-(\d\d)\.json$/
+
+/**
+ * Which automatic backups to keep: everything from the last 2 hours, then the newest of each hour for 2 days,
+ * of each day for 2 months, and of each month for good. Files the app didn't name itself are never touched.
+ */
+export function backupsToDelete(names: string[], now = Date.now()): string[] {
+  const dated = names.flatMap(n => {
+    const m = n.match(BACKUP_NAME)
+    return m ? [{ n, t: new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime() }] : []
+  }).sort((a, b) => b.t - a.t)
+  const H = 3600e3, D = 24 * H
+  const seen = new Set<string>()
+  const drop: string[] = []
+  for (const { n, t } of dated) {
+    const age = now - t, at = new Date(t)
+    if (age < 2 * H) continue
+    const bucket = age < 2 * D ? `h${at.getFullYear()}-${at.getMonth()}-${at.getDate()}-${at.getHours()}`
+      : age < 60 * D ? `d${at.getFullYear()}-${at.getMonth()}-${at.getDate()}`
+      : `m${at.getFullYear()}-${at.getMonth()}`
+    if (seen.has(bucket)) drop.push(n)
+    else seen.add(bucket)
+  }
+  return drop
+}
+
+/** Save the database. Before overwriting, keep a copy of the previous file (at most every 10 minutes). */
+export async function save(force = false) {
   const s = state.storage, d = state.db
-  if (!s || !d || state.saving) return
+  if (!s || !d || state.saving || state.readOnly) return
   state.saving = true
   const at = state.changes
   try {
-    if (Date.now() - state.lastBackup > BACKUP_EVERY_MS) {
+    // Someone else saved the file since this tab read it: stop rather than overwrite their work.
+    const onDisk = await s.stat(DB_FILE)
+    if (!force && stamp && onDisk && (onDisk.modified !== stamp.modified || onDisk.size !== stamp.size)) {
+      state.conflict = true
+      state.readOnly = `${DB_FILE} was changed outside this tab since it was loaded. To keep those changes, reload. To keep this tab's version instead, overwrite (the other version is kept in backups).`
+      return
+    }
+    const text = JSON.stringify(d, null, 1)
+    const problem = checkBeforeSave(d, text)
+    if (problem) throw new Error(`Not saved, because ${problem}. Reload to get the last saved data back.`)
+    if (force || Date.now() - state.lastBackup > BACKUP_EVERY_MS) {
       const prev = await s.readText(DB_FILE)
-      if (prev) {
-        const d = new Date(), p = (n: number) => String(n).padStart(2, '0')
-        const stamp = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`
-        await s.writeText(`${BACKUP_DIR}/eldoria-${stamp}.json`, prev)
-        const old = (await s.list(BACKUP_DIR)).filter(n => n.endsWith('.json')).sort()
-        for (const n of old.slice(0, Math.max(0, old.length - BACKUPS_KEPT))) await s.remove(`${BACKUP_DIR}/${n}`)
-      }
+      if (prev) await s.writeText(`${BACKUP_DIR}/eldoria-${stampOf(new Date())}.json`, prev)
+      for (const n of backupsToDelete(await s.list(BACKUP_DIR))) await s.remove(`${BACKUP_DIR}/${n}`)
       state.lastBackup = Date.now()
     }
-    await s.writeText(DB_FILE, JSON.stringify(d, null, 1))
+    await s.writeText(DB_FILE, text)
+    stamp = await s.stat(DB_FILE)
+    savedCount = Object.keys(d.entries).length
     state.dirty = state.changes !== at
     state.savedAt = Date.now()
     state.error = ''
@@ -385,8 +479,16 @@ export async function save() {
     state.error = (e as Error).message
   } finally {
     state.saving = false
-    if (state.dirty && !state.error) scheduleSave()
+    if (state.dirty && !state.error && !state.readOnly) scheduleSave()
   }
+}
+
+/** After a conflict: write this tab's version anyway (the version on disk goes to the backups first). */
+export async function overwrite() {
+  if (!state.conflict) return
+  state.conflict = false
+  state.readOnly = ''
+  await save(true)
 }
 
 let timer: number | undefined

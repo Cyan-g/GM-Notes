@@ -74,7 +74,8 @@ const current = computed(() => MENUS.findIndex(m => m.owns(route.current)))
       <button class="search-btn" @click="$emit('search')"><span>Search…</span><kbd>Ctrl K</kbd></button>
       <button class="new-btn" title="New entry" @click="newEntry()">＋</button>
       <span class="save-status" :class="{ err: !!state.error }">
-        <template v-if="state.error">⚠ Not saved <button class="link-btn" :title="state.error" @click="save">Retry</button></template>
+        <template v-if="state.readOnly"><span :title="state.readOnly">🔒 Not saving</span></template>
+        <template v-else-if="state.error">⚠ Not saved <button class="link-btn" :title="state.error" @click="save()">Retry</button></template>
         <template v-else-if="state.saving">Saving…</template>
         <template v-else-if="state.dirty">Unsaved…</template>
         <template v-else-if="state.savedAt">✓ Saved</template>

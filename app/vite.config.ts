@@ -17,6 +17,12 @@ function devData(): Plugin {
         const file = path.resolve(DATA, rel)
         if (!file.startsWith(DATA)) { res.statusCode = 403; return res.end() }
         if (req.method === 'GET') {
+          if ((req.url || '').includes('?stat')) {
+            if (!fs.existsSync(file)) { res.statusCode = 404; return res.end() }
+            const st = fs.statSync(file)
+            res.setHeader('content-type', 'application/json')
+            return res.end(JSON.stringify({ modified: Math.round(st.mtimeMs), size: st.size }))
+          }
           if (rel.endsWith('/') || rel === '') {
             if (!fs.existsSync(file)) { res.setHeader('content-type', 'application/json'); return res.end('[]') }
             res.setHeader('content-type', 'application/json')

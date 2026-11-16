@@ -1,6 +1,6 @@
 // Copying the data folder somewhere else, and restoring from the app's own backups.
 import type { Database } from './model/types'
-import { save, state, touch } from './store'
+import { adopt, save, state } from './store'
 import type { Storage } from './storage/storage'
 
 const stamp = () => {
@@ -47,8 +47,7 @@ export async function restoreBackup(name: string) {
   await save()
   const current = await s.readText('eldoria.json')
   if (current) await s.writeText(`backups/before-restore-${stamp()}.json`, current)
-  state.db = db
-  touch()
+  adopt(db)
   await save()
 }
 

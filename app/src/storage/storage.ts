@@ -11,7 +11,11 @@ export interface Storage {
   remove(path: string): Promise<void>
   /** A URL an <img> can show. */
   fileUrl(path: string): Promise<string | null>
+  /** When a file was last written and how big it is, to notice changes made elsewhere. Null if unknown. */
+  stat(path: string): Promise<FileStamp | null>
 }
+
+export interface FileStamp { modified: number; size: number }
 
 // ---------- dev server (npm run dev) ----------
 
@@ -49,6 +53,10 @@ export class HttpStorage implements Storage {
   }
   async remove(path: string) { if (this.ro) return; await fetch(this.enc(path), { method: 'DELETE' }) }
   async fileUrl(path: string) { return this.enc(path) }
+  async stat(path: string) {
+    const r = await fetch(this.enc(path) + '?stat', { cache: 'no-store' })
+    return r.ok ? (await r.json()) as FileStamp : null
+  }
 }
 
 // ---------- picked folder (File System Access API: Edge, Chrome, Brave with the flag on) ----------
@@ -99,6 +107,10 @@ export class FolderStorage implements Storage {
     const parts = path.split('/').filter(Boolean)
     const name = parts.pop()!
     try { await (await this.dir(parts, false)).removeEntry(name) } catch { /* already gone */ }
+  }
+  async stat(path: string) {
+    try { const f = await (await this.file(path, false)).getFile(); return { modified: f.lastModified, size: f.size } }
+    catch { return null }
   }
   async fileUrl(path: string) {
     const hit = this.urls.get(path)

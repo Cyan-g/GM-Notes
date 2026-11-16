@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
-    "migrate": "node scripts/migrate.mjs"
+    "build": "vue-tsc --noEmit && vite build"
   },
   "dependencies": {
     "d3-hierarchy": "^3.1.3",

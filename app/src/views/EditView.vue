@@ -30,11 +30,20 @@ const groups = computed(() => {
   }
   return [...out]
 })
-// Spells edit like a sheet: all their stats in the main column, the description as the big text
-// (it's what the spell card shows), and the general notes folded away underneath.
-const SHEET_TYPES: EntryType[] = ['spell']
+// Spells and items edit like a sheet: their stats in the main column, the description as the big text
+// (it's what their card shows), and the general notes folded away underneath. Spells have no side cards.
+const SHEET_TYPES: EntryType[] = ['spell', 'item']
+const noSide = computed(() => e.value?.type === 'spell')
 const sheet = computed(() => !!e.value && SHEET_TYPES.includes(e.value.type))
 const sheetFields = computed(() => (def.value?.fields ?? []).filter(f => f.key !== 'summary' && !BIG.includes(f.kind) && shown(f)))
+// Yes/no fields share one row of toggle buttons.
+const sheetBools = computed(() => sheetFields.value.filter(f => f.kind === 'bool'))
+function toggleBool(key: string) {
+  const x = e.value!
+  if (x.fields[key]) delete x.fields[key]
+  else x.fields[key] = true
+  changed(x)
+}
 function setSummary(v: string) { if (v.trim()) e.value!.fields.summary = v; else delete e.value!.fields.summary; changed(e.value!) }
 const bigFields = computed(() => (def.value?.fields ?? []).filter(f => BIG.includes(f.kind) && shown(f)))
 
@@ -87,13 +96,24 @@ function remove() {
       </div>
     </header>
 
-    <div class="entry-grid" :class="{ 'no-side': sheet }">
+    <div class="entry-grid" :class="{ 'no-side': noSide }">
       <div class="entry-main">
         <template v-if="sheet">
           <section class="card sheet-form">
             <SpellForm v-if="e.type === 'spell'" :entry="e" />
             <div v-else class="sheet-grid">
-              <label v-for="f in sheetFields" :key="f.key" class="sheet-field" :class="'k-' + f.kind">
+              <!-- Short fields in two columns, then the yes/no toggles, then the full-width ones. -->
+              <label v-for="f in sheetFields.filter(x => !['bool', 'list', 'longtext'].includes(x.kind))" :key="f.key" class="sheet-field" :class="'k-' + f.kind">
+                <span>{{ f.label }}</span>
+                <FieldInput :id="`f-${f.key}`" :def="f" :entry="e" />
+              </label>
+              <div v-if="sheetBools.length" class="sheet-field">
+                <span>{{ e.type === 'item' ? 'Magic' : 'Options' }}</span>
+                <div class="seg wrap">
+                  <button v-for="f in sheetBools" :key="f.key" type="button" :class="{ on: !!e.fields[f.key] }" @click="toggleBool(f.key)">{{ f.label }}</button>
+                </div>
+              </div>
+              <label v-for="f in sheetFields.filter(x => ['list', 'longtext'].includes(x.kind))" :key="f.key" class="sheet-field" :class="'k-' + f.kind">
                 <span>{{ f.label }}</span>
                 <FieldInput :id="`f-${f.key}`" :def="f" :entry="e" />
               </label>
@@ -121,7 +141,7 @@ function remove() {
       </div>
 
       <!-- Sheets (spells) have nothing for the side: no picture, no relations. -->
-      <aside v-if="!sheet" class="entry-side">
+      <aside v-if="!noSide" class="entry-side">
         <div class="card">
           <h3>Picture</h3>
           <ImageInput :model-value="e.image" :hint="e.name" @update:model-value="setImage" />

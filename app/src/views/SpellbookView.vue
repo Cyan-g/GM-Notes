@@ -101,6 +101,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
 
       <section class="card sbk-slots">
         <h3>Spell slots <button class="link-btn" @click="editSlots = !editSlots">{{ editSlots ? 'Done' : 'Edit' }}</button></h3>
+        <div class="slot-cols">
         <div v-for="s in shownSlots" :key="s.i" class="slot-row">
           <span class="slot-lvl">{{ ORD[s.i] }}</span>
           <span class="pips">
@@ -109,6 +110,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
           </span>
           <span class="slot-left">{{ s.max - s.used }} / {{ s.max }}</span>
           <input v-if="editSlots" class="slot-max" type="number" min="0" max="9" :value="s.max" title="Slots of this level" @change="setMax(s.i, ($event.target as HTMLInputElement).value)" />
+        </div>
         </div>
         <p v-if="!shownSlots.length" class="muted small">No slots yet: click Edit to set them.</p>
       </section>

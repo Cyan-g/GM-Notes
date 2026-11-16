@@ -615,14 +615,16 @@ input.init { width: 4em; }
 .sbk-stats .over { color: var(--accent); }
 .sbk-slots h3, .sbk-list h3 { display: flex; justify-content: space-between; align-items: baseline; }
 .sbk-slots h3 .link-btn { font: 12px var(--sans); font-variant: normal; letter-spacing: 0; }
-.slot-row { display: flex; align-items: center; gap: .8rem; padding: .25rem 0; }
-.slot-lvl { width: 2.6em; font: 600 14px var(--serif); color: var(--ink-2); }
-.pips { display: flex; gap: .35rem; flex-wrap: wrap; min-width: 0; }
-.pip { width: 18px; height: 18px; padding: 0; margin: 2px; border: 2px solid var(--accent); background: transparent; transform: rotate(45deg); border-radius: 4px; }
+.slot-cols { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: .5rem; }
+/* One column per level: level on top, its slots as a stack of diamonds, what's left underneath. */
+.slot-row { display: flex; flex-direction: column; align-items: center; gap: .45rem; padding: .5rem .3rem; border-radius: 8px; background: var(--panel-2); }
+.slot-lvl { font: 600 14px var(--serif); color: var(--ink-2); }
+.pips { display: grid; grid-template-columns: repeat(2, 22px); gap: .3rem .35rem; justify-content: center; }
+.pip { width: 16px; height: 16px; padding: 0; margin: 3px; border: 2px solid var(--accent); background: transparent; transform: rotate(45deg); border-radius: 3px; }
 .pip.on { background: var(--accent); }
 .pip:hover { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
-.slot-left { margin-left: auto; font-size: 13px; color: var(--muted); }
-.slot-max { width: 4em; text-align: center; }
+.slot-left { font-size: 12px; color: var(--muted); }
+.slot-max { width: 4em; text-align: center; padding: .2em; }
 .sbk-list { margin-bottom: 1rem; }
 .sbk-list table { margin-bottom: .6rem; }
 .sbk-check { white-space: nowrap; color: var(--ink); font-weight: 500; }

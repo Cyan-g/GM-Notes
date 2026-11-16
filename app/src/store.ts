@@ -236,6 +236,14 @@ function upgrade(d: Database) {
     d.version = 11
     changed = true
   }
+  // Version 12: Mira is Aria's sister.
+  if ((d.version ?? 1) < 12) {
+    const [a, b] = ['mira-vance', 'aria-vance']
+    if (d.entries[a] && d.entries[b] && !d.relations.some(r => r.kind === 'sibling' && ((r.a === a && r.b === b) || (r.a === b && r.b === a))))
+      d.relations.push({ id: `rfam${Date.now().toString(36)}s`, a, b, kind: 'sibling', visibility: 'secret' })
+    d.version = 12
+    changed = true
+  }
   return changed
 }
 

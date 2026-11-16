@@ -605,3 +605,28 @@ input.init { width: 4em; }
   .ic-body { grid-template-columns: minmax(0, 1fr) minmax(200px, 280px); align-items: start; }
   .ic-stats { margin: .4rem 0 0; padding-left: 1.2rem; border-left: 1px solid var(--line); }
 }
+
+/* ---------- spellbook ---------- */
+.sbk-top { display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: 1rem; margin-bottom: 1rem; align-items: start; }
+@media (max-width: 800px) { .sbk-top { grid-template-columns: 1fr; } }
+.sbk-stats label { display: flex; align-items: center; gap: .5rem; margin: .35rem 0; }
+.sbk-stats label span { flex: 1; color: var(--ink-2); }
+.sbk-stats input { width: 5em; text-align: center; }
+.sbk-stats .over { color: var(--accent); }
+.sbk-slots h3, .sbk-list h3 { display: flex; justify-content: space-between; align-items: baseline; }
+.sbk-slots h3 .link-btn { font: 12px var(--sans); font-variant: normal; letter-spacing: 0; }
+.slot-row { display: flex; align-items: center; gap: .8rem; padding: .25rem 0; }
+.slot-lvl { width: 2.6em; font: 600 14px var(--serif); color: var(--ink-2); }
+.pips { display: flex; gap: .35rem; flex-wrap: wrap; min-width: 0; }
+.pip { width: 18px; height: 18px; padding: 0; margin: 2px; border: 2px solid var(--accent); background: transparent; transform: rotate(45deg); border-radius: 4px; }
+.pip.on { background: var(--accent); }
+.pip:hover { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+.slot-left { margin-left: auto; font-size: 13px; color: var(--muted); }
+.slot-max { width: 4em; text-align: center; }
+.sbk-list { margin-bottom: 1rem; }
+.sbk-list table { margin-bottom: .6rem; }
+.sbk-check { white-space: nowrap; color: var(--ink); font-weight: 500; }
+.sbk-actions { white-space: nowrap; text-align: right; }
+.sbk-actions .chip-btn { font-size: 12px; padding: .15em .7em; }
+.sbk-actions .chip-btn:disabled { opacity: .4; cursor: default; }
+.sbk-actions .link-btn { margin-left: .5rem; }

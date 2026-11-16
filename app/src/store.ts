@@ -54,6 +54,26 @@ function upgrade(d: Database) {
     d.version = 2
     changed = true
   }
+  // Version 3: the "Spell Tome" note becomes the Spellbook page. The import lost the note's settings,
+  // so they're filled in from the Obsidian note as it was, and the empty note is removed.
+  if ((d.version ?? 1) < 3) {
+    if (!d.spellbook) {
+      const ids = (names: string[]) => names.map(n => Object.values(d.entries).find(e => e.type === 'spell' && e.name.toLowerCase() === n.toLowerCase())?.id).filter((x): x is string => !!x)
+      d.spellbook = {
+        attackBonus: 8, saveDC: 15, preparedMax: 15,
+        slots: [4, 4, 4, 3, 2, 1, 0, 0, 0].map(max => ({ max, used: 0 })),
+        prepared: ids(['Tharns Might', 'Alarm', 'Bless']),
+        always: ids(['Acid Splash', 'Fire Bolt', 'Friends', 'Yawn']),
+      }
+    }
+    const tome = d.entries['spell-tome']
+    if (tome && tome.type === 'note' && tome.body.trim().length < 60) {
+      delete d.entries['spell-tome']
+      if (d.meta.favourites) d.meta.favourites = d.meta.favourites.filter(f => f !== 'spell-tome')
+    }
+    d.version = 3
+    changed = true
+  }
   return changed
 }
 

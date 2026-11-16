@@ -117,6 +117,20 @@ export interface Calendar {
   holidays: { name: string; month: number; day: number; note?: string }[]
 }
 
+// ---------- spellbook ----------
+
+/** One caster's spells and slots (what the Obsidian "Spell Tome" note did). */
+export interface Spellbook {
+  attackBonus?: number
+  saveDC?: number
+  /** How many spells may be prepared. */
+  preparedMax?: number
+  /** Index 0 is 1st level … 8 is 9th level. */
+  slots: { max: number; used: number }[]
+  prepared: Id[]
+  always: Id[]
+}
+
 // ---------- initiative tracker ----------
 
 export interface Combatant {
@@ -162,4 +176,5 @@ export interface Database {
   entries: Record<Id, Entry>
   relations: Relation[]
   tracker?: Tracker
+  spellbook?: Spellbook
 }

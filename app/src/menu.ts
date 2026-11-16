@@ -139,9 +139,11 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'Spells',
-    owns: r => typeOf(r) === 'spell' || dashOf(r) === 'spells',
+    owns: r => typeOf(r) === 'spell' || dashOf(r) === 'spells' || r.name === 'spellbook',
     // The spell tables first, then every spell by level.
     items: () => [
+      { label: 'Spellbook', icon: '📖', href: '#/spellbook', hint: state.db?.spellbook ? `${(state.db.spellbook.prepared.length)} prepared` : undefined },
+      SEP,
       ...dashViews('spells'),
       SEP,
       ...entriesOf('spell'),

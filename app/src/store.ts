@@ -120,6 +120,17 @@ function upgrade(d: Database) {
     d.version = 7
     changed = true
   }
+  // Version 8: the vault filed every brew as a potion. What the Poisoner's Kit makes is poison,
+  // and the kit itself is a tool like the other two kits.
+  if ((d.version ?? 1) < 8) {
+    for (const e of Object.values(d.entries)) {
+      if (e.type !== 'item' || e.fields.kind !== 'Potion') continue
+      if (e.fields.craftingType === "Poisoner's Kit") e.fields.kind = 'Poison'
+      else if (e.id === 'poisoners-kit') e.fields.kind = 'Other'
+    }
+    d.version = 8
+    changed = true
+  }
   return changed
 }
 

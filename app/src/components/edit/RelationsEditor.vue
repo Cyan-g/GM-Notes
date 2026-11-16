@@ -55,6 +55,8 @@ function add(other: string) {
 
 <template>
   <div class="rel-edit">
+    <!-- The existing relations scroll inside the card; adding a new one stays in view below. -->
+    <div v-if="rels.length" class="rel-rows">
     <div v-for="r in rels" :key="r.id" class="rel-row">
       <select :value="optionOf(r)" @change="setOption(r, ($event.target as HTMLSelectElement).value)">
         <option v-for="o in optionsFor(r)" :key="o.value" :value="o.value">{{ o.label }}</option>
@@ -66,6 +68,7 @@ function add(other: string) {
         <span class="muted small">from</span><DateInput :model-value="r.from" @update:model-value="v => setField(r, 'from', v)" />
         <span class="muted small">until</span><DateInput :model-value="r.to" @update:model-value="v => setField(r, 'to', v)" />
       </div>
+    </div>
     </div>
     <div class="rel-add">
       <select v-model="newKind">

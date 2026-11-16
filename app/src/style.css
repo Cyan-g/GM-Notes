@@ -335,6 +335,9 @@ textarea { width: 100%; resize: vertical; }
 .be-preview { padding: .8rem 1rem; max-height: 75vh; overflow-y: auto; }
 
 .rel-edit { display: flex; flex-direction: column; gap: .6rem; }
+/* Long relation lists scroll inside their card instead of stretching the page. */
+.rel-rows { display: flex; flex-direction: column; gap: .6rem; max-height: 26rem; overflow-y: auto; overscroll-behavior: contain; padding-right: .3rem; }
+ul.rel-scroll { max-height: 22rem; overflow-y: auto; overscroll-behavior: contain; padding-right: .3rem; }
 .rel-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .3rem; padding-bottom: .6rem; border-bottom: 1px solid var(--line); }
 .rel-row .role, .rel-row .rel-dates { grid-column: 1 / -1; }
 .rel-dates { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }

@@ -279,7 +279,7 @@ const siblings = computed(() => {
 
         <div v-for="[label, list] in relGroups" :key="label" class="card">
           <h3>{{ label[0].toUpperCase() + label.slice(1) }}</h3>
-          <ul class="rel">
+          <ul class="rel rel-scroll">
             <li v-for="{ other, r } in list" :key="r.id" :class="{ ended: ended(r) }">
               <EntryLink :id="other" icon />
               <span v-if="r.role" class="role">{{ r.role }}</span>

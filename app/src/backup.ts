@@ -17,12 +17,12 @@ export async function backupTo(dest: Storage, onProgress: (done: number, total: 
   const src = state.storage!
   await save()
   const folder = `Eldoria-backup-${stamp()}`
-  const files: string[] = ['eldoria.json']
+  const files: string[] = ['eldoria.json', 'session.json']
   for (const dir of ['images', 'files']) for (const n of await src.list(dir)) files.push(`${dir}/${n}`)
   let done = 0
   onProgress(0, files.length)
   for (const f of files) {
-    const blob = f === 'eldoria.json' ? new Blob([JSON.stringify(state.db, null, 1)], { type: 'application/json' }) : await src.readBlob(f)
+    const blob = await src.readBlob(f)
     if (blob) await dest.writeBlob(`${folder}/${f}`, blob)
     onProgress(++done, files.length)
   }
@@ -34,7 +34,8 @@ export async function backupTo(dest: Storage, onProgress: (done: number, total: 
 
 /** The app's automatic backups in data/backups, newest first. */
 export async function listBackups(): Promise<string[]> {
-  return (await state.storage!.list('backups')).filter(n => n.endsWith('.json')).sort().reverse()
+  // The play-state copies (session-…) aren't versions of the world to go back to.
+  return (await state.storage!.list('backups')).filter(n => n.endsWith('.json') && !n.startsWith('session-')).sort().reverse()
 }
 
 /** Replace the open database with a backup. The current one is kept as a backup first. */

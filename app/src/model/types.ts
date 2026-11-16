@@ -183,7 +183,7 @@ export interface Database {
     today: WorldDate
     calendar: Calendar
     eventCategories: { id: string; name: string; color: string }[]
-    /** Set on the first change made in the app. The migration refuses to overwrite the file once this exists. */
+    /** When the world data was last saved with a change (shown on the Data page). */
     edited?: string
     /** When the data folder was last copied somewhere else with the Back up button. */
     externalBackup?: string

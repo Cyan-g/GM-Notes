@@ -244,6 +244,14 @@ function upgrade(d: Database) {
     d.version = 12
     changed = true
   }
+  // Version 13: Lena is Mira's mother too.
+  if ((d.version ?? 1) < 13) {
+    const [mum, kid] = ['lena-vance', 'mira-vance']
+    if (d.entries[mum] && d.entries[kid] && !d.relations.some(r => r.kind === 'parent' && r.a === mum && r.b === kid))
+      d.relations.push({ id: `rfam${Date.now().toString(36)}m`, a: mum, b: kid, kind: 'parent', visibility: 'secret' })
+    d.version = 13
+    changed = true
+  }
   return changed
 }
 

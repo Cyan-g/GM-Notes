@@ -10,7 +10,6 @@ import Sunburst from '../components/Sunburst.vue'
 import { ui } from '../ui'
 import { isFavourite, toggleFavourite } from '../edit'
 import type { Pin } from '../model/types'
-import { loadEncounter } from '../tracker'
 import EntryLink from '../components/EntryLink.vue'
 import MarkdownView from '../components/MarkdownView.vue'
 import FieldValue from '../components/FieldValue.vue'
@@ -203,7 +202,6 @@ const siblings = computed(() => {
           <EntryLink v-if="siblings.next" :id="siblings.next.id" :label="siblings.next.name + ' →'" />
         </div>
 
-        <div v-if="e.type === 'encounter'" class="run-bar"><button class="primary" @click="loadEncounter(e.id); go('#/tracker')">▶ Run in initiative tracker</button></div>
         <!-- An item's card takes the main two thirds; its recipe is the first card on the right (as when editing). -->
         <div v-if="e.type === 'item'" class="item-top">
           <ItemCard :e="e" />

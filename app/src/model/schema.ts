@@ -183,6 +183,7 @@ export const SCHEMA: TypeDef[] = [
       { key: 'campaign', label: 'Campaign', kind: 'ref', to: ['campaign'] },
       { key: 'session', label: 'Session', kind: 'ref', to: ['session'] },
       { key: 'location', label: 'Where', kind: 'ref', to: ['place'] },
+      { key: 'party', label: 'Party', kind: 'refs', to: ['pc'] },
       { key: 'creatures', label: 'Creatures', kind: 'combatants', group: 'Creatures' },
     ],
   },

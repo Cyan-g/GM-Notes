@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import { open, save, state } from './store'
+import { get, open, save, state } from './store'
 import { ui } from './ui'
 import { FolderStorage, HttpStorage, folderApiAvailable, pickFolder, regrant, rememberedFolder } from './storage/storage'
 import { route } from './router'
@@ -10,6 +10,7 @@ import HomeView from './views/HomeView.vue'
 import ListView from './views/ListView.vue'
 import EntryView from './views/EntryView.vue'
 import EditView from './views/EditView.vue'
+import EncounterView from './views/EncounterView.vue'
 import TimelineView from './views/TimelineView.vue'
 import DashboardView from './views/DashboardView.vue'
 import CalendarView from './views/CalendarView.vue'
@@ -94,6 +95,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <DataView v-else-if="route.current.name === 'data'" />
       <MapPage v-else-if="route.current.name === 'map'" :id="route.current.id" :pin="route.current.pin" :key="'map-' + route.current.id" />
       <DashboardView v-else-if="route.current.name === 'dashboard'" :id="route.current.id" :view="route.current.view" />
+      <EncounterView v-else-if="route.current.name === 'entry' && get(route.current.id)?.type === 'encounter'" :id="route.current.id" :key="'enc-' + route.current.id" />
       <EditView v-else-if="route.current.name === 'entry' && route.current.edit" :id="route.current.id" :key="'edit-' + route.current.id" />
       <EntryView v-else-if="route.current.name === 'entry'" :id="route.current.id" :key="route.current.id" />
     </main>

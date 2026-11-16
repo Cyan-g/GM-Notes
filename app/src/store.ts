@@ -62,6 +62,7 @@ function upgrade(d: Database) {
       d.spellbook = {
         attackBonus: 8, saveDC: 15, preparedMax: 15,
         slots: [4, 4, 4, 3, 2, 1, 0, 0, 0].map(max => ({ max, used: 0 })),
+        known: [],
         prepared: ids(['Tharns Might', 'Alarm', 'Bless']),
         always: ids(['Acid Splash', 'Fire Bolt', 'Friends', 'Yawn']),
       }
@@ -104,6 +105,12 @@ function upgrade(d: Database) {
     }
     if (d.crafting) d.crafting.tools = [...new Set(d.crafting.tools.map(t => RENAME[t] ?? t))]
     d.version = 5
+    changed = true
+  }
+  // Version 6: the spellbook gets a list of known spells; everything prepared is known.
+  if ((d.version ?? 1) < 6) {
+    if (d.spellbook) d.spellbook.known = [...new Set([...(d.spellbook.known ?? []), ...d.spellbook.always, ...d.spellbook.prepared])]
+    d.version = 6
     changed = true
   }
   return changed

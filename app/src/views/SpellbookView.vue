@@ -5,14 +5,15 @@ import { computed, ref } from 'vue'
 import type { Entry, Id, Spellbook } from '../model/types'
 import { db, get, touch } from '../store'
 import { newEntry } from '../ui'
-import EntryLink from '../components/EntryLink.vue'
+import { hrefEntry } from '../router'
+import SpellModal from '../components/SpellModal.vue'
 import EntryPicker from '../components/edit/EntryPicker.vue'
 
 const ORD = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 
 const book = computed<Spellbook>(() => {
   const d = db()
-  if (!d.spellbook) d.spellbook = { slots: ORD.map(() => ({ max: 0, used: 0 })), prepared: [], always: [] }
+  if (!d.spellbook) d.spellbook = { slots: ORD.map(() => ({ max: 0, used: 0 })), known: [], prepared: [], always: [] }
   return d.spellbook
 })
 const editSlots = ref(false)
@@ -49,33 +50,48 @@ const canCast = (e: Entry) => {
   const lvl = Number(e.fields.level)
   return lvl > 0 && book.value.slots.some((s, k) => k >= lvl - 1 && s.used < s.max)
 }
-function add(list: 'prepared' | 'always', id: Id) {
-  if (book.value.prepared.includes(id) || book.value.always.includes(id)) return
-  book.value[list].push(id)
+// ---- known / prepared ----
+function learn(id: Id) { if (!book.value.known.includes(id)) { book.value.known.push(id); touch() } }
+function forget(id: Id) {
+  const b = book.value
+  b.known = b.known.filter(x => x !== id); b.prepared = b.prepared.filter(x => x !== id); b.always = b.always.filter(x => x !== id)
   touch()
 }
-function remove(list: 'prepared' | 'always', id: Id) { book.value[list] = book.value[list].filter(x => x !== id); touch() }
-function move(id: Id, to: 'prepared' | 'always') {
-  const from = to === 'always' ? 'prepared' : 'always'
-  book.value[from] = book.value[from].filter(x => x !== id)
-  book.value[to].push(id)
+const isPrepared = (id: Id) => book.value.prepared.includes(id) || book.value.always.includes(id)
+function prepare(id: Id) { learn(id); if (!isPrepared(id)) { book.value.prepared.push(id); touch() } }
+function unprepare(id: Id) { book.value.prepared = book.value.prepared.filter(x => x !== id); book.value.always = book.value.always.filter(x => x !== id); touch() }
+/** Always prepared <-> prepared (always-prepared spells don't count against the limit). */
+function toggleAlways(id: Id) {
+  const b = book.value
+  if (b.always.includes(id)) { b.always = b.always.filter(x => x !== id); b.prepared.push(id) }
+  else { b.prepared = b.prepared.filter(x => x !== id); b.always.push(id) }
   touch()
 }
 
-// ---- tables ----
+// ---- lists ----
 const levelOf = (e: Entry) => (e.fields.level === 'Cantrip' ? 0 : Number(e.fields.level) || 0)
 const spells = (ids: Id[]) => ids.map(id => get(id)).filter((e): e is Entry => !!e)
   .sort((a, b) => levelOf(a) - levelOf(b) || a.name.localeCompare(b.name))
-const groups = computed(() => [
-  { key: 'always' as const, title: 'Always prepared', list: spells(book.value.always) },
-  { key: 'prepared' as const, title: 'Prepared', list: spells(book.value.prepared) },
-])
+const knownList = computed(() => spells(book.value.known))
+const preparedList = computed(() => spells([...book.value.always, ...book.value.prepared]))
 /** What the spell asks for, with this caster's numbers filled in. */
 function check(e: Entry) {
   const f = e.fields
   if (f.spellType === 'Saving throw') return `${f.savingThrow ? String(f.savingThrow).slice(0, 3).toUpperCase() + ' ' : ''}save DC ${book.value.saveDC ?? '?'}`
   if (f.spellType === 'Attack') return `Spell attack ${book.value.attackBonus != null ? (book.value.attackBonus >= 0 ? '+' : '') + book.value.attackBonus : '?'}`
   return String(f.spellType ?? '')
+}
+const alwaysTitle = (id: Id) => (book.value.always.includes(id)
+  ? "Always prepared (doesn't count). Click to make it a normal prepared spell"
+  : 'Make it always prepared')
+
+// ---- spell pop-up: a plain click opens it; middle-click, Ctrl/Cmd/Shift-click or "open in new tab" use the link ----
+const shown = ref<Id | null>(null)
+const shownEntry = computed(() => (shown.value ? get(shown.value) : undefined))
+function openSpell(ev: MouseEvent, id: Id) {
+  if (ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return
+  ev.preventDefault()
+  shown.value = id
 }
 const levelLabel = (e: Entry) => (levelOf(e) ? ORD[levelOf(e) - 1] : 'Cantrip')
 const full = computed(() => book.value.preparedMax != null && book.value.prepared.length > book.value.preparedMax)
@@ -116,30 +132,57 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
       </section>
     </div>
 
-    <section v-for="g in groups" :key="g.key" class="card sbk-list">
-      <h3>{{ g.title }} <span class="muted small">{{ g.list.length }}</span></h3>
-      <table v-if="g.list.length" class="grid">
-        <thead><tr><th>Spell</th><th>Level</th><th>School</th><th>Casting time</th><th>Range</th><th>Attack / save</th><th title="Concentration">C</th><th title="Ritual">R</th><th></th></tr></thead>
-        <tbody>
-          <tr v-for="e in g.list" :key="e.id">
-            <td><EntryLink :id="e.id" /></td>
-            <td>{{ levelLabel(e) }}</td>
-            <td>{{ e.fields.school ?? '' }}</td>
-            <td>{{ e.fields.castingTime ?? '' }}</td>
-            <td>{{ e.fields.range ?? '' }}</td>
-            <td class="sbk-check">{{ check(e) }}</td>
-            <td>{{ e.fields.concentration ? 'C' : '' }}</td>
-            <td>{{ e.fields.ritual ? 'R' : '' }}</td>
-            <td class="sbk-actions">
-              <button v-if="levelOf(e)" class="chip-btn" :disabled="!canCast(e)" :title="canCast(e) ? 'Spend a slot of this level (or the next free higher one)' : 'No slot left for this level'" @click="cast(e)">Cast</button>
-              <button class="link-btn" :title="g.key === 'always' ? 'Make it a normal prepared spell' : 'Always prepared'" @click="move(e.id, g.key === 'always' ? 'prepared' : 'always')">{{ g.key === 'always' ? '↓' : '↑' }}</button>
-              <button class="link-btn x" title="Remove from the spellbook" @click="remove(g.key, e.id)">✕</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <p v-else class="muted small">None yet.</p>
-      <EntryPicker add :types="['spell']" :exclude="[...book.prepared, ...book.always]" :placeholder="`Add to ${g.title.toLowerCase()}: type a spell…`" @pick="(id: string) => add(g.key, id)" />
-    </section>
+    <div class="sbk-columns">
+      <section class="card sbk-list">
+        <h3>Known spells <span class="muted small">{{ knownList.length }}</span></h3>
+        <table v-if="knownList.length" class="grid">
+          <thead><tr><th>Spell</th><th>Level</th><th>School</th><th></th></tr></thead>
+          <tbody>
+            <tr v-for="e in knownList" :key="e.id" :class="{ dim: isPrepared(e.id) }">
+              <td><a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a></td>
+              <td>{{ levelLabel(e) }}</td>
+              <td>{{ e.fields.school ?? '' }}</td>
+              <td class="sbk-actions">
+                <span v-if="isPrepared(e.id)" class="muted small">prepared</span>
+                <button v-else class="chip-btn" title="Prepare this spell" @click="prepare(e.id)">Prepare →</button>
+                <button class="link-btn x" title="Remove from the spellbook" @click="forget(e.id)">✕</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else class="muted small">No spells in the book yet.</p>
+        <EntryPicker add :types="['spell']" :exclude="book.known" placeholder="Add a spell to the book…" @pick="learn" />
+      </section>
+
+      <section class="card sbk-list">
+        <h3>Prepared spells <span class="muted small" :class="{ over: full }">{{ book.prepared.length }}<template v-if="book.preparedMax != null"> / {{ book.preparedMax }}</template><template v-if="book.always.length"> + {{ book.always.length }} always</template></span></h3>
+        <table v-if="preparedList.length" class="grid">
+          <thead><tr><th>Spell</th><th>Level</th><th>Attack / save</th><th title="Concentration · Ritual">C/R</th><th></th></tr></thead>
+          <tbody>
+            <tr v-for="e in preparedList" :key="e.id">
+              <td>
+                <button class="link-btn always" :class="{ on: book.always.includes(e.id) }" :title="alwaysTitle(e.id)" @click="toggleAlways(e.id)">★</button>
+                <a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a>
+              </td>
+              <td>{{ levelLabel(e) }}</td>
+              <td class="sbk-check">{{ check(e) }}</td>
+              <td>{{ [e.fields.concentration && 'C', e.fields.ritual && 'R'].filter(Boolean).join(' ') }}</td>
+              <td class="sbk-actions">
+                <button v-if="levelOf(e)" class="chip-btn" :disabled="!canCast(e)" :title="canCast(e) ? 'Spend a slot of this level (or the next free higher one)' : 'No slot left for this level'" @click="cast(e)">Cast</button>
+                <button class="link-btn" title="Unprepare" @click="unprepare(e.id)">←</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else class="muted small">Nothing prepared: use “Prepare →” on a known spell.</p>
+      </section>
+    </div>
+
+    <SpellModal v-if="shown" :id="shown" @close="shown = null">
+      <template #actions>
+        <button v-if="!isPrepared(shown)" class="chip-btn" @click="prepare(shown!)">Prepare</button>
+        <button v-else-if="shownEntry && levelOf(shownEntry)" class="chip-btn" :disabled="!canCast(shownEntry)" @click="cast(shownEntry)">Cast</button>
+      </template>
+    </SpellModal>
   </div>
 </template>

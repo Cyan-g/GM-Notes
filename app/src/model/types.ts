@@ -127,7 +127,10 @@ export interface Spellbook {
   preparedMax?: number
   /** Index 0 is 1st level … 8 is 9th level. */
   slots: { max: number; used: number }[]
+  /** Every spell in the book. `prepared` and `always` are taken from these. */
+  known: Id[]
   prepared: Id[]
+  /** Prepared without counting against the limit (cantrips, domain spells, …). */
   always: Id[]
 }
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Edit mode for one entry. Every change saves itself a moment later.
 import { computed } from 'vue'
-import type { EntryType } from '../model/types'
+import type { EntryType, Statblock } from '../model/types'
 import { SCHEMA, TYPES, type FieldDef } from '../model/schema'
 import { backlinks, get, relationsOf } from '../store'
 import { changed, deleteEntry } from '../edit'
@@ -10,6 +10,8 @@ import FieldInput from '../components/edit/FieldInput.vue'
 import ListInput from '../components/edit/ListInput.vue'
 import BodyEditor from '../components/edit/BodyEditor.vue'
 import SpellForm from '../components/edit/SpellForm.vue'
+import CreatureForm from '../components/edit/CreatureForm.vue'
+import StatblockView from '../components/Statblock.vue'
 import RelationsEditor from '../components/edit/RelationsEditor.vue'
 import ImageInput from '../components/edit/ImageInput.vue'
 import MapView from '../components/MapView.vue'
@@ -32,10 +34,13 @@ const groups = computed(() => {
 })
 // Spells and items edit like a sheet: their stats in the main column, the description as the big text
 // (it's what their card shows), and the general notes folded away underneath. Spells have no side cards.
-const SHEET_TYPES: EntryType[] = ['spell', 'item']
+const SHEET_TYPES: EntryType[] = ['spell', 'item', 'creature']
 const noSide = computed(() => e.value?.type === 'spell')
 // A scroll is described by the spell it holds, so it has no description of its own.
 const showDesc = computed(() => !(e.value?.type === 'item' && e.value.fields.kind === 'Scroll'))
+// Creatures are their statblock: the form on the left, the finished block on the right, no text editor
+// (old notes stay reachable, folded, if there are any).
+const creature = computed(() => e.value?.type === 'creature')
 const sheet = computed(() => !!e.value && SHEET_TYPES.includes(e.value.type))
 const sheetFields = computed(() => (def.value?.fields ?? []).filter(f => f.key !== 'summary' && !BIG.includes(f.kind) && shown(f)))
 // Yes/no fields share one row of toggle buttons.
@@ -100,7 +105,14 @@ function remove() {
 
     <div class="entry-grid" :class="{ 'no-side': noSide }">
       <div class="entry-main">
-        <template v-if="sheet">
+        <template v-if="creature">
+          <CreatureForm :entry="e" />
+          <details v-if="e.body.trim()" class="sheet-notes">
+            <summary>Notes <span class="muted small">(old text under the statblock)</span></summary>
+            <BodyEditor :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
+          </details>
+        </template>
+        <template v-else-if="sheet">
           <section class="card sheet-form">
             <SpellForm v-if="e.type === 'spell'" :entry="e" />
             <div v-else class="sheet-grid">
@@ -144,7 +156,11 @@ function remove() {
       </div>
 
       <!-- Sheets (spells) have nothing for the side: no picture, no relations. -->
-      <aside v-if="!noSide" class="entry-side">
+      <aside v-if="creature" class="entry-side cf-preview">
+        <StatblockView v-if="e.fields.statblock" :sb="e.fields.statblock as Statblock" :name="e.name" />
+        <p v-else class="muted small">The statblock shows up here as you fill it in.</p>
+      </aside>
+      <aside v-else-if="!noSide" class="entry-side">
         <!-- A craftable item's recipe sits first on the right, beside its stats. -->
         <div v-for="f in e.type === 'item' ? bigFields : []" :key="f.key" class="card side-big">
           <h3>{{ f.label }}</h3>

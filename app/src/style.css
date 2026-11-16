@@ -812,3 +812,47 @@ input.init { width: 4em; }
 .enc-setup h3, .enc-creatures h3 { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin: 0 0 .2rem; }
 .enc-party-title { margin-top: .6rem !important; }
 .enc-creatures .edit-table { width: 100%; }
+
+/* ---------- creature form ---------- */
+.creature-form { display: flex; flex-direction: column; gap: .8rem; }
+.cf-card { display: flex; flex-direction: column; gap: .7rem; margin: 0; }
+.cf-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem 1rem; }
+.cf-wide { grid-column: 1 / -1; }
+@media (max-width: 700px) { .cf-grid { grid-template-columns: 1fr; } }
+.creature-form .sf-field { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
+.creature-form .sf-label { font-size: 12px; color: var(--muted); }
+.cf-row { display: flex; gap: .4rem; align-items: center; }
+.cf-row > input:not(.cf-num), .cf-row > select { flex: 1; min-width: 0; }
+.cf-num { width: 4.5em; text-align: center; }
+.cf-num.big { font-size: 1.1rem; font-weight: 700; }
+.cf-dists { display: flex; flex-wrap: wrap; gap: .4rem .8rem; align-items: end; }
+.cf-dist { display: flex; flex-direction: column; gap: .15rem; font-size: 12px; color: var(--muted); }
+.cf-dist input { width: 5em; text-align: center; }
+.cf-abilities { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .5rem; }
+@media (max-width: 700px) { .cf-abilities { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.cf-ability { display: flex; flex-direction: column; align-items: center; gap: .2rem; padding: .5rem .3rem; border: 1px solid var(--line); border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 4%, var(--panel)); }
+.cf-ability b { color: var(--accent); font-size: 13px; letter-spacing: .05em; }
+.cf-ability input { width: 3.6em; text-align: center; font-size: 1.15rem; font-weight: 700; }
+.cf-mod { font-size: 13px; color: var(--ink-2); }
+.cf-save { font-size: 11px; padding: 0 .5em; border-radius: 99px; opacity: .55; }
+.cf-save.on { opacity: 1; background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.cf-save-n { width: 3.4em !important; font-size: 12px !important; font-weight: 600 !important; padding: 0 .2em; }
+.cf-skills { display: flex; flex-wrap: wrap; gap: .3rem; }
+.cf-skill { display: inline-flex; align-items: center; gap: 2px; }
+.cf-skill input { width: 3.4em; padding: .1em .2em; text-align: center; font-size: 12px; }
+.cf-tabs { margin: -.2rem 0 .2rem; }
+.cf-feat { border: 1px solid var(--line); border-radius: 8px; padding: .4rem .5rem; display: flex; flex-direction: column; gap: .3rem; }
+.cf-feat-head { display: flex; gap: .3rem; align-items: center; }
+.cf-feat-name { flex: 1; font-weight: 600; font-style: italic; }
+.cf-feat textarea { width: 100%; resize: vertical; min-height: 2.6em; overflow: hidden; font: inherit; }
+.cf-srd { opacity: .8; }
+.cf-preview { position: sticky; top: calc(var(--bar-h) + 1rem); max-height: calc(100vh - var(--bar-h) - 2rem); overflow-y: auto; columns: auto !important; display: block; }
+
+/* chip toggles (damage types, conditions, skills) */
+.token-field { display: flex; flex-direction: column; gap: .35rem; }
+.token-opts, .token-free { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; }
+.token-opt { font-size: 12px; padding: .1em .55em; border-radius: 99px; color: var(--muted); background: transparent; }
+.token-opt.on { color: var(--panel); background: var(--accent); border-color: var(--accent); }
+.token-free input { flex: 1 1 10rem; min-width: 8rem; padding: .15em .4em; font-size: 13px; }
+.token-free .chip { display: inline-flex; align-items: center; gap: .2rem; }

@@ -57,6 +57,7 @@ function entriesOf(t: EntryType): MenuNode[] {
   switch (t) {
     case 'place':
     case 'organization':
+    case 'race':
       return list.filter(e => get(e.fields.parent as string)?.type !== t).sort(byName).map(treeNode)
     case 'session':
       return grouped(list, e => refName(e, 'campaign'), undefined, bySession)

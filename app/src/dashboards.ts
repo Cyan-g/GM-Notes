@@ -42,7 +42,7 @@ export const DASHBOARDS: Dashboard[] = [
   },
   {
     id: 'people', title: 'People', icon: '👥', views: [
-      { name: 'All NPCs', filter: is('npc'), cols: ['race', 'subrace', '@lives-in', '@member', '@aliases'], facets: ['race', '@lives-in', '@member'], creates: 'npc' },
+      { name: 'All NPCs', filter: is('npc'), cols: ['race', '@lives-in', '@member', '@aliases'], facets: ['race', '@lives-in', '@member'], creates: 'npc' },
       { name: 'Player characters', filter: is('pc'), cols: ['player', 'race', 'class', 'level', 'campaigns'], creates: 'pc' },
       { name: 'Organizations', filter: is('organization'), cols: ['orgType', 'parent', 'seat', '@members'], facets: ['orgType'], creates: 'organization' },
     ],

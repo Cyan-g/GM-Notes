@@ -131,6 +131,53 @@ function upgrade(d: Database) {
     d.version = 8
     changed = true
   }
+  // Version 9: subraces are races of their own ("Hill Dwarf", Subrace of: Dwarf), like Sunfolk. The subrace lists on
+  // races become entries, and characters with a subrace get that entry as their race.
+  if ((d.version ?? 1) < 9) {
+    const now = new Date().toISOString()
+    const all = () => Object.values(d.entries)
+    const slugOf = (s: string) => s.toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    /** The subrace entry `sub` of `race`: an existing race called "Sub Race" or "Sub", else a new one. */
+    function subrace(race: Entry, sub: string, fields: Record<string, unknown> = {}): Id {
+      const full = `${sub} ${race.name}`
+      const found = all().find(x => x.type === 'race' && x.id !== race.id && [full, sub].some(n => x.name.toLowerCase() === n.toLowerCase()))
+      if (found) { if (!found.fields.parent) found.fields.parent = race.id; return found.id }
+      let id = slugOf(full), i = 2
+      while (d.entries[id]) id = `${slugOf(full)}-${i++}`
+      d.entries[id] = { id, type: 'race', name: full, aliases: [], tags: [], fields: { parent: race.id, ...fields }, body: '', visibility: race.visibility, created: now, updated: now }
+      return id
+    }
+    for (const race of all().filter(x => x.type === 'race')) {
+      for (const item of (race.fields.subraces as string[] | undefined) ?? []) {
+        const m = item.match(/^([^:]+):\s*(.*)$/)
+        const sub = (m?.[1] ?? item).trim()
+        const text = (m?.[2] ?? '').trim()
+        // "+1 Wis, Dwarven Toughness (+1 HP per level)" → ability scores and traits; commas inside brackets stay.
+        const parts = text.split(/,\s*(?![^(]*\))/).map(p => p.trim()).filter(Boolean)
+        const ab = parts.filter(p => /^[+-]\d+\s+(str|dex|con|int|wis|cha)\b/i.test(p))
+        let traits = parts.filter(p => !ab.includes(p) && !/^see \[\[/i.test(p))
+        if (race.id === 'dragonborn' && traits.length === 1 && /^(acid|cold|fire|lightning|poison)$/i.test(traits[0])) traits = [`Draconic Ancestry: ${traits[0]} breath weapon and resistance`]
+        const fields: Record<string, unknown> = {}
+        if (ab.length) fields.abilityIncrease = ab.join(', ')
+        if (traits.length) fields.traits = traits
+        subrace(race, sub, fields)
+      }
+      delete race.fields.subraces
+    }
+    for (const n of all().filter(x => x.type === 'npc' || x.type === 'pc')) {
+      const raw = String(n.fields.subrace ?? '').trim()
+      if (!raw) { delete n.fields.subrace; continue }
+      const m = raw.match(/^(.*?)\s*\((.*)\)$/)
+      const race = d.entries[n.fields.race as Id]
+      if (race?.type === 'race') {
+        n.fields.race = subrace(race, (m?.[1] ?? raw).trim())
+        if (m?.[2] && !n.tags.includes(m[2].trim())) n.tags.push(m[2].trim())
+      } else if (!n.tags.includes(raw)) n.tags.push(raw)
+      delete n.fields.subrace
+    }
+    d.version = 9
+    changed = true
+  }
   return changed
 }
 

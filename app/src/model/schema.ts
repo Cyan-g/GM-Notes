@@ -45,7 +45,6 @@ export const SCHEMA: TypeDef[] = [
   {
     type: 'npc', label: 'NPC', plural: 'NPCs', icon: '👤', fields: [
       { key: 'race', label: 'Race', kind: 'ref', to: ['race'], group: 'Appearance' },
-      { key: 'subrace', label: 'Subrace', kind: 'text', group: 'Appearance' },
       { key: 'gender', label: 'Gender', kind: 'text', group: 'Appearance' },
       { key: 'age', label: 'Age', kind: 'text', group: 'Appearance' },
       { key: 'hair', label: 'Hair', kind: 'text', group: 'Appearance' },
@@ -60,7 +59,6 @@ export const SCHEMA: TypeDef[] = [
     type: 'pc', label: 'Player character', plural: 'Player characters', icon: '🛡️', fields: [
       { key: 'player', label: 'Player', kind: 'text' },
       { key: 'race', label: 'Race', kind: 'ref', to: ['race'] },
-      { key: 'subrace', label: 'Subrace', kind: 'text' },
       { key: 'class', label: 'Class', kind: 'text' },
       { key: 'level', label: 'Level', kind: 'number' },
       { key: 'campaigns', label: 'Campaigns', kind: 'refs', to: ['campaign'] },
@@ -88,12 +86,13 @@ export const SCHEMA: TypeDef[] = [
   },
   {
     type: 'race', label: 'Race', plural: 'Races', icon: '🧬', fields: [
+      // A subrace is a race of its own that names its main race here (Hill Dwarf: Subrace of Dwarf).
+      { key: 'parent', label: 'Subrace of', kind: 'ref', to: ['race'] },
       { key: 'size', label: 'Size', kind: 'select', options: SIZES },
       { key: 'speed', label: 'Speed', kind: 'text' },
       { key: 'abilityIncrease', label: 'Ability scores', kind: 'text' },
       { key: 'languages', label: 'Languages', kind: 'list' },
       { key: 'traits', label: 'Traits', kind: 'list' },
-      { key: 'subraces', label: 'Subraces', kind: 'list' },
     ],
   },
   {

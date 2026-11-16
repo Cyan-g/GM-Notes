@@ -134,15 +134,22 @@ const mentions = computed(() => {
   if (!x) return []
   const related = new Set((relationsOf.value.get(x.id) ?? []).flatMap(r => [r.a, r.b]))
   // Leave out what another card already lists.
-  const kids = new Set([...children.value, ...usedIn.value, ...soldAt.value].map(c => c.id))
+  const kids = new Set([...children.value, ...usedIn.value, ...soldAt.value, ...raceMembers.value].map(c => c.id))
   return [...(backlinks.value.get(x.id) ?? [])].map(get).filter((m): m is Entry => !!m && !related.has(m.id) && !kids.has(m.id))
     .sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name))
 })
 
 // ---- type-specific lists ----
-const raceMembers = computed(() => e.value?.type === 'race'
-  ? entries.value.filter(n => (n.type === 'npc' || n.type === 'pc') && n.fields.race === e.value!.id).sort((a, b) => String(a.fields.subrace ?? '').localeCompare(String(b.fields.subrace ?? '')) || a.name.localeCompare(b.name))
-  : [])
+/** Everyone of this race or of one of its subraces (any depth). */
+const raceMembers = computed(() => {
+  if (e.value?.type !== 'race') return []
+  const ids = new Set<string>([e.value.id])
+  for (let grew = true; grew;) { grew = false; for (const r of byType.value.get('race') ?? []) if (!ids.has(r.id) && ids.has(r.fields.parent as string)) { ids.add(r.id); grew = true } }
+  return entries.value.filter(n => (n.type === 'npc' || n.type === 'pc') && ids.has(n.fields.race as string))
+    .sort((a, b) => subraceName(a).localeCompare(subraceName(b)) || a.name.localeCompare(b.name))
+})
+const subraceName = (n: Entry) => (n.fields.race === e.value?.id ? '' : get(n.fields.race as string)?.name ?? '')
+const hasSubraceMembers = computed(() => raceMembers.value.some(n => subraceName(n)))
 const usedIn = computed(() => e.value?.type === 'item'
   ? entries.value.filter(n => ((n.fields.recipe as { item: string }[]) ?? []).some(l => l.item === e.value!.id)) : [])
 const soldAt = computed(() => e.value?.type === 'item'
@@ -241,8 +248,8 @@ const siblings = computed(() => {
         <section v-if="raceMembers.length">
           <h2>{{ e.name }} characters</h2>
           <table class="mini">
-            <thead><tr><th>Name</th><th>Subrace</th></tr></thead>
-            <tbody><tr v-for="n in raceMembers" :key="n.id"><td><EntryLink :id="n.id" icon /></td><td>{{ n.fields.subrace }}</td></tr></tbody>
+            <thead><tr><th>Name</th><th v-if="hasSubraceMembers">Subrace</th></tr></thead>
+            <tbody><tr v-for="n in raceMembers" :key="n.id"><td><EntryLink :id="n.id" icon /></td><td v-if="hasSubraceMembers"><EntryLink v-if="subraceName(n)" :id="n.fields.race as string" /></td></tr></tbody>
           </table>
         </section>
       </div>
@@ -253,7 +260,7 @@ const siblings = computed(() => {
           <FieldValue :def="f" :value="e.fields[f.key]" :entry="e" />
         </div>
         <div v-if="children.length" class="card subregions">
-          <h3>{{ e.type === 'place' ? 'Subregions' : 'Part of this' }}
+          <h3>{{ e.type === 'place' ? 'Subregions' : e.type === 'race' ? 'Subraces' : 'Part of this' }}
             <button class="link-btn" :title="ui.treeAsList ? 'Show as rings' : 'Show as a list'" @click="ui.treeAsList = !ui.treeAsList">{{ ui.treeAsList ? '◎ Rings' : '☰ List' }}</button></h3>
           <SubTree v-if="ui.treeAsList" :id="e.id" />
           <Sunburst v-else :id="e.id" :key="'sb-' + e.id" />

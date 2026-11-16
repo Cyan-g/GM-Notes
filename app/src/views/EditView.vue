@@ -86,7 +86,7 @@ function remove() {
       </div>
     </header>
 
-    <div class="entry-grid">
+    <div class="entry-grid" :class="{ 'no-side': sheet }">
       <div class="entry-main">
         <template v-if="sheet">
           <section class="card sheet-form">
@@ -118,7 +118,8 @@ function remove() {
         </section>
       </div>
 
-      <aside class="entry-side">
+      <!-- Sheets (spells) have nothing for the side: no picture, no relations. -->
+      <aside v-if="!sheet" class="entry-side">
         <div class="card">
           <h3>Picture</h3>
           <ImageInput :model-value="e.image" :hint="e.name" @update:model-value="setImage" />

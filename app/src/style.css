@@ -644,3 +644,4 @@ input.init { width: 4em; }
 .sheet-desc h2 { margin-top: 0; }
 .sheet-notes { margin-top: 1.5rem; }
 .sheet-notes > summary { cursor: pointer; font: 600 1.1rem var(--serif); color: var(--ink-2); margin-bottom: .6rem; }
+.entry.editing .entry-grid.no-side { grid-template-columns: minmax(0, 1fr); }

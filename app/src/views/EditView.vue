@@ -9,6 +9,7 @@ import { go, hrefEntry, hrefList } from '../router'
 import FieldInput from '../components/edit/FieldInput.vue'
 import ListInput from '../components/edit/ListInput.vue'
 import BodyEditor from '../components/edit/BodyEditor.vue'
+import SpellForm from '../components/edit/SpellForm.vue'
 import RelationsEditor from '../components/edit/RelationsEditor.vue'
 import ImageInput from '../components/edit/ImageInput.vue'
 import MapView from '../components/MapView.vue'
@@ -90,7 +91,8 @@ function remove() {
       <div class="entry-main">
         <template v-if="sheet">
           <section class="card sheet-form">
-            <div class="sheet-grid">
+            <SpellForm v-if="e.type === 'spell'" :entry="e" />
+            <div v-else class="sheet-grid">
               <label v-for="f in sheetFields" :key="f.key" class="sheet-field" :class="'k-' + f.kind">
                 <span>{{ f.label }}</span>
                 <FieldInput :id="`f-${f.key}`" :def="f" :entry="e" />

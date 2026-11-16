@@ -25,11 +25,15 @@ const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magic
 <template>
   <div class="item-card" :class="'r-' + rarity">
     <div class="ic-line">{{ describe(e) || f.kind }}</div>
-    <p v-if="f.summary" class="ic-summary" v-html="renderInline(f.summary)" />
-    <p v-if="f.effect" class="ic-effect"><b>Effect.</b> <span v-html="renderInline(f.effect)" /></p>
-    <dl v-if="rows.length" class="ic-stats">
-      <template v-for="[k, v] in rows" :key="k"><dt>{{ k }}</dt><dd>{{ v }}</dd></template>
-    </dl>
-    <div v-if="f.properties?.length" class="chips"><span v-for="p in f.properties" :key="p" class="chip">{{ p }}</span></div>
+    <div class="ic-body">
+      <div class="ic-text">
+        <p v-if="f.summary" class="ic-summary" v-html="renderInline(f.summary)" />
+        <p v-if="f.effect" class="ic-effect"><b>Effect.</b> <span v-html="renderInline(f.effect)" /></p>
+        <div v-if="f.properties?.length" class="chips"><span v-for="p in f.properties" :key="p" class="chip">{{ p }}</span></div>
+      </div>
+      <dl v-if="rows.length" class="ic-stats">
+        <template v-for="[k, v] in rows" :key="k"><dt>{{ k }}</dt><dd>{{ v }}</dd></template>
+      </dl>
+    </div>
   </div>
 </template>

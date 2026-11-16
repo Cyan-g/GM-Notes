@@ -408,7 +408,7 @@ td.clip { max-width: 360px; }
 .statblock.wide { max-width: 720px; margin-bottom: 1.5rem; }
 .md.map { margin-bottom: 1rem; }
 
-.item-card, .spell-card { max-width: 720px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.2rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border-top: 4px solid var(--rc, var(--line)); }
+.item-card, .spell-card { max-width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.2rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border-top: 4px solid var(--rc, var(--line)); }
 .item-card.r-uncommon { --rc: #3f8f4f; } .item-card.r-rare { --rc: #3a6fc4; } .item-card.r-very-rare { --rc: #8a4fc7; }
 .item-card.r-legendary { --rc: #d08a1e; } .item-card.r-artifact { --rc: #b8432e; } .item-card.r-magical { --rc: var(--accent-2); }
 .ic-line, .sc-line { font-style: italic; color: var(--ink-2); margin-bottom: .5rem; }
@@ -593,3 +593,15 @@ input.init { width: 4em; }
 /* ---------- favourites on the home page ---------- */
 .favourites .unfav { margin-left: auto; color: var(--muted); opacity: 0; }
 .favourites li:hover .unfav, .favourites .unfav:focus { opacity: 1; }
+
+/* ---------- item pages ---------- */
+/* Card and recipe (or stock) side by side; the card's text and stats split once it's wide. */
+.item-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; align-items: start; margin-bottom: 1.5rem; }
+.item-top > .item-card { margin-bottom: 0; container-type: inline-size; }
+.entry-main .item-top > section { margin-top: 0; }
+.item-top > section h2 { margin-top: 0; }
+.ic-body { display: grid; gap: .2rem 1.5rem; }
+@container (min-width: 600px) {
+  .ic-body { grid-template-columns: minmax(0, 1fr) minmax(200px, 280px); align-items: start; }
+  .ic-stats { margin: .4rem 0 0; padding-left: 1.2rem; border-left: 1px solid var(--line); }
+}

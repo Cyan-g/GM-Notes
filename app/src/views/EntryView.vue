@@ -96,7 +96,8 @@ const onMaps = computed(() => {
 })
 
 // A place's kind shows as its badge, so a place has no lead line of its own.
-const lead = computed(() => (e.value && e.value.type !== 'place' ? describe(e.value, { parent: false }) : ''))
+// Places show their kind as the badge; items and spells show their line inside their card.
+const lead = computed(() => (e.value && !['place', 'item', 'spell'].includes(e.value.type) ? describe(e.value, { parent: false }) : ''))
 
 /** The few facts that belong right under the name: affiliations, home, rulers, leaders. */
 const LEADER = /(leader|head|chief|duke|duchess|king|queen|abbess|abbot|master|captain|high priest|archbishop|matriarch|patriarch|lord|lady|commander|general|elder)/i
@@ -132,7 +133,8 @@ const mentions = computed(() => {
   const x = e.value
   if (!x) return []
   const related = new Set((relationsOf.value.get(x.id) ?? []).flatMap(r => [r.a, r.b]))
-  const kids = new Set(children.value.map(c => c.id))
+  // Leave out what another card already lists.
+  const kids = new Set([...children.value, ...usedIn.value, ...soldAt.value].map(c => c.id))
   return [...(backlinks.value.get(x.id) ?? [])].map(get).filter((m): m is Entry => !!m && !related.has(m.id) && !kids.has(m.id))
     .sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name))
 })
@@ -175,7 +177,7 @@ const siblings = computed(() => {
       <div class="title-line">
         <h1><span class="icon">{{ def.icon }}</span>{{ e.name }}</h1>
         <div class="sub">
-          <span class="badge">{{ (e.type === 'place' && e.fields.placeType) || def.label }}</span>
+          <span class="badge">{{ (e.type === 'place' && e.fields.placeType) || (e.type === 'item' && e.fields.kind) || def.label }}</span>
           <span v-if="e.visibility === 'secret'" class="badge dm-only" title="Players don't know this entry yet">DM only</span>
           <span v-if="e.aliases.length" class="aliases">also: {{ e.aliases.join(' · ') }}</span>
           <span v-for="t in e.tags" :key="t" class="tag">#{{ t }}</span>
@@ -201,13 +203,20 @@ const siblings = computed(() => {
         </div>
 
         <div v-if="e.type === 'encounter'" class="run-bar"><button class="primary" @click="loadEncounter(e.id); go('#/tracker')">▶ Run in initiative tracker</button></div>
-        <ItemCard v-if="e.type === 'item'" :e="e" />
+        <!-- An item's card and its recipe/stock side by side when there's room. -->
+        <div v-if="e.type === 'item'" class="item-top">
+          <ItemCard :e="e" />
+          <section v-for="f in bigFields" :key="f.key">
+            <h2>{{ f.label }}</h2>
+            <FieldValue :def="f" :value="e.fields[f.key]" :entry="e" />
+          </section>
+        </div>
         <SpellCard v-if="e.type === 'spell'" :e="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
         <MarkdownView v-if="e.body" :source="e.body" />
         <p v-else-if="!['item', 'spell', 'creature', 'encounter'].includes(e.type)" class="muted">No text yet.</p>
 
-        <section v-for="f in bigFields" :key="f.key">
+        <section v-for="f in e.type === 'item' ? [] : bigFields" :key="f.key">
           <h2>{{ f.label }}</h2>
           <FieldValue :def="f" :value="e.fields[f.key]" :entry="e" />
         </section>

@@ -131,6 +131,18 @@ export interface Spellbook {
   always: Id[]
 }
 
+// ---------- crafting ----------
+
+/** The crafter's tools, known recipes, ingredient pouch and what they've made. */
+export interface Crafting {
+  /** Tool proficiencies, as written in an item's "Crafted with". */
+  tools: string[]
+  /** Items whose recipe is known. */
+  known: Id[]
+  pouch: { item: Id; qty: number }[]
+  made: { item: Id; qty: number }[]
+}
+
 // ---------- initiative tracker ----------
 
 export interface Combatant {
@@ -177,4 +189,5 @@ export interface Database {
   relations: Relation[]
   tracker?: Tracker
   spellbook?: Spellbook
+  crafting?: Crafting
 }

@@ -153,8 +153,10 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'Crafting',
-    owns: r => dashOf(r) === 'crafting' || (r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
+    owns: r => dashOf(r) === 'crafting' || r.name === 'crafting' || (r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
     items: () => [
+      { label: 'Workbench', icon: '⚗️', href: '#/crafting', hint: state.db?.crafting ? `${state.db.crafting.known.length} recipes` : undefined },
+      SEP,
       ...dashViews('crafting'),
       SEP,
       kindNode('Ingredient', 'Ingredients'),

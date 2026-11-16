@@ -671,3 +671,22 @@ input.init { width: 4em; }
 .chip-btn.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
 .sf-inline { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
 .sf-material { flex: 1; min-width: 10rem; }
+
+/* ---------- crafting workbench ---------- */
+.wb-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 1rem; align-items: start; }
+@media (max-width: 1000px) { .wb-grid { grid-template-columns: 1fr; } }
+.wb-main, .wb-side { display: grid; gap: 1rem; }
+.workbench .card h3 { display: flex; justify-content: space-between; align-items: baseline; }
+.wb-recipes { margin-bottom: .6rem; }
+.wb-recipes tr.ready td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.wb-recipes td.missing { color: var(--accent); text-decoration: line-through; }
+.wb-need { display: inline-block; margin-right: .8rem; white-space: nowrap; }
+.wb-need.short .muted { color: var(--accent); font-weight: 600; }
+.wb-actions { white-space: nowrap; text-align: right; }
+.wb-actions .chip-btn:disabled { opacity: .4; cursor: default; }
+.wb-actions .link-btn { margin-left: .5rem; }
+.wb-list { list-style: none; margin: 0 0 .6rem; padding: 0; }
+.wb-list li { display: flex; align-items: center; gap: .5rem; padding: .25rem 0; border-bottom: 1px solid var(--line); }
+.wb-qty { margin-left: auto; display: inline-flex; align-items: center; gap: .3rem; }
+.wb-qty input { width: 3.6em; text-align: center; padding: .15em .3em; }
+.wb-qty .link-btn { font-size: 16px; padding: 0 .2rem; }

@@ -13,6 +13,8 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   add?: boolean
   exclude?: string[]
+  /** If given, only these entries can be picked. */
+  only?: string[]
 }>(), { modelValue: null, add: false })
 const emit = defineEmits<{ 'update:modelValue': [string | null]; pick: [string] }>()
 
@@ -21,8 +23,8 @@ const q = ref('')
 const sel = ref(0)
 const input = ref<HTMLInputElement>()
 const current = computed(() => get(props.modelValue))
-const results = computed(() => search(q.value, 10, e => (!props.types?.length || props.types.includes(e.type)) && !props.exclude?.includes(e.id)))
-const createType = computed(() => props.types?.length === 1 ? props.types[0] : null)
+const results = computed(() => search(q.value, 10, e => (!props.types?.length || props.types.includes(e.type)) && !props.exclude?.includes(e.id) && (!props.only || props.only.includes(e.id))))
+const createType = computed(() => props.types?.length === 1 && !props.only ? props.types[0] : null)
 const options = computed(() => [
   ...results.value.map(e => ({ kind: 'pick' as const, e })),
   ...(createType.value && q.value.trim() && !results.value.some(e => e.name.toLowerCase() === q.value.trim().toLowerCase())

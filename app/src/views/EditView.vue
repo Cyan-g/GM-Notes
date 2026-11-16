@@ -134,7 +134,7 @@ function remove() {
           <ImageInput :model-value="e.fields.map as string | undefined" :hint="e.name + ' map'" @update:model-value="setMap" />
           <MapView v-if="e.fields.map" :place="e" editable class="inline-map" />
         </section>
-        <section v-for="f in bigFields" :key="f.key">
+        <section v-for="f in e.type === 'item' ? [] : bigFields" :key="f.key">
           <h2>{{ f.label }}</h2>
           <FieldInput :def="f" :entry="e" />
         </section>
@@ -142,6 +142,11 @@ function remove() {
 
       <!-- Sheets (spells) have nothing for the side: no picture, no relations. -->
       <aside v-if="!noSide" class="entry-side">
+        <!-- A craftable item's recipe sits first on the right, beside its stats. -->
+        <div v-for="f in e.type === 'item' ? bigFields : []" :key="f.key" class="card side-big">
+          <h3>{{ f.label }}</h3>
+          <FieldInput :def="f" :entry="e" />
+        </div>
         <div class="card">
           <h3>Picture</h3>
           <ImageInput :model-value="e.image" :hint="e.name" @update:model-value="setImage" />

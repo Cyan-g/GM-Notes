@@ -157,6 +157,8 @@ ul.rel.nested { padding-left: 1.6rem; width: 100%; }
 .entry-side { columns: 320px; column-gap: 1rem; }
 .entry-side > * { break-inside: avoid; margin: 0 0 1rem; }
 .entry-main > section { margin-top: 2rem; }
+/* Both columns start at the same height. */
+.entry-main > :first-child { margin-top: 0; }
 .entry-main h2 { font-size: 1.35rem; border-bottom: 1px solid var(--line); padding-bottom: .25rem; }
 .pager { display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 14px; }
 

@@ -1,4 +1,4 @@
-// Tiny hash router: #/ , #/t/<type> , #/e/<id> , #/e/<id>/edit , #/timeline , #/d/<dashboard>/<view>
+// Tiny hash router: #/ , #/t/<type> , #/e/<id> , #/e/<id>/edit , #/atlas/timeline , #/d/<dashboard>/<view>
 import { reactive } from 'vue'
 import type { EntryType, Id } from './model/types'
 
@@ -6,12 +6,11 @@ export type Route =
   | { name: 'home' }
   | { name: 'list'; type: EntryType }
   | { name: 'entry'; id: Id; edit: boolean; tab?: 'family' }
-  | { name: 'timeline' }
   | { name: 'calendar'; year?: number; month?: number }
   | { name: 'tracker' }
   | { name: 'spellbook' }
   | { name: 'crafting' }
-  | { name: 'atlas' }
+  | { name: 'atlas'; tab?: 'timeline' }
   | { name: 'orgs' }
   | { name: 'data' }
   | { name: 'map'; id: Id; pin?: string }
@@ -19,12 +18,13 @@ export type Route =
 
 function parse(): Route {
   const [, kind, arg, extra] = location.hash.replace(/^#/, '').split('/').map(decodeURIComponent)
-  if (kind === 'timeline') return { name: 'timeline' }
+  // The timeline lives on the Atlas now; old #/timeline links still land there.
+  if (kind === 'timeline') return { name: 'atlas', tab: 'timeline' }
   if (kind === 'calendar') return { name: 'calendar', year: arg ? Number(arg) : undefined, month: extra ? Number(extra) : undefined }
   if (kind === 'tracker') return { name: 'tracker' }
   if (kind === 'spellbook') return { name: 'spellbook' }
   if (kind === 'crafting') return { name: 'crafting' }
-  if (kind === 'atlas') return { name: 'atlas' }
+  if (kind === 'atlas') return { name: 'atlas', tab: arg === 'timeline' ? 'timeline' : undefined }
   if (kind === 'organizations') return { name: 'orgs' }
   if (kind === 'data') return { name: 'data' }
   if (kind === 'map' && arg) return { name: 'map', id: arg, pin: extra }

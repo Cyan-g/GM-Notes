@@ -16,7 +16,6 @@ function pageName(r: Route): string {
       return (r.edit && e.type !== 'encounter' ? '✎ ' : '') + e.name
     }
     case 'map': return `Map of ${get(r.id)?.name ?? r.id}`
-    case 'timeline': return 'Timeline'
     case 'calendar': return 'Calendar'
     case 'tracker': {
       const t = db().tracker
@@ -25,7 +24,7 @@ function pageName(r: Route): string {
     }
     case 'spellbook': return 'Spellbook'
     case 'crafting': return 'Workbench'
-    case 'atlas': return 'Atlas'
+    case 'atlas': return r.tab === 'timeline' ? 'Timeline' : 'Atlas'
     case 'orgs': return 'Organizations'
     case 'data': return 'Data'
     case 'dashboard': {

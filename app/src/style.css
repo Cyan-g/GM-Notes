@@ -946,3 +946,6 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .feat-text { margin-top: .35rem; }
 .feat-text p:first-child { margin-top: 0; }
 .feat-text p:last-child { margin-bottom: 0; }
+
+/* timeline inside the Atlas */
+.tl-count { margin: -.4rem 0 .6rem; }

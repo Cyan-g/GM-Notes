@@ -31,7 +31,7 @@ const TOOLS = [
   { icon: '🛠', label: 'Workbench', href: '#/crafting' },
   { icon: '🐉', label: 'Encounter', href: '#/tracker' },
   { icon: '🗺', label: 'Atlas', href: '#/atlas' },
-  { icon: '⏳', label: 'Timeline', href: '#/timeline' },
+  { icon: '⏳', label: 'Timeline', href: '#/atlas/timeline' },
   { icon: '📅', label: 'Calendar', href: '#/calendar' },
 ]
 

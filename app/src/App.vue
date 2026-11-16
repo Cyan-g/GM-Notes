@@ -11,7 +11,6 @@ import ListView from './views/ListView.vue'
 import EntryView from './views/EntryView.vue'
 import EditView from './views/EditView.vue'
 import EncounterView from './views/EncounterView.vue'
-import TimelineView from './views/TimelineView.vue'
 import DashboardView from './views/DashboardView.vue'
 import CalendarView from './views/CalendarView.vue'
 import TrackerView from './views/TrackerView.vue'
@@ -90,12 +89,11 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
     <main class="main">
       <HomeView v-if="route.current.name === 'home'" />
       <ListView v-else-if="route.current.name === 'list'" :type="route.current.type" />
-      <TimelineView v-else-if="route.current.name === 'timeline'" />
       <CalendarView v-else-if="route.current.name === 'calendar'" :year="route.current.year" :month="route.current.month" />
       <TrackerView v-else-if="route.current.name === 'tracker'" />
       <SpellbookView v-else-if="route.current.name === 'spellbook'" />
       <CraftingView v-else-if="route.current.name === 'crafting'" />
-      <AtlasView v-else-if="route.current.name === 'atlas'" />
+      <AtlasView v-else-if="route.current.name === 'atlas'" :tab="route.current.tab" />
       <OrgsView v-else-if="route.current.name === 'orgs'" />
       <DataView v-else-if="route.current.name === 'data'" />
       <MapPage v-else-if="route.current.name === 'map'" :id="route.current.id" :pin="route.current.pin" :key="'map-' + route.current.id" />

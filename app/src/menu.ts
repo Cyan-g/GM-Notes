@@ -113,11 +113,10 @@ const kindNode = (k: string, plural: string): MenuNode => {
 export const MENUS: TopMenu[] = [
   {
     title: 'Dashboards',
-    owns: r => ['calendar', 'tracker', 'timeline'].includes(r.name) || (!!dashOf(r) && !OWN_MENU.includes(dashOf(r)!)),
+    owns: r => ['calendar', 'tracker'].includes(r.name) || (!!dashOf(r) && !OWN_MENU.includes(dashOf(r)!)),
     items: () => [
       { label: 'Calendar', icon: '📅', href: '#/calendar' },
       { label: 'Initiative', icon: '⚔', href: '#/tracker', hint: state.db?.tracker?.round ? `R${state.db.tracker.round}` : undefined },
-      { label: 'Timeline', icon: '⏳', href: '#/timeline' },
       {
         label: 'Favourites', icon: '★', href: '#/', hint: String(state.db?.meta.favourites?.length ?? 0),
         children: state.db?.meta.favourites?.length
@@ -139,20 +138,20 @@ export const MENUS: TopMenu[] = [
   {
     title: 'World',
     home: '#/atlas',
-    owns: r => r.name === 'atlas' || ['place', 'event', 'deity'].includes(typeOf(r) ?? ''),
+    owns: r => r.name === 'atlas' || ['place', 'event'].includes(typeOf(r) ?? ''),
     // The world's places first, cascading by "Located in" (Eldoria › Ardenvale › Desolation), then the lists.
-    items: () => [{ label: 'Atlas', icon: '🗺', href: '#/atlas' }, SEP, ...entriesOf('place'), SEP, ...(['place', 'event', 'deity'] as EntryType[]).map(typeNode)],
+    items: () => [{ label: 'Atlas', icon: '🗺', href: '#/atlas' }, { label: 'Timeline', icon: '⏳', href: '#/atlas/timeline' }, SEP, ...entriesOf('place'), SEP, ...(['place', 'event'] as EntryType[]).map(typeNode)],
   },
   {
     title: 'People',
     home: '#/organizations',
-    owns: r => r.name === 'orgs' || dashOf(r) === 'people' || ['npc', 'organization', 'race'].includes(typeOf(r) ?? ''),
+    owns: r => r.name === 'orgs' || dashOf(r) === 'people' || ['npc', 'organization'].includes(typeOf(r) ?? ''),
     // The people tables, then NPCs, organizations (cascading by "Part of") and the peoples of the world.
     // (A table named like one of the lists below is left out: the list has its own "All …" link.)
     items: () => {
-      const types = ['npc', 'organization', 'race'] as EntryType[]
+      const types = ['npc', 'organization'] as EntryType[]
       const plurals = types.map(t => info(t).plural)
-      return [{ label: 'Organizations', icon: '⚑', href: '#/organizations', hint: String(state.db ? (byType.value.get('organization')?.length ?? 0) : '') }, SEP,
+      return [{ label: 'Overview', icon: '⚑', href: '#/organizations', hint: String(state.db ? (byType.value.get('organization')?.length ?? 0) : '') }, SEP,
         ...dashViews('people', '👥').filter(v => !plurals.includes(v.label)), SEP, ...types.map(typeNode)]
     },
   },
@@ -191,7 +190,7 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'Archive',
-    owns: r => ['item', 'creature', 'feat', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
-    items: () => (['item', 'creature', 'feat', 'subclass', 'writing', 'note'] as EntryType[]).map(typeNode),
+    owns: r => ['item', 'creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
+    items: () => (['item', 'creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'] as EntryType[]).map(typeNode),
   },
 ]

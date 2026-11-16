@@ -9,6 +9,10 @@ import { addDays, dayNumber } from '../calendar'
 import Sunburst from '../components/Sunburst.vue'
 import DataImage from '../components/DataImage.vue'
 import EntryLink from '../components/EntryLink.vue'
+import TimelineView from './TimelineView.vue'
+
+/** The World menu's dashboard has two tabs: the atlas itself and the timeline. */
+defineProps<{ tab?: 'timeline' }>()
 
 const places = computed(() => byType.value.get('place') ?? [])
 const roots = computed(() => places.value.filter(p => !p.fields.parent).sort((a, b) => a.name.localeCompare(b.name)))
@@ -56,8 +60,13 @@ const seat = (o: Entry) => o.fields.seat as string | undefined
       <h1><span class="icon">🗺</span>Atlas</h1>
       <span class="muted">{{ places.length }} places · {{ maps.length }} maps</span>
     </header>
+    <nav class="tabs">
+      <a href="#/atlas" :class="{ on: tab !== 'timeline' }">🗺 Atlas</a>
+      <a href="#/atlas/timeline" :class="{ on: tab === 'timeline' }">⏳ Timeline</a>
+    </nav>
 
-    <div class="atlas-grid">
+    <TimelineView v-if="tab === 'timeline'" embedded />
+    <div v-else class="atlas-grid">
       <div class="atlas-main">
         <section v-if="root" class="card atlas-world">
           <h3>

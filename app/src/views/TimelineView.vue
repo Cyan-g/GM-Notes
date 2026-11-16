@@ -6,6 +6,9 @@ import TimelineChart from '../components/TimelineChart.vue'
 import TimelineList from '../components/TimelineList.vue'
 import EntryPicker from '../components/edit/EntryPicker.vue'
 
+/** Inside the Atlas, which has its own heading. */
+defineProps<{ embedded?: boolean }>()
+
 const KEY = 'eldoria.timeline-filter'
 const blank = (): TimelineFilter => ({ type: 'all', person: null, org: null, place: null, from: null, to: null })
 function load(): TimelineFilter {
@@ -22,10 +25,11 @@ const num = (v: string) => (v.trim() === '' ? null : Number(v))
 
 <template>
   <div class="timeline-view">
-    <header class="list-head">
+    <header v-if="!embedded" class="list-head">
       <h1><span class="icon">⏳</span>Timeline <span class="count">{{ items.length }}</span></h1>
       <span class="muted">Today: <b>{{ formatDate(db().meta.today) }}</b></span>
     </header>
+    <p v-else class="muted small tl-count">{{ items.length }} on the timeline · today is <b>{{ formatDate(db().meta.today) }}</b></p>
 
     <div class="tl-filters card">
       <label><span>Show</span>

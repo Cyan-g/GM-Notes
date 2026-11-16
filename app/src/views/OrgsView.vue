@@ -63,7 +63,6 @@ const people = computed(() => [
   { label: 'All NPCs', icon: '👤', href: hrefDashboard('people', 'All NPCs'), n: npcs.value.length },
   { label: 'Player characters', icon: '🛡️', href: hrefDashboard('people', 'Player characters'), n: byType.value.get('pc')?.length ?? 0 },
   { label: 'Organizations table', icon: '⚑', href: hrefDashboard('people', 'Organizations'), n: orgs.value.length },
-  { label: 'Races', icon: '🧬', href: hrefList('race'), n: byType.value.get('race')?.length ?? 0 },
 ])
 </script>
 

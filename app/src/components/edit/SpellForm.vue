@@ -47,30 +47,16 @@ const setMaterial = (v: string) => set('material', v.trim() || 'yes')
 </script>
 
 <template>
+  <!-- Two columns; buttons only where a glance matters (level, components, casting), dropdowns elsewhere. -->
   <div class="spell-form">
-    <div class="sf-row">
+    <div class="sf-cell">
       <span class="sf-label">Level</span>
       <div class="seg">
-        <button v-for="l in LEVELS" :key="l" type="button" :class="{ on: f.level === l }" @click="set('level', f.level === l ? undefined : l)">{{ l === 'Cantrip' ? 'Cantrip' : l }}</button>
+        <button v-for="l in LEVELS" :key="l" type="button" :class="{ on: f.level === l }" @click="set('level', f.level === l ? undefined : l)">{{ l }}</button>
       </div>
     </div>
 
-    <div class="sf-row">
-      <span class="sf-label">School</span>
-      <div class="seg wrap">
-        <button v-for="s in SCHOOLS" :key="s" type="button" :class="{ on: f.school === s }" @click="set('school', f.school === s ? undefined : s)">{{ s }}</button>
-      </div>
-    </div>
-
-    <div v-for="key in (Object.keys(QUICK) as Quick[])" :key="key" class="sf-row">
-      <span class="sf-label">{{ LABELS[key] }}</span>
-      <div class="sf-quick">
-        <input :value="f[key] ?? ''" :placeholder="QUICK[key][0]" @change="set(key, ($event.target as HTMLInputElement).value.trim())" />
-        <button v-for="q in QUICK[key]" :key="q" type="button" class="chip-btn" :class="{ on: String(f[key] ?? '').toLowerCase() === q.toLowerCase() }" @click="set(key, q)">{{ q }}</button>
-      </div>
-    </div>
-
-    <div class="sf-row">
+    <div class="sf-cell">
       <span class="sf-label">Components</span>
       <div class="sf-inline">
         <div class="seg" role="group" aria-label="Components">
@@ -82,7 +68,36 @@ const setMaterial = (v: string) => set('material', v.trim() || 'yes')
       </div>
     </div>
 
-    <div class="sf-row">
+    <label class="sf-cell">
+      <span class="sf-label">School</span>
+      <select :value="f.school ?? ''" @change="set('school', ($event.target as HTMLSelectElement).value || undefined)">
+        <option value="">—</option>
+        <option v-for="o in SCHOOLS" :key="o" :value="o">{{ o }}</option>
+      </select>
+    </label>
+
+    <div class="sf-cell">
+      <span class="sf-label">Type</span>
+      <div class="sf-inline">
+        <select :value="f.spellType ?? ''" @change="set('spellType', ($event.target as HTMLSelectElement).value || undefined)">
+          <option value="">—</option>
+          <option v-for="o in KINDS" :key="o" :value="o">{{ o }}</option>
+        </select>
+        <select v-if="f.spellType === 'Saving throw' || f.savingThrow" :value="f.savingThrow ?? ''" aria-label="Saving throw" @change="set('savingThrow', ($event.target as HTMLSelectElement).value || undefined)">
+          <option value="">which save?</option>
+          <option v-for="o in ABILITIES" :key="o" :value="o">{{ o }} save</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Free text with the usual values as suggestions. -->
+    <label v-for="key in (Object.keys(QUICK) as Quick[])" :key="key" class="sf-cell">
+      <span class="sf-label">{{ LABELS[key] }}</span>
+      <input :value="f[key] ?? ''" :list="`sf-${key}`" :placeholder="QUICK[key][0]" @change="set(key, ($event.target as HTMLInputElement).value.trim())" />
+      <datalist :id="`sf-${key}`"><option v-for="q in QUICK[key]" :key="q" :value="q" /></datalist>
+    </label>
+
+    <div class="sf-cell">
       <span class="sf-label">Casting</span>
       <div class="seg">
         <button type="button" :class="{ on: f.concentration }" @click="toggle('concentration')">Concentration</button>
@@ -90,21 +105,7 @@ const setMaterial = (v: string) => set('material', v.trim() || 'yes')
       </div>
     </div>
 
-    <div class="sf-row">
-      <span class="sf-label">Type</span>
-      <div class="seg wrap">
-        <button v-for="k in KINDS" :key="k" type="button" :class="{ on: f.spellType === k }" @click="set('spellType', f.spellType === k ? undefined : k)">{{ k }}</button>
-      </div>
-    </div>
-
-    <div v-if="f.spellType === 'Saving throw' || f.savingThrow" class="sf-row">
-      <span class="sf-label">Saving throw</span>
-      <div class="seg">
-        <button v-for="a in ABILITIES" :key="a" type="button" :class="{ on: f.savingThrow === a }" :title="a" @click="set('savingThrow', f.savingThrow === a ? undefined : a)">{{ a.slice(0, 3).toUpperCase() }}</button>
-      </div>
-    </div>
-
-    <div class="sf-row">
+    <div class="sf-cell full">
       <span class="sf-label">Classes</span>
       <div class="seg wrap">
         <button v-for="c in CLASSES" :key="c" type="button" :class="{ on: (f.classes ?? []).includes(c) }" @click="toggleIn('classes', c)">{{ c }}</button>

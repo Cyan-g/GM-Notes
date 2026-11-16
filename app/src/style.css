@@ -647,10 +647,12 @@ input.init { width: 4em; }
 .entry.editing .entry-grid.no-side { grid-template-columns: minmax(0, 1fr); }
 
 /* ---------- spell form ---------- */
-.spell-form { display: grid; gap: .75rem; }
-.sf-row { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); align-items: center; gap: 1rem; }
-@media (max-width: 700px) { .sf-row { grid-template-columns: 1fr; gap: .3rem; } }
-.sf-label { font-size: 13px; color: var(--muted); }
+.spell-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem 1.5rem; }
+@media (max-width: 700px) { .spell-form { grid-template-columns: 1fr; } }
+.sf-cell { display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
+.sf-cell.full { grid-column: 1 / -1; }
+.sf-cell > select, .sf-cell > input { max-width: 22rem; }
+.sf-label { font-size: 12px; color: var(--muted); }
 /* Segmented buttons: one connected group; .wrap lets long groups break into lines. */
 .seg { display: inline-flex; flex-wrap: nowrap; }
 .seg.wrap { flex-wrap: wrap; gap: .3rem; }
@@ -659,8 +661,6 @@ input.init { width: 4em; }
 .seg:not(.wrap) button:last-child { border-radius: 0 8px 8px 0; }
 .seg.wrap button { border-radius: 8px; margin-left: 0; }
 .seg button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); position: relative; z-index: 1; }
-.sf-quick { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
-.sf-quick input { width: 12rem; }
 .chip-btn.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
 .sf-inline { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
-.sf-material { flex: 1; min-width: 14rem; }
+.sf-material { flex: 1; min-width: 10rem; }

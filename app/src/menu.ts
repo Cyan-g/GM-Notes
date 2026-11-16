@@ -56,6 +56,7 @@ function entriesOf(t: EntryType): MenuNode[] {
   const list = [...(byType.value.get(t) ?? [])]
   switch (t) {
     case 'place':
+    case 'organization':
       return list.filter(e => get(e.fields.parent as string)?.type !== t).sort(byName).map(treeNode)
     case 'session':
       return grouped(list, e => refName(e, 'campaign'), undefined, bySession)
@@ -91,7 +92,7 @@ function typeNode(t: EntryType): MenuNode {
 export interface TopMenu { title: string; items: () => MenuNode[]; owns: (r: Route) => boolean; home?: string }
 
 /** Dashboards that have a top menu of their own, and the item kinds that belong to crafting. */
-const OWN_MENU = ['spells', 'crafting']
+const OWN_MENU = ['spells', 'crafting', 'people']
 const CRAFT_KINDS = ['Ingredient', 'Potion', 'Poison', 'Scroll']
 
 const typeOf = (r: Route) => (r.name === 'list' ? r.type : r.name === 'entry' ? get(r.id)?.type : undefined)
@@ -135,9 +136,21 @@ export const MENUS: TopMenu[] = [
   {
     title: 'World',
     home: '#/atlas',
-    owns: r => r.name === 'atlas' || ['place', 'npc', 'organization', 'event', 'deity', 'race'].includes(typeOf(r) ?? ''),
+    owns: r => r.name === 'atlas' || ['place', 'event', 'deity'].includes(typeOf(r) ?? ''),
     // The world's places first, cascading by "Located in" (Eldoria › Ardenvale › Desolation), then the lists.
-    items: () => [{ label: 'Atlas', icon: '🗺', href: '#/atlas' }, SEP, ...entriesOf('place'), SEP, ...(['place', 'npc', 'organization', 'event', 'deity', 'race'] as EntryType[]).map(typeNode)],
+    items: () => [{ label: 'Atlas', icon: '🗺', href: '#/atlas' }, SEP, ...entriesOf('place'), SEP, ...(['place', 'event', 'deity'] as EntryType[]).map(typeNode)],
+  },
+  {
+    title: 'People',
+    home: hrefDashboard('people'),
+    owns: r => dashOf(r) === 'people' || ['npc', 'organization', 'race'].includes(typeOf(r) ?? ''),
+    // The people tables, then NPCs, organizations (cascading by "Part of") and the peoples of the world.
+    // (A table named like one of the lists below is left out: the list has its own "All …" link.)
+    items: () => {
+      const types = ['npc', 'organization', 'race'] as EntryType[]
+      const plurals = types.map(t => info(t).plural)
+      return [...dashViews('people', '👥').filter(v => !plurals.includes(v.label)), SEP, ...types.map(typeNode)]
+    },
   },
   {
     title: 'Spells',

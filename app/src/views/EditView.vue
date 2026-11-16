@@ -121,7 +121,7 @@ function remove() {
             <!-- The description closes the card, the way it ends a spell or item card. -->
             <div class="sheet-desc">
               <span class="sf-label">Description</span>
-              <BodyEditor :model-value="String(e.fields.summary ?? '')" :hint="e.name" @update:model-value="setSummary" />
+              <BodyEditor compact :model-value="String(e.fields.summary ?? '')" :hint="e.name" @update:model-value="setSummary" />
             </div>
           </section>
           <details class="sheet-notes" :open="!!e.body.trim()">

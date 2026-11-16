@@ -327,6 +327,9 @@ textarea { width: 100%; resize: vertical; }
 .body-editor.split .be-panes { grid-template-columns: 1fr 1fr; }
 .be-write { position: relative; }
 .be-write textarea { border: none; border-radius: 0 0 12px 12px; min-height: 60vh; font: 14px/1.6 ui-monospace, Consolas, monospace; padding: .8rem 1rem; resize: vertical; }
+/* Compact: a few lines to start with, grows with the text (see fit() in BodyEditor). */
+.body-editor.compact .be-write textarea { min-height: 7.5em; overflow: hidden; resize: none; }
+.body-editor.compact .be-preview { max-height: none; }
 .body-editor.split .be-write textarea { border-right: 1px solid var(--line); border-radius: 0 0 0 12px; }
 .be-preview { padding: .8rem 1rem; max-height: 75vh; overflow-y: auto; }
 

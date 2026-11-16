@@ -1,17 +1,27 @@
 <script setup lang="ts">
 // Markdown editor: typing [[ suggests entries, pasted or dropped pictures are saved to data/images.
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { TYPES } from '../../model/schema'
 import { search } from '../../search'
 import { saveImage } from '../../edit'
 import MarkdownView from '../MarkdownView.vue'
 
-const props = defineProps<{ modelValue: string; hint?: string }>()
+/** `compact`: start a few lines tall and grow with the text (short descriptions), instead of a tall page. */
+const props = defineProps<{ modelValue: string; hint?: string; compact?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [string] }>()
 
 const ta = ref<HTMLTextAreaElement>()
 const mode = ref<'write' | 'split' | 'preview'>(window.innerWidth > 1300 ? 'split' : 'write')
 const busy = ref('')
+
+function fit() {
+  const t = ta.value
+  if (!props.compact || !t) return
+  t.style.height = 'auto'
+  t.style.height = t.scrollHeight + 2 + 'px'
+}
+onMounted(() => nextTick(fit))
+watch(() => [props.modelValue, mode.value], () => nextTick(fit))
 
 // ---- [[ autocomplete ----
 const ac = ref<{ query: string; start: number; top: number; left: number } | null>(null)
@@ -133,7 +143,7 @@ async function onPick(ev: Event) {
 </script>
 
 <template>
-  <div class="body-editor" :class="mode">
+  <div class="body-editor" :class="[mode, { compact }]">
     <div class="be-toolbar">
       <button type="button" title="Bold (Ctrl+B)" @click="wrap('**', '**')"><b>B</b></button>
       <button type="button" title="Italic (Ctrl+I)" @click="wrap('*', '*')"><i>I</i></button>

@@ -95,6 +95,17 @@ function upgrade(d: Database) {
     d.version = 4
     changed = true
   }
+  // Version 5: one name per tool. "Alchemy Kit" was the old name for Alchemist's Supplies.
+  if ((d.version ?? 1) < 5) {
+    const RENAME: Record<string, string> = { 'Alchemy Kit': "Alchemist's Supplies" }
+    for (const e of Object.values(d.entries)) {
+      const t = e.fields.craftingType as string | undefined
+      if (t && RENAME[t]) e.fields.craftingType = RENAME[t]
+    }
+    if (d.crafting) d.crafting.tools = [...new Set(d.crafting.tools.map(t => RENAME[t] ?? t))]
+    d.version = 5
+    changed = true
+  }
   return changed
 }
 

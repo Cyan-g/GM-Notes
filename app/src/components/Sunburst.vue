@@ -19,12 +19,14 @@ const box = ref<HTMLElement | null>(null)
 const size = ref(300)
 const wide = ref(false)
 let ro: ResizeObserver | undefined
+function fit(w: number) {
+  wide.value = w >= 620
+  size.value = Math.max(220, Math.min(props.max, wide.value ? w - LEGEND - 24 : w))
+}
 onMounted(() => {
-  ro = new ResizeObserver(([e]) => {
-    const w = Math.floor(e.contentRect.width)
-    wide.value = w >= 620
-    size.value = Math.max(220, Math.min(props.max, wide.value ? w - LEGEND - 24 : w))
-  })
+  // Measure once straight away (a hidden tab gets no resize callbacks), then follow the card's width.
+  if (box.value) fit(Math.floor(box.value.clientWidth))
+  ro = new ResizeObserver(([e]) => fit(Math.floor(e.contentRect.width)))
   if (box.value) ro.observe(box.value)
 })
 onUnmounted(() => ro?.disconnect())

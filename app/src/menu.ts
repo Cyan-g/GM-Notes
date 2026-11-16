@@ -143,14 +143,15 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'People',
-    home: hrefDashboard('people'),
-    owns: r => dashOf(r) === 'people' || ['npc', 'organization', 'race'].includes(typeOf(r) ?? ''),
+    home: '#/organizations',
+    owns: r => r.name === 'orgs' || dashOf(r) === 'people' || ['npc', 'organization', 'race'].includes(typeOf(r) ?? ''),
     // The people tables, then NPCs, organizations (cascading by "Part of") and the peoples of the world.
     // (A table named like one of the lists below is left out: the list has its own "All …" link.)
     items: () => {
       const types = ['npc', 'organization', 'race'] as EntryType[]
       const plurals = types.map(t => info(t).plural)
-      return [...dashViews('people', '👥').filter(v => !plurals.includes(v.label)), SEP, ...types.map(typeNode)]
+      return [{ label: 'Organizations', icon: '⚑', href: '#/organizations', hint: String(state.db ? (byType.value.get('organization')?.length ?? 0) : '') }, SEP,
+        ...dashViews('people', '👥').filter(v => !plurals.includes(v.label)), SEP, ...types.map(typeNode)]
     },
   },
   {

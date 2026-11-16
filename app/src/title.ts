@@ -26,6 +26,7 @@ function pageName(r: Route): string {
     case 'spellbook': return 'Spellbook'
     case 'crafting': return 'Workbench'
     case 'atlas': return 'Atlas'
+    case 'orgs': return 'Organizations'
     case 'data': return 'Data'
     case 'dashboard': {
       const d = DASHBOARDS.find(x => x.id === r.id)

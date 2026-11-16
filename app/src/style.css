@@ -914,3 +914,23 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .ranks-edit input:not(.short) { width: 100%; }
 .ranks-edit td:nth-child(2) { width: 22%; }
 .ranks-actions { white-space: nowrap; }
+
+/* ---------- organizations front page ---------- */
+.orgs-page .list-head { justify-content: flex-start; align-items: center; }
+.orgs-page .list-head .spacer { flex: 1; }
+.orgs-grid { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 1rem; align-items: start; }
+@media (max-width: 1000px) { .orgs-grid { grid-template-columns: 1fr; } }
+.orgs-side { position: sticky; top: calc(var(--bar-h) + 1rem); }
+.orgs-filter { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; margin-bottom: .5rem; }
+.orgs-filter > input { flex: 0 1 16rem; }
+.org-group h2 { font-size: 1.1rem; margin: 1.2rem 0 .5rem; display: flex; align-items: baseline; gap: .4rem; }
+.org-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: .8rem; }
+.org-card { display: flex; flex-direction: column; gap: .3rem; margin: 0; border-top: 3px solid var(--accent); }
+.org-card header { display: flex; align-items: baseline; gap: .5rem; justify-content: space-between; }
+.org-name { font-weight: 700; font-size: 1.05rem; color: var(--ink); }
+.org-name:hover { color: var(--accent); }
+.org-line { margin: 0; font-size: 14px; }
+.org-ranks { display: flex; flex-wrap: wrap; gap: .2rem; margin-top: .2rem; }
+.org-rank { font-size: 11px; padding: 0 .45em; border-radius: 99px; border: 1px solid var(--line); color: var(--ink-2); }
+.org-rank:first-child { border-color: var(--accent); color: var(--accent); }
+.org-subs { display: flex; flex-wrap: wrap; gap: .2rem .6rem; font-size: 13px; border-top: 1px dashed var(--line); padding-top: .3rem; }

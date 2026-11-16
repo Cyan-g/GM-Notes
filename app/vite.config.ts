@@ -29,7 +29,9 @@ function devData(): Plugin {
             return res.end(JSON.stringify(fs.readdirSync(file)))
           }
           if (!fs.existsSync(file)) { res.statusCode = 404; return res.end() }
-          return fs.createReadStream(file).pipe(res)
+          // Read in one go: a stream left open by a cut-off request keeps the file locked on Windows, and then
+          // the app in the browser can no longer replace it when saving.
+          return res.end(fs.readFileSync(file))
         }
         if (req.method === 'PUT') {
           const chunks: Buffer[] = []

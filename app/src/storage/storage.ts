@@ -89,9 +89,21 @@ export class FolderStorage implements Storage {
   // real file on close(), so a crash mid-save leaves the old file intact.
   async writeText(path: string, text: string) { await this.writeBlob(path, new Blob([text], { type: 'application/json' })) }
   async writeBlob(path: string, blob: Blob) {
-    const w = await (await this.file(path, true)).createWritable()
-    await w.write(blob)
-    await w.close()
+    // Another program holding the file open (a virus scanner, a sync tool, a dev server) makes the final
+    // replace fail with InvalidStateError or NoModificationAllowedError. Try again a few times before giving up.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        const w = await (await this.file(path, true)).createWritable()
+        await w.write(blob)
+        await w.close()
+        break
+      } catch (e) {
+        const name = (e as DOMException).name
+        if (!['InvalidStateError', 'NoModificationAllowedError'].includes(name)) throw e
+        if (attempt >= 4) throw new Error(`${path} couldn't be replaced: another program seems to have it open (${name}). Close anything that might use the data folder, then try again.`)
+        await new Promise(r => setTimeout(r, 400 * attempt))
+      }
+    }
     const old = this.urls.get(path)
     if (old) { URL.revokeObjectURL(old); this.urls.delete(path) }
   }

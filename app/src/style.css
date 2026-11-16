@@ -707,3 +707,11 @@ input.init { width: 4em; }
 .modal-head h2 { margin: 0; font-size: 1.4rem; color: var(--accent); }
 .modal-head .spacer { flex: 1; }
 .modal .spell-card { margin-bottom: 0; box-shadow: none; }
+
+/* spellbook drag and drop */
+.drop-zone { transition: box-shadow .12s, border-color .12s; }
+.drop-zone.over { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent), var(--shadow); }
+.sbk-list tr[draggable="true"] { cursor: grab; }
+.sbk-list tr.dragging { opacity: .4; }
+.drag-handle { color: var(--muted); margin-right: .3rem; cursor: grab; }
+.drop-hint { border: 2px dashed var(--line); border-radius: 8px; padding: 1rem; text-align: center; }

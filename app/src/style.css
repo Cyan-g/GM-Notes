@@ -882,3 +882,26 @@ tr.craft-time td { color: var(--ink-2); font-weight: 600; border-top: 0; }
 .home-inline { margin: 0; line-height: 1.8; }
 .home-link-form { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .4rem; }
 .home-link-form input { flex: 1 1 8rem; min-width: 0; }
+
+/* ---------- family tree ---------- */
+.entry-tabs { margin-top: .5rem; }
+.family-tools { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .8rem; }
+.family-tools .chip-btn.on { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.family-tools .entry-picker, .family-tools > div:last-child { min-width: 16rem; }
+.family-scroll { overflow: auto; border: 1px solid var(--line); border-radius: 12px; background:
+  radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 9%, transparent) 1px, transparent 0) 0 0 / 22px 22px, var(--panel-2); max-height: calc(100vh - 220px); }
+.family-canvas { position: relative; margin: 0 auto; }
+.family-lines { position: absolute; inset: 0; pointer-events: none; }
+.family-lines path { fill: none; stroke: var(--ink-2); stroke-width: 1.6; stroke-linejoin: round; opacity: .7; }
+.family-lines path.couple { stroke: var(--accent); stroke-width: 2.4; opacity: .9; }
+.family-lines path.sibling { stroke-dasharray: 4 4; }
+.kin { position: absolute; display: flex; align-items: center; gap: .5rem; padding: .4rem .55rem; box-sizing: border-box; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--panel); box-shadow: var(--shadow); color: var(--ink); text-decoration: none; overflow: hidden; transition: border-color .12s, transform .12s; }
+.kin:hover { border-color: var(--accent-2); transform: translateY(-1px); text-decoration: none; }
+.kin.focus { border: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--panel)); }
+.kin-pic { width: 36px; height: 36px; flex: none; border-radius: 50%; object-fit: cover; }
+.kin-initial { display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 18%, var(--panel)); color: var(--accent); font-weight: 700; font-size: 1.1rem; }
+.kin-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.kin-text b, .kin-text span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kin-text b { font-size: 14px; }
+.family-empty { border: 2px dashed var(--line); border-radius: 12px; padding: 2rem; text-align: center; }

@@ -100,7 +100,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <DashboardView v-else-if="route.current.name === 'dashboard'" :id="route.current.id" :view="route.current.view" />
       <EncounterView v-else-if="route.current.name === 'entry' && get(route.current.id)?.type === 'encounter'" :id="route.current.id" :key="'enc-' + route.current.id" />
       <EditView v-else-if="route.current.name === 'entry' && route.current.edit" :id="route.current.id" :key="'edit-' + route.current.id" />
-      <EntryView v-else-if="route.current.name === 'entry'" :id="route.current.id" :key="route.current.id" />
+      <EntryView v-else-if="route.current.name === 'entry'" :id="route.current.id" :tab="route.current.tab" :key="route.current.id" />
     </main>
     <QuickSwitcher v-model="ui.switcher" />
     <NewEntryDialog v-model="ui.newOpen" :type="ui.newType" :fields="ui.newFields" />

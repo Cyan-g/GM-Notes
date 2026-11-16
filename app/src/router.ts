@@ -5,7 +5,7 @@ import type { EntryType, Id } from './model/types'
 export type Route =
   | { name: 'home' }
   | { name: 'list'; type: EntryType }
-  | { name: 'entry'; id: Id; edit: boolean }
+  | { name: 'entry'; id: Id; edit: boolean; tab?: 'family' }
   | { name: 'timeline' }
   | { name: 'calendar'; year?: number; month?: number }
   | { name: 'tracker' }
@@ -28,7 +28,7 @@ function parse(): Route {
   if (kind === 'map' && arg) return { name: 'map', id: arg, pin: extra }
   if (kind === 'd' && arg) return { name: 'dashboard', id: arg, view: extra }
   if (kind === 't' && arg) return { name: 'list', type: arg as EntryType }
-  if (kind === 'e' && arg) return { name: 'entry', id: arg, edit: extra === 'edit' }
+  if (kind === 'e' && arg) return { name: 'entry', id: arg, edit: extra === 'edit', tab: extra === 'family' ? 'family' : undefined }
   return { name: 'home' }
 }
 
@@ -41,6 +41,8 @@ window.addEventListener('hashchange', () => {
 })
 
 export const hrefEntry = (id: Id, edit = false) => `#/e/${encodeURIComponent(id)}${edit ? '/edit' : ''}`
+/** A person's family tree tab. */
+export const hrefFamily = (id: Id) => `#/e/${encodeURIComponent(id)}/family`
 export const hrefList = (type: EntryType) => `#/t/${type}`
 export const go = (href: string) => { location.hash = href.replace(/^#/, '') }
 export const hrefDashboard = (id: string, view?: string) => `#/d/${id}${view ? '/' + encodeURIComponent(view) : ''}`

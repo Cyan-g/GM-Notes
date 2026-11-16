@@ -3,7 +3,9 @@ import { computed } from 'vue'
 import type { Entry, Relation, Statblock, WorldDate } from '../model/types'
 import { TYPES, RELATION_KINDS, type FieldDef } from '../model/schema'
 import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, placePath, relationsOf, entries } from '../store'
-import { go, hrefEntry, hrefList, hrefMap } from '../router'
+import { go, hrefEntry, hrefFamily, hrefList, hrefMap } from '../router'
+import FamilyTree from '../components/FamilyTree.vue'
+import { familySize } from '../family'
 import MapView from '../components/MapView.vue'
 import SubTree from '../components/SubTree.vue'
 import Sunburst from '../components/Sunburst.vue'
@@ -23,8 +25,11 @@ import TimelineChart from '../components/TimelineChart.vue'
 import TimelineList from '../components/TimelineList.vue'
 import { allItems, filterItems } from '../timeline'
 
-const props = defineProps<{ id: string }>()
+const props = defineProps<{ id: string; tab?: 'family' }>()
 const e = computed(() => get(props.id))
+/** People have a second tab with their family tree. */
+const hasFamily = computed(() => e.value?.type === 'npc' || e.value?.type === 'pc')
+const onFamily = computed(() => hasFamily.value && props.tab === 'family')
 const def = computed(() => e.value ? TYPES[e.value.type] : undefined)
 const today = computed(() => db().meta.today)
 
@@ -201,7 +206,12 @@ const siblings = computed(() => {
     </header>
 
     <MapView v-if="e.fields.map" :place="e" banner />
-    <div class="entry-grid">
+    <nav v-if="hasFamily" class="tabs entry-tabs">
+      <a :href="hrefEntry(e.id)" :class="{ on: !onFamily }">Overview</a>
+      <a :href="hrefFamily(e.id)" :class="{ on: onFamily }">🌳 Family tree <span v-if="familySize(e.id)" class="muted small">{{ familySize(e.id) }}</span></a>
+    </nav>
+    <FamilyTree v-if="onFamily" :id="e.id" />
+    <div v-else class="entry-grid">
       <div class="entry-main">
         <div v-if="siblings" class="pager">
           <EntryLink v-if="siblings.prev" :id="siblings.prev.id" :label="'← ' + siblings.prev.name" />

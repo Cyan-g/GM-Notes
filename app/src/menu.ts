@@ -2,7 +2,7 @@
 import { SCHEMA } from './model/schema'
 import type { Entry, EntryType } from './model/types'
 import { byType, childrenOf, get, state } from './store'
-import { hrefDashboard, hrefEntry, hrefList } from './router'
+import { hrefDashboard, hrefEntry, hrefList, type Route } from './router'
 import { newEntry } from './ui'
 import { DASHBOARDS } from './dashboards'
 
@@ -86,11 +86,29 @@ function typeNode(t: EntryType): MenuNode {
   }
 }
 
-export interface TopMenu { title: string; items: () => MenuNode[] }
+/** `owns` says whether the open page belongs to this menu, so its title can be marked. */
+export interface TopMenu { title: string; items: () => MenuNode[]; owns: (r: Route) => boolean }
+
+/** Dashboards that have a top menu of their own, and the item kinds that belong to crafting. */
+const OWN_MENU = ['spells', 'crafting']
+const CRAFT_KINDS = ['Ingredient', 'Potion', 'Poison', 'Scroll']
+
+const typeOf = (r: Route) => (r.name === 'list' ? r.type : r.name === 'entry' ? get(r.id)?.type : undefined)
+const dashOf = (r: Route) => (r.name === 'dashboard' ? r.id : undefined)
+const dashViews = (id: string, icon = '📋') => {
+  const d = DASHBOARDS.find(x => x.id === id)!
+  return d.views.map(v => ({ label: v.name, icon, href: hrefDashboard(d.id, v.name) }))
+}
+const itemsOfKind = (k: string) => (byType.value.get('item') ?? []).filter(e => e.fields.kind === k).sort(byName)
+const kindNode = (k: string, plural: string): MenuNode => {
+  const list = itemsOfKind(k)
+  return { label: plural, hint: String(list.length), children: list.length ? () => list.map(e => entryNode(e)) : undefined }
+}
 
 export const MENUS: TopMenu[] = [
   {
     title: 'Dashboards',
+    owns: r => ['calendar', 'tracker', 'timeline'].includes(r.name) || (!!dashOf(r) && !OWN_MENU.includes(dashOf(r)!)),
     items: () => [
       { label: 'Calendar', icon: '📅', href: '#/calendar' },
       { label: 'Initiative', icon: '⚔', href: '#/tracker', hint: state.db?.tracker?.round ? `R${state.db.tracker.round}` : undefined },
@@ -102,17 +120,53 @@ export const MENUS: TopMenu[] = [
           : undefined,
       },
       SEP,
-      ...DASHBOARDS.map(d => ({
+      ...DASHBOARDS.filter(d => !OWN_MENU.includes(d.id)).map(d => ({
         label: d.title, icon: d.icon, href: hrefDashboard(d.id),
         children: d.views.length > 1 ? () => d.views.map(v => ({ label: v.name, href: hrefDashboard(d.id, v.name) })) : undefined,
       })),
     ],
   },
-  { title: 'Campaign', items: () => (['campaign', 'session', 'encounter', 'pc'] as EntryType[]).map(typeNode) },
+  {
+    title: 'Campaign',
+    owns: r => ['campaign', 'session', 'encounter', 'pc'].includes(typeOf(r) ?? ''),
+    items: () => (['campaign', 'session', 'encounter', 'pc'] as EntryType[]).map(typeNode),
+  },
   {
     title: 'World',
+    owns: r => ['place', 'npc', 'organization', 'event', 'deity', 'race'].includes(typeOf(r) ?? ''),
     // The world's places first, cascading by "Located in" (Eldoria › Ardenvale › Desolation), then the lists.
     items: () => [...entriesOf('place'), SEP, ...(['place', 'npc', 'organization', 'event', 'deity', 'race'] as EntryType[]).map(typeNode)],
   },
-  { title: 'Archive', items: () => (['item', 'creature', 'spell', 'subclass', 'writing', 'note'] as EntryType[]).map(typeNode) },
+  {
+    title: 'Spells',
+    owns: r => typeOf(r) === 'spell' || dashOf(r) === 'spells',
+    // The spell tables first, then every spell by level.
+    items: () => [
+      ...dashViews('spells'),
+      SEP,
+      ...entriesOf('spell'),
+      SEP,
+      { label: 'New spell…', action: () => newEntry('spell') },
+    ],
+  },
+  {
+    title: 'Crafting',
+    owns: r => dashOf(r) === 'crafting' || (r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
+    items: () => [
+      ...dashViews('crafting'),
+      SEP,
+      kindNode('Ingredient', 'Ingredients'),
+      kindNode('Potion', 'Potions'),
+      kindNode('Poison', 'Poisons'),
+      kindNode('Scroll', 'Scrolls'),
+      SEP,
+      { label: 'New ingredient…', action: () => newEntry('item', { kind: 'Ingredient' }) },
+      { label: 'New potion…', action: () => newEntry('item', { kind: 'Potion' }) },
+    ],
+  },
+  {
+    title: 'Archive',
+    owns: r => ['item', 'creature', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
+    items: () => (['item', 'creature', 'subclass', 'writing', 'note'] as EntryType[]).map(typeNode),
+  },
 ]

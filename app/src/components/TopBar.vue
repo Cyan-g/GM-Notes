@@ -2,7 +2,7 @@
 // The menu bar at the top: one menu per category, cascading into types and entries.
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { MENUS } from '../menu'
-import { db, get, save, state } from '../store'
+import { db, save, state } from '../store'
 import { newEntry } from '../ui'
 import { route } from '../router'
 import { daysSince } from '../backup'
@@ -33,17 +33,7 @@ onUnmounted(() => { document.removeEventListener('pointerdown', outside); window
 watch(() => route.current, close)
 
 // Which menu the open page belongs to, so its title can be marked.
-const TYPES_OF = [
-  ['calendar', 'tracker', 'timeline', 'dashboard'],
-  ['campaign', 'session', 'encounter', 'pc'],
-  ['place', 'npc', 'organization', 'event', 'deity', 'race'],
-  ['item', 'creature', 'spell', 'subclass', 'writing', 'note'],
-]
-const current = computed(() => {
-  const r = route.current
-  const key = r.name === 'list' ? r.type : r.name === 'entry' ? get(r.id)?.type : r.name
-  return TYPES_OF.findIndex(l => l.includes(key as string))
-})
+const current = computed(() => MENUS.findIndex(m => m.owns(route.current)))
 </script>
 
 <template>

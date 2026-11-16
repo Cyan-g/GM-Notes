@@ -1,7 +1,7 @@
 // The loaded database plus lookups the pages need, and saving with backups.
 import { reactive, computed, shallowRef } from 'vue'
 import type { Database, Entry, EntryType, Id, Relation, WorldDate } from './model/types'
-import type { FileStamp, Storage } from './storage/storage'
+import type { Storage } from './storage/storage'
 import { OLD_PLACE_SIZES } from './model/schema'
 
 const DB_FILE = 'eldoria.json'
@@ -31,8 +31,6 @@ export const state = reactive({
 })
 
 /** The data file as this tab last read or wrote it; a different one on disk means someone else saved. */
-let stamp: FileStamp | null = null
-let sessionStamp: FileStamp | null = null
 /** The text of each file as last read or written; a file whose new text is the same isn't written again. */
 let worldText = '', sessionText = ''
 /** How many entries the file had when this tab last read or wrote it. */
@@ -42,12 +40,10 @@ export const db = () => state.db!
 
 export async function open(storage: Storage) {
   state.storage = storage
-  stamp = await storage.stat(DB_FILE)
   const text = await storage.readText(DB_FILE)
   if (text == null) throw new Error(`No ${DB_FILE} found in "${storage.label}". Pick the app's data folder.`)
   const d = JSON.parse(text) as Database
   // The play state comes from session.json. Before the split it was inside the world file, which is used then.
-  sessionStamp = await storage.stat(SESSION_FILE)
   const sessionRaw = await storage.readText(SESSION_FILE)
   if (sessionRaw != null) {
     const sess = JSON.parse(sessionRaw) as Partial<Database>
@@ -480,7 +476,6 @@ function splitForSave(d: Database) {
   }
   return { world: JSON.stringify(world, null, 1), session: JSON.stringify(session, null, 1) }
 }
-const changedOnDisk = (was: FileStamp | null, now: FileStamp | null) => !!was && !!now && (now.modified !== was.modified || now.size !== was.size)
 
 /**
  * Save what changed. Each file is checked for changes made elsewhere first, and the world is sanity-checked.
@@ -498,8 +493,10 @@ export async function save(force = false) {
     // "Last edit" on the Data page: stamped only when the world itself changes, not on every click in a fight.
     if (worldChanged) { d.meta.edited = new Date().toISOString(); world = splitForSave(d).world }
     // Someone else saved a file since this tab read it: stop rather than overwrite their work.
-    const [worldNow, sessionNow] = await Promise.all([s.stat(DB_FILE), s.stat(SESSION_FILE)])
-    const clash = !force && ((worldChanged && changedOnDisk(stamp, worldNow)) || (sessionChanged && changedOnDisk(sessionStamp, sessionNow)))
+    // Compared by content, not by the file's date: on Windows, asking the browser for a file's date leaves the
+    // file open, and then the browser can't replace it. Reading it whole doesn't.
+    const [worldDisk, sessionDisk] = await Promise.all([worldChanged ? s.readText(DB_FILE) : null, sessionChanged ? s.readText(SESSION_FILE) : null])
+    const clash = !force && ((worldDisk != null && worldDisk !== worldText) || (sessionDisk != null && sessionDisk !== sessionText))
     if (clash) {
       state.conflict = true
       state.readOnly = `The data files were changed outside this tab since it loaded them. To keep those changes, reload. To keep this tab's version instead, overwrite (the other version is kept in backups).`
@@ -512,16 +509,14 @@ export async function save(force = false) {
     const backupDue = force || Date.now() - state.lastBackup > BACKUP_EVERY_MS
     const when = stampOf(new Date())
     if (sessionChanged) {
-      if (backupDue) { const prev = await s.readText(SESSION_FILE); if (prev) await s.writeText(`${BACKUP_DIR}/session-${when}.json`, prev) }
+      if (backupDue && sessionDisk) await s.writeText(`${BACKUP_DIR}/session-${when}.json`, sessionDisk)
       await s.writeText(SESSION_FILE, session)
       sessionText = session
-      sessionStamp = await s.stat(SESSION_FILE)
     }
     if (worldChanged) {
-      if (backupDue) { const prev = await s.readText(DB_FILE); if (prev) await s.writeText(`${BACKUP_DIR}/eldoria-${when}.json`, prev) }
+      if (backupDue && worldDisk) await s.writeText(`${BACKUP_DIR}/eldoria-${when}.json`, worldDisk)
       await s.writeText(DB_FILE, world)
       worldText = world
-      stamp = await s.stat(DB_FILE)
       savedCount = Object.keys(d.entries).length
     }
     if (backupDue && (worldChanged || sessionChanged)) {

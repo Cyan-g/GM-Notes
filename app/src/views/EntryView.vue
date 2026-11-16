@@ -203,13 +203,9 @@ const siblings = computed(() => {
         </div>
 
         <div v-if="e.type === 'encounter'" class="run-bar"><button class="primary" @click="loadEncounter(e.id); go('#/tracker')">▶ Run in initiative tracker</button></div>
-        <!-- An item's card and its recipe/stock side by side when there's room. -->
+        <!-- An item's card takes the main two thirds; its recipe is the first card on the right (as when editing). -->
         <div v-if="e.type === 'item'" class="item-top">
           <ItemCard :e="e" />
-          <section v-for="f in bigFields" :key="f.key">
-            <h2>{{ f.label }}</h2>
-            <FieldValue :def="f" :value="e.fields[f.key]" :entry="e" />
-          </section>
         </div>
         <SpellCard v-if="e.type === 'spell'" :e="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
@@ -248,6 +244,10 @@ const siblings = computed(() => {
       </div>
 
       <aside class="entry-side">
+        <div v-for="f in e.type === 'item' ? bigFields : []" :key="f.key" class="card side-big">
+          <h3>{{ f.label }}</h3>
+          <FieldValue :def="f" :value="e.fields[f.key]" :entry="e" />
+        </div>
         <div v-if="children.length" class="card subregions">
           <h3>{{ e.type === 'place' ? 'Subregions' : 'Part of this' }}
             <button class="link-btn" :title="ui.treeAsList ? 'Show as rings' : 'Show as a list'" @click="ui.treeAsList = !ui.treeAsList">{{ ui.treeAsList ? '◎ Rings' : '☰ List' }}</button></h3>

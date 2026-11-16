@@ -87,7 +87,8 @@ function typeNode(t: EntryType): MenuNode {
 }
 
 /** `owns` says whether the open page belongs to this menu, so its title can be marked. */
-export interface TopMenu { title: string; items: () => MenuNode[]; owns: (r: Route) => boolean }
+/** `home`: the menu's own dashboard, opened by clicking the title (hovering shows the menu). */
+export interface TopMenu { title: string; items: () => MenuNode[]; owns: (r: Route) => boolean; home?: string }
 
 /** Dashboards that have a top menu of their own, and the item kinds that belong to crafting. */
 const OWN_MENU = ['spells', 'crafting']
@@ -139,6 +140,7 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'Spells',
+    home: '#/spellbook',
     owns: r => typeOf(r) === 'spell' || dashOf(r) === 'spells' || r.name === 'spellbook',
     // The spell tables first, then every spell by level.
     items: () => [
@@ -153,6 +155,7 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'Crafting',
+    home: '#/crafting',
     owns: r => dashOf(r) === 'crafting' || r.name === 'crafting' || (r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
     items: () => [
       { label: 'Workbench', icon: '⚗️', href: '#/crafting', hint: state.db?.crafting ? `${state.db.crafting.known.length} recipes` : undefined },

@@ -19,10 +19,31 @@ function show(i: number, ev: Event) {
   anchor.value = (ev.currentTarget as HTMLElement).getBoundingClientRect()
   open.value = i
 }
-const toggle = (i: number, ev: Event) => (open.value === i ? close() : show(i, ev))
-// Once a menu is open, moving to another title switches to it, like a desktop menu bar.
-const slide = (i: number, ev: Event) => { if (open.value != null && open.value !== i) show(i, ev) }
-const close = () => { open.value = null }
+const close = () => { clearTimeout(timer); open.value = null }
+
+// Hovering a title opens its menu; leaving the title and its menu closes it after a moment,
+// so moving the mouse from the title down into the menu doesn't lose it.
+let timer: number | undefined
+function hoverTitle(i: number, ev: MouseEvent) {
+  clearTimeout(timer)
+  const el = ev.currentTarget as HTMLElement
+  if (open.value === i) return
+  timer = window.setTimeout(() => show(i, { currentTarget: el } as unknown as Event), open.value == null ? 90 : 0)
+}
+const keep = () => clearTimeout(timer)
+const leave = () => { clearTimeout(timer); timer = window.setTimeout(close, 280) }
+
+// Clicking a title opens the menu's dashboard if it has one (a real link, so middle-click opens a tab);
+// otherwise it opens or closes the menu. On a touch screen the first tap opens the menu.
+let touch = false
+const notePointer = (ev: PointerEvent) => { touch = ev.pointerType === 'touch' }
+function clickTitle(i: number, ev: MouseEvent) {
+  const m = MENUS[i]
+  if (m.home && !(touch && open.value !== i)) { close(); return }
+  ev.preventDefault()
+  // Hovering usually opened it already; a click keeps it open (Esc, a click elsewhere or leaving closes it).
+  if (open.value !== i) show(i, ev)
+}
 
 function outside(ev: PointerEvent) {
   if (!(ev.target as Element).closest?.('.menubar, .menu-panel')) close()
@@ -40,11 +61,15 @@ const current = computed(() => MENUS.findIndex(m => m.owns(route.current)))
   <header class="topbar">
     <a class="brand" href="#/">{{ db().meta.title }}</a>
     <nav class="menubar" role="menubar">
-      <button v-for="(m, i) in MENUS" :key="m.title" class="menu-title" role="menuitem" aria-haspopup="menu"
+      <component :is="m.home ? 'a' : 'button'" v-for="(m, i) in MENUS" :key="m.title" class="menu-title" role="menuitem" aria-haspopup="menu"
+              :href="m.home" :title="m.home ? `Open ${m.title.toLowerCase()} (hover for the menu)` : undefined"
               :aria-expanded="open === i" :class="{ open: open === i, current: current === i }"
-              @click="toggle(i, $event)" @mouseenter="slide(i, $event)">{{ m.title }}</button>
+              @pointerdown="notePointer" @click="clickTitle(i, $event)"
+              @mouseenter="hoverTitle(i, $event)" @mouseleave="leave">{{ m.title }}</component>
     </nav>
-    <MenuPanel v-if="open != null && anchor" :key="open" :items="MENUS[open].items()" :anchor="anchor" :level="0" @close="close" />
+    <div class="menu-host" @mouseenter="keep" @mouseleave="leave">
+      <MenuPanel v-if="open != null && anchor" :key="open" :items="MENUS[open].items()" :anchor="anchor" :level="0" @close="close" />
+    </div>
     <div class="bar-tools">
       <button class="search-btn" @click="$emit('search')"><span>Search…</span><kbd>Ctrl K</kbd></button>
       <button class="new-btn" title="New entry" @click="newEntry()">＋</button>

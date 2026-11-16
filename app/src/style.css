@@ -86,6 +86,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid color-mix(in srgb
 .brand { font: 700 1.4rem var(--serif); color: var(--accent); font-variant: small-caps; letter-spacing: .06em; white-space: nowrap; }
 .brand:hover { text-decoration: none; color: var(--accent); }
 .menubar { display: flex; gap: .15rem; }
+a.menu-title { display: inline-block; text-decoration: none; }
 .menu-title { border: none; background: none; padding: .4em .75em; border-radius: 6px; color: var(--ink-2); font-weight: 500; }
 .menu-title:hover, .menu-title.open { background: var(--panel); color: var(--ink); }
 .menu-title.current { color: var(--accent); }

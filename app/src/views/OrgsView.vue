@@ -3,7 +3,7 @@
 // with its leader, members and ranks at a glance; and the people tables beside it.
 import { computed, ref } from 'vue'
 import type { Entry, Id, RankLine } from '../model/types'
-import { byType, childrenOf, placePath, relationsOf } from '../store'
+import { byType, childrenOf, isCurrent, placePath, relationsOf } from '../store'
 import { hrefDashboard, hrefEntry, hrefList } from '../router'
 import { TYPES } from '../model/schema'
 import { newEntry } from '../ui'
@@ -22,7 +22,7 @@ const shown = computed(() => orgs.value.filter(o =>
   && (!q.value.trim() || [o.name, ...o.aliases].some(n => n.toLowerCase().includes(q.value.trim().toLowerCase())))))
 
 // ---- per organization ----
-const members = (o: Entry) => (relationsOf.value.get(o.id) ?? []).filter(r => r.kind === 'member' && r.b === o.id && !r.to)
+const members = (o: Entry) => (relationsOf.value.get(o.id) ?? []).filter(r => r.kind === 'member' && r.b === o.id && isCurrent(r))
 const ranks = (o: Entry) => (o.fields.ranks as RankLine[] | undefined) ?? []
 const LEADER = /\b(leader|head|king|queen|duke|duchess|chief|chieftain|general|archmage|vizier|saint|high[- ]?priest(ess)?|grandmaster|captain|matriarch|patriarch)\b/i
 /** Who leads it: the holder of the top rank, else a member whose role sounds like it. */

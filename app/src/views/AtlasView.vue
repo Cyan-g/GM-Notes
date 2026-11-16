@@ -3,7 +3,7 @@
 // and the factions at a glance.
 import { computed, ref } from 'vue'
 import type { Entry, Pin, WorldDate } from '../model/types'
-import { byType, db, formatDate, placePath, relationsOf } from '../store'
+import { byType, db, formatDate, isCurrent, placePath, relationsOf } from '../store'
 import { hrefEntry, hrefMap } from '../router'
 import { addDays, dayNumber } from '../calendar'
 import Sunburst from '../components/Sunburst.vue'
@@ -45,7 +45,7 @@ const weekFromNow = computed(() => formatDate(addDays(cal.value, today.value, 7)
 // ---- factions: top-level organizations with members and seat ----
 const factions = computed(() => (byType.value.get('organization') ?? [])
   .filter(o => !o.fields.parent)
-  .map(o => ({ o, members: (relationsOf.value.get(o.id) ?? []).filter(r => r.kind === 'member' && r.b === o.id && !r.to).length }))
+  .map(o => ({ o, members: (relationsOf.value.get(o.id) ?? []).filter(r => r.kind === 'member' && r.b === o.id && isCurrent(r)).length }))
   .sort((a, b) => b.members - a.members || a.o.name.localeCompare(b.o.name)))
 const seat = (o: Entry) => o.fields.seat as string | undefined
 </script>

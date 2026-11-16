@@ -3,7 +3,7 @@
 import type { Entry, EntryType, RecipeLine, Statblock, WorldDate } from './model/types'
 import { craftingMinutes, craftingTime } from './crafting'
 import { SCHEMA, TYPES, type FieldDef } from './model/schema'
-import { dateKey, entries, get, relationsOf } from './store'
+import { dateKey, entries, get, isCurrent, relationsOf } from './store'
 
 export interface Col {
   key: string
@@ -20,7 +20,7 @@ const FIELD_BY_KEY = new Map<string, FieldDef>()
 for (const t of SCHEMA) for (const f of t.fields) if (!FIELD_BY_KEY.has(f.key)) FIELD_BY_KEY.set(f.key, f)
 
 const current = (e: Entry, kind: string, mine: boolean) =>
-  (relationsOf.value.get(e.id) ?? []).filter(r => r.kind === kind && (mine ? r.a === e.id : r.b === e.id) && !r.to).map(r => (mine ? r.b : r.a))
+  (relationsOf.value.get(e.id) ?? []).filter(r => r.kind === kind && (mine ? r.a === e.id : r.b === e.id) && isCurrent(r)).map(r => (mine ? r.b : r.a))
 
 export const recipeCost = (e: Entry) => {
   const lines = e.fields.recipe as RecipeLine[] | undefined

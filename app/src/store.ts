@@ -421,3 +421,10 @@ export function formatDate(d: WorldDate | undefined | null): string {
 }
 
 export const dateKey = (d?: WorldDate | null) => d ? d.year * 10000 + (d.month ?? 0) * 100 + (d.day ?? 0) : Number.NEGATIVE_INFINITY
+/** Is a dated relation true today (in the world)? An end date without month or day runs to the end of that year or month. */
+export function isCurrent(r: Relation): boolean {
+  const today = dateKey(state.db?.meta.today)
+  if (r.from && dateKey(r.from) > today) return false
+  if (r.to && r.to.year * 10000 + (r.to.month ?? 12) * 100 + (r.to.day ?? 99) < today) return false
+  return true
+}

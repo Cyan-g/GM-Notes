@@ -113,6 +113,13 @@ function upgrade(d: Database) {
     d.version = 6
     changed = true
   }
+  // Version 7: Harrowmere's map was lost in the move (the comma in its file name broke the link).
+  if ((d.version ?? 1) < 7) {
+    const u = d.entries['harrowmere']
+    if (u && !u.fields.map) u.fields.map = 'images/Harrowmere, the ashen empire.jpg'
+    d.version = 7
+    changed = true
+  }
   return changed
 }
 

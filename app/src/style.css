@@ -645,7 +645,7 @@ input.init { width: 4em; }
 .sheet-field.k-bool { flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: .5rem; align-self: end; padding-bottom: .4rem; }
 .sheet-field.k-bool > span { font-size: 14px; color: var(--ink-2); }
 .sheet-field.k-list, .sheet-field.k-longtext { grid-column: 1 / -1; }
-.sheet-desc h2 { margin-top: 0; }
+.sheet-desc { display: flex; flex-direction: column; gap: .3rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 .sheet-notes { margin-top: 1.5rem; }
 .sheet-notes > summary { cursor: pointer; font: 600 1.1rem var(--serif); color: var(--ink-2); margin-bottom: .6rem; }
 .entry.editing .entry-grid.no-side { grid-template-columns: minmax(0, 1fr); }

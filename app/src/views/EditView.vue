@@ -118,10 +118,11 @@ function remove() {
                 <FieldInput :id="`f-${f.key}`" :def="f" :entry="e" />
               </label>
             </div>
-          </section>
-          <section class="sheet-desc">
-            <h2>Description</h2>
-            <BodyEditor :model-value="String(e.fields.summary ?? '')" :hint="e.name" @update:model-value="setSummary" />
+            <!-- The description closes the card, the way it ends a spell or item card. -->
+            <div class="sheet-desc">
+              <span class="sf-label">Description</span>
+              <BodyEditor :model-value="String(e.fields.summary ?? '')" :hint="e.name" @update:model-value="setSummary" />
+            </div>
           </section>
           <details class="sheet-notes" :open="!!e.body.trim()">
             <summary>Notes <span class="muted small">(extra text under the card)</span></summary>

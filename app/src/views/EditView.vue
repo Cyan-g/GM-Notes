@@ -34,6 +34,8 @@ const groups = computed(() => {
 // (it's what their card shows), and the general notes folded away underneath. Spells have no side cards.
 const SHEET_TYPES: EntryType[] = ['spell', 'item']
 const noSide = computed(() => e.value?.type === 'spell')
+// A scroll is described by the spell it holds, so it has no description of its own.
+const showDesc = computed(() => !(e.value?.type === 'item' && e.value.fields.kind === 'Scroll'))
 const sheet = computed(() => !!e.value && SHEET_TYPES.includes(e.value.type))
 const sheetFields = computed(() => (def.value?.fields ?? []).filter(f => f.key !== 'summary' && !BIG.includes(f.kind) && shown(f)))
 // Yes/no fields share one row of toggle buttons.
@@ -119,7 +121,7 @@ function remove() {
               </label>
             </div>
             <!-- The description closes the card, the way it ends a spell or item card. -->
-            <div class="sheet-desc">
+            <div v-if="showDesc" class="sheet-desc">
               <span class="sf-label">Description</span>
               <BodyEditor compact :model-value="String(e.fields.summary ?? '')" :hint="e.name" @update:model-value="setSummary" />
             </div>

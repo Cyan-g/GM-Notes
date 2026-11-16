@@ -113,6 +113,7 @@ export const SCHEMA: TypeDef[] = [
   {
     type: 'item', label: 'Item', plural: 'Items', icon: '🗡️', fields: [
       { key: 'kind', label: 'Kind', kind: 'select', options: ITEM_KINDS },
+      { key: 'spell', label: 'Spell', kind: 'ref', to: ['spell'], when: { field: 'kind', is: ['Scroll'] } },
       { key: 'subtype', label: 'Subtype', kind: 'text' },
       { key: 'rarity', label: 'Rarity', kind: 'select', options: ['Common', 'Uncommon', 'Rare', 'Very rare', 'Legendary', 'Artifact'] },
       { key: 'magical', label: 'Magical', kind: 'bool' },
@@ -129,7 +130,7 @@ export const SCHEMA: TypeDef[] = [
       { key: 'slot', label: 'Slot', kind: 'select', options: ['Head', 'Chest', 'Cloak', 'Gloves', 'Boots', 'Shield'], when: A, group: 'Armor' },
       { key: 'category', label: 'Ingredient type', kind: 'select', options: ['Plant', 'Mineral', 'Body Part', 'Fluid', 'Other'], when: ING, group: 'Ingredient' },
       { key: 'craftingType', label: 'Crafted with', kind: 'select', options: ["Alchemist's Supplies", "Herbalism Kit", "Poisoner's Kit", "Calligrapher's Supplies", 'Other'], when: CRAFT, group: 'Crafting' },
-      { key: 'effect', label: 'Effect', kind: 'longtext', when: CRAFT, group: 'Crafting' },
+      { key: 'effect', label: 'Effect', kind: 'longtext', when: { field: 'kind', is: ['Potion', 'Poison', 'Other'] }, group: 'Crafting' },
       { key: 'recipe', label: 'Recipe', kind: 'recipe', when: CRAFT, group: 'Crafting' },
     ],
   },

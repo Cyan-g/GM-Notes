@@ -52,6 +52,7 @@ const bigFields = computed(() => {
   if (!x || !def.value) return []
   return def.value.fields.filter(f => ['recipe', 'stock', 'combatants'].includes(f.kind) && shown(f, x) && !empty(x.fields[f.key]))
 })
+const scrollSpell = computed(() => (e.value?.type === 'item' && e.value.fields.kind === 'Scroll' ? get(e.value.fields.spell as string) : undefined))
 const statblock = computed(() => e.value?.fields.statblock as Statblock | undefined)
 const raceText = computed(() => e.value?.fields.raceText as string | undefined)
 
@@ -207,6 +208,11 @@ const siblings = computed(() => {
         <div v-if="e.type === 'item'" class="item-top">
           <ItemCard :e="e" />
         </div>
+        <!-- A scroll shows the spell it holds. -->
+        <section v-if="scrollSpell" class="scroll-spell">
+          <h2>🔮 <EntryLink :id="scrollSpell.id" /></h2>
+          <SpellCard :e="scrollSpell" />
+        </section>
         <SpellCard v-if="e.type === 'spell'" :e="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
         <MarkdownView v-if="e.body" :source="e.body" />

@@ -74,6 +74,27 @@ function upgrade(d: Database) {
     d.version = 3
     changed = true
   }
+  // Version 4: scrolls link the spell they hold instead of describing it. Each "Scroll of X" gets
+  // linked to the spell X (created empty if it doesn't exist yet), and the generated boilerplate goes.
+  if ((d.version ?? 1) < 4) {
+    for (const e of Object.values(d.entries)) {
+      if (e.type !== 'item' || e.fields.kind !== 'Scroll' || e.fields.spell) continue
+      const name = e.name.match(/^scroll of (.+)$/i)?.[1]?.trim()
+      if (!name) continue
+      let spell = Object.values(d.entries).find(x => x.type === 'spell' && x.name.toLowerCase() === name.toLowerCase())
+      if (!spell) {
+        const id = name.toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+        const now = new Date().toISOString()
+        spell = { id: d.entries[id] ? `${id}-spell` : id, type: 'spell', name, aliases: [], tags: [], fields: {}, body: '', visibility: e.visibility, created: now, updated: now }
+        d.entries[spell.id] = spell
+      }
+      e.fields.spell = spell.id
+      if (/lets you cast/i.test(String(e.fields.summary ?? ''))) delete e.fields.summary
+      if (/^\*\*Effect\*\*\s*Use an action to cast/i.test(e.body.trim())) e.body = ''
+    }
+    d.version = 4
+    changed = true
+  }
   return changed
 }
 

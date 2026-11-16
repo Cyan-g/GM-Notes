@@ -29,6 +29,12 @@ const groups = computed(() => {
   }
   return [...out]
 })
+// Spells edit like a sheet: all their stats in the main column, the description as the big text
+// (it's what the spell card shows), and the general notes folded away underneath.
+const SHEET_TYPES: EntryType[] = ['spell']
+const sheet = computed(() => !!e.value && SHEET_TYPES.includes(e.value.type))
+const sheetFields = computed(() => (def.value?.fields ?? []).filter(f => f.key !== 'summary' && !BIG.includes(f.kind) && shown(f)))
+function setSummary(v: string) { if (v.trim()) e.value!.fields.summary = v; else delete e.value!.fields.summary; changed(e.value!) }
 const bigFields = computed(() => (def.value?.fields ?? []).filter(f => BIG.includes(f.kind) && shown(f)))
 
 function setName(v: string) { if (v.trim()) { e.value!.name = v.trim(); changed(e.value!) } }
@@ -82,7 +88,25 @@ function remove() {
 
     <div class="entry-grid">
       <div class="entry-main">
-        <BodyEditor :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
+        <template v-if="sheet">
+          <section class="card sheet-form">
+            <div class="sheet-grid">
+              <label v-for="f in sheetFields" :key="f.key" class="sheet-field" :class="'k-' + f.kind">
+                <span>{{ f.label }}</span>
+                <FieldInput :id="`f-${f.key}`" :def="f" :entry="e" />
+              </label>
+            </div>
+          </section>
+          <section class="sheet-desc">
+            <h2>Description</h2>
+            <BodyEditor :model-value="String(e.fields.summary ?? '')" :hint="e.name" @update:model-value="setSummary" />
+          </section>
+          <details class="sheet-notes" :open="!!e.body.trim()">
+            <summary>Notes <span class="muted small">(extra text under the card)</span></summary>
+            <BodyEditor :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
+          </details>
+        </template>
+        <BodyEditor v-else :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
         <section v-if="e.type === 'place'">
           <h2>Map</h2>
           <ImageInput :model-value="e.fields.map as string | undefined" :hint="e.name + ' map'" @update:model-value="setMap" />
@@ -99,7 +123,7 @@ function remove() {
           <h3>Picture</h3>
           <ImageInput :model-value="e.image" :hint="e.name" @update:model-value="setImage" />
         </div>
-        <div v-for="[g, fs] in groups" :key="g" class="card">
+        <div v-for="[g, fs] in sheet ? [] : groups" :key="g" class="card">
           <h3>{{ g }}</h3>
           <div class="form-grid">
             <template v-for="f in fs" :key="f.key">

@@ -632,3 +632,15 @@ input.init { width: 4em; }
 .sbk-actions .chip-btn { font-size: 12px; padding: .15em .7em; }
 .sbk-actions .chip-btn:disabled { opacity: .4; cursor: default; }
 .sbk-actions .link-btn { margin-left: .5rem; }
+
+/* ---------- sheet-style editing (spells) ---------- */
+.sheet-form { margin-bottom: 1.5rem; }
+.sheet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .7rem 1rem; }
+.sheet-field { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
+.sheet-field > span { font-size: 12px; color: var(--muted); }
+.sheet-field.k-bool { flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: .5rem; align-self: end; padding-bottom: .4rem; }
+.sheet-field.k-bool > span { font-size: 14px; color: var(--ink-2); }
+.sheet-field.k-list, .sheet-field.k-longtext { grid-column: 1 / -1; }
+.sheet-desc h2 { margin-top: 0; }
+.sheet-notes { margin-top: 1.5rem; }
+.sheet-notes > summary { cursor: pointer; font: 600 1.1rem var(--serif); color: var(--ink-2); margin-bottom: .6rem; }

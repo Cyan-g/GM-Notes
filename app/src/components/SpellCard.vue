@@ -3,7 +3,7 @@
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { describe } from '../describe'
-import { renderInline } from '../markdown'
+import MarkdownView from './MarkdownView.vue'
 
 const props = defineProps<{ e: Entry }>()
 const f = computed(() => props.e.fields as Record<string, any>)
@@ -22,7 +22,7 @@ const grid = computed(() => ([
     <div class="sc-grid">
       <div v-for="[k, v] in grid" :key="k"><b>{{ k }}</b><span>{{ v || '—' }}</span></div>
     </div>
-    <p v-if="f.summary" class="sc-text" v-html="renderInline(f.summary)" />
+    <MarkdownView v-if="f.summary" class="sc-text" :source="String(f.summary)" />
     <div v-if="f.classes?.length" class="sc-classes"><span class="muted small">Classes:</span> <span class="chips"><span v-for="c in f.classes" :key="c" class="chip">{{ c }}</span></span></div>
   </div>
 </template>

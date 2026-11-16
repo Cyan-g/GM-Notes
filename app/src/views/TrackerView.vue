@@ -83,6 +83,8 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
       <h1><span class="icon">⚔</span>Encounter <span v-if="t.round" class="count">round {{ t.round }}</span></h1>
       <span v-if="encounter" class="muted"><EntryLink :id="encounter.id" icon /></span>
       <span class="spacer" />
+      <button v-if="t.combatants.length" title="Roll d20 + Dex for every monster without an initiative" @click="rollInitiative()">🎲 Roll for monsters</button>
+      <button v-if="t.combatants.length" class="danger" title="End the fight: monsters go, player characters stay with full HP" @click="clearAll">Clear</button>
       <div class="cal-nav">
         <button title="Previous turn (P)" :disabled="t.turn < 0" @click="nextTurn(-1)">◀</button>
         <button class="primary" title="Next turn (N or Space)" :disabled="!t.combatants.length" @click="nextTurn()">{{ t.turn < 0 ? '⚔ Start combat' : 'Next ▶' }}</button>
@@ -90,10 +92,11 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
     </header>
 
     <!-- The order of play, starting with whoever is acting. -->
-    <div v-if="t.combatants.length" class="init-strip card">
+    <div class="init-strip card" :class="{ empty: !t.combatants.length }">
+      <span v-if="!t.combatants.length" class="muted small">The initiative order shows up here once there's someone in the fight.</span>
       <template v-for="(part, pi) in [order.now, order.next]" :key="pi">
         <span v-if="pi === 1 && part.length" class="init-wrap" :title="`Round ${t.round + 1}`">↻ {{ t.round ? t.round + 1 : '' }}</span>
-        <button v-for="({ c }, k) in part" :key="c.id" type="button" class="init-chip"
+        <button v-for="{ c } in part" :key="c.id" type="button" class="init-chip"
                 :class="[stripState(c), { now: current(c), party: isParty(c), sel: selected === c.id }]"
                 :title="`${c.name}${c.init != null ? ' · initiative ' + c.init : ''}`" @click="selected = c.id">
           <span class="init-num">{{ c.init ?? '–' }}</span>
@@ -104,37 +107,29 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
       </template>
     </div>
 
-    <details class="card tracker-tools-wrap" :open="!t.combatants.length">
-      <summary>Add to the fight</summary>
-      <div class="tracker-tools">
-        <label><span>Encounter</span><EntryPicker :model-value="t.encounter ?? null" :types="['encounter']" placeholder="Load an encounter…" @update:model-value="load" /></label>
-        <label><span>Party</span>
-          <span class="row">
-            <select v-model="partyCampaign"><option value="">All player characters ({{ partyOf().length }})</option><option v-for="c in campaigns" :key="c.id" :value="c.id">{{ c.name }} ({{ partyOf(c.id).length }})</option></select>
-            <button @click="addParty">Add</button>
-          </span>
-        </label>
-        <label><span>Ally</span><EntryPicker add :types="['npc', 'creature', 'pc']" placeholder="Name…" @pick="addAlly" /></label>
-        <label><span>Enemy</span><EntryPicker add :types="['creature', 'npc', 'pc']" placeholder="Name…" @pick="addEntry" /></label>
-        <label><span>…or anything</span><input v-model="freeName" placeholder="e.g. Goblin" @keydown.enter="addFree" /></label>
-        <span class="spacer" />
-        <button title="Roll d20 + Dex for every monster without an initiative" @click="rollInitiative()">🎲 Roll for monsters</button>
-        <button class="danger" @click="clearAll">Clear</button>
-      </div>
-    </details>
-
-    <p v-if="!t.combatants.length" class="muted pad">Load an encounter, add your party, or add creatures one by one.</p>
-
-    <div v-else class="sides">
+    <div class="sides">
       <section class="side-col">
         <h2 class="side-title">🛡 Party &amp; allies <span class="muted small">{{ party.length }}</span></h2>
         <CombatantCard v-for="c in party" :key="c.id" :c="c" :current="current(c)" :selected="selected === c.id" @select="selected = c.id" @stats="shown = c.id" />
-        <p v-if="!party.length" class="muted small">No one yet: add the party above.</p>
+        <!-- Adding: a big card while the side is empty, a slim one under the fighters after. -->
+        <div class="card side-add" :class="{ slim: party.length }">
+          <label><span>Party</span>
+            <span class="row">
+              <select v-model="partyCampaign"><option value="">All player characters ({{ partyOf().length }})</option><option v-for="c in campaigns" :key="c.id" :value="c.id">{{ c.name }} ({{ partyOf(c.id).length }})</option></select>
+              <button @click="addParty">Add</button>
+            </span>
+          </label>
+          <label><span>Ally</span><EntryPicker add :types="['npc', 'creature', 'pc']" placeholder="Add an ally by name…" @pick="addAlly" /></label>
+        </div>
       </section>
       <section class="side-col enemies">
-        <h2 class="side-title">☠ Enemies <span class="muted small">{{ enemies.filter(c => !(c.hp != null && c.hp <= 0)).length }} / {{ enemies.length }} standing</span></h2>
+        <h2 class="side-title">☠ Enemies <span v-if="enemies.length" class="muted small">{{ enemies.filter(c => !(c.hp != null && c.hp <= 0)).length }} / {{ enemies.length }} standing</span></h2>
         <CombatantCard v-for="c in enemies" :key="c.id" :c="c" :current="current(c)" :selected="selected === c.id" @select="selected = c.id" @stats="shown = c.id" />
-        <p v-if="!enemies.length" class="muted small">No enemies yet.</p>
+        <div class="card side-add" :class="{ slim: enemies.length }">
+          <label><span>Encounter</span><EntryPicker :model-value="t.encounter ?? null" :types="['encounter']" placeholder="Load an encounter…" @update:model-value="load" /></label>
+          <label><span>Enemy</span><EntryPicker add :types="['creature', 'npc', 'pc']" placeholder="Add a creature by name…" @pick="addEntry" /></label>
+          <label><span>…or anything</span><input v-model="freeName" placeholder="e.g. Goblin, then Enter" @keydown.enter="addFree" /></label>
+        </div>
       </section>
     </div>
 

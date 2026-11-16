@@ -790,3 +790,13 @@ input.init { width: 4em; }
 .cond-icon:hover { opacity: .7; }
 .cond-icon.on { filter: none; opacity: 1; background: var(--secret-bg); border-color: var(--secret-line); }
 .cond-names { font-size: 12px; color: var(--accent); margin-top: .2rem; }
+
+/* encounter: adding sits in each column; big while the side is empty, slim and quiet once there are fighters */
+.init-strip.empty { min-height: 48px; align-items: center; justify-content: center; border-style: dashed; box-shadow: none; }
+.side-add { display: flex; flex-direction: column; gap: .6rem; border-style: dashed; box-shadow: none; padding: 1rem; }
+.side-add label { display: flex; flex-direction: column; gap: .2rem; font-size: 12px; color: var(--muted); }
+.side-add .row { display: flex; gap: .3rem; }
+.side-add .row select { flex: 1; min-width: 0; }
+.side-add.slim { flex-direction: row; flex-wrap: wrap; align-items: end; padding: .5rem .8rem; background: transparent; }
+.side-add.slim label { flex: 1 1 180px; }
+.tracker-view .list-head > button { align-self: center; }

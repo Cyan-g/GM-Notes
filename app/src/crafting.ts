@@ -2,10 +2,12 @@
 // (and does not count as resting).
 const CP_PER_HOUR = 50 * 100
 
-/** Minutes to craft an item worth `valueCp` copper; undefined without a value. At least one minute. */
+/** Minutes to craft an item worth `valueCp` copper; undefined without a value.
+ *  At least one minute; anything over an hour is rounded to whole hours. */
 export function craftingMinutes(valueCp: unknown): number | undefined {
   if (typeof valueCp !== 'number' || !(valueCp > 0)) return undefined
-  return Math.max(1, Math.round((valueCp / CP_PER_HOUR) * 60))
+  const min = Math.max(1, Math.round((valueCp / CP_PER_HOUR) * 60))
+  return min > 60 ? Math.round(min / 60) * 60 : min
 }
 
 /** "45 min", "2 h 30 min", "1 day 2 h" (days of 24 hours, since brewing is just time spent). */

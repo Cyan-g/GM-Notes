@@ -78,6 +78,9 @@ export function buildTree(focus: Id): Tree {
   rows.forEach(row => { let cur = 0; for (const b of row) { b.forEach((id, i) => x.set(id, cur + i * (NODE_W + GAP))); cur += width(b) + BLOCK_GAP } })
   const centre = (id: Id) => x.get(id)! + NODE_W / 2
   const mean = (v: number[]) => v.reduce((s, n) => s + n, 0) / v.length
+  /** Brothers and sisters in the same row: recorded as siblings, or sharing a parent. */
+  const sibsOf = (id: Id) => order.filter(o => o !== id && gen.get(o) === gen.get(id)
+    && (K(id).siblings.includes(o) || K(o).siblings.includes(id) || parentsIn(o).some(q => parentsIn(id).includes(q))))
   function place(row: Id[][], linked: (id: Id) => Id[]) {
     // Order blocks by where they want to be, then lay them out left to right without overlapping.
     const want = (b: Id[]) => { const l = b.flatMap(linked); return l.length ? mean(l.map(centre)) : mean(b.map(centre)) }
@@ -99,10 +102,10 @@ export function buildTree(focus: Id): Tree {
     // A couple where one married in: the one born into this tree stands on the side of their brothers and sisters.
     for (const b of row) {
       if (b.length !== 2) continue
-      const born = b.filter(id => parentsIn(id).length)
+      const born = b.filter(id => sibsOf(id).some(o => !b.includes(o)))
       if (born.length !== 1) continue
       const p = born[0]
-      const sibs = row.flat().filter(o => o !== p && !b.includes(o) && parentsIn(o).some(q => parentsIn(p).includes(q)))
+      const sibs = sibsOf(p).filter(o => !b.includes(o))
       if (!sibs.length) continue
       const sibsRight = mean(sibs.map(centre)) > centre(p)
       if (sibsRight !== (b[1] === p)) {
@@ -119,9 +122,11 @@ export function buildTree(focus: Id): Tree {
     const viaSibs = sibs.flatMap(parentsIn)
     return viaSibs.length ? viaSibs : sibs
   }
+  /** Going up: over one's children; someone without children here stands by their brothers and sisters. */
+  const below = (id: Id) => { const c = childrenIn(id); return c.length ? c : sibsOf(id) }
   for (let pass = 0; pass < 2; pass++) {
     for (let i = 1; i < rows.length; i++) place(rows[i], above)
-    for (let i = rows.length - 2; i >= 0; i--) place(rows[i], childrenIn)
+    for (let i = rows.length - 2; i >= 0; i--) place(rows[i], below)
   }
   for (let i = 1; i < rows.length; i++) place(rows[i], above)
 

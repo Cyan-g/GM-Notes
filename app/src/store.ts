@@ -178,6 +178,54 @@ function upgrade(d: Database) {
     d.version = 9
     changed = true
   }
+  // Version 10: families written in the notes become relations, so the family trees show them. Relatives who are
+  // named but had no entry (the Stonefist parents, Rowan's family) get one.
+  if ((d.version ?? 1) < 10) {
+    const now = new Date().toISOString()
+    let seq = 0
+    const person = (id: Id, name: string, fields: Record<string, unknown>, body: string) => {
+      if (!d.entries[id]) d.entries[id] = { id, type: 'npc', name, aliases: [], tags: [], fields, body, visibility: 'secret', created: now, updated: now }
+    }
+    person('vike-stonefist', 'Vike Stonefist', { race: 'human', gender: 'male', age: '52' },
+      '# History\nCarpenter in the 6th generation. A simple and traditional man, who wants his sons to take over his business when he retires. Doesn\'t understand [[doran-stonefist|Doran]]\' fascination with music and poetry.')
+    person('greta-stonefist', 'Greta Stonefist', { race: 'human', gender: 'female', age: '47' },
+      '# History\nFormerly a locally renowned musician, now helps Vike in the family business. She never lost her passion for music and passed it on to [[doran-stonefist|Doran]]: she taught him to play her lute and gifted it to him.')
+    person('bram-hale', 'Bram Hale', { gender: 'male' },
+      '# History\nFather of Tomas II, Edric and [[rowan-hale|Rowan]]. Deceased; since his death his brother Osric runs the family\'s affairs.')
+    person('ilsa-marsh', 'Ilsa Marsh', { gender: 'female' },
+      '# History\nMother of Tomas II, Edric and [[rowan-hale|Rowan]]. Since the death of her husband Bram she has kept her distance from the family and drinks.')
+    person('edric-hale', 'Edric Hale', { gender: 'male' },
+      '# History\nThe middle of the three Hale brothers. A learned philosopher who presses a few too many wisdoms on [[rowan-hale|Rowan]].')
+    person('osric-hale', 'Osric Hale', { gender: 'male' },
+      '# History\nCyrus\'s uncle. Has run the family\'s affairs since Bram died, until Tomas II turns 25 this year. A shrewd fox who has brought the family more wealth; he treats Tomas II like his own son, having only twin daughters himself.')
+    const has = (a: Id, b: Id, kind: Relation['kind']) => d.relations.some(r => r.kind === kind && ((r.a === a && r.b === b) || (r.a === b && r.b === a)))
+    const rel = (a: Id, b: Id, kind: Relation['kind'], role?: string) => {
+      if (!d.entries[a] || !d.entries[b] || has(a, b, kind)) return
+      d.relations.push({ id: `rfam${(seq++).toString(36)}${Date.now().toString(36)}`, a, b, kind, visibility: 'secret', ...(role ? { role } : {}) })
+    }
+    // From the notes
+    rel('doran-stonefist', 'adrian-stonefist', 'sibling')
+    rel('eldar', 'kael', 'parent'); rel('lysara', 'kael', 'parent'); rel('eldar', 'lysara', 'spouse')
+    rel('inaya-sugarscale', 'cualli-sugarscale', 'sibling')
+    rel('shawn-nettle', 'olivia-nettle', 'parent')
+    rel('james-miller', 'molly-miller', 'spouse')
+    rel('naphala-ular', 'akhim-ular', 'parent')
+    rel('tirbalt-westmarch', 'queen-lafira', 'spouse')
+    rel('high-priestess-zuhla', 'rell-astra', 'sibling')
+    rel('vega', 'antares-ashby', 'sibling', 'twin')
+    rel('bartholomeus-witchlight', 'wayland-witchlight', 'related', 'cousin')
+    // The Duuthalds
+    rel('vike-stonefist', 'greta-stonefist', 'spouse')
+    for (const kid of ['doran-stonefist', 'adrian-stonefist']) { rel('vike-stonefist', kid, 'parent'); rel('greta-stonefist', kid, 'parent') }
+    rel('vike-stonefist', 'mariners-peak', 'lives-in'); rel('greta-stonefist', 'mariners-peak', 'lives-in')
+    // The Mithras: three brothers, their parents, and their uncle
+    rel('bram-hale', 'ilsa-marsh', 'spouse')
+    for (const kid of ['tomas-hale', 'edric-hale', 'rowan-hale']) { rel('bram-hale', kid, 'parent'); rel('ilsa-marsh', kid, 'parent') }
+    rel('tomas-hale', 'edric-hale', 'sibling'); rel('tomas-hale', 'rowan-hale', 'sibling'); rel('edric-hale', 'rowan-hale', 'sibling')
+    rel('osric-hale', 'bram-hale', 'sibling')
+    d.version = 10
+    changed = true
+  }
   return changed
 }
 

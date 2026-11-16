@@ -122,7 +122,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
     <header class="list-head">
       <h1><span class="icon">📖</span>Spellbook</h1>
       <div class="row-btns">
-        <button title="Every slot back" @click="longRest">🌙 Long rest</button>
+        <button title="Every spell slot back" @click="longRest">🌙 Restore spell slots</button>
         <button @click="newEntry('spell')">＋ New spell</button>
       </div>
     </header>

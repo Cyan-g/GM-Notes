@@ -22,6 +22,7 @@ export function describe(e: Entry, { parent = true } = {}): string {
       return join([sb?.size, f.creatureType ?? sb?.creatureType].filter(Boolean).join(' '), sb?.cr && `CR ${sb.cr}`)
     }
     case 'deity': return join(f.rank, (f.domains as string[] | undefined)?.join(', '), f.alignment)
+    case 'feat': return join(f.category, f.level && `level ${f.level}+`, name(f.source) && `from ${name(f.source)}`)
     case 'race': return join(f.parent ? `subrace of ${name(f.parent)}` : '', f.size, f.speed && `speed ${f.speed}`, f.abilityIncrease)
     case 'event': return join(formatDate(f.date as WorldDate), f.category)
     case 'session': return join(name(f.campaign), f.number != null && `session ${f.number}`, formatDate(f.date as WorldDate))

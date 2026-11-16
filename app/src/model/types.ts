@@ -13,7 +13,7 @@ export type Visibility = 'secret' | 'known'
 
 export type EntryType =
   | 'npc' | 'pc' | 'organization' | 'place' | 'race' | 'deity' | 'creature'
-  | 'item' | 'spell' | 'subclass' | 'event' | 'campaign' | 'session' | 'encounter' | 'writing' | 'note'
+  | 'item' | 'spell' | 'feat' | 'subclass' | 'event' | 'campaign' | 'session' | 'encounter' | 'writing' | 'note'
 
 export interface Entry {
   id: Id

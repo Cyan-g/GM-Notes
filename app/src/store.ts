@@ -279,6 +279,83 @@ function upgrade(d: Database) {
     d.version = 14
     changed = true
   }
+  // Version 15: feats written under a "Feats" heading become feat entries, granted by the entry they were in.
+  //   - **Ironwall** - Fighting Style            (with sub-bullets: Prerequisite, Ability Score increase, text)
+  //   **Origin Feat** - Sanguine expert             (the text on the following lines)
+  // Anything else in those sections (a subclass, a spell perk) stays as text.
+  if ((d.version ?? 1) < 15) {
+    const now = new Date().toISOString()
+    const isKind = (s: string) => /\b(feat|fighting style|boon)\b/i.test(s)
+    const kindOf = (s: string) => /origin/i.test(s) ? 'Origin Feat' : /fighting style/i.test(s) ? 'Fighting Style' : /boon/i.test(s) ? 'Epic Boon' : /feat/i.test(s) ? 'General Feat' : 'Other'
+    const slugOf = (s: string) => s.toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    const needs: { feat: Entry; names: string[] }[] = []
+    for (const host of Object.values(d.entries)) {
+      const lines = host.body.split('\n')
+      const h = lines.findIndex(l => /^#{1,6}\s+feats?\s*$/i.test(l.trim()))
+      if (h < 0) continue
+      const level = lines[h].trim().match(/^#+/)![0].length
+      let end = lines.findIndex((l, i) => i > h && /^#{1,6}\s/.test(l.trim()) && l.trim().match(/^#+/)![0].length <= level)
+      if (end < 0) end = lines.length
+      const drop = new Set<number>()
+      for (let i = h + 1; i < end; i++) {
+        const a = lines[i].match(/^-\s*\*\*(.+?)\*\*\s*-\s*(.+?)\s*$/)
+        const b = lines[i].match(/^\*\*(.+?)\*\*\s*-\s*(.+?)\s*$/)
+        let name = '', kind = ''
+        const text: string[] = []
+        const f: Record<string, unknown> = {}
+        let j = i + 1
+        if (a && isKind(a[2])) {
+          name = a[1].trim(); kind = kindOf(a[2])
+          for (; j < end && (/^\s+-/.test(lines[j]) || (!lines[j].trim() && /^\s+-/.test(lines[j + 1] ?? ''))); j++) {
+            const t = lines[j].replace(/^\s+-\s*/, '').trim()
+            if (!t) continue
+            const pre = t.match(/^\*\*prerequisite\*\*\s*:?\s*(.*)$/i)
+            const asi = t.match(/^\*\*ability score increase:?\*\*\s*:?\s*(.*)$/i)
+            if (pre) {
+              const others: string[] = []
+              for (const p of pre[1].split('|').map(x => x.trim()).filter(Boolean)) {
+                const lv = p.match(/^level\s*(\d+)\+?$/i)
+                if (lv) f.level = Number(lv[1])
+                else others.push(p)
+              }
+              if (others.length) f.prerequisiteNames = others
+            } else if (asi) f.abilityIncrease = asi[1].trim()
+            else text.push(t)
+          }
+        } else if (b && isKind(b[1])) {
+          kind = kindOf(b[1]); name = b[2].trim()
+          name = name[0].toUpperCase() + name.slice(1)
+          for (; j < end && lines[j].trim() && !/^\*\*/.test(lines[j].trim()) && !/^#/.test(lines[j].trim()); j++) text.push(lines[j].trim())
+        } else continue
+        let id = slugOf(name), n = 2
+        while (d.entries[id]) id = `${slugOf(name)}-${n++}`
+        const names = (f.prerequisiteNames as string[] | undefined) ?? []
+        delete f.prerequisiteNames
+        const feat: Entry = {
+          id, type: 'feat', name, aliases: [], tags: [], body: '', visibility: host.visibility, created: now, updated: now,
+          fields: { category: kind, ...f, source: host.id, ...(text.length ? { summary: text.join('\n\n') } : {}) },
+        }
+        d.entries[id] = feat
+        if (names.length) needs.push({ feat, names })
+        for (let k = i; k < j; k++) drop.add(k)
+        i = j - 1
+      }
+      if (!drop.size) continue
+      host.body = lines.filter((_, k) => !drop.has(k)).join('\n').replace(/\n{3,}/g, '\n\n')
+    }
+    // "Prerequisite: Level 8+ | Barricade": a name that is a feat becomes a link, anything else stays as text.
+    for (const { feat, names } of needs) {
+      const ids: Id[] = [], rest: string[] = []
+      for (const nm of names) {
+        const hit = Object.values(d.entries).find(x => x.type === 'feat' && x.name.toLowerCase() === nm.toLowerCase())
+        if (hit) ids.push(hit.id); else rest.push(nm)
+      }
+      if (ids.length) feat.fields.requires = ids
+      if (rest.length) feat.fields.prerequisite = rest.join(', ')
+    }
+    d.version = 15
+    changed = true
+  }
   return changed
 }
 

@@ -68,6 +68,8 @@ function entriesOf(t: EntryType): MenuNode[] {
       return grouped(list, e => String(e.fields.kind ?? ''), SCHEMA.find(s => s.type === 'item')!.fields.find(f => f.key === 'kind')!.options)
     case 'spell':
       return grouped(list, e => (e.fields.level === 'Cantrip' ? 'Cantrips' : e.fields.level ? `Level ${e.fields.level}` : ''), ['Cantrips', ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `Level ${n}`)])
+    case 'feat':
+      return grouped(list, e => String(e.fields.category ?? ''))
     case 'subclass':
       return grouped(list, e => String(e.fields.class ?? ''))
     default:
@@ -189,7 +191,7 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'Archive',
-    owns: r => ['item', 'creature', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
-    items: () => (['item', 'creature', 'subclass', 'writing', 'note'] as EntryType[]).map(typeNode),
+    owns: r => ['item', 'creature', 'feat', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
+    items: () => (['item', 'creature', 'feat', 'subclass', 'writing', 'note'] as EntryType[]).map(typeNode),
   },
 ]

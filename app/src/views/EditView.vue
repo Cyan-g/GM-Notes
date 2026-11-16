@@ -34,8 +34,8 @@ const groups = computed(() => {
 })
 // Spells and items edit like a sheet: their stats in the main column, the description as the big text
 // (it's what their card shows), and the general notes folded away underneath. Spells have no side cards.
-const SHEET_TYPES: EntryType[] = ['spell', 'item', 'creature']
-const noSide = computed(() => e.value?.type === 'spell')
+const SHEET_TYPES: EntryType[] = ['spell', 'item', 'creature', 'feat']
+const noSide = computed(() => e.value?.type === 'spell' || e.value?.type === 'feat')
 // A scroll is described by the spell it holds, so it has no description of its own.
 const showDesc = computed(() => !(e.value?.type === 'item' && e.value.fields.kind === 'Scroll'))
 // Creatures are their statblock: the form on the left, the finished block on the right, no text editor

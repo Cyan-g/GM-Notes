@@ -20,6 +20,7 @@ import MembersCard from '../components/MembersCard.vue'
 import DataImage from '../components/DataImage.vue'
 import ItemCard from '../components/ItemCard.vue'
 import SpellCard from '../components/SpellCard.vue'
+import FeatCard from '../components/FeatCard.vue'
 import { describe } from '../describe'
 import TimelineChart from '../components/TimelineChart.vue'
 import TimelineList from '../components/TimelineList.vue'
@@ -40,7 +41,7 @@ const shown = (f: FieldDef, x: Entry) => !f.when || f.when.is.includes(String(x.
 const groups = computed(() => {
   const x = e.value
   if (!x || !def.value) return []
-  if (x.type === 'item' || x.type === 'spell') return []
+  if (x.type === 'item' || x.type === 'spell' || x.type === 'feat') return []
   const big = ['statblock', 'recipe', 'stock', 'combatants', 'ranks']
   const out = new Map<string, { def: FieldDef; value: unknown }[]>()
   for (const f of def.value.fields) {
@@ -56,22 +57,50 @@ const bigFields = computed(() => {
   if (!x || !def.value) return []
   return def.value.fields.filter(f => ['recipe', 'stock', 'combatants', 'ranks'].includes(f.kind) && shown(f, x) && !empty(x.fields[f.key]))
 })
-/** An organization's ranks sit at the end of its "Structure" section, where the table used to be in the text. */
-const rankSplit = computed(() => {
-  const x = e.value
-  if (x?.type !== 'organization' || empty(x.fields.ranks)) return null
-  const lines = x.body.split('\n')
-  const h = lines.findIndex(l => /^#{1,6}\s+structure\s*$/i.test(l.trim()))
-  if (h < 0) return null
-  const level = lines[h].trim().match(/^#+/)![0].length
-  let end = lines.findIndex((l, i) => i > h && /^#{1,6}\s/.test(l.trim()) && l.trim().match(/^#+/)![0].length <= level)
-  if (end < 0) end = lines.length
-  // Before another table in that section (the Iron Branch's services), else at its end.
-  const table = lines.findIndex((l, i) => i > h && i < end && l.trim().startsWith('|'))
-  if (table > 0) end = table
-  return { before: lines.slice(0, end).join('\n'), after: lines.slice(end).join('\n') }
-})
+/** The feats an entry grants (an organization's fighting styles and the like). */
+const grantedFeats = computed(() => (e.value ? (byType.value.get('feat') ?? []).filter(f => f.fields.source === e.value!.id).sort((a, b) => a.name.localeCompare(b.name)) : []))
 const ranksDef = computed(() => def.value?.fields.find(f => f.kind === 'ranks'))
+/**
+ * The text cut where data belongs inside it: an organization's ranks at the end of its "Structure" section
+ * (before another table there), and granted feats right under a "Feats" heading. What has no heading to go
+ * under is shown after the text instead.
+ */
+const bodyParts = computed(() => {
+  const x = e.value
+  if (!x) return { parts: [] as { md?: string; insert?: 'ranks' | 'feats' }[], placed: new Set<string>() }
+  const lines = x.body.split('\n')
+  const heading = (name: string) => lines.findIndex(l => new RegExp(`^#{1,6}\\s+${name}\\s*$`, 'i').test(l.trim()))
+  const sectionEnd = (h: number) => {
+    const level = lines[h].trim().match(/^#+/)![0].length
+    const end = lines.findIndex((l, i) => i > h && /^#{1,6}\s/.test(l.trim()) && l.trim().match(/^#+/)![0].length <= level)
+    return end < 0 ? lines.length : end
+  }
+  const cuts: { at: number; insert: 'ranks' | 'feats' }[] = []
+  if (x.type === 'organization' && !empty(x.fields.ranks)) {
+    const h = heading('structure')
+    if (h >= 0) {
+      const end = sectionEnd(h)
+      const table = lines.findIndex((l, i) => i > h && i < end && l.trim().startsWith('|'))
+      cuts.push({ at: table > 0 ? table : end, insert: 'ranks' })
+    }
+  }
+  if (grantedFeats.value.length) {
+    const h = heading('feats?')
+    if (h >= 0) cuts.push({ at: h + 1, insert: 'feats' })
+  }
+  cuts.sort((p, q) => p.at - q.at)
+  const parts: { md?: string; insert?: 'ranks' | 'feats' }[] = []
+  let from = 0
+  for (const c of cuts) {
+    const md = lines.slice(from, c.at).join('\n')
+    if (md.trim()) parts.push({ md })
+    parts.push({ insert: c.insert })
+    from = c.at
+  }
+  const rest = lines.slice(from).join('\n')
+  if (rest.trim()) parts.push({ md: rest })
+  return { parts, placed: new Set(cuts.map(c => c.insert)) }
+})
 const scrollSpell = computed(() => (e.value?.type === 'item' && e.value.fields.kind === 'Scroll' ? get(e.value.fields.spell as string) : undefined))
 const statblock = computed(() => e.value?.fields.statblock as Statblock | undefined)
 const raceText = computed(() => e.value?.fields.raceText as string | undefined)
@@ -118,7 +147,7 @@ const onMaps = computed(() => {
 
 // A place's kind shows as its badge, so a place has no lead line of its own.
 // Places show their kind as the badge; items and spells show their line inside their card.
-const lead = computed(() => (e.value && !['place', 'item', 'spell'].includes(e.value.type) ? describe(e.value, { parent: false }) : ''))
+const lead = computed(() => (e.value && !['place', 'item', 'spell', 'feat'].includes(e.value.type) ? describe(e.value, { parent: false }) : ''))
 
 /** The few facts that belong right under the name: affiliations, home, rulers, leaders. */
 const LEADER = /(leader|head|chief|duke|duchess|king|queen|abbess|abbot|master|captain|high priest|archbishop|matriarch|patriarch|lord|lady|commander|general|elder)/i
@@ -246,17 +275,22 @@ const siblings = computed(() => {
         </section>
         <SpellCard v-if="e.type === 'spell'" :e="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
-        <template v-if="rankSplit && ranksDef">
-          <MarkdownView :source="rankSplit.before" />
-          <FieldValue :def="ranksDef" :value="e.fields.ranks" :entry="e" />
-          <MarkdownView v-if="rankSplit.after.trim()" :source="rankSplit.after" />
+        <FeatCard v-if="e.type === 'feat'" :e="e" source />
+        <template v-for="(p, i) in bodyParts.parts" :key="i">
+          <MarkdownView v-if="p.md" :source="p.md" />
+          <FieldValue v-else-if="p.insert === 'ranks' && ranksDef" :def="ranksDef" :value="e.fields.ranks" :entry="e" />
+          <div v-else-if="p.insert === 'feats'" class="feat-list"><FeatCard v-for="f in grantedFeats" :key="f.id" :e="f" title /></div>
         </template>
-        <MarkdownView v-else-if="e.body" :source="e.body" />
-        <p v-else-if="!['item', 'spell', 'creature', 'encounter'].includes(e.type)" class="muted">No text yet.</p>
+        <p v-if="!e.body && !['item', 'spell', 'feat', 'creature', 'encounter'].includes(e.type)" class="muted">No text yet.</p>
 
-        <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => !(rankSplit && f.kind === 'ranks'))" :key="f.key">
+        <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => !(bodyParts.placed.has('ranks') && f.kind === 'ranks'))" :key="f.key">
           <h2>{{ f.label }}</h2>
           <FieldValue :def="f" :value="e.fields[f.key]" :entry="e" />
+        </section>
+
+        <section v-if="grantedFeats.length && !bodyParts.placed.has('feats')">
+          <h2>Feats</h2>
+          <div class="feat-list"><FeatCard v-for="f in grantedFeats" :key="f.id" :e="f" title /></div>
         </section>
 
         <section v-if="sessions.length">

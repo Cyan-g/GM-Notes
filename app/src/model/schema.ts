@@ -152,6 +152,17 @@ export const SCHEMA: TypeDef[] = [
       { key: 'summary', label: 'Short description', kind: 'longtext' },
     ],
   },
+  {
+    type: 'feat', label: 'Feat', plural: 'Feats', icon: '🎖️', fields: [
+      { key: 'category', label: 'Kind', kind: 'select', options: ['Origin Feat', 'General Feat', 'Fighting Style', 'Epic Boon', 'Other'] },
+      { key: 'level', label: 'Level needed', kind: 'number' },
+      { key: 'requires', label: 'Needs feats', kind: 'refs', to: ['feat'] },
+      { key: 'prerequisite', label: 'Other prerequisite', kind: 'text' },
+      { key: 'abilityIncrease', label: 'Ability score increase', kind: 'text' },
+      { key: 'source', label: 'Granted by', kind: 'ref', to: ['organization', 'race', 'subclass', 'deity', 'place', 'item'] },
+      { key: 'summary', label: 'Description', kind: 'longtext' },
+    ],
+  },
   { type: 'subclass', label: 'Subclass', plural: 'Subclasses', icon: '📜', fields: [{ key: 'class', label: 'Class', kind: 'select', options: CLASSES }] },
   {
     type: 'event', label: 'Event', plural: 'Events', icon: '⏳', fields: [

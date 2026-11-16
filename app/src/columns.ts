@@ -1,6 +1,7 @@
 // Table columns and filters by key, shared by type lists and dashboards.
 // A key is a schema field ("level", "value") or a computed value starting with "@".
 import type { Entry, EntryType, RecipeLine, Statblock, WorldDate } from './model/types'
+import { craftingMinutes, craftingTime } from './crafting'
 import { SCHEMA, TYPES, type FieldDef } from './model/schema'
 import { dateKey, entries, get, relationsOf } from './store'
 
@@ -42,6 +43,11 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
     label: 'Profit', kind: 'money',
     value: e => { const c = recipeCost(e), v = e.fields.value as number | undefined; return c != null && v != null ? v - c : undefined },
     sort: e => { const c = recipeCost(e), v = e.fields.value as number | undefined; return c != null && v != null ? v - c : -1e9 },
+  },
+  '@craftTime': {
+    label: 'Crafting time', kind: 'text',
+    value: e => ((e.fields.recipe as unknown[] | undefined)?.length ? craftingTime(e.fields.value) : ''),
+    sort: e => craftingMinutes(e.fields.value) ?? 1e9,
   },
   '@usedIn': { label: 'Used in', value: e => usedIn(e) || '', sort: e => -usedIn(e), kind: 'text' },
   '@updated': { label: 'Last edited', value: e => new Date(e.updated).toLocaleString(), sort: e => -Date.parse(e.updated), kind: 'text' },

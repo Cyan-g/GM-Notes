@@ -856,3 +856,6 @@ input.init { width: 4em; }
 .token-opt.on { color: var(--panel); background: var(--accent); border-color: var(--accent); }
 .token-free input { flex: 1 1 10rem; min-width: 8rem; padding: .15em .4em; font-size: 13px; }
 .token-free .chip { display: inline-flex; align-items: center; gap: .2rem; }
+
+/* recipe blocks: the crafting time under the cost */
+tr.craft-time td { color: var(--ink-2); font-weight: 600; border-top: 0; }

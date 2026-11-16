@@ -6,6 +6,7 @@ import type { Crafting, Entry, Id, RecipeLine } from '../model/types'
 import { TYPES } from '../model/schema'
 import { byType, db, formatMoney, get, touch } from '../store'
 import { recipeCost } from '../columns'
+import { CRAFTING_RULE, craftingTime } from '../crafting'
 import EntryLink from '../components/EntryLink.vue'
 import EntryPicker from '../components/edit/EntryPicker.vue'
 
@@ -83,7 +84,7 @@ const notIngredient = computed(() => (byType.value.get('item') ?? []).filter(e =
         <section class="card">
           <h3>Known recipes <span class="muted small">{{ known.length }}</span></h3>
           <table v-if="known.length" class="grid wb-recipes">
-            <thead><tr><th>Item</th><th>Crafted with</th><th>Ingredients</th><th class="num">Cost</th><th class="num">Value</th><th></th></tr></thead>
+            <thead><tr><th>Item</th><th>Crafted with</th><th>Ingredients</th><th class="num">Cost</th><th class="num">Value</th><th class="num" :title="CRAFTING_RULE">Time</th><th></th></tr></thead>
             <tbody>
               <tr v-for="e in known" :key="e.id" :class="{ ready: canCraft(e) }">
                 <td><EntryLink :id="e.id" icon /></td>
@@ -95,6 +96,7 @@ const notIngredient = computed(() => (byType.value.get('item') ?? []).filter(e =
                 </td>
                 <td class="num">{{ formatMoney(recipeCost(e)) }}</td>
                 <td class="num">{{ formatMoney(e.fields.value) }}</td>
+                <td class="num">{{ craftingTime(e.fields.value) }}</td>
                 <td class="wb-actions">
                   <button class="chip-btn" :disabled="!canCraft(e)" :title="canCraft(e) ? 'Use the ingredients from the pouch' : !proficient(e) ? 'Needs the tool proficiency' : 'Not enough ingredients'" @click="craft(e)">Craft</button>
                   <button class="link-btn x" title="Forget this recipe" @click="forget(e.id)">✕</button>

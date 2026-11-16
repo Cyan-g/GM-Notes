@@ -7,6 +7,7 @@ import { formatDate, formatMoney, get } from '../store'
 import EntryLink from './EntryLink.vue'
 import EncounterTable from './EncounterTable.vue'
 import { renderInline } from '../markdown'
+import { CRAFTING_RULE, craftingTime } from '../crafting'
 
 const props = defineProps<{ def: FieldDef; value: unknown; entry: Entry }>()
 
@@ -48,7 +49,10 @@ const stock = computed(() => {
       <tbody>
         <tr v-for="r in recipe.rows" :key="r.item"><td><EntryLink :id="r.item" /></td><td class="num">{{ r.amount }}</td><td class="num">{{ formatMoney(r.each) }}</td><td class="num">{{ formatMoney(r.total) }}</td></tr>
       </tbody>
-      <tfoot><tr><td colspan="3">Ingredient cost{{ recipe.known ? '' : ' (some prices unknown)' }}</td><td class="num">{{ formatMoney(recipe.total) }}</td></tr></tfoot>
+      <tfoot>
+        <tr><td colspan="3">Ingredient cost{{ recipe.known ? '' : ' (some prices unknown)' }}</td><td class="num">{{ formatMoney(recipe.total) }}</td></tr>
+        <tr class="craft-time" :title="CRAFTING_RULE"><td colspan="3">⏳ Crafting time</td><td class="num">{{ craftingTime(entry.fields.value) || '—' }}</td></tr>
+      </tfoot>
     </table>
   </template>
   <EncounterTable v-else-if="def.kind === 'combatants'" :lines="(value as any[]) ?? []" />

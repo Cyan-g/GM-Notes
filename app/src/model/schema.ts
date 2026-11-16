@@ -4,7 +4,7 @@ import type { EntryType, RelationKind } from './types'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
-  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins'
+  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks'
 
 export interface FieldDef {
   key: string
@@ -70,6 +70,7 @@ export const SCHEMA: TypeDef[] = [
       { key: 'orgType', label: 'Type', kind: 'select', options: ['Clan', 'Family', 'Guild', 'Faith', 'Government', 'Military', 'Order', 'Tribe', 'Company', 'Crew', 'Cult', 'Other'] },
       { key: 'parent', label: 'Part of', kind: 'ref', to: ['organization'] },
       { key: 'seat', label: 'Seat', kind: 'ref', to: ['place'] },
+      { key: 'ranks', label: 'Ranks', kind: 'ranks' },
     ],
   },
   {

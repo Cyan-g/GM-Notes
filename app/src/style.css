@@ -905,3 +905,12 @@ tr.craft-time td { color: var(--ink-2); font-weight: 600; border-top: 0; }
 .kin-text b, .kin-text span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kin-text b { font-size: 14px; }
 .family-empty { border: 2px dashed var(--line); border-radius: 12px; padding: 2rem; text-align: center; }
+
+/* organization ranks */
+table.ranks { width: 100%; }
+table.ranks .rank-n, .ranks-edit .rank-n { color: var(--accent); font-weight: 700; width: 3em; }
+table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
+.ranks-edit { width: 100%; }
+.ranks-edit input:not(.short) { width: 100%; }
+.ranks-edit td:nth-child(2) { width: 22%; }
+.ranks-actions { white-space: nowrap; }

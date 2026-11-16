@@ -21,7 +21,7 @@ const e = computed(() => get(props.id))
 const def = computed(() => (e.value ? TYPES[e.value.type] : undefined))
 
 const shown = (f: FieldDef) => !f.when || f.when.is.includes(String(e.value!.fields[f.when.field] ?? ''))
-const BIG = ['recipe', 'stock', 'combatants']
+const BIG = ['recipe', 'stock', 'combatants', 'ranks']
 const groups = computed(() => {
   const out = new Map<string, FieldDef[]>()
   for (const f of def.value?.fields ?? []) {

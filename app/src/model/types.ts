@@ -61,6 +61,8 @@ export type RelationKind =
 export type Copper = number
 
 export interface RecipeLine { item: Id; amount: number }
+/** One rank of an organization, highest first. `renown` is what it takes; none for a rank that is appointed. */
+export interface RankLine { title: string; renown?: number; station?: string }
 
 /** One line of an encounter: a creature entry (or just a name) and how many. */
 export interface EncounterLine { creature?: Id; name?: string; count: number; hp?: number; ac?: number; init?: number }

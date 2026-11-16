@@ -6,6 +6,7 @@ import type { Entry, RecipeLine, StockLine, WorldDate } from '../model/types'
 import { formatDate, formatMoney, get } from '../store'
 import EntryLink from './EntryLink.vue'
 import EncounterTable from './EncounterTable.vue'
+import RanksTable from './RanksTable.vue'
 import { renderInline } from '../markdown'
 import { CRAFTING_RULE, craftingTime } from '../crafting'
 
@@ -43,6 +44,7 @@ const stock = computed(() => {
     <span class="chips"><span v-for="(v, i) in (value as string[])" :key="i" class="chip" v-html="renderInline(String(v))" /></span>
   </template>
   <template v-else-if="def.kind === 'longtext'"><span v-html="renderInline(String(value))" /></template>
+  <RanksTable v-else-if="def.kind === 'ranks'" :ranks="(value as any[]) ?? []" :org="entry" />
   <template v-else-if="def.kind === 'recipe'">
     <table class="mini">
       <thead><tr><th>Ingredient</th><th class="num">Amount</th><th class="num">Each</th><th class="num">Cost</th></tr></thead>

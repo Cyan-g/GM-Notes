@@ -252,6 +252,33 @@ function upgrade(d: Database) {
     d.version = 13
     changed = true
   }
+  // Version 14: organizations' rank tables (| Rank | Title | Renown | Station |) move out of the text into the Ranks field.
+  if ((d.version ?? 1) < 14) {
+    for (const e of Object.values(d.entries)) {
+      if (e.type !== 'organization' || e.fields.ranks) continue
+      const lines = e.body.split('\n')
+      const head = lines.findIndex(l => /^\s*\|\s*rank\s*\|\s*title\s*\|/i.test(l))
+      if (head < 0 || !/^\s*\|[\s:|-]+\|\s*$/.test(lines[head + 1] ?? '')) continue
+      const cols = lines[head].split('|').slice(1, -1).map(c => c.trim().toLowerCase())
+      let end = head + 2
+      const rows: { n: number; line: { title: string; renown?: number; station?: string } }[] = []
+      for (; end < lines.length && /^\s*\|/.test(lines[end]); end++) {
+        const cells = lines[end].split('|').slice(1, -1).map(c => c.trim())
+        const get = (name: string) => cells[cols.indexOf(name)] ?? ''
+        const title = get('title')
+        if (!title) continue
+        const renown = Number(get('renown'))
+        const station = get('station')
+        rows.push({ n: Number(get('rank')) || rows.length + 1, line: { title, ...(get('renown') !== '' && !Number.isNaN(renown) ? { renown } : {}), ...(station ? { station } : {}) } })
+      }
+      if (!rows.length) continue
+      e.fields.ranks = rows.sort((a, b) => a.n - b.n).map(r => r.line)
+      lines.splice(head, end - head)
+      e.body = lines.join('\n').replace(/\n{3,}/g, '\n\n')
+    }
+    d.version = 14
+    changed = true
+  }
   return changed
 }
 

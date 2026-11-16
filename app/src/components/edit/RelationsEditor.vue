@@ -3,7 +3,7 @@
 import { computed, ref } from 'vue'
 import type { Entry, EntryType, Relation, RelationKind } from '../../model/types'
 import { RELATION_KINDS } from '../../model/schema'
-import { formatDate, relationsOf } from '../../store'
+import { formatDate, get, relationsOf } from '../../store'
 import { addRelation, relationChanged, removeRelation } from '../../edit'
 import EntryPicker from './EntryPicker.vue'
 import DateInput from './DateInput.vue'
@@ -36,6 +36,8 @@ const groups = computed(() => {
 /** Rows showing their kind and dates for editing. */
 const open = ref(new Set<string>())
 const toggle = (id: string) => { const s = new Set(open.value); s.has(id) ? s.delete(id) : s.add(id); open.value = s }
+/** For a membership: the organization's rank titles, offered as roles. */
+const rankTitles = (r: Relation) => (r.kind === 'member' ? ((get(r.b)?.fields.ranks as { title: string }[] | undefined) ?? []).map(k => k.title).filter(Boolean) : [])
 const dates = (r: Relation) => (r.from || r.to ? `${r.from ? formatDate(r.from) : '…'} – ${r.to ? formatDate(r.to) : 'now'}` : '')
 
 function setOption(r: Relation, v: string) {
@@ -76,7 +78,8 @@ function add(other: string) {
         <div v-for="r in g.list" :key="r.id" class="rel-row" :class="{ open: open.has(r.id) }">
           <div class="rel-line">
             <EntryPicker class="rel-who" :model-value="otherOf(r)" :exclude="[entry.id]" @update:model-value="v => setOther(r, v)" />
-            <input class="rel-role" :value="r.role ?? ''" placeholder="role" title="Role (optional)" @change="setField(r, 'role', ($event.target as HTMLInputElement).value.trim())" />
+            <input class="rel-role" :value="r.role ?? ''" :list="rankTitles(r).length ? `ranks-${r.id}` : undefined" :placeholder="rankTitles(r).length ? 'rank' : 'role'" title="Role (optional)" @change="setField(r, 'role', ($event.target as HTMLInputElement).value.trim())" />
+            <datalist v-if="rankTitles(r).length" :id="`ranks-${r.id}`"><option v-for="t in rankTitles(r)" :key="t" :value="t" /></datalist>
             <button type="button" class="rel-more" :class="{ dated: !!dates(r) }" :title="open.has(r.id) ? 'Hide details' : 'Kind and dates'" @click="toggle(r.id)">{{ dates(r) || '⋯' }}</button>
             <button type="button" class="x" title="Remove this relation" @click="removeRelation(r.id)">×</button>
           </div>

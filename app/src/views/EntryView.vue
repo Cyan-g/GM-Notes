@@ -41,7 +41,7 @@ const groups = computed(() => {
   const x = e.value
   if (!x || !def.value) return []
   if (x.type === 'item' || x.type === 'spell') return []
-  const big = ['statblock', 'recipe', 'stock', 'combatants']
+  const big = ['statblock', 'recipe', 'stock', 'combatants', 'ranks']
   const out = new Map<string, { def: FieldDef; value: unknown }[]>()
   for (const f of def.value.fields) {
     if (big.includes(f.kind) || f.key === 'parent' || f.key === 'map' || f.key === 'pins' || !shown(f, x) || empty(x.fields[f.key])) continue
@@ -54,7 +54,7 @@ const groups = computed(() => {
 const bigFields = computed(() => {
   const x = e.value
   if (!x || !def.value) return []
-  return def.value.fields.filter(f => ['recipe', 'stock', 'combatants'].includes(f.kind) && shown(f, x) && !empty(x.fields[f.key]))
+  return def.value.fields.filter(f => ['recipe', 'stock', 'combatants', 'ranks'].includes(f.kind) && shown(f, x) && !empty(x.fields[f.key]))
 })
 const scrollSpell = computed(() => (e.value?.type === 'item' && e.value.fields.kind === 'Scroll' ? get(e.value.fields.spell as string) : undefined))
 const statblock = computed(() => e.value?.fields.statblock as Statblock | undefined)

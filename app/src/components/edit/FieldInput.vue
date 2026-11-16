@@ -12,6 +12,7 @@ import RecipeInput from './RecipeInput.vue'
 import StockInput from './StockInput.vue'
 import StatblockInput from './StatblockInput.vue'
 import EncounterInput from './EncounterInput.vue'
+import RanksInput from './RanksInput.vue'
 
 const props = defineProps<{ def: FieldDef; entry: Entry }>()
 
@@ -51,6 +52,7 @@ function addRef(id: string) { if (!refs.value.includes(id)) value.value = [...re
     <span v-for="(id, i) in refs" :key="id" class="chip"><EntryPicker :model-value="id" :types="def.to" @update:model-value="v => { const l = [...refs]; if (v) l[i] = v; else l.splice(i, 1); value = l }" /></span>
     <EntryPicker add :types="def.to" :exclude="[entry.id, ...refs]" placeholder="Add…" @pick="addRef" />
   </div>
+  <RanksInput v-else-if="def.kind === 'ranks'" v-model="value" />
   <RecipeInput v-else-if="def.kind === 'recipe'" v-model="value" :item-value="entry.fields.value as number | undefined" />
   <StockInput v-else-if="def.kind === 'stock'" v-model="value" :markup="(entry.fields.markup as number) ?? 1" />
   <EncounterInput v-else-if="def.kind === 'combatants'" v-model="value" />

@@ -8,6 +8,7 @@ import MapView from '../components/MapView.vue'
 import SubTree from '../components/SubTree.vue'
 import Sunburst from '../components/Sunburst.vue'
 import { ui } from '../ui'
+import { isFavourite, toggleFavourite } from '../edit'
 import type { Pin } from '../model/types'
 import { loadEncounter } from '../tracker'
 import EntryLink from '../components/EntryLink.vue'
@@ -165,7 +166,10 @@ const siblings = computed(() => {
       <template v-for="c in crumbs" :key="c.id"><span class="sep">›</span><EntryLink :id="c.id" /></template>
     </nav>
     <header class="entry-head" :class="{ 'has-portrait': e.image }">
-      <a class="button edit-btn" :href="hrefEntry(e.id, true)" title="Edit (E)">✎ Edit</a>
+      <div class="head-actions">
+        <button class="fav-btn" :class="{ on: isFavourite(e.id) }" :title="isFavourite(e.id) ? 'Remove from favourites (F)' : 'Add to favourites (F)'" :aria-pressed="isFavourite(e.id)" @click="toggleFavourite(e.id)">{{ isFavourite(e.id) ? '★' : '☆' }}</button>
+        <a class="button edit-btn" :href="hrefEntry(e.id, true)" title="Edit (E)">✎ Edit</a>
+      </div>
       <DataImage v-if="e.image" :path="e.image" :alt="e.name" class="portrait head-portrait" />
       <div class="head-text">
       <div class="title-line">

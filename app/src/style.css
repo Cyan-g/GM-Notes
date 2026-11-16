@@ -151,7 +151,7 @@ ul.rel.nested { padding-left: 1.6rem; width: 100%; }
 .crumbs .sep { color: var(--accent); opacity: .7; font-size: 1.1em; }
 .entry-head h1 { font-size: 2.1rem; margin: 0; }
 /* Title, type badge, aliases and tags on one line; room on the right for the Edit button. */
-.title-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem 1rem; margin: .2rem 0 .25rem; padding-right: 6rem; }
+.title-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem 1rem; margin: .2rem 0 .25rem; padding-right: 9rem; }
 .entry-head .sub { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; color: var(--muted); font-size: 13px; }
 .entry-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr); gap: 2rem; margin-top: 1.25rem; align-items: start; }
 .entry-side { columns: 320px; column-gap: 1rem; }
@@ -260,7 +260,9 @@ input.short { width: 5em; }
 input.bad { border-color: var(--accent); background: var(--secret-bg); }
 textarea { width: 100%; resize: vertical; }
 .entry-head { position: relative; }
-.edit-btn { position: absolute; right: 0; top: 0; }
+.head-actions { position: absolute; right: 0; top: 0; display: flex; gap: .4rem; }
+.fav-btn { font-size: 1.15rem; line-height: 1; padding: .35em .55em; color: var(--muted); }
+.fav-btn.on { color: var(--accent); border-color: var(--accent); }
 
 .edit-bar { position: sticky; top: var(--bar-h); z-index: 5; display: flex; align-items: center; gap: .6rem; padding: .6rem 0; background: var(--bg); border-bottom: 1px solid var(--line); margin-bottom: .5rem; }
 .edit-bar .spacer { flex: 1; }
@@ -587,3 +589,7 @@ input.init { width: 4em; }
 .sb-centre-label { font: 600 13px var(--serif); fill: var(--ink); text-anchor: middle; }
 .sb-info { min-height: 2.6em; font-size: 13px; color: var(--ink-2); }
 .sunburst:not(.wide) .sb-info { text-align: center; }
+
+/* ---------- favourites on the home page ---------- */
+.favourites .unfav { margin-left: auto; color: var(--muted); opacity: 0; }
+.favourites li:hover .unfav, .favourites .unfav:focus { opacity: 1; }

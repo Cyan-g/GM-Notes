@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { byType, childrenOf, db, formatDate, entries } from '../store'
+import { byType, childrenOf, db, entries, formatDate, get } from '../store'
 import EntryLink from '../components/EntryLink.vue'
+import { describe } from '../describe'
+import { toggleFavourite } from '../edit'
 
 const campaigns = computed(() => (byType.value.get('campaign') ?? []).map(c => {
   const s = (byType.value.get('session') ?? []).filter(x => x.fields.campaign === c.id)
@@ -9,7 +11,7 @@ const campaigns = computed(() => (byType.value.get('campaign') ?? []).map(c => {
   return { c, count: s.length, last }
 }))
 const worlds = computed(() => (byType.value.get('place') ?? []).filter(p => !p.fields.parent))
-const recent = computed(() => [...entries.value].sort((a, b) => b.updated.localeCompare(a.updated)).slice(0, 8))
+const favourites = computed(() => (db().meta.favourites ?? []).map(id => get(id)).filter((e): e is NonNullable<typeof e> => !!e))
 </script>
 
 <template>
@@ -38,9 +40,16 @@ const recent = computed(() => [...entries.value].sort((a, b) => b.updated.locale
           </li>
         </ul>
       </section>
-      <section class="card">
-        <h3>Recently changed</h3>
-        <ul class="rel"><li v-for="e in recent" :key="e.id"><EntryLink :id="e.id" icon /></li></ul>
+      <section class="card favourites">
+        <h3>★ Favourites</h3>
+        <ul v-if="favourites.length" class="rel">
+          <li v-for="e in favourites" :key="e.id">
+            <EntryLink :id="e.id" icon />
+            <span class="role">{{ describe(e, { parent: false }) }}</span>
+            <button class="link-btn unfav" title="Remove from favourites" @click="toggleFavourite(e.id)">✕</button>
+          </li>
+        </ul>
+        <p v-else class="muted small">Star an entry with ☆ next to its Edit button (or press F on its page) to keep it here.</p>
       </section>
     </div>
   </div>

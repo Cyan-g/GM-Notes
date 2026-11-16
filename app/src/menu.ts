@@ -95,6 +95,12 @@ export const MENUS: TopMenu[] = [
       { label: 'Calendar', icon: '📅', href: '#/calendar' },
       { label: 'Initiative', icon: '⚔', href: '#/tracker', hint: state.db?.tracker?.round ? `R${state.db.tracker.round}` : undefined },
       { label: 'Timeline', icon: '⏳', href: '#/timeline' },
+      {
+        label: 'Favourites', icon: '★', href: '#/', hint: String(state.db?.meta.favourites?.length ?? 0),
+        children: state.db?.meta.favourites?.length
+          ? () => (state.db!.meta.favourites ?? []).map(id => get(id)).filter(e => !!e).map(e => ({ label: e!.name, icon: SCHEMA.find(s => s.type === e!.type)!.icon, href: hrefEntry(e!.id) }))
+          : undefined,
+      },
       SEP,
       ...DASHBOARDS.map(d => ({
         label: d.title, icon: d.icon, href: hrefDashboard(d.id),

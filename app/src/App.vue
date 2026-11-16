@@ -19,6 +19,7 @@ import DataView from './views/DataView.vue'
 import NewEntryDialog from './components/NewEntryDialog.vue'
 import LinkPreview from './components/LinkPreview.vue'
 import { go, hrefEntry } from './router'
+import { toggleFavourite } from './edit'
 
 const phase = ref<'starting' | 'need-folder' | 'no-api' | 'ready'>('starting')
 const remembered = ref<FileSystemDirectoryHandle | null>(null)
@@ -65,6 +66,7 @@ function onKey(ev: KeyboardEvent) {
   else if (mod && ev.key.toLowerCase() === 's') { ev.preventDefault(); save() }
   else if (!mod && !ev.altKey && !typing(ev.target) && route.current.name === 'entry' && !ui.switcher && !ui.newOpen) {
     if (ev.key === 'e' && !route.current.edit) { ev.preventDefault(); go(hrefEntry(route.current.id, true)) }
+    else if (ev.key === 'f' && !route.current.edit) { ev.preventDefault(); toggleFavourite(route.current.id) }
     else if (ev.key === 'Escape' && route.current.edit) go(hrefEntry(route.current.id))
   }
 }

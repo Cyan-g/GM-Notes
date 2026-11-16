@@ -33,7 +33,17 @@ export function createEntry(type: EntryType, name: string, fields: Record<string
 export function deleteEntry(id: Id) {
   const d = db()
   delete d.entries[id]
+  if (d.meta.favourites) d.meta.favourites = d.meta.favourites.filter(f => f !== id)
   d.relations = d.relations.filter(r => r.a !== id && r.b !== id)
+  touch()
+}
+
+// ---- favourites ----
+export const isFavourite = (id: Id) => !!state.db?.meta.favourites?.includes(id)
+export function toggleFavourite(id: Id) {
+  const m = db().meta
+  const list = m.favourites ?? []
+  m.favourites = list.includes(id) ? list.filter(f => f !== id) : [...list, id]
   touch()
 }
 

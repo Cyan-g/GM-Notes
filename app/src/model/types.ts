@@ -154,6 +154,8 @@ export interface Database {
     edited?: string
     /** When the data folder was last copied somewhere else with the Back up button. */
     externalBackup?: string
+    /** Starred entries, in the order they were starred; shown on the home page. */
+    favourites?: Id[]
     /** Colour theme and heading font (see theme.ts). */
     theme?: import('../theme').ThemeSettings
   }

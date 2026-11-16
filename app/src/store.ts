@@ -226,6 +226,16 @@ function upgrade(d: Database) {
     d.version = 10
     changed = true
   }
+  // Version 11: the Hale family's spelling for Tomas, and Aria's mother.
+  if ((d.version ?? 1) < 11) {
+    const tomas = d.entries['tomas-hale']
+    if (tomas && tomas.name === 'Tomas Hale') tomas.name = 'Tomas Hale'
+    const [mum, kid] = ['lena-vance', 'aria-vance']
+    if (d.entries[mum] && d.entries[kid] && !d.relations.some(r => r.kind === 'parent' && r.a === mum && r.b === kid))
+      d.relations.push({ id: `rfam${Date.now().toString(36)}`, a: mum, b: kid, kind: 'parent', visibility: 'secret' })
+    d.version = 11
+    changed = true
+  }
   return changed
 }
 

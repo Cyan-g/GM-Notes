@@ -157,14 +157,13 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
                @dragover="dragOver($event, 'known')" @dragleave.self="over = null" @drop.prevent="drop('known')">
         <h3>Known spells <span class="muted small">{{ knownList.length }}</span></h3>
         <table v-if="knownList.length" class="grid">
-          <thead><tr><th>Spell</th><th>Level</th><th>School</th><th></th></tr></thead>
+          <thead><tr><th>Spell</th><th>Level</th><th></th></tr></thead>
           <tbody>
             <tr v-for="e in knownList" :key="e.id" :class="{ dim: isPrepared(e.id), dragging: dragging?.id === e.id }"
                 :draggable="!isPrepared(e.id)" :title="isPrepared(e.id) ? '' : 'Drag to Prepared spells'"
                 @dragstart="dragStart($event, e.id, 'known')" @dragend="dragEnd">
               <td><a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a></td>
               <td>{{ levelLabel(e) }}</td>
-              <td>{{ e.fields.school ?? '' }}</td>
               <td class="sbk-actions">
                 <span v-if="isPrepared(e.id)" class="muted small">prepared</span>
                 <span v-else class="drag-handle" aria-hidden="true">⠿</span>
@@ -181,7 +180,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
                @dragover="dragOver($event, 'prepared')" @dragleave.self="over = null" @drop.prevent="drop('prepared')">
         <h3>Prepared spells <span class="muted small" :class="{ over: full }">{{ book.prepared.length }}<template v-if="book.preparedMax != null"> / {{ book.preparedMax }}</template><template v-if="book.always.length"> + {{ book.always.length }} always</template></span></h3>
         <table v-if="preparedList.length" class="grid">
-          <thead><tr><th>Spell</th><th>Level</th><th>Attack / save</th><th title="Concentration · Ritual">C/R</th><th></th></tr></thead>
+          <thead><tr><th>Spell</th><th>Level</th><th>School</th><th>Casting time</th><th>Range</th><th>Duration</th><th>Attack / save</th><th title="Concentration · Ritual">C/R</th><th></th></tr></thead>
           <tbody>
             <tr v-for="e in preparedList" :key="e.id" :class="{ dragging: dragging?.id === e.id }" draggable="true"
                 title="Drag back to Known spells to unprepare" @dragstart="dragStart($event, e.id, 'prepared')" @dragend="dragEnd">
@@ -190,6 +189,10 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
                 <a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a>
               </td>
               <td>{{ levelLabel(e) }}</td>
+              <td>{{ e.fields.school ?? '' }}</td>
+              <td>{{ e.fields.castingTime ?? '' }}</td>
+              <td>{{ e.fields.range ?? '' }}</td>
+              <td>{{ e.fields.duration ?? '' }}</td>
               <td class="sbk-check">{{ check(e) }}</td>
               <td>{{ [e.fields.concentration && 'C', e.fields.ritual && 'R'].filter(Boolean).join(' ') }}</td>
               <td class="sbk-actions">

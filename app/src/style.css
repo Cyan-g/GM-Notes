@@ -692,7 +692,8 @@ input.init { width: 4em; }
 .wb-qty .link-btn { font-size: 16px; padding: 0 .2rem; }
 
 /* ---------- spellbook: known / prepared columns ---------- */
-.sbk-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; }
+/* Known spells only need names; the prepared ones get the room for the details. */
+.sbk-columns { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 2.4fr); gap: 1rem; align-items: start; }
 @media (max-width: 1000px) { .sbk-columns { grid-template-columns: 1fr; } }
 .sbk-list tr.dim td:not(.sbk-actions) { opacity: .55; }
 .sbk-list .over { color: var(--accent); font-weight: 600; }

@@ -859,3 +859,26 @@ input.init { width: 4em; }
 
 /* recipe blocks: the crafting time under the cost */
 tr.craft-time td { color: var(--ink-2); font-weight: 600; border-top: 0; }
+
+/* ---------- home: the DM desk ---------- */
+.home-desk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; margin-top: 1.5rem; align-items: start; }
+.home-lore { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; align-items: start; }
+@media (max-width: 1100px) { .home-desk, .home-lore { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 700px) { .home-desk, .home-lore { grid-template-columns: 1fr; } }
+.home h3 { display: flex; align-items: baseline; gap: .5rem; }
+.home h3 > a.muted, .home h3 > .link-btn { margin-left: auto; font-weight: 400; }
+.home h4 { margin: .8rem 0 .3rem; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.home-current { font-size: 1.15rem; font-weight: 600; margin: 0 0 .3rem; }
+.home ul.rel.compact li { padding: .15rem 0; }
+.tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: .4rem; }
+.tool { display: flex; flex-direction: column; align-items: center; gap: .15rem; padding: .55rem .3rem; border: 1px solid var(--line); border-radius: 10px;
+  text-decoration: none; color: var(--ink); font-size: 13px; background: color-mix(in srgb, var(--accent) 3%, var(--panel)); transition: border-color .12s, transform .12s; }
+.tool > span { font-size: 1.35rem; }
+.tool:hover { border-color: var(--accent); transform: translateY(-1px); }
+.home-regions { margin: 1rem 0; }
+.home-regions td { vertical-align: top; }
+.home-region { font-weight: 600; white-space: nowrap; }
+.home-tag { display: inline-block; margin: 0 .7rem .2rem 0; }
+.home-inline { margin: 0; line-height: 1.8; }
+.home-link-form { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .4rem; }
+.home-link-form input { flex: 1 1 8rem; min-width: 0; }

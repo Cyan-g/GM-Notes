@@ -187,6 +187,8 @@ export interface Database {
     externalBackup?: string
     /** Starred entries, in the order they were starred; shown on the home page. */
     favourites?: Id[]
+    /** Web links kept on the home page (a watch-together room, a soundboard …). */
+    links?: { label: string; url: string }[]
     /** Colour theme and heading font (see theme.ts). */
     theme?: import('../theme').ThemeSettings
   }

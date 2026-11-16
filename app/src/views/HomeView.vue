@@ -1,17 +1,79 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { byType, childrenOf, db, entries, formatDate, get } from '../store'
-import EntryLink from '../components/EntryLink.vue'
-import { describe } from '../describe'
+// The DM desk, after the old Overview note: the campaign at hand, the tools, favourites, the regions of the world
+// with their factions, the gods, peoples and subclasses, and a few links. Everything comes from the entries.
+import { computed, ref } from 'vue'
+import type { Entry, Id, WorldDate } from '../model/types'
+import { byType, childrenOf, db, entries, formatDate, get, placePath, touch } from '../store'
+import { hrefDashboard, hrefList } from '../router'
+import { DASHBOARDS } from '../dashboards'
+import { newEntry } from '../ui'
 import { toggleFavourite } from '../edit'
+import { describe } from '../describe'
+import EntryLink from '../components/EntryLink.vue'
 
-const campaigns = computed(() => (byType.value.get('campaign') ?? []).map(c => {
-  const s = (byType.value.get('session') ?? []).filter(x => x.fields.campaign === c.id)
-  const last = s.sort((a, b) => (b.fields.number as number ?? 0) - (a.fields.number as number ?? 0))[0]
-  return { c, count: s.length, last }
-}))
-const worlds = computed(() => (byType.value.get('place') ?? []).filter(p => !p.fields.parent))
-const favourites = computed(() => (db().meta.favourites ?? []).map(id => get(id)).filter((e): e is NonNullable<typeof e> => !!e))
+const byName = (a: Entry, b: Entry) => a.name.localeCompare(b.name)
+const list = (t: Entry['type']) => byType.value.get(t) ?? []
+
+// ---- campaigns: the one with the latest session first ----
+const campaigns = computed(() => list('campaign').map(c => {
+  const s = list('session').filter(x => x.fields.campaign === c.id).sort((a, b) => ((b.fields.number as number) ?? 0) - ((a.fields.number as number) ?? 0))
+  return { c, sessions: s }
+}).sort((a, b) => b.sessions.length - a.sessions.length || byName(a.c, b.c)))
+const current = computed(() => campaigns.value[0]?.sessions.length ? campaigns.value[0] : undefined)
+const others = computed(() => campaigns.value.filter(x => x !== current.value))
+const nextNumber = computed(() => ((current.value?.sessions[0]?.fields.number as number | undefined) ?? 0) + 1)
+const newSession = () => current.value && newEntry('session', { campaign: current.value.c.id, number: nextNumber.value, date: { ...db().meta.today } })
+const notes = computed(() => list('note').sort(byName))
+
+// ---- the desk: dashboards and tools ----
+const TOOLS = [
+  { icon: '📖', label: 'Spellbook', href: '#/spellbook' },
+  { icon: '🛠', label: 'Workbench', href: '#/crafting' },
+  { icon: '🐉', label: 'Encounter', href: '#/tracker' },
+  { icon: '🗺', label: 'Atlas', href: '#/atlas' },
+  { icon: '⏳', label: 'Timeline', href: '#/timeline' },
+  { icon: '📅', label: 'Calendar', href: '#/calendar' },
+]
+
+// ---- favourites ----
+const favourites = computed(() => (db().meta.favourites ?? []).map(id => get(id)).filter((e): e is Entry => !!e))
+
+// ---- regions: the parts of the world, with their subregions, the factions seated there and the mapped places ----
+const world = computed(() => list('place').filter(p => !p.fields.parent).sort((a, b) => (childrenOf.value.get(b.id)?.length ?? 0) - (childrenOf.value.get(a.id)?.length ?? 0))[0])
+const within = (id: Id | undefined, region: Id) => !!id && placePath(id).some(p => p.id === region)
+const regions = computed(() => (world.value ? (childrenOf.value.get(world.value.id) ?? []).filter(c => c.type === 'place') : []).map(r => ({
+  r,
+  subs: (childrenOf.value.get(r.id) ?? []).filter(c => c.type === 'place').sort(byName),
+  orgs: list('organization').filter(o => !o.fields.parent && within(o.fields.seat as Id | undefined, r.id)).sort(byName),
+  maps: list('place').filter(p => p.id !== r.id && p.fields.map && within(p.id, r.id)).sort(byName),
+})).sort((a, b) => b.subs.length + b.orgs.length - (a.subs.length + a.orgs.length) || byName(a.r, b.r)))
+const homeless = computed(() => list('organization').filter(o => !o.fields.parent && !regions.value.some(r => r.orgs.includes(o))).sort(byName))
+
+// ---- gods, peoples, subclasses ----
+const greater = computed(() => list('deity').filter(d => d.fields.rank === 'Greater deity').sort(byName))
+const lesser = computed(() => list('deity').filter(d => d.fields.rank === 'Lesser deity').sort(byName))
+const pantheon = computed(() => list('deity').find(d => !d.fields.rank && d.body.length > 500))
+/** The first alias as a title: "the scarlet king" → "The Scarlet King". */
+const SMALL = ['of', 'the', 'and', 'a', 'an', 'in']
+const epithet = (e: Entry) => (e.aliases[0] ?? '').split(' ').map((w, i) => (i > 0 && SMALL.includes(w.toLowerCase()) ? w.toLowerCase() : w[0]?.toUpperCase() + w.slice(1))).join(' ')
+const races = computed(() => list('race').sort(byName))
+const subclasses = computed(() => list('subclass').sort(byName))
+const kits = computed(() => list('item').filter(i => /kit$|supplies$/i.test(i.name) && i.fields.kind !== 'Ingredient').sort(byName))
+
+// ---- links: web pages you keep at hand (a watch-together room, a soundboard …) ----
+const links = computed(() => db().meta.links ?? [])
+const adding = ref(false)
+const newLabel = ref(''), newUrl = ref('')
+function addLink() {
+  const url = newUrl.value.trim()
+  if (!url) return
+  const m = db().meta
+  m.links = [...(m.links ?? []), { label: newLabel.value.trim() || url.replace(/^https?:\/\/(www\.)?/, '').split('/')[0], url: /^[a-z]+:/i.test(url) ? url : 'https://' + url }]
+  touch()
+  newLabel.value = ''; newUrl.value = ''; adding.value = false
+}
+function removeLink(i: number) { const m = db().meta; m.links = (m.links ?? []).filter((_, j) => j !== i); touch() }
+const sessionDate = (s: Entry) => { const d = s.fields.date as WorldDate | undefined; return d?.year ? formatDate(d) : '' }
 </script>
 
 <template>
@@ -20,26 +82,43 @@ const favourites = computed(() => (db().meta.favourites ?? []).map(id => get(id)
       <h1>{{ db().meta.title }}</h1>
       <p class="muted">Today in the world: <a href="#/calendar"><b>{{ formatDate(db().meta.today) }}</b></a> · {{ entries.length }} entries</p>
     </header>
-    <div class="home-grid">
-      <section class="card">
-        <h3>Campaigns</h3>
-        <ul class="rel">
-          <li v-for="{ c, count, last } in campaigns" :key="c.id">
-            <EntryLink :id="c.id" icon />
-            <span class="role">{{ c.fields.status || '' }}</span>
-            <span class="when" v-if="count">{{ count }} sessions<template v-if="last">, last: <EntryLink :id="last.id" /></template></span>
+
+    <!-- the desk -->
+    <div class="home-desk">
+      <section class="card home-campaign">
+        <h3>🎲 Campaign</h3>
+        <template v-if="current">
+          <p class="home-current"><EntryLink :id="current.c.id" /> <span class="muted small">{{ current.sessions.length }} sessions</span></p>
+          <ul class="rel">
+            <li v-for="s in current.sessions.slice(0, 3)" :key="s.id"><EntryLink :id="s.id" /><span class="when">{{ sessionDate(s) }}</span></li>
+          </ul>
+          <button class="chip-btn" @click="newSession">＋ Session {{ nextNumber }}</button>
+        </template>
+        <h4 v-if="others.length">Others</h4>
+        <ul class="rel compact">
+          <li v-for="{ c, sessions } in others" :key="c.id">
+            <EntryLink :id="c.id" />
+            <span class="when">{{ c.fields.status || (sessions.length ? sessions.length + ' sessions' : '') }}</span>
           </li>
         </ul>
+        <template v-if="notes.length">
+          <h4>Notes</h4>
+          <ul class="rel compact"><li v-for="n in notes" :key="n.id"><EntryLink :id="n.id" icon /></li></ul>
+        </template>
       </section>
-      <section class="card">
-        <h3>World</h3>
-        <ul class="rel">
-          <li v-for="w in worlds" :key="w.id">
-            <EntryLink :id="w.id" icon />
-            <ul class="rel nested"><li v-for="c in childrenOf.get(w.id) ?? []" :key="c.id"><EntryLink :id="c.id" /></li></ul>
-          </li>
-        </ul>
+
+      <section class="card home-tools">
+        <h3>🧰 Desk</h3>
+        <div class="tool-grid">
+          <a v-for="d in DASHBOARDS.filter(x => x.id !== 'recent')" :key="d.id" class="tool" :href="hrefDashboard(d.id)"><span>{{ d.icon }}</span>{{ d.title }}</a>
+          <a v-for="t in TOOLS" :key="t.href" class="tool" :href="t.href"><span>{{ t.icon }}</span>{{ t.label }}</a>
+        </div>
+        <template v-if="kits.length">
+          <h4>Crafting kits</h4>
+          <p class="home-inline"><template v-for="(k, i) in kits" :key="k.id"><EntryLink :id="k.id" /><span v-if="i < kits.length - 1" class="muted"> · </span></template></p>
+        </template>
       </section>
+
       <section class="card favourites">
         <h3>★ Favourites</h3>
         <ul v-if="favourites.length" class="rel">
@@ -50,6 +129,64 @@ const favourites = computed(() => (db().meta.favourites ?? []).map(id => get(id)
           </li>
         </ul>
         <p v-else class="muted small">Star an entry with ☆ next to its Edit button (or press F on its page) to keep it here.</p>
+      </section>
+    </div>
+
+    <!-- the world -->
+    <section v-if="world" class="card home-regions">
+      <h3>🌍 Regions of <EntryLink :id="world.id" /> <a class="muted small" href="#/atlas">Atlas →</a></h3>
+      <div class="table-wrap">
+        <table class="grid">
+          <thead><tr><th>Region</th><th>Subregions</th><th>Organizations</th><th>Mapped places</th></tr></thead>
+          <tbody>
+            <tr v-for="x in regions" :key="x.r.id">
+              <td class="home-region"><EntryLink :id="x.r.id" /></td>
+              <td><span v-for="s in x.subs" :key="s.id" class="home-tag"><EntryLink :id="s.id" /></span></td>
+              <td><span v-for="o in x.orgs" :key="o.id" class="home-tag"><EntryLink :id="o.id" /><span v-if="o.fields.orgType" class="muted small"> {{ o.fields.orgType }}</span></span></td>
+              <td><span v-for="m in x.maps" :key="m.id" class="home-tag"><a :href="`#/map/${encodeURIComponent(m.id)}`" title="Open the map">🗺</a> <EntryLink :id="m.id" /></span></td>
+            </tr>
+            <tr v-if="homeless.length">
+              <td class="muted">Elsewhere</td><td />
+              <td><span v-for="o in homeless" :key="o.id" class="home-tag"><EntryLink :id="o.id" /></span></td><td />
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- lore at hand -->
+    <div class="home-lore">
+      <section class="card">
+        <h3>✨ Major deities <a v-if="pantheon" class="muted small" :href="`#/e/${pantheon.id}`">{{ pantheon.name }} →</a></h3>
+        <ul class="rel compact">
+          <li v-for="d in greater" :key="d.id"><EntryLink :id="d.id" /><span class="role">{{ epithet(d) }}</span></li>
+        </ul>
+        <p v-if="lesser.length" class="muted small">Lesser: <template v-for="(d, i) in lesser" :key="d.id"><EntryLink :id="d.id" />{{ i < lesser.length - 1 ? ', ' : '' }}</template></p>
+      </section>
+
+      <section class="card">
+        <h3>🧝 Races <a class="muted small" :href="hrefList('race')">all →</a></h3>
+        <p class="home-inline"><span v-for="r in races" :key="r.id" class="home-tag"><EntryLink :id="r.id" /></span></p>
+        <template v-if="subclasses.length">
+          <h4>Subclasses</h4>
+          <ul class="rel compact"><li v-for="s in subclasses" :key="s.id"><EntryLink :id="s.id" /></li></ul>
+        </template>
+      </section>
+
+      <section class="card home-links">
+        <h3>🔗 Links <button class="link-btn" :title="adding ? 'Cancel' : 'Add a link'" @click="adding = !adding">{{ adding ? '×' : '＋' }}</button></h3>
+        <ul v-if="links.length" class="rel compact">
+          <li v-for="(l, i) in links" :key="l.url + i">
+            <a :href="l.url" target="_blank" rel="noopener">{{ l.label }}</a>
+            <button class="link-btn unfav" title="Remove this link" @click="removeLink(i)">✕</button>
+          </li>
+        </ul>
+        <p v-else-if="!adding" class="muted small">Web pages you keep at hand, like a watch-together room. Entries go in ★ Favourites.</p>
+        <form v-if="adding" class="home-link-form" @submit.prevent="addLink">
+          <input v-model="newLabel" placeholder="Name (optional)" />
+          <input v-model="newUrl" placeholder="https://…" required />
+          <button class="primary" type="submit">Add</button>
+        </form>
       </section>
     </div>
   </div>

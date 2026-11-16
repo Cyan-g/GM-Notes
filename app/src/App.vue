@@ -24,6 +24,9 @@ import NewEntryDialog from './components/NewEntryDialog.vue'
 import LinkPreview from './components/LinkPreview.vue'
 import { go, hrefEntry } from './router'
 import { toggleFavourite } from './edit'
+import { syncTitle } from './title'
+
+syncTitle()
 
 const phase = ref<'starting' | 'need-folder' | 'no-api' | 'ready'>('starting')
 const remembered = ref<FileSystemDirectoryHandle | null>(null)

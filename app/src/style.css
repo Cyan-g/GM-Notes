@@ -394,7 +394,7 @@ td.clip { max-width: 360px; }
 .tl-bar.ongoing.flip .tl-bar-label { right: calc(100% + 6px); }
 
 /* ---------- rich pages ---------- */
-.entry-head.has-portrait { display: flex; gap: 1.2rem; align-items: flex-start; }
+.entry-head.has-portrait { display: flex; flex-wrap: wrap; gap: 0 1.2rem; align-items: flex-start; }
 .head-text { min-width: 0; flex: 1; }
 .portrait { display: block; max-width: 100%; border-radius: 12px; object-fit: cover; box-shadow: var(--shadow); }
 .head-portrait { width: 140px; height: 140px; flex: none; margin-top: .4rem; }

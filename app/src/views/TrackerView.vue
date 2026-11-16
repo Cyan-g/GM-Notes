@@ -48,11 +48,38 @@ function addAlly(id: Id) {
 // ---- the two sides and the order of play ----
 const party = computed(() => t.value.combatants.filter(isParty))
 const enemies = computed(() => t.value.combatants.filter(c => !isParty(c)))
-/** The initiative order starting with whoever is acting; the ones after the wrap are next round. */
+/**
+ * The initiative order around whoever is acting: they stand in the middle, those who went before them to the
+ * left (oldest at the far left), those still to come to the right. "↻" marks where a new round begins.
+ * Before combat starts, the first in line takes the middle.
+ */
+type StripItem = { kind: 'chip'; c: Combatant } | { kind: 'wrap'; round: number }
 const order = computed(() => {
-  const list = t.value.combatants.map((c, i) => ({ c, i }))
+  const list = t.value.combatants
+  const n = list.length
+  if (!n) return { left: [] as StripItem[], centre: null as Combatant | null, right: [] as StripItem[] }
   const at = Math.max(0, t.value.turn)
-  return { now: list.slice(at), next: list.slice(0, at) }
+  // Before combat nobody has gone yet: everyone after the first waits on the right.
+  // On the left only turns that were really taken: none before combat, and in round 1 only this round's.
+  const half = Math.floor((n - 1) / 2)
+  const L = t.value.turn < 0 ? 0 : t.value.round <= 1 ? Math.min(half, at) : half, R = n - 1 - L
+  const idx = (k: number) => ((k % n) + n) % n
+  const round = t.value.round
+  const leftIdx = Array.from({ length: L }, (_, k) => idx(at - L + k))
+  const rightIdx = Array.from({ length: R }, (_, k) => idx(at + 1 + k))
+  const build = (ids: number[], side: 'left' | 'right') => {
+    const out: StripItem[] = []
+    ids.forEach((i, k) => {
+      // The first in initiative starts a round: the current one on the left, the next one on the right.
+      if (i === 0 && (side === 'right' || k > 0)) out.push({ kind: 'wrap', round: side === 'right' ? round + 1 : round })
+      out.push({ kind: 'chip', c: list[i] })
+    })
+    return out
+  }
+  const left = build(leftIdx, 'left')
+  // The current turn holder opens a round: the marker sits just left of them.
+  if (at === 0 && L > 0 && round > 0) left.push({ kind: 'wrap', round })
+  return { left, centre: list[at], right: build(rightIdx, 'right') }
 })
 const current = (c: Combatant) => t.value.combatants[t.value.turn]?.id === c.id
 const stripState = (c: Combatant) => (c.hp == null || !c.maxHp ? '' : c.hp <= 0 ? 'down' : c.hp <= c.maxHp / 2 ? 'bloodied' : '')
@@ -91,19 +118,38 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
       </div>
     </header>
 
-    <!-- The order of play, starting with whoever is acting. -->
+    <!-- The order of play: whoever is acting in the middle, earlier turns to the left, upcoming to the right. -->
     <div class="init-strip card" :class="{ empty: !t.combatants.length }">
       <span v-if="!t.combatants.length" class="muted small">The initiative order shows up here once there's someone in the fight.</span>
-      <template v-for="(part, pi) in [order.now, order.next]" :key="pi">
-        <span v-if="pi === 1 && part.length" class="init-wrap" :title="`Round ${t.round + 1}`">↻ {{ t.round ? t.round + 1 : '' }}</span>
-        <button v-for="{ c } in part" :key="c.id" type="button" class="init-chip"
-                :class="[stripState(c), { now: current(c), party: isParty(c), sel: selected === c.id }]"
-                :title="`${c.name}${c.init != null ? ' · initiative ' + c.init : ''}`" @click="selected = c.id">
-          <span class="init-num">{{ c.init ?? '–' }}</span>
-          <span class="init-name">{{ c.name }}</span>
-          <span v-if="c.conditions.length" class="init-cond" :title="c.conditions.join(', ')">{{ c.conditions.length }}</span>
-          <span v-if="hpPct(c) != null" class="init-hp"><span :style="{ width: hpPct(c) + '%' }" /></span>
+      <template v-else>
+        <div class="init-side left">
+          <template v-for="(it, k) in order.left" :key="it.kind === 'chip' ? it.c.id : 'w' + k">
+            <span v-if="it.kind === 'wrap'" class="init-wrap" :title="`Round ${it.round} starts`">↻ {{ it.round || '' }}</span>
+            <button v-else type="button" class="init-chip done" :class="[stripState(it.c), { party: isParty(it.c), sel: selected === it.c.id }]"
+                    :title="`${it.c.name}${it.c.init != null ? ' · initiative ' + it.c.init : ''} · already went`" @click="selected = it.c.id">
+              <span class="init-num">{{ it.c.init ?? '–' }}</span><span class="init-name">{{ it.c.name }}</span>
+              <span v-if="it.c.conditions.length" class="init-cond" :title="it.c.conditions.join(', ')">{{ it.c.conditions.length }}</span>
+              <span v-if="hpPct(it.c) != null" class="init-hp"><span :style="{ width: hpPct(it.c) + '%' }" /></span>
+            </button>
+          </template>
+        </div>
+        <button v-if="order.centre" type="button" class="init-chip centre" :class="[stripState(order.centre), { now: t.turn >= 0, party: isParty(order.centre), sel: selected === order.centre.id }]"
+                :title="t.turn >= 0 ? `${order.centre.name}'s turn` : `${order.centre.name} goes first`" @click="selected = order.centre!.id">
+          <span class="init-num">{{ order.centre.init ?? '–' }}</span><span class="init-name">{{ order.centre.name }}</span>
+          <span v-if="order.centre.conditions.length" class="init-cond" :title="order.centre.conditions.join(', ')">{{ order.centre.conditions.length }}</span>
+          <span v-if="hpPct(order.centre) != null" class="init-hp"><span :style="{ width: hpPct(order.centre) + '%' }" /></span>
         </button>
+        <div class="init-side right">
+          <template v-for="(it, k) in order.right" :key="it.kind === 'chip' ? it.c.id : 'w' + k">
+            <span v-if="it.kind === 'wrap'" class="init-wrap" :title="`Round ${it.round} starts`">↻ {{ it.round || '' }}</span>
+            <button v-else type="button" class="init-chip" :class="[stripState(it.c), { party: isParty(it.c), sel: selected === it.c.id }]"
+                    :title="`${it.c.name}${it.c.init != null ? ' · initiative ' + it.c.init : ''}`" @click="selected = it.c.id">
+              <span class="init-num">{{ it.c.init ?? '–' }}</span><span class="init-name">{{ it.c.name }}</span>
+              <span v-if="it.c.conditions.length" class="init-cond" :title="it.c.conditions.join(', ')">{{ it.c.conditions.length }}</span>
+              <span v-if="hpPct(it.c) != null" class="init-hp"><span :style="{ width: hpPct(it.c) + '%' }" /></span>
+            </button>
+          </template>
+        </div>
       </template>
     </div>
 

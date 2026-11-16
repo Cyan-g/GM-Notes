@@ -956,3 +956,13 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .fighter-stat input::-webkit-inner-spin-button, .fighter-stat input::-webkit-outer-spin-button,
 .hp-max::-webkit-inner-spin-button, .hp-max::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .fighter-stat span { font-size: 11px; }
+
+/* initiative strip: current turn in the middle; earlier turns fade out to the left, upcoming ones to the right */
+.init-strip:not(.empty) { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); overflow: hidden; align-items: center; }
+.init-side { display: flex; gap: .4rem; align-items: stretch; overflow: hidden; min-width: 0; }
+.init-side.left { justify-content: flex-end; -webkit-mask-image: linear-gradient(to right, transparent, #000 3rem); mask-image: linear-gradient(to right, transparent, #000 3rem); }
+.init-side.right { justify-content: flex-start; -webkit-mask-image: linear-gradient(to left, transparent, #000 3rem); mask-image: linear-gradient(to left, transparent, #000 3rem); }
+.init-chip.done { opacity: .55; }
+.init-chip.done:hover { opacity: .9; }
+.init-chip.centre { margin: 0 .6rem; font-size: 15px; padding: .45rem .9rem .6rem; }
+.init-chip.centre:not(.now) { border-style: dashed; }

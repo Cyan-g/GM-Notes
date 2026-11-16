@@ -103,7 +103,6 @@ const bodyParts = computed(() => {
 })
 const scrollSpell = computed(() => (e.value?.type === 'item' && e.value.fields.kind === 'Scroll' ? get(e.value.fields.spell as string) : undefined))
 const statblock = computed(() => e.value?.fields.statblock as Statblock | undefined)
-const raceText = computed(() => e.value?.fields.raceText as string | undefined)
 
 const crumbs = computed(() => {
   const x = e.value
@@ -331,7 +330,6 @@ const siblings = computed(() => {
           <Sunburst v-else :id="e.id" :key="'sb-' + e.id" />
         </div>
 
-        <div v-if="raceText" class="card warn">Race was typed as “{{ raceText }}” and doesn't match a race entry.</div>
 
         <div v-for="[g, fs] in groups" :key="g" class="card">
           <h3>{{ g }}</h3>

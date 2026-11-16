@@ -11,7 +11,7 @@ const ord = (n: string) => ({ '1': '1st', '2': '2nd', '3': '3rd' } as Record<str
 export function describe(e: Entry, { parent = true } = {}): string {
   const f = e.fields
   switch (e.type) {
-    case 'npc': return join(name(f.race) ?? f.raceText, f.gender, f.age)
+    case 'npc': return join(name(f.race), f.gender, f.age)
     case 'pc': return join(name(f.race), [f.class, f.level && `level ${f.level}`].filter(Boolean).join(' '), f.player && `played by ${f.player}`)
     case 'organization': return join(f.orgType, parent && f.parent && `part of ${name(f.parent)}`, f.seat && `seat: ${name(f.seat)}`)
     case 'place': return join(f.placeType, parent && f.parent && `in ${name(f.parent)}`)

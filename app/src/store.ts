@@ -12,7 +12,7 @@ const SESSION_KEYS = ['tracker', 'spellbook', 'crafting'] as const
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
 /** The newest data version this build understands (the last step in upgrade()). Newer files open read-only. */
-export const DATA_VERSION = 16
+export const DATA_VERSION = 17
 
 export const state = reactive({
   storage: null as Storage | null,
@@ -419,6 +419,18 @@ function upgrade(d: Database) {
   // Nothing to convert in memory; the next save writes the two files. (Older app files open this read-only.)
   if ((d.version ?? 1) < 16) {
     d.version = 16
+    changed = true
+  }
+  // Version 17: leftovers from the Obsidian import go. `mapConfig` was the old map plugin's setting (unused);
+  // `raceText` was a race typed in that matched no entry. A typed "undead" survives as a tag.
+  if ((d.version ?? 1) < 17) {
+    for (const e of Object.values(d.entries)) {
+      delete e.fields.mapConfig
+      const typed = String(e.fields.raceText ?? '').trim()
+      if (typed.toLowerCase() === 'undead' && !e.tags.includes('undead')) e.tags.push('undead')
+      delete e.fields.raceText
+    }
+    d.version = 17
     changed = true
   }
   // Adding a step? Raise DATA_VERSION at the top to match, or the new data opens read-only in this build.

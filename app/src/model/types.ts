@@ -153,6 +153,8 @@ export interface Combatant {
   name: string
   entry?: Id
   isPlayer: boolean
+  /** Which column it stands in; players are party and everyone else an enemy unless set. */
+  side?: 'party' | 'enemy'
   init: number | null
   initMod: number
   hp?: number

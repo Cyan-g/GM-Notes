@@ -49,4 +49,10 @@ export function playerCombatant(pc: Entry): Combatant {
   return { id: newCombatantId(), name: pc.name, entry: pc.id, isPlayer: true, init: null, initMod: mod(sb?.abilities?.dex), hp: sb?.hp, maxHp: sb?.hp, ac: sb?.ac, conditions: [] }
 }
 
+/** A small picture for every condition, for the toggles on the combatant cards. */
+export const CONDITION_ICONS: Record<string, string> = {
+  Blinded: '🙈', Charmed: '💕', Deafened: '🔇', Exhaustion: '😩', Frightened: '😱', Grappled: '🤼', Incapacitated: '💫',
+  Invisible: '👻', Paralyzed: '⚡', Petrified: '🗿', Poisoned: '🤢', Prone: '🛌', Restrained: '⛓', Stunned: '😵',
+  Unconscious: '💤', Concentrating: '🎯',
+}
 export const CONDITIONS = ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious', 'Concentrating']

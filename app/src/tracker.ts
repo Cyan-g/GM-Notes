@@ -65,30 +65,40 @@ export function sortByInitiative() {
   touch()
 }
 
+/** Party and allies stand on the left, enemies on the right. */
+export const isParty = (c: Combatant) => (c.side ? c.side === 'party' : c.isPlayer)
+/** Fallen enemies are skipped; fallen party members still get their turn (death saves). */
+const skipped = (c: Combatant) => !isParty(c) && c.hp != null && c.hp <= 0
+
 export function nextTurn(step = 1) {
   const t = tracker()
   const n = t.combatants.length
   if (!n) return
   if (t.turn < 0) { sortByInitiative(); t.turn = 0; t.round = 1; touch(); return }
-  let turn = t.turn + step
-  if (turn >= n) { turn = 0; t.round++ }
-  if (turn < 0) { turn = n - 1; t.round = Math.max(1, t.round - 1) }
+  let turn = t.turn
+  for (let k = 0; k < n; k++) {
+    turn += step
+    if (turn >= n) { turn = 0; t.round++ }
+    if (turn < 0) { turn = n - 1; t.round = Math.max(1, t.round - 1) }
+    if (!skipped(t.combatants[turn])) break
+  }
   t.turn = turn
   touch()
 }
 
-/** "-7" damages, "+5" heals, "=20" sets. Damage takes temporary HP first. */
+/** "-7" damages, "+5" heals, "=20" sets, "t5" gives temporary HP. Damage takes temporary HP first. */
 export function applyHp(c: Combatant, input: string) {
-  const m = input.trim().match(/^([+\-=]?)\s*(\d+)$/)
+  const m = input.trim().toLowerCase().match(/^([+\-=t]?)\s*(\d+)$/)
   if (!m) return false
   const n = Number(m[2])
   const op = m[1] || '-'
-  if (op === '=') c.hp = n
+  if (op === 't') c.tempHp = Math.max(c.tempHp ?? 0, n) || undefined
+  else if (op === '=') c.hp = n
   else if (op === '+') c.hp = c.maxHp != null ? Math.min(c.maxHp, (c.hp ?? 0) + n) : (c.hp ?? 0) + n
   else {
     let dmg = n
     if (c.tempHp) { const used = Math.min(c.tempHp, dmg); c.tempHp -= used; dmg -= used }
-    c.hp = (c.hp ?? 0) - dmg
+    c.hp = Math.max(0, (c.hp ?? 0) - dmg)
   }
   touch()
   return true

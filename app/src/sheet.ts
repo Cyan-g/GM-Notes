@@ -1,7 +1,7 @@
 // A player character's sheet: what's stored on the PC entry (fields.sheet) and the numbers worked out from it
 // with the 5e rules: modifiers, proficiency bonus, saves, skills, armor class, attacks and spellcasting.
-import { computed } from 'vue'
-import type { Abilities, CharacterSheet, Crafting, Entry, Id, Spellbook } from './model/types'
+import { computed, reactive } from 'vue'
+import type { Abilities, CharacterSheet, Crafting, Entry, Id, InventoryLine, Spellbook } from './model/types'
 import { db, get, state, touch } from './store'
 
 export type Ability = keyof Abilities
@@ -196,3 +196,29 @@ export function trackerStats(pc: Entry) {
   if (!s) return undefined
   return { ac: armorClass(s).ac, hp: s.hp ?? s.maxHp, maxHp: s.maxHp, initMod: mod(s.abilities.dex) + (s.initBonus ?? 0) }
 }
+
+// ---------- inventory: what can be done with a line, and dragging lines around ----------
+
+/** Weapons and armor can be equipped. */
+export const canEquip = (l: InventoryLine) => ['Weapon', 'Armor'].includes(String(get(l.item)?.fields.kind ?? ''))
+/** Attunement: items marked as needing it, and (since few are marked) any magical item. */
+export const canAttune = (l: InventoryLine) => { const e = get(l.item); return !!(e?.fields.attunement || e?.fields.magical || l.attuned) }
+
+/** Change a PC's sheet and mark the PC as changed (nothing happens in a tab that doesn't save). */
+export function editSheet(pc: Entry, fn: (s: CharacterSheet) => void) {
+  if (state.readOnly) return
+  fn(sheetToEdit(pc))
+  pc.updated = new Date().toISOString()
+  touch()
+}
+
+/** The inventory line being dragged: from the inventory, or out of the equipped or attunement list. */
+export const dragged = reactive<{ pc: Id | null; i: number; from: 'inventory' | 'equipped' | 'attuned' }>({ pc: null, i: -1, from: 'inventory' })
+export function startDrag(ev: DragEvent, pc: Entry, i: number, from: 'inventory' | 'equipped' | 'attuned') {
+  Object.assign(dragged, { pc: pc.id, i, from })
+  ev.dataTransfer?.setData('text/plain', get(sheetOf(pc)?.inventory[i]?.item)?.name ?? '')
+  if (ev.dataTransfer) ev.dataTransfer.effectAllowed = 'move'
+}
+export const endDrag = () => { dragged.pc = null }
+/** The line being dragged, if it belongs to this PC. */
+export const draggedLine = (pc: Entry) => (dragged.pc === pc.id ? sheetOf(pc)?.inventory[dragged.i] : undefined)

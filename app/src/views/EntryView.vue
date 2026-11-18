@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import type { Entry, Relation, Statblock, WorldDate } from '../model/types'
 import { TYPES, RELATION_KINDS, type FieldDef } from '../model/schema'
-import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, placePath, relationsOf, entries } from '../store'
+import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, placePath, playerMode, relationsOf, entries } from '../store'
 import { go, hrefEntry, hrefFamily, hrefList, hrefMap } from '../router'
 import FamilyTree from '../components/FamilyTree.vue'
 import { familySize } from '../family'
@@ -24,6 +24,7 @@ import ItemCard from '../components/ItemCard.vue'
 import SpellCard from '../components/SpellCard.vue'
 import CharacterSheet from '../components/CharacterSheet.vue'
 import EquippedCard from '../components/EquippedCard.vue'
+import InventoryCard from '../components/InventoryCard.vue'
 import FeatCard from '../components/FeatCard.vue'
 import { describe } from '../describe'
 import TimelineChart from '../components/TimelineChart.vue'
@@ -360,6 +361,8 @@ const siblings = computed(() => {
         <MembersCard v-if="e.type === 'organization'" :org="e" />
         <!-- A character's sheet: what they're equipped with instead of the relation cards. -->
         <EquippedCard v-if="e.type === 'pc'" :pc="e" />
+        <!-- Player mode: the inventory sits under it, where "Mentioned in" would be. -->
+        <InventoryCard v-if="e.type === 'pc' && playerMode" :pc="e" side />
 
         <div v-for="[label, list] in e.type === 'pc' ? [] : relGroups" :key="label" class="card">
           <h3>{{ label[0].toUpperCase() + label.slice(1) }}</h3>
@@ -387,7 +390,7 @@ const siblings = computed(() => {
           <ul class="rel"><li v-for="m in onMaps" :key="m.place.id + m.pin.id"><a :href="hrefMap(m.place.id, m.pin.id)">🗺 {{ m.place.name }}</a></li></ul>
         </div>
 
-        <div v-if="mentions.length" class="card">
+        <div v-if="mentions.length && !(e.type === 'pc' && playerMode)" class="card">
           <h3>Mentioned in</h3>
           <ul class="rel"><li v-for="m in mentions" :key="m.id"><EntryLink :id="m.id" icon /></li></ul>
         </div>

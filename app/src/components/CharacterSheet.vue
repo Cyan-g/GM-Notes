@@ -1,16 +1,16 @@
 <script setup lang="ts">
 // A player character's sheet, filled in right here: scores, proficiencies, HP, inventory and features.
+// (In player mode the inventory sits beside the sheet, under the Equipped card.)
 // Modifiers, saves, skills, AC, attacks and spellcasting are worked out from them.
 import { computed, ref } from 'vue'
-import type { CharacterSheet, Entry, InventoryLine } from '../model/types'
-import { formatMoney, get, state } from '../store'
+import type { CharacterSheet, Entry } from '../model/types'
+import { playerMode, state } from '../store'
 import { changed } from '../edit'
 import {
-  ABILITIES, SKILLS, armorClass, attacks, blankSheet, carried, castingAbility, levelOf, mod, passivePerception,
+  ABILITIES, SKILLS, armorClass, attacks, blankSheet, canAttune, canEquip, castingAbility, levelOf, mod, passivePerception,
   profBonus, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, currentPc, setCurrent, type Ability,
 } from '../sheet'
-import EntryPicker from './edit/EntryPicker.vue'
-import MoneyInput from './edit/MoneyInput.vue'
+import InventoryCard from './InventoryCard.vue'
 import ItemModal from './ItemModal.vue'
 
 const props = defineProps<{ pc: Entry }>()
@@ -23,7 +23,6 @@ const ac = computed(() => armorClass(s.value))
 const atks = computed(() => attacks(s.value, prof.value))
 const cast = computed(() => castingAbility(props.pc, s.value))
 const castMod = computed(() => (cast.value ? mod(s.value.abilities[cast.value]) : 0))
-const weight = computed(() => carried(s.value))
 
 function edit(fn: (s: CharacterSheet) => void) {
   if (ro.value) return
@@ -66,29 +65,11 @@ function hit(ev: Event) {
 }
 const longRest = () => edit(x => { x.hp = x.maxHp; x.tempHp = undefined; x.hitDiceUsed = Math.max(0, (x.hitDiceUsed ?? 0) - Math.max(1, Math.floor(level.value / 2))) || undefined })
 
-// ---- inventory ----
-const itemOf = (l: InventoryLine) => get(l.item)
-const canEquip = (l: InventoryLine) => ['Weapon', 'Armor'].includes(String(itemOf(l)?.fields.kind ?? ''))
-/** Attunement: items marked as needing it, and (since few are marked) any magical item. */
-const canAttune = (l: InventoryLine) => !!(itemOf(l)?.fields.attunement || itemOf(l)?.fields.magical || l.attuned)
-const attunedCount = computed(() => s.value.inventory.filter(l => l.attuned).length)
-function addItem(id: string) {
-  edit(x => {
-    const have = x.inventory.find(l => l.item === id)
-    if (have) have.qty += 1; else x.inventory.push({ item: id, qty: 1 })
-  })
-}
-const addNamed = () => edit(x => { x.inventory.push({ name: 'New thing', qty: 1 }) })
-// Ingredients are the crafting pouch: listed apart, under the gear (the Workbench uses them).
-const lines = computed(() => s.value.inventory.map((l, i) => ({ l, i })))
-const gear = computed(() => lines.value.filter(x => itemOf(x.l)?.fields.kind !== 'Ingredient'))
-const pouch = computed(() => lines.value.filter(x => itemOf(x.l)?.fields.kind === 'Ingredient'))
-const isCurrent = computed(() => currentPc.value?.id === props.pc.id)
-
-/** The inventory line whose item is open in the pop-up. */
+// ---- items in the attack lines open in a pop-up ----
 const shown = ref<number | null>(null)
 const shownLine = computed(() => (shown.value != null ? s.value.inventory[shown.value] : undefined))
 const showItem = (id: string) => { const i = s.value.inventory.findIndex(l => l.item === id); if (i >= 0) shown.value = i }
+const isCurrent = computed(() => currentPc.value?.id === props.pc.id)
 
 // ---- features ----
 const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
@@ -182,38 +163,8 @@ const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
       </section>
     </div>
 
-    <!-- inventory -->
-    <section class="cs-inventory">
-      <h4>Inventory <span class="muted small">{{ weight ? `${Math.round(weight * 10) / 10} lb` : '' }}{{ attunedCount ? ` · ${attunedCount}/3 attuned` : '' }}</span></h4>
-      <table class="cs-inv">
-        <tr v-for="{ l, i } in gear" :key="i">
-          <td class="cs-qty"><input type="number" min="0" :value="l.qty" :disabled="ro" @change="edit(x => x.inventory[i].qty = num($event) ?? 0)" /></td>
-          <td class="cs-iname">
-            <button v-if="itemOf(l)" class="link-btn cs-item" @click="shown = i">{{ itemOf(l)!.name }}</button>
-            <input v-else :value="l.name ?? ''" placeholder="Name" :disabled="ro" @change="edit(x => x.inventory[i].name = text($event))" />
-            <span v-if="itemOf(l)?.fields.kind" class="muted small cs-kind">{{ itemOf(l)!.fields.kind }}</span>
-          </td>
-          <td><button v-if="canEquip(l)" class="chip-toggle" :class="{ on: l.equipped }" :disabled="ro" @click="edit(x => x.inventory[i].equipped = !l.equipped || undefined)">{{ l.equipped ? 'Equipped' : 'Equip' }}</button></td>
-          <td><button v-if="canAttune(l)" class="chip-toggle" :class="{ on: l.attuned }" :disabled="ro" @click="edit(x => x.inventory[i].attuned = !l.attuned || undefined)">{{ l.attuned ? 'Attuned' : 'Attune' }}</button></td>
-          <td><button class="link-btn" title="Remove" :disabled="ro" @click="edit(x => x.inventory.splice(i, 1))">✕</button></td>
-        </tr>
-      </table>
-      <template v-if="pouch.length">
-        <h5 class="cs-sub">Ingredient pouch</h5>
-        <table class="cs-inv">
-          <tr v-for="{ l, i } in pouch" :key="i">
-            <td class="cs-qty"><input type="number" min="0" :value="l.qty" :disabled="ro" @change="edit(x => x.inventory[i].qty = num($event) ?? 0)" /></td>
-            <td class="cs-iname"><button class="link-btn cs-item" @click="shown = i">{{ itemOf(l)!.name }}</button></td>
-            <td><button class="link-btn" title="Remove" :disabled="ro" @click="edit(x => x.inventory.splice(i, 1))">✕</button></td>
-          </tr>
-        </table>
-      </template>
-      <div v-if="!ro" class="cs-inv-add">
-        <EntryPicker add :types="['item']" placeholder="Add an item…" @pick="addItem" />
-        <button class="link-btn" @click="addNamed">＋ Something else</button>
-      </div>
-      <label class="cs-money"><span>Money</span><MoneyInput :model-value="s.money" :disabled="ro" @update:model-value="v => edit(x => x.money = v)" /><span class="muted small">{{ formatMoney(s.money) }}</span></label>
-    </section>
+    <!-- inventory (in player mode it sits beside the sheet instead) -->
+    <InventoryCard v-if="!playerMode" :pc="pc" />
 
     <!-- features and traits -->
     <section class="cs-features">

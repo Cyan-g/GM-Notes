@@ -1,11 +1,10 @@
-// Sharing single entries between worlds: a spell, an item, an NPC … saved as one file that another copy of the
-// app can import as it is.
+// Sharing spells, items and maps with someone else who has this app: one entry saved as a file they can import.
 //
-// The file holds the entry, the entries it can't work without (a potion's ingredients, an encounter's creatures,
-// a scroll's spell), its pictures and attached files, its relations, and the name and type of everything else it
-// links to. On import, those links are reconnected to entries of the same type and name; what isn't there is left out.
-import type { Entry, Id, Relation } from './model/types'
-import { SCHEMA, type FieldDef } from './model/schema'
+// - A spell or item travels with what it needs to work: a recipe's ingredients (and theirs), a scroll's spell,
+//   and the spells an item's text links to. Other links in the text become plain words.
+// - A map travels as a place with only its name and map picture (no text, pins or "Located in").
+// Relations never travel.
+import type { Entry, Id } from './model/types'
 import { db, get, state, touch } from './store'
 import { newId } from './edit'
 
@@ -17,48 +16,28 @@ interface Bundle {
   exported: string
   /** The world it came from, for the import preview. */
   from: string
-  /** The entries that were exported; the rest of `entries` came along as parts. */
-  main: Id[]
+  /** The exported entry; the other entries came along because it needs them. */
+  main: Id
   entries: Entry[]
-  relations: Relation[]
-  /** Everything linked to that isn't in the file: matched by type and name on import. */
-  refs: Record<Id, { name: string; type: Entry['type'] }>
   /** Pictures and attached files, as data: URLs, by their path in the data folder. */
   files: Record<string, string>
 }
 
-// ---------- where entries point at other entries ----------
+/** Spells, items, and places with a map can be exported. */
+export const canExport = (e: Entry) => e.type === 'spell' || e.type === 'item' || (e.type === 'place' && !!e.fields.map)
 
-const fieldDefs = (e: Entry): FieldDef[] => SCHEMA.find(s => s.type === e.type)?.fields ?? []
-const REF_KINDS = ['ref', 'refs', 'recipe', 'stock', 'combatants', 'pins']
-/** The key inside a line that points at an entry, for fields that are lists of lines. */
-const LINE_KEY: Record<string, string> = { recipe: 'item', stock: 'item', combatants: 'creature', pins: 'entry' }
-/** Line kinds that make no sense without their entry (a pin or a combatant keeps its label instead). */
-const LINE_NEEDS_ENTRY = ['recipe', 'stock']
 const LINK = /\[\[([^\]|\\]+)((?:\\?\|)[^\]]*)?\]\]/g
-const DATA_PATH = /\]\((?:<)?((?:images|files)\/[^)>]+)(?:>)?\)/g
+const DATA_PATH = /\]\(<?((?:images|files)\/[^)>]+)>?\)/g
+const stripSecrets = (body: string) => body.replace(/^:::secret\s*\n[\s\S]*?\n:::\s*$/gm, '').replace(/\n{3,}/g, '\n\n').trim()
 
-/** Every entry id an entry points at: in its fields and in its text. */
-function pointsAt(e: Entry): Id[] {
-  const out: Id[] = []
-  for (const f of fieldDefs(e)) {
-    const v = e.fields[f.key]
-    if (!REF_KINDS.includes(f.kind) || v == null) continue
-    if (f.kind === 'ref' && typeof v === 'string') out.push(v)
-    else if (f.kind === 'refs' && Array.isArray(v)) out.push(...v.filter(x => typeof x === 'string'))
-    else if (Array.isArray(v)) for (const line of v) { const id = line?.[LINE_KEY[f.kind]]; if (typeof id === 'string') out.push(id) }
-  }
-  for (const m of e.body.matchAll(LINK)) out.push(m[1].trim())
-  return out
-}
-
-/** The entries an entry can't work without, so they travel with it. */
+/** What an item needs to work: recipe ingredients, a scroll's spell, spells linked in its text. */
 function partsOf(e: Entry): Id[] {
+  if (e.type !== 'item') return []
   const f = e.fields
   const ids: Id[] = []
   if (Array.isArray(f.recipe)) ids.push(...(f.recipe as { item?: Id }[]).map(l => l.item!).filter(Boolean))
-  if (Array.isArray(f.creatures)) ids.push(...(f.creatures as { creature?: Id }[]).map(l => l.creature!).filter(Boolean))
-  if (e.type === 'item' && typeof f.spell === 'string') ids.push(f.spell)
+  if (typeof f.spell === 'string' && f.spell) ids.push(f.spell)
+  for (const m of e.body.matchAll(LINK)) if (get(m[1].trim())?.type === 'spell') ids.push(m[1].trim())
   return ids
 }
 
@@ -72,55 +51,56 @@ function dataPaths(e: Entry): string[] {
   return [...out]
 }
 
-const stripSecrets = (body: string) => body.replace(/^:::secret\s*\n[\s\S]*?\n:::\s*$/gm, '').replace(/\n{3,}/g, '\n\n').trim()
-
 // ---------- export ----------
 
 export interface ExportPlan {
-  main: Entry[]
-  /** Entries that come along because the main ones need them. */
+  main: Entry
+  /** Entries that come along because the main one needs them. */
   parts: Entry[]
-  /** Linked entries that stay behind (matched by name on import). */
-  linked: Entry[]
   files: string[]
   hasSecrets: boolean
 }
 
-export function planExport(ids: Id[]): ExportPlan {
-  const main = ids.map(id => get(id)).filter((e): e is Entry => !!e)
-  const all = new Map(main.map(e => [e.id, e]))
-  // Parts of parts too (an ingredient that is itself brewed), but nothing else.
-  const queue = [...main]
+export function planExport(id: Id): ExportPlan | null {
+  const main = get(id)
+  if (!main || !canExport(main)) return null
+  if (main.type === 'place') return { main, parts: [], files: [main.fields.map as string], hasSecrets: false }
+  const all = new Map([[main.id, main]])
+  const queue = [main]
   while (queue.length) {
-    for (const id of partsOf(queue.shift()!)) {
-      const p = get(id)
-      if (p && !all.has(id)) { all.set(id, p); queue.push(p) }
+    for (const pid of partsOf(queue.shift()!)) {
+      const p = get(pid)
+      if (p && !all.has(pid)) { all.set(pid, p); queue.push(p) }
     }
   }
-  const inFile = [...all.values()]
-  const linked = new Map<Id, Entry>()
-  const consider = (id: Id) => { const x = get(id); if (x && !all.has(id)) linked.set(id, x) }
-  for (const e of inFile) pointsAt(e).forEach(consider)
-  for (const r of db().relations) if (all.has(r.a) || all.has(r.b)) { consider(r.a); consider(r.b) }
+  const list = [...all.values()]
   return {
     main,
-    parts: inFile.filter(e => !ids.includes(e.id)),
-    linked: [...linked.values()].sort((a, b) => a.name.localeCompare(b.name)),
-    files: [...new Set(inFile.flatMap(dataPaths))],
-    hasSecrets: inFile.some(e => /^:::secret/m.test(e.body)),
+    parts: list.slice(1),
+    files: [...new Set(list.flatMap(dataPaths))],
+    hasSecrets: list.some(e => /^:::secret/m.test(e.body)),
   }
+}
+
+/** The copy of an entry that goes into the file. Links to entries that don't come along become plain words. */
+function exportCopy(e: Entry, inFile: Set<Id>, secrets: boolean): Entry {
+  const c = JSON.parse(JSON.stringify(e)) as Entry
+  if (c.type === 'place') {
+    return { id: c.id, type: 'place', name: c.name, aliases: [], tags: [], fields: { map: c.fields.map }, body: '', visibility: c.visibility, created: c.created, updated: c.updated }
+  }
+  if (!secrets) c.body = stripSecrets(c.body)
+  c.body = c.body.replace(LINK, (all, ref: string, label?: string) =>
+    inFile.has(ref.trim()) ? all : label ? label.replace(/^\\?\|/, '') : (get(ref.trim())?.name ?? ref))
+  if (typeof c.fields.spell === 'string' && !inFile.has(c.fields.spell)) delete c.fields.spell
+  if (Array.isArray(c.fields.recipe)) c.fields.recipe = (c.fields.recipe as { item: Id }[]).filter(l => inFile.has(l.item))
+  return c
 }
 
 const toDataUrl = (b: Blob) => new Promise<string>((ok, fail) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => fail(r.error); r.readAsDataURL(b) })
 
 export async function buildExport(plan: ExportPlan, opts: { secrets: boolean }): Promise<{ blob: Blob; name: string }> {
-  const inFile = [...plan.main, ...plan.parts]
-  const ids = new Set(inFile.map(e => e.id))
-  const entries = inFile.map(e => {
-    const c = JSON.parse(JSON.stringify(e)) as Entry
-    if (!opts.secrets) c.body = stripSecrets(c.body)
-    return c
-  })
+  const list = [plan.main, ...plan.parts]
+  const ids = new Set(list.map(e => e.id))
   const files: Record<string, string> = {}
   for (const p of plan.files) {
     const b = await state.storage!.readBlob(p)
@@ -128,14 +108,11 @@ export async function buildExport(plan: ExportPlan, opts: { secrets: boolean }):
   }
   const bundle: Bundle = {
     format: FORMAT, version: 1, exported: new Date().toISOString(), from: db().meta.title,
-    main: plan.main.map(e => e.id),
-    entries,
-    relations: db().relations.filter(r => ids.has(r.a) || ids.has(r.b)).map(r => ({ ...r })),
-    refs: Object.fromEntries(plan.linked.map(e => [e.id, { name: e.name, type: e.type }])),
+    main: plan.main.id,
+    entries: list.map(e => exportCopy(e, ids, opts.secrets)),
     files,
   }
-  const first = plan.main[0]?.name ?? 'export'
-  const name = `${(plan.main.length > 1 ? `${first} and ${plan.main.length - 1} more` : first).replace(/[\\/:*?"<>|]+/g, '')}.eldoria.json`
+  const name = `${plan.main.name.replace(/[\\/:*?"<>|]+/g, '')}.eldoria.json`
   return { blob: new Blob([JSON.stringify(bundle, null, 1)], { type: 'application/json' }), name }
 }
 
@@ -148,30 +125,20 @@ export function download(blob: Blob, name: string) {
 
 // ---------- import ----------
 
-/** What to do with an entry from the file that this world already has (same type and name). */
-export type Clash = 'keep' | 'replace' | 'copy'
-
-export interface ImportItem {
-  entry: Entry
-  main: boolean
-  /** The entry here with the same type and name, if any. */
-  existing?: Entry
-  action: Clash
-}
 export interface ImportPlan {
   from: string
   exported: string
-  items: ImportItem[]
-  /** Links to entries that weren't in the file: found here, or left out. */
-  found: { name: string; type: Entry['type']; here: Entry }[]
-  missing: { name: string; type: Entry['type'] }[]
+  main: Entry
+  /** The same entry already here (same type and name): the user keeps it or replaces it. */
+  existing?: Entry
+  replace: boolean
+  /** The entries that came along, and whether this world already has each one (then that one is used). */
+  parts: { entry: Entry; here?: Entry }[]
   bundle: Bundle
 }
 
 const norm = (s: string) => s.trim().toLowerCase()
-function findHere(type: Entry['type'], name: string, id?: Id): Entry | undefined {
-  const same = id ? get(id) : undefined
-  if (same && same.type === type && norm(same.name) === norm(name)) return same
+function findHere(type: Entry['type'], name: string): Entry | undefined {
   const list = Object.values(db().entries).filter(e => e.type === type)
   return list.find(e => norm(e.name) === norm(name)) ?? list.find(e => e.aliases.some(a => norm(a) === norm(name)))
 }
@@ -179,107 +146,75 @@ function findHere(type: Entry['type'], name: string, id?: Id): Entry | undefined
 export async function readImport(file: File): Promise<ImportPlan> {
   let b: Bundle
   try { b = JSON.parse(await file.text()) } catch { throw new Error(`${file.name} isn't a file this app can read.`) }
-  if (b?.format !== FORMAT || !Array.isArray(b.entries)) throw new Error(`${file.name} isn't an exported entry. Use a file made with Export on an entry's page.`)
+  if (b?.format !== FORMAT || !Array.isArray(b.entries)) throw new Error(`${file.name} isn't an exported spell, item or map. Use a file made with ⇩ Export on an entry's page.`)
   if (b.version > 1) throw new Error(`${file.name} was made by a newer version of the app. Update this one first.`)
-  const known = new Set(SCHEMA.map(s => s.type))
-  const items: ImportItem[] = b.entries.filter(e => e?.id && known.has(e.type) && typeof e.name === 'string').map(e => {
-    const existing = findHere(e.type, e.name, e.id)
-    return { entry: e, main: b.main.includes(e.id), existing, action: existing ? 'keep' : 'copy' }
-  })
-  const found: ImportPlan['found'] = [], missing: ImportPlan['missing'] = []
-  for (const [id, r] of Object.entries(b.refs ?? {})) {
-    const here = findHere(r.type, r.name, id)
-    if (here) found.push({ ...r, here }); else missing.push(r)
+  const ok = b.entries.filter(e => e?.id && typeof e.name === 'string' && e.fields && canExport(e))
+  const main = ok.find(e => e.id === b.main)
+  if (!main) throw new Error(`${file.name} doesn't hold a spell, item or map.`)
+  return {
+    from: b.from, exported: b.exported, main,
+    existing: findHere(main.type, main.name), replace: false,
+    parts: ok.filter(e => e !== main).map(e => ({ entry: e, here: findHere(e.type, e.name) })),
+    bundle: b,
   }
-  return { from: b.from, exported: b.exported, items, found, missing, bundle: b }
 }
 
-/** Add the file's contents to this world. Returns the id of the (first) main entry. */
-export async function applyImport(plan: ImportPlan): Promise<Id | undefined> {
+/** Add the file's contents to this world. Returns the id of the imported (or kept) entry. */
+export async function applyImport(plan: ImportPlan): Promise<Id> {
   const d = db()
   const b = plan.bundle
-  // Where each id from the file ends up here; ids missing from the map are left out.
+  if (plan.existing && !plan.replace) return plan.existing.id
+
+  // Where each id from the file ends up here.
   const map = new Map<Id, Id>()
-  for (const [id, r] of Object.entries(b.refs ?? {})) { const here = findHere(r.type, r.name, id); if (here) map.set(id, here.id) }
   const incoming: { e: Entry; id: Id }[] = []
   const taken = new Set<Id>()
-  for (const it of plan.items) {
-    if (it.existing && it.action === 'keep') { map.set(it.entry.id, it.existing.id); continue }
-    let id = it.existing && it.action === 'replace' ? it.existing.id : newId(it.entry.name)
-    for (let i = 2; taken.has(id); i++) id = newId(`${it.entry.name} ${i}`)
-    taken.add(id)
-    map.set(it.entry.id, id)
-    incoming.push({ e: it.entry, id })
+  const add = (e: Entry, id: Id) => { map.set(e.id, id); taken.add(id); incoming.push({ e, id }) }
+  const freeId = (name: string) => { let id = newId(name); for (let i = 2; taken.has(id); i++) id = newId(`${name} ${i}`); return id }
+  add(plan.main, plan.existing ? plan.existing.id : freeId(plan.main.name))
+  for (const p of plan.parts) {
+    if (p.here) map.set(p.entry.id, p.here.id)
+    else add(p.entry, freeId(p.entry.name))
   }
 
-  // Pictures and files first (nothing in the data changes until they're stored):
-  // an identical one already here is reused, otherwise it's stored under a free name.
+  // Pictures and files first (nothing in the data changes until they're stored).
+  // Only paths inside the data folder, and only data carried in the file itself (never fetched from elsewhere).
   const paths = new Map<string, string>()
   const used = new Set(incoming.flatMap(({ e }) => dataPaths(e)))
   for (const [path, url] of Object.entries(b.files ?? {})) {
-    // Only paths inside the data folder, and only data carried in the file itself (never fetched from elsewhere).
     if (!used.has(path) || !/^(images|files)\/[^/]+$/.test(path) || !String(url).startsWith('data:')) continue
-    const blob = await (await fetch(url)).blob()
-    paths.set(path, await storeFile(path, blob))
+    paths.set(path, await storeFile(path, await (await fetch(url)).blob()))
   }
 
   const now = new Date().toISOString()
   for (const { e, id } of incoming) {
     const c = JSON.parse(JSON.stringify(e)) as Entry
+    const mine = d.entries[id]
+    if (c.type === 'place') {
+      // A map: a place with only its name and picture. Replacing keeps the place's own text, pins and
+      // "Located in", and only swaps the map picture.
+      const pic = paths.get(String(c.fields.map ?? ''))
+      if (mine) { if (pic) mine.fields.map = pic; mine.updated = now; continue }
+      d.entries[id] = { id, type: 'place', name: c.name, aliases: [], tags: [], fields: pic ? { map: pic } : {}, body: '', visibility: 'secret', created: now, updated: now }
+      continue
+    }
     c.id = id
-    c.aliases ??= []; c.tags ??= []; c.fields ??= {}; c.body ??= ''; c.visibility ??= 'secret'; c.created ??= now
+    c.aliases ??= []; c.tags ??= []; c.body ??= ''; c.visibility ??= 'secret'
+    c.created = mine?.created ?? now
     c.updated = now
-    c.fields = remapFields(c, map)
-    c.body = c.body.replace(LINK, (all, ref: string, label?: string) => {
+    if (typeof c.fields.spell === 'string') { const to = map.get(c.fields.spell); if (to) c.fields.spell = to; else delete c.fields.spell }
+    if (Array.isArray(c.fields.recipe)) c.fields.recipe = (c.fields.recipe as { item: Id }[]).flatMap(l => (map.has(l.item) ? [{ ...l, item: map.get(l.item)! }] : []))
+    c.body = c.body.replace(LINK, (_all, ref: string, label?: string) => {
       const to = map.get(ref.trim())
-      if (to) return `[[${to}${label ?? ''}]]`
-      return label ? label.replace(/^\\?\|/, '') : (b.refs?.[ref.trim()]?.name ?? ref)
+      return to ? `[[${to}${label ?? ''}]]` : label ? label.replace(/^\\?\|/, '') : ref
     }).replace(DATA_PATH, (all, p: string) => { const to = paths.get(decodeURI(p)); return to ? all.replace(p, encodeURI(to)) : all })
     if (c.image) c.image = paths.get(c.image)
-    if (typeof c.fields.map === 'string') c.fields.map = paths.get(c.fields.map) ?? ''
-    if (c.files) c.files = c.files.map(f => paths.get(f)).filter((f): f is string => !!f)
     if (!c.image) delete c.image
-    if (!c.fields.map) delete c.fields.map
+    if (c.files) c.files = c.files.map(f => paths.get(f)).filter((f): f is string => !!f)
     d.entries[id] = c
   }
-
-  // Relations: both ends must be here now, and the same connection isn't added twice.
-  // A replaced entry keeps its own relations; the file's are added next to them.
-  const newIds = new Set(incoming.map(x => x.id))
-  for (const r of b.relations ?? []) {
-    const a = map.get(r.a), bb = map.get(r.b)
-    if (!a || !bb || (!newIds.has(a) && !newIds.has(bb))) continue
-    if (d.relations.some(x => x.a === a && x.b === bb && x.kind === r.kind)) continue
-    let rid: string, n = 0
-    do rid = `r${Date.now().toString(36)}i${(n++).toString(36)}`
-    while (d.relations.some(x => x.id === rid))
-    d.relations.push({ ...r, id: rid, a, b: bb })
-  }
   touch()
-  const first = b.main.find(id => map.has(id))
-  return first ? map.get(first) : undefined
-}
-
-function remapFields(e: Entry, map: Map<Id, Id>): Record<string, unknown> {
-  const out = { ...e.fields }
-  for (const f of fieldDefs(e)) {
-    const v = out[f.key]
-    if (!REF_KINDS.includes(f.kind) || v == null) continue
-    if (f.kind === 'ref') { const to = typeof v === 'string' ? map.get(v) : undefined; if (to) out[f.key] = to; else delete out[f.key]; continue }
-    if (!Array.isArray(v)) { delete out[f.key]; continue }
-    if (f.kind === 'refs') { out[f.key] = v.map(x => map.get(x)).filter(Boolean); continue }
-    const key = LINE_KEY[f.kind]
-    out[f.key] = v.flatMap(line => {
-      const id = line?.[key]
-      if (id == null) return [line]
-      const to = map.get(id)
-      if (to) return [{ ...line, [key]: to }]
-      if (LINE_NEEDS_ENTRY.includes(f.kind)) return []
-      const { [key]: _gone, ...rest } = line
-      return [rest]
-    })
-  }
-  return out
+  return map.get(plan.main.id)!
 }
 
 /** Store an imported picture or file. An identical file already in the folder is reused. */

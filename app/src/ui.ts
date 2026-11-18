@@ -12,7 +12,6 @@ export const ui = reactive({
   treeAsList: false,
   /** An exported file waiting to be imported (the import dialog shows it). */
   importPlan: null as ImportPlan | null,
-  importError: '',
 })
 
 export function newEntry(type?: EntryType, fields: Record<string, unknown> = {}) {
@@ -22,16 +21,15 @@ export function newEntry(type?: EntryType, fields: Record<string, unknown> = {})
 }
 
 /** Read an exported file and show what importing it would do. */
-export async function startImport(file: File) {
-  ui.importError = ''
+async function startImport(file: File) {
   try {
     const plan = await readImport(file)
     plan.bundle = markRaw(plan.bundle)
     ui.importPlan = plan
-  } catch (e) { ui.importError = (e as Error).message; alert(ui.importError) }
+  } catch (e) { alert((e as Error).message) }
 }
 
-/** Let the user pick an exported file. */
+/** Let the user pick an exported spell, item or map. */
 export function pickImport() {
   const input = Object.assign(document.createElement('input'), { type: 'file', accept: '.json,application/json' })
   input.onchange = () => { const f = input.files?.[0]; if (f) startImport(f) }

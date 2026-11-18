@@ -1,11 +1,10 @@
 <script setup lang="ts">
-// Bring in entries someone exported: shows what the file holds and what already exists here, then adds it.
+// Bring in a spell, item or map someone exported: shows what the file holds and what's already here, then adds it.
+import { ref } from 'vue'
 import { SCHEMA } from '../model/schema'
 import { applyImport, type ImportPlan } from '../transfer'
 import { go, hrefEntry } from '../router'
 import { state } from '../store'
-import { ref } from 'vue'
-import EntryLink from './EntryLink.vue'
 
 const plan = defineModel<ImportPlan | null>({ required: true })
 const busy = ref(false), error = ref('')
@@ -18,7 +17,7 @@ async function run() {
   try {
     const id = await applyImport(plan.value)
     plan.value = null
-    if (id) go(hrefEntry(id))
+    go(hrefEntry(id))
   } catch (e) { error.value = (e as Error).message }
   finally { busy.value = false }
 }
@@ -28,34 +27,28 @@ const close = () => { plan.value = null }
 <template>
   <div v-if="plan" class="qs-backdrop" @mousedown.self="close" @keydown.esc="close">
     <form class="qs transfer" @submit.prevent="run">
-      <h3>Import</h3>
+      <h3>Import {{ icon(plan.main.type) }} {{ plan.main.name }}</h3>
       <p class="muted small">From “{{ plan.from }}”<template v-if="when(plan.exported)">, exported {{ when(plan.exported) }}</template>.</p>
-      <ul class="transfer-items">
-        <li v-for="it in plan.items" :key="it.entry.id" :class="{ part: !it.main }">
-          <span class="name">{{ icon(it.entry.type) }} {{ it.entry.name }}<span v-if="!it.main" class="muted small"> needed</span></span>
-          <template v-if="it.existing">
-            <select v-model="it.action" :title="`You already have ${it.existing.name}`">
-              <option value="keep">Already here: keep yours</option>
-              <option value="replace">Replace yours with this one</option>
-              <option value="copy">Add as a second one</option>
-            </select>
-          </template>
-          <span v-else class="muted small">new</span>
-        </li>
-      </ul>
-      <template v-if="plan.found.length">
-        <h4>Links reconnected to your entries</h4>
-        <p class="transfer-list"><span v-for="f in plan.found" :key="f.here.id"><EntryLink :id="f.here.id" icon /></span></p>
+      <template v-if="plan.existing">
+        <p>You already have {{ plan.main.type === 'place' ? 'a place' : 'one' }} called <b>{{ plan.existing.name }}</b>.</p>
+        <label class="check"><input v-model="plan.replace" type="radio" :value="false" /> Keep yours</label>
+        <label class="check"><input v-model="plan.replace" type="radio" :value="true" />
+          {{ plan.main.type === 'place' ? 'Use the new map picture (your text and pins stay)' : 'Replace yours with this one' }}</label>
       </template>
-      <template v-if="plan.missing.length">
-        <h4>Links left out (not in your world)</h4>
-        <p class="transfer-list muted"><span v-for="m in plan.missing" :key="m.type + m.name">{{ icon(m.type) }} {{ m.name }}</span></p>
+      <template v-if="plan.parts.length && (!plan.existing || plan.replace)">
+        <h4>Comes along</h4>
+        <ul class="transfer-items">
+          <li v-for="p in plan.parts" :key="p.entry.id">
+            <span class="name">{{ icon(p.entry.type) }} {{ p.entry.name }}</span>
+            <span class="muted small">{{ p.here ? 'you have it, yours is used' : 'new' }}</span>
+          </li>
+        </ul>
       </template>
       <p v-if="state.readOnly" class="error">This tab isn't saving, so nothing can be imported here.</p>
       <p v-if="error" class="error">{{ error }}</p>
       <div class="actions">
         <button type="button" @click="close">Cancel</button>
-        <button type="submit" class="primary" :disabled="busy || !!state.readOnly || plan.items.every(i => i.existing && i.action === 'keep')">{{ busy ? 'Importing…' : 'Import' }}</button>
+        <button type="submit" class="primary" :disabled="busy || !!state.readOnly">{{ busy ? 'Importing…' : plan.existing && !plan.replace ? 'Open yours' : 'Import' }}</button>
       </div>
     </form>
   </div>

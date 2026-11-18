@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { get, open, overwrite, save, state } from './store'
-import { startImport, ui } from './ui'
+import { ui } from './ui'
 import { FolderStorage, HttpStorage, folderApiAvailable, pickFolder, regrant, rememberedFolder } from './storage/storage'
 import { route } from './router'
 import TopBar from './components/TopBar.vue'
@@ -81,17 +81,8 @@ function onKey(ev: KeyboardEvent) {
 // Warn before closing the tab while a save is still pending.
 const reload = () => location.reload()
 function beforeUnload(ev: BeforeUnloadEvent) { if (state.dirty || state.saving) { save(); ev.preventDefault() } }
-// An exported entry file dropped anywhere on the app (outside a text or picture field) opens the import.
-const isFileDrag = (ev: DragEvent) => !!ev.dataTransfer?.types.includes('Files')
-function onDragOver(ev: DragEvent) { if (isFileDrag(ev) && !ev.defaultPrevented) ev.preventDefault() }
-function onDrop(ev: DragEvent) {
-  if (ev.defaultPrevented || !isFileDrag(ev) || phase.value !== 'ready') return
-  const f = [...(ev.dataTransfer?.files ?? [])].find(x => x.name.endsWith('.json'))
-  ev.preventDefault()
-  if (f) startImport(f)
-}
-onMounted(() => { window.addEventListener('keydown', onKey); window.addEventListener('beforeunload', beforeUnload); window.addEventListener('dragover', onDragOver); window.addEventListener('drop', onDrop) })
-onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeEventListener('beforeunload', beforeUnload); window.removeEventListener('dragover', onDragOver); window.removeEventListener('drop', onDrop) })
+onMounted(() => { window.addEventListener('keydown', onKey); window.addEventListener('beforeunload', beforeUnload) })
+onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeEventListener('beforeunload', beforeUnload) })
 </script>
 
 <template>

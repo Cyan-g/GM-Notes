@@ -982,8 +982,6 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .transfer ul.transfer-items { padding: 0; max-height: none; }
 .transfer-items li { display: flex; align-items: center; gap: .6rem; padding: .35rem .2rem; cursor: default; border-bottom: 1px solid var(--line); }
 .transfer-items li .name { flex: 1; font-weight: 500; }
-.transfer-items li.part .name { font-weight: 400; }
-.transfer-items select { width: auto; }
 .transfer .check { display: flex; align-items: center; gap: .5rem; font-size: 14px; }
 .transfer .check input { width: auto; border: none; padding: 0; }
 .transfer .error { color: #b33; font-size: 14px; }

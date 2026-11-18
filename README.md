@@ -17,9 +17,15 @@ A local campaign wiki that replaces the Obsidian vault.
 
 ### Sharing entries
 
-- **⇩ Export** on an entry's page saves it as `<name>.eldoria.json`, to send to someone with this app. The file also carries the entries it can't work without (a potion's ingredients, a scroll's spell), its pictures and files, and its relations. DM-only text is left out unless you tick the box.
-- To import, use **＋ → Import from a file…**, or drop the file onto the app. The preview shows what's new and what you already have (same type and name). For each existing entry you choose *keep yours*, *replace yours*, or *add as a second one*.
-- Links to entries that weren't in the file (a race, a home town, an organization) reconnect to your entries of the same type and name. Links with no match are left out: a link in the text becomes plain text.
+Spells, items and maps can be sent to someone else who has this app.
+
+- **⇩ Export** on a spell's, item's or map's page saves it as `<name>.eldoria.json`.
+  - **Spells and items** bring along what they need to work: a recipe's ingredients (and the ingredients of those), a scroll's spell, and any spells linked in an item's text. Other links in the text become plain words. DM-only text is left out unless you tick the box.
+  - **Maps** are a place with only its name and map picture: no text, no pins, and no *Located in*.
+- **＋ → Import from a file…** brings one in.
+  - If you already have an entry with the same type and name, you choose to keep yours or replace it. Replacing a map only swaps the picture; your text and pins stay.
+  - Ingredients and spells you already have are reused as they are.
+- Relations never travel.
 
 Everything is saved in `data/`:
 

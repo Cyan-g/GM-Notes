@@ -14,6 +14,7 @@ import { isFavourite, toggleFavourite } from '../edit'
 import type { Pin } from '../model/types'
 import EntryLink from '../components/EntryLink.vue'
 import ExportDialog from '../components/ExportDialog.vue'
+import { canExport } from '../transfer'
 import MarkdownView from '../components/MarkdownView.vue'
 import FieldValue from '../components/FieldValue.vue'
 import StatblockView from '../components/Statblock.vue'
@@ -233,10 +234,10 @@ const siblings = computed(() => {
     <header class="entry-head" :class="{ 'has-portrait': e.image }">
       <div class="head-actions">
         <button class="fav-btn" :class="{ on: isFavourite(e.id) }" :title="isFavourite(e.id) ? 'Remove from favourites (F)' : 'Add to favourites (F)'" :aria-pressed="isFavourite(e.id)" @click="toggleFavourite(e.id)">{{ isFavourite(e.id) ? '★' : '☆' }}</button>
-        <button class="export-btn" title="Save as a file to share (someone else can import it)" @click="exporting = true">⇩ Export</button>
+        <button v-if="canExport(e)" class="export-btn" title="Save as a file to share (someone else can import it)" @click="exporting = true">⇩ Export</button>
         <a class="button edit-btn" :href="hrefEntry(e.id, true)" title="Edit (E)">✎ Edit</a>
       </div>
-      <ExportDialog v-model="exporting" :ids="[e.id]" />
+      <ExportDialog v-if="canExport(e)" v-model="exporting" :id="e.id" />
       <DataImage v-if="e.image" :path="e.image" :alt="e.name" class="portrait head-portrait" />
       <div class="head-text">
       <div class="title-line">

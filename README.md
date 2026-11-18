@@ -36,7 +36,7 @@ A player character's page is its character sheet, filled in right on the page.
 
 - **What you fill in:** level, ability scores, proficient saves, and skills. Click a skill to cycle it: proficient, then expertise, then none.
 - **Hit points:** current, max and temporary HP. Type `-7` or `+5` in *Damage / heal* to apply it; temporary HP soak up damage first. **Long rest** restores HP and gives back half your hit dice.
-- **Inventory:** items from the world with a quantity, plus anything else by name. Clicking an item opens its card in a pop-up, where it can also be equipped or attuned. Magical items, and items marked as requiring attunement, can be attuned.
+- **Inventory:** items from the world with a quantity, plus anything else by name. Clicking an item opens its card in a pop-up, where it can also be equipped or attuned. Anything that could be a magic item can be attuned: rings, accessories, tomes, weapons, armor and so on, but not potions, poisons, scrolls, ingredients or plain gear.
 - **Equipped card** (beside the sheet, in place of the relation cards): the worn armor and wielded weapons, and the three attunement slots.
 - **Drag and drop:** drag an item from the inventory onto *Equipped* to wear or wield it. A ring or other magical item is attuned instead. Drag it onto the attunement slots to attune it, and back to the inventory to take it off.
 - **Player mode:** the inventory sits beside the sheet under *Equipped*, where *Mentioned in* is in DM mode. Weapons and armor can be equipped, and magic items attuned.

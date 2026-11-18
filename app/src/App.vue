@@ -118,7 +118,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
 
   <div v-else class="start">
     <div class="start-card">
-      <h1>Eldoria</h1>
+      <h1>DnDesk</h1>
       <template v-if="phase === 'starting'"><p class="muted">Opening…</p></template>
       <template v-else-if="phase === 'no-api'">
         <p>This browser can't open folders on your computer, so the app can't read or save your data.</p>

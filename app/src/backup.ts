@@ -10,13 +10,13 @@ const stamp = () => {
 }
 
 /**
- * Copy the database, pictures and files into `<dest>/Eldoria-backup-<date>/`.
+ * Copy the database, pictures and files into `<dest>/DnDesk-backup-<date>/`.
  * The app's own backups folder isn't copied: it would only repeat the database.
  */
 export async function backupTo(dest: Storage, onProgress: (done: number, total: number) => void): Promise<string> {
   const src = state.storage!
   await save()
-  const folder = `Eldoria-backup-${stamp()}`
+  const folder = `DnDesk-backup-${stamp()}`
   const files: string[] = ['eldoria.json', 'session.json']
   for (const dir of ['images', 'files']) for (const n of await src.list(dir)) files.push(`${dir}/${n}`)
   let done = 0
@@ -44,7 +44,7 @@ export async function restoreBackup(name: string) {
   const text = await s.readText(`backups/${name}`)
   if (!text) throw new Error(`Couldn't read ${name}`)
   const db = JSON.parse(text) as Database
-  if (!db.entries || !db.meta) throw new Error(`${name} doesn't look like a Eldoria database`)
+  if (!db.entries || !db.meta) throw new Error(`${name} doesn't look like a DnDesk database`)
   await save()
   const current = await s.readText('eldoria.json')
   if (current) await s.writeText(`backups/before-restore-${stamp()}.json`, current)

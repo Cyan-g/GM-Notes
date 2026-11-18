@@ -8,10 +8,12 @@ import type { Entry, Id } from './model/types'
 import { db, get, state, touch } from './store'
 import { newId } from './edit'
 
-export const FORMAT = 'eldoria-export'
+export const FORMAT = 'dndesk-export'
+/** Files exported before the app was renamed. */
+const OLD_FORMAT = 'eldoria-export'
 
 interface Bundle {
-  format: typeof FORMAT
+  format: typeof FORMAT | typeof OLD_FORMAT
   version: 1
   exported: string
   /** The world it came from, for the import preview. */
@@ -112,7 +114,7 @@ export async function buildExport(plan: ExportPlan, opts: { secrets: boolean }):
     entries: list.map(e => exportCopy(e, ids, opts.secrets)),
     files,
   }
-  const name = `${plan.main.name.replace(/[\\/:*?"<>|]+/g, '')}.eldoria.json`
+  const name = `${plan.main.name.replace(/[\\/:*?"<>|]+/g, '')}.dndesk.json`
   return { blob: new Blob([JSON.stringify(bundle, null, 1)], { type: 'application/json' }), name }
 }
 
@@ -146,7 +148,7 @@ function findHere(type: Entry['type'], name: string): Entry | undefined {
 export async function readImport(file: File): Promise<ImportPlan> {
   let b: Bundle
   try { b = JSON.parse(await file.text()) } catch { throw new Error(`${file.name} isn't a file this app can read.`) }
-  if (b?.format !== FORMAT || !Array.isArray(b.entries)) throw new Error(`${file.name} isn't an exported spell, item or map. Use a file made with ⇩ Export on an entry's page.`)
+  if ((b?.format !== FORMAT && b?.format !== OLD_FORMAT) || !Array.isArray(b.entries)) throw new Error(`${file.name} isn't an exported spell, item or map. Use a file made with ⇩ Export on an entry's page.`)
   if (b.version > 1) throw new Error(`${file.name} was made by a newer version of the app. Update this one first.`)
   const ok = b.entries.filter(e => e?.id && typeof e.name === 'string' && e.fields && canExport(e))
   const main = ok.find(e => e.id === b.main)

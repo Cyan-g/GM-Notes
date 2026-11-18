@@ -54,7 +54,7 @@ function copyOut(): Plugin {
     name: 'copy-out',
     apply: 'build',
     closeBundle() {
-      fs.copyFileSync(path.resolve(__dirname, 'dist/index.html'), path.resolve(__dirname, '../Eldoria.html'))
+      fs.copyFileSync(path.resolve(__dirname, 'dist/index.html'), path.resolve(__dirname, '../DnDesk.html'))
     },
   }
 }

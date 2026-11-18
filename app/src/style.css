@@ -1161,3 +1161,4 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .history-show h3 { margin: .3rem 0; }
 .history-text { white-space: pre-wrap; font-size: 14px; max-height: 40vh; overflow-y: auto; }
 .deleted-list li { display: flex; gap: .6rem; align-items: baseline; }
+.wb-owned input { width: 3.6em; text-align: center; padding: .1rem; }

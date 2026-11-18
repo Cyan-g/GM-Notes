@@ -7,7 +7,7 @@ The data files keep their names (`data/eldoria.json`, `eldoria-…` backups): th
 ## Using it
 
 1. Double-click **DnDesk.html**. It opens in Edge, Chrome or Brave. In Brave, first set `brave://flags/#file-system-access-api` to Enabled.
-2. The first time, choose the **data** folder next to it. The browser remembers it; later it may ask you once per visit to allow access again.
+2. The first time, choose the folder it is in (`DnDesk`) or the **data** folder inside it. The browser remembers it; later it may ask you once per visit to allow access again.
 
 ### Editing
 

@@ -180,9 +180,23 @@ export async function pickBackupFolder(): Promise<FileSystemDirectoryHandle> {
   return handle
 }
 
-/** Let the user pick the data folder. Must be called from a click. */
+/**
+ * Let the user pick the data folder. Must be called from a click.
+ * Picking the app's own folder (the one with DnDesk.html) works too: its `data` folder is used.
+ */
 export async function pickFolder(): Promise<FileSystemDirectoryHandle> {
-  const handle: FileSystemDirectoryHandle = await (window as any).showDirectoryPicker({ id: 'eldoria-data', mode: 'readwrite' })
+  let handle: FileSystemDirectoryHandle = await (window as any).showDirectoryPicker({ id: 'eldoria-data', mode: 'readwrite' })
+  handle = (await dataFolderIn(handle)) ?? handle
   await idbSet('data', handle)
   return handle
+}
+
+/** The `data` folder inside a picked folder, when the picked one isn't the data folder itself. */
+async function dataFolderIn(dir: FileSystemDirectoryHandle): Promise<FileSystemDirectoryHandle | null> {
+  const has = async (d: FileSystemDirectoryHandle, name: string) => { try { await d.getFileHandle(name); return true } catch { return false } }
+  if (await has(dir, 'eldoria.json')) return null
+  try {
+    const data = await dir.getDirectoryHandle('data')
+    return (await has(data, 'eldoria.json')) ? data : null
+  } catch { return null }
 }

@@ -129,7 +129,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
         </ul>
       </template>
       <template v-else>
-        <p>Choose the <b>data</b> folder next to this file (it contains <code>eldoria.json</code>).</p>
+        <p>Choose the folder this file is in (or the <b>data</b> folder inside it). The browser remembers it, so this is needed only once.</p>
         <button v-if="remembered" class="primary" @click="reconnect">Open “{{ remembered.name }}” again</button>
         <button :class="{ primary: !remembered }" @click="choose">Choose folder…</button>
         <p v-if="startError" class="error">{{ startError }}</p>

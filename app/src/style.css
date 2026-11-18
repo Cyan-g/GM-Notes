@@ -1071,3 +1071,7 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .cs-current { display: flex; align-items: center; gap: 1rem; }
 .cs-sub { margin: .8rem 0 .3rem; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 .sbk-owner { margin: 0 0 .4rem; font-weight: 600; }
+
+.cs-item { font: inherit; color: var(--link); text-align: left; padding: 0; }
+.cs-item:hover { text-decoration: underline; }
+.item-modal .item-modal-text { margin-top: 1rem; }

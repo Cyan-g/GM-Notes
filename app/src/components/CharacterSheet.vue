@@ -1,18 +1,17 @@
 <script setup lang="ts">
 // A player character's sheet, filled in right here: scores, proficiencies, HP, inventory and features.
 // Modifiers, saves, skills, AC, attacks and spellcasting are worked out from them.
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { CharacterSheet, Entry, InventoryLine } from '../model/types'
 import { formatMoney, get, state } from '../store'
 import { changed } from '../edit'
-import { hrefEntry } from '../router'
 import {
   ABILITIES, SKILLS, armorClass, attacks, blankSheet, carried, castingAbility, levelOf, mod, passivePerception,
   profBonus, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, currentPc, setCurrent, type Ability,
 } from '../sheet'
-import EntryLink from './EntryLink.vue'
 import EntryPicker from './edit/EntryPicker.vue'
 import MoneyInput from './edit/MoneyInput.vue'
+import ItemModal from './ItemModal.vue'
 
 const props = defineProps<{ pc: Entry }>()
 const ro = computed(() => !!state.readOnly)
@@ -84,6 +83,11 @@ const lines = computed(() => s.value.inventory.map((l, i) => ({ l, i })))
 const gear = computed(() => lines.value.filter(x => itemOf(x.l)?.fields.kind !== 'Ingredient'))
 const pouch = computed(() => lines.value.filter(x => itemOf(x.l)?.fields.kind === 'Ingredient'))
 const isCurrent = computed(() => currentPc.value?.id === props.pc.id)
+
+/** The inventory line whose item is open in the pop-up. */
+const shown = ref<number | null>(null)
+const shownLine = computed(() => (shown.value != null ? s.value.inventory[shown.value] : undefined))
+const showItem = (id: string) => { const i = s.value.inventory.findIndex(l => l.item === id); if (i >= 0) shown.value = i }
 
 // ---- features ----
 const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
@@ -158,7 +162,7 @@ const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
       <section class="cs-side">
         <h4>Attacks</h4>
         <table v-if="atks.length" class="cs-attacks">
-          <tr v-for="a in atks" :key="a.id"><td><EntryLink :id="a.id" /></td><td><b>{{ signed(a.toHit) }}</b></td><td>{{ a.damage }} <span class="muted small">{{ a.type }}</span></td></tr>
+          <tr v-for="a in atks" :key="a.id"><td><button class="link-btn cs-item" @click="showItem(a.id)">{{ a.name }}</button></td><td><b>{{ signed(a.toHit) }}</b></td><td>{{ a.damage }} <span class="muted small">{{ a.type }}</span></td></tr>
         </table>
         <p v-else class="muted small">Equip a weapon in the inventory to see its attack here.</p>
 
@@ -184,7 +188,7 @@ const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
         <tr v-for="{ l, i } in gear" :key="i">
           <td class="cs-qty"><input type="number" min="0" :value="l.qty" :disabled="ro" @change="edit(x => x.inventory[i].qty = num($event) ?? 0)" /></td>
           <td class="cs-iname">
-            <a v-if="itemOf(l)" :href="hrefEntry(l.item!)">{{ itemOf(l)!.name }}</a>
+            <button v-if="itemOf(l)" class="link-btn cs-item" @click="shown = i">{{ itemOf(l)!.name }}</button>
             <input v-else :value="l.name ?? ''" placeholder="Name" :disabled="ro" @change="edit(x => x.inventory[i].name = text($event))" />
             <span v-if="itemOf(l)?.fields.kind" class="muted small cs-kind">{{ itemOf(l)!.fields.kind }}</span>
           </td>
@@ -198,7 +202,7 @@ const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
         <table class="cs-inv">
           <tr v-for="{ l, i } in pouch" :key="i">
             <td class="cs-qty"><input type="number" min="0" :value="l.qty" :disabled="ro" @change="edit(x => x.inventory[i].qty = num($event) ?? 0)" /></td>
-            <td class="cs-iname"><a :href="hrefEntry(l.item!)">{{ itemOf(l)!.name }}</a></td>
+            <td class="cs-iname"><button class="link-btn cs-item" @click="shown = i">{{ itemOf(l)!.name }}</button></td>
             <td><button class="link-btn" title="Remove" :disabled="ro" @click="edit(x => x.inventory.splice(i, 1))">✕</button></td>
           </tr>
         </table>
@@ -220,5 +224,12 @@ const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
       </div>
       <p v-if="!s.features.length" class="muted small">Class features, racial traits, feats.</p>
     </section>
+    <ItemModal v-if="shownLine?.item" :id="shownLine.item" @close="shown = null">
+      <template #actions>
+        <span class="muted small">× {{ shownLine.qty }}</span>
+        <button v-if="canEquip(shownLine)" class="chip-toggle" :class="{ on: shownLine.equipped }" :disabled="ro" @click="edit(x => x.inventory[shown!].equipped = !shownLine!.equipped || undefined)">{{ shownLine.equipped ? 'Equipped' : 'Equip' }}</button>
+        <button v-if="canAttune(shownLine)" class="chip-toggle" :class="{ on: shownLine.attuned }" :disabled="ro" @click="edit(x => x.inventory[shown!].attuned = !shownLine!.attuned || undefined)">{{ shownLine.attuned ? 'Attuned' : 'Attune' }}</button>
+      </template>
+    </ItemModal>
   </div>
 </template>

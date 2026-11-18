@@ -36,7 +36,7 @@ A player character's page is its character sheet, filled in right on the page.
 
 - **What you fill in:** level, ability scores, proficient saves, and skills. Click a skill to cycle it: proficient, then expertise, then none.
 - **Hit points:** current, max and temporary HP. Type `-7` or `+5` in *Damage / heal* to apply it; temporary HP soak up damage first. **Long rest** restores HP and gives back half your hit dice.
-- **Inventory:** items from the world with a quantity, plus anything else by name. Weapons and armor can be equipped, and magic items attuned.
+- **Inventory:** items from the world with a quantity, plus anything else by name. Clicking an item opens its card in a pop-up, where it can also be equipped or attuned. Weapons and armor can be equipped, and magic items attuned.
 - **Also:** money, speed, inspiration, proficiencies and languages, and features.
 - **Worked out for you:**
   - modifiers and the proficiency bonus (from the level)

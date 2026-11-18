@@ -14,6 +14,7 @@ import { isFavourite, toggleFavourite } from '../edit'
 import type { Pin } from '../model/types'
 import EntryLink from '../components/EntryLink.vue'
 import ExportDialog from '../components/ExportDialog.vue'
+import HistoryDialog from '../components/HistoryDialog.vue'
 import { canExport } from '../transfer'
 import MarkdownView from '../components/MarkdownView.vue'
 import FieldValue from '../components/FieldValue.vue'
@@ -214,6 +215,7 @@ function newSession() {
   newEntry('session', { campaign: e.value!.id, number: next })
 }
 const exporting = ref(false)
+const showHistory = ref(false)
 const sessions = computed(() => e.value?.type === 'campaign'
   ? (byType.value.get('session') ?? []).filter(s => s.fields.campaign === e.value!.id).sort((a, b) => (a.fields.number ?? 0) - (b.fields.number ?? 0) || a.name.localeCompare(b.name))
   : [])
@@ -237,10 +239,12 @@ const siblings = computed(() => {
     <header class="entry-head" :class="{ 'has-portrait': e.image }">
       <div class="head-actions">
         <button class="fav-btn" :class="{ on: isFavourite(e.id) }" :title="isFavourite(e.id) ? 'Remove from favourites (F)' : 'Add to favourites (F)'" :aria-pressed="isFavourite(e.id)" @click="toggleFavourite(e.id)">{{ isFavourite(e.id) ? '★' : '☆' }}</button>
+        <button class="export-btn" title="Earlier versions of this entry" @click="showHistory = true">🕘</button>
         <button v-if="canExport(e)" class="export-btn" title="Save as a file to share (someone else can import it)" @click="exporting = true">⇩ Export</button>
         <a class="button edit-btn" :href="hrefEntry(e.id, true)" title="Edit (E)">✎ Edit</a>
       </div>
       <ExportDialog v-if="canExport(e)" v-model="exporting" :id="e.id" />
+      <HistoryDialog v-if="showHistory" :entry="e" @close="showHistory = false" />
       <DataImage v-if="e.image" :path="e.image" :alt="e.name" class="portrait head-portrait" />
       <div class="head-text">
       <div class="title-line">

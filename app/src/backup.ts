@@ -1,6 +1,5 @@
-// Copying the data folder somewhere else, and restoring from the app's own backups.
-import type { Database } from './model/types'
-import { adopt, save, state } from './store'
+// Copying the data folder somewhere else, and going back to one of the app's own backups.
+import { save, state } from './store'
 import type { Storage } from './storage/storage'
 
 const stamp = () => {
@@ -10,21 +9,23 @@ const stamp = () => {
 }
 
 /**
- * Copy the database, pictures and files into `<dest>/DnDesk-backup-<date>/`.
- * The app's own backups folder isn't copied: it would only repeat the database.
+ * Copy the database, pictures and files into `<backup folder>/DnDesk-backup-<date>/`. The database is copied by
+ * SQLite itself, so the copy is complete and consistent. The app's own backups folder isn't copied.
  */
 export async function backupTo(dest: Storage, onProgress: (done: number, total: number) => void): Promise<string> {
   const src = state.storage!
   await save()
   const folder = `DnDesk-backup-${stamp()}`
-  const files: string[] = ['eldoria.json', 'session.json']
+  const files: string[] = []
   for (const dir of ['images', 'files']) for (const n of await src.list(dir)) files.push(`${dir}/${n}`)
   let done = 0
-  onProgress(0, files.length)
+  onProgress(0, files.length + 1)
+  await state.backend!.copyTo('backup', `${folder}/dndesk.sqlite`)
+  onProgress(++done, files.length + 1)
   for (const f of files) {
     const blob = await src.readBlob(f)
     if (blob) await dest.writeBlob(`${folder}/${f}`, blob)
-    onProgress(++done, files.length)
+    onProgress(++done, files.length + 1)
   }
   // Remember the date without counting it as an edit.
   state.db!.meta.externalBackup = new Date().toISOString()
@@ -34,22 +35,14 @@ export async function backupTo(dest: Storage, onProgress: (done: number, total: 
 
 /** The app's automatic backups in data/backups, newest first. */
 export async function listBackups(): Promise<string[]> {
-  // The play-state copies (session-…) aren't versions of the world to go back to.
-  return (await state.storage!.list('backups')).filter(n => n.endsWith('.json') && !n.startsWith('session-')).sort().reverse()
+  return (await state.storage!.list('backups')).filter(n => n.endsWith('.sqlite')).sort().reverse()
 }
 
-/** Replace the open database with a backup. The current one is kept as a backup first. */
+/** Replace the database with a backup (the current one is kept as a backup first), then start over with it. */
 export async function restoreBackup(name: string) {
-  const s = state.storage!
-  const text = await s.readText(`backups/${name}`)
-  if (!text) throw new Error(`Couldn't read ${name}`)
-  const db = JSON.parse(text) as Database
-  if (!db.entries || !db.meta) throw new Error(`${name} doesn't look like a DnDesk database`)
   await save()
-  const current = await s.readText('eldoria.json')
-  if (current) await s.writeText(`backups/before-restore-${stamp()}.json`, current)
-  adopt(db)
-  await save()
+  await state.backend!.restore(name)
+  location.reload()
 }
 
 export const daysSince = (iso?: string) => (iso ? Math.floor((Date.now() - Date.parse(iso)) / 86400000) : null)

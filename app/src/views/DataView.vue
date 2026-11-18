@@ -1,14 +1,13 @@
 <script setup lang="ts">
 // Where the data lives, copying it somewhere safe, and going back to an earlier version.
 import { computed, onMounted, ref } from 'vue'
-import { db, entries, save, state } from '../store'
+import { db, entries, save, state, touch } from '../store'
+import type { Entry } from '../model/types'
 import { checkDatabase } from '../validate'
 import EntryLink from '../components/EntryLink.vue'
-import { FolderStorage, HttpStorage, folderApiAvailable, pickBackupFolder, regrant, rememberedBackupFolder } from '../storage/storage'
 import { backupTo, daysSince, listBackups, restoreBackup } from '../backup'
 import { DesktopStorage, desktop, folderName } from '../storage/desktop'
 
-const dest = ref<FileSystemDirectoryHandle | null>(null)
 const progress = ref<{ done: number; total: number } | null>(null)
 const message = ref('')
 const error = ref('')
@@ -18,14 +17,25 @@ const backups = ref<string[]>([])
 const destPath = ref<string | null>(null)
 const dataPath = ref<string | null>(null)
 const version = ref('')
-const destName = computed(() => (desktop ? (destPath.value ? folderName(destPath.value) : '') : dest.value?.name ?? ''))
+const destName = computed(() => (destPath.value ? folderName(destPath.value) : ''))
+
+// Deleted entries the database still remembers (their last version), to bring back.
+const deleted = ref<{ saved: string; entry: Entry }[]>([])
+async function loadDeleted() { try { deleted.value = await state.backend!.deleted() } catch { deleted.value = [] } }
+async function bringBack(d: { entry: Entry }) {
+  db().entries[d.entry.id] = { ...JSON.parse(JSON.stringify(d.entry)), updated: new Date().toISOString() }
+  touch()
+  await save()
+  await loadDeleted()
+}
 
 onMounted(async () => {
+  loadDeleted()
   if (desktop) {
     destPath.value = await desktop.getFolder('backup')
     dataPath.value = await desktop.getFolder('data')
     version.value = (await desktop.info()).version
-  } else dest.value = await rememberedBackupFolder()
+  }
   backups.value = await listBackups()
 })
 
@@ -46,32 +56,16 @@ async function run(choose: boolean) {
   error.value = ''
   message.value = ''
   try {
-    if (desktop) {
-      if (choose || !destPath.value) destPath.value = await desktop.pickFolder('backup')
-      if (!destPath.value) return
-      const folder = await backupTo(new DesktopStorage('backup', folderName(destPath.value)), (done, total) => { progress.value = { done, total } })
-      message.value = `Copied to “${folderName(destPath.value)}”, into the folder ${folder}.`
-      return
-    }
-    let h = dest.value
-    if (choose || !h) h = await pickBackupFolder()
-    else if (!(await regrant(h))) h = await pickBackupFolder()
-    dest.value = h
-    const folder = await backupTo(new FolderStorage(h), (done, total) => { progress.value = { done, total } })
-    message.value = `Copied to “${h.name}/${folder}”.`
+    if (!desktop) throw new Error('Copying to another folder works in the desktop app.')
+    if (choose || !destPath.value) destPath.value = await desktop.pickFolder('backup')
+    if (!destPath.value) return
+    const folder = await backupTo(new DesktopStorage('backup', folderName(destPath.value)), (done, total) => { progress.value = { done, total } })
+    message.value = `Copied to “${folderName(destPath.value)}”, into the folder ${folder}.`
   } catch (e) {
-    if ((e as DOMException).name !== 'AbortError') error.value = (e as Error).message
+    error.value = (e as Error).message
   } finally {
     progress.value = null
   }
-}
-
-// Development only: back up into the data folder itself through the dev server (no folder dialog needed).
-const isDev = import.meta.env.DEV
-async function devBackup() {
-  const folder = await backupTo(new HttpStorage(), (done, total) => { progress.value = { done, total } })
-  progress.value = null
-  message.value = `Dev test copy: data/${folder}`
 }
 
 async function restore(name: string) {
@@ -112,15 +106,14 @@ const pretty = (n: string) => {
         <h3>Copy to another place</h3>
         <p class="small">The app keeps its own backups, but they're on the same stick. A copy on your PC or another drive survives losing the stick.</p>
         <p><b>Last copy:</b> {{ last ? `${new Date(last).toLocaleString()} (${age === 0 ? 'today' : age + ' days ago'})` : 'never' }}</p>
-        <template v-if="desktop || folderApiAvailable()">
+        <template v-if="desktop">
           <div class="row-btns">
             <button class="primary" :disabled="!!progress" @click="run(false)">{{ destName ? `Back up to “${destName}”` : 'Back up…' }}</button>
             <button v-if="destName" :disabled="!!progress" @click="run(true)">Other folder…</button>
-            <button v-if="isDev" class="dev-backup" @click="devBackup">Dev test copy</button>
           </div>
           <p v-if="progress" class="small">Copying {{ progress.done }} of {{ progress.total }} files…</p>
         </template>
-        <p v-else class="small muted">This browser can't write to folders. Copy the <code>data</code> folder by hand.</p>
+        <p v-else class="small muted">Copying to another folder works in the desktop app.</p>
         <p v-if="message" class="small ok">{{ message }}</p>
         <p v-if="error" class="small error">{{ error }}</p>
       </section>
@@ -139,9 +132,20 @@ const pretty = (n: string) => {
       <button v-if="problems.length > 30 && !showAll" class="link-btn" @click="showAll = true">Show all {{ problems.length }}</button>
     </section>
 
+    <section v-if="deleted.length" class="card">
+      <h3>Deleted entries <span class="muted small">{{ deleted.length }}</span></h3>
+      <p class="small muted">The last version of every deleted entry is kept. Bringing one back restores the entry; its relations have to be added again.</p>
+      <ul class="rel deleted-list">
+        <li v-for="d in deleted" :key="d.entry.id + d.saved">
+          <span>{{ d.entry.name }}</span><span class="role">{{ d.entry.type }}, deleted {{ new Date(d.saved).toLocaleString() }}</span>
+          <button class="link-btn" :disabled="!!state.readOnly || !!db().entries[d.entry.id]" @click="bringBack(d)">Bring back</button>
+        </li>
+      </ul>
+    </section>
+
     <section class="card backups-card">
       <h3>Earlier versions</h3>
-      <p class="small muted">Saved automatically at most every 10 minutes while you edit. Thinned out over time: everything from the last 2 hours, then one per hour for 2 days, one per day for 2 months, and one per month after that.</p>
+      <p class="small muted">Copies of the whole database, made automatically at most every 10 minutes while you edit. Thinned out over time: everything from the last 2 hours, then one per hour for 2 days, one per day for 2 months, and one per month after that.</p>
       <ul v-if="backups.length" class="rel">
         <li v-for="b in backups" :key="b"><span>{{ pretty(b) }}</span><button class="link-btn" :disabled="!!progress" @click="restore(b)">Go back to this</button></li>
       </ul>

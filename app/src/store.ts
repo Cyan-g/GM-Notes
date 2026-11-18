@@ -1,26 +1,30 @@
-// The loaded database plus lookups the pages need, and saving with backups.
+// The loaded world plus lookups the pages need, and saving it (only what changed) with backups.
 import { reactive, computed, shallowRef } from 'vue'
 import type { Database, Entry, EntryType, Id, Relation, WorldDate } from './model/types'
 import type { Storage } from './storage/storage'
+import type { Backend, Changes } from './storage/backend'
+import { SCHEMA, RELATION_KINDS } from './model/schema'
+import { checkDatabase, type Problem } from './validate'
 
-const DB_FILE = 'eldoria.json'
-/** What changes during play (the fight, the spellbook, the crafting pouch) lives in its own small file, so a click
- *  in a fight doesn't rewrite the whole world. In memory it's all one Database. */
-const SESSION_FILE = 'session.json'
-const SESSION_KEYS = ['tracker', 'spellbook', 'crafting'] as const
+/** The play state (the fight, the world's own spellbook and workbench): saved like the rest, but not a "world edit". */
+const PLAY_KEYS = ['tracker', 'spellbook', 'crafting'] as const
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
-/** The newest data version this build understands (the last step in upgrade()). Newer files open read-only. */
+/** The newest data version this build understands (the last step in upgrade()). Newer data opens read-only. */
 export const DATA_VERSION = 20
-/** The oldest data version this build can still open; older data (an old backup) is refused instead of guessed at. */
+/** The oldest data version this build can still open; older data is refused instead of guessed at. */
 export const OLDEST_VERSION = 20
-
-import { checkDatabase, type Problem } from './validate'
+/** What the database must allow: every entry type and relation kind the app knows. */
+const TYPES_LIST = SCHEMA.map(t => t.type) as string[]
+const KINDS_LIST = Object.keys(RELATION_KINDS)
 
 export const state = reactive({
   /** What the data check found when the data was opened (see validate.ts and the Data page). */
   problems: [] as Problem[],
+  /** Pictures and attached files in the data folder. */
   storage: null as Storage | null,
+  /** The world's database. */
+  backend: null as Backend | null,
   db: null as Database | null,
   dirty: false,
   saving: false,
@@ -29,77 +33,53 @@ export const state = reactive({
   /** Bumped on every change; lets a save notice edits made while it was writing. */
   changes: 0,
   savedAt: 0,
-  /** Why this tab doesn't save, if it doesn't (another tab is editing, the file changed elsewhere, newer data). */
+  /** Why nothing is saved, if it isn't (newer or too old data, the data changed elsewhere). */
   readOnly: '' as string,
-  /** The file on disk was changed by something else since this tab loaded or saved it. */
+  /** Another copy of the app saved since this one loaded. */
   conflict: false,
+  /** The data was just converted from the JSON files of an earlier version. */
+  converted: null as { entries: number; relations: number } | null,
 })
 
-/** The data file as this tab last read or wrote it; a different one on disk means someone else saved. */
-/** The text of each file as last read or written; a file whose new text is the same isn't written again. */
-let worldText = '', sessionText = ''
-/** How many entries the file had when this tab last read or wrote it. */
-let savedCount = 0
+/** The world as last loaded or saved, piece by piece (as JSON), to find what changed. */
+const saved = { entries: new Map<Id, string>(), relations: new Map<string, string>(), meta: '', play: {} as Record<string, string>, version: 0 }
+let rev = 0
+/** Entries whose current version must go into the history on the next save (see HistoryDialog). */
+export const keepVersion = new Set<Id>()
 
 export const db = () => state.db!
 
-export async function open(storage: Storage) {
+function remember(d: Database) {
+  saved.entries = new Map(Object.values(d.entries).map(e => [e.id, JSON.stringify(e)]))
+  saved.relations = new Map(d.relations.map(r => [r.id, JSON.stringify(r)]))
+  saved.meta = JSON.stringify(d.meta)
+  saved.play = Object.fromEntries(PLAY_KEYS.map(k => [k, JSON.stringify(d[k] ?? null)]))
+  saved.version = d.version
+}
+
+/** Open the world. Returns false if the folder has no world yet (the app then offers to start one). */
+export async function open(backend: Backend, storage: Storage): Promise<boolean> {
+  state.backend = backend
   state.storage = storage
-  const text = await storage.readText(DB_FILE)
-  if (text == null) throw new Error(`No ${DB_FILE} found in "${storage.label}". Pick the app's data folder.`)
-  const d = JSON.parse(text) as Database
-  // The play state comes from session.json. Before the split it was inside the world file, which is used then.
-  const sessionRaw = await storage.readText(SESSION_FILE)
-  if (sessionRaw != null) {
-    const sess = JSON.parse(sessionRaw) as Partial<Database>
-    for (const k of SESSION_KEYS) { if (sess[k]) (d as any)[k] = sess[k]; else delete (d as any)[k] }
-  }
-  worldText = text
-  sessionText = sessionRaw ?? ''
+  const l = await backend.load(TYPES_LIST, KINDS_LIST)
+  if (l.empty || !l.data) return false
+  const d = l.data
+  rev = l.rev ?? 0
+  state.converted = l.converted ?? null
   state.db = d
   state.dirty = false
-  savedCount = Object.keys(d.entries ?? {}).length
+  remember(d)
   if ((d.version ?? 1) < OLDEST_VERSION) {
     state.readOnly = `This data is from an early test version of the app (data version ${d.version ?? 1}); this one opens data version ${OLDEST_VERSION} and newer. Nothing is saved here.`
-    return
+    return true
   }
   if ((d.version ?? 1) > DATA_VERSION) {
-    state.readOnly = `This data was saved by a newer version of the app (data version ${d.version}, this one knows up to ${DATA_VERSION}). Reload to get the newer app; until then nothing is saved here.`
-    return
-  }
-  if (!(await takeLock())) {
-    state.readOnly = 'The data is already open for editing in another tab or window. Changes here are not saved; close the other one and reload this one to edit here.'
-    return
+    state.readOnly = `This data was saved by a newer version of the app (data version ${d.version}, this one knows up to ${DATA_VERSION}). Update the app; until then nothing is saved here.`
+    return true
   }
   if (upgrade(d)) touch()
   state.problems = checkDatabase(d)
-}
-
-/**
- * Take over another database (restoring a backup): bring it up to date, accept its size as the new normal,
- * and save it. Data from a newer app version is refused.
- */
-export function adopt(d: Database) {
-  if ((d.version ?? 1) > DATA_VERSION) throw new Error(`That backup is from a newer version of the app (data version ${d.version}).`)
-  if ((d.version ?? 1) < OLDEST_VERSION) throw new Error(`That backup is from an early test version of the app (data version ${d.version ?? 1}) and can't be restored.`)
-  upgrade(d)
-  // A backup restores the world; the fight, spellbook and pouch stay as they are now.
-  for (const k of SESSION_KEYS) { const cur = (state.db as any)?.[k]; if (cur) (d as any)[k] = cur; else delete (d as any)[k] }
-  state.db = d
-  savedCount = Object.keys(d.entries ?? {}).length
-  touch()
-}
-
-/** Only one tab may edit at a time; it holds this lock until it closes. Without the Web Locks API, every tab may edit. */
-function takeLock(): Promise<boolean> {
-  const locks = (navigator as any).locks
-  if (!locks?.request) return Promise.resolve(true)
-  return new Promise(ok => {
-    locks.request('eldoria-data', { ifAvailable: true }, (lock: unknown) => {
-      ok(!!lock)
-      return lock ? new Promise(() => { /* held for the life of the tab */ }) : undefined
-    })
-  })
+  return true
 }
 
 /**
@@ -114,22 +94,32 @@ function upgrade(d: Database): boolean {
   return changed
 }
 
+/** What changed since the last save; `world` says whether entries or relations did. */
+function changesOf(d: Database): Changes & { world: boolean } {
+  const upsert: Entry[] = [], relUpsert: Relation[] = []
+  for (const e of Object.values(d.entries)) if (saved.entries.get(e.id) !== JSON.stringify(e)) upsert.push(e)
+  const remove = [...saved.entries.keys()].filter(id => !d.entries[id])
+  const ids = new Set(d.relations.map(r => r.id))
+  for (const r of d.relations) if (saved.relations.get(r.id) !== JSON.stringify(r)) relUpsert.push(r)
+  const relRemove = [...saved.relations.keys()].filter(id => !ids.has(id))
+  const play: Changes['play'] = {}
+  for (const k of PLAY_KEYS) if (saved.play[k] !== JSON.stringify(d[k] ?? null)) play[k] = d[k] ?? null
+  const metaChanged = saved.meta !== JSON.stringify(d.meta)
+  const world = !!(upsert.length || remove.length || relUpsert.length || relRemove.length)
+  return { rev, upsert, remove, relUpsert, relRemove, play, world, meta: metaChanged || world ? d.meta : undefined, version: d.version !== saved.version ? d.version : undefined }
+}
+
 /**
- * What must hold before the database is written. A bug that wiped or mangled the data in memory must never
- * reach the disk (and then, over time, the backups too).
+ * What must hold before saving. A bug that wiped or mangled the world in memory must never reach the disk.
+ * The database refuses broken entries and links by itself; this catches mass deletions it can't tell from intent.
  */
-function checkBeforeSave(d: Database, text: string): string {
-  if (!d.meta || !d.entries || typeof d.entries !== 'object' || !Array.isArray(d.relations)) return 'the data is missing its main parts'
-  const n = Object.keys(d.entries).length
-  if (!n && savedCount > 0) return 'there would be no entries left'
-  const lost = savedCount - n
-  if (lost > 10) return `${lost} entries would disappear in one go (${savedCount} → ${n})`
-  try { JSON.parse(text) } catch { return 'the file would not read back' }
+function checkBeforeSave(c: Changes): string {
+  if (c.remove.length > 10) return `${c.remove.length} entries would disappear in one go`
   return ''
 }
 
 const stampOf = (t: Date) => { const p = (n: number) => String(n).padStart(2, '0'); return `${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}-${p(t.getHours())}-${p(t.getMinutes())}-${p(t.getSeconds())}` }
-const BACKUP_NAME = /^(eldoria|session)-(\d{4})-(\d\d)-(\d\d)-(\d\d)-(\d\d)-(\d\d)\.json$/
+const BACKUP_NAME = /^dndesk-(\d{4})-(\d\d)-(\d\d)-(\d\d)-(\d\d)-(\d\d)\.sqlite$/
 
 /**
  * Which automatic backups to keep: everything from the last 2 hours, then the newest of each hour for 2 days,
@@ -138,92 +128,68 @@ const BACKUP_NAME = /^(eldoria|session)-(\d{4})-(\d\d)-(\d\d)-(\d\d)-(\d\d)-(\d\
 export function backupsToDelete(names: string[], now = Date.now()): string[] {
   const dated = names.flatMap(n => {
     const m = n.match(BACKUP_NAME)
-    return m ? [{ n, kind: m[1], t: new Date(+m[2], +m[3] - 1, +m[4], +m[5], +m[6], +m[7]).getTime() }] : []
+    return m ? [{ n, t: new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime() }] : []
   }).sort((a, b) => b.t - a.t)
   const H = 3600e3, D = 24 * H
   const seen = new Set<string>()
   const drop: string[] = []
-  for (const { n, kind, t } of dated) {
+  for (const { n, t } of dated) {
     const age = now - t, at = new Date(t)
     if (age < 2 * H) continue
-    const bucket = kind + (age < 2 * D ? `h${at.getFullYear()}-${at.getMonth()}-${at.getDate()}-${at.getHours()}`
+    const bucket = age < 2 * D ? `h${at.getFullYear()}-${at.getMonth()}-${at.getDate()}-${at.getHours()}`
       : age < 60 * D ? `d${at.getFullYear()}-${at.getMonth()}-${at.getDate()}`
-      : `m${at.getFullYear()}-${at.getMonth()}`)
+      : `m${at.getFullYear()}-${at.getMonth()}`
     if (seen.has(bucket)) drop.push(n)
     else seen.add(bucket)
   }
   return drop
 }
 
-/** Save the database. Before overwriting, keep a copy of the previous file (at most every 10 minutes). */
-/** The database as the two files it's saved in. */
-function splitForSave(d: Database) {
-  const world: Record<string, unknown> = {}, session: Record<string, unknown> = { version: 1 }
-  for (const [k, v] of Object.entries(d)) {
-    if ((SESSION_KEYS as readonly string[]).includes(k)) { if (v) session[k] = v }
-    else world[k] = v
-  }
-  return { world: JSON.stringify(world, null, 1), session: JSON.stringify(session, null, 1) }
-}
-
 /**
- * Save what changed. Each file is checked for changes made elsewhere first, and the world is sanity-checked.
- * The play state is written before the world, so the world file never loses it without session.json having it.
- * The world gets a backup (at most every 10 minutes) only when it actually changes; so does the play state.
+ * Save what changed, as one transaction: it lands completely or not at all. At most every 10 minutes a copy of
+ * the database goes to data/backups first. Another copy of the app having saved in between stops the save.
  */
 export async function save(force = false) {
-  const s = state.storage, d = state.db
-  if (!s || !d || state.saving || state.readOnly) return
+  const b = state.backend, d = state.db
+  if (!b || !d || state.saving || state.readOnly) return
   state.saving = true
   const at = state.changes
   try {
-    let { world, session } = splitForSave(d)
-    const worldChanged = world !== worldText, sessionChanged = session !== sessionText
     // "Last edit" on the Data page: stamped only when the world itself changes, not on every click in a fight.
-    if (worldChanged) { d.meta.edited = new Date().toISOString(); world = splitForSave(d).world }
-    // Someone else saved a file since this tab read it: stop rather than overwrite their work.
-    // Compared by content, not by the file's date: on Windows, asking the browser for a file's date leaves the
-    // file open, and then the browser can't replace it. Reading it whole doesn't.
-    const [worldDisk, sessionDisk] = await Promise.all([worldChanged ? s.readText(DB_FILE) : null, sessionChanged ? s.readText(SESSION_FILE) : null])
-    const clash = !force && ((worldDisk != null && worldDisk !== worldText) || (sessionDisk != null && sessionDisk !== sessionText))
-    if (clash) {
-      state.conflict = true
-      state.readOnly = `The data files were changed outside this tab since it loaded them. To keep those changes, reload. To keep this tab's version instead, overwrite (the other version is kept in backups).`
-      return
-    }
-    if (worldChanged) {
-      const problem = checkBeforeSave(d, world)
-      if (problem) throw new Error(`Not saved, because ${problem}. Reload to get the last saved data back.`)
-    }
-    const backupDue = force || Date.now() - state.lastBackup > BACKUP_EVERY_MS
-    const when = stampOf(new Date())
-    if (sessionChanged) {
-      if (backupDue && sessionDisk) await s.writeText(`${BACKUP_DIR}/session-${when}.json`, sessionDisk)
-      await s.writeText(SESSION_FILE, session)
-      sessionText = session
-    }
-    if (worldChanged) {
-      if (backupDue && worldDisk) await s.writeText(`${BACKUP_DIR}/eldoria-${when}.json`, worldDisk)
-      await s.writeText(DB_FILE, world)
-      worldText = world
-      savedCount = Object.keys(d.entries).length
-    }
-    if (backupDue && (worldChanged || sessionChanged)) {
-      for (const n of backupsToDelete(await s.list(BACKUP_DIR))) await s.remove(`${BACKUP_DIR}/${n}`)
-      state.lastBackup = Date.now()
+    if (changesOf(d).world) d.meta.edited = new Date().toISOString()
+    const { world: _world, ...c } = changesOf(d)
+    const nothing = !c.upsert.length && !c.remove.length && !c.relUpsert.length && !c.relRemove.length && !c.meta && c.version == null && !Object.keys(c.play ?? {}).length
+    if (!nothing) {
+      const problem = checkBeforeSave(c)
+      if (problem && !force) throw new Error(`Not saved, because ${problem}. Reload to get the last saved data back.`)
+      const backupDue = force || Date.now() - state.lastBackup > BACKUP_EVERY_MS
+      if (backupDue) await b.copyTo('data', `${BACKUP_DIR}/dndesk-${stampOf(new Date())}.sqlite`)
+      if (force) c.rev = -1
+      c.keep = c.upsert.filter(e => keepVersion.has(e.id)).map(e => e.id)
+      rev = await b.save(c)
+      keepVersion.clear()
+      remember(d)
+      if (backupDue && !b.readOnly) {
+        for (const n of backupsToDelete(await state.storage!.list(BACKUP_DIR))) await state.storage!.remove(`${BACKUP_DIR}/${n}`)
+        state.lastBackup = Date.now()
+      }
     }
     state.dirty = state.changes !== at
     state.savedAt = Date.now()
     state.error = ''
   } catch (e) {
-    state.error = (e as Error).message
+    const m = (e as Error).message
+    if (m.startsWith('Conflict')) {
+      state.conflict = true
+      state.readOnly = "The data was saved by another copy of the app since this one loaded it. To keep those changes, reload. To keep this window's version instead, overwrite (the other version is kept in the backups)."
+    } else state.error = m
   } finally {
     state.saving = false
     if (state.dirty && !state.error && !state.readOnly) scheduleSave()
   }
 }
 
-/** After a conflict: write this tab's version anyway (the version on disk goes to the backups first). */
+/** After a conflict: write this window's version anyway (the database is backed up first). */
 export async function overwrite() {
   if (!state.conflict) return
   state.conflict = false
@@ -232,7 +198,7 @@ export async function overwrite() {
 }
 
 let timer: number | undefined
-/** Save a moment after the last change, so typing doesn't write the file on every key. */
+/** Save a moment after the last change, so typing doesn't write on every key. */
 export function scheduleSave(delay = 1200) {
   clearTimeout(timer)
   timer = window.setTimeout(save, delay)
@@ -258,8 +224,7 @@ export function setMode(mode: 'dm' | 'player') {
 }
 
 /** Start a new, empty world in a folder that has none (a player's copy). It opens in player mode. */
-export async function createWorld(storage: Storage, title: string) {
-  if (await storage.readText(DB_FILE) != null) throw new Error(`There already is a world in "${storage.label}".`)
+export async function createWorld(backend: Backend, storage: Storage, title: string) {
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
   const days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
   const d: Database = {
@@ -278,8 +243,8 @@ export async function createWorld(storage: Storage, title: string) {
     entries: {},
     relations: [],
   }
-  await storage.writeText(DB_FILE, JSON.stringify(d, null, 1))
-  await open(storage)
+  await backend.create(d, TYPES_LIST, KINDS_LIST)
+  await open(backend, storage)
 }
 
 export const entries = computed(() => { version.value; return state.db ? Object.values(state.db.entries) : [] })

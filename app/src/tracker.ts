@@ -1,4 +1,4 @@
-// The initiative tracker's state lives in the database, so a fight survives closing the browser.
+// The initiative tracker's state is saved with the world, so a fight survives closing the app.
 import type { Combatant, Entry, Id, Tracker } from './model/types'
 import { byType, db, get, touch } from './store'
 import { combatantsFrom, playerCombatant } from './encounter'

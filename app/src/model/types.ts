@@ -1,4 +1,4 @@
-// The whole campaign lives in one Database object, saved as data/eldoria.json.
+// The whole campaign lives in one Database object while the app runs; it's stored in data/dndesk.sqlite (electron/db.cjs).
 
 export type Id = string
 

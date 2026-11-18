@@ -1,4 +1,4 @@
-// The browser tab's title follows the open page: "Harrowmere · Eldoria", "✎ Harrowmere · Eldoria", "Spellbook · Eldoria".
+// The window's title follows the open page: "Harrowmere · Eldoria", "✎ Harrowmere · Eldoria", "Spellbook · Eldoria".
 import { watchEffect } from 'vue'
 import type { Route } from './router'
 import { route } from './router'

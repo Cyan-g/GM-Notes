@@ -1,13 +1,13 @@
 import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { viteSingleFile } from 'vite-plugin-singlefile'
 import fs from 'node:fs'
 import path from 'node:path'
+import { createRequire } from 'node:module'
 
 const DATA = path.resolve(__dirname, '../data')
 
-// Dev only: serve and save the data folder over HTTP, so the app can be tested
-// without the browser's folder picker. The built app talks to the folder directly.
+// Dev only: serve and save the data folder's pictures and files over HTTP, so the pages can be tested in a
+// browser. The desktop app talks to the folder directly.
 function devData(): Plugin {
   return {
     name: 'dev-data',
@@ -48,18 +48,54 @@ function devData(): Plugin {
   }
 }
 
-// After a build, put the single-file app next to the data folder.
-function copyOut(): Plugin {
+// Dev only: the world's database for the app in the browser, through the same code the desktop app uses
+// (electron/db.cjs). Read-only unless the page was opened with `?write` (it then sends x-dndesk-write).
+function devDb(): Plugin {
+  const require = createRequire(import.meta.url)
+  const { WorldDb } = require('./electron/db.cjs')
+  let ro: any = null, rw: any = null
+  const open = (write: boolean) => {
+    if (!WorldDb.exists(DATA)) return null
+    if (write) { ro?.close(); ro = null; return (rw ??= new WorldDb(DATA)) }
+    return rw ?? (ro ??= new WorldDb(DATA, { readOnly: true }))
+  }
   return {
-    name: 'copy-out',
-    apply: 'build',
-    closeBundle() {
-      fs.copyFileSync(path.resolve(__dirname, 'dist/index.html'), path.resolve(__dirname, '../DnDesk.html'))
+    name: 'dev-db',
+    configureServer(server) {
+      server.middlewares.use('/__db', (req, res) => {
+        const method = (req.url || '').replace(/^\/+/, '').split('?')[0]
+        const write = req.headers['x-dndesk-write'] === '1'
+        const chunks: Buffer[] = []
+        req.on('data', c => chunks.push(c))
+        req.on('end', () => {
+          res.setHeader('content-type', 'application/json')
+          try {
+            const args = JSON.parse(Buffer.concat(chunks).toString() || '[]')
+            const w = open(write || method === 'create')
+            let result: unknown
+            if (method === 'load') result = w ? { ...(write && w.allow(args[0], args[1]), w.load()) } : { empty: true }
+            else if (!w) throw new Error('There is no dndesk.sqlite in the data folder.')
+            else if (method === 'history') result = w.history(args[0])
+            else if (method === 'deleted') result = w.deleted()
+            else if (!write) throw new Error('The dev server is read-only; add ?write to the address.')
+            else if (method === 'save') result = w.save(args[0])
+            else if (method === 'create') result = w.create(args[0], args[1], args[2])
+            else if (method === 'copyTo') { w.copyTo(path.resolve(DATA, args[1])); result = true }
+            else throw new Error(`Unknown call ${method}`)
+            res.end(JSON.stringify({ result }))
+          } catch (e) {
+            res.statusCode = 400
+            res.end(JSON.stringify({ error: (e as Error).message }))
+          }
+        })
+      })
     },
   }
 }
 
 export default defineConfig({
-  plugins: [vue(), viteSingleFile(), devData(), copyOut()],
+  plugins: [vue(), devData(), devDb()],
+  // The desktop app loads the built pages from files, so their links must be relative.
+  base: './',
   server: { port: 5199 },
 })

@@ -1,7 +1,7 @@
 {
   "name": "dndesk",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -27,7 +27,6 @@
     "electron-builder": "^26.18.0",
     "typescript": "^6.0.3",
     "vite": "^8.3.8",
-    "vite-plugin-singlefile": "^2.3.4",
     "vue-tsc": "^3.3.14",
     "yaml": "^2.9.1"
   },

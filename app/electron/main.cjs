@@ -4,6 +4,7 @@
 const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require('electron')
 const fs = require('node:fs')
 const path = require('node:path')
+const { WorldDb, convertFromJson } = require('./db.cjs')
 
 const REPO = { owner: 'Cyan-g', repo: 'DnDesk' }
 const RELEASES = `https://github.com/${REPO.owner}/${REPO.repo}/releases/latest`
@@ -65,6 +66,52 @@ ipcMain.handle('fs:remove', (_e, root, rel) => {
   return true
 })
 
+// ---------- the world's database (data/dndesk.sqlite) ----------
+
+let world = null
+function openWorld() {
+  if (!world) world = new WorldDb(rootDir('data'))
+  return world
+}
+function closeWorld() { world?.close(); world = null }
+const stamp = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}` }
+
+/**
+ * Load the world. A data folder from before the database (eldoria.json) is converted first; the JSON files stay.
+ * An empty folder answers { empty: true }, so the app can offer to start a new world there.
+ */
+ipcMain.handle('db:load', (_e, types, kinds) => {
+  const dir = rootDir('data')
+  let converted
+  if (!WorldDb.exists(dir)) {
+    if (!fs.existsSync(path.join(dir, 'eldoria.json'))) return { empty: true }
+    converted = convertFromJson(dir, types, kinds)
+  }
+  const w = openWorld()
+  w.allow(types, kinds)
+  return { ...w.load(), converted }
+})
+ipcMain.handle('db:create', (_e, d, types, kinds) => openWorld().create(d, types, kinds))
+ipcMain.handle('db:save', (_e, changes) => openWorld().save(changes))
+ipcMain.handle('db:history', (_e, id) => openWorld().history(id))
+ipcMain.handle('db:deleted', () => openWorld().deleted())
+/** A copy of the database: an automatic backup in data/backups, or into the backup folder. */
+ipcMain.handle('db:copy-to', (_e, root, rel) => { openWorld().copyTo(inside(root, rel)); return true })
+/** Go back to a backup: the current database is kept as a backup first, then replaced. */
+ipcMain.handle('db:restore', (_e, name) => {
+  const dir = rootDir('data')
+  const src = inside('data', `backups/${name}`)
+  if (!fs.existsSync(src)) throw new Error(`No backup called ${name}`)
+  // The backup must be a sound database before anything is replaced.
+  const { DatabaseSync } = require('node:sqlite')
+  const test = new DatabaseSync(src, { readOnly: true })
+  try { if (test.prepare('PRAGMA integrity_check').get().integrity_check !== 'ok') throw new Error(`${name} is damaged`) } finally { test.close() }
+  openWorld().copyTo(inside('data', `backups/before-restore-${stamp()}.sqlite`))
+  closeWorld()
+  fs.copyFileSync(src, path.join(dir, 'dndesk.sqlite'))
+  return true
+})
+
 // ---------- choosing folders ----------
 
 ipcMain.handle('folder:get', (_e, root) => {
@@ -85,6 +132,7 @@ ipcMain.handle('folder:pick', async (e, root) => {
   if (r.canceled || !r.filePaths[0]) return null
   let dir = r.filePaths[0]
   if (root === 'data' && !fs.existsSync(path.join(dir, 'eldoria.json')) && fs.existsSync(path.join(dir, 'data', 'eldoria.json'))) dir = path.join(dir, 'data')
+  if (root === 'data') closeWorld()
   config[ROOTS[root]] = dir
   writeConfig(config)
   return dir
@@ -157,4 +205,5 @@ else {
     app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow() })
   })
   app.on('window-all-closed', () => app.quit())
+  app.on('will-quit', closeWorld)
 }

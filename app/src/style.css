@@ -1097,3 +1097,13 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .data-check li.serious .role { color: #b33; font-weight: 600; }
 
 .update-banner { background: color-mix(in srgb, var(--accent) 14%, var(--panel)); border-bottom-color: var(--accent); }
+
+/* an entry's earlier versions */
+.history-modal { width: min(900px, calc(100vw - 32px)); }
+.history-grid { display: grid; grid-template-columns: 13rem 1fr; gap: 1rem; min-height: 14rem; }
+.history-list { list-style: none; margin: 0; padding: 0; max-height: 60vh; overflow-y: auto; border-right: 1px solid var(--line); }
+.history-list li { padding: .2rem .4rem; border-radius: 6px; font-size: 14px; }
+.history-list li.on { background: var(--chip); }
+.history-show h3 { margin: .3rem 0; }
+.history-text { white-space: pre-wrap; font-size: 14px; max-height: 40vh; overflow-y: auto; }
+.deleted-list li { display: flex; gap: .6rem; align-items: baseline; }

@@ -11,6 +11,15 @@ contextBridge.exposeInMainWorld('dndesk', {
   showFolder: root => ipcRenderer.invoke('app:show-folder', root),
   info: () => ipcRenderer.invoke('app:info'),
   open: url => ipcRenderer.invoke('app:open', url),
+  db: {
+    load: (types, kinds) => ipcRenderer.invoke('db:load', types, kinds),
+    create: (d, types, kinds) => ipcRenderer.invoke('db:create', d, types, kinds),
+    save: changes => ipcRenderer.invoke('db:save', changes),
+    history: id => ipcRenderer.invoke('db:history', id),
+    deleted: () => ipcRenderer.invoke('db:deleted'),
+    copyTo: (root, rel) => ipcRenderer.invoke('db:copy-to', root, rel),
+    restore: name => ipcRenderer.invoke('db:restore', name),
+  },
   onUpdate: cb => ipcRenderer.on('update', (_e, info) => cb(info)),
   installUpdate: () => ipcRenderer.invoke('update:install'),
 })

@@ -1,5 +1,5 @@
 // The desktop app (Electron): the data folder is read and written directly through electron/preload.cjs.
-// No browser permission, no folder handle that can go stale.
+// No permission prompts, no folder handle that can go stale.
 import type { Storage } from './storage'
 
 export interface UpdateInfo { state: 'ready' | 'available'; version: string; url?: string }
@@ -13,6 +13,15 @@ interface Bridge {
   showFolder(root: string): Promise<boolean>
   info(): Promise<{ version: string; platform: string; packaged: boolean }>
   open(url: string): Promise<boolean>
+  db: {
+    load(types: string[], kinds: string[]): Promise<import('./backend').Loaded>
+    create(d: unknown, types: string[], kinds: string[]): Promise<number>
+    save(c: unknown): Promise<number>
+    history(id: string): Promise<import('./backend').Version[]>
+    deleted(): Promise<{ saved: string; entry: import('../model/types').Entry }[]>
+    copyTo(root: string, rel: string): Promise<boolean>
+    restore(name: string): Promise<boolean>
+  }
   onUpdate(cb: (info: UpdateInfo) => void): void
   installUpdate(): Promise<boolean>
 }

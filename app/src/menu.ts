@@ -206,13 +206,10 @@ export const MENUS: TopMenu[] = [
     // Clicking the title opens the current character's sheet.
     get home() { return currentPc.value ? hrefEntry(currentPc.value.id) : undefined },
     owns: r => typeOf(r) === 'pc',
+    // Hovering offers only a new character and the list of them all, not every character.
     items: () => [
-      ...(byType.value.get('pc') ?? []).slice().sort(byName).map(p => ({
-        label: p.name, icon: p.id === currentPc.value?.id ? '★' : '🛡️', href: hrefEntry(p.id),
-        hint: [p.id === currentPc.value?.id ? 'current' : '', p.fields.level ? `Lv ${p.fields.level}` : ''].filter(Boolean).join(' · ') || undefined,
-      })),
-      SEP,
-      { label: 'New character…', action: () => newEntry('pc') },
+      { label: 'New character…', icon: '＋', action: () => newEntry('pc') },
+      { label: 'All characters', icon: '🛡️', href: hrefList('pc'), hint: String((byType.value.get('pc') ?? []).length) },
     ],
   },
 ]

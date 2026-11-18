@@ -112,23 +112,6 @@ const kindNode = (k: string, plural: string): MenuNode => {
 
 export const MENUS: TopMenu[] = [
   {
-    title: 'Dashboards',
-    owns: r => (!!dashOf(r) && !OWN_MENU.includes(dashOf(r)!)),
-    items: () => [
-      {
-        label: 'Favourites', icon: '★', href: '#/', hint: String(state.db?.meta.favourites?.length ?? 0),
-        children: state.db?.meta.favourites?.length
-          ? () => (state.db!.meta.favourites ?? []).map(id => get(id)).filter(e => !!e).map(e => ({ label: e!.name, icon: SCHEMA.find(s => s.type === e!.type)!.icon, href: hrefEntry(e!.id) }))
-          : undefined,
-      },
-      SEP,
-      ...DASHBOARDS.filter(d => !OWN_MENU.includes(d.id)).map(d => ({
-        label: d.title, icon: d.icon, href: hrefDashboard(d.id),
-        children: d.views.length > 1 ? () => d.views.map(v => ({ label: v.name, href: hrefDashboard(d.id, v.name) })) : undefined,
-      })),
-    ],
-  },
-  {
     title: 'Campaign',
     owns: r => r.name === 'tracker' || ['campaign', 'session', 'encounter', 'pc'].includes(typeOf(r) ?? ''),
     // Sessions have no item of their own: each campaign's page lists its sessions and starts new ones.

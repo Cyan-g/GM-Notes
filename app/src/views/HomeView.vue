@@ -37,6 +37,12 @@ const TOOLS = [
 
 // ---- favourites ----
 const favourites = computed(() => (db().meta.favourites ?? []).map(id => get(id)).filter((e): e is Entry => !!e))
+// ---- recently edited (sessions and notes included, so the last thing worked on is one click away) ----
+const recent = computed(() => [...entries.value].sort((a, b) => (b.updated ?? '').localeCompare(a.updated ?? '')).slice(0, 8))
+const ago = (iso: string) => {
+  const m = Math.round((Date.now() - Date.parse(iso)) / 60000)
+  return !iso || isNaN(m) ? '' : m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`
+}
 
 // ---- regions: the parts of the world, with their subregions, the factions seated there and the mapped places ----
 const world = computed(() => list('place').filter(p => !p.fields.parent).sort((a, b) => (childrenOf.value.get(b.id)?.length ?? 0) - (childrenOf.value.get(a.id)?.length ?? 0))[0])
@@ -129,6 +135,10 @@ const sessionDate = (s: Entry) => { const d = s.fields.date as WorldDate | undef
           </li>
         </ul>
         <p v-else class="muted small">Star an entry with ☆ next to its Edit button (or press F on its page) to keep it here.</p>
+        <h4>🕘 Recently edited <a class="muted small" :href="hrefDashboard('recent')">more →</a></h4>
+        <ul class="rel compact">
+          <li v-for="e in recent" :key="e.id"><EntryLink :id="e.id" icon /><span class="when">{{ ago(e.updated) }}</span></li>
+        </ul>
       </section>
     </div>
 

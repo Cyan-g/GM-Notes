@@ -4,7 +4,7 @@ import type { EntryType, RelationKind } from './types'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
-  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks'
+  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet'
 
 export interface FieldDef {
   key: string
@@ -62,7 +62,8 @@ export const SCHEMA: TypeDef[] = [
       { key: 'class', label: 'Class', kind: 'text' },
       { key: 'level', label: 'Level', kind: 'number' },
       { key: 'campaigns', label: 'Campaigns', kind: 'refs', to: ['campaign'] },
-      { key: 'statblock', label: 'Stats', kind: 'statblock', group: 'Stats' },
+      // Filled in on the PC's page, which is the character sheet.
+      { key: 'sheet', label: 'Character sheet', kind: 'sheet' },
     ],
   },
   {

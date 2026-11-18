@@ -1,6 +1,7 @@
 // Encounter maths: XP by challenge rating, and turning encounter lines into tracker combatants.
 import type { Combatant, EncounterLine, Entry, Statblock } from './model/types'
 import { get } from './store'
+import { trackerStats } from './sheet'
 
 const XP: Record<string, number> = {
   '0': 10, '1/8': 25, '1/4': 50, '1/2': 100, '1': 200, '2': 450, '3': 700, '4': 1100, '5': 1800, '6': 2300, '7': 2900,
@@ -45,7 +46,9 @@ export function combatantsFrom(lines: EncounterLine[]): Combatant[] {
 }
 
 export function playerCombatant(pc: Entry): Combatant {
-  const sb = statsOf(pc)
+  // From the character sheet; older PCs may still have a statblock.
+  const t = trackerStats(pc), sb = statsOf(pc)
+  if (t) return { id: newCombatantId(), name: pc.name, entry: pc.id, isPlayer: true, init: null, initMod: t.initMod, hp: t.hp, maxHp: t.maxHp, ac: t.ac, conditions: [] }
   return { id: newCombatantId(), name: pc.name, entry: pc.id, isPlayer: true, init: null, initMod: mod(sb?.abilities?.dex), hp: sb?.hp, maxHp: sb?.hp, ac: sb?.ac, conditions: [] }
 }
 

@@ -9,6 +9,7 @@ import { DASHBOARDS } from '../dashboards'
 import { newEntry } from '../ui'
 import { toggleFavourite } from '../edit'
 import { describe } from '../describe'
+import { armorClass, sheetOf } from '../sheet'
 import EntryLink from '../components/EntryLink.vue'
 
 const byName = (a: Entry, b: Entry) => a.name.localeCompare(b.name)
@@ -40,6 +41,10 @@ const PLAYER_TOOLS = ['#/spellbook', '#/crafting']
 const tools = computed(() => (playerMode.value ? TOOLS.filter(t => PLAYER_TOOLS.includes(t.href)) : TOOLS))
 const desks = computed(() => DASHBOARDS.filter(x => x.id !== 'recent' && (!playerMode.value || ['spells', 'crafting'].includes(x.id))))
 const maps = computed(() => list('place').filter(p => p.fields.map).sort(byName))
+const characters = computed(() => list('pc').sort(byName).map(p => {
+  const s = sheetOf(p)
+  return { p, hp: s ? `${s.hp ?? s.maxHp ?? '?'} / ${s.maxHp ?? '?'} HP` : '', ac: s ? `AC ${armorClass(s).ac}` : '' }
+}))
 
 // ---- favourites ----
 const favourites = computed(() => (db().meta.favourites ?? []).map(id => get(id)).filter((e): e is Entry => !!e))
@@ -97,6 +102,13 @@ const sessionDate = (s: Entry) => { const d = s.fields.date as WorldDate | undef
 
     <!-- the desk -->
     <div class="home-desk">
+      <section v-if="playerMode" class="card home-campaign">
+        <h3>🛡️ Character</h3>
+        <ul v-if="characters.length" class="rel">
+          <li v-for="c in characters" :key="c.p.id"><EntryLink :id="c.p.id" /><span class="when">{{ [c.p.fields.class, c.p.fields.level && 'Lv ' + c.p.fields.level, c.ac, c.hp].filter(Boolean).join(' · ') }}</span></li>
+        </ul>
+        <button class="chip-btn" @click="newEntry('pc')">＋ {{ characters.length ? 'Another character' : 'Your character' }}</button>
+      </section>
       <section v-if="!playerMode" class="card home-campaign">
         <h3>🎲 Campaign</h3>
         <template v-if="current">

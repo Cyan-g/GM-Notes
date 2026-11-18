@@ -21,7 +21,8 @@ const e = computed(() => get(props.id))
 const def = computed(() => (e.value ? TYPES[e.value.type] : undefined))
 
 const shown = (f: FieldDef) => !f.when || f.when.is.includes(String(e.value!.fields[f.when.field] ?? ''))
-const BIG = ['recipe', 'stock', 'combatants', 'ranks']
+// The character sheet is filled in on the PC's page itself.
+const BIG = ['recipe', 'stock', 'combatants', 'ranks', 'sheet']
 const groups = computed(() => {
   const out = new Map<string, FieldDef[]>()
   for (const f of def.value?.fields ?? []) {

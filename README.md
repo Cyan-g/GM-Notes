@@ -23,12 +23,28 @@ The data files keep their names (`data/eldoria.json`, `eldoria-…` backups): th
 
 - **DM mode** (your Eldoria) shows everything.
 - **Player mode** is for a player's own copy.
-  - The menus are only Spells, Crafting and Maps.
-  - The home page shows the spellbook, workbench, favourites, maps and links.
-  - New entries can only be spells, items and places.
+  - The menus are only Character, Spells, Crafting and Maps.
+  - The home page shows the characters, spellbook, workbench, favourites, maps and links.
+  - New entries can only be characters, spells, items and places.
   - DM-only text is never shown.
 
 To set up a player: give them `DnDesk.html` in a folder of its own. They open it and choose that folder. Because there's no world in it yet, the app offers **Start a new world here**. That creates the `data` folder and starts in player mode. Then they import the spells, items and maps you send them.
+
+### Character sheet
+
+A player character's page is its character sheet, filled in right on the page.
+
+- **What you fill in:** level, ability scores, proficient saves, and skills. Click a skill to cycle it: proficient, then expertise, then none.
+- **Hit points:** current, max and temporary HP. Type `-7` or `+5` in *Damage / heal* to apply it; temporary HP soak up damage first. **Long rest** restores HP and gives back half your hit dice.
+- **Inventory:** items from the world with a quantity, plus anything else by name. Weapons and armor can be equipped, and magic items attuned.
+- **Also:** money, speed, inspiration, proficiencies and languages, and features.
+- **Worked out for you:**
+  - modifiers and the proficiency bonus (from the level)
+  - saves, skills and passive Perception
+  - armor class from the equipped armor and shield, e.g. "14 + dex(max 2)", or 10 + DEX without armor. A number typed under AC overrides it.
+  - an attack line for each equipped weapon: finesse weapons use the better of STR and DEX, ranged weapons DEX, and a "+1" in the item's Bonus field counts
+  - the spell save DC and attack bonus, from the class's casting ability unless you pick another
+- **In a fight:** the initiative tracker takes the PC's AC, HP and initiative from the sheet.
 
 ### Sharing entries
 

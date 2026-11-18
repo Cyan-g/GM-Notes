@@ -188,6 +188,18 @@ export const MENUS: TopMenu[] = [
       ...(['item', 'creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'] as EntryType[]).map(typeNode)],
   },
   {
+    // Player mode: the characters, each page being their sheet.
+    title: 'Character',
+    player: true,
+    playerOnly: true,
+    owns: r => typeOf(r) === 'pc',
+    items: () => [
+      ...(byType.value.get('pc') ?? []).slice().sort(byName).map(p => ({ label: p.name, icon: '🛡️', href: hrefEntry(p.id), hint: p.fields.level ? `Lv ${p.fields.level}` : undefined })),
+      SEP,
+      { label: 'New character…', action: () => newEntry('pc') },
+    ],
+  },
+  {
     // Player mode's World: the maps in this world (usually ones the DM shared), each opening on its map.
     title: 'Maps',
     player: true,
@@ -202,4 +214,9 @@ export const MENUS: TopMenu[] = [
 ]
 
 /** The menus for the current mode. */
-export const visibleMenus = computed(() => MENUS.filter(m => (playerMode.value ? m.player : !m.playerOnly)))
+export const visibleMenus = computed(() => {
+  if (!playerMode.value) return MENUS.filter(m => !m.playerOnly)
+  // A player's own character comes first.
+  const list = MENUS.filter(m => m.player)
+  return [...list.filter(m => m.title === 'Character'), ...list.filter(m => m.title !== 'Character')]
+})

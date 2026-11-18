@@ -76,6 +76,37 @@ export interface Abilities { str: number; dex: number; con: number; int: number;
 
 export interface Feature { name: string; text: string }
 
+/** A player character's sheet (a PC entry's `sheet` field). Everything that follows from the rules is worked out, not stored. */
+export interface CharacterSheet {
+  abilities: Abilities
+  /** Saving throws the character is proficient in. */
+  saves: (keyof Abilities)[]
+  /** 1 = proficient, 2 = expertise. */
+  skills: Record<string, 1 | 2>
+  hp?: number
+  maxHp?: number
+  tempHp?: number
+  /** e.g. "d8"; how many are spent. */
+  hitDie?: string
+  hitDiceUsed?: number
+  speed?: string
+  /** Armor class typed by hand, instead of the one worked out from what's worn. */
+  acOverride?: number
+  /** Extra AC from anything else (a ring, a feature). */
+  acBonus?: number
+  initBonus?: number
+  inspiration?: boolean
+  /** The casting ability, if not the one the class uses. */
+  spellAbility?: keyof Abilities
+  inventory: InventoryLine[]
+  money?: Copper
+  features: Feature[]
+  /** Armor, weapons, tools and languages, as text. */
+  proficiencies?: string
+}
+/** An item carried: an item entry (so weapons and armor count) or just a name. */
+export interface InventoryLine { item?: Id; name?: string; qty: number; equipped?: boolean; attuned?: boolean }
+
 export interface Statblock {
   /** Name of an SRD monster to take the stats from, when the block isn't written out. */
   srd?: string

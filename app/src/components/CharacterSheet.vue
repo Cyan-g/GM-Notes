@@ -247,6 +247,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         <p v-else class="muted small">Equip a weapon in the inventory to see its attack here.</p>
         </template>
 
+        <template v-if="build">
         <h4>Spellcasting</h4>
         <div class="cs-cast">
           <select v-if="build" :value="s.spellAbility ?? ''" @change="edit(x => x.spellAbility = (($event.target as HTMLSelectElement).value || undefined) as Ability | undefined)">
@@ -257,6 +258,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
           <template v-if="cast"><span>Save DC <b>{{ 8 + prof + castMod }}</b></span><span>Attack <b>{{ signed(prof + castMod) }}</b></span></template>
           <a :href="hrefTab(pc.id, 'spellbook')" class="small">Spellbook →</a>
         </div>
+        </template>
 
         <template v-if="build">
         <h4>Proficiencies &amp; languages</h4>

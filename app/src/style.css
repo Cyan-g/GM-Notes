@@ -1032,7 +1032,7 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 /* six ability cards (score, save, skills) in a grid, attacks and spellcasting beside them */
 .cs-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr); gap: 1rem; align-items: start; }
 @media (max-width: 1000px) { .cs-grid { grid-template-columns: 1fr; } }
-.cs-abilities { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: .5rem; align-items: start; }
+.cs-abilities { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); grid-auto-rows: 1fr; gap: .5rem; align-items: stretch; }
 .cs-ability { display: flex; flex-direction: column; padding: .4rem .45rem .35rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
 .cs-ab-head { display: grid; grid-template-columns: auto 1fr 3.4em; align-items: center; gap: .4rem; padding: 0 .2rem .3rem; margin-bottom: .2rem; border-bottom: 1px solid var(--line); }
 .cs-short { font-weight: 700; font-size: 12px; letter-spacing: .05em; color: var(--muted); }

@@ -14,7 +14,7 @@ import { changed } from '../edit'
 import { hrefTab } from '../router'
 import {
   ABILITIES, SKILLS, armorClass, attacks, blankSheet, canAttune, canEquip, castingAbility, levelOf, mod, passivePerception,
-  profBonus, profsOf, profsToEdit, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, currentPc, setCurrent, longRest, type Ability,
+  profBonus, profsOf, profsToEdit, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, longRest, type Ability,
 } from '../sheet'
 import InventoryCard from './InventoryCard.vue'
 import ProfChips from './ProfChips.vue'
@@ -115,7 +115,6 @@ const rest = () => { if (!ro.value) longRest(props.pc) }
 const shown = ref<number | null>(null)
 const shownLine = computed(() => (shown.value != null ? s.value.inventory[shown.value] : undefined))
 const showItem = (id: string) => { const i = s.value.inventory.findIndex(l => l.item === id); if (i >= 0) shown.value = i }
-const isCurrent = computed(() => currentPc.value?.id === props.pc.id)
 
 // ---- proficiencies: picked from the lists items use, so attacks, armor and the Workbench can check them ----
 const profs = computed(() => profsOf(s.value))
@@ -138,11 +137,6 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
 
 <template>
   <div class="char-sheet" :class="{ ro }">
-    <div v-if="!build" class="cs-current">
-      <button class="chip-toggle" :class="{ on: isCurrent }" :disabled="ro"
-              :title="isCurrent ? 'The Spellbook, Workbench and Character menu use this character' : 'Use this character in the Spellbook, Workbench and Character menu'"
-              @click="setCurrent(isCurrent ? undefined : pc.id)">{{ isCurrent ? '★ Current character' : '☆ Make current character' }}</button>
-    </div>
     <!-- building: the classes, each with its level, subclass and hit die -->
     <section v-if="build" class="cs-classes">
       <h4>Classes <span v-if="classes.length" class="muted small">level {{ level }}</span><button class="link-btn" :disabled="!classOptions('').length" @click="addClass">＋ Class</button></h4>

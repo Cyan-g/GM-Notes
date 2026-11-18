@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { entryIcon } from '../model/classes'
+import { currentPc, setCurrent } from '../sheet'
 import { computed, ref } from 'vue'
 import type { Entry, Relation, Statblock, WorldDate } from '../model/types'
 import { TYPES, RELATION_KINDS, byKey, type FieldDef } from '../model/schema'
@@ -264,6 +265,10 @@ const siblings = computed(() => {
         <h1><span class="icon">{{ entryIcon(e) }}</span>{{ e.name }}</h1>
         <div class="sub">
           <span class="badge">{{ (e.type === 'place' && e.fields.placeType) || (e.type === 'item' && e.fields.kind) || def.label }}</span>
+          <!-- A character: whether the Spellbook, Workbench and Character menu use them. -->
+          <button v-if="e.type === 'pc'" class="chip-toggle current-toggle" :class="{ on: currentPc?.id === e.id }" :disabled="!!state.readOnly"
+                  :title="currentPc?.id === e.id ? 'The Spellbook, Workbench and Character menu use this character' : 'Use this character in the Spellbook, Workbench and Character menu'"
+                  @click="setCurrent(currentPc?.id === e.id ? undefined : e.id)">{{ currentPc?.id === e.id ? '★ Current character' : '☆ Make current' }}</button>
           <span v-if="e.visibility === 'secret'" class="badge dm-only" title="Players don't know this entry yet">DM only</span>
           <span v-if="e.aliases.length" class="aliases">also: {{ e.aliases.join(' · ') }}</span>
           <span v-for="t in e.tags" :key="t" class="tag">#{{ t }}</span>

@@ -1191,3 +1191,4 @@ th.sortable:hover::after { content: ' ↕'; opacity: .5; }
 .small-seg { margin-left: auto; font-size: 12px; font-variant: normal; letter-spacing: 0; }
 .small-seg button { padding: .05rem .5rem; }
 .side-add .row input { flex: 1; min-width: 0; }
+.current-toggle { font-size: 12px; padding: .05rem .55rem; }

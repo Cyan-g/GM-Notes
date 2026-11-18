@@ -113,9 +113,8 @@ const kindNode = (k: string, plural: string): MenuNode => {
 export const MENUS: TopMenu[] = [
   {
     title: 'Dashboards',
-    owns: r => r.name === 'tracker' || (!!dashOf(r) && !OWN_MENU.includes(dashOf(r)!)),
+    owns: r => (!!dashOf(r) && !OWN_MENU.includes(dashOf(r)!)),
     items: () => [
-      { label: 'Initiative', icon: '⚔', href: '#/tracker', hint: state.db?.tracker?.round ? `R${state.db.tracker.round}` : undefined },
       {
         label: 'Favourites', icon: '★', href: '#/', hint: String(state.db?.meta.favourites?.length ?? 0),
         children: state.db?.meta.favourites?.length
@@ -131,9 +130,15 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'Campaign',
-    owns: r => ['campaign', 'session', 'encounter', 'pc'].includes(typeOf(r) ?? ''),
+    owns: r => r.name === 'tracker' || ['campaign', 'session', 'encounter', 'pc'].includes(typeOf(r) ?? ''),
     // Sessions have no item of their own: each campaign's page lists its sessions and starts new ones.
-    items: () => (['campaign', 'encounter', 'pc'] as EntryType[]).map(typeNode),
+    // The fight that's running, next to the encounters it's started from.
+    items: () => [
+      typeNode('campaign'),
+      { label: 'Initiative', icon: '⚔', href: '#/tracker', hint: state.db?.tracker?.round ? `R${state.db.tracker.round}` : undefined },
+      typeNode('encounter'),
+      typeNode('pc'),
+    ],
   },
   {
     title: 'World',

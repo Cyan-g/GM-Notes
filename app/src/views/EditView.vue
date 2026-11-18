@@ -2,7 +2,7 @@
 // Edit mode for one entry. Every change saves itself a moment later.
 import { computed } from 'vue'
 import type { EntryType, Statblock } from '../model/types'
-import { SCHEMA, TYPES, byKey, type FieldDef } from '../model/schema'
+import { TYPES, byKey, type FieldDef } from '../model/schema'
 import { backlinks, get, relationsOf } from '../store'
 import { changed, deleteEntry } from '../edit'
 import { go, hrefEntry, hrefList } from '../router'
@@ -60,7 +60,6 @@ const bigFields = computed(() => (def.value?.fields ?? []).filter(f => BIG.inclu
 function setName(v: string) { if (v.trim()) { e.value!.name = v.trim(); changed(e.value!) } }
 function setBody(v: string) { e.value!.body = v; changed(e.value!) }
 function setList(key: 'aliases' | 'tags', v: string[]) { e.value![key] = v; changed(e.value!) }
-function setType(t: EntryType) { e.value!.type = t; changed(e.value!) }
 function setImage(p?: string) { if (p) e.value!.image = p; else delete e.value!.image; changed(e.value!) }
 function setMap(p?: string) { if (p) e.value!.fields.map = p; else delete e.value!.fields.map; changed(e.value!) }
 function toggleSecret() { e.value!.visibility = e.value!.visibility === 'secret' ? 'known' : 'secret'; changed(e.value!) }
@@ -92,11 +91,8 @@ function remove() {
     <header class="entry-head edit-head">
       <input class="name-input" :value="e.name" aria-label="Name" @change="setName(($event.target as HTMLInputElement).value)" />
       <div class="edit-meta">
-        <label><span>Type</span>
-          <select :value="e.type" @change="setType(($event.target as HTMLSelectElement).value as EntryType)">
-            <option v-for="t in SCHEMA" :key="t.type" :value="t.type">{{ t.icon }} {{ t.label }}</option>
-          </select>
-        </label>
+        <!-- The type is chosen when the entry is made and can't change after (its fields and pages depend on it). -->
+        <span class="edit-type">{{ TYPES[e.type].icon }} {{ TYPES[e.type].label }}</span>
         <label class="toggle" :title="e.visibility === 'secret' ? 'Players don\'t know about this yet' : 'Players know this exists'">
           <input type="checkbox" :checked="e.visibility === 'known'" @change="toggleSecret" />
           <span>{{ e.visibility === 'known' ? 'Known to players' : 'DM only' }}</span>
@@ -110,10 +106,6 @@ function remove() {
       <div class="entry-main">
         <template v-if="creature">
           <CreatureForm :entry="e" />
-          <details v-if="e.body.trim()" class="sheet-notes">
-            <summary>Notes</summary>
-            <BodyEditor :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
-          </details>
         </template>
         <template v-else-if="sheet">
           <section class="card sheet-form">

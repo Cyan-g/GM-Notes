@@ -5,7 +5,7 @@ import { computed, ref } from 'vue'
 import { optionLabel } from '../store'
 import type { Entry, Id, Spellbook } from '../model/types'
 import { db, get, touch } from '../store'
-import { activeSpellbook, currentPc, spellStats } from '../sheet'
+import { activeSpellbook, currentPc, longRest, spellStats } from '../sheet'
 import type { Entry as PcEntry } from '../model/types'
 import EntryLink from '../components/EntryLink.vue'
 import { newEntry } from '../ui'
@@ -46,7 +46,12 @@ function pip(i: number, p: number) {
   s.used = p < left ? s.used + 1 : s.used - 1
   touch()
 }
-function longRest() { for (const s of book.value.slots) s.used = 0; touch() }
+/** A character's long rest is the whole one (HP and hit dice too); the world's book only gets its slots back. */
+function rest() {
+  if (owner.value) { longRest(owner.value); return }
+  for (const s of book.value.slots) s.used = 0
+  touch()
+}
 /** Cast a levelled spell: spend a slot of its level, or the lowest higher one left. */
 function cast(e: Entry) {
   const lvl = Number(e.fields.level)
@@ -131,7 +136,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
     <header class="list-head">
       <h1 v-if="!pc"><span class="icon">📖</span>Spellbook<span v-if="owner" class="head-of">of <EntryLink :id="owner.id" /></span></h1>
       <div class="row-btns">
-        <button title="Every spell slot back" @click="longRest">🌙 Restore spell slots</button>
+        <button :title="owner ? 'Full HP, every spell slot and half the hit dice back' : 'Every spell slot back'" @click="rest">🌙 {{ owner ? 'Long rest' : 'Restore spell slots' }}</button>
         <button @click="newEntry('spell')">＋ New spell</button>
       </div>
     </header>

@@ -30,17 +30,21 @@ watch(() => [props.cols, props.sort, props.rows.length === 0] as const, () => {
 watch(() => props.facets.join(), () => { chosen.value = {} })
 watch(facetDefs, fs => { for (const x of fs) chosen.value[x.f.key] ??= '' }, { immediate: true })
 
+const sorted = (list: Entry[], key: string, dir: number) => {
+  const col = key === 'name' ? column('name') : columns.value.find(c => c.key === key) ?? column(key)
+  return [...list].sort((a, b) => {
+    const x = col.sort(a), y = col.sort(b)
+    return (x < y ? -1 : x > y ? 1 : a.name.localeCompare(b.name)) * dir
+  })
+}
+/** A view with a limit ("Last 50 changes") picks its rows by its own sort first; re-sorting only reorders them. */
+const base = computed(() => (props.limit ? sorted(props.rows, props.sort.key, props.sort.dir).slice(0, props.limit) : props.rows))
 const shown = computed(() => {
   const n = q.value.trim().toLowerCase()
-  let list = props.rows.filter(e =>
+  const list = base.value.filter(e =>
     (!n || e.name.toLowerCase().includes(n) || e.aliases.some(a => a.toLowerCase().includes(n))) &&
     facetDefs.value.every(({ f }) => !chosen.value[f.key] || f.match(e, chosen.value[f.key])))
-  const col = sortKey.value === 'name' ? column('name') : columns.value.find(c => c.key === sortKey.value) ?? column('name')
-  list = [...list].sort((a, b) => {
-    const x = col.sort(a), y = col.sort(b)
-    return (x < y ? -1 : x > y ? 1 : a.name.localeCompare(b.name)) * sortDir.value
-  })
-  return props.limit ? list.slice(0, props.limit) : list
+  return sorted(list, sortKey.value, sortDir.value)
 })
 
 function sortBy(k: string) {

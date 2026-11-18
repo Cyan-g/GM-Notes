@@ -1168,3 +1168,4 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .deleted-list li { display: flex; gap: .6rem; align-items: baseline; }
 .wb-owned input { width: 3.6em; text-align: center; padding: .1rem; }
 .current-mark { margin-left: .5rem; font-size: 12px; color: var(--accent); white-space: nowrap; }
+.edit-type { font-size: 13px; color: var(--muted); }

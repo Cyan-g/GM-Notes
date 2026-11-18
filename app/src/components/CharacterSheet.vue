@@ -14,7 +14,7 @@ import { changed } from '../edit'
 import { hrefTab } from '../router'
 import {
   ABILITIES, SKILLS, armorClass, attacks, blankSheet, canAttune, canEquip, castingAbility, levelOf, mod, passivePerception,
-  profBonus, profsOf, profsToEdit, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, currentPc, setCurrent, type Ability,
+  profBonus, profsOf, profsToEdit, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, currentPc, setCurrent, longRest, type Ability,
 } from '../sheet'
 import InventoryCard from './InventoryCard.vue'
 import ProfChips from './ProfChips.vue'
@@ -109,19 +109,7 @@ function hit(ev: Event) {
     x.hp = hp
   })
 }
-/** Full HP, no temp HP, and back half the total level in hit dice (at least one), biggest dice first. */
-const longRest = () => edit(x => {
-  x.hp = x.maxHp
-  x.tempHp = undefined
-  let back = Math.max(1, Math.floor(level.value / 2))
-  const m = { ...(x.hitDiceSpent ?? {}) }
-  for (const p of pools.value) {
-    const n = Math.min(back, p.spent)
-    if (n) { m[p.die] = p.spent - n; back -= n }
-    if (!m[p.die]) delete m[p.die]
-  }
-  if (Object.keys(m).length) x.hitDiceSpent = m; else delete x.hitDiceSpent
-})
+const rest = () => { if (!ro.value) longRest(props.pc) }
 
 // ---- items in the attack lines open in a pop-up ----
 const shown = ref<number | null>(null)
@@ -214,7 +202,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
           <b v-else class="cs-die-label">{{ p.die }}</b>
         </div>
       </div>
-      <button class="cs-rest" :disabled="ro" title="Full HP, no temp HP, half your hit dice back" @click="longRest">Long rest</button>
+      <button class="cs-rest" :disabled="ro" title="Full HP, no temp HP, every spell slot and half your hit dice back" @click="rest">Long rest</button>
     </div>
 
     <div class="cs-grid">

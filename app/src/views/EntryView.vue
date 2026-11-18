@@ -382,7 +382,7 @@ const siblings = computed(() => {
         <!-- Player mode: the inventory sits under it, where "Mentioned in" would be. -->
         <InventoryCard v-if="e.type === 'pc' && playerMode" :pc="e" side />
 
-        <div v-for="[label, list] in e.type === 'pc' ? [] : relGroups" :key="label" class="card">
+        <div v-for="[label, list] in ['pc', 'spell', 'feat'].includes(e.type) ? [] : relGroups" :key="label" class="card">
           <h3>{{ label[0].toUpperCase() + label.slice(1) }}</h3>
           <ul class="rel rel-scroll">
             <li v-for="{ other, r } in list" :key="r.id" :class="{ ended: ended(r) }">

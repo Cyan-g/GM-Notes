@@ -1,7 +1,7 @@
 // A player character's sheet: what's stored on the PC entry (fields.sheet) and the numbers worked out from it
 // with the 5e rules: modifiers, proficiency bonus, saves, skills, armor class, attacks and spellcasting.
 import { computed, reactive } from 'vue'
-import { classesOf, totalLevel } from './model/classes'
+import { classesOf, hitDicePools, totalLevel } from './model/classes'
 import type { Abilities, CharacterSheet, Crafting, Entry, Id, InventoryLine, Proficiencies, Spellbook } from './model/types'
 import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from './model/schema'
 import { db, get, state, touch } from './store'
@@ -272,3 +272,24 @@ export function startDrag(ev: DragEvent, pc: Entry, i: number, from: 'inventory'
 export const endDrag = () => { dragged.pc = null }
 /** The line being dragged, if it belongs to this PC. */
 export const draggedLine = (pc: Entry) => (dragged.pc === pc.id ? sheetOf(pc)?.inventory[dragged.i] : undefined)
+
+/**
+ * A character's long rest: full HP, no temporary HP, every spell slot back, and half the level in hit dice (at least
+ * one), biggest dice first.
+ */
+export function longRest(pc: Entry) {
+  const s = sheetToEdit(pc)
+  s.hp = s.maxHp
+  delete s.tempHp
+  for (const slot of s.spellbook?.slots ?? []) slot.used = 0
+  let back = Math.max(1, Math.floor(totalLevel(pc) / 2))
+  const m = { ...(s.hitDiceSpent ?? {}) }
+  for (const p of hitDicePools(pc, s)) {
+    const n = Math.min(back, p.spent)
+    if (n) { m[p.die] = p.spent - n; back -= n }
+    if (!m[p.die]) delete m[p.die]
+  }
+  if (Object.keys(m).length) s.hitDiceSpent = m; else delete s.hitDiceSpent
+  pc.updated = new Date().toISOString()
+  touch()
+}

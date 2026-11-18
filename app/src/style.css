@@ -674,11 +674,19 @@ input.init { width: 4em; }
 .sf-material { flex: 1; min-width: 10rem; }
 
 /* ---------- crafting workbench ---------- */
-.wb-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 1rem; align-items: start; }
+.wb-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 1rem; align-items: start; }
 @media (max-width: 1000px) { .wb-grid { grid-template-columns: 1fr; } }
 .wb-main, .wb-side { display: grid; gap: 1rem; }
 .workbench .card h3 { display: flex; justify-content: space-between; align-items: baseline; }
 .wb-recipes { margin-bottom: .6rem; }
+/* Names, tools and numbers stay on one line; only the ingredient list wraps (one ingredient per line at most). */
+.wb-recipes td { white-space: nowrap; }
+.wb-recipes td:nth-child(3) { white-space: normal; }
+.wb-recipes .wb-need { white-space: nowrap; }
+table.grid.wb-recipes th { white-space: normal; vertical-align: bottom; }
+table.grid.wb-recipes th, table.grid.wb-recipes td { padding-left: .45rem; padding-right: .45rem; }
+table.grid.wb-recipes th:nth-last-child(2) { width: 7.5em; }
+.wb-main > .card:first-child { overflow-x: auto; }
 .wb-recipes tr.ready td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
 .wb-recipes td.missing { color: var(--accent); text-decoration: line-through; }
 .wb-need { display: inline-block; margin-right: .8rem; white-space: nowrap; }

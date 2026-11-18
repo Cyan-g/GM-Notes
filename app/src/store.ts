@@ -6,6 +6,7 @@ import type { Backend, Changes } from './storage/backend'
 import { SCHEMA, RELATION_KINDS, MARTIAL_WEAPONS, SIMPLE_WEAPONS, byKey, type FieldDef } from './model/schema'
 import { LIST_BY_KEY, LISTS, labelIn, listKeyOf, optionsIn, type ListOption } from './model/lists'
 import { checkDatabase, type Problem } from './validate'
+import { defaultCalendar, formatYear } from './calendar'
 
 /** The play state (the fight, the world's own spellbook and workbench): saved like the rest, but not a "world edit". */
 const PLAY_KEYS = ['tracker', 'spellbook', 'crafting'] as const
@@ -386,18 +387,12 @@ export async function createWorld(backend: Backend, storage: Storage, title: str
     await open(backend, storage)
     return
   }
-  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-  const days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
   const d: Database = {
     version: DATA_VERSION,
     meta: {
       title: title.trim() || 'My world',
       today: { year: 1, month: 1, day: 1 },
-      calendar: {
-        name: 'Calendar', months: months.map((name, i) => ({ name, days: days[i] })),
-        weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-        leapMonth: 2, firstWeekDay: 1, moons: [], eras: [], holidays: [],
-      },
+      calendar: defaultCalendar(),
       eventCategories: [],
       mode: 'player',
     },
@@ -490,8 +485,7 @@ export function formatMoney(cp: unknown): string {
 export function formatDate(d: WorldDate | undefined | null): string {
   if (!d || d.year == null) return ''
   const cal = state.db?.meta.calendar
-  const era = d.year < 0 ? ' BC' : ' AC'
-  const y = `${Math.abs(d.year)}${era}`
+  const y = formatYear(cal, d.year)
   if (!d.month) return y
   const month = cal?.months[d.month - 1]?.name ?? `Month ${d.month}`
   return d.day ? `${d.day} ${month} ${y}` : `${month} ${y}`

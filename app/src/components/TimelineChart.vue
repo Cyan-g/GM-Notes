@@ -6,6 +6,7 @@ import { RELATION_KINDS } from '../model/schema'
 import { db, get, formatDate } from '../store'
 import { go, hrefEntry } from '../router'
 import { type TItem, yearPos } from '../timeline'
+import { formatYear } from '../calendar'
 
 const props = defineProps<{ items: TItem[]; from?: number | null; to?: number | null; focus?: Id | null }>()
 
@@ -46,7 +47,7 @@ const ticks = computed(() => {
   for (let y = Math.ceil(lo / step) * step; y <= hi; y += step) out.push(y)
   return out
 })
-const yearLabel = (y: number) => (y < 0 ? `${-y} BC` : `${y}`)
+const yearLabel = (y: number) => (y < 0 ? formatYear(db().meta.calendar, y) : `${y}`)
 
 // ---- events row: stack dots into lanes so labels don't overlap ----
 const events = computed(() => {

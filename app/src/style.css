@@ -1071,6 +1071,16 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .lists-lock { margin-left: .3rem; cursor: help; }
 .lists-users { margin: .3rem 0 0; padding-left: 1.1rem; font-size: 13px; }
 .lists-add { display: flex; gap: .5rem; margin-top: .8rem; }
+.cal-edit-grid { columns: 2 26rem; column-gap: 1rem; }
+.cal-edit-grid > .card { break-inside: avoid; margin-bottom: 1rem; }
+.cal-edit-grid .lists-table input { width: 100%; min-width: 6rem; }
+.cal-edit-grid .lists-table input.num { width: 6.5rem; min-width: 0; }
+.cal-edit-grid .lists-table input.short { width: 5rem; min-width: 0; }
+.cal-edit-grid .lists-table input[type=color] { width: 2.6rem; min-width: 0; padding: 0; vertical-align: middle; }
+.cal-edit-row { margin: .6rem 0 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.cal-edit-grid > .cal-edit-save { column-span: all; }
+.cal-edit-outside { border-left: 3px solid var(--accent); padding-left: .7rem; margin-bottom: .6rem; }
+.cal-edit-outside ul { margin: .3rem 0; }
 @media (max-width: 720px) { .lists-grid { grid-template-columns: 1fr; } }
 .prof-label { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 .prof-chips { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }

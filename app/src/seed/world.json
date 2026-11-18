@@ -3,7 +3,7 @@
  "dataVersion": 22,
  "meta": {
   "calendar": {
-   "name": "Ardenvalian Calendar",
+   "name": "Calendar",
    "months": [
     {
      "name": "January",
@@ -69,43 +69,24 @@
     {
      "name": "Moon",
      "cycle": 29.530588853,
-     "offset": 9.24953
+     "offset": 19.051057
     }
    ],
    "eras": [
     {
-     "name": "Before Calamity",
+     "name": "Before Christ",
+     "short": "BC",
      "fromYear": -999999
     },
     {
-     "name": "After Calamity",
+     "name": "Anno Domini",
+     "short": "AD",
      "fromYear": 1
     }
    ],
-   "holidays": [
-    {
-     "name": "Fairsails",
-     "month": 9,
-     "day": 24
-    }
-   ]
+   "holidays": []
   },
   "eventCategories": [
-   {
-    "id": "christian-holidays",
-    "name": "Holidays",
-    "color": "#9b2c2c"
-   },
-   {
-    "id": "historical-events",
-    "name": "Historical Events",
-    "color": "#455A64"
-   },
-   {
-    "id": "miscellaneous-events",
-    "name": "Miscellaneous Events",
-    "color": "#0288D1"
-   },
    {
     "id": "ID_ba5b8baa19eb",
     "name": "Session",
@@ -113,9 +94,9 @@
    }
   ],
   "today": {
-   "year": 892,
-   "month": 9,
-   "day": 6
+   "year": 1,
+   "month": 1,
+   "day": 1
   },
   "lists": {
    "ability": [

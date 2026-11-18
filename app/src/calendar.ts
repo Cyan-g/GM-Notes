@@ -1,5 +1,37 @@
-// Date arithmetic for the world calendar: month lengths, leap years, weekdays, moon phases.
+// Date arithmetic for the world calendar: month lengths, leap years, weekdays, moon phases, eras.
 import type { Calendar, WorldDate } from './model/types'
+
+/** An era's start meaning "from the beginning of time". */
+export const ERA_START = -999999
+
+/** The standard calendar a new world starts with: Gregorian months and leap day, the real moon, BC and AD. */
+export function defaultCalendar(): Calendar {
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+  const days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  return {
+    name: 'Calendar',
+    months: months.map((name, i) => ({ name, days: days[i] })),
+    weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    // 1 January of year 1 was a Monday; the moon is new on 6 January 2000 at 18:14.
+    leapMonth: 2, firstWeekDay: 1,
+    moons: [{ name: 'Moon', cycle: 29.530588853, offset: 19.051057 }],
+    eras: [{ name: 'Before Christ', short: 'BC', fromYear: ERA_START }, { name: 'Anno Domini', short: 'AD', fromYear: 1 }],
+    holidays: [],
+  }
+}
+
+/** The era a year falls in: the last one starting at or before it, or the first era for years before them all. */
+export function eraOf(cal: Calendar | undefined, year: number) {
+  const eras = [...(cal?.eras ?? [])].sort((a, b) => a.fromYear - b.fromYear)
+  return eras.filter(e => e.fromYear <= year).pop() ?? eras[0]
+}
+/** What an era shows in dates: its short name, or its initials. */
+export const eraShort = (e: { name: string; short?: string }) => e.short?.trim() || e.name.split(/\s+/).filter(Boolean).map(w => w[0]).join('').toUpperCase()
+/** "892 AC", "120 BC"; years before 0 count backwards. Without eras, just the number. */
+export function formatYear(cal: Calendar | undefined, year: number): string {
+  const era = eraOf(cal, year)
+  return era ? `${Math.abs(year)} ${eraShort(era)}` : String(year)
+}
 
 const isLeap = (cal: Calendar, y: number) => cal.leapMonth != null && y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)
 

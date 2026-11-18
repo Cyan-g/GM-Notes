@@ -8,6 +8,7 @@ const props = defineProps<{ modelValue?: WorldDate | null }>()
 const emit = defineEmits<{ 'update:modelValue': [WorldDate | undefined] }>()
 const months = computed(() => db().meta.calendar.months)
 const d = computed(() => props.modelValue ?? undefined)
+const yearHint = computed(() => { const e = [...db().meta.calendar.eras].sort((a, b) => a.fromYear - b.fromYear); return e.length > 1 ? `Years below 0 are ${e[0].name}` : 'Years below 0 count backwards' })
 
 function set(part: 'year' | 'month' | 'day', raw: string) {
   const v = raw === '' ? undefined : Number(raw)
@@ -27,6 +28,6 @@ const maxDay = computed(() => d.value?.month ? months.value[d.value.month - 1]?.
       <option value="">Month</option>
       <option v-for="(m, i) in months" :key="m.name" :value="i + 1">{{ m.name }}</option>
     </select>
-    <input type="number" class="year" :value="d?.year ?? ''" placeholder="Year" title="Negative years are before the Calamity" @change="set('year', ($event.target as HTMLInputElement).value)" />
+    <input type="number" class="year" :value="d?.year ?? ''" placeholder="Year" :title="yearHint" @change="set('year', ($event.target as HTMLInputElement).value)" />
   </span>
 </template>

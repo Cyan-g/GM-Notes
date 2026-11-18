@@ -161,7 +161,8 @@ export interface Calendar {
   /** Weekday (index into weekdays) of 1 January, year 1. */
   firstWeekDay: number
   moons: { name: string; cycle: number; offset: number }[]
-  eras: { name: string; fromYear: number }[]
+  /** The first era (lowest fromYear) also covers every year before it. `short` is shown in dates (default: its initials). */
+  eras: { name: string; short?: string; fromYear: number }[]
   /** Holidays that repeat every year. */
   holidays: { name: string; month: number; day: number; note?: string }[]
 }

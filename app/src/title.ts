@@ -16,7 +16,7 @@ function pageName(r: Route): string {
       return (r.edit && e.type !== 'encounter' ? '✎ ' : '') + e.name
     }
     case 'map': return `Map of ${get(r.id)?.name ?? r.id}`
-    case 'calendar': return 'Calendar'
+    case 'calendar': return r.edit ? 'Edit the calendar' : 'Calendar'
     case 'tracker': {
       const t = db().tracker
       const enc = get(t?.encounter)

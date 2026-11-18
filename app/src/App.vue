@@ -15,6 +15,7 @@ import EditView from './views/EditView.vue'
 import EncounterView from './views/EncounterView.vue'
 import DashboardView from './views/DashboardView.vue'
 import CalendarView from './views/CalendarView.vue'
+import CalendarEditView from './views/CalendarEditView.vue'
 import TrackerView from './views/TrackerView.vue'
 import SpellbookView from './views/SpellbookView.vue'
 import CraftingView from './views/CraftingView.vue'
@@ -122,6 +123,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
     <main class="main">
       <HomeView v-if="route.current.name === 'home'" />
       <ListView v-else-if="route.current.name === 'list'" :type="route.current.type" />
+      <CalendarEditView v-else-if="route.current.name === 'calendar' && route.current.edit" />
       <CalendarView v-else-if="route.current.name === 'calendar'" :year="route.current.year" :month="route.current.month" />
       <TrackerView v-else-if="route.current.name === 'tracker'" />
       <SpellbookView v-else-if="route.current.name === 'spellbook'" />
@@ -149,7 +151,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <template v-if="phase === 'starting'"><p class="muted">Opening…</p></template>
       <template v-else-if="phase === 'new-world'">
         <p>“{{ emptyName }}” has no world in it yet.</p>
-        <p class="muted small">Start a new one here, for example as a player keeping what your DM shares. It comes with the dropdown lists, the calendar, races, subclasses, spells, feats and tools.
+        <p class="muted small">Start a new one here, for example as a player keeping what your DM shares. It comes with the dropdown lists, a standard calendar to make your own, races, subclasses, spells, feats and tools.
           It starts in player mode; ⚙ → DM mode switches.</p>
         <input v-model="worldName" placeholder="Name, e.g. your character's name" @keydown.enter="startWorld" />
         <button class="primary" @click="startWorld">Start a new world here</button>

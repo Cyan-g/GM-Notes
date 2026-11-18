@@ -6,7 +6,7 @@ export type Route =
   | { name: 'home' }
   | { name: 'list'; type: EntryType }
   | { name: 'entry'; id: Id; edit: boolean; tab?: 'family' }
-  | { name: 'calendar'; year?: number; month?: number }
+  | { name: 'calendar'; year?: number; month?: number; edit?: boolean }
   | { name: 'tracker' }
   | { name: 'spellbook' }
   | { name: 'crafting' }
@@ -21,6 +21,7 @@ function parse(): Route {
   const [, kind, arg, extra] = location.hash.replace(/^#/, '').split('/').map(decodeURIComponent)
   // The timeline lives on the Atlas now; old #/timeline links still land there.
   if (kind === 'timeline') return { name: 'atlas', tab: 'timeline' }
+  if (kind === 'calendar' && arg === 'edit') return { name: 'calendar', edit: true }
   if (kind === 'calendar') return { name: 'calendar', year: arg ? Number(arg) : undefined, month: extra ? Number(extra) : undefined }
   if (kind === 'tracker') return { name: 'tracker' }
   if (kind === 'spellbook') return { name: 'spellbook' }

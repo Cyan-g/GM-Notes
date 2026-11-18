@@ -1,9 +1,10 @@
 // npm run seed [data folder]: rebuilds src/seed/world.json, what every new world starts with, from a world's database
 // (default ../data). Commit the result; the next build ships it.
 //
-// The seed holds every dropdown list, the calendar, the timeline's event categories and today's date, and these
-// entries: races, subclasses, spells, feats and Tool items. DM-only text, pictures and attached files are left out,
-// and references to anything else become plain words.
+// The seed holds every dropdown list, the standard calendar (Gregorian, real moon, BC/AD; today is 1 January of
+// year 1; worlds make their own in the calendar editor), the session colour of the timeline, and these entries:
+// races, subclasses, spells, feats and Tool items. DM-only text, pictures and attached files are left out, and
+// references to anything else become plain words.
 import { createRequire } from 'node:module'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -11,6 +12,7 @@ import { fileURLToPath } from 'node:url'
 import type { Database, Entry, EntryType } from '../src/model/types'
 import { LISTS, optionsIn } from '../src/model/lists'
 import { mapRefs } from '../src/model/refs'
+import { defaultCalendar } from '../src/calendar'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const { WorldDb } = createRequire(import.meta.url)('../electron/db.cjs')
@@ -43,9 +45,9 @@ const seed = {
   about: 'What every new world starts with. Made by `npm run seed` from the DM\'s world; don\'t edit by hand.',
   dataVersion: d.version,
   meta: {
-    calendar: d.meta.calendar,
-    eventCategories: d.meta.eventCategories,
-    today: d.meta.today,
+    calendar: defaultCalendar(),
+    eventCategories: d.meta.eventCategories.filter(c => c.name === 'Session'),
+    today: { year: 1, month: 1, day: 1 },
     lists: Object.fromEntries(LISTS.map(l => [l.key, optionsIn(d.meta, l.key)])),
   },
   entries,

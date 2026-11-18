@@ -38,7 +38,7 @@ DnDesk is a desktop app for Windows and macOS. It's installed once and keeps the
 
 To set up a player:
 1. They install DnDesk and choose an empty folder as the data folder.
-2. The app offers **Start a new world here**, which starts in player mode. The new world already has every dropdown list, your calendar and timeline categories, today's date, the races, subclasses, spells, feats and Tool items (see *The starting world* below).
+2. The app offers **Start a new world here**, which starts in player mode. The new world already has every dropdown list, the standard calendar, the races, subclasses, spells, feats and Tool items (see *The starting world* below).
 3. They import the world (⚙ → Export the world…) or the entries you send them; importing a newer file later updates their copy.
 
 ### Character sheet
@@ -79,12 +79,26 @@ A player character's page is its character sheet, filled in right on the page.
 
 With no current character, the Spellbook and Workbench use the world's own; the Spellbook then takes typed numbers.
 
+### The calendar
+
+**World → Calendar → ⚙ Edit calendar** changes the world's calendar:
+- **Structure:** its name, the months and their length, which month gets the leap day (every 4 years, except every 100, except every 400; or none) and the weekdays.
+- **Moons:** each with its cycle in days and today's phase.
+- **Eras:** dates show the era's short name (its initials unless you give one), e.g. "892 AC". The first era also covers every year before it; years below 0 count backwards.
+- **Holidays:** they repeat every year.
+- **Timeline colours:** for each event category (the categories themselves are in Archive → Lists) and for sessions.
+- **Today stays put:** it keeps the weekday and moon phases picked on the page, whatever else changes.
+- **Dates follow their month:** when months are moved, or one before them is removed, dates move with them. Saving warns first about dates that no longer fit:
+  - a date in a removed last month keeps its number, so adding a month back brings it back;
+  - a date in another removed month keeps only its year;
+  - a day past a shortened month's end stays as it is.
+
 ### Sharing entries and the world
 
 An entry, or the whole world, can be sent to someone else who has this app, and sent again later to bring their copy up to date.
 
 - **⇩ Export** on an entry's page saves it as `<name>.dndesk.json`, with everything it points at, and what those point at in turn: *Located in*, race, recipes and their tools, a scroll's spell, shop stock, map pins, a character's inventory, spellbook, recipes and tools. Tick *Also what its text links to* to follow the `[[links]]` in the text too.
-- **⚙ → Export the world…** saves every entry, the connections between them, every dropdown list, the calendar and today's date.
+- **⚙ → Export the world…** saves every entry, the connections between them, every dropdown list, your calendar (as edited in *⚙ Edit calendar*), the timeline's colours and today's date.
 - **Never exported:** campaigns, sessions, encounters and creatures stay with the DM.
 - **DM-only text** is left out unless you tick *Include the DM-only parts of the text*. **Hidden entries** (not known to the players) go along unless you untick *Include entries hidden from the players*; their connections stay out with them.
 - **Choosing types:** the *Take along* chips leave whole types out.
@@ -94,7 +108,7 @@ An entry, or the whole world, can be sent to someone else who has this app, and 
   - **DM-only text:** a file without DM-only text never wipes out DM-only text you have.
   - **Connections:** they're matched by their two ends and kind, then added or updated.
   - **Dropdown lists:** choices are matched to your options by id, then by name; one you don't have is added. A world's file also carries over renamed options.
-  - **Calendar:** a world's file can update the calendar and today's date (a tick box).
+  - **Calendar:** a world's file brings its calendar, timeline colours and today's date; the tick box is on when they differ from yours. So a player who imports your world gets your calendar in place of the standard one.
 
 Everything is saved in `data/`:
 
@@ -161,7 +175,8 @@ npm run build      # type-checks and builds the pages into dist/ (what the deskt
 ### The starting world
 
 Every new world starts from `app/src/seed/world.json`, which ships inside the app. It holds:
-- every dropdown list, the calendar, the timeline's event categories and today's date;
+- every dropdown list;
+- the standard calendar: Gregorian months and leap day, the real moon, BC and AD, today 1 January of year 1, and the sessions' timeline colour. It's not taken from your world: a world makes its own on the Calendar page (*⚙ Edit calendar*), and a player gets yours by importing your world;
 - the races, subclasses, spells, feats and Tool items, without DM-only text or pictures. Links to anything else become plain words.
 
 `npm run seed` rebuilds it from your world (`../data`, or a folder given after the command); commit it and the next build ships it. The seed records its data version, so after an upgrade step a new world from an older seed is brought up to date like any older data. Rebuilding it now and then keeps it current.

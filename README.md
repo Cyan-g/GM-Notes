@@ -17,6 +17,19 @@ The data files keep their names (`data/eldoria.json`, `eldoria-…` backups): th
 - Relations (memberships, family, home, ...) are edited on either entry and show up on both.
 - Keep the app open in one tab only: two tabs would overwrite each other's saves.
 
+### DM mode and player mode
+
+**⚙ → DM mode** switches what the app shows. The setting is saved with the world. Nothing is deleted when you switch.
+
+- **DM mode** (your Eldoria) shows everything.
+- **Player mode** is for a player's own copy.
+  - The menus are only Spells, Crafting and Maps.
+  - The home page shows the spellbook, workbench, favourites, maps and links.
+  - New entries can only be spells, items and places.
+  - DM-only text is never shown.
+
+To set up a player: give them `DnDesk.html` in a folder of its own. They open it and choose that folder. Because there's no world in it yet, the app offers **Start a new world here**. That creates the `data` folder and starts in player mode. Then they import the spells, items and maps you send them.
+
 ### Sharing entries
 
 Spells, items and maps can be sent to someone else who has this app.

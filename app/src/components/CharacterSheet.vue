@@ -2,14 +2,13 @@
 // A player character's sheet, filled in right here: scores, proficiencies, HP, inventory and features.
 // (In player mode the inventory sits beside the sheet, under the Equipped card.)
 // Modifiers, saves, skills, AC, attacks and spellcasting are worked out from them.
-// Play view changes only what changes at the table (HP, hit dice, inspiration, inventory); "✎ Edit sheet" also
-// opens what's set when building the character: level, max HP, hit die, AC, speed, scores, proficiencies,
-// spellcasting and features.
+// On the character's page it's for play: only what changes at the table (HP, hit dice, inspiration, inventory).
+// On the Edit page (`build`) it also opens what's set when building the character: level, max HP, hit die, AC,
+// speed, scores, proficiencies, spellcasting and features.
 import { computed, ref } from 'vue'
 import type { CharacterSheet, Entry, Proficiencies } from '../model/types'
 import { byType, listOptions, playerMode, setList, state } from '../store'
 import { changed } from '../edit'
-import { ui } from '../ui'
 import {
   ABILITIES, SKILLS, armorClass, attacks, blankSheet, canAttune, canEquip, castingAbility, levelOf, mod, passivePerception,
   profBonus, profsOf, profsToEdit, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, currentPc, setCurrent, type Ability,
@@ -18,10 +17,10 @@ import InventoryCard from './InventoryCard.vue'
 import ProfChips from './ProfChips.vue'
 import ItemModal from './ItemModal.vue'
 
-const props = defineProps<{ pc: Entry }>()
+const props = defineProps<{ pc: Entry; build?: boolean }>()
 const ro = computed(() => !!state.readOnly)
 /** Build-time parts are locked unless the sheet is being edited. */
-const build = computed(() => ui.sheetEdit && !ro.value)
+const build = computed(() => !!props.build && !ro.value)
 const locked = computed(() => !build.value)
 /** The stored sheet, or a blank one until the first change stores it. */
 const s = computed<CharacterSheet>(() => sheetOf(props.pc) ?? blankSheet())
@@ -100,15 +99,12 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
 </script>
 
 <template>
-  <div class="char-sheet" :class="{ ro, building: build }">
+  <div class="char-sheet" :class="{ ro }">
     <div class="cs-current">
       <button class="chip-toggle" :class="{ on: isCurrent }" :disabled="ro"
               :title="isCurrent ? 'The Spellbook, Workbench and Character menu use this character' : 'Use this character in the Spellbook, Workbench and Character menu'"
               @click="setCurrent(isCurrent ? undefined : pc.id)">{{ isCurrent ? '★ Current character' : '☆ Make current character' }}</button>
       <template v-if="isCurrent"><a href="#/spellbook" class="small">Spellbook →</a><a href="#/crafting" class="small">Workbench →</a></template>
-      <button v-if="!ro" class="chip-toggle cs-edit-toggle" :class="{ on: ui.sheetEdit }"
-              :title="ui.sheetEdit ? 'Back to the sheet for play' : 'Change scores, proficiencies, features and other things set when building the character'"
-              @click="ui.sheetEdit = !ui.sheetEdit">{{ ui.sheetEdit ? '✓ Done editing' : '✎ Edit sheet' }}</button>
     </div>
     <!-- the strip at the top: the numbers looked at most -->
     <div class="cs-strip">
@@ -211,7 +207,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <dl v-else-if="s.features.length" class="cs-feature-list">
         <template v-for="(f, i) in s.features" :key="i"><dt>{{ f.name }}</dt><dd>{{ f.text }}</dd></template>
       </dl>
-      <p v-if="!s.features.length" class="muted small">Class features, racial traits, feats<template v-if="!build && !ro">: add them with ✎ Edit sheet</template>.</p>
+      <p v-if="!s.features.length" class="muted small">Class features, racial traits, feats<template v-if="!build && !ro">: add them with ✎ Edit</template>.</p>
     </section>
     <ItemModal v-if="shownLine?.item" :id="shownLine.item" @close="shown = null">
       <template #actions>

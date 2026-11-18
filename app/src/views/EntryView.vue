@@ -24,6 +24,7 @@ import DataImage from '../components/DataImage.vue'
 import ItemCard from '../components/ItemCard.vue'
 import SpellCard from '../components/SpellCard.vue'
 import CharacterSheet from '../components/CharacterSheet.vue'
+import PcNotes from '../components/PcNotes.vue'
 import EquippedCard from '../components/EquippedCard.vue'
 import InventoryCard from '../components/InventoryCard.vue'
 import FeatCard from '../components/FeatCard.vue'
@@ -293,12 +294,13 @@ const siblings = computed(() => {
         <CharacterSheet v-if="e.type === 'pc'" :pc="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
         <FeatCard v-if="e.type === 'feat'" :e="e" source />
-        <template v-for="(p, i) in bodyParts.parts" :key="i">
+        <template v-for="(p, i) in e.type === 'pc' ? [] : bodyParts.parts" :key="i">
           <MarkdownView v-if="p.md" :source="p.md" />
           <FieldValue v-else-if="p.insert === 'ranks' && ranksDef" :def="ranksDef" :value="e.fields.ranks" :entry="e" />
           <div v-else-if="p.insert === 'feats'" class="feat-list"><FeatCard v-for="f in grantedFeats" :key="f.id" :e="f" title /></div>
         </template>
         <p v-if="!e.body && !['item', 'spell', 'feat', 'creature', 'encounter', 'pc'].includes(e.type)" class="muted">No text yet.</p>
+        <PcNotes v-if="e.type === 'pc'" :pc="e" />
 
         <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => !(bodyParts.placed.has('ranks') && f.kind === 'ranks'))" :key="f.key">
           <h2>{{ f.label }}</h2>

@@ -1050,12 +1050,12 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .cs-skill { display: grid; grid-template-columns: 1em 2.1em 1fr; align-items: baseline; gap: .3rem; border: none; background: none; padding: .1rem .25rem; border-radius: 6px; text-align: left; font-size: 13px; cursor: pointer; color: var(--ink-2); }
 .cs-skill:hover:not(:disabled) { background: var(--chip); }
 .char-sheet .cs-skill:disabled, .char-sheet .chip-toggle.on:disabled { opacity: 1; cursor: default; }
-.cs-edit-toggle { margin-left: auto; }
-.char-sheet.building { outline: 2px dashed var(--accent); outline-offset: .6rem; border-radius: 4px; }
 .cs-other { margin: 0; font-size: 14px; white-space: pre-line; }
 .cs-feature-list { margin: 0; }
 .cs-feature-list dt { font-weight: 600; margin-top: .5rem; }
 .cs-feature-list dt:first-child { margin-top: 0; }
+.pc-notes { padding: .7rem .9rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.pc-notes h4 { display: flex; align-items: baseline; gap: .6rem; margin: 0 0 .5rem; font: 600 1rem var(--serif); font-variant: small-caps; letter-spacing: .04em; color: var(--accent); }
 .cs-feature-list dd { margin: .1rem 0 0; white-space: pre-line; font-size: 14px; color: var(--ink-2); }
 .cs-skill.on { color: var(--ink); }
 .cs-skill.on .cs-dot { color: var(--accent); }

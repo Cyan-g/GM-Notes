@@ -9,6 +9,7 @@ import { go, hrefEntry, hrefList } from '../router'
 import FieldInput from '../components/edit/FieldInput.vue'
 import ListInput from '../components/edit/ListInput.vue'
 import BodyEditor from '../components/edit/BodyEditor.vue'
+import CharacterSheet from '../components/CharacterSheet.vue'
 import SpellForm from '../components/edit/SpellForm.vue'
 import CreatureForm from '../components/edit/CreatureForm.vue'
 import StatblockView from '../components/Statblock.vue'
@@ -21,7 +22,7 @@ const e = computed(() => get(props.id))
 const def = computed(() => (e.value ? TYPES[e.value.type] : undefined))
 
 const shown = (f: FieldDef) => !f.when || f.when.is.includes(String(byKey(e.value!.fields)[f.when.field] ?? ''))
-// The character sheet is filled in on the PC's page itself.
+// A character's sheet is the main column of its Edit page.
 const BIG = ['recipe', 'stock', 'combatants', 'ranks', 'sheet']
 const groups = computed(() => {
   const out = new Map<string, FieldDef[]>()
@@ -145,13 +146,15 @@ function remove() {
             <BodyEditor :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
           </details>
         </template>
+        <!-- A character is built on its sheet; the notes are written on the character's page. -->
+        <CharacterSheet v-else-if="e.type === 'pc'" :pc="e" build />
         <BodyEditor v-else :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
         <section v-if="e.type === 'place'">
           <h2>Map</h2>
           <ImageInput :model-value="e.fields.map" :hint="e.name + ' map'" @update:model-value="setMap" />
           <MapView v-if="e.fields.map" :place="e" editable class="inline-map" />
         </section>
-        <section v-for="f in e.type === 'item' ? [] : bigFields" :key="f.key">
+        <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => f.kind !== 'sheet')" :key="f.key">
           <h2>{{ f.label }}</h2>
           <FieldInput :def="f" :entry="e" />
         </section>

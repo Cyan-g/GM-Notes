@@ -21,7 +21,7 @@ const rows = computed(() => (view.value ? entries.value.filter(view.value.filter
     <nav v-if="dash.views.length > 1" class="tabs">
       <a v-for="v in dash.views" :key="v.name" :href="hrefDashboard(dash.id, v.name)" :class="{ on: v === view }">{{ v.name }}</a>
     </nav>
-    <DataTable :key="dash.id + view.name" :rows="rows" :cols="view.cols" :facets="view.facets" :sort="view.sort" :limit="view.limit" />
+    <DataTable :key="dash.id + view.name" :rows="rows" :cols="view.cols" :facets="view.facets" :sort="view.sort" :limit="view.limit" :creates="view.creates" />
   </div>
   <div v-else class="empty-state"><h1>No such dashboard</h1></div>
 </template>

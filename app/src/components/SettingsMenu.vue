@@ -13,6 +13,7 @@ const open = ref<null | 'menu' | 'theme'>(null)
 const backupAge = computed(() => daysSince(state.db?.meta.externalBackup))
 const overdue = computed(() => backupAge.value == null || backupAge.value > 7)
 const toggle = () => { open.value = open.value ? null : 'menu' }
+defineExpose({ toggle })
 function importFile() { open.value = null; pickImport() }
 function exportWorld() { open.value = null; ui.worldExport = true }
 function data() { open.value = null; go('#/data') }
@@ -52,10 +53,10 @@ onUnmounted(() => { document.removeEventListener('pointerdown', outside); window
         <span>🎲</span>DM mode
         <input type="checkbox" role="switch" :checked="!playerMode" :disabled="!!state.readOnly" @change="setMode(($event.target as HTMLInputElement).checked ? 'dm' : 'player')" />
       </label>
-      <button role="menuitem" @click="exportWorld"><span>⇩</span>Export the world…<span class="hint">for a player</span></button>
+      <button role="menuitem" @click="exportWorld"><span>⇩</span>Export the world…<span class="hint">{{ playerMode ? 'to share' : 'for a player' }}</span></button>
       <button role="menuitem" @click="importFile"><span>⇪</span>Import from a file…<span class="hint">entry or world</span></button>
       <button role="menuitem" :class="{ warn: overdue }" @click="data"><span>💾</span>Data &amp; backups
-        <span class="hint">{{ backupAge == null ? 'no copy yet' : backupAge === 0 ? 'copied today' : `copied ${backupAge} d ago` }}</span></button>
+        <span class="hint">{{ backupAge == null ? 'no backup copy yet' : backupAge === 0 ? 'backup copy today' : `backup copy ${backupAge} d ago` }}</span></button>
     </div>
     <div v-if="open === 'theme'" class="theme-panel" role="dialog" aria-label="Theme and colours">
       <h4><button class="link-btn back" @click="open = 'menu'">‹ Back</button></h4>

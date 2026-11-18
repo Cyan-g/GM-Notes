@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Initiative tracker: turn order, HP, conditions, and the statblock of whoever is acting.
+// Combat: initiative order, HP, conditions, and the statblock of whoever is acting.
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Combatant, Id, Statblock } from '../model/types'
 import { byType, get, touch } from '../store'
@@ -19,6 +19,7 @@ const partyCampaign = ref<string>((encounter.value?.fields.campaign) ?? '')
 
 function load(id: string | null) {
   if (!id) return
+  if (t.value.round && t.value.combatants.length && !confirm(`Replace the fight in round ${t.value.round} with ${get(id)?.name ?? 'this encounter'}?`)) return
   loadEncounter(id)
   const c = get(id)?.fields.campaign
   if (c) partyCampaign.value = c
@@ -107,7 +108,7 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
 <template>
   <div class="tracker-view">
     <header class="list-head">
-      <h1><span class="icon">⚔</span>Encounter <span v-if="t.round" class="count">round {{ t.round }}</span></h1>
+      <h1><span class="icon">⚔</span>Combat <span v-if="t.round" class="count">round {{ t.round }}</span></h1>
       <span v-if="encounter" class="muted"><EntryLink :id="encounter.id" icon /></span>
       <span class="spacer" />
       <button v-if="t.combatants.length" title="Roll d20 + Dex for every monster without an initiative" @click="rollInitiative()">🎲 Roll for monsters</button>
@@ -173,8 +174,10 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
         <CombatantCard v-for="c in enemies" :key="c.id" :c="c" :current="current(c)" :selected="selected === c.id" @select="selected = c.id" @stats="shown = c.id" />
         <div class="card side-add" :class="{ slim: enemies.length }">
           <label><span>Encounter</span><EntryPicker :model-value="t.encounter ?? null" :types="['encounter']" placeholder="Load an encounter…" @update:model-value="load" /></label>
-          <label><span>Enemy</span><EntryPicker add :types="['creature', 'npc', 'pc']" placeholder="Add a creature by name…" @pick="addEntry" /></label>
-          <label><span>…or anything</span><input v-model="freeName" placeholder="e.g. Goblin, then Enter" @keydown.enter="addFree" /></label>
+          <label><span>Enemy</span><EntryPicker add :types="['creature', 'npc']" placeholder="Add a creature by name…" @pick="addEntry" /></label>
+          <label><span>…or anything</span>
+            <span class="row"><input v-model="freeName" placeholder="e.g. Goblin" @keydown.enter="addFree" /><button :disabled="!freeName.trim()" @click="addFree">Add</button></span>
+          </label>
         </div>
       </section>
     </div>

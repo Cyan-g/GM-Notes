@@ -1169,3 +1169,17 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .wb-owned input { width: 3.6em; text-align: center; padding: .1rem; }
 .current-mark { margin-left: .5rem; font-size: 12px; color: var(--accent); white-space: nowrap; }
 .edit-type { font-size: 13px; color: var(--muted); }
+.sbk-search { margin-left: auto; width: 9rem; font: 13px var(--sans, inherit); font-variant: normal; letter-spacing: 0; padding: .15rem .4rem; }
+.sbk-list h3 { display: flex; align-items: center; gap: .5rem; }
+.sbk-scroll { max-height: 22rem; overflow-y: auto; }
+.edit-text .field-label { margin: 0 0 .3rem; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
+.edit-meta .badge.dm-only { font-size: 11px; padding: 0 .4rem; }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--accent); }
+th.sortable:hover::after { content: ' ↕'; opacity: .5; }
+.older-sessions summary { cursor: pointer; color: var(--muted); font-size: 13px; margin-bottom: .3rem; }
+.mode-tag { font-size: 11px; padding: .1rem .5rem; border-radius: 999px; border: 1px solid var(--line); background: var(--chip); color: var(--muted); cursor: pointer; white-space: nowrap; }
+.mode-tag:hover { color: var(--accent); }
+.small-seg { margin-left: auto; font-size: 12px; font-variant: normal; letter-spacing: 0; }
+.small-seg button { padding: .05rem .5rem; }
+.side-add .row input { flex: 1; min-width: 0; }

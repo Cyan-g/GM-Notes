@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { TYPES } from '../model/schema'
+import { hrefEntry } from '../router'
 // Where the data lives, copying it somewhere safe, and going back to an earlier version.
 import { computed, onMounted, ref } from 'vue'
 import { db, entries, save, state, touch } from '../store'
@@ -22,11 +24,13 @@ const destName = computed(() => (destPath.value ? folderName(destPath.value) : '
 // Deleted entries the database still remembers (their last version), to bring back.
 const deleted = ref<{ saved: string; entry: Entry }[]>([])
 async function loadDeleted() { try { deleted.value = await state.backend!.deleted() } catch { deleted.value = [] } }
+const broughtBack = ref<Entry | null>(null)
 async function bringBack(d: { entry: Entry }) {
   db().entries[d.entry.id] = { ...JSON.parse(JSON.stringify(d.entry)), updated: new Date().toISOString() }
   touch()
   await save()
   await loadDeleted()
+  broughtBack.value = db().entries[d.entry.id] ?? null
 }
 
 onMounted(async () => {
@@ -103,12 +107,12 @@ const pretty = (n: string) => {
       </section>
 
       <section class="card" :class="{ warn: age == null || age > 7 }">
-        <h3>Copy to another place</h3>
-        <p class="small">The app keeps its own backups, but they're on the same stick. A copy on your PC or another drive survives losing the stick.</p>
-        <p><b>Last copy:</b> {{ last ? `${new Date(last).toLocaleString()} (${age === 0 ? 'today' : age + ' days ago'})` : 'never' }}</p>
+        <h3>Backup copy</h3>
+        <p class="small">The app keeps its own backups, but they're on the same stick. A backup copy on your PC or another drive survives losing the stick.</p>
+        <p><b>Last backup copy:</b> {{ last ? `${new Date(last).toLocaleString()} (${age === 0 ? 'today' : age + ' days ago'})` : 'never' }}</p>
         <template v-if="desktop">
           <div class="row-btns">
-            <button class="primary" :disabled="!!progress" @click="run(false)">{{ destName ? `Back up to “${destName}”` : 'Back up…' }}</button>
+            <button class="primary" :disabled="!!progress" @click="run(false)">{{ destName ? `Make a backup copy in “${destName}”` : 'Make a backup copy…' }}</button>
             <button v-if="destName" :disabled="!!progress" @click="run(true)">Other folder…</button>
           </div>
           <p v-if="progress" class="small">Copying {{ progress.done }} of {{ progress.total }} files…</p>
@@ -135,9 +139,10 @@ const pretty = (n: string) => {
     <section v-if="deleted.length" class="card">
       <h3>Deleted entries <span class="muted small">{{ deleted.length }}</span></h3>
       <p class="small muted">The last version of every deleted entry is kept. Bringing one back restores the entry; its relations have to be added again.</p>
+      <p v-if="broughtBack" class="ok small">✓ <a :href="hrefEntry(broughtBack.id)">{{ broughtBack.name }}</a> is back. Add its relations again on its page.</p>
       <ul class="rel deleted-list">
         <li v-for="d in deleted" :key="d.entry.id + d.saved">
-          <span>{{ d.entry.name }}</span><span class="role">{{ d.entry.type }}, deleted {{ new Date(d.saved).toLocaleString() }}</span>
+          <span>{{ d.entry.name }}</span><span class="role">{{ TYPES[d.entry.type]?.label ?? d.entry.type }}, deleted {{ new Date(d.saved).toLocaleString() }}</span>
           <button class="link-btn" :disabled="!!state.readOnly || !!db().entries[d.entry.id]" @click="bringBack(d)">Bring back</button>
         </li>
       </ul>

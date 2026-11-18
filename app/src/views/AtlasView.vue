@@ -44,7 +44,6 @@ const upcoming = computed(() => {
   return out.sort((a, b) => a.days - b.days).slice(0, 8)
 })
 const inDays = (n: number) => (n === 0 ? 'today' : n === 1 ? 'tomorrow' : `in ${n} days`)
-const weekFromNow = computed(() => formatDate(addDays(cal.value, today.value, 7)))
 
 // ---- factions: top-level organizations with members and seat ----
 const factions = computed(() => (byType.value.get('organization') ?? [])
@@ -63,6 +62,7 @@ const seat = (o: Entry) => o.fields.seat
     <nav class="tabs">
       <a href="#/atlas" :class="{ on: tab !== 'timeline' }">🗺 Atlas</a>
       <a href="#/atlas/timeline" :class="{ on: tab === 'timeline' }">⏳ Timeline</a>
+      <a href="#/calendar">📅 Calendar</a>
     </nav>
 
     <TimelineView v-if="tab === 'timeline'" embedded />
@@ -103,7 +103,7 @@ const seat = (o: Entry) => o.fields.seat
               <span class="when">{{ inDays(u.days) }}</span>
             </li>
           </ul>
-          <p v-else class="muted small">Nothing on the calendar after {{ weekFromNow }}.</p>
+          <p v-else class="muted small">Nothing on the calendar in the next year.</p>
         </section>
 
         <section class="card">

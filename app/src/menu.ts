@@ -116,7 +116,27 @@ const dashViews = (id: string, icon = '📋') => {
 const itemsOfKind = (k: string) => (byType.value.get('item') ?? []).filter(e => e.fields.kind === k).sort(byName)
 const kindNode = (k: string, plural: string): MenuNode => {
   const list = itemsOfKind(k)
-  return { label: plural, hint: String(list.length), children: list.length ? () => list.map(e => entryNode(e)) : undefined }
+  return { label: plural, hint: String(list.length), children: () => [{ label: `New ${k.toLowerCase()}…`, action: () => newEntry('item', { kind: k }) }, ...(list.length ? [SEP, ...list.map(e => entryNode(e))] : [])] }
+}
+
+/** The campaign being played (the one with the most sessions) and its latest session. */
+function playing() {
+  const sessions = byType.value.get('session') ?? []
+  const camps = (byType.value.get('campaign') ?? []).map(c => ({ c, s: sessions.filter(x => x.fields.campaign === c.id) })).sort((a, b) => b.s.length - a.s.length)
+  const top = camps[0]
+  if (!top?.s.length) return undefined
+  const latest = [...top.s].sort((a, b) => (Number(b.fields.number) || 0) - (Number(a.fields.number) || 0))[0]
+  return { campaign: top.c, latest, next: (Number(latest.fields.number) || 0) + 1 }
+}
+/** The latest session and a new one, at the top of the Campaign menu. */
+function sessionNodes(): MenuNode[] {
+  const p = playing()
+  if (!p) return []
+  return [
+    { label: 'Latest session', icon: '📅', href: hrefEntry(p.latest.id), hint: p.latest.name },
+    { label: 'New session…', icon: '＋', hint: p.campaign.name, action: () => newEntry('session', { campaign: p.campaign.id, number: p.next, date: { ...state.db!.meta.today } }) },
+    SEP,
+  ]
 }
 
 export const MENUS: TopMenu[] = [
@@ -124,12 +144,13 @@ export const MENUS: TopMenu[] = [
     title: 'Campaign',
     player: true,
     owns: r => r.name === 'tracker' || ['campaign', 'session', 'encounter', 'pc'].includes(typeOf(r) ?? ''),
-    // Sessions have no item of their own: each campaign's page lists its sessions and starts new ones.
+    // The latest session of the campaign being played and a new one come first; every session is on its campaign's page.
     // The fight that's running, next to the encounters it's started from. Players keep only their campaigns
     // (and the session notes on them); their character has a menu of its own.
-    items: () => playerMode.value ? [typeNode('campaign')] : [
+    items: () => playerMode.value ? [...sessionNodes(), typeNode('campaign')] : [
+      ...sessionNodes(),
       typeNode('campaign'),
-      { label: 'Initiative', icon: '⚔', href: '#/tracker', hint: state.db?.tracker?.round ? `R${state.db.tracker.round}` : undefined },
+      { label: 'Combat', icon: '⚔', href: '#/tracker', hint: state.db?.tracker?.round ? `R${state.db.tracker.round}` : undefined },
       typeNode('encounter'),
       typeNode('pc'),
     ],
@@ -165,9 +186,8 @@ export const MENUS: TopMenu[] = [
       SEP,
       ...dashViews('spells'),
       SEP,
-      ...entriesOf('spell'),
-      SEP,
       { label: 'New spell…', action: () => newEntry('spell') },
+      ...entriesOf('spell'),
     ],
   },
   {
@@ -183,9 +203,6 @@ export const MENUS: TopMenu[] = [
       kindNode('Potion', 'Potions'),
       kindNode('Poison', 'Poisons'),
       kindNode('Scroll', 'Scrolls'),
-      SEP,
-      { label: 'New ingredient…', action: () => newEntry('item', { kind: 'Ingredient' }) },
-      { label: 'New potion…', action: () => newEntry('item', { kind: 'Potion' }) },
     ],
   },
   {

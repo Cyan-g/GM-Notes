@@ -102,7 +102,7 @@ const usedBy = (l: ListDef) => [...l.fields.map(f => `${f.def.label} of ${f.type
         <p class="muted small">Used by: {{ usedBy(list) }}.</p>
         <p v-if="message" class="error small">{{ message }}</p>
         <table class="grid lists-table">
-          <thead><tr><th></th><th>Option</th><th>Used by</th><th></th></tr></thead>
+          <thead><tr><th></th><th>Option</th><th>In use</th><th></th></tr></thead>
           <tbody>
             <tr v-for="(o, i) in options" :key="o.id">
               <td class="lists-move">

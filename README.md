@@ -31,7 +31,7 @@ DnDesk is a desktop app for Windows and macOS. It's installed once and keeps the
 
 - **DM mode** (your Eldoria) shows everything.
 - **Player mode** is for a player's own copy.
-  - The menus are Character, Campaign (the campaigns, with their session notes) and World (Atlas, Timeline, Calendar, places and events). The spellbook and workbench are tabs on the character's page instead of the Spells and Crafting menus. People, the Archive, Initiative and encounters are hidden.
+  - The menus are Character, Campaign (the campaigns, with their session notes) and World (Atlas, Timeline, Calendar, places and events). The spellbook and workbench are tabs on the character's page instead of the Spells and Crafting menus. People, the Archive, Combat and encounters are hidden. New entries can also be notes.
   - The home page shows the characters, the campaign, the tools, favourites, the regions and links, but not the deities and races.
   - New entries can be characters, campaigns, sessions, places, events, spells and items.
   - DM-only text is never shown.
@@ -66,7 +66,7 @@ A player character's page is its character sheet for play: HP, hit dice, inspira
   - an attack line for each equipped weapon: finesse weapons use the better of STR and DEX, ranged weapons DEX, and a "+1" in the item's Bonus field counts. The proficiency bonus is added only if the character is proficient with the weapon; ⚠ marks one they aren't
   - ⚠ on the AC and in *Equipped* for armor or a shield worn without the proficiency for it
   - the spell save DC and attack bonus, from the casting ability of the highest level spellcasting class unless you pick another
-- **In a fight:** the initiative tracker takes the PC's AC, HP and initiative from the sheet.
+- **In a fight:** Combat (the initiative tracker) takes the PC's AC, HP and initiative from the sheet.
 
 **How items match proficiencies.** Each item says what it needs:
 - **A weapon:** its *Weapon category* (Simple or Martial) and its *Base weapon* (Rapier). A standard base weapon also tells the category. A weapon with neither, such as a wand, needs no proficiency.
@@ -125,7 +125,7 @@ Everything is saved in `data/`:
 
 **⚙ → Data & backups** (top right) has two tools:
 
-- **Back up** copies the database (with SQLite's own safe copy), pictures and files into a folder you choose, for example on your PC. Each copy is a new folder named `DnDesk-backup-<date>`. The app remembers the folder, and the ⚙ gets a dot when the last copy is more than a week old.
+- **Make a backup copy** copies the database (with SQLite's own safe copy), pictures and files into a folder you choose, for example on your PC. Each copy is a new folder named `DnDesk-backup-<date>`. The app remembers the folder, and the ⚙ gets a dot when the last backup copy is more than a week old.
 - **Earlier versions** lists the automatic backups in `data/backups`. **Go back to this** restores one, after saving the current database as `before-restore-<date>.sqlite`, so a restore can be undone.
 - **Deleted entries** lists every deleted entry the database still remembers. **Bring back** restores it; its relations have to be added again.
 

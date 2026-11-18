@@ -95,7 +95,7 @@ function remove() {
         <span class="edit-type">{{ TYPES[e.type].icon }} {{ TYPES[e.type].label }}</span>
         <label class="toggle" :title="e.visibility === 'secret' ? 'Players don\'t know about this yet' : 'Players know this exists'">
           <input type="checkbox" :checked="e.visibility === 'known'" @change="toggleSecret" />
-          <span>{{ e.visibility === 'known' ? 'Known to players' : 'DM only' }}</span>
+          <span>Known to players</span><span v-if="e.visibility !== 'known'" class="badge dm-only">DM only</span>
         </label>
         <label class="grow"><span>Also known as</span><ListInput :model-value="e.aliases" placeholder="Add alias…" @update:model-value="v => setList('aliases', v)" /></label>
         <label class="grow"><span>Tags</span><ListInput :model-value="e.tags" placeholder="Add tag…" @update:model-value="v => setList('tags', v)" /></label>
@@ -117,7 +117,7 @@ function remove() {
                 <FieldInput :id="`f-${f.key}`" :def="f" :entry="e" />
               </label>
               <div v-if="sheetBools.length" class="sheet-field">
-                <span>{{ e.type === 'item' ? 'Magic' : 'Options' }}</span>
+                <span>{{ e.type === 'item' ? 'Properties' : 'Options' }}</span>
                 <div class="seg wrap">
                   <button v-for="f in sheetBools" :key="f.key" type="button" :class="{ on: !!byKey(e.fields)[f.key] }" @click="toggleBool(f.key)">{{ f.label }}</button>
                 </div>
@@ -134,13 +134,16 @@ function remove() {
             </div>
           </section>
           <details class="sheet-notes" :open="!!e.body.trim()">
-            <summary>Notes <span class="muted small">(extra text under the card)</span></summary>
+            <summary>Text <span class="muted small">(under the card)</span></summary>
             <BodyEditor :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
           </details>
         </template>
         <!-- A character is built on its sheet; the notes are written on the character's page. -->
         <CharacterSheet v-else-if="e.type === 'pc'" :pc="e" build />
-        <BodyEditor v-else :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
+        <section v-else class="edit-text">
+          <h4 class="field-label">Text</h4>
+          <BodyEditor :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
+        </section>
         <section v-if="e.type === 'place'">
           <h2>Map</h2>
           <ImageInput :model-value="e.fields.map" :hint="e.name + ' map'" @update:model-value="setMap" />

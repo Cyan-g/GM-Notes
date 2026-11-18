@@ -2,11 +2,12 @@
 // The menu bar at the top: one menu per category, cascading into types and entries.
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { visibleMenus } from '../menu'
-import { db, save, state } from '../store'
+import { db, playerMode, save, state } from '../store'
 import { newEntry } from '../ui'
 import { route } from '../router'
 import MenuPanel from './MenuPanel.vue'
 import SettingsMenu from './SettingsMenu.vue'
+const settingsMenu = ref<InstanceType<typeof SettingsMenu> | null>(null)
 
 defineEmits<{ search: [] }>()
 
@@ -79,7 +80,8 @@ const current = computed(() => visibleMenus.value.findIndex(m => m.owns(route.cu
         <template v-else-if="state.dirty">Unsaved…</template>
         <template v-else-if="state.savedAt">✓ Saved</template>
       </span>
-      <SettingsMenu />
+      <button class="mode-tag" :title="`${playerMode ? 'Player' : 'DM'} mode: switch it in ⚙`" @click.stop="settingsMenu?.toggle()">{{ playerMode ? 'Player mode' : 'DM mode' }}</button>
+      <SettingsMenu ref="settingsMenu" />
     </div>
   </header>
 </template>

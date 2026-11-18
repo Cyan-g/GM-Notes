@@ -20,7 +20,7 @@ function pageName(r: Route): string {
     case 'tracker': {
       const t = db().tracker
       const enc = get(t?.encounter)
-      return [t?.round ? `Round ${t.round}` : '', enc?.name ?? 'Encounter'].filter(Boolean).join(' · ')
+      return [t?.round ? `Round ${t.round}` : '', enc?.name ?? 'Combat'].filter(Boolean).join(' · ')
     }
     case 'spellbook': return 'Spellbook'
     case 'crafting': return 'Workbench'

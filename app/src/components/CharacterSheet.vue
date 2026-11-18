@@ -138,11 +138,10 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
 
 <template>
   <div class="char-sheet" :class="{ ro }">
-    <div class="cs-current">
+    <div v-if="!build" class="cs-current">
       <button class="chip-toggle" :class="{ on: isCurrent }" :disabled="ro"
               :title="isCurrent ? 'The Spellbook, Workbench and Character menu use this character' : 'Use this character in the Spellbook, Workbench and Character menu'"
               @click="setCurrent(isCurrent ? undefined : pc.id)">{{ isCurrent ? '★ Current character' : '☆ Make current character' }}</button>
-      <span v-if="!build && classLabel" class="cs-class-line">{{ classLabel }}</span>
     </div>
     <!-- building: the classes, each with its level, subclass and hit die -->
     <section v-if="build" class="cs-classes">
@@ -175,34 +174,41 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <div class="cs-stat"><span>Initiative</span><b>{{ signed(mod(s.abilities.dex) + (s.initBonus ?? 0)) }}</b></div>
       <label class="cs-stat"><span>Speed</span><input :value="s.speed ?? ''" placeholder="30 ft" :disabled="locked" @change="edit(x => x.speed = text($event))" /></label>
       <div class="cs-stat"><span>Passive perception</span><b>{{ passivePerception(s, prof) }}</b></div>
-      <button class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" title="Inspiration" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>Inspiration</span><b>{{ s.inspiration ? '★' : '☆' }}</b></button>
+      <button v-if="!build" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" title="Inspiration" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>Inspiration</span><b>{{ s.inspiration ? '★' : '☆' }}</b></button>
     </div>
 
     <div class="cs-hp">
       <div class="cs-hp-main">
-        <span class="cs-label">Hit points</span>
+        <span class="cs-label">{{ build ? 'Maximum hit points' : 'Hit points' }}</span>
         <div class="cs-hp-row">
-          <input class="cs-hp-now" type="number" :value="s.hp ?? s.maxHp ?? ''" :disabled="ro" title="Current HP" @change="edit(x => x.hp = num($event))" />
-          <span class="muted">/</span>
+          <template v-if="!build">
+            <input class="cs-hp-now" type="number" :value="s.hp ?? s.maxHp ?? ''" :disabled="ro" title="Current HP" @change="edit(x => x.hp = num($event))" />
+            <span class="muted">/</span>
+          </template>
           <input type="number" :value="s.maxHp ?? ''" :placeholder="build ? 'max' : '—'" :disabled="locked" title="Maximum HP" @change="edit(x => x.maxHp = num($event))" />
-          <span class="muted small">temp</span>
-          <input type="number" :value="s.tempHp ?? ''" placeholder="0" :disabled="ro" title="Temporary HP" @change="edit(x => x.tempHp = num($event) || undefined)" />
+          <template v-if="!build">
+            <span class="muted small">temp</span>
+            <input type="number" :value="s.tempHp ?? ''" placeholder="0" :disabled="ro" title="Temporary HP" @change="edit(x => x.tempHp = num($event) || undefined)" />
+          </template>
         </div>
-        <div v-if="s.maxHp" class="cs-hp-bar"><i :style="{ width: Math.min(100, Math.round(100 * (s.hp ?? s.maxHp) / s.maxHp)) + '%' }" /></div>
+        <div v-if="s.maxHp && !build" class="cs-hp-bar"><i :style="{ width: Math.min(100, Math.round(100 * (s.hp ?? s.maxHp) / s.maxHp)) + '%' }" /></div>
       </div>
-      <label class="cs-hp-change"><span class="cs-label">Damage / heal</span><input placeholder="−7 or +5" :disabled="ro" @keydown.enter="hit" @change="hit" /></label>
+      <label v-if="!build" class="cs-hp-change"><span class="cs-label">Damage / heal</span><input placeholder="−7 or +5" :disabled="ro" @keydown.enter="hit" @change="hit" /></label>
       <div class="cs-hitdice">
         <span class="cs-label">Hit dice</span>
         <div v-for="p in pools" :key="p.die" class="cs-hp-row">
-          <input type="number" min="0" :max="p.total" :value="p.total - p.spent" :disabled="ro" :title="`${p.die} left`" @change="setLeft(p.die, p.total, num($event))" />
-          <span class="muted">/ {{ p.total }}</span>
+          <template v-if="!build">
+            <input type="number" min="0" :max="p.total" :value="p.total - p.spent" :disabled="ro" :title="`${p.die} left`" @change="setLeft(p.die, p.total, num($event))" />
+            <span class="muted">/ {{ p.total }}</span>
+          </template>
+          <span v-else>{{ p.total }} ×</span>
           <select v-if="build && !classes.length" class="cs-die" :value="s.hitDie || 'd8'" title="Hit die" @change="edit(x => x.hitDie = ($event.target as HTMLSelectElement).value)">
             <option v-for="d in DICE" :key="d" :value="d">{{ d }}</option>
           </select>
           <b v-else class="cs-die-label">{{ p.die }}</b>
         </div>
       </div>
-      <button class="cs-rest" :disabled="ro" title="Full HP, no temp HP, every spell slot and half your hit dice back" @click="rest">Long rest</button>
+      <button v-if="!build" class="cs-rest" :disabled="ro" title="Full HP, no temp HP, every spell slot and half your hit dice back" @click="rest">Long rest</button>
     </div>
 
     <div class="cs-grid">

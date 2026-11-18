@@ -59,11 +59,10 @@ const groups = computed(() => {
 
 // ---- people at a glance ----
 const inOrg = computed(() => new Set(orgs.value.flatMap(o => members(o).map(r => r.a))))
-const loners = computed(() => npcs.value.filter(n => !inOrg.value.has(n.id)).length)
 const people = computed(() => [
   { label: 'All NPCs', icon: '👤', href: hrefDashboard('people', 'All NPCs'), n: npcs.value.length },
   { label: 'Player characters', icon: '🛡️', href: hrefDashboard('people', 'Player characters'), n: byType.value.get('pc')?.length ?? 0 },
-  { label: 'Organizations table', icon: '⚑', href: hrefDashboard('people', 'Organizations'), n: orgs.value.length },
+  { label: 'Organizations as a table', icon: '⚑', href: hrefDashboard('people', 'Organizations'), n: orgs.value.length },
 ])
 </script>
 
@@ -119,9 +118,8 @@ const people = computed(() => [
         <section class="card">
           <h3>👥 People</h3>
           <ul class="rel compact">
-            <li v-for="p in people" :key="p.label"><span>{{ p.icon }}</span><a :href="p.href">{{ p.label }}</a><span class="when">{{ p.n }}</span></li>
+            <li v-for="p in people" :key="p.label"><span>{{ p.icon }}</span><a :href="p.href">{{ p.label }}</a></li>
           </ul>
-          <p class="muted small">{{ loners }} NPCs aren't in any organization.</p>
         </section>
       </aside>
     </div>

@@ -1,17 +1,19 @@
 <script setup lang="ts">
 // An encounter is something you prepare and then run, so it has one page that is both view and editor:
 // where and when, who fights on the party's side, and the creatures. No text, picture or relations.
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { EncounterLine, Id } from '../model/types'
 import { TYPES } from '../model/schema'
 import { get } from '../store'
-import { changed, deleteEntry } from '../edit'
+import { changed, deleteEntry, isFavourite, toggleFavourite } from '../edit'
+import HistoryDialog from '../components/HistoryDialog.vue'
 import { go, hrefList } from '../router'
 import { lineInfo } from '../encounter'
 import { loadEncounter, partyOf } from '../tracker'
 import FieldInput from '../components/edit/FieldInput.vue'
 
 const props = defineProps<{ id: string }>()
+const showHistory = ref(false)
 const e = computed(() => get(props.id))
 const field = (key: string) => TYPES.encounter.fields.find(f => f.key === key)!
 
@@ -46,8 +48,11 @@ function remove() {
       <input class="name-input" :value="e.name" aria-label="Name" @change="setName(($event.target as HTMLInputElement).value)" />
       <span class="muted small">changes save automatically</span>
       <span class="spacer" />
+      <button class="fav-btn" :class="{ on: isFavourite(e.id) }" :title="isFavourite(e.id) ? 'Remove from favourites' : 'Add to favourites'" :aria-pressed="isFavourite(e.id)" @click="toggleFavourite(e.id)">{{ isFavourite(e.id) ? '★' : '☆' }}</button>
+      <button class="export-btn" title="Earlier versions of this encounter" @click="showHistory = true">🕘 History</button>
+      <HistoryDialog v-if="showHistory" :entry="e" @close="showHistory = false" />
       <button class="danger" @click="remove">Delete</button>
-      <button class="primary" :disabled="!lines.length && !party.length" title="Load it into the encounter tracker, with this party" @click="run">▶ Run</button>
+      <button class="primary" :disabled="!lines.length && !party.length" title="Load it into Combat, with this party" @click="run">▶ Run</button>
     </header>
 
     <div class="enc-grid">
@@ -59,7 +64,7 @@ function remove() {
 
         <h3 class="enc-party-title">
           <span>🛡 Party</span>
-          <button v-if="campaignParty.length" type="button" class="chip-btn" :title="`Set the party to the ${campaignParty.length} player characters of the campaign`" @click="useCampaignParty">Use the campaign's party</button>
+          <button v-if="campaignParty.length" type="button" class="chip-btn" :title="`Set the party to the ${campaignParty.length} player characters of the campaign`" @click="useCampaignParty">Replace with the campaign's party</button>
         </h3>
         <FieldInput :def="field('party')" :entry="e" />
         <p class="muted small">{{ party.length ? 'They join the fight when you run it.' : 'Empty: running it keeps whoever is already in the tracker.' }}</p>

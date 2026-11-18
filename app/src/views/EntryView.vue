@@ -3,7 +3,7 @@ import { entryIcon } from '../model/classes'
 import { computed, ref } from 'vue'
 import type { Entry, Relation, Statblock, WorldDate } from '../model/types'
 import { TYPES, RELATION_KINDS, byKey, type FieldDef } from '../model/schema'
-import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, placePath, playerMode, relationsOf, entries } from '../store'
+import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, placePath, playerMode, relationsOf, entries, state } from '../store'
 import { go, hrefEntry, hrefFamily, hrefList, hrefMap, hrefTab, type EntryTab } from '../router'
 import SpellbookView from './SpellbookView.vue'
 import CraftingView from './CraftingView.vue'
@@ -58,7 +58,7 @@ const groups = computed(() => {
   const big = ['statblock', 'recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes']
   const out = new Map<string, { def: FieldDef; value: unknown }[]>()
   for (const f of def.value.fields) {
-    if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || f.key === 'parent' || f.key === 'map' || f.key === 'pins' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
+    if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'session' && ['campaign', 'number', 'date'].includes(f.key)) || f.key === 'parent' || f.key === 'map' || f.key === 'pins' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
     const g = f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
     out.get(g)!.push({ def: f, value: byKey(x.fields)[f.key] })
@@ -143,6 +143,7 @@ const relGroups = computed(() => {
     const mine = r.a === x.id
     const label = mine ? k.forward : k.reverse
     if (x.type === 'organization' && r.kind === 'member' && !mine) continue // shown in MembersCard
+    if (inFacts.value.has(r.id)) continue // shown under the name
     if (!out.has(label)) out.set(label, [])
     out.get(label)!.push({ other: mine ? r.b : r.a, r })
   }
@@ -167,20 +168,22 @@ const facts = computed(() => {
   const x = e.value
   if (!x) return []
   const rs = (relationsOf.value.get(x.id) ?? []).filter(r => !ended(r))
-  const out: { label: string; items: { id: string; note?: string }[] }[] = []
-  const add = (label: string, items: { id: string; note?: string }[]) => { if (items.length) out.push({ label, items }) }
+  const out: { label: string; items: { id: string; note?: string; rel: string }[] }[] = []
+  const add = (label: string, items: { id: string; note?: string; rel: string }[]) => { if (items.length) out.push({ label, items }) }
   if (x.type === 'npc' || x.type === 'pc') {
-    add('Member of', rs.filter(r => r.kind === 'member' && r.a === x.id).map(r => ({ id: r.b, note: r.role })))
-    add('Lives in', rs.filter(r => r.kind === 'lives-in' && r.a === x.id).map(r => ({ id: r.b })))
-    add('Rules', rs.filter(r => r.kind === 'rules' && r.a === x.id).map(r => ({ id: r.b })))
-    add('Worships', rs.filter(r => r.kind === 'worships' && r.a === x.id).map(r => ({ id: r.b })))
+    add('Member of', rs.filter(r => r.kind === 'member' && r.a === x.id).map(r => ({ id: r.b, note: r.role, rel: r.id })))
+    add('Lives in', rs.filter(r => r.kind === 'lives-in' && r.a === x.id).map(r => ({ id: r.b, rel: r.id })))
+    add('Rules', rs.filter(r => r.kind === 'rules' && r.a === x.id).map(r => ({ id: r.b, rel: r.id })))
+    add('Worships', rs.filter(r => r.kind === 'worships' && r.a === x.id).map(r => ({ id: r.b, rel: r.id })))
   } else if (x.type === 'organization') {
-    add('Led by', rs.filter(r => r.kind === 'member' && r.b === x.id && r.role && LEADER.test(r.role)).map(r => ({ id: r.a, note: r.role })))
+    add('Led by', rs.filter(r => r.kind === 'member' && r.b === x.id && r.role && LEADER.test(r.role)).map(r => ({ id: r.a, note: r.role, rel: r.id })))
   } else if (x.type === 'place') {
-    add('Ruled by', rs.filter(r => r.kind === 'rules' && r.b === x.id).map(r => ({ id: r.a, note: r.role })))
+    add('Ruled by', rs.filter(r => r.kind === 'rules' && r.b === x.id).map(r => ({ id: r.a, note: r.role, rel: r.id })))
   }
   return out
 })
+/** The relations already in the facts line, left out of the side cards (ended ones still show there). */
+const inFacts = computed(() => new Set(facts.value.flatMap(f => f.items.map(i => i.rel))))
 
 /** Timeline items involving this entry (not the entry itself when it's an event). */
 const history = computed(() => {
@@ -191,12 +194,15 @@ const history = computed(() => {
 
 const children = computed(() => (e.value ? childrenOf.value.get(e.value.id) ?? [] : []))
 
+/** The characters with this spell in their spellbook, or this item in their inventory. */
+const knownBy = computed(() => (e.value?.type === 'spell' ? (byType.value.get('pc') ?? []).filter(p => p.fields.sheet?.spellbook?.known?.includes(e.value!.id)) : []))
+const carriedBy = computed(() => (e.value?.type === 'item' ? (byType.value.get('pc') ?? []).filter(p => p.fields.sheet?.inventory?.some(l => l.item === e.value!.id && l.qty > 0)) : []))
 const mentions = computed(() => {
   const x = e.value
   if (!x) return []
   const related = new Set((relationsOf.value.get(x.id) ?? []).flatMap(r => [r.a, r.b]))
   // Leave out what another card already lists.
-  const kids = new Set([...children.value, ...usedIn.value, ...soldAt.value, ...raceMembers.value].map(c => c.id))
+  const kids = new Set([...children.value, ...usedIn.value, ...soldAt.value, ...raceMembers.value, ...knownBy.value, ...carriedBy.value].map(c => c.id))
   return [...(backlinks.value.get(x.id) ?? [])].map(get).filter((m): m is Entry => !!m && !related.has(m.id) && !kids.has(m.id))
     .sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name))
 })
@@ -246,7 +252,7 @@ const siblings = computed(() => {
     <header class="entry-head" :class="{ 'has-portrait': e.image }">
       <div class="head-actions">
         <button class="fav-btn" :class="{ on: isFavourite(e.id) }" :title="isFavourite(e.id) ? 'Remove from favourites (F)' : 'Add to favourites (F)'" :aria-pressed="isFavourite(e.id)" @click="toggleFavourite(e.id)">{{ isFavourite(e.id) ? '★' : '☆' }}</button>
-        <button class="export-btn" title="Earlier versions of this entry" @click="showHistory = true">🕘</button>
+        <button class="export-btn" title="Earlier versions of this entry" @click="showHistory = true">🕘 History</button>
         <button v-if="canExport(e)" class="export-btn" title="Save as a file to share (someone else can import it)" @click="exporting = true">⇩ Export</button>
         <a class="button edit-btn" :href="hrefEntry(e.id, true)" title="Edit (E)">✎ Edit</a>
       </div>
@@ -311,7 +317,7 @@ const siblings = computed(() => {
           <FieldValue v-else-if="p.insert === 'ranks' && ranksDef" :def="ranksDef" :value="e.fields.ranks" :entry="e" />
           <div v-else-if="p.insert === 'feats'" class="feat-list"><FeatCard v-for="f in grantedFeats" :key="f.id" :e="f" title /></div>
         </template>
-        <p v-if="!e.body && !['item', 'spell', 'feat', 'creature', 'encounter', 'pc'].includes(e.type)" class="muted">No text yet.</p>
+        <p v-if="!e.body && !['item', 'spell', 'feat', 'creature', 'encounter', 'pc'].includes(e.type)" class="muted">No text yet<template v-if="!state.readOnly"> — <a :href="hrefEntry(e.id) + '/edit'">✎ Edit</a> to write some</template>.</p>
         <PcNotes v-if="e.type === 'pc'" :pc="e" />
 
         <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => !(bodyParts.placed.has('ranks') && f.kind === 'ranks'))" :key="f.key">
@@ -326,8 +332,14 @@ const siblings = computed(() => {
 
         <section v-if="e.type === 'campaign'">
           <h2>Sessions</h2>
+          <details v-if="sessions.length > 10" class="older-sessions">
+            <summary>Show the {{ sessions.length - 10 }} earlier sessions</summary>
+            <ol class="plain">
+              <li v-for="s in sessions.slice(0, -10)" :key="s.id"><EntryLink :id="s.id" /> <span class="muted">{{ formatDate(s.fields.date) }}</span></li>
+            </ol>
+          </details>
           <ol v-if="sessions.length" class="plain">
-            <li v-for="s in sessions" :key="s.id"><EntryLink :id="s.id" /> <span class="muted">{{ formatDate(s.fields.date) }}</span></li>
+            <li v-for="s in sessions.slice(-10)" :key="s.id"><EntryLink :id="s.id" /> <span class="muted">{{ formatDate(s.fields.date) }}</span></li>
           </ol>
           <button class="new-session" @click="newSession">+ New session</button>
         </section>
@@ -358,7 +370,7 @@ const siblings = computed(() => {
         </div>
         <div v-if="children.length" class="card subregions">
           <h3>{{ e.type === 'place' ? 'Subregions' : e.type === 'race' ? 'Subraces' : 'Part of this' }}
-            <button class="link-btn" :title="ui.treeAsList ? 'Show as rings' : 'Show as a list'" @click="ui.treeAsList = !ui.treeAsList">{{ ui.treeAsList ? '◎ Rings' : '☰ List' }}</button></h3>
+            <span class="seg small-seg"><button type="button" :class="{ on: !ui.treeAsList }" @click="ui.treeAsList = false">◎ Rings</button><button type="button" :class="{ on: ui.treeAsList }" @click="ui.treeAsList = true">☰ List</button></span></h3>
           <SubTree v-if="ui.treeAsList" :id="e.id" />
           <Sunburst v-else :id="e.id" :key="'sb-' + e.id" />
         </div>
@@ -408,6 +420,14 @@ const siblings = computed(() => {
           <ul class="rel"><li v-for="m in onMaps" :key="m.place.id + m.pin.id"><a :href="hrefMap(m.place.id, m.pin.id)">🗺 {{ m.place.name }}</a></li></ul>
         </div>
 
+        <div v-if="knownBy.length" class="card">
+          <h3>Known by</h3>
+          <ul class="plain"><li v-for="p in knownBy" :key="p.id"><EntryLink :id="p.id" icon /></li></ul>
+        </div>
+        <div v-if="carriedBy.length" class="card">
+          <h3>Carried by</h3>
+          <ul class="plain"><li v-for="p in carriedBy" :key="p.id"><EntryLink :id="p.id" icon /> <span class="muted small">× {{ p.fields.sheet!.inventory.filter(l => l.item === e!.id).reduce((n, l) => n + l.qty, 0) }}</span></li></ul>
+        </div>
         <div v-if="mentions.length && !(e.type === 'pc' && playerMode)" class="card">
           <h3>Mentioned in</h3>
           <ul class="rel"><li v-for="m in mentions" :key="m.id"><EntryLink :id="m.id" icon /></li></ul>

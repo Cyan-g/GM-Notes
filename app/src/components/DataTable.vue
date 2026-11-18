@@ -5,6 +5,8 @@ import { computed, ref, watch } from 'vue'
 import type { Entry, EntryType } from '../model/types'
 import { column, facet } from '../columns'
 import { formatMoney } from '../store'
+import { TYPES } from '../model/schema'
+import { newEntry } from '../ui'
 import EntryLink from './EntryLink.vue'
 import FieldValue from './FieldValue.vue'
 
@@ -15,9 +17,12 @@ const props = withDefaults(defineProps<{
   sort?: { key: string; dir: 1 | -1 }
   limit?: number
   type?: EntryType
+  /** The type the view's ＋ New makes, for its empty state. */
+  creates?: EntryType
 }>(), { facets: () => [], sort: () => ({ key: 'name', dir: 1 as const }) })
 
-const columns = computed(() => props.cols.map(k => column(k, props.type)))
+/** The columns, leaving out any with nothing in any row (a Player nobody filled in). */
+const columns = computed(() => props.cols.map(k => column(k, props.type)).filter(c => !props.rows.length || props.rows.some(e => !empty(c.value(e)))))
 const facetDefs = computed(() => props.facets.map(k => facet(k, props.type)).map(f => ({ f, values: f.values(props.rows) })).filter(x => x.values.length > 1))
 
 const q = ref('')
@@ -67,14 +72,14 @@ defineExpose({ count: computed(() => shown.value.length) })
           <option v-for="v in values" :key="v" :value="v">{{ v }}</option>
         </select>
       </label>
-      <span class="muted small">{{ shown.length }} shown</span>
+      <span class="muted small">{{ shown.length === base.length ? `${shown.length} shown` : `${shown.length} of ${base.length} shown` }}</span>
     </div>
     <div class="table-wrap">
       <table class="grid">
         <thead>
           <tr>
-            <th @click="sortBy('name')">Name{{ arrow('name') }}</th>
-            <th v-for="c in columns" :key="c.key" :class="{ num: c.kind === 'money' || c.field?.kind === 'money' }" @click="sortBy(c.key)">{{ c.label }}{{ arrow(c.key) }}</th>
+            <th class="sortable" title="Sort by name" @click="sortBy('name')">Name{{ arrow('name') }}</th>
+            <th v-for="c in columns" :key="c.key" class="sortable" :class="{ num: c.kind === 'money' || c.field?.kind === 'money' }" :title="`Sort by ${c.label.toLowerCase()}`" @click="sortBy(c.key)">{{ c.label }}{{ arrow(c.key) }}</th>
           </tr>
         </thead>
         <tbody>
@@ -90,7 +95,8 @@ defineExpose({ count: computed(() => shown.value.length) })
           </tr>
         </tbody>
       </table>
-      <p v-if="!shown.length" class="muted pad">Nothing matches.</p>
+      <p v-if="!base.length" class="muted pad">No {{ (TYPES[creates ?? type ?? 'note']?.plural ?? 'entries').toLowerCase() }} yet<template v-if="creates ?? type"> — <button class="link-btn" @click="newEntry((creates ?? type)!)">＋ New {{ TYPES[(creates ?? type)!].label.toLowerCase() }}</button></template>.</p>
+      <p v-else-if="!shown.length" class="muted pad">Nothing matches.</p>
     </div>
   </div>
 </template>

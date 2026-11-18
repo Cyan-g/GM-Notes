@@ -109,7 +109,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
     </div>
     <div v-if="state.problems.some(p => p.serious) && !state.readOnly && !state.error" class="save-banner" role="status">
       <span>⚠ The data check found {{ state.problems.filter(p => p.serious).length }} serious problem(s) in the data. Nothing was changed.</span>
-      <a class="button" href="#/data" @click="state.problems = []">Show them</a>
+      <a class="button" href="#/data">Show them</a>
     </div>
     <div v-if="state.converted" class="save-banner update-banner" role="status">
       <span>✓ Your data moved into the database (dndesk.sqlite): {{ state.converted.entries }} entries and {{ state.converted.relations }} relations, all checked. The old eldoria.json and session.json stay in the data folder, untouched.</span>

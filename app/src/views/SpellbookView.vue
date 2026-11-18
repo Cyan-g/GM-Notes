@@ -128,6 +128,9 @@ function openSpell(ev: MouseEvent, id: Id) {
   shown.value = id
 }
 const levelLabel = (e: Entry) => (levelOf(e) ? ORD[levelOf(e) - 1] : 'Cantrip')
+/** The known spells matching the search box. */
+const knownQ = ref('')
+const knownShown = computed(() => { const q = knownQ.value.trim().toLowerCase(); return q ? knownList.value.filter(e => e.name.toLowerCase().includes(q)) : knownList.value })
 const full = computed(() => book.value.preparedMax != null && book.value.prepared.length > book.value.preparedMax)
 </script>
 
@@ -143,17 +146,18 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
 
     <div class="sbk-top">
       <section class="card sbk-stats">
-        <h3>Spellcasting</h3>
-        <p v-if="!owner" class="muted small">No current character: make one current on their sheet to use their spellbook and numbers.</p>
+        <h3>Spellcasting
+          <span v-if="fromSheet" class="muted small" title="From the character sheet">{{ fromSheet.ability.toUpperCase() }}</span>
+          <span v-else-if="caster" class="muted small" title="The character sheet has no casting ability yet: the numbers are typed here">no casting ability</span>
+          <span v-else class="muted small" title="No current character: make one current on their sheet to use their spellbook and numbers">world's book</span>
+        </h3>
         <template v-if="fromSheet">
           <label><span>Spell attack</span><b>{{ fromSheet.attack >= 0 ? '+' : '' }}{{ fromSheet.attack }}</b></label>
           <label><span>Save DC</span><b>{{ fromSheet.dc }}</b></label>
-          <p class="muted small">From the character sheet ({{ fromSheet.ability.toUpperCase() }}).</p>
         </template>
         <template v-else>
           <label><span>Spell attack</span><input type="number" :value="book.attackBonus" @change="setNum('attackBonus', ($event.target as HTMLInputElement).value)" /></label>
           <label><span>Save DC</span><input type="number" :value="book.saveDC" @change="setNum('saveDC', ($event.target as HTMLInputElement).value)" /></label>
-          <p v-if="caster" class="muted small">The character sheet has no casting ability yet.</p>
         </template>
         <label><span>Prepared</span><b :class="{ over: full }">{{ book.prepared.length }}</b> / <input type="number" min="0" :value="book.preparedMax" @change="setNum('preparedMax', ($event.target as HTMLInputElement).value)" /></label>
       </section>
@@ -178,11 +182,14 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
     <div class="sbk-columns">
       <section class="card sbk-list drop-zone" :class="{ over: over === 'known' }"
                @dragover="dragOver($event, 'known')" @dragleave.self="over = null" @drop.prevent="drop('known')">
-        <h3>Known spells <span class="muted small">{{ knownList.length }}</span></h3>
-        <table v-if="knownList.length" class="grid">
+        <h3>Known spells <span class="muted small">{{ knownList.length }}</span>
+          <input v-if="knownList.length > 1" v-model="knownQ" class="sbk-search" type="search" placeholder="Find…" aria-label="Find a known spell" />
+        </h3>
+        <div v-if="knownList.length" class="sbk-scroll">
+        <table class="grid">
           <thead><tr><th>Spell</th><th>Level</th><th></th></tr></thead>
           <tbody>
-            <tr v-for="e in knownList" :key="e.id" :class="{ dim: isPrepared(e.id), dragging: dragging?.id === e.id }"
+            <tr v-for="e in knownShown" :key="e.id" :class="{ dim: isPrepared(e.id), dragging: dragging?.id === e.id }"
                 :draggable="!isPrepared(e.id)" :title="isPrepared(e.id) ? '' : 'Drag to Prepared spells'"
                 @dragstart="dragStart($event, e.id, 'known')" @dragend="dragEnd">
               <td><a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a></td>
@@ -195,6 +202,8 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
             </tr>
           </tbody>
         </table>
+        <p v-if="!knownShown.length" class="muted small">No known spell matches.</p>
+        </div>
         <p v-else class="muted small">No spells in the book yet.</p>
         <EntryPicker add :types="['spell']" :exclude="book.known" placeholder="Add a spell to the book…" @pick="learn" />
       </section>

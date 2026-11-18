@@ -1,7 +1,8 @@
 // One-line descriptions and short excerpts of entries, for headers, previews and search.
 import type { Entry, Statblock, WorldDate } from './model/types'
 import { TYPES, byKey } from './model/schema'
-import { fieldLabel, formatDate, get } from './store'
+import { fieldLabel, formatDate, get, state } from './store'
+import { classText, totalLevel } from './model/classes'
 
 const name = (id: unknown) => get(id as string)?.name
 /** A choice field's value as its option's label (see model/lists.ts). */
@@ -14,7 +15,7 @@ export function describe(e: Entry, { parent = true } = {}): string {
   const f = e.fields
   switch (e.type) {
     case 'npc': return join(name(f.race), f.gender, f.age)
-    case 'pc': return join(name(f.race), [f.class, f.level && `level ${f.level}`].filter(Boolean).join(' '), f.player && `played by ${f.player}`)
+    case 'pc': return join(classText(e, state.db?.meta, id => name(id)) || `level ${totalLevel(e)}`, f.player && `played by ${f.player}`)
     case 'organization': return join(L(e, 'orgType'), parent && f.parent && `part of ${name(f.parent)}`, f.seat && `seat: ${name(f.seat)}`)
     case 'place': return join(L(e, 'placeType'), parent && f.parent && `in ${name(f.parent)}`)
     case 'item': return join([L(e, 'rarity'), f.magical && !f.rarity ? 'magical' : '', f.subtype || L(e, 'kind')].filter(Boolean).join(' '), f.attunement && 'requires attunement')

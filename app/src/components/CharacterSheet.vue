@@ -239,11 +239,13 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
 
       <!-- attacks, spellcasting, proficiencies -->
       <section class="cs-side">
+        <template v-if="build">
         <h4>Attacks</h4>
         <table v-if="atks.length" class="cs-attacks">
           <tr v-for="a in atks" :key="a.id"><td><button class="link-btn cs-item" @click="showItem(a.id)">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> ⚠</span></td><td><b>{{ signed(a.toHit) }}</b></td><td>{{ a.damage }} <span class="muted small">{{ a.type }}</span></td></tr>
         </table>
         <p v-else class="muted small">Equip a weapon in the inventory to see its attack here.</p>
+        </template>
 
         <h4>Spellcasting</h4>
         <div class="cs-cast">
@@ -256,6 +258,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
           <a :href="hrefTab(pc.id, 'spellbook')" class="small">Spellbook →</a>
         </div>
 
+        <template v-if="build">
         <h4>Proficiencies &amp; languages</h4>
         <div class="cs-profs">
           <ProfChips label="Armor" :values="profs.armor" :toggles="armorTypes" :disabled="locked" @change="setProfs('armor', $event)" />
@@ -265,6 +268,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
           <textarea v-if="build" rows="2" :value="profs.other ?? ''" placeholder="Anything else" @change="edit(x => profsToEdit(x).other = text($event))" />
           <p v-else-if="profs.other" class="cs-other">{{ profs.other }}</p>
         </div>
+        </template>
       </section>
     </div>
     </div>

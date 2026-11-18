@@ -38,7 +38,7 @@ DnDesk is a desktop app for Windows and macOS. It's installed once and keeps the
 
 To set up a player:
 1. They install DnDesk and choose an empty folder as the data folder.
-2. The app offers **Start a new world here**, which starts in player mode.
+2. The app offers **Start a new world here**, which starts in player mode. The new world already has every dropdown list, your calendar and timeline categories, today's date, the races, subclasses, spells, feats and Tool items (see *The starting world* below).
 3. They import the world (⚙ → Export the world…) or the entries you send them; importing a newer file later updates their copy.
 
 ### Character sheet
@@ -157,6 +157,14 @@ npm run build      # type-checks and builds the pages into dist/ (what the deskt
 - **Field types:** `EntryFields` gives each field key the type its kind stores, so `e.fields.recipe` is a `RecipeLine[]` and a misspelled key doesn't compile.
 - **Keys only known at runtime** (a table column, a form field) go through `byKey(e.fields)`.
 - **Adding a field:** adding it to the schema is enough.
+
+### The starting world
+
+Every new world starts from `app/src/seed/world.json`, which ships inside the app. It holds:
+- every dropdown list, the calendar, the timeline's event categories and today's date;
+- the races, subclasses, spells, feats and Tool items, without DM-only text or pictures. Links to anything else become plain words.
+
+`npm run seed` rebuilds it from your world (`../data`, or a folder given after the command); commit it and the next build ships it. The seed records its data version, so after an upgrade step a new world from an older seed is brought up to date like any older data. Rebuilding it now and then keeps it current.
 
 ### The desktop app
 

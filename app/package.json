@@ -8,7 +8,8 @@
     "build": "vue-tsc --noEmit && vite build",
     "desktop": "npm run build && electron .",
     "dist": "npm run build && electron-builder --publish never -c.directories.output=%LOCALAPPDATA%/DnDesk-build",
-    "release": "npm run build && electron-builder --publish always"
+    "release": "npm run build && electron-builder --publish always",
+    "seed": "jiti scripts/seed.ts"
   },
   "dependencies": {
     "d3-hierarchy": "^3.1.3",
@@ -25,6 +26,7 @@
     "@vitejs/plugin-vue": "^6.0.11",
     "electron": "^45.3.4",
     "electron-builder": "^26.18.0",
+    "jiti": "^2.7.0",
     "typescript": "^6.0.3",
     "vite": "^8.3.8",
     "vue-tsc": "^3.3.14",

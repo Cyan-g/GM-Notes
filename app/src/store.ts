@@ -359,8 +359,33 @@ export function setMode(mode: 'dm' | 'player') {
   touch()
 }
 
-/** Start a new, empty world in a folder that has none (a player's copy). It opens in player mode. */
+/** What every new world starts with: src/seed/world.json, made by `npm run seed` from the DM's world. */
+interface Seed {
+  dataVersion: number
+  meta: Pick<Database['meta'], 'calendar' | 'eventCategories' | 'today' | 'lists'>
+  entries: Entry[]
+  relations: Database['relations']
+}
+
+/**
+ * Start a new world in a folder that has none (a player's copy). It opens in player mode, with the seed's lists,
+ * calendar, races, subclasses, spells, feats and tools; a seed from an older data version is brought up to date
+ * like any older data. Without a usable seed it starts empty, with a plain calendar.
+ */
 export async function createWorld(backend: Backend, storage: Storage, title: string) {
+  const seed = (await import('./seed/world.json')).default as unknown as Seed
+  if (seed?.dataVersion >= OLDEST_VERSION && seed.dataVersion <= DATA_VERSION) {
+    const d: Database = {
+      version: seed.dataVersion,
+      meta: { title: title.trim() || 'My world', ...JSON.parse(JSON.stringify(seed.meta)), mode: 'player' },
+      entries: Object.fromEntries(seed.entries.map(e => [e.id, JSON.parse(JSON.stringify(e)) as Entry])),
+      relations: JSON.parse(JSON.stringify(seed.relations)),
+    }
+    upgrade(d)
+    await backend.create(d, TYPES_LIST, KINDS_LIST)
+    await open(backend, storage)
+    return
+  }
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
   const days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
   const d: Database = {

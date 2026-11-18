@@ -149,7 +149,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <template v-if="phase === 'starting'"><p class="muted">Opening…</p></template>
       <template v-else-if="phase === 'new-world'">
         <p>“{{ emptyName }}” has no world in it yet.</p>
-        <p class="muted small">Start a new one here, for example as a player keeping the spells, recipes and maps your DM shares.
+        <p class="muted small">Start a new one here, for example as a player keeping what your DM shares. It comes with the dropdown lists, the calendar, races, subclasses, spells, feats and tools.
           It starts in player mode; ⚙ → DM mode switches.</p>
         <input v-model="worldName" placeholder="Name, e.g. your character's name" @keydown.enter="startWorld" />
         <button class="primary" @click="startWorld">Start a new world here</button>

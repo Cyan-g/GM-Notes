@@ -1,0 +1,1257 @@
+{
+ "about": "What every new world starts with. Made by `npm run seed` from the DM's world; don't edit by hand.",
+ "dataVersion": 22,
+ "meta": {
+  "calendar": {
+   "name": "Ardenvalian Calendar",
+   "months": [
+    {
+     "name": "January",
+     "days": 31
+    },
+    {
+     "name": "February",
+     "days": 28
+    },
+    {
+     "name": "March",
+     "days": 31
+    },
+    {
+     "name": "April",
+     "days": 30
+    },
+    {
+     "name": "May",
+     "days": 31
+    },
+    {
+     "name": "June",
+     "days": 30
+    },
+    {
+     "name": "July",
+     "days": 31
+    },
+    {
+     "name": "August",
+     "days": 31
+    },
+    {
+     "name": "September",
+     "days": 30
+    },
+    {
+     "name": "October",
+     "days": 31
+    },
+    {
+     "name": "November",
+     "days": 30
+    },
+    {
+     "name": "December",
+     "days": 31
+    }
+   ],
+   "weekdays": [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday"
+   ],
+   "leapMonth": 2,
+   "firstWeekDay": 1,
+   "moons": [
+    {
+     "name": "Moon",
+     "cycle": 29.530588853,
+     "offset": 9.24953
+    }
+   ],
+   "eras": [
+    {
+     "name": "Before Calamity",
+     "fromYear": -999999
+    },
+    {
+     "name": "After Calamity",
+     "fromYear": 1
+    }
+   ],
+   "holidays": [
+    {
+     "name": "Fairsails",
+     "month": 9,
+     "day": 24
+    }
+   ]
+  },
+  "eventCategories": [
+   {
+    "id": "christian-holidays",
+    "name": "Holidays",
+    "color": "#9b2c2c"
+   },
+   {
+    "id": "historical-events",
+    "name": "Historical Events",
+    "color": "#455A64"
+   },
+   {
+    "id": "miscellaneous-events",
+    "name": "Miscellaneous Events",
+    "color": "#0288D1"
+   },
+   {
+    "id": "ID_ba5b8baa19eb",
+    "name": "Session",
+    "color": "#5e20c9"
+   }
+  ],
+  "today": {
+   "year": 892,
+   "month": 9,
+   "day": 6
+  },
+  "lists": {
+   "ability": [
+    {
+     "id": "Strength",
+     "label": "Strength"
+    },
+    {
+     "id": "Dexterity",
+     "label": "Dexterity"
+    },
+    {
+     "id": "Constitution",
+     "label": "Constitution"
+    },
+    {
+     "id": "Intelligence",
+     "label": "Intelligence"
+    },
+    {
+     "id": "Wisdom",
+     "label": "Wisdom"
+    },
+    {
+     "id": "Charisma",
+     "label": "Charisma"
+    }
+   ],
+   "campaign.status": [
+    {
+     "id": "Planned",
+     "label": "Planned"
+    },
+    {
+     "id": "Running",
+     "label": "Running"
+    },
+    {
+     "id": "Finished",
+     "label": "Finished"
+    },
+    {
+     "id": "One-shot",
+     "label": "One-shot"
+    }
+   ],
+   "class": [
+    {
+     "id": "Artificer",
+     "label": "Artificer"
+    },
+    {
+     "id": "Barbarian",
+     "label": "Barbarian"
+    },
+    {
+     "id": "Bard",
+     "label": "Bard"
+    },
+    {
+     "id": "Cleric",
+     "label": "Cleric"
+    },
+    {
+     "id": "Druid",
+     "label": "Druid"
+    },
+    {
+     "id": "Fighter",
+     "label": "Fighter"
+    },
+    {
+     "id": "Monk",
+     "label": "Monk"
+    },
+    {
+     "id": "Paladin",
+     "label": "Paladin"
+    },
+    {
+     "id": "Ranger",
+     "label": "Ranger"
+    },
+    {
+     "id": "Rogue",
+     "label": "Rogue"
+    },
+    {
+     "id": "Sorcerer",
+     "label": "Sorcerer"
+    },
+    {
+     "id": "Warlock",
+     "label": "Warlock"
+    },
+    {
+     "id": "Wizard",
+     "label": "Wizard"
+    }
+   ],
+   "creature.creatureType": [
+    {
+     "id": "Aberration",
+     "label": "Aberration"
+    },
+    {
+     "id": "Beast",
+     "label": "Beast"
+    },
+    {
+     "id": "Celestial",
+     "label": "Celestial"
+    },
+    {
+     "id": "Construct",
+     "label": "Construct"
+    },
+    {
+     "id": "Dragon",
+     "label": "Dragon"
+    },
+    {
+     "id": "Elemental",
+     "label": "Elemental"
+    },
+    {
+     "id": "Fey",
+     "label": "Fey"
+    },
+    {
+     "id": "Fiend",
+     "label": "Fiend"
+    },
+    {
+     "id": "Giant",
+     "label": "Giant"
+    },
+    {
+     "id": "Humanoid",
+     "label": "Humanoid"
+    },
+    {
+     "id": "Monstrosity",
+     "label": "Monstrosity"
+    },
+    {
+     "id": "Ooze",
+     "label": "Ooze"
+    },
+    {
+     "id": "Plant",
+     "label": "Plant"
+    },
+    {
+     "id": "Undead",
+     "label": "Undead"
+    }
+   ],
+   "deity.rank": [
+    {
+     "id": "Greater deity",
+     "label": "Greater deity"
+    },
+    {
+     "id": "Lesser deity",
+     "label": "Lesser deity"
+    },
+    {
+     "id": "Demigod",
+     "label": "Demigod"
+    },
+    {
+     "id": "Other",
+     "label": "Other"
+    }
+   ],
+   "event.category": [
+    {
+     "id": "Historical Events",
+     "label": "Historical Events"
+    },
+    {
+     "id": "Miscellaneous Events",
+     "label": "Miscellaneous Events"
+    },
+    {
+     "id": "Holidays",
+     "label": "Holidays"
+    }
+   ],
+   "feat.category": [
+    {
+     "id": "Origin Feat",
+     "label": "Origin Feat"
+    },
+    {
+     "id": "General Feat",
+     "label": "General Feat"
+    },
+    {
+     "id": "Fighting Style",
+     "label": "Fighting Style"
+    },
+    {
+     "id": "Epic Boon",
+     "label": "Epic Boon"
+    },
+    {
+     "id": "Other",
+     "label": "Other"
+    }
+   ],
+   "item.armorType": [
+    {
+     "id": "Light",
+     "label": "Light"
+    },
+    {
+     "id": "Medium",
+     "label": "Medium"
+    },
+    {
+     "id": "Heavy",
+     "label": "Heavy"
+    },
+    {
+     "id": "Shield",
+     "label": "Shield"
+    },
+    {
+     "id": "Clothing",
+     "label": "Clothing"
+    }
+   ],
+   "item.baseWeapon": [
+    {
+     "id": "Battleaxe",
+     "label": "Battleaxe"
+    },
+    {
+     "id": "Blowgun",
+     "label": "Blowgun"
+    },
+    {
+     "id": "Club",
+     "label": "Club"
+    },
+    {
+     "id": "Dagger",
+     "label": "Dagger"
+    },
+    {
+     "id": "Dart",
+     "label": "Dart"
+    },
+    {
+     "id": "Flail",
+     "label": "Flail"
+    },
+    {
+     "id": "Glaive",
+     "label": "Glaive"
+    },
+    {
+     "id": "Greataxe",
+     "label": "Greataxe"
+    },
+    {
+     "id": "Greatclub",
+     "label": "Greatclub"
+    },
+    {
+     "id": "Greatsword",
+     "label": "Greatsword"
+    },
+    {
+     "id": "Halberd",
+     "label": "Halberd"
+    },
+    {
+     "id": "Hand Crossbow",
+     "label": "Hand Crossbow"
+    },
+    {
+     "id": "Handaxe",
+     "label": "Handaxe"
+    },
+    {
+     "id": "Heavy Crossbow",
+     "label": "Heavy Crossbow"
+    },
+    {
+     "id": "Javelin",
+     "label": "Javelin"
+    },
+    {
+     "id": "Lance",
+     "label": "Lance"
+    },
+    {
+     "id": "Light Crossbow",
+     "label": "Light Crossbow"
+    },
+    {
+     "id": "Light Hammer",
+     "label": "Light Hammer"
+    },
+    {
+     "id": "Longbow",
+     "label": "Longbow"
+    },
+    {
+     "id": "Longsword",
+     "label": "Longsword"
+    },
+    {
+     "id": "Mace",
+     "label": "Mace"
+    },
+    {
+     "id": "Maul",
+     "label": "Maul"
+    },
+    {
+     "id": "Morningstar",
+     "label": "Morningstar"
+    },
+    {
+     "id": "Net",
+     "label": "Net"
+    },
+    {
+     "id": "Pike",
+     "label": "Pike"
+    },
+    {
+     "id": "Quarterstaff",
+     "label": "Quarterstaff"
+    },
+    {
+     "id": "Rapier",
+     "label": "Rapier"
+    },
+    {
+     "id": "Scimitar",
+     "label": "Scimitar"
+    },
+    {
+     "id": "Shortbow",
+     "label": "Shortbow"
+    },
+    {
+     "id": "Shortsword",
+     "label": "Shortsword"
+    },
+    {
+     "id": "Sickle",
+     "label": "Sickle"
+    },
+    {
+     "id": "Sling",
+     "label": "Sling"
+    },
+    {
+     "id": "Spear",
+     "label": "Spear"
+    },
+    {
+     "id": "Trident",
+     "label": "Trident"
+    },
+    {
+     "id": "War Pick",
+     "label": "War Pick"
+    },
+    {
+     "id": "Warhammer",
+     "label": "Warhammer"
+    },
+    {
+     "id": "Whip",
+     "label": "Whip"
+    },
+    {
+     "id": "Scythe",
+     "label": "Scythe"
+    }
+   ],
+   "item.damageType": [
+    {
+     "id": "Acid",
+     "label": "Acid"
+    },
+    {
+     "id": "Bludgeoning",
+     "label": "Bludgeoning"
+    },
+    {
+     "id": "Cold",
+     "label": "Cold"
+    },
+    {
+     "id": "Fire",
+     "label": "Fire"
+    },
+    {
+     "id": "Force",
+     "label": "Force"
+    },
+    {
+     "id": "Lightning",
+     "label": "Lightning"
+    },
+    {
+     "id": "Necrotic",
+     "label": "Necrotic"
+    },
+    {
+     "id": "Piercing",
+     "label": "Piercing"
+    },
+    {
+     "id": "Poison",
+     "label": "Poison"
+    },
+    {
+     "id": "Psychic",
+     "label": "Psychic"
+    },
+    {
+     "id": "Radiant",
+     "label": "Radiant"
+    },
+    {
+     "id": "Slashing",
+     "label": "Slashing"
+    },
+    {
+     "id": "Thunder",
+     "label": "Thunder"
+    }
+   ],
+   "item.category": [
+    {
+     "id": "Plant",
+     "label": "Plant"
+    },
+    {
+     "id": "Mineral",
+     "label": "Mineral"
+    },
+    {
+     "id": "Body Part",
+     "label": "Body Part"
+    },
+    {
+     "id": "Fluid",
+     "label": "Fluid"
+    },
+    {
+     "id": "Other",
+     "label": "Other"
+    }
+   ],
+   "item.kind": [
+    {
+     "id": "Weapon",
+     "label": "Weapon"
+    },
+    {
+     "id": "Armor",
+     "label": "Armor"
+    },
+    {
+     "id": "Tool",
+     "label": "Tool"
+    },
+    {
+     "id": "Potion",
+     "label": "Potion"
+    },
+    {
+     "id": "Poison",
+     "label": "Poison"
+    },
+    {
+     "id": "Ingredient",
+     "label": "Ingredient"
+    },
+    {
+     "id": "Scroll",
+     "label": "Scroll"
+    },
+    {
+     "id": "Tome",
+     "label": "Tome"
+    },
+    {
+     "id": "Ring",
+     "label": "Ring"
+    },
+    {
+     "id": "Accessory",
+     "label": "Accessory"
+    },
+    {
+     "id": "Instrument",
+     "label": "Instrument"
+    },
+    {
+     "id": "Adventuring Gear",
+     "label": "Adventuring Gear"
+    },
+    {
+     "id": "Flask",
+     "label": "Flask"
+    },
+    {
+     "id": "Other",
+     "label": "Other"
+    }
+   ],
+   "item.rarity": [
+    {
+     "id": "Common",
+     "label": "Common"
+    },
+    {
+     "id": "Uncommon",
+     "label": "Uncommon"
+    },
+    {
+     "id": "Rare",
+     "label": "Rare"
+    },
+    {
+     "id": "Very rare",
+     "label": "Very rare"
+    },
+    {
+     "id": "Legendary",
+     "label": "Legendary"
+    },
+    {
+     "id": "Artifact",
+     "label": "Artifact"
+    }
+   ],
+   "item.slot": [
+    {
+     "id": "Head",
+     "label": "Head"
+    },
+    {
+     "id": "Chest",
+     "label": "Chest"
+    },
+    {
+     "id": "Cloak",
+     "label": "Cloak"
+    },
+    {
+     "id": "Gloves",
+     "label": "Gloves"
+    },
+    {
+     "id": "Boots",
+     "label": "Boots"
+    },
+    {
+     "id": "Shield",
+     "label": "Shield"
+    }
+   ],
+   "item.weaponCategory": [
+    {
+     "id": "Simple",
+     "label": "Simple"
+    },
+    {
+     "id": "Martial",
+     "label": "Martial"
+    }
+   ],
+   "language": [
+    {
+     "id": "Common",
+     "label": "Common"
+    },
+    {
+     "id": "Dwarvish",
+     "label": "Dwarvish"
+    },
+    {
+     "id": "Elvish",
+     "label": "Elvish"
+    },
+    {
+     "id": "Giant",
+     "label": "Giant"
+    },
+    {
+     "id": "Gnomish",
+     "label": "Gnomish"
+    },
+    {
+     "id": "Goblin",
+     "label": "Goblin"
+    },
+    {
+     "id": "Halfling",
+     "label": "Halfling"
+    },
+    {
+     "id": "Orc",
+     "label": "Orc"
+    },
+    {
+     "id": "Abyssal",
+     "label": "Abyssal"
+    },
+    {
+     "id": "Celestial",
+     "label": "Celestial"
+    },
+    {
+     "id": "Draconic",
+     "label": "Draconic"
+    },
+    {
+     "id": "Deep Speech",
+     "label": "Deep Speech"
+    },
+    {
+     "id": "Infernal",
+     "label": "Infernal"
+    },
+    {
+     "id": "Primordial",
+     "label": "Primordial"
+    },
+    {
+     "id": "Sylvan",
+     "label": "Sylvan"
+    },
+    {
+     "id": "Undercommon",
+     "label": "Undercommon"
+    },
+    {
+     "id": "Thieves' Cant",
+     "label": "Thieves' Cant"
+    },
+    {
+     "id": "Druidic",
+     "label": "Druidic"
+    }
+   ],
+   "organization.orgType": [
+    {
+     "id": "Clan",
+     "label": "Clan"
+    },
+    {
+     "id": "Family",
+     "label": "Family"
+    },
+    {
+     "id": "Guild",
+     "label": "Guild"
+    },
+    {
+     "id": "Faith",
+     "label": "Faith"
+    },
+    {
+     "id": "Government",
+     "label": "Government"
+    },
+    {
+     "id": "Military",
+     "label": "Military"
+    },
+    {
+     "id": "Order",
+     "label": "Order"
+    },
+    {
+     "id": "Tribe",
+     "label": "Tribe"
+    },
+    {
+     "id": "Company",
+     "label": "Company"
+    },
+    {
+     "id": "Crew",
+     "label": "Crew"
+    },
+    {
+     "id": "Cult",
+     "label": "Cult"
+    },
+    {
+     "id": "Other",
+     "label": "Other"
+    }
+   ],
+   "place.placeType": [
+    {
+     "id": "Shop",
+     "label": "Shop"
+    },
+    {
+     "id": "Tavern",
+     "label": "Tavern"
+    },
+    {
+     "id": "Temple",
+     "label": "Temple"
+    },
+    {
+     "id": "Dungeon",
+     "label": "Dungeon"
+    },
+    {
+     "id": "Landmark",
+     "label": "Landmark"
+    },
+    {
+     "id": "Plane",
+     "label": "Plane"
+    }
+   ],
+   "size": [
+    {
+     "id": "Tiny",
+     "label": "Tiny"
+    },
+    {
+     "id": "Small",
+     "label": "Small"
+    },
+    {
+     "id": "Medium",
+     "label": "Medium"
+    },
+    {
+     "id": "Large",
+     "label": "Large"
+    },
+    {
+     "id": "Huge",
+     "label": "Huge"
+    },
+    {
+     "id": "Gargantuan",
+     "label": "Gargantuan"
+    }
+   ],
+   "spell.level": [
+    {
+     "id": "Cantrip",
+     "label": "Cantrip"
+    },
+    {
+     "id": "1",
+     "label": "1"
+    },
+    {
+     "id": "2",
+     "label": "2"
+    },
+    {
+     "id": "3",
+     "label": "3"
+    },
+    {
+     "id": "4",
+     "label": "4"
+    },
+    {
+     "id": "5",
+     "label": "5"
+    },
+    {
+     "id": "6",
+     "label": "6"
+    },
+    {
+     "id": "7",
+     "label": "7"
+    },
+    {
+     "id": "8",
+     "label": "8"
+    },
+    {
+     "id": "9",
+     "label": "9"
+    }
+   ],
+   "spell.school": [
+    {
+     "id": "Abjuration",
+     "label": "Abjuration"
+    },
+    {
+     "id": "Conjuration",
+     "label": "Conjuration"
+    },
+    {
+     "id": "Divination",
+     "label": "Divination"
+    },
+    {
+     "id": "Enchantment",
+     "label": "Enchantment"
+    },
+    {
+     "id": "Evocation",
+     "label": "Evocation"
+    },
+    {
+     "id": "Illusion",
+     "label": "Illusion"
+    },
+    {
+     "id": "Necromancy",
+     "label": "Necromancy"
+    },
+    {
+     "id": "Transmutation",
+     "label": "Transmutation"
+    }
+   ],
+   "spell.spellType": [
+    {
+     "id": "Attack",
+     "label": "Attack"
+    },
+    {
+     "id": "Saving throw",
+     "label": "Saving throw"
+    },
+    {
+     "id": "Healing",
+     "label": "Healing"
+    },
+    {
+     "id": "Buff",
+     "label": "Buff"
+    },
+    {
+     "id": "Debuff",
+     "label": "Debuff"
+    },
+    {
+     "id": "Utility",
+     "label": "Utility"
+    },
+    {
+     "id": "Control",
+     "label": "Control"
+    },
+    {
+     "id": "Summoning",
+     "label": "Summoning"
+    }
+   ],
+   "writing.writingType": [
+    {
+     "id": "Book",
+     "label": "Book"
+    },
+    {
+     "id": "Diary",
+     "label": "Diary"
+    },
+    {
+     "id": "Letter",
+     "label": "Letter"
+    },
+    {
+     "id": "Spoken record",
+     "label": "Spoken record"
+    },
+    {
+     "id": "Inscription",
+     "label": "Inscription"
+    },
+    {
+     "id": "Other",
+     "label": "Other"
+    }
+   ]
+  }
+ },
+ "entries": [
+  {
+   "id": "alchemy-kit",
+   "type": "item",
+   "name": "Alchemy Kit",
+   "aliases": [],
+   "tags": [],
+   "fields": {
+    "kind": "Tool",
+    "value": 2500,
+    "summary": "Required to brew magical potions, brewing takes 1 hour per 50g worth of the potion and does not count as resting.\n\nPotions may be consumed or applied to another creature as a bonus action."
+   },
+   "body": "",
+   "visibility": "secret",
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
+   "id": "herbalism-kit",
+   "type": "item",
+   "name": "Herbalism Kit",
+   "aliases": [],
+   "tags": [],
+   "fields": {
+    "kind": "Tool",
+    "value": 2500,
+    "summary": "Required to brew healing potions, brewing takes 1 hour per 50g worth of the potion and does not count as resting.\n\nPotions may be consumed or applied to another creature as a bonus action."
+   },
+   "body": "",
+   "visibility": "secret",
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
+   "id": "jewelers-tools",
+   "type": "item",
+   "name": "Jeweler's Tools",
+   "aliases": [],
+   "tags": [],
+   "fields": {
+    "kind": "Tool",
+    "value": 2500,
+    "summary": "Jeweler's tools consist of a small saw and hammer, files, pliers, and tweezers."
+   },
+   "body": "",
+   "visibility": "secret",
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
+   "id": "poisoners-kit",
+   "type": "item",
+   "name": "Poisoner's Kit",
+   "aliases": [],
+   "tags": [],
+   "fields": {
+    "kind": "Tool"
+   },
+   "body": "",
+   "visibility": "secret",
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
+   "id": "dragonborn",
+   "type": "race",
+   "name": "Dragonborn",
+   "aliases": [],
+   "tags": [],
+   "fields": {
+    "size": "Medium",
+    "speed": "30 ft",
+    "abilityIncrease": "+2 Str, +1 Cha",
+    "languages": [
+     "Common",
+     "Draconic"
+    ],
+    "traits": [
+     "Draconic Ancestry: dragon type sets breath weapon and resistance",
+     "Breath Weapon: 2d6 in a line or cone (Dex or Con save), once per short rest",
+     "Damage Resistance: to the ancestry's damage type"
+    ]
+   },
+   "body": "",
+   "visibility": "secret",
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
+   "id": "dwarf",
+   "type": "race",
+   "name": "Dwarf",
+   "aliases": [],
+   "tags": [],
+   "fields": {
+    "size": "Medium",
+    "speed": "25 ft (not reduced by heavy armor)",
+    "abilityIncrease": "+2 Con",
+    "languages": [
+     "Common",
+     "Dwarvish"
+    ],
+    "traits": [
+     "Darkvision 60 ft",
+     "Dwarven Resilience: advantage vs. poison, resistance to poison damage",
+     "Dwarven Combat Training: battleaxe, handaxe, light and war hammer",
+     "Tool proficiency: smith's, brewer's or mason's tools",
+     "Stonecunning: double proficiency on History checks about stonework"
+    ]
+   },
+   "body": "",
+   "visibility": "secret",
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
+   "id": "elf",
+   "type": "race",
+   "name": "Elf",
+   "aliases": [],
+   "tags": [],
+   "fields": {
+    "size": "Medium",
+    "speed": "30 ft",
+    "abilityIncrease": "+2 Dex",
+    "languages": [
+     "Common",
+     "Elvish"
+    ],
+    "traits": [
+     "Darkvision 60 ft",
+     "Keen Senses: Perception proficiency",
+     "Fey Ancestry: advantage vs. charmed, can't be put to sleep by magic",
+     "Trance: 4 hours of meditation instead of sleep"
+    ]
+   },
+   "body": "",
+   "visibility": "secret",
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
+   "id": "gnome",
+   "type": "race",
+   "name": "Gnome",
+   "aliases": [],
+   "tags": [],
+   "fields": {
+    "size": "Small",
+    "speed": "25 ft",
+    "abilityIncrease": "+2 Int",
+    "languages": [
+     "Common",
+     "Gnomish"
+    ],
+    "traits": [
+     "Darkvision 60 ft",
+     "Gnome Cunning: advantage on Int, Wis and Cha saves against magic"
+    ]
+   },
+   "body": "",
+   "visibility": "secret",
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
+   "id": "halfling",
+   "type": "race",
+   "name": "Halfling",
+   "aliases": [],
+   "tags": [],
+   "fields": {
+    "size": "Small",
+    "speed": "25 ft",
+    "abilityIncrease": "+2 Dex",
+    "languages": [
+     "Common",
+     "Halfling"
+    ],
+    "traits": [
+     "Lucky: reroll natural 1s on d20s",
+     "Brave: advantage vs. frightened",
+     "Halfling Nimbleness: move through larger creatures' space"
+    ]
+   },
+   "body": "",
+   "visibility": "secret",
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
+   "id": "human",
+   "type": "race",
+   "name": "Human",
+   "aliases": [],
+   "tags": [],
+   "fields": {
+    "size": "Medium",
+    "speed": "30 ft",
+    "abilityIncrease": "+1 to all ability scores",
+    "languages": [
+     "Common",
+     "one extra language"
+    ],
+    "traits": [
+     "Versatile: +1 to every ability score"
+    ]
+   },
+   "body": "",
+   "visibility": "secret",
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
+   "id": "tiefling",
+   "type": "race",
+   "name": "Tiefling",
+   "aliases": [],
+   "tags": [],
+   "fields": {
+    "size": "Medium",
+    "speed": "30 ft",
+    "abilityIncrease": "+2 Cha, +1 Int",
+    "languages": [
+     "Common",
+     "Infernal"
+    ],
+    "traits": [
+     "Darkvision 60 ft",
+     "Hellish Resistance: resistance to fire damage",
+     "Infernal Legacy: Thaumaturgy, later Hellish Rebuke and Darkness"
+    ]
+   },
+   "body": "",
+   "visibility": "secret",
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  }
+ ],
+ "relations": []
+}

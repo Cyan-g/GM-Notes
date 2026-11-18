@@ -250,7 +250,7 @@ const siblings = computed(() => {
       <a class="crumb-root" :href="hrefList(e.type)">{{ def.icon }} {{ def.plural }}</a>
       <template v-for="c in crumbs" :key="c.id"><span class="sep">›</span><EntryLink :id="c.id" /></template>
     </nav>
-    <header class="entry-head" :class="{ 'has-portrait': e.image }">
+    <header class="entry-head" :class="{ 'has-portrait': e.image && e.type !== 'pc' }">
       <div class="head-actions">
         <button class="fav-btn" :class="{ on: isFavourite(e.id) }" :title="isFavourite(e.id) ? 'Remove from favourites (F)' : 'Add to favourites (F)'" :aria-pressed="isFavourite(e.id)" @click="toggleFavourite(e.id)">{{ isFavourite(e.id) ? '★' : '☆' }}</button>
         <button class="export-btn" title="Earlier versions of this entry" @click="showHistory = true">🕘 History</button>
@@ -259,7 +259,7 @@ const siblings = computed(() => {
       </div>
       <ExportDialog v-if="canExport(e)" v-model="exporting" :id="e.id" />
       <HistoryDialog v-if="showHistory" :entry="e" @close="showHistory = false" />
-      <DataImage v-if="e.image" :path="e.image" :alt="e.name" class="portrait head-portrait" />
+      <DataImage v-if="e.image && e.type !== 'pc'" :path="e.image" :alt="e.name" class="portrait head-portrait" />
       <div class="head-text">
       <div class="title-line">
         <h1><span class="icon">{{ entryIcon(e) }}</span>{{ e.name }}</h1>
@@ -381,7 +381,7 @@ const siblings = computed(() => {
         </div>
 
 
-        <div v-for="[g, fs] in groups" :key="g" class="card">
+        <div v-for="[g, fs] in e.type === 'pc' ? [] : groups" :key="g" class="card">
           <h3>{{ g }}</h3>
           <dl>
             <template v-for="f in fs" :key="f.def.key">
@@ -398,6 +398,16 @@ const siblings = computed(() => {
         <EquippedCard v-if="e.type === 'pc'" :pc="e" />
         <!-- Player mode: the inventory sits under it, where "Mentioned in" would be. -->
         <InventoryCard v-if="e.type === 'pc' && playerMode" :pc="e" side />
+        <!-- A character's details and appearance come after what they carry. -->
+        <div v-for="[g, fs] in e.type === 'pc' ? groups : []" :key="'pc-' + g" class="card">
+          <h3>{{ g }}</h3>
+          <dl>
+            <template v-for="f in fs" :key="f.def.key">
+              <dt>{{ f.def.label }}</dt>
+              <dd><FieldValue :def="f.def" :value="f.value" :entry="e" /></dd>
+            </template>
+          </dl>
+        </div>
 
         <div v-for="[label, list] in ['pc', 'spell', 'feat'].includes(e.type) ? [] : relGroups" :key="label" class="card">
           <h3>{{ label[0].toUpperCase() + label.slice(1) }}</h3>

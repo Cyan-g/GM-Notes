@@ -19,6 +19,7 @@ import {
 import InventoryCard from './InventoryCard.vue'
 import ProfChips from './ProfChips.vue'
 import ItemModal from './ItemModal.vue'
+import PcPortrait from './PcPortrait.vue'
 
 const props = defineProps<{ pc: Entry; build?: boolean }>()
 const ro = computed(() => !!state.readOnly)
@@ -158,6 +159,9 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       </div>
       <p v-if="levelOver" class="error small">The class levels add up to more than 20; the sheet counts 20.</p>
     </section>
+    <div class="cs-top" :class="{ 'with-portrait': !build }">
+    <PcPortrait v-if="!build" :pc="pc" />
+    <div class="cs-top-right">
     <!-- the strip at the top: the numbers looked at most -->
     <div class="cs-strip">
       <label v-if="!classes.length" class="cs-stat"><span>Level</span><input type="number" min="1" max="20" :value="pc.fields.level ?? ''" placeholder="1" :disabled="locked" @change="setLevel" /></label>
@@ -171,6 +175,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <button v-if="!build" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" title="Inspiration" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>Inspiration</span><b>{{ s.inspiration ? '★' : '☆' }}</b></button>
     </div>
 
+    <div class="cs-hp-cards">
     <div class="cs-hp">
       <div class="cs-hp-main">
         <span class="cs-label">{{ build ? 'Maximum hit points' : 'Hit points' }}</span>
@@ -188,6 +193,8 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         <div v-if="s.maxHp && !build" class="cs-hp-bar"><i :style="{ width: Math.min(100, Math.round(100 * (s.hp ?? s.maxHp) / s.maxHp)) + '%' }" /></div>
       </div>
       <label v-if="!build" class="cs-hp-change"><span class="cs-label">Damage / heal</span><input placeholder="−7 or +5" :disabled="ro" @keydown.enter="hit" @change="hit" /></label>
+    </div>
+    <div class="cs-hp cs-dice">
       <div class="cs-hitdice">
         <span class="cs-label">Hit dice</span>
         <div v-for="p in pools" :key="p.die" class="cs-hp-row">
@@ -203,6 +210,9 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         </div>
       </div>
       <button v-if="!build" class="cs-rest" :disabled="ro" title="Full HP, no temp HP, every spell slot and half your hit dice back" @click="rest">Long rest</button>
+    </div>
+    </div>
+    </div>
     </div>
 
     <div class="cs-grid">

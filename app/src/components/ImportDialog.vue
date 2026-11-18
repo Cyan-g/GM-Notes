@@ -44,6 +44,10 @@ const close = () => { plan.value = null }
           </li>
         </ul>
       </template>
+      <details v-if="plan.warnings.length" class="small">
+        <summary class="muted">{{ plan.warnings.length }} thing(s) in the file this app doesn't take, left out</summary>
+        <ul><li v-for="w in plan.warnings" :key="w">{{ w }}</li></ul>
+      </details>
       <p v-if="state.readOnly" class="error">This tab isn't saving, so nothing can be imported here.</p>
       <p v-if="error" class="error">{{ error }}</p>
       <div class="actions">

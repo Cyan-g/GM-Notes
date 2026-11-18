@@ -88,6 +88,18 @@ Everything is saved in `data/`:
 
 The automatic backups keep everything from the last 2 hours, then the newest of each hour for 2 days, of each day for 2 months, and of each month for good. Only files named `eldoria-<date>.json` or `session-<date>.json` are ever deleted; anything else in that folder (like `before-migrate-…`) stays.
 
+### Data check
+
+Every time the data is opened, the app checks it against what it expects:
+- each entry's fields are ones its type has, with values of the right kind
+- links in fields point at existing entries of the right type
+- relations connect entries that exist
+- favourites and the current character exist
+
+The check never changes anything. **⚙ → Data & backups → Data check** lists what it found, with links to the entries. A bar under the menu appears only for serious problems.
+
+Imported files are checked too. A damaged file is refused, and fields the app doesn't know or values of the wrong kind are left out.
+
 ### Safety while saving
 
 - **One tab edits.** The first tab to open the data edits it; any other tab opens read-only and says so in a bar under the menu.

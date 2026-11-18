@@ -1091,3 +1091,7 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .cs-inv-side .cs-inv td { padding: .15rem .2rem; }
 .cs-inv-side .cs-inv-add { flex-wrap: wrap; }
 .cs-inv-side .cs-money input { width: 6em; }
+
+/* the data check on the Data page */
+.data-check { margin-top: 1rem; }
+.data-check li.serious .role { color: #b33; font-weight: 600; }

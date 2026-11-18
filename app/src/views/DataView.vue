@@ -2,6 +2,8 @@
 // Where the data lives, copying it somewhere safe, and going back to an earlier version.
 import { computed, onMounted, ref } from 'vue'
 import { db, entries, save, state } from '../store'
+import { checkDatabase } from '../validate'
+import EntryLink from '../components/EntryLink.vue'
 import { FolderStorage, HttpStorage, folderApiAvailable, pickBackupFolder, regrant, rememberedBackupFolder } from '../storage/storage'
 import { backupTo, daysSince, listBackups, restoreBackup } from '../backup'
 
@@ -16,6 +18,9 @@ onMounted(async () => {
   backups.value = await listBackups()
 })
 
+// The data check, run again whenever the data changes while this page is open.
+const problems = computed(() => checkDatabase(db()).sort((a, b) => Number(!!b.serious) - Number(!!a.serious)))
+const showAll = ref(false)
 const last = computed(() => db().meta.externalBackup)
 const age = computed(() => daysSince(last.value))
 const edited = computed(() => db().meta.edited)
@@ -94,9 +99,22 @@ const pretty = (n: string) => {
       </section>
     </div>
 
+    <section class="card data-check" :class="{ warn: problems.some(p => p.serious) }">
+      <h3>Data check <span class="muted small">{{ problems.length ? `${problems.length} to look at` : 'all fine' }}</span></h3>
+      <p class="small muted">Every entry and relation is checked against what the app expects: known fields, values of the right kind, links to entries that exist. Nothing is changed here; fix what's listed on the entry itself.</p>
+      <ul v-if="problems.length" class="rel">
+        <li v-for="(p, i) in showAll ? problems : problems.slice(0, 30)" :key="i" :class="{ serious: p.serious }">
+          <EntryLink v-if="p.entry && db().entries[p.entry]" :id="p.entry" :label="p.where" />
+          <span v-else>{{ p.where }}</span>
+          <span class="role">{{ p.message }}</span>
+        </li>
+      </ul>
+      <button v-if="problems.length > 30 && !showAll" class="link-btn" @click="showAll = true">Show all {{ problems.length }}</button>
+    </section>
+
     <section class="card backups-card">
       <h3>Earlier versions</h3>
-      <p class="small muted">Saved automatically at most every 10 minutes while you edit; the last 40 are kept.</p>
+      <p class="small muted">Saved automatically at most every 10 minutes while you edit. Thinned out over time: everything from the last 2 hours, then one per hour for 2 days, one per day for 2 months, and one per month after that.</p>
       <ul v-if="backups.length" class="rel">
         <li v-for="b in backups" :key="b"><span>{{ pretty(b) }}</span><button class="link-btn" :disabled="!!progress" @click="restore(b)">Go back to this</button></li>
       </ul>

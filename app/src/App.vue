@@ -111,6 +111,10 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <button v-if="state.conflict" class="danger" @click="overwrite">Overwrite with this tab's version</button>
       <button v-else-if="state.error" @click="save()">Try again</button>
     </div>
+    <div v-if="state.problems.some(p => p.serious) && !state.readOnly && !state.error" class="save-banner" role="status">
+      <span>⚠ The data check found {{ state.problems.filter(p => p.serious).length }} serious problem(s) in the data. Nothing was changed.</span>
+      <a class="button" href="#/data" @click="state.problems = []">Show them</a>
+    </div>
     <main class="main">
       <HomeView v-if="route.current.name === 'home'" />
       <ListView v-else-if="route.current.name === 'list'" :type="route.current.type" />

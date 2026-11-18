@@ -7,6 +7,8 @@
 import type { Entry, Id } from './model/types'
 import { db, get, state, touch } from './store'
 import { newId } from './edit'
+import { TYPES } from './model/schema'
+import { checkEntry, checkField } from './validate'
 
 export const FORMAT = 'dndesk-export'
 /** Files exported before the app was renamed. */
@@ -136,6 +138,8 @@ export interface ImportPlan {
   replace: boolean
   /** The entries that came along, and whether this world already has each one (then that one is used). */
   parts: { entry: Entry; here?: Entry }[]
+  /** What the data check found in the file: these fields are left out on import. */
+  warnings: string[]
   bundle: Bundle
 }
 
@@ -153,10 +157,16 @@ export async function readImport(file: File): Promise<ImportPlan> {
   const ok = b.entries.filter(e => e?.id && typeof e.name === 'string' && e.fields && canExport(e))
   const main = ok.find(e => e.id === b.main)
   if (!main) throw new Error(`${file.name} doesn't hold a spell, item or map.`)
+  // The data check, on the shape only (the file's links are worked out on import). A broken entry stops the
+  // import; a field that's unknown or of the wrong kind is only left out.
+  const found = ok.flatMap(e => checkEntry({ ...e, aliases: e.aliases ?? [], tags: e.tags ?? [], body: e.body ?? '', visibility: e.visibility ?? 'secret' }))
+  const serious = found.find(p => p.serious)
+  if (serious) throw new Error(`${file.name} is damaged: ${serious.where} ${serious.message}.`)
   return {
     from: b.from, exported: b.exported, main,
     existing: findHere(main.type, main.name), replace: false,
     parts: ok.filter(e => e !== main).map(e => ({ entry: e, here: findHere(e.type, e.name) })),
+    warnings: found.map(p => `${p.where} ${p.message}`),
     bundle: b,
   }
 }
@@ -202,6 +212,11 @@ export async function applyImport(plan: ImportPlan): Promise<Id> {
     }
     c.id = id
     c.aliases ??= []; c.tags ??= []; c.body ??= ''; c.visibility ??= 'secret'
+    // Only the fields this app knows, with values of the right kind.
+    for (const [k, v] of Object.entries(c.fields)) {
+      const f = TYPES[c.type].fields.find(x => x.key === k)
+      if (!f || checkField(f, v)) delete c.fields[k]
+    }
     c.created = mine?.created ?? now
     c.updated = now
     if (typeof c.fields.spell === 'string') { const to = map.get(c.fields.spell); if (to) c.fields.spell = to; else delete c.fields.spell }

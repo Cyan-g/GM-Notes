@@ -183,7 +183,7 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
     const dice = String(e.fields.damage ?? '').trim()
     const dmg = m + magic
     const damage = dice ? dice.split('/').map(d => `${d.trim()}${dmg ? ' ' + signed(dmg).replace('−', '− ').replace('+', '+ ') : ''}`).join(' / ') : '—'
-    return { id: e.id, name: e.name, toHit: m + prof + magic, damage, type: e.fields.damageType as string | undefined, note: e.fields.range as string | undefined }
+    return { id: e.id, name: e.name, toHit: m + prof + magic, damage, type: (e.fields.damageType as string[] | undefined)?.join('/'), note: e.fields.range as string | undefined }
   })
 }
 

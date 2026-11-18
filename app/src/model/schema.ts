@@ -123,7 +123,7 @@ export const SCHEMA: TypeDef[] = [
       { key: 'weight', label: 'Weight', kind: 'weight' },
       { key: 'summary', label: 'Short description', kind: 'longtext' },
       { key: 'damage', label: 'Damage', kind: 'text', when: W, group: 'Weapon' },
-      { key: 'damageType', label: 'Damage type', kind: 'select', options: DAMAGE, when: W, group: 'Weapon' },
+      { key: 'damageType', label: 'Damage type', kind: 'list', options: DAMAGE, when: W, group: 'Weapon' },
       { key: 'range', label: 'Range', kind: 'text', when: W, group: 'Weapon' },
       { key: 'properties', label: 'Properties', kind: 'list', when: { field: 'kind', is: ['Weapon', 'Ingredient'] } },
       { key: 'bonus', label: 'Bonus', kind: 'text', when: { field: 'kind', is: ['Weapon', 'Armor'] } },

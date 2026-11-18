@@ -12,9 +12,13 @@ const SESSION_KEYS = ['tracker', 'spellbook', 'crafting'] as const
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
 /** The newest data version this build understands (the last step in upgrade()). Newer files open read-only. */
-export const DATA_VERSION = 19
+export const DATA_VERSION = 20
+
+import { checkDatabase, type Problem } from './validate'
 
 export const state = reactive({
+  /** What the data check found when the data was opened (see validate.ts and the Data page). */
+  problems: [] as Problem[],
   storage: null as Storage | null,
   db: null as Database | null,
   dirty: false,
@@ -63,6 +67,7 @@ export async function open(storage: Storage) {
     return
   }
   if (upgrade(d)) touch()
+  state.problems = checkDatabase(d)
 }
 
 /**
@@ -474,6 +479,20 @@ function upgrade(d: Database) {
     ]
     for (const id of ATTUNED) { const e = d.entries[id]; if (e?.type === 'item') e.fields.attunement = true }
     d.version = 19
+    changed = true
+  }
+  // Version 20 (found by the data check): a weapon's damage type is a list, since some do two
+  // ("Slashing/Piercing" was one text the form couldn't show); characters lose the statblock the sheet replaced.
+  if ((d.version ?? 1) < 20) {
+    for (const e of Object.values(d.entries)) {
+      const dt = e.fields.damageType
+      if (typeof dt === 'string') {
+        const list = dt.split('/').map(x => x.trim()).filter(Boolean)
+        if (list.length) e.fields.damageType = list; else delete e.fields.damageType
+      }
+      if (e.type === 'pc') delete e.fields.statblock
+    }
+    d.version = 20
     changed = true
   }
   // Adding a step? Raise DATA_VERSION at the top to match, or the new data opens read-only in this build.

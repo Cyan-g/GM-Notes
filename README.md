@@ -34,7 +34,7 @@ To set up a player: give them `DnDesk.html` in a folder of its own. They open it
 
 A player character's page is its character sheet, filled in right on the page.
 
-- **What you fill in:** level, ability scores, proficient saves, and skills. Click a skill to cycle it: proficient, then expertise, then none.
+- **What you fill in:** level and ability scores. Each ability has a card with its saving throw and the skills that use it; click a save to mark proficiency, and click a skill to cycle it: proficient, then expertise, then none.
 - **Hit points:** current, max and temporary HP. Type `-7` or `+5` in *Damage / heal* to apply it; temporary HP soak up damage first. **Long rest** restores HP and gives back half your hit dice.
 - **Inventory:** items from the world with a quantity, plus anything else by name. Clicking an item opens its card in a pop-up, where it can also be equipped or attuned. Only items marked *Requires attunement* can be attuned (24 are, set in data version 19).
 - **Equipped card** (beside the sheet, in place of the relation cards): the worn armor and wielded weapons, and the three attunement slots. What's equipped or attuned is shown there and not in the inventory.

@@ -1029,22 +1029,21 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .cs-hp-change { display: flex; flex-direction: column; gap: .2rem; }
 .cs-hp-change input { width: 9em; }
 .cs-hitdice { display: flex; flex-direction: column; gap: .2rem; }
-.cs-grid { display: grid; grid-template-columns: minmax(150px, .8fr) minmax(220px, 1fr) minmax(240px, 1.2fr); gap: 1rem; align-items: start; }
-@media (max-width: 1000px) { .cs-grid { grid-template-columns: 1fr 1fr; } .cs-side { grid-column: 1 / -1; } }
-@media (max-width: 620px) { .cs-grid { grid-template-columns: 1fr; } }
-.cs-abilities { display: flex; flex-direction: column; gap: .45rem; }
-.cs-ability { display: grid; grid-template-columns: 2.6em 1fr 3.8em; align-items: center; gap: .1rem .4rem; padding: .35rem .5rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+/* six ability cards (score, save, skills) in a grid, attacks and spellcasting beside them */
+.cs-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr); gap: 1rem; align-items: start; }
+@media (max-width: 1000px) { .cs-grid { grid-template-columns: 1fr; } }
+.cs-abilities { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: .5rem; align-items: start; }
+.cs-ability { display: flex; flex-direction: column; padding: .4rem .45rem .35rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.cs-ab-head { display: grid; grid-template-columns: auto 1fr 3.4em; align-items: center; gap: .4rem; padding: 0 .2rem .3rem; margin-bottom: .2rem; border-bottom: 1px solid var(--line); }
 .cs-short { font-weight: 700; font-size: 12px; letter-spacing: .05em; color: var(--muted); }
-.cs-mod { font: 600 1.3rem var(--serif); text-align: center; }
-.cs-ability input { width: 100%; text-align: center; padding: .15rem; }
-.cs-save { grid-column: 1 / -1; border: none; background: none; padding: .1rem .2rem; font-size: 12px; color: var(--muted); text-align: left; white-space: nowrap; cursor: pointer; }
-.cs-save.on { color: var(--ink); font-weight: 600; }
-.cs-skills { display: flex; flex-direction: column; }
-.cs-skill { display: grid; grid-template-columns: 1.2em 2.4em 1fr auto; align-items: baseline; gap: .35rem; border: none; background: none; padding: .18rem .3rem; border-radius: 6px; text-align: left; font-size: 14px; cursor: pointer; color: var(--ink-2); }
+.cs-mod { font: 600 1.35rem var(--serif); text-align: center; }
+.cs-ab-head input { width: 100%; text-align: center; padding: .1rem; }
+.cs-skill { display: grid; grid-template-columns: 1em 2.1em 1fr; align-items: baseline; gap: .3rem; border: none; background: none; padding: .1rem .25rem; border-radius: 6px; text-align: left; font-size: 13px; cursor: pointer; color: var(--ink-2); }
 .cs-skill:hover:not(:disabled) { background: var(--chip); }
 .cs-skill.on { color: var(--ink); }
 .cs-skill.on .cs-dot { color: var(--accent); }
 .cs-skill b { text-align: right; }
+.cs-save { font-style: italic; }
 .cs-side textarea { width: 100%; }
 .cs-attacks { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: .8rem; }
 .cs-attacks td { padding: .25rem .3rem; border-bottom: 1px solid var(--line); }

@@ -44,6 +44,7 @@ const cycleSkill = (name: string) => edit(x => {
   const v = x.skills[name]
   if (!v) x.skills[name] = 1; else if (v === 1) x.skills[name] = 2; else delete x.skills[name]
 })
+const skillsOf = (a: Ability) => SKILLS.filter(sk => sk.ability === a)
 const skillMark = (name: string) => ({ 1: '●', 2: '◉' } as Record<number, string>)[s.value.skills[name] ?? 0] ?? '○'
 
 /** Damage or healing typed into the HP box: "-7" or "+5"; temp HP soaks damage first. */
@@ -120,24 +121,21 @@ const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
     </div>
 
     <div class="cs-grid">
-      <!-- abilities and saves -->
+      <!-- one card per ability: score, modifier, saving throw and the skills that use it -->
       <section class="cs-abilities">
         <div v-for="a in ABILITIES" :key="a.key" class="cs-ability">
-          <span class="cs-short" :title="a.label">{{ a.short }}</span>
-          <b class="cs-mod">{{ signed(mod(s.abilities[a.key])) }}</b>
-          <input type="number" min="1" max="30" :value="s.abilities[a.key]" :disabled="ro" :title="`${a.label} score`" @change="edit(x => x.abilities[a.key] = num($event) ?? 10)" />
-          <button class="cs-save" :class="{ on: s.saves.includes(a.key) }" :disabled="ro" :title="`${a.label} saving throw${s.saves.includes(a.key) ? ' (proficient)' : ''}`" @click="toggleSave(a.key)">
-            {{ s.saves.includes(a.key) ? '●' : '○' }} save {{ signed(saveBonus(s, a.key, prof)) }}</button>
+          <div class="cs-ab-head">
+            <span class="cs-short" :title="a.label">{{ a.short }}</span>
+            <b class="cs-mod">{{ signed(mod(s.abilities[a.key])) }}</b>
+            <input type="number" min="1" max="30" :value="s.abilities[a.key]" :disabled="ro" :title="`${a.label} score`" @change="edit(x => x.abilities[a.key] = num($event) ?? 10)" />
+          </div>
+          <button class="cs-skill cs-save" :class="{ on: s.saves.includes(a.key) }" :disabled="ro" :title="`${a.label} saving throw: click for proficiency`" @click="toggleSave(a.key)">
+            <span class="cs-dot">{{ s.saves.includes(a.key) ? '●' : '○' }}</span><b>{{ signed(saveBonus(s, a.key, prof)) }}</b><span>Saving throw</span>
+          </button>
+          <button v-for="sk in skillsOf(a.key)" :key="sk.name" class="cs-skill" :class="{ on: s.skills[sk.name] }" :disabled="ro" title="Click: proficient, expertise, none" @click="cycleSkill(sk.name)">
+            <span class="cs-dot">{{ skillMark(sk.name) }}</span><b>{{ signed(skillBonus(s, sk.name, prof)) }}</b><span>{{ sk.name }}</span>
+          </button>
         </div>
-      </section>
-
-      <!-- skills -->
-      <section class="cs-skills">
-        <h4>Skills <span class="muted small">click: proficient, expertise</span></h4>
-        <button v-for="sk in SKILLS" :key="sk.name" class="cs-skill" :class="{ on: s.skills[sk.name] }" :disabled="ro" @click="cycleSkill(sk.name)">
-          <span class="cs-dot">{{ skillMark(sk.name) }}</span><b>{{ signed(skillBonus(s, sk.name, prof)) }}</b>
-          <span>{{ sk.name }}</span><span class="muted small">{{ sk.ability.toUpperCase() }}</span>
-        </button>
       </section>
 
       <!-- attacks, spellcasting, proficiencies -->

@@ -45,6 +45,7 @@ A player character's page is its character sheet, filled in right on the page.
   - an attack line for each equipped weapon: finesse weapons use the better of STR and DEX, ranged weapons DEX, and a "+1" in the item's Bonus field counts
   - the spell save DC and attack bonus, from the class's casting ability unless you pick another
 - **In a fight:** the initiative tracker takes the PC's AC, HP and initiative from the sheet.
+- **The Spellbook** takes its spell attack and save DC from the character picked at the top (in a world with one character, that one). With no character picked, you type them in.
 
 ### Sharing entries
 

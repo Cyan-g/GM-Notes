@@ -3,7 +3,9 @@
 // with their attack or save worked out. Replaces the Obsidian "Spell Tome" note.
 import { computed, ref } from 'vue'
 import type { Entry, Id, Spellbook } from '../model/types'
-import { db, get, touch } from '../store'
+import { byType, db, get, touch } from '../store'
+import { spellStats } from '../sheet'
+import EntryLink from '../components/EntryLink.vue'
 import { newEntry } from '../ui'
 import { hrefEntry } from '../router'
 import SpellModal from '../components/SpellModal.vue'
@@ -16,6 +18,13 @@ const book = computed<Spellbook>(() => {
   if (!d.spellbook) d.spellbook = { slots: ORD.map(() => ({ max: 0, used: 0 })), known: [], prepared: [], always: [] }
   return d.spellbook
 })
+// The caster: a character picked here, or the only character there is. Their sheet gives attack and DC.
+const pcs = computed(() => (byType.value.get('pc') ?? []).slice().sort((a, b) => a.name.localeCompare(b.name)))
+const caster = computed(() => get(book.value.caster) ?? (pcs.value.length === 1 ? pcs.value[0] : undefined))
+const fromSheet = computed(() => (caster.value ? spellStats(caster.value) : undefined))
+const attack = computed(() => fromSheet.value?.attack ?? book.value.attackBonus)
+const dc = computed(() => fromSheet.value?.dc ?? book.value.saveDC)
+function setCaster(id: string) { if (id) book.value.caster = id; else delete book.value.caster; touch() }
 const editSlots = ref(false)
 const shownSlots = computed(() => book.value.slots.map((s, i) => ({ ...s, i })).filter(s => editSlots.value || s.max > 0))
 
@@ -77,8 +86,8 @@ const preparedList = computed(() => spells([...book.value.always, ...book.value.
 /** What the spell asks for, with this caster's numbers filled in. */
 function check(e: Entry) {
   const f = e.fields
-  if (f.spellType === 'Saving throw') return `${f.savingThrow ? String(f.savingThrow).slice(0, 3).toUpperCase() + ' ' : ''}save DC ${book.value.saveDC ?? '?'}`
-  if (f.spellType === 'Attack') return `Spell attack ${book.value.attackBonus != null ? (book.value.attackBonus >= 0 ? '+' : '') + book.value.attackBonus : '?'}`
+  if (f.spellType === 'Saving throw') return `${f.savingThrow ? String(f.savingThrow).slice(0, 3).toUpperCase() + ' ' : ''}save DC ${dc.value ?? '?'}`
+  if (f.spellType === 'Attack') return `Spell attack ${attack.value != null ? (attack.value >= 0 ? '+' : '') + attack.value : '?'}`
   return String(f.spellType ?? '')
 }
 const alwaysTitle = (id: Id) => (book.value.always.includes(id)
@@ -130,8 +139,22 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
     <div class="sbk-top">
       <section class="card sbk-stats">
         <h3>Spellcasting</h3>
-        <label><span>Spell attack</span><input type="number" :value="book.attackBonus" @change="setNum('attackBonus', ($event.target as HTMLInputElement).value)" /></label>
-        <label><span>Save DC</span><input type="number" :value="book.saveDC" @change="setNum('saveDC', ($event.target as HTMLInputElement).value)" /></label>
+        <label><span>Character</span>
+          <select :value="book.caster ?? ''" @change="setCaster(($event.target as HTMLSelectElement).value)">
+            <option value="">{{ pcs.length === 1 ? pcs[0].name : 'None (type the numbers)' }}</option>
+            <option v-for="p in pcs.length > 1 ? pcs : []" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
+        </label>
+        <template v-if="fromSheet">
+          <label><span>Spell attack</span><b>{{ fromSheet.attack >= 0 ? '+' : '' }}{{ fromSheet.attack }}</b></label>
+          <label><span>Save DC</span><b>{{ fromSheet.dc }}</b></label>
+          <p class="muted small">From <EntryLink :id="caster!.id" />'s sheet ({{ fromSheet.ability.toUpperCase() }}).</p>
+        </template>
+        <template v-else>
+          <label><span>Spell attack</span><input type="number" :value="book.attackBonus" @change="setNum('attackBonus', ($event.target as HTMLInputElement).value)" /></label>
+          <label><span>Save DC</span><input type="number" :value="book.saveDC" @change="setNum('saveDC', ($event.target as HTMLInputElement).value)" /></label>
+          <p v-if="caster" class="muted small"><EntryLink :id="caster.id" />'s sheet has no casting ability yet.</p>
+        </template>
         <label><span>Prepared</span><b :class="{ over: full }">{{ book.prepared.length }}</b> / <input type="number" min="0" :value="book.preparedMax" @change="setNum('preparedMax', ($event.target as HTMLInputElement).value)" /></label>
       </section>
 

@@ -154,6 +154,8 @@ export interface Calendar {
 
 /** One caster's spells and slots (what the Obsidian "Spell Tome" note did). */
 export interface Spellbook {
+  /** The character whose sheet gives the spell attack and save DC (instead of the typed numbers). */
+  caster?: Id
   attackBonus?: number
   saveDC?: number
   /** How many spells may be prepared. */

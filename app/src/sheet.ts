@@ -47,6 +47,16 @@ export function castingAbility(pc: Entry, s: CharacterSheet): Ability | undefine
   return Object.entries(CASTING).find(([c]) => cls.includes(c))?.[1]
 }
 
+/** A character's spell attack bonus and save DC, from their sheet; undefined without a casting ability. */
+export function spellStats(pc: Entry): { attack: number; dc: number; ability: Ability } | undefined {
+  const s = sheetOf(pc)
+  if (!s) return undefined
+  const a = castingAbility(pc, s)
+  if (!a) return undefined
+  const p = profBonus(levelOf(pc)), m = mod(s.abilities[a])
+  return { attack: p + m, dc: 8 + p + m, ability: a }
+}
+
 // ---------- what the inventory adds up to ----------
 
 const equipped = (s: CharacterSheet) => s.inventory.filter(l => l.equipped).map(l => get(l.item)).filter((e): e is Entry => !!e)

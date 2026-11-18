@@ -1008,7 +1008,7 @@
     "summary": "Required to brew magical potions, brewing takes 1 hour per 50g worth of the potion and does not count as resting.\n\nPotions may be consumed or applied to another creature as a bonus action."
    },
    "body": "",
-   "visibility": "secret",
+   "visibility": "known",
    "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-15T20:32:34.371Z"
   },
@@ -1024,7 +1024,7 @@
     "summary": "Required to brew healing potions, brewing takes 1 hour per 50g worth of the potion and does not count as resting.\n\nPotions may be consumed or applied to another creature as a bonus action."
    },
    "body": "",
-   "visibility": "secret",
+   "visibility": "known",
    "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-15T20:32:34.371Z"
   },
@@ -1040,7 +1040,7 @@
     "summary": "Jeweler's tools consist of a small saw and hammer, files, pliers, and tweezers."
    },
    "body": "",
-   "visibility": "secret",
+   "visibility": "known",
    "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-15T20:32:34.371Z"
   },
@@ -1054,7 +1054,7 @@
     "kind": "Tool"
    },
    "body": "",
-   "visibility": "secret",
+   "visibility": "known",
    "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-15T20:32:34.371Z"
   },
@@ -1079,7 +1079,7 @@
     ]
    },
    "body": "",
-   "visibility": "secret",
+   "visibility": "known",
    "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-15T20:32:34.371Z"
   },
@@ -1106,7 +1106,7 @@
     ]
    },
    "body": "",
-   "visibility": "secret",
+   "visibility": "known",
    "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-15T20:32:34.371Z"
   },
@@ -1132,7 +1132,7 @@
     ]
    },
    "body": "",
-   "visibility": "secret",
+   "visibility": "known",
    "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-15T20:32:34.371Z"
   },
@@ -1156,7 +1156,7 @@
     ]
    },
    "body": "",
-   "visibility": "secret",
+   "visibility": "known",
    "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-15T20:32:34.371Z"
   },
@@ -1181,7 +1181,7 @@
     ]
    },
    "body": "",
-   "visibility": "secret",
+   "visibility": "known",
    "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-15T20:32:34.371Z"
   },
@@ -1204,7 +1204,7 @@
     ]
    },
    "body": "",
-   "visibility": "secret",
+   "visibility": "known",
    "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-15T20:32:34.371Z"
   },
@@ -1229,7 +1229,7 @@
     ]
    },
    "body": "",
-   "visibility": "secret",
+   "visibility": "known",
    "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-15T20:32:34.371Z"
   }

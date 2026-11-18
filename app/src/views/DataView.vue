@@ -6,6 +6,7 @@ import { checkDatabase } from '../validate'
 import EntryLink from '../components/EntryLink.vue'
 import { FolderStorage, HttpStorage, folderApiAvailable, pickBackupFolder, regrant, rememberedBackupFolder } from '../storage/storage'
 import { backupTo, daysSince, listBackups, restoreBackup } from '../backup'
+import { DesktopStorage, desktop, folderName } from '../storage/desktop'
 
 const dest = ref<FileSystemDirectoryHandle | null>(null)
 const progress = ref<{ done: number; total: number } | null>(null)
@@ -13,10 +14,26 @@ const message = ref('')
 const error = ref('')
 const backups = ref<string[]>([])
 
+// The desktop app: folders are paths chosen with the system dialog.
+const destPath = ref<string | null>(null)
+const dataPath = ref<string | null>(null)
+const version = ref('')
+const destName = computed(() => (desktop ? (destPath.value ? folderName(destPath.value) : '') : dest.value?.name ?? ''))
+
 onMounted(async () => {
-  dest.value = await rememberedBackupFolder()
+  if (desktop) {
+    destPath.value = await desktop.getFolder('backup')
+    dataPath.value = await desktop.getFolder('data')
+    version.value = (await desktop.info()).version
+  } else dest.value = await rememberedBackupFolder()
   backups.value = await listBackups()
 })
+
+/** Desktop: open another data folder (the app starts over with it). */
+async function changeDataFolder() {
+  if (state.dirty) await save()
+  if (await desktop!.pickFolder('data')) location.reload()
+}
 
 // The data check, run again whenever the data changes while this page is open.
 const problems = computed(() => checkDatabase(db()).sort((a, b) => Number(!!b.serious) - Number(!!a.serious)))
@@ -29,6 +46,13 @@ async function run(choose: boolean) {
   error.value = ''
   message.value = ''
   try {
+    if (desktop) {
+      if (choose || !destPath.value) destPath.value = await desktop.pickFolder('backup')
+      if (!destPath.value) return
+      const folder = await backupTo(new DesktopStorage('backup', folderName(destPath.value)), (done, total) => { progress.value = { done, total } })
+      message.value = `Copied to “${folderName(destPath.value)}”, into the folder ${folder}.`
+      return
+    }
     let h = dest.value
     if (choose || !h) h = await pickBackupFolder()
     else if (!(await regrant(h))) h = await pickBackupFolder()
@@ -74,9 +98,12 @@ const pretty = (n: string) => {
       <section class="card">
         <h3>Your data</h3>
         <dl>
-          <dt>Folder</dt><dd>{{ state.storage?.label }}</dd>
+          <dt>Folder</dt>
+          <dd v-if="desktop">{{ dataPath }} <button class="link-btn" @click="desktop.showFolder('data')">Show</button> <button class="link-btn" @click="changeDataFolder">Change…</button></dd>
+          <dd v-else>{{ state.storage?.label }}</dd>
           <dt>Entries</dt><dd>{{ entries.length }}, with {{ db().relations.length }} relations</dd>
           <dt>Saved</dt><dd>{{ state.saving ? 'saving…' : state.dirty ? 'unsaved changes' : state.savedAt ? new Date(state.savedAt).toLocaleTimeString() : 'nothing changed yet' }} <button v-if="state.dirty" class="link-btn" @click="save()">Save now</button></dd>
+          <dt v-if="version">App</dt><dd v-if="version">DnDesk {{ version }}</dd>
           <dt>Last edit</dt><dd>{{ edited ? new Date(edited).toLocaleString() : 'none since the import from Obsidian' }}</dd>
         </dl>
       </section>
@@ -85,10 +112,10 @@ const pretty = (n: string) => {
         <h3>Copy to another place</h3>
         <p class="small">The app keeps its own backups, but they're on the same stick. A copy on your PC or another drive survives losing the stick.</p>
         <p><b>Last copy:</b> {{ last ? `${new Date(last).toLocaleString()} (${age === 0 ? 'today' : age + ' days ago'})` : 'never' }}</p>
-        <template v-if="folderApiAvailable()">
+        <template v-if="desktop || folderApiAvailable()">
           <div class="row-btns">
-            <button class="primary" :disabled="!!progress" @click="run(false)">{{ dest ? `Back up to “${dest.name}”` : 'Back up…' }}</button>
-            <button v-if="dest" :disabled="!!progress" @click="run(true)">Other folder…</button>
+            <button class="primary" :disabled="!!progress" @click="run(false)">{{ destName ? `Back up to “${destName}”` : 'Back up…' }}</button>
+            <button v-if="destName" :disabled="!!progress" @click="run(true)">Other folder…</button>
             <button v-if="isDev" class="dev-backup" @click="devBackup">Dev test copy</button>
           </div>
           <p v-if="progress" class="small">Copying {{ progress.done }} of {{ progress.total }} files…</p>

@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { createWorld, get, open, overwrite, save, state } from './store'
 import { ui } from './ui'
+import { DesktopStorage, desktop, folderName, type UpdateInfo } from './storage/desktop'
 import { FolderStorage, HttpStorage, folderApiAvailable, newWorldFolder, pickFolder, regrant, rememberFolder, rememberedFolder } from './storage/storage'
 import { route } from './router'
 import TopBar from './components/TopBar.vue'
@@ -35,12 +36,31 @@ const startError = ref('')
 
 /** A picked folder without a world in it: offered to start a new one there (a player's own copy). */
 const emptyFolder = ref<FileSystemDirectoryHandle | null>(null)
+const emptyName = ref('')
 const worldName = ref('')
 
 async function useHandle(h: FileSystemDirectoryHandle) {
   try {
     const s = new FolderStorage(h)
-    if (await s.readText('eldoria.json') == null) { emptyFolder.value = h; phase.value = 'new-world'; return }
+    if (await s.readText('eldoria.json') == null) { emptyFolder.value = h; emptyName.value = h.name; phase.value = 'new-world'; return }
+    await open(s)
+    phase.value = 'ready'
+  } catch (e) {
+    startError.value = (e as Error).message
+    phase.value = 'need-folder'
+  }
+}
+
+/** A new version of the desktop app: downloaded and ready to install (Windows), or out to download (Mac). */
+const update = ref<UpdateInfo | null>(null)
+desktop?.onUpdate(info => { update.value = info })
+async function installUpdate() { if (state.dirty) await save(); desktop!.installUpdate() }
+
+/** The desktop app: the data folder is a path, picked once with the system dialog and remembered. */
+async function useDesktop(dir: string) {
+  try {
+    const s = new DesktopStorage('data', folderName(dir))
+    if (await s.readText('eldoria.json') == null) { emptyName.value = folderName(dir); phase.value = 'new-world'; return }
     await open(s)
     phase.value = 'ready'
   } catch (e) {
@@ -50,6 +70,12 @@ async function useHandle(h: FileSystemDirectoryHandle) {
 }
 
 onMounted(async () => {
+  if (desktop) {
+    const dir = await desktop.getFolder('data')
+    if (dir) return useDesktop(dir)
+    phase.value = 'need-folder'
+    return
+  }
   if (import.meta.env.DEV) {
     try { await open(new HttpStorage()); phase.value = 'ready' }
     catch (e) { startError.value = (e as Error).message; phase.value = 'need-folder' }
@@ -63,8 +89,13 @@ onMounted(async () => {
 })
 
 async function startWorld() {
-  if (!emptyFolder.value) return
   startError.value = ''
+  if (desktop) {
+    try { await createWorld(new DesktopStorage('data', emptyName.value), worldName.value); phase.value = 'ready' }
+    catch (e) { startError.value = (e as Error).message }
+    return
+  }
+  if (!emptyFolder.value) return
   try {
     const dir = await newWorldFolder(emptyFolder.value)
     await rememberFolder(dir)
@@ -80,6 +111,7 @@ async function reconnect() {
 }
 async function choose() {
   startError.value = ''
+  if (desktop) { const dir = await desktop.pickFolder('data'); if (dir) await useDesktop(dir); return }
   try { await useHandle(await pickFolder()) }
   catch (e) { if ((e as DOMException).name !== 'AbortError') startError.value = (e as Error).message }
 }
@@ -115,6 +147,11 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <span>⚠ The data check found {{ state.problems.filter(p => p.serious).length }} serious problem(s) in the data. Nothing was changed.</span>
       <a class="button" href="#/data" @click="state.problems = []">Show them</a>
     </div>
+    <div v-if="update" class="save-banner update-banner" role="status">
+      <template v-if="update.state === 'ready'"><span>⬆ DnDesk {{ update.version }} is downloaded.</span><button class="primary" @click="installUpdate">Restart and update</button></template>
+      <template v-else><span>⬆ DnDesk {{ update.version }} is out.</span><button class="primary" @click="desktop!.open(update.url!)">Download</button></template>
+      <button @click="update = null">Later</button>
+    </div>
     <main class="main">
       <HomeView v-if="route.current.name === 'home'" />
       <ListView v-else-if="route.current.name === 'list'" :type="route.current.type" />
@@ -149,8 +186,8 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
           <li><b>Firefox / Safari:</b> not supported.</li>
         </ul>
       </template>
-      <template v-else-if="phase === 'new-world' && emptyFolder">
-        <p>“{{ emptyFolder.name }}” has no world in it yet.</p>
+      <template v-else-if="phase === 'new-world'">
+        <p>“{{ emptyName }}” has no world in it yet.</p>
         <p class="muted small">Start a new one here, for example as a player keeping the spells, recipes and maps your DM shares.
           It starts in player mode; ⚙ → DM mode switches.</p>
         <input v-model="worldName" placeholder="Name, e.g. your character's name" @keydown.enter="startWorld" />
@@ -159,7 +196,8 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
         <p v-if="startError" class="error">{{ startError }}</p>
       </template>
       <template v-else>
-        <p>Choose the folder this file is in (or the <b>data</b> folder inside it). The browser remembers it, so this is needed only once.</p>
+        <p v-if="desktop">Choose your <b>data</b> folder (or the folder that holds it). DnDesk remembers it, so this is needed only once.</p>
+        <p v-else>Choose the folder this file is in (or the <b>data</b> folder inside it). The browser remembers it, so this is needed only once.</p>
         <button v-if="remembered" class="primary" @click="reconnect">Open “{{ remembered.name }}” again</button>
         <button :class="{ primary: !remembered }" @click="choose">Choose folder…</button>
         <p v-if="startError" class="error">{{ startError }}</p>

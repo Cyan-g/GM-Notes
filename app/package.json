@@ -5,11 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build"
+    "build": "vue-tsc --noEmit && vite build",
+    "desktop": "npm run build && electron .",
+    "dist": "npm run build && electron-builder --publish never -c.directories.output=%LOCALAPPDATA%/DnDesk-build",
+    "release": "npm run build && electron-builder --publish always"
   },
   "dependencies": {
     "d3-hierarchy": "^3.1.3",
     "d3-shape": "^3.2.1",
+    "electron-updater": "^6.8.11",
     "markdown-it": "^15.0.3",
     "vue": "^3.5.45"
   },
@@ -19,10 +23,62 @@
     "@types/markdown-it": "^14.2.0",
     "@types/node": "^26.6.6",
     "@vitejs/plugin-vue": "^6.0.11",
+    "electron": "^45.3.4",
+    "electron-builder": "^26.18.0",
     "typescript": "^6.0.3",
     "vite": "^8.3.8",
     "vite-plugin-singlefile": "^2.3.4",
     "vue-tsc": "^3.3.14",
     "yaml": "^2.9.1"
+  },
+  "allowScripts": {
+    "electron@45.3.4": true
+  },
+  "description": "A campaign wiki and toolkit for D&D: world, characters, spells and crafting.",
+  "author": "Cyan-g",
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "io.github.cyan-g.dndesk",
+    "productName": "DnDesk",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "DnDesk-Setup-${version}.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.role-playing-games",
+      "icon": "build/icon.png",
+      "identity": null
+    },
+    "dmg": {
+      "artifactName": "DnDesk-${version}-${arch}.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Cyan-g",
+        "repo": "DnDesk",
+        "releaseType": "release"
+      }
+    ]
   }
 }

@@ -1095,3 +1095,5 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 /* the data check on the Data page */
 .data-check { margin-top: 1rem; }
 .data-check li.serious .role { color: #b33; font-weight: 600; }
+
+.update-banner { background: color-mix(in srgb, var(--accent) 14%, var(--panel)); border-bottom-color: var(--accent); }

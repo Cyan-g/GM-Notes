@@ -6,6 +6,16 @@ The data files keep their names (`data/eldoria.json`, `eldoria-…` backups): th
 
 ## Using it
 
+There are two ways to run DnDesk. Both use the same `data` folder, so you can switch between them.
+
+- **The desktop app** (Windows and macOS) is installed once and reads and writes the data folder directly: no browser and no permission prompts.
+  - **First start:** choose the data folder in a normal folder dialog, or the folder that holds it. The app remembers it; ⚙ → Data & backups shows where it is and can change it.
+  - **Windows:** the installer (`DnDesk-Setup-<version>.exe`) installs for your user only and updates itself. When a new version is downloaded, a bar offers *Restart and update*.
+  - **macOS:** the app isn't signed with an Apple Developer ID, so the first time, right-click it and choose *Open*. It can't install updates itself; a bar says when a new version is out, with a download link.
+  - **Only one copy runs at a time.** Starting it again brings the open window forward.
+- **`DnDesk.html`** is the same app as a single web page, for players or any computer without the desktop app. It's described below.
+
+
 1. Double-click **DnDesk.html**. It opens in Edge, Chrome or Brave. In Brave, first set `brave://flags/#file-system-access-api` to Enabled.
 2. The first time, choose the folder it is in (`DnDesk`) or the **data** folder inside it. The browser remembers it; later it may ask you once per visit to allow access again.
 
@@ -124,6 +134,30 @@ npm run build      # type-checks and writes ../DnDesk.html
 - **Field types:** `EntryFields` gives each field key the type its kind stores, so `e.fields.recipe` is a `RecipeLine[]` and a misspelled key doesn't compile.
 - **Keys only known at runtime** (a table column, a form field) go through `byKey(e.fields)`.
 - **Adding a field:** adding it to the schema is enough.
+
+### The desktop app
+
+`app/electron/` holds the desktop shell:
+- **`main.cjs`** owns the window, the data folder (remembered in the app's settings), safe file writing, and updates.
+- **`preload.cjs`** is the only bridge the pages get: a few named calls, no Node.
+- **On the pages' side**, `src/storage/desktop.ts` is one more implementation of the same storage interface as the browser folder and the dev server.
+
+```bash
+cd app
+npm run desktop    # build the pages and open them in the desktop app
+npm run dist       # Windows installer, into %LOCALAPPDATA%\DnDesk-build
+```
+
+Building onto the USB stick fails: it's FAT32, which stores file times in 2-second steps, and the packager's lock file needs finer ones. So `npm run dist` builds on the local disk.
+
+**Releasing a version:**
+1. Raise `version` in `app/package.json`.
+2. Commit, then tag the commit, e.g. `v0.2.0`.
+3. Push the commit and the tag.
+
+`.github/workflows/release.yml` then builds the Windows installer and the Mac `.dmg`/`.zip` on GitHub's machines and publishes them as a GitHub release, which is where the apps look for updates.
+
+While the repository is private, the apps can't see its releases, so update checks quietly find nothing. That changes once it's public.
 
 The switch from Obsidian happened on 2026-11-15. The vault was archived as `the old vault backup`, and from then on the app is the only place to edit. The import script was removed afterwards (it's in the git history, `app/scripts/migrate.mjs`), so nothing can overwrite the data with the old vault any more.
 

@@ -4,6 +4,8 @@ data/
 # Installed and built by npm; recreate with `npm install` / `npm run build`
 app/node_modules/
 app/dist/
+# Desktop builds (installers); published as GitHub releases
+app/release/
 
 # macOS metadata files
 ._*

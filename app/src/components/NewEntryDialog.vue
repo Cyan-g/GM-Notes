@@ -10,8 +10,8 @@ import { go, hrefEntry } from '../router'
 
 const open = defineModel<boolean>({ required: true })
 const props = defineProps<{ type?: EntryType; fields?: Record<string, unknown> }>()
-/** Player mode creates only what it shows: characters, spells, items (crafting, inventory) and places (maps). */
-const types = computed(() => (playerMode.value ? SCHEMA.filter(t => ['pc', 'spell', 'item', 'place'].includes(t.type)) : SCHEMA))
+/** Player mode creates only what it shows: characters, campaigns and session notes, places and events, spells and items. */
+const types = computed(() => (playerMode.value ? SCHEMA.filter(t => ['pc', 'campaign', 'session', 'place', 'event', 'spell', 'item'].includes(t.type)) : SCHEMA))
 const type = ref<EntryType>('npc')
 const name = ref('')
 const input = ref<HTMLInputElement>()

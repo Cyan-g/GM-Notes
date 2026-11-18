@@ -3,7 +3,7 @@ import { SCHEMA } from './model/schema'
 import type { Entry, EntryType } from './model/types'
 import { computed } from 'vue'
 import { byType, childrenOf, get, playerMode, state } from './store'
-import { hrefDashboard, hrefEntry, hrefList, hrefMap, type Route } from './router'
+import { hrefDashboard, hrefEntry, hrefList, type Route } from './router'
 import { newEntry } from './ui'
 import { DASHBOARDS } from './dashboards'
 
@@ -115,10 +115,12 @@ const kindNode = (k: string, plural: string): MenuNode => {
 export const MENUS: TopMenu[] = [
   {
     title: 'Campaign',
+    player: true,
     owns: r => r.name === 'tracker' || ['campaign', 'session', 'encounter', 'pc'].includes(typeOf(r) ?? ''),
     // Sessions have no item of their own: each campaign's page lists its sessions and starts new ones.
-    // The fight that's running, next to the encounters it's started from.
-    items: () => [
+    // The fight that's running, next to the encounters it's started from. Players keep only their campaigns
+    // (and the session notes on them); their character has a menu of its own.
+    items: () => playerMode.value ? [typeNode('campaign')] : [
       typeNode('campaign'),
       { label: 'Initiative', icon: '⚔', href: '#/tracker', hint: state.db?.tracker?.round ? `R${state.db.tracker.round}` : undefined },
       typeNode('encounter'),
@@ -128,6 +130,7 @@ export const MENUS: TopMenu[] = [
   {
     title: 'World',
     home: '#/atlas',
+    player: true,
     owns: r => r.name === 'atlas' || r.name === 'calendar' || ['place', 'event'].includes(typeOf(r) ?? ''),
     // The world's places first, cascading by "Located in" (Eldoria › Ardenvale › Desolation), then the lists.
     items: () => [{ label: 'Atlas', icon: '🗺', href: '#/atlas' }, { label: 'Timeline', icon: '⏳', href: '#/atlas/timeline' }, { label: 'Calendar', icon: '📅', href: '#/calendar' }, SEP, ...entriesOf('place'), SEP, ...(['place', 'event'] as EntryType[]).map(typeNode)],
@@ -198,18 +201,6 @@ export const MENUS: TopMenu[] = [
       SEP,
       { label: 'New character…', action: () => newEntry('pc') },
     ],
-  },
-  {
-    // Player mode's World: the maps in this world (usually ones the DM shared), each opening on its map.
-    title: 'Maps',
-    player: true,
-    playerOnly: true,
-    owns: r => r.name === 'map' || typeOf(r) === 'place',
-    items: () => {
-      const maps = (byType.value.get('place') ?? []).filter(p => p.fields.map).sort(byName)
-      return maps.length ? maps.map(p => ({ label: p.name, icon: '🗺', href: hrefMap(p.id) }))
-        : [{ label: 'No maps yet: import one with ⚙ → Import', hint: '' }]
-    },
   },
 ]
 

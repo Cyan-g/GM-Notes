@@ -4,7 +4,7 @@
 import { computed, ref } from 'vue'
 import type { Entry, Id, WorldDate } from '../model/types'
 import { byType, childrenOf, db, entries, formatDate, get, placePath, playerMode, touch } from '../store'
-import { hrefDashboard, hrefList, hrefMap } from '../router'
+import { hrefDashboard, hrefList } from '../router'
 import { DASHBOARDS } from '../dashboards'
 import { newEntry } from '../ui'
 import { toggleFavourite } from '../edit'
@@ -36,11 +36,10 @@ const TOOLS = [
   { icon: '📅', label: 'Calendar', href: '#/calendar' },
 ]
 
-// Player mode: only the player's tools, and the maps instead of the world's regions.
-const PLAYER_TOOLS = ['#/spellbook', '#/crafting']
+// Player mode: the player's tools and the world, without the DM's (the fight, the armory, the lore cards).
+const PLAYER_TOOLS = ['#/spellbook', '#/crafting', '#/atlas', '#/atlas/timeline', '#/calendar']
 const tools = computed(() => (playerMode.value ? TOOLS.filter(t => PLAYER_TOOLS.includes(t.href)) : TOOLS))
 const desks = computed(() => DASHBOARDS.filter(x => x.id !== 'recent' && (!playerMode.value || ['spells', 'crafting'].includes(x.id))))
-const maps = computed(() => list('place').filter(p => p.fields.map).sort(byName))
 const characters = computed(() => list('pc').sort(byName).map(p => {
   const s = sheetOf(p)
   return { p, hp: s ? `${s.hp ?? s.maxHp ?? '?'} / ${s.maxHp ?? '?'} HP` : '', ac: s ? `AC ${armorClass(s).ac}` : '' }
@@ -97,11 +96,11 @@ const sessionDate = (s: Entry) => { const d = s.fields.date as WorldDate | undef
   <div class="home">
     <header>
       <h1>{{ db().meta.title }}</h1>
-      <p v-if="!playerMode" class="muted">Today in the world: <a href="#/calendar"><b>{{ formatDate(db().meta.today) }}</b></a> · {{ entries.length }} entries</p>
+      <p class="muted">Today in the world: <a href="#/calendar"><b>{{ formatDate(db().meta.today) }}</b></a> · {{ entries.length }} entries</p>
     </header>
 
     <!-- the desk -->
-    <div class="home-desk">
+    <div class="home-desk" :class="{ four: playerMode }">
       <section v-if="playerMode" class="card home-campaign">
         <h3>🛡️ Character</h3>
         <ul v-if="characters.length" class="rel">
@@ -109,7 +108,7 @@ const sessionDate = (s: Entry) => { const d = s.fields.date as WorldDate | undef
         </ul>
         <button class="chip-btn" @click="newEntry('pc')">＋ {{ characters.length ? 'Another character' : 'Your character' }}</button>
       </section>
-      <section v-if="!playerMode" class="card home-campaign">
+      <section class="card home-campaign">
         <h3>🎲 Campaign</h3>
         <template v-if="current">
           <p class="home-current"><EntryLink :id="current.c.id" /> <span class="muted small">{{ current.sessions.length }} sessions</span></p>
@@ -160,15 +159,8 @@ const sessionDate = (s: Entry) => { const d = s.fields.date as WorldDate | undef
       </section>
     </div>
 
-    <!-- the maps (player mode) -->
-    <section v-if="playerMode" class="card">
-      <h3>🗺 Maps</h3>
-      <ul v-if="maps.length" class="rel compact"><li v-for="m in maps" :key="m.id"><a :href="hrefMap(m.id)">{{ m.name }}</a></li></ul>
-      <p v-else class="muted small">Maps your DM shares show up here: ⚙ → Import from a file.</p>
-    </section>
-
     <!-- the world -->
-    <section v-if="world && !playerMode" class="card home-regions">
+    <section v-if="world" class="card home-regions">
       <h3>🌍 Regions of <EntryLink :id="world.id" /> <a class="muted small" href="#/atlas">Atlas →</a></h3>
       <div class="table-wrap">
         <table class="grid">

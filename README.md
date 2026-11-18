@@ -23,9 +23,9 @@ The data files keep their names (`data/eldoria.json`, `eldoria-…` backups): th
 
 - **DM mode** (your Eldoria) shows everything.
 - **Player mode** is for a player's own copy.
-  - The menus are only Character, Spells, Crafting and Maps.
-  - The home page shows the characters, spellbook, workbench, favourites, maps and links.
-  - New entries can only be characters, spells, items and places.
+  - The menus are Character, Campaign (the campaigns, with their session notes), World (Atlas, Timeline, Calendar, places and events), Spells and Crafting. People, the Archive, Initiative and encounters are hidden.
+  - The home page shows the characters, the campaign, the tools, favourites, the regions and links, but not the deities and races.
+  - New entries can be characters, campaigns, sessions, places, events, spells and items.
   - DM-only text is never shown.
 
 To set up a player: give them `DnDesk.html` in a folder of its own. They open it and choose that folder. Because there's no world in it yet, the app offers **Start a new world here**. That creates the `data` folder and starts in player mode. Then they import the spells, items and maps you send them.

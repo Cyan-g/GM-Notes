@@ -109,13 +109,14 @@ export interface CharacterSheet {
   crafting?: { known: Id[] }
 }
 /**
- * What a character is proficient with, picked from the same lists items use (schema.ts): armor types,
- * weapon categories or single weapons ("Rapier"), tools; plus languages and anything else as text.
+ * What a character is proficient with, by reference: option ids from the lists items use (armor types, weapon
+ * categories or base weapons, languages) and Tool item ids; plus anything else as text.
  */
 export interface Proficiencies {
   armor: string[]
   weapons: string[]
-  tools: string[]
+  /** Tool items. */
+  tools: Id[]
   languages: string[]
   other?: string
 }
@@ -241,6 +242,8 @@ export interface Database {
     currentCharacter?: Id
     /** Who this world is for. Player mode trims the app to spells, crafting and maps and hides DM-only text. */
     mode?: 'dm' | 'player'
+    /** The dropdown lists as changed on the Lists page (model/lists.ts); a list never changed isn't stored. */
+    lists?: Record<string, import('./lists').ListOption[]>
     /** Colour theme and heading font (see theme.ts). */
     theme?: import('../theme').ThemeSettings
   }

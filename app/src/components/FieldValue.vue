@@ -3,7 +3,8 @@
 import { computed } from 'vue'
 import type { FieldDef } from '../model/schema'
 import type { Entry, RecipeLine, StockLine, WorldDate } from '../model/types'
-import { formatDate, formatMoney, get } from '../store'
+import { fieldLabel, formatDate, formatMoney, get } from '../store'
+import { listKeyOf } from '../model/lists'
 import EntryLink from './EntryLink.vue'
 import EncounterTable from './EncounterTable.vue'
 import RanksTable from './RanksTable.vue'
@@ -12,6 +13,7 @@ import { CRAFTING_RULE, craftingTime } from '../crafting'
 
 const props = defineProps<{ def: FieldDef; value: unknown; entry: Entry }>()
 
+const listed = computed(() => !!listKeyOf(props.def))
 const recipe = computed(() => {
   const lines = (props.value as RecipeLine[]) ?? []
   const rows = lines.map(l => {
@@ -40,6 +42,10 @@ const stock = computed(() => {
   <template v-else-if="def.kind === 'weight'">{{ value }} lb</template>
   <template v-else-if="def.kind === 'bool'">{{ value ? 'Yes' : 'No' }}</template>
   <template v-else-if="def.kind === 'date'">{{ formatDate(value as WorldDate) }}</template>
+  <template v-else-if="def.kind === 'select'">{{ fieldLabel(def, value) }}</template>
+  <template v-else-if="def.kind === 'list' && listed">
+    <span class="chips"><span v-for="(v, i) in (value as string[])" :key="i" class="chip">{{ fieldLabel(def, v) }}</span></span>
+  </template>
   <template v-else-if="def.kind === 'list'">
     <span class="chips"><span v-for="(v, i) in (value as string[])" :key="i" class="chip" v-html="renderInline(String(v))" /></span>
   </template>

@@ -2,6 +2,7 @@
 // The People menu's front page: every organization as a card, grouped by the region its seat is in,
 // with its leader, members and ranks at a glance; and the people tables beside it.
 import { computed, ref } from 'vue'
+import { optionLabel, listOptions } from '../store'
 import type { Entry, Id, RankLine } from '../model/types'
 import { byType, childrenOf, isCurrent, placePath, relationsOf } from '../store'
 import { hrefDashboard, hrefEntry, hrefList } from '../router'
@@ -11,12 +12,12 @@ import EntryLink from '../components/EntryLink.vue'
 
 const orgs = computed(() => byType.value.get('organization') ?? [])
 const npcs = computed(() => byType.value.get('npc') ?? [])
-const ORG_TYPES = (TYPES.organization.fields.find(f => f.key === 'orgType')?.options ?? []) as string[]
+const ORG_TYPES = computed(() => listOptions('organization.orgType').map(o => o.id))
 
 // ---- filters ----
 const typeFilter = ref<string>('')
 const q = ref('')
-const types = computed(() => ORG_TYPES.filter(t => orgs.value.some(o => o.fields.orgType === t)))
+const types = computed(() => ORG_TYPES.value.filter(t => orgs.value.some(o => o.fields.orgType === t)))
 const shown = computed(() => orgs.value.filter(o =>
   (!typeFilter.value || (typeFilter.value === '—' ? !o.fields.orgType : o.fields.orgType === typeFilter.value))
   && (!q.value.trim() || [o.name, ...o.aliases].some(n => n.toLowerCase().includes(q.value.trim().toLowerCase())))))
@@ -82,7 +83,7 @@ const people = computed(() => [
           <input v-model="q" placeholder="Find an organization…" />
           <div class="seg wrap">
             <button :class="{ on: !typeFilter }" @click="typeFilter = ''">All</button>
-            <button v-for="t in types" :key="t" :class="{ on: typeFilter === t }" @click="typeFilter = typeFilter === t ? '' : t">{{ t }}</button>
+            <button v-for="t in types" :key="t" :class="{ on: typeFilter === t }" @click="typeFilter = typeFilter === t ? '' : t">{{ optionLabel('organization.orgType', t) }}</button>
             <button v-if="orgs.some(o => !o.fields.orgType)" :class="{ on: typeFilter === '—' }" title="Organizations without a type" @click="typeFilter = typeFilter === '—' ? '' : '—'">No type</button>
           </div>
         </div>
@@ -93,7 +94,7 @@ const people = computed(() => [
             <article v-for="o in g.list" :key="o.id" class="card org-card">
               <header>
                 <a class="org-name" :href="hrefEntry(o.id)">{{ o.name }}</a>
-                <span v-if="o.fields.orgType" class="badge">{{ o.fields.orgType }}</span>
+                <span v-if="o.fields.orgType" class="badge">{{ optionLabel('organization.orgType', o.fields.orgType) }}</span>
               </header>
               <p v-if="o.fields.seat" class="org-line">📍 <EntryLink :id="o.fields.seat" /></p>
               <p v-if="leader(o)" class="org-line">👑 <EntryLink :id="leader(o)!.id" /><span v-if="leader(o)!.role" class="muted small"> · {{ leader(o)!.role }}</span></p>

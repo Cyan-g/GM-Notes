@@ -1,5 +1,6 @@
 // What the top menu bar shows. Children are built lazily, only when a submenu opens.
 import { SCHEMA, byKey } from './model/schema'
+import { optionLabel, listOptions } from './store'
 import type { Entry, EntryType } from './model/types'
 import { computed } from 'vue'
 import { byType, childrenOf, get, playerMode, state } from './store'
@@ -68,13 +69,13 @@ function entriesOf(t: EntryType): MenuNode[] {
     case 'note':
       return grouped(list, e => refName(e, 'campaign'))
     case 'item':
-      return grouped(list, e => String(e.fields.kind ?? ''), SCHEMA.find(s => s.type === 'item')!.fields.find(f => f.key === 'kind')!.options)
+      return grouped(list, e => optionLabel('item.kind', e.fields.kind ?? ''), listOptions('item.kind').map(o => o.label))
     case 'spell':
       return grouped(list, e => (e.fields.level === 'Cantrip' ? 'Cantrips' : e.fields.level ? `Level ${e.fields.level}` : ''), ['Cantrips', ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `Level ${n}`)])
     case 'feat':
-      return grouped(list, e => String(e.fields.category ?? ''))
+      return grouped(list, e => optionLabel('feat.category', e.fields.category ?? ''))
     case 'subclass':
-      return grouped(list, e => String(e.fields.class ?? ''))
+      return grouped(list, e => optionLabel('class', e.fields.class ?? ''))
     default:
       return list.sort(byName).map(e => entryNode(e))
   }
@@ -191,10 +192,11 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'Archive',
-    owns: r => dashOf(r) === 'armory' || (['item', 'creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? '')))),
-    // The armory tables (weapons, armor, other items), then every kind of entry kept for reference.
+    owns: r => dashOf(r) === 'armory' || r.name === 'lists' || (['item', 'creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? '')))),
+    // The armory tables (weapons, armor, other items), every kind of entry kept for reference, and the dropdown lists.
     items: () => [{ label: 'Armory', icon: '⚔️', href: hrefDashboard('armory'), children: () => dashViews('armory') }, SEP,
-      ...(['item', 'creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'] as EntryType[]).map(typeNode)],
+      ...(['item', 'creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'] as EntryType[]).map(typeNode), SEP,
+      { label: 'Lists', icon: '☰', href: '#/lists', hint: 'dropdown options' }],
   },
   {
     // Player mode: the characters, each page being their sheet.

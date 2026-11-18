@@ -3,6 +3,7 @@
 // Items open in a pop-up; they can be dragged onto the Equipped card, and dropping one back here unequips it.
 // `side`: the narrow version beside the sheet (player mode), with equip and attune left to the pop-up and dragging.
 import { computed, ref } from 'vue'
+import { optionLabel } from '../store'
 import type { CharacterSheet, Entry } from '../model/types'
 import { formatMoney, get, state } from '../store'
 import { blankSheet, canAttune, canEquip, carried, draggedLine, dragged, editSheet, endDrag, sheetOf, startDrag } from '../sheet'
@@ -59,7 +60,7 @@ function onDrop(ev: DragEvent) {
         <td class="cs-iname">
           <button v-if="e" class="link-btn cs-item" @click="shown = i">{{ e.name }}</button>
           <input v-else :value="l.name ?? ''" placeholder="Name" :disabled="ro" @change="edit(x => x.inventory[i].name = text($event))" />
-          <span v-if="e?.fields.kind && !side" class="muted small cs-kind">{{ e.fields.kind }}</span>
+          <span v-if="e?.fields.kind && !side" class="muted small cs-kind">{{ optionLabel('item.kind', e.fields.kind) }}</span>
         </td>
         <template v-if="!side">
           <td><button v-if="canEquip(l)" class="chip-toggle" :class="{ on: l.equipped }" :disabled="ro" @click="edit(x => x.inventory[i].equipped = !l.equipped || undefined)">{{ l.equipped ? 'Equipped' : 'Equip' }}</button></td>

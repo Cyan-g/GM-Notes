@@ -2,6 +2,7 @@
 // The caster's spellbook: attack bonus and save DC, spell slots to tick off, and the prepared spells
 // with their attack or save worked out.
 import { computed, ref } from 'vue'
+import { optionLabel } from '../store'
 import type { Entry, Id, Spellbook } from '../model/types'
 import { db, get, touch } from '../store'
 import { activeSpellbook, currentPc, spellStats } from '../sheet'
@@ -81,9 +82,9 @@ const preparedList = computed(() => spells([...book.value.always, ...book.value.
 /** What the spell asks for, with this caster's numbers filled in. */
 function check(e: Entry) {
   const f = e.fields
-  if (f.spellType === 'Saving throw') return `${f.savingThrow ? String(f.savingThrow).slice(0, 3).toUpperCase() + ' ' : ''}save DC ${dc.value ?? '?'}`
+  if (f.spellType === 'Saving throw') return `${f.savingThrow ? optionLabel('ability', f.savingThrow).slice(0, 3).toUpperCase() + ' ' : ''}save DC ${dc.value ?? '?'}`
   if (f.spellType === 'Attack') return `Spell attack ${attack.value != null ? (attack.value >= 0 ? '+' : '') + attack.value : '?'}`
-  return String(f.spellType ?? '')
+  return optionLabel('spell.spellType', f.spellType)
 }
 const alwaysTitle = (id: Id) => (book.value.always.includes(id)
   ? "Always prepared (doesn't count). Click to make it a normal prepared spell"
@@ -202,7 +203,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
                 <a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a>
               </td>
               <td>{{ levelLabel(e) }}</td>
-              <td>{{ e.fields.school ?? '' }}</td>
+              <td>{{ optionLabel('spell.school', e.fields.school) }}</td>
               <td>{{ e.fields.castingTime ?? '' }}</td>
               <td>{{ e.fields.range ?? '' }}</td>
               <td>{{ e.fields.duration ?? '' }}</td>

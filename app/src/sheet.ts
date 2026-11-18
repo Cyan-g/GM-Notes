@@ -51,37 +51,30 @@ export function profsToEdit(s: CharacterSheet): Proficiencies {
   return p
 }
 
-/** A weapon's base weapon: "Rapier" from the subtype "Melee (Rapier)", else the subtype, else the name. */
-export function baseWeapon(e: Entry): string {
-  const sub = String(e.fields.subtype ?? '').trim()
-  return sub.match(/\(([^)]+)\)/)?.[1].trim() || sub || e.name
-}
-const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
-/** The category of a standard weapon by name ("Light crossbow" → Simple), if it is one. */
+/** The category of a standard weapon ("Light Crossbow" → Simple), if it is one. */
 export function categoryOf(weapon: string): 'Simple' | 'Martial' | undefined {
-  if (SIMPLE_WEAPONS.some(w => same(w, weapon))) return 'Simple'
-  if (MARTIAL_WEAPONS.some(w => same(w, weapon))) return 'Martial'
+  if (SIMPLE_WEAPONS.includes(weapon)) return 'Simple'
+  if (MARTIAL_WEAPONS.includes(weapon)) return 'Martial'
   return undefined
 }
 
 /**
- * Whether a character is proficient with an item: a weapon by its category or by its base weapon, armor by its
- * type, a tool by the tool it is. Undefined when the item needs no proficiency or doesn't say which it needs.
+ * Whether a character is proficient with an item: a weapon by its category or its base weapon, armor by its type,
+ * a Tool item by being that tool. Undefined when the item needs no proficiency or doesn't say which it needs.
  */
 export function proficientWith(s: CharacterSheet | undefined, e: Entry): boolean | undefined {
   const p = profsOf(s)
-  const has = (list: string[], v: string) => list.some(x => same(x, v))
   if (e.fields.kind === 'Weapon') {
-    const base = baseWeapon(e)
-    const cat = e.fields.weaponCategory ?? categoryOf(base)
-    if (!cat) return has(p.weapons, base) || has(p.weapons, e.name) ? true : undefined
-    return has(p.weapons, cat) || has(p.weapons, base) || has(p.weapons, e.name)
+    const base = e.fields.baseWeapon
+    const cat = e.fields.weaponCategory ?? (base ? categoryOf(base) : undefined)
+    if (!cat) return base && p.weapons.includes(base) ? true : undefined
+    return p.weapons.includes(cat) || (!!base && p.weapons.includes(base))
   }
   if (e.fields.kind === 'Armor') {
     const t = e.fields.armorType
-    return !t || t === 'Clothing' ? undefined : has(p.armor, t)
+    return !t || t === 'Clothing' ? undefined : p.armor.includes(t)
   }
-  if (e.fields.kind === 'Tool' && e.fields.tool) return has(p.tools, e.fields.tool)
+  if (e.fields.kind === 'Tool') return p.tools.includes(e.id)
   return undefined
 }
 

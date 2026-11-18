@@ -12,9 +12,16 @@ export interface FieldDef {
   key: string
   label: string
   kind: FieldKind
+  /** A choice field's starting options (see lists.ts: the world's lists are managed on the Lists page). */
   options?: readonly string[]
+  /** The list it picks from, when several fields share one; otherwise "<type>.<key>". */
+  list?: string
+  /** Options the app relies on: they can be renamed but not removed. */
+  fixed?: readonly string[]
   /** For ref/refs: which entry types may be picked. */
   to?: readonly EntryType[]
+  /** For ref: only entries whose field has one of these values, e.g. Tool items. */
+  pick?: { readonly field: string; readonly is: readonly string[] }
   /** Only show when another field has one of these values, e.g. weapon fields when kind = Weapon. */
   when?: { readonly field: string; readonly is: readonly string[] }
   group?: string
@@ -31,24 +38,16 @@ export interface TypeDef {
 const SIZES = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']
 const ABILITY = ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma']
 const DAMAGE = ['Acid', 'Bludgeoning', 'Cold', 'Fire', 'Force', 'Lightning', 'Necrotic', 'Piercing', 'Poison', 'Psychic', 'Radiant', 'Slashing', 'Thunder']
+const SPELL_LEVELS = ['Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 const CLASSES = ['Artificer', 'Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard']
 
 export const PLACE_KINDS = ['Shop', 'Tavern', 'Temple', 'Dungeon', 'Landmark', 'Plane']
 export const ITEM_KINDS = ['Weapon', 'Armor', 'Tool', 'Potion', 'Poison', 'Ingredient', 'Scroll', 'Tome', 'Ring', 'Accessory', 'Instrument', 'Adventuring Gear', 'Flask', 'Other']
 
-// What a character can be proficient with. An item says which of these it is (a weapon's category, an armor's
-// type, the tool a tool item is), and the character sheet's proficiencies are picked from the same lists.
-export const WEAPON_CATEGORIES = ['Simple', 'Martial']
-export const ARMOR_TYPES = ['Light', 'Medium', 'Heavy', 'Shield', 'Clothing']
-/** Armor types a character can be proficient in (clothing needs no proficiency). */
-export const ARMOR_PROFS = ['Light', 'Medium', 'Heavy', 'Shield']
-export const TOOLS = [
-  "Alchemist's Supplies", "Brewer's Supplies", "Calligrapher's Supplies", "Carpenter's Tools", "Cartographer's Tools",
-  "Cobbler's Tools", "Cook's Utensils", "Glassblower's Tools", "Jeweler's Tools", "Leatherworker's Tools", "Mason's Tools",
-  "Painter's Supplies", "Potter's Tools", "Smith's Tools", "Tinker's Tools", "Weaver's Tools", "Woodcarver's Tools",
-  'Disguise Kit', 'Forgery Kit', 'Gaming Set', 'Herbalism Kit', 'Musical Instrument', "Navigator's Tools", "Poisoner's Kit",
-  "Thieves' Tools", 'Vehicles (Land)', 'Vehicles (Water)',
-]
+// What a character can be proficient with. An item says which of these it is (a weapon's category and base
+// weapon, an armor's type; a Tool item is the tool), and the sheet's proficiencies pick from the same lists.
+const WEAPON_CATEGORIES = ['Simple', 'Martial']
+const ARMOR_TYPES = ['Light', 'Medium', 'Heavy', 'Shield', 'Clothing']
 /** The standard weapons and their category, so a weapon's category can be told from its base weapon. */
 export const SIMPLE_WEAPONS = ['Club', 'Dagger', 'Greatclub', 'Handaxe', 'Javelin', 'Light Hammer', 'Mace', 'Quarterstaff', 'Sickle', 'Spear', 'Dart', 'Light Crossbow', 'Shortbow', 'Sling']
 export const MARTIAL_WEAPONS = ['Battleaxe', 'Flail', 'Glaive', 'Greataxe', 'Greatsword', 'Halberd', 'Lance', 'Longsword', 'Maul', 'Morningstar', 'Pike', 'Rapier', 'Scimitar', 'Shortsword', 'Trident', 'War Pick', 'Warhammer', 'Whip', 'Blowgun', 'Hand Crossbow', 'Heavy Crossbow', 'Longbow', 'Net']
@@ -95,7 +94,7 @@ export const SCHEMA = [
     type: 'place', label: 'Place', plural: 'Places', icon: '📍', fields: [
       // No size categories (world, region, city…): places nest freely, "Located in" is what matters.
       // A kind is only for places that behave differently (shops have stock) or are worth filtering by.
-      { key: 'placeType', label: 'Kind', kind: 'select', options: PLACE_KINDS },
+      { key: 'placeType', label: 'Kind', kind: 'select', options: PLACE_KINDS, fixed: ['Shop', 'Tavern'] },
       { key: 'parent', label: 'Located in', kind: 'ref', to: ['place'] },
       { key: 'markup', label: 'Price markup', kind: 'number', when: { field: 'placeType', is: ['Shop', 'Tavern'] }, group: 'Shop' },
       { key: 'stock', label: 'Stock', kind: 'stock', when: { field: 'placeType', is: ['Shop', 'Tavern'] }, group: 'Shop' },
@@ -107,7 +106,7 @@ export const SCHEMA = [
     type: 'race', label: 'Race', plural: 'Races', icon: '🧬', fields: [
       // A subrace is a race of its own that names its main race here (Hill Dwarf: Subrace of Dwarf).
       { key: 'parent', label: 'Subrace of', kind: 'ref', to: ['race'] },
-      { key: 'size', label: 'Size', kind: 'select', options: SIZES },
+      { key: 'size', label: 'Size', kind: 'select', options: SIZES, list: 'size' },
       { key: 'speed', label: 'Speed', kind: 'text' },
       { key: 'abilityIncrease', label: 'Ability scores', kind: 'text' },
       { key: 'languages', label: 'Languages', kind: 'list' },
@@ -116,7 +115,7 @@ export const SCHEMA = [
   },
   {
     type: 'deity', label: 'Deity', plural: 'Deities', icon: '✨', fields: [
-      { key: 'rank', label: 'Rank', kind: 'select', options: ['Greater deity', 'Lesser deity', 'Demigod', 'Other'] },
+      { key: 'rank', label: 'Rank', kind: 'select', options: ['Greater deity', 'Lesser deity', 'Demigod', 'Other'], fixed: ['Greater deity', 'Lesser deity'] },
       { key: 'domains', label: 'Domains', kind: 'list' },
       { key: 'alignment', label: 'Alignment', kind: 'text' },
       { key: 'symbol', label: 'Symbol', kind: 'text' },
@@ -130,7 +129,7 @@ export const SCHEMA = [
   },
   {
     type: 'item', label: 'Item', plural: 'Items', icon: '🗡️', fields: [
-      { key: 'kind', label: 'Kind', kind: 'select', options: ITEM_KINDS },
+      { key: 'kind', label: 'Kind', kind: 'select', options: ITEM_KINDS, fixed: ['Weapon', 'Armor', 'Tool', 'Potion', 'Poison', 'Ingredient', 'Scroll', 'Other'] },
       { key: 'spell', label: 'Spell', kind: 'ref', to: ['spell'], when: { field: 'kind', is: ['Scroll'] } },
       { key: 'subtype', label: 'Subtype', kind: 'text' },
       { key: 'rarity', label: 'Rarity', kind: 'select', options: ['Common', 'Uncommon', 'Rare', 'Very rare', 'Legendary', 'Artifact'] },
@@ -139,25 +138,26 @@ export const SCHEMA = [
       { key: 'value', label: 'Value', kind: 'money' },
       { key: 'weight', label: 'Weight', kind: 'weight' },
       { key: 'summary', label: 'Short description', kind: 'longtext' },
-      { key: 'weaponCategory', label: 'Category', kind: 'select', options: WEAPON_CATEGORIES, when: W, group: 'Weapon' },
+      { key: 'weaponCategory', label: 'Weapon category', kind: 'select', options: WEAPON_CATEGORIES, fixed: WEAPON_CATEGORIES, when: W, group: 'Weapon' },
+      { key: 'baseWeapon', label: 'Base weapon', kind: 'select', options: [...SIMPLE_WEAPONS, ...MARTIAL_WEAPONS].sort(), when: W, group: 'Weapon' },
       { key: 'damage', label: 'Damage', kind: 'text', when: W, group: 'Weapon' },
       { key: 'damageType', label: 'Damage type', kind: 'list', options: DAMAGE, when: W, group: 'Weapon' },
       { key: 'range', label: 'Range', kind: 'text', when: W, group: 'Weapon' },
       { key: 'properties', label: 'Properties', kind: 'list', when: { field: 'kind', is: ['Weapon', 'Ingredient'] } },
       { key: 'bonus', label: 'Bonus', kind: 'text', when: { field: 'kind', is: ['Weapon', 'Armor'] } },
-      { key: 'armorType', label: 'Armor type', kind: 'select', options: ARMOR_TYPES, when: A, group: 'Armor' },
+      { key: 'armorType', label: 'Armor type', kind: 'select', options: ARMOR_TYPES, fixed: ARMOR_TYPES, when: A, group: 'Armor' },
       { key: 'armorClass', label: 'Armor class', kind: 'text', when: A, group: 'Armor' },
       { key: 'slot', label: 'Slot', kind: 'select', options: ['Head', 'Chest', 'Cloak', 'Gloves', 'Boots', 'Shield'], when: A, group: 'Armor' },
-      { key: 'tool', label: 'Tool', kind: 'select', options: TOOLS, when: { field: 'kind', is: ['Tool'] } },
       { key: 'category', label: 'Ingredient type', kind: 'select', options: ['Plant', 'Mineral', 'Body Part', 'Fluid', 'Other'], when: ING, group: 'Ingredient' },
-      { key: 'craftingType', label: 'Crafted with', kind: 'select', options: [...TOOLS, 'Other'], when: CRAFT, group: 'Crafting' },
+      // The Tool item a recipe is crafted with (proficiency in it is what the Workbench checks).
+      { key: 'craftingType', label: 'Crafted with', kind: 'ref', to: ['item'], pick: { field: 'kind', is: ['Tool'] }, when: CRAFT, group: 'Crafting' },
       { key: 'effect', label: 'Effect', kind: 'longtext', when: { field: 'kind', is: ['Potion', 'Poison', 'Other'] }, group: 'Crafting' },
       { key: 'recipe', label: 'Recipe', kind: 'recipe', when: CRAFT, group: 'Crafting' },
     ],
   },
   {
     type: 'spell', label: 'Spell', plural: 'Spells', icon: '🔮', fields: [
-      { key: 'level', label: 'Level', kind: 'select', options: ['Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9'] },
+      { key: 'level', label: 'Level', kind: 'select', options: SPELL_LEVELS, fixed: SPELL_LEVELS },
       { key: 'school', label: 'School', kind: 'select', options: ['Abjuration', 'Conjuration', 'Divination', 'Enchantment', 'Evocation', 'Illusion', 'Necromancy', 'Transmutation'] },
       { key: 'castingTime', label: 'Casting time', kind: 'text' },
       { key: 'range', label: 'Range', kind: 'text' },
@@ -167,9 +167,9 @@ export const SCHEMA = [
       { key: 'verbal', label: 'Verbal', kind: 'bool', group: 'Components' },
       { key: 'somatic', label: 'Somatic', kind: 'bool', group: 'Components' },
       { key: 'material', label: 'Material', kind: 'text', group: 'Components' },
-      { key: 'spellType', label: 'Type', kind: 'select', options: ['Attack', 'Saving throw', 'Healing', 'Buff', 'Debuff', 'Utility', 'Control', 'Summoning'] },
-      { key: 'savingThrow', label: 'Saving throw', kind: 'select', options: ABILITY },
-      { key: 'classes', label: 'Classes', kind: 'list', options: CLASSES },
+      { key: 'spellType', label: 'Type', kind: 'select', options: ['Attack', 'Saving throw', 'Healing', 'Buff', 'Debuff', 'Utility', 'Control', 'Summoning'], fixed: ['Attack', 'Saving throw'] },
+      { key: 'savingThrow', label: 'Saving throw', kind: 'select', options: ABILITY, list: 'ability', fixed: ABILITY },
+      { key: 'classes', label: 'Classes', kind: 'list', options: CLASSES, list: 'class' },
       { key: 'summary', label: 'Short description', kind: 'longtext' },
     ],
   },
@@ -184,12 +184,12 @@ export const SCHEMA = [
       { key: 'summary', label: 'Description', kind: 'longtext' },
     ],
   },
-  { type: 'subclass', label: 'Subclass', plural: 'Subclasses', icon: '📜', fields: [{ key: 'class', label: 'Class', kind: 'select', options: CLASSES }] },
+  { type: 'subclass', label: 'Subclass', plural: 'Subclasses', icon: '📜', fields: [{ key: 'class', label: 'Class', kind: 'select', options: CLASSES, list: 'class' }] },
   {
     type: 'event', label: 'Event', plural: 'Events', icon: '⏳', fields: [
       { key: 'date', label: 'Date', kind: 'date' },
       { key: 'endDate', label: 'Until', kind: 'date' },
-      { key: 'category', label: 'Category', kind: 'select', options: ['Historical Events', 'Miscellaneous Events', 'Holidays'] },
+      { key: 'category', label: 'Category', kind: 'select', options: ['Historical Events', 'Miscellaneous Events', 'Holidays'], fixed: ['Historical Events'] },
       { key: 'places', label: 'Where', kind: 'refs', to: ['place'] },
     ],
   },

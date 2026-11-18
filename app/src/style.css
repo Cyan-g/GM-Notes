@@ -1048,6 +1048,22 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 /* proficiencies: one row per list (ProfChips.vue) */
 .cs-profs { display: grid; gap: .45rem; }
 .prof-row { display: grid; grid-template-columns: 5.5rem 1fr; align-items: baseline; gap: .5rem; }
+.prof-row.bare { grid-template-columns: 1fr; }
+
+/* Archive → Lists */
+.lists-grid { display: grid; grid-template-columns: minmax(14rem, 18rem) 1fr; gap: 1rem; align-items: start; }
+.lists-nav ul { list-style: none; margin: .5rem 0 0; padding: 0; max-height: 70vh; overflow-y: auto; }
+.lists-nav li .link-btn { display: block; width: 100%; text-align: left; padding: .2rem .4rem; border-radius: 6px; }
+.lists-nav li .link-btn.on { background: var(--chip); font-weight: 600; }
+.lists-search { width: 100%; }
+.lists-table td { vertical-align: top; }
+.lists-table input { width: min(18rem, 100%); }
+.lists-move { white-space: nowrap; }
+.lists-move .link-btn:disabled, .lists-table .x:disabled { opacity: .3; cursor: default; }
+.lists-lock { margin-left: .3rem; cursor: help; }
+.lists-users { margin: .3rem 0 0; padding-left: 1.1rem; font-size: 13px; }
+.lists-add { display: flex; gap: .5rem; margin-top: .8rem; }
+@media (max-width: 720px) { .lists-grid { grid-template-columns: 1fr; } }
 .prof-label { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 .prof-chips { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
 .prof-chip { display: inline-flex; align-items: center; gap: .2rem; font-size: 12px; }

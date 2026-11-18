@@ -1,9 +1,11 @@
 // One-line descriptions and short excerpts of entries, for headers, previews and search.
 import type { Entry, Statblock, WorldDate } from './model/types'
-import { TYPES } from './model/schema'
-import { formatDate, get } from './store'
+import { TYPES, byKey } from './model/schema'
+import { fieldLabel, formatDate, get } from './store'
 
 const name = (id: unknown) => get(id as string)?.name
+/** A choice field's value as its option's label (see model/lists.ts). */
+const L = (e: Entry, key: string) => fieldLabel(TYPES[e.type].fields.find(x => x.key === key), byKey(e.fields)[key]) || undefined
 const join = (...parts: unknown[]) => parts.filter(p => p != null && p !== '' && p !== false).join(' · ')
 const ord = (n: string) => ({ '1': '1st', '2': '2nd', '3': '3rd' } as Record<string, string>)[n] ?? `${n}th`
 
@@ -13,21 +15,21 @@ export function describe(e: Entry, { parent = true } = {}): string {
   switch (e.type) {
     case 'npc': return join(name(f.race), f.gender, f.age)
     case 'pc': return join(name(f.race), [f.class, f.level && `level ${f.level}`].filter(Boolean).join(' '), f.player && `played by ${f.player}`)
-    case 'organization': return join(f.orgType, parent && f.parent && `part of ${name(f.parent)}`, f.seat && `seat: ${name(f.seat)}`)
-    case 'place': return join(f.placeType, parent && f.parent && `in ${name(f.parent)}`)
-    case 'item': return join([f.rarity, f.magical && !f.rarity ? 'magical' : '', f.subtype || f.tool || f.kind].filter(Boolean).join(' '), f.attunement && 'requires attunement')
-    case 'spell': return f.level === 'Cantrip' ? join(`${f.school ?? ''} cantrip`.trim()) : join(f.level ? `${ord(String(f.level))}-level ${String(f.school ?? '').toLowerCase()}`.trim() : f.school)
+    case 'organization': return join(L(e, 'orgType'), parent && f.parent && `part of ${name(f.parent)}`, f.seat && `seat: ${name(f.seat)}`)
+    case 'place': return join(L(e, 'placeType'), parent && f.parent && `in ${name(f.parent)}`)
+    case 'item': return join([L(e, 'rarity'), f.magical && !f.rarity ? 'magical' : '', f.subtype || L(e, 'kind')].filter(Boolean).join(' '), f.attunement && 'requires attunement')
+    case 'spell': return f.level === 'Cantrip' ? join(`${L(e, 'school') ?? ''} cantrip`.trim()) : join(f.level ? `${ord(String(f.level))}-level ${String(L(e, 'school') ?? '').toLowerCase()}`.trim() : L(e, 'school'))
     case 'creature': {
       const sb = f.statblock as Statblock | undefined
-      return join([sb?.size, f.creatureType ?? sb?.creatureType].filter(Boolean).join(' '), sb?.cr && `CR ${sb.cr}`)
+      return join([sb?.size, L(e, 'creatureType') ?? sb?.creatureType].filter(Boolean).join(' '), sb?.cr && `CR ${sb.cr}`)
     }
-    case 'deity': return join(f.rank, (f.domains as string[] | undefined)?.join(', '), f.alignment)
-    case 'feat': return join(f.category, f.level && `level ${f.level}+`, name(f.source) && `from ${name(f.source)}`)
-    case 'race': return join(f.parent ? `subrace of ${name(f.parent)}` : '', f.size, f.speed && `speed ${f.speed}`, f.abilityIncrease)
-    case 'event': return join(formatDate(f.date as WorldDate), f.category)
+    case 'deity': return join(L(e, 'rank'), (f.domains as string[] | undefined)?.join(', '), f.alignment)
+    case 'feat': return join(L(e, 'category'), f.level && `level ${f.level}+`, name(f.source) && `from ${name(f.source)}`)
+    case 'race': return join(f.parent ? `subrace of ${name(f.parent)}` : '', L(e, 'size'), f.speed && `speed ${f.speed}`, f.abilityIncrease)
+    case 'event': return join(formatDate(f.date as WorldDate), L(e, 'category'))
     case 'session': return join(name(f.campaign), f.number != null && `session ${f.number}`, formatDate(f.date as WorldDate))
-    case 'campaign': return join(f.status)
-    case 'writing': return join(f.writingType, f.author && `by ${name(f.author)}`, formatDate(f.date as WorldDate))
+    case 'campaign': return join(L(e, 'status'))
+    case 'writing': return join(L(e, 'writingType'), f.author && `by ${name(f.author)}`, formatDate(f.date as WorldDate))
     default: return join(f.category)
   }
 }

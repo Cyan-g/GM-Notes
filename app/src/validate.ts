@@ -3,6 +3,7 @@
 // Run on every load (the Data page lists what it found) and on every imported file.
 import type { Database, Entry } from './model/types'
 import { RELATION_KINDS, TYPES, type FieldDef } from './model/schema'
+import { listKeyOf, optionsIn } from './model/lists'
 
 export interface Problem {
   /** The entry it's about, if any. */
@@ -27,9 +28,12 @@ const LINES: Partial<Record<FieldDef['kind'], { key: string; needed: boolean }>>
 
 /**
  * Check one field value against its definition. `exists` says whether an id is an entry (and of what type),
- * so links can be checked; leave it out to check only the shape (an import, whose links aren't resolved yet).
+ * so links can be checked, and `meta` holds the world's dropdown lists; leave them out to check only the shape
+ * (an import, whose links and options are worked out when it's added).
  */
-export function checkField(f: FieldDef, v: unknown, exists?: (id: string) => Entry | undefined): string | undefined {
+export function checkField(f: FieldDef, v: unknown, exists?: (id: string) => Entry | undefined, meta?: Database['meta']): string | undefined {
+  const key = listKeyOf(f)
+  const choice = (x: string) => (!meta || !key || optionsIn(meta, key).some(o => o.id === x) ? undefined : `"${x}" isn't one of the choices (Archive → Lists)`)
   if (v == null) return undefined
   const link = (id: unknown, what = 'a link') => {
     if (!isStr(id)) return `${what} that isn't an entry id`
@@ -37,16 +41,17 @@ export function checkField(f: FieldDef, v: unknown, exists?: (id: string) => Ent
     const e = exists(id)
     if (!e) return `links to "${id}", which doesn't exist`
     if (f.to && !f.to.includes(e.type)) return `links to ${e.name}, a ${e.type}, but takes ${f.to.join(' or ')}`
+    if (f.pick && !f.pick.is.includes(String((e.fields as Record<string, unknown>)[f.pick.field] ?? ''))) return `links to ${e.name}, which isn't a ${f.pick.is.join(' or ')}`
     return undefined
   }
   switch (f.kind) {
     case 'text': case 'longtext': return isStr(v) ? undefined : 'should be text'
     case 'number': case 'money': case 'weight': return isNum(v) ? undefined : `should be a number, is ${JSON.stringify(v)}`
     case 'bool': return typeof v === 'boolean' ? undefined : 'should be yes or no'
-    case 'select': return !isStr(v) ? 'should be one of the choices' : f.options && !f.options.includes(v) ? `"${v}" isn't one of the choices` : undefined
+    case 'select': return !isStr(v) ? 'should be one of the choices' : choice(v)
     case 'list':
       if (!Array.isArray(v) || !v.every(isStr)) return 'should be a list of words'
-      return f.options ? v.filter(x => !f.options!.includes(x)).map(x => `"${x}" isn't one of the choices`)[0] : undefined
+      return v.map(choice).find(Boolean)
     case 'date': return isDate(v) ? undefined : 'should be a date'
     case 'ref': return link(v)
     case 'refs': return !Array.isArray(v) ? 'should be a list of links' : v.map(id => link(id)).find(Boolean)
@@ -77,7 +82,7 @@ export function checkField(f: FieldDef, v: unknown, exists?: (id: string) => Ent
 }
 
 /** Check one entry: its own parts and every field. */
-export function checkEntry(e: Entry, exists?: (id: string) => Entry | undefined, key?: string): Problem[] {
+export function checkEntry(e: Entry, exists?: (id: string) => Entry | undefined, key?: string, meta?: Database['meta']): Problem[] {
   const out: Problem[] = []
   const where = (part: string) => `${e?.name || key || e?.id || '?'} › ${part}`
   if (!isObj(e)) return [{ entry: key, where: key ?? '?', message: 'is not an entry', serious: true }]
@@ -92,7 +97,7 @@ export function checkEntry(e: Entry, exists?: (id: string) => Entry | undefined,
   for (const [k, v] of Object.entries(e.fields)) {
     const f = def.fields.find(x => x.key === k)
     if (!f) { out.push({ entry: e.id, where: where(k), message: `isn't a field of ${def.plural.toLowerCase()} (left over?)` }); continue }
-    const bad = checkField(f, v, exists)
+    const bad = checkField(f, v, exists, meta)
     if (bad) out.push({ entry: e.id, where: where(f.label), message: bad, serious: f.kind === 'sheet' || (!!LINES[f.kind] && !bad.startsWith('links')) })
   }
   return out
@@ -103,7 +108,7 @@ export function checkDatabase(d: Database): Problem[] {
   const out: Problem[] = []
   if (!isObj(d) || !isObj(d.meta) || !isObj(d.entries) || !Array.isArray(d.relations)) return [{ where: 'the data', message: 'is missing its main parts', serious: true }]
   const exists = (id: string) => d.entries[id]
-  for (const [key, e] of Object.entries(d.entries)) out.push(...checkEntry(e, exists, key))
+  for (const [key, e] of Object.entries(d.entries)) out.push(...checkEntry(e, exists, key, d.meta))
   const ids = new Set<string>()
   for (const r of d.relations) {
     const where = `relation ${get(d, r.a)} → ${get(d, r.b)}`

@@ -4,8 +4,7 @@
 // Modifiers, saves, skills, AC, attacks and spellcasting are worked out from them.
 import { computed, ref } from 'vue'
 import type { CharacterSheet, Entry, Proficiencies } from '../model/types'
-import { ARMOR_PROFS, MARTIAL_WEAPONS, SIMPLE_WEAPONS, TOOLS, WEAPON_CATEGORIES } from '../model/schema'
-import { playerMode, state } from '../store'
+import { byType, listOptions, playerMode, setList, state } from '../store'
 import { changed } from '../edit'
 import {
   ABILITIES, SKILLS, armorClass, attacks, blankSheet, canAttune, canEquip, castingAbility, levelOf, mod, passivePerception,
@@ -76,8 +75,15 @@ const isCurrent = computed(() => currentPc.value?.id === props.pc.id)
 
 // ---- proficiencies: picked from the lists items use, so attacks, armor and the Workbench can check them ----
 const profs = computed(() => profsOf(s.value))
-const WEAPONS = [...SIMPLE_WEAPONS, ...MARTIAL_WEAPONS].sort()
-const LANGUAGES = ['Common', 'Dwarvish', 'Elvish', 'Giant', 'Gnomish', 'Goblin', 'Halfling', 'Orc', 'Abyssal', 'Celestial', 'Draconic', 'Deep Speech', 'Infernal', 'Primordial', 'Sylvan', 'Undercommon', "Thieves' Cant", 'Druidic']
+// Clothing needs no proficiency, so it isn't offered.
+const armorTypes = computed(() => listOptions('item.armorType').filter(o => o.id !== 'Clothing'))
+const tools = computed(() => (byType.value.get('item') ?? []).filter(e => e.fields.kind === 'Tool').map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label)))
+/** A language typed on the sheet that isn't in the list yet is added to it. */
+function newLanguage(label: string) {
+  const l = listOptions('language')
+  if (!l.some(o => o.id === label)) setList('language', [...l, { id: label, label }])
+  return label
+}
 const setProfs = (k: Exclude<keyof Proficiencies, 'other'>, v: string[]) => edit(x => { profsToEdit(x)[k] = v })
 
 // ---- features ----
@@ -166,10 +172,10 @@ const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
 
         <h4>Proficiencies &amp; languages</h4>
         <div class="cs-profs">
-          <ProfChips label="Armor" :values="profs.armor" :toggles="ARMOR_PROFS" :disabled="ro" @change="setProfs('armor', $event)" />
-          <ProfChips label="Weapons" :values="profs.weapons" :toggles="WEAPON_CATEGORIES" :suggest="WEAPONS" free placeholder="Add a weapon…" :disabled="ro" @change="setProfs('weapons', $event)" />
-          <ProfChips label="Tools" :values="profs.tools" :suggest="TOOLS" placeholder="Add a tool…" :disabled="ro" @change="setProfs('tools', $event)" />
-          <ProfChips label="Languages" :values="profs.languages" :suggest="LANGUAGES" free placeholder="Add a language…" :disabled="ro" @change="setProfs('languages', $event)" />
+          <ProfChips label="Armor" :values="profs.armor" :toggles="armorTypes" :disabled="ro" @change="setProfs('armor', $event)" />
+          <ProfChips label="Weapons" :values="profs.weapons" :toggles="listOptions('item.weaponCategory')" :suggest="listOptions('item.baseWeapon')" placeholder="Add a weapon…" :disabled="ro" @change="setProfs('weapons', $event)" />
+          <ProfChips label="Tools" :values="profs.tools" :suggest="tools" placeholder="Add a tool…" :disabled="ro" @change="setProfs('tools', $event)" />
+          <ProfChips label="Languages" :values="profs.languages" :suggest="listOptions('language')" :create="newLanguage" placeholder="Add a language…" :disabled="ro" @change="setProfs('languages', $event)" />
           <textarea rows="2" :value="profs.other ?? ''" placeholder="Anything else" :disabled="ro" @change="edit(x => profsToEdit(x).other = text($event))" />
         </div>
       </section>

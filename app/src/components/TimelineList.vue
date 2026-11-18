@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TItem } from '../timeline'
+import { optionLabel } from '../store'
 import type { Id } from '../model/types'
 import { RELATION_KINDS } from '../model/schema'
 import { formatDate, get } from '../store'
@@ -16,7 +17,7 @@ function when(it: TItem) {
   return it.end ? `${formatDate(it.start)} – ${formatDate(it.end)}` : formatDate(it.start)
 }
 const people = (it: TItem) => it.involved.filter((id: Id) => get(id)?.type !== 'place' && id !== it.entry)
-const typeLabel = (it: TItem) => it.kind === 'relation' ? RELATION_KINDS[it.rel!.kind].forward : it.category
+const typeLabel = (it: TItem) => it.kind === 'relation' ? RELATION_KINDS[it.rel!.kind].forward : it.kind === 'event' ? optionLabel('event.category', it.category) : it.category
 </script>
 
 <template>

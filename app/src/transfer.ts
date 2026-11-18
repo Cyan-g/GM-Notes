@@ -1,11 +1,13 @@
 // Sharing spells, items and maps with someone else who has this app: one entry saved as a file they can import.
 //
-// - A spell or item travels with what it needs to work: a recipe's ingredients (and theirs), a scroll's spell,
-//   and the spells an item's text links to. Other links in the text become plain words.
+// - A spell or item travels with what it needs to work: a recipe's ingredients (and theirs) and the Tool it's
+//   crafted with, a scroll's spell, and the spells an item's text links to. Other links in the text become plain words.
+// - Choices (kind, rarity, school…) travel with their labels: one this world doesn't have is added to its list.
 // - A map travels as a place with only its name and map picture (no text, pins or "Located in").
 // Relations never travel.
 import type { Entry, Id } from './model/types'
-import { db, get, state, touch } from './store'
+import { db, get, listOptions, setList, state, touch } from './store'
+import { listKeyOf, type ListOption } from './model/lists'
 import { newId } from './edit'
 import { TYPES, byKey } from './model/schema'
 import { checkEntry, checkField } from './validate'
@@ -23,6 +25,8 @@ interface Bundle {
   entries: Entry[]
   /** Pictures and attached files, as data: URLs, by their path in the data folder. */
   files: Record<string, string>
+  /** The list options the entries use, with their labels (files from before the lists don't have them). */
+  options?: Record<string, ListOption[]>
 }
 
 /** Spells, items, and places with a map can be exported. */
@@ -39,6 +43,7 @@ function partsOf(e: Entry): Id[] {
   const ids: Id[] = []
   if (Array.isArray(f.recipe)) ids.push(...(f.recipe as { item?: Id }[]).map(l => l.item!).filter(Boolean))
   if (typeof f.spell === 'string' && f.spell) ids.push(f.spell)
+  if (typeof f.craftingType === 'string' && get(f.craftingType)) ids.push(f.craftingType)
   for (const m of e.body.matchAll(LINK)) if (get(m[1].trim())?.type === 'spell') ids.push(m[1].trim())
   return ids
 }
@@ -95,6 +100,7 @@ function exportCopy(e: Entry, inFile: Set<Id>, secrets: boolean): Entry {
     inFile.has(ref.trim()) ? all : label ? label.replace(/^\\?\|/, '') : (get(ref.trim())?.name ?? ref))
   if (typeof c.fields.spell === 'string' && !inFile.has(c.fields.spell)) delete c.fields.spell
   if (Array.isArray(c.fields.recipe)) c.fields.recipe = c.fields.recipe.filter(l => inFile.has(l.item))
+  if (typeof c.fields.craftingType === 'string' && !inFile.has(c.fields.craftingType)) delete c.fields.craftingType
   return c
 }
 
@@ -108,14 +114,28 @@ export async function buildExport(plan: ExportPlan, opts: { secrets: boolean }):
     const b = await state.storage!.readBlob(p)
     if (b) files[p] = await toDataUrl(b)
   }
+  const entries = list.map(e => exportCopy(e, ids, opts.secrets))
   const bundle: Bundle = {
     format: FORMAT, version: 1, exported: new Date().toISOString(), from: db().meta.title,
-    main: plan.main.id,
-    entries: list.map(e => exportCopy(e, ids, opts.secrets)),
-    files,
+    main: plan.main.id, entries, files, options: optionsUsed(entries),
   }
   const name = `${plan.main.name.replace(/[\\/:*?"<>|]+/g, '')}.dndesk.json`
   return { blob: new Blob([JSON.stringify(bundle, null, 1)], { type: 'application/json' }), name }
+}
+
+/** The options of every list the entries pick from, with their labels. */
+function optionsUsed(entries: Entry[]): Record<string, ListOption[]> {
+  const out: Record<string, ListOption[]> = {}
+  for (const e of entries) for (const f of TYPES[e.type].fields) {
+    const key = listKeyOf(f)
+    const v = byKey(e.fields)[f.key]
+    if (!key || v == null) continue
+    for (const id of Array.isArray(v) ? v : [v]) {
+      const o = listOptions(key).find(x => x.id === id)
+      if (o && !(out[key] ??= []).some(x => x.id === id)) out[key].push({ ...o })
+    }
+  }
+  return out
 }
 
 export function download(blob: Blob, name: string) {
@@ -214,11 +234,14 @@ export async function applyImport(plan: ImportPlan): Promise<Id> {
     const fields = byKey(c.fields)
     for (const [k, v] of Object.entries(fields)) {
       const f = TYPES[c.type].fields.find(x => x.key === k)
-      if (!f || checkField(f, v)) delete fields[k]
+      if (!f || checkField(f, v)) { delete fields[k]; continue }
+      const key = listKeyOf(f)
+      if (key) fields[k] = Array.isArray(v) ? v.map(x => optionHere(key, String(x), b)) : optionHere(key, String(v), b)
     }
     c.created = mine?.created ?? now
     c.updated = now
     if (typeof c.fields.spell === 'string') { const to = map.get(c.fields.spell); if (to) c.fields.spell = to; else delete c.fields.spell }
+    if (typeof c.fields.craftingType === 'string') { const to = map.get(c.fields.craftingType); if (to) c.fields.craftingType = to; else delete c.fields.craftingType }
     if (Array.isArray(c.fields.recipe)) c.fields.recipe = c.fields.recipe.flatMap(l => (map.has(l.item) ? [{ ...l, item: map.get(l.item)! }] : []))
     c.body = c.body.replace(LINK, (_all, ref: string, label?: string) => {
       const to = map.get(ref.trim())
@@ -231,6 +254,22 @@ export async function applyImport(plan: ImportPlan): Promise<Id> {
   }
   touch()
   return map.get(plan.main.id)!
+}
+
+/**
+ * A choice from an imported file as this world's option id: the same id, else an option with the same label,
+ * else a new option (with the file's label) added to the list.
+ */
+function optionHere(key: string, id: string, b: Bundle): string {
+  const here = listOptions(key)
+  if (here.some(o => o.id === id)) return id
+  const label = b.options?.[key]?.find(o => o.id === id)?.label ?? id
+  const same = here.find(o => o.label.trim().toLowerCase() === label.trim().toLowerCase())
+  if (same) return same.id
+  let newId = id
+  for (let i = 2; here.some(o => o.id === newId); i++) newId = `${id} ${i}`
+  setList(key, [...here, { id: newId, label }])
+  return newId
 }
 
 /** Store an imported picture or file. An identical file already in the folder is reused. */

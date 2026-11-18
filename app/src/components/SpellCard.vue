@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // A spell as it reads in a spellbook.
 import { computed } from 'vue'
+import { optionLabel } from '../store'
 import type { Entry } from '../model/types'
 import { describe } from '../describe'
 import MarkdownView from './MarkdownView.vue'
@@ -18,11 +19,11 @@ const grid = computed(() => ([
 
 <template>
   <div class="spell-card">
-    <div class="sc-line">{{ describe(e) }}<template v-if="f.spellType"> · {{ f.spellType }}</template><template v-if="f.savingThrow"> · {{ f.savingThrow }} save</template></div>
+    <div class="sc-line">{{ describe(e) }}<template v-if="f.spellType"> · {{ optionLabel('spell.spellType', f.spellType) }}</template><template v-if="f.savingThrow"> · {{ optionLabel('ability', f.savingThrow) }} save</template></div>
     <div class="sc-grid">
       <div v-for="[k, v] in grid" :key="k"><b>{{ k }}</b><span>{{ v || '—' }}</span></div>
     </div>
     <MarkdownView v-if="f.summary" class="sc-text" :source="String(f.summary)" />
-    <div v-if="f.classes?.length" class="sc-classes"><span class="muted small">Classes:</span> <span class="chips"><span v-for="c in f.classes" :key="c" class="chip">{{ c }}</span></span></div>
+    <div v-if="f.classes?.length" class="sc-classes"><span class="muted small">Classes:</span> <span class="chips"><span v-for="c in f.classes" :key="c" class="chip">{{ optionLabel('class', c) }}</span></span></div>
   </div>
 </template>

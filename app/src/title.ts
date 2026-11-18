@@ -27,6 +27,7 @@ function pageName(r: Route): string {
     case 'atlas': return r.tab === 'timeline' ? 'Timeline' : 'Atlas'
     case 'orgs': return 'Organizations'
     case 'data': return 'Data'
+    case 'lists': return 'Lists'
     case 'dashboard': {
       const d = DASHBOARDS.find(x => x.id === r.id)
       if (!d) return 'Dashboard'

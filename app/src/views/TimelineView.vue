@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
+import { optionLabel } from '../store'
 import { allItems, filterItems, type TimelineFilter } from '../timeline'
 import { db, formatDate } from '../store'
 import TimelineChart from '../components/TimelineChart.vue'
@@ -36,7 +37,7 @@ const num = (v: string) => (v.trim() === '' ? null : Number(v))
         <select v-model="f.type">
           <option value="all">Everything</option>
           <option value="event">All events</option>
-          <option v-for="c in categories" :key="c" :value="c">· {{ c }}</option>
+          <option v-for="c in categories" :key="c" :value="c">· {{ optionLabel('event.category', c) }}</option>
           <option value="relation">Memberships & roles</option>
           <option value="session">Sessions</option>
           <option value="writing">Writings</option>

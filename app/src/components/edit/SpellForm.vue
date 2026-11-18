@@ -2,13 +2,15 @@
 // Editing a spell's stats the way you'd fill in a spell card: buttons for the fixed choices,
 // quick picks for the usual casting times, ranges and durations, V S M as one toggle group.
 import { computed, ref } from 'vue'
+import { fieldOptions } from '../../store'
 import type { Entry } from '../../model/types'
 import { TYPES, byKey, type FieldKey } from '../../model/schema'
 import { changed } from '../../edit'
 
 const props = defineProps<{ entry: Entry }>()
 const f = computed(() => props.entry.fields)
-const opts = (key: string) => TYPES.spell.fields.find(x => x.key === key)?.options ?? []
+/** A field's options from the world's lists (ids stored, labels shown). */
+const opts = (key: string) => fieldOptions(TYPES.spell.fields.find(x => x.key === key))
 
 function set(key: FieldKey, value: unknown) {
   const raw = byKey(f.value)
@@ -53,7 +55,7 @@ const setMaterial = (v: string) => set('material', v.trim() || 'yes')
     <div class="sf-cell">
       <span class="sf-label">Level</span>
       <div class="seg">
-        <button v-for="l in LEVELS" :key="l" type="button" :class="{ on: f.level === l }" @click="set('level', f.level === l ? undefined : l)">{{ l }}</button>
+        <button v-for="l in LEVELS" :key="l.id" type="button" :class="{ on: f.level === l.id }" @click="set('level', f.level === l.id ? undefined : l.id)">{{ l.label }}</button>
       </div>
     </div>
 
@@ -73,7 +75,7 @@ const setMaterial = (v: string) => set('material', v.trim() || 'yes')
       <span class="sf-label">School</span>
       <select :value="f.school ?? ''" @change="set('school', ($event.target as HTMLSelectElement).value || undefined)">
         <option value="">—</option>
-        <option v-for="o in SCHOOLS" :key="o" :value="o">{{ o }}</option>
+        <option v-for="o in SCHOOLS" :key="o.id" :value="o.id">{{ o.label }}</option>
       </select>
     </label>
 
@@ -82,11 +84,11 @@ const setMaterial = (v: string) => set('material', v.trim() || 'yes')
       <div class="sf-inline">
         <select :value="f.spellType ?? ''" @change="set('spellType', ($event.target as HTMLSelectElement).value || undefined)">
           <option value="">—</option>
-          <option v-for="o in KINDS" :key="o" :value="o">{{ o }}</option>
+          <option v-for="o in KINDS" :key="o.id" :value="o.id">{{ o.label }}</option>
         </select>
         <select v-if="f.spellType === 'Saving throw' || f.savingThrow" :value="f.savingThrow ?? ''" aria-label="Saving throw" @change="set('savingThrow', ($event.target as HTMLSelectElement).value || undefined)">
           <option value="">which save?</option>
-          <option v-for="o in ABILITIES" :key="o" :value="o">{{ o }} save</option>
+          <option v-for="o in ABILITIES" :key="o.id" :value="o.id">{{ o.label }} save</option>
         </select>
       </div>
     </div>
@@ -109,7 +111,7 @@ const setMaterial = (v: string) => set('material', v.trim() || 'yes')
     <div class="sf-cell full">
       <span class="sf-label">Classes</span>
       <div class="seg wrap">
-        <button v-for="c in CLASSES" :key="c" type="button" :class="{ on: (f.classes ?? []).includes(c) }" @click="toggleIn('classes', c)">{{ c }}</button>
+        <button v-for="c in CLASSES" :key="c.id" type="button" :class="{ on: (f.classes ?? []).includes(c.id) }" @click="toggleIn('classes', c.id)">{{ c.label }}</button>
       </div>
     </div>
   </div>

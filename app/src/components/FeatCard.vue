@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // A feat as it reads in a rulebook: kind, prerequisites, the ability score increase, then what it does.
 import { computed } from 'vue'
+import { optionLabel } from '../store'
 import type { Entry, Id } from '../model/types'
 import { get } from '../store'
 import { hrefEntry } from '../router'
@@ -17,7 +18,7 @@ const hasPrereq = computed(() => f.value.level || requires.value.length || f.val
   <div class="feat-card">
     <div class="feat-head">
       <a v-if="title" class="feat-name" :href="hrefEntry(e.id)">{{ e.name }}</a>
-      <span v-if="f.category" class="badge">{{ f.category }}</span>
+      <span v-if="f.category" class="badge">{{ optionLabel('feat.category', f.category) }}</span>
       <span v-if="source && f.source" class="muted small">from <EntryLink :id="f.source" /></span>
     </div>
     <p v-if="hasPrereq" class="feat-line"><b>Prerequisite:</b>

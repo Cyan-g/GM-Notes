@@ -3,22 +3,24 @@
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { describe } from '../describe'
-import { formatMoney } from '../store'
+import { TYPES, byKey } from '../model/schema'
+import { fieldLabel, formatMoney, get } from '../store'
 import { renderInline } from '../markdown'
 
 const props = defineProps<{ e: Entry }>()
 const f = computed(() => props.e.fields)
+/** A choice field's value as its option's label. */
+const L = (key: string) => fieldLabel(TYPES.item.fields.find(x => x.key === key), byKey(f.value)[key])
 const rows = computed(() => ([
-  ['Damage', [f.value.damage, f.value.damageType?.length && f.value.damageType.join(' or ').toLowerCase()].filter(Boolean).join(' ')],
-  ['Category', f.value.weaponCategory],
+  ['Damage', [f.value.damage, f.value.damageType?.length && L('damageType').replace(/, /g, ' or ').toLowerCase()].filter(Boolean).join(' ')],
+  ['Category', [L('weaponCategory'), L('baseWeapon')].filter(Boolean).join(' · ')],
   ['Range', f.value.range],
-  ['Armor type', f.value.armorType],
+  ['Armor type', L('armorType')],
   ['Armor class', f.value.armorClass],
-  ['Slot', f.value.slot],
+  ['Slot', L('slot')],
   ['Bonus', f.value.bonus],
-  ['Tool', f.value.tool],
-  ['Crafted with', f.value.craftingType],
-  ['Ingredient type', f.value.category],
+  ['Crafted with', get(f.value.craftingType)?.name],
+  ['Ingredient type', L('category')],
   ['Weight', f.value.weight != null ? `${f.value.weight} lb` : ''],
   ['Value', formatMoney(f.value.value)],
 ] as [string, string][]).filter(([, v]) => v))
@@ -27,7 +29,7 @@ const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magic
 
 <template>
   <div class="item-card" :class="'r-' + rarity">
-    <div class="ic-line">{{ describe(e) || f.kind }}</div>
+    <div class="ic-line">{{ describe(e) || L('kind') }}</div>
     <div class="ic-body">
       <div class="ic-text">
         <p v-if="f.summary" class="ic-summary" v-html="renderInline(f.summary)" />

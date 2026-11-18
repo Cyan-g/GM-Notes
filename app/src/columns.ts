@@ -3,7 +3,8 @@
 import type { Entry, EntryType, RecipeLine, Statblock, WorldDate } from './model/types'
 import { craftingMinutes, craftingTime } from './crafting'
 import { SCHEMA, TYPES, byKey, type FieldDef } from './model/schema'
-import { dateKey, entries, get, isCurrent, relationsOf } from './store'
+import { dateKey, entries, fieldLabel, fieldOptions, get, isCurrent, relationsOf } from './store'
+import { listKeyOf } from './model/lists'
 
 export interface Col {
   key: string
@@ -70,6 +71,8 @@ export function column(key: string, type?: EntryType): Col {
       if (field.kind === 'bool') return v ? 0 : 1
       if (key === 'level') return v === 'Cantrip' ? 0 : Number(v)
       if (typeof v === 'number') return v
+      // Choices sort by their label (see model/lists.ts).
+      if (listKeyOf(field)) return fieldLabel(field, v).toLowerCase()
       if (Array.isArray(v)) return v.join(', ').toLowerCase()
       return String(v).toLowerCase()
     },
@@ -101,10 +104,12 @@ export function facet(key: string, type?: EntryType): Facet {
     if (v == null || v === '') return []
     if (field?.kind === 'bool') return [v ? 'Yes' : 'No']
     if (field?.kind === 'ref') return [nameOf(v as string)]
+    // Choices filter by their label (see model/lists.ts).
+    if (listKeyOf(field)) return (Array.isArray(v) ? v : [v]).map(x => fieldLabel(field, x))
     if (Array.isArray(v)) return v.map(String)
     return [String(v)]
   }
-  const order = field?.options
+  const order = listKeyOf(field) ? fieldOptions(field).map(o => o.label) : undefined
   return {
     key, label,
     values: rows => {

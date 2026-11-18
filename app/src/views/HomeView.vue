@@ -2,6 +2,7 @@
 // The DM desk: the campaign at hand, the tools, favourites, the regions of the world
 // with their factions, the gods, peoples and subclasses, and a few links. Everything comes from the entries.
 import { computed, ref } from 'vue'
+import { optionLabel } from '../store'
 import type { Entry, Id, WorldDate } from '../model/types'
 import { byType, childrenOf, db, entries, formatDate, get, placePath, playerMode, touch } from '../store'
 import { hrefDashboard, hrefList } from '../router'
@@ -77,7 +78,7 @@ const subclasses = computed(() => list('subclass').sort(byName))
 /** Tool items for the tools recipes are crafted with. */
 const kits = computed(() => {
   const used = new Set(list('item').filter(i => i.fields.recipe?.length).map(i => i.fields.craftingType))
-  return list('item').filter(i => i.fields.kind === 'Tool' && used.has(i.fields.tool)).sort(byName)
+  return list('item').filter(i => i.fields.kind === 'Tool' && used.has(i.id)).sort(byName)
 })
 
 // ---- links: web pages you keep at hand (a watch-together room, a soundboard …) ----
@@ -125,7 +126,7 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
         <ul class="rel compact">
           <li v-for="{ c, sessions } in others" :key="c.id">
             <EntryLink :id="c.id" />
-            <span class="when">{{ c.fields.status || (sessions.length ? sessions.length + ' sessions' : '') }}</span>
+            <span class="when">{{ optionLabel('campaign.status', c.fields.status) || (sessions.length ? sessions.length + ' sessions' : '') }}</span>
           </li>
         </ul>
         <template v-if="notes.length">
@@ -173,7 +174,7 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
             <tr v-for="x in regions" :key="x.r.id">
               <td class="home-region"><EntryLink :id="x.r.id" /></td>
               <td><span v-for="s in x.subs" :key="s.id" class="home-tag"><EntryLink :id="s.id" /></span></td>
-              <td><span v-for="o in x.orgs" :key="o.id" class="home-tag"><EntryLink :id="o.id" /><span v-if="o.fields.orgType" class="muted small"> {{ o.fields.orgType }}</span></span></td>
+              <td><span v-for="o in x.orgs" :key="o.id" class="home-tag"><EntryLink :id="o.id" /><span v-if="o.fields.orgType" class="muted small"> {{ optionLabel('organization.orgType', o.fields.orgType) }}</span></span></td>
               <td><span v-for="m in x.maps" :key="m.id" class="home-tag"><a :href="`#/map/${encodeURIComponent(m.id)}`" title="Open the map">🗺</a> <EntryLink :id="m.id" /></span></td>
             </tr>
             <tr v-if="homeless.length">

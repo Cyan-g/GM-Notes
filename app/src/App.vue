@@ -22,6 +22,7 @@ import AtlasView from './views/AtlasView.vue'
 import OrgsView from './views/OrgsView.vue'
 import MapPage from './views/MapPage.vue'
 import DataView from './views/DataView.vue'
+import ListsView from './views/ListsView.vue'
 import NewEntryDialog from './components/NewEntryDialog.vue'
 import ImportDialog from './components/ImportDialog.vue'
 import LinkPreview from './components/LinkPreview.vue'
@@ -127,6 +128,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <AtlasView v-else-if="route.current.name === 'atlas'" :tab="route.current.tab" />
       <OrgsView v-else-if="route.current.name === 'orgs'" />
       <DataView v-else-if="route.current.name === 'data'" />
+      <ListsView v-else-if="route.current.name === 'lists'" />
       <MapPage v-else-if="route.current.name === 'map'" :id="route.current.id" :pin="route.current.pin" :key="'map-' + route.current.id" />
       <DashboardView v-else-if="route.current.name === 'dashboard'" :id="route.current.id" :view="route.current.view" />
       <EncounterView v-else-if="route.current.name === 'entry' && get(route.current.id)?.type === 'encounter'" :id="route.current.id" :key="'enc-' + route.current.id" />

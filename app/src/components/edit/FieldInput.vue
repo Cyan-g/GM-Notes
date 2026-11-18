@@ -2,6 +2,9 @@
 // Edits one schema field of an entry in place.
 import { computed } from 'vue'
 import { byKey, type FieldDef } from '../../model/schema'
+import { listKeyOf } from '../../model/lists'
+import { byType, fieldOptions } from '../../store'
+import ProfChips from '../ProfChips.vue'
 import type { Entry } from '../../model/types'
 import { changed } from '../../edit'
 import EntryPicker from './EntryPicker.vue'
@@ -25,10 +28,19 @@ const value = computed({
     changed(props.entry)
   },
 })
+/** The field's list (Archive → Lists): ids stored, labels shown. A value no longer in the list stays pickable. */
+const options = computed(() => fieldOptions(props.def))
 const selectOptions = computed(() => {
-  const o = props.def.options ?? []
+  const o = options.value
   const v = value.value
-  return v && !o.includes(String(v)) ? [String(v), ...o] : o
+  return v && !o.some(x => x.id === v) ? [{ id: String(v), label: String(v) }, ...o] : o
+})
+const hasList = computed(() => !!listKeyOf(props.def))
+/** For a ref with `pick`: only the entries that fit (e.g. Tool items for "Crafted with"). */
+const only = computed(() => {
+  const p = props.def.pick
+  if (!p) return undefined
+  return (props.def.to ?? []).flatMap(t => byType.value.get(t) ?? []).filter(e => p.is.includes(String(byKey(e.fields)[p.field] ?? ''))).map(e => e.id)
 })
 const refs = computed(() => (value.value as string[] | undefined) ?? [])
 function addRef(id: string) { if (!refs.value.includes(id)) value.value = [...refs.value, id] }
@@ -42,12 +54,13 @@ function addRef(id: string) { if (!refs.value.includes(id)) value.value = [...re
   <label v-else-if="def.kind === 'bool'" class="toggle"><input type="checkbox" :checked="!!value" @change="value = ($event.target as HTMLInputElement).checked || undefined" /><span>{{ value ? 'Yes' : 'No' }}</span></label>
   <select v-else-if="def.kind === 'select'" :value="value ?? ''" @change="value = ($event.target as HTMLSelectElement).value">
     <option value="">—</option>
-    <option v-for="o in selectOptions" :key="o" :value="o">{{ o }}</option>
+    <option v-for="o in selectOptions" :key="o.id" :value="o.id">{{ o.label }}</option>
   </select>
-  <ListInput v-else-if="def.kind === 'list'" v-model="value" :options="def.options" />
+  <ProfChips v-else-if="def.kind === 'list' && hasList" :values="value ?? []" :toggles="options" @change="value = $event" />
+  <ListInput v-else-if="def.kind === 'list'" v-model="value" />
   <MoneyInput v-else-if="def.kind === 'money'" v-model="value" />
   <DateInput v-else-if="def.kind === 'date'" v-model="value" />
-  <EntryPicker v-else-if="def.kind === 'ref'" v-model="value" :types="def.to" :exclude="[entry.id]" />
+  <EntryPicker v-else-if="def.kind === 'ref'" v-model="value" :types="def.to" :exclude="[entry.id]" :only="only" />
   <div v-else-if="def.kind === 'refs'" class="refs-input">
     <span v-for="(id, i) in refs" :key="id" class="chip"><EntryPicker :model-value="id" :types="def.to" @update:model-value="v => { const l = [...refs]; if (v) l[i] = v; else l.splice(i, 1); value = l }" /></span>
     <EntryPicker add :types="def.to" :exclude="[entry.id, ...refs]" placeholder="Add…" @pick="addRef" />

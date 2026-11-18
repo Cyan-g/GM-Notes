@@ -15,13 +15,9 @@ import EntryPicker from '../components/edit/EntryPicker.vue'
 const c = computed(() => activeBench())
 const message = ref('')
 
-// ---- proficiencies: the tools recipes are crafted with, plus any the character is proficient in ----
+// ---- proficiencies: the Tool items ----
 // With a current character these are the tool proficiencies on their sheet (the same list, changed from either place).
-const TOOLS = computed(() => {
-  const set = new Set<string>(c.value.tools)
-  for (const e of byType.value.get('item') ?? []) if (e.fields.recipe?.length && e.fields.craftingType && e.fields.craftingType !== 'Other') set.add(e.fields.craftingType)
-  return [...set].sort()
-})
+const TOOLS = computed(() => (byType.value.get('item') ?? []).filter(e => e.fields.kind === 'Tool').sort((a, b) => a.name.localeCompare(b.name)))
 function toggleTool(t: string) {
   c.value.setTools(c.value.tools.includes(t) ? c.value.tools.filter(x => x !== t) : [...c.value.tools, t])
 }
@@ -39,10 +35,11 @@ const madeRows = computed(() => rows('made'))
 const pouchValue = computed(() => pouchRows.value.reduce((n, r) => n + r.qty * (Number(r.e.fields.value) || 0), 0))
 
 // ---- recipes ----
+const toolName = (e: Entry) => get(e.fields.craftingType)?.name ?? ''
 const known = computed(() => c.value.known.map(id => get(id)).filter((e): e is Entry => !!e)
-  .sort((a, b) => String(a.fields.craftingType ?? '').localeCompare(String(b.fields.craftingType ?? '')) || a.name.localeCompare(b.name)))
+  .sort((a, b) => toolName(a).localeCompare(toolName(b)) || a.name.localeCompare(b.name)))
 const lines = (e: Entry) => (e.fields.recipe) ?? []
-const proficient = (e: Entry) => !e.fields.craftingType || c.value.tools.includes(String(e.fields.craftingType))
+const proficient = (e: Entry) => !e.fields.craftingType || c.value.tools.includes(e.fields.craftingType)
 const enough = (e: Entry) => lines(e).every(l => have(l.item) >= (l.amount || 1))
 const canCraft = (e: Entry) => proficient(e) && enough(e) && lines(e).length > 0
 function craft(e: Entry) {
@@ -74,7 +71,7 @@ const notIngredient = computed(() => (byType.value.get('item') ?? []).filter(e =
             <tbody>
               <tr v-for="e in known" :key="e.id" :class="{ ready: canCraft(e) }">
                 <td><EntryLink :id="e.id" icon /></td>
-                <td :class="{ missing: !proficient(e) }" :title="proficient(e) ? '' : 'You are not proficient with this tool'">{{ e.fields.craftingType ?? '—' }}</td>
+                <td :class="{ missing: !proficient(e) }" :title="proficient(e) ? '' : 'You are not proficient with this tool'"><EntryLink v-if="e.fields.craftingType" :id="e.fields.craftingType" /><template v-else>—</template></td>
                 <td>
                   <span v-for="l in lines(e)" :key="l.item" class="wb-need" :class="{ short: have(l.item) < (l.amount || 1) }">
                     <EntryLink :id="l.item" /> <span class="muted">{{ have(l.item) }}/{{ l.amount || 1 }}</span>
@@ -117,8 +114,9 @@ const notIngredient = computed(() => (byType.value.get('item') ?? []).filter(e =
           <h3>Tool proficiencies</h3>
           <p v-if="currentPc" class="muted small">From <a :href="hrefEntry(currentPc.id)">{{ currentPc.name }}'s character sheet</a>.</p>
           <div class="seg wrap">
-            <button v-for="t in TOOLS" :key="t" type="button" :class="{ on: c.tools.includes(t) }" @click="toggleTool(t)">{{ t }}</button>
+            <button v-for="t in TOOLS" :key="t.id" type="button" :class="{ on: c.tools.includes(t.id) }" @click="toggleTool(t.id)">{{ t.name }}</button>
           </div>
+          <p v-if="!TOOLS.length" class="muted small">No tools yet: tools are items of the kind Tool.</p>
         </section>
 
         <section class="card">

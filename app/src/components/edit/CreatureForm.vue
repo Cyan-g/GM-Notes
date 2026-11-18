@@ -2,6 +2,7 @@
 // A creature's statblock as a form: buttons and boxes instead of statblock text. The free-text parts of the
 // stored statblock ("30 ft., fly 30 ft. (hover)", "perception +5") are read into fields and written back the same way.
 import { computed, ref } from 'vue'
+import { fieldOptions, optionLabel } from '../../store'
 import type { Abilities, Entry, Feature, Statblock } from '../../model/types'
 import { TYPES } from '../../model/schema'
 import { changed } from '../../edit'
@@ -25,19 +26,19 @@ const val = (ev: Event) => (ev.target as HTMLInputElement).value
 // ---- identity: size, type (+ tags in brackets), alignment ----
 const SIZES = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']
 const sizeIs = (s: string) => (sb.value.size ?? '').toLowerCase() === s.toLowerCase()
-const TYPE_OPTIONS = (TYPES.creature.fields.find(f => f.key === 'creatureType')?.options ?? []) as string[]
+const TYPE_OPTIONS = computed(() => fieldOptions(TYPES.creature.fields.find(f => f.key === 'creatureType')))
 const typeParts = computed(() => {
   const m = (sb.value.creatureType ?? '').match(/^\s*([^(]*?)\s*(?:\((.*)\))?\s*$/)
   return { base: m?.[1] ?? '', tags: m?.[2] ?? '' }
 })
 const typeValue = computed(() => {
   const t = (props.entry.fields.creatureType) ?? typeParts.value.base
-  return TYPE_OPTIONS.find(o => o.toLowerCase() === t.toLowerCase()) ?? t
+  return TYPE_OPTIONS.value.find(o => o.id.toLowerCase() === t.toLowerCase() || o.label.toLowerCase() === t.toLowerCase())?.id ?? t
 })
 function setType(base: string, tags: string) {
   if (base) props.entry.fields.creatureType = base
   else delete props.entry.fields.creatureType
-  const line = [base.toLowerCase(), tags.trim() ? `(${tags.trim()})` : ''].filter(Boolean).join(' ')
+  const line = [optionLabel('creature.creatureType', base).toLowerCase(), tags.trim() ? `(${tags.trim()})` : ''].filter(Boolean).join(' ')
   set('creatureType', line || undefined)
 }
 const ALIGNMENTS = ['lawful good', 'neutral good', 'chaotic good', 'lawful neutral', 'neutral', 'chaotic neutral', 'lawful evil', 'neutral evil', 'chaotic evil', 'unaligned', 'any alignment']
@@ -189,8 +190,8 @@ const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() =
         <label class="sf-field"><span class="sf-label">Type</span>
           <select :value="typeValue" @change="setType(val($event), typeParts.tags)">
             <option value="">—</option>
-            <option v-for="o in TYPE_OPTIONS" :key="o" :value="o">{{ o }}</option>
-            <option v-if="typeValue && !TYPE_OPTIONS.includes(typeValue)" :value="typeValue">{{ typeValue }}</option>
+            <option v-for="o in TYPE_OPTIONS" :key="o.id" :value="o.id">{{ o.label }}</option>
+            <option v-if="typeValue && !TYPE_OPTIONS.some(o => o.id === typeValue)" :value="typeValue">{{ typeValue }}</option>
           </select>
         </label>
         <label class="sf-field"><span class="sf-label">Tags <span class="muted">(in brackets)</span></span>

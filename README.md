@@ -19,6 +19,10 @@ DnDesk is a desktop app for Windows and macOS. It's installed once and keeps the
 - Changes save by themselves about a second after you stop typing. The top bar shows the save status, and **Ctrl+S** saves right away.
 - In the text, type `[[` to link to another entry. Paste or drop a picture to store it in `data/images`. 🔒 Secret wraps text that only the DM should see.
 - Relations (memberships, family, home, ...) are edited on either entry and show up on both.
+- **Dropdowns** (an item's kind, a spell's school, …) pick from lists kept in the world. **Archive → Lists** (DM mode) shows them all: rename, reorder, add and remove options.
+  - Entries point at an option rather than copying its name, so renaming it renames it everywhere.
+  - An option that's in use can't be removed; the page shows which entries use it.
+  - Options marked 🔒 are the ones the app relies on (an item being a Weapon, a spell needing a Saving throw, …). They can be renamed but not removed.
 - **🕘** on an entry's page shows its earlier versions and can go back to one. A version is kept each time the entry changes, at most every 10 minutes, and the last 40 are kept. Going back keeps the version it replaces, so it can be undone.
 
 ### DM mode and player mode
@@ -49,8 +53,8 @@ A player character's page is its character sheet, filled in right on the page.
 - **Player mode:** the inventory sits beside the sheet under *Equipped*, where *Mentioned in* is in DM mode. Weapons and armor can be equipped, and magic items attuned.
 - **Proficiencies:** picked from the same lists the items use:
   - armor: Light, Medium, Heavy, Shield
-  - weapons: Simple, Martial, or single weapons such as Rapier
-  - tools, from the standard 5e list
+  - weapons: Simple, Martial, or single base weapons such as Rapier
+  - tools: the Tool items in the world
   - languages, plus a line for anything else
 - **Also:** money, speed, inspiration and features.
 - **Worked out for you:**
@@ -63,9 +67,9 @@ A player character's page is its character sheet, filled in right on the page.
 - **In a fight:** the initiative tracker takes the PC's AC, HP and initiative from the sheet.
 
 **How items match proficiencies.** Each item says what it needs:
-- **A weapon:** its *Category* (Simple or Martial), or a standard base weapon in its subtype, e.g. "Melee (Rapier)". A weapon with neither, such as a wand, needs no proficiency.
+- **A weapon:** its *Weapon category* (Simple or Martial) and its *Base weapon* (Rapier). A standard base weapon also tells the category. A weapon with neither, such as a wand, needs no proficiency.
 - **Armor:** its *Armor type*. Clothing needs no proficiency.
-- **A Tool item:** its *Tool*. The same tool list is used for a recipe's *Crafted with*.
+- **A tool:** an item of the kind Tool *is* the tool. A recipe's *Crafted with* links to one, and the Workbench checks the character is proficient with it.
 
 **The current character.** "☆ Make current character" at the top of a sheet makes that character the one the other tools are about:
 
@@ -80,11 +84,12 @@ With no current character, the Spellbook and Workbench use the world's own; the 
 Spells, items and maps can be sent to someone else who has this app.
 
 - **⇩ Export** on a spell's, item's or map's page saves it as `<name>.dndesk.json`.
-  - **Spells and items** bring along what they need to work: a recipe's ingredients (and the ingredients of those), a scroll's spell, and any spells linked in an item's text. Other links in the text become plain words. DM-only text is left out unless you tick the box.
+  - **Spells and items** bring along what they need to work: a recipe's ingredients (and the ingredients of those) and the tool it's crafted with, a scroll's spell, and any spells linked in an item's text. Other links in the text become plain words. DM-only text is left out unless you tick the box.
   - **Maps** are a place with only its name and map picture: no text, no pins, and no *Located in*.
 - **⚙ → Import from a file…** (top right) brings one in.
   - If you already have an entry with the same type and name, you choose to keep yours or replace it. Replacing a map only swaps the picture; your text and pins stay.
-  - Ingredients and spells you already have are reused as they are.
+  - Ingredients, tools and spells you already have are reused as they are.
+  - Dropdown choices are matched to your lists by name; one you don't have is added to the list.
 - Relations never travel.
 
 Everything is saved in `data/`:

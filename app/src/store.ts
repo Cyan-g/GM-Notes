@@ -3,7 +3,8 @@ import { reactive, computed, shallowRef } from 'vue'
 import type { Database, Entry, EntryType, Id, Relation, WorldDate } from './model/types'
 import type { Storage } from './storage/storage'
 import type { Backend, Changes } from './storage/backend'
-import { SCHEMA, RELATION_KINDS, MARTIAL_WEAPONS, SIMPLE_WEAPONS, TOOLS } from './model/schema'
+import { SCHEMA, RELATION_KINDS, MARTIAL_WEAPONS, SIMPLE_WEAPONS, byKey, type FieldDef } from './model/schema'
+import { LIST_BY_KEY, LISTS, labelIn, listKeyOf, optionsIn, type ListOption } from './model/lists'
 import { checkDatabase, type Problem } from './validate'
 
 /** The play state (the fight, the world's own spellbook and workbench): saved like the rest, but not a "world edit". */
@@ -11,7 +12,7 @@ const PLAY_KEYS = ['tracker', 'spellbook', 'crafting'] as const
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
 /** The newest data version this build understands (the last step in upgrade()). Newer data opens read-only. */
-export const DATA_VERSION = 21
+export const DATA_VERSION = 22
 /** The oldest data version this build can still open; older data is refused instead of guessed at. */
 export const OLDEST_VERSION = 20
 /** What the database must allow: every entry type and relation kind the app knows. */
@@ -91,7 +92,81 @@ export async function open(backend: Backend, storage: Storage): Promise<boolean>
 function upgrade(d: Database): boolean {
   let changed = false
   if ((d.version ?? 1) < 21) { upgradeTo21(d); d.version = 21; changed = true }
+  if ((d.version ?? 1) < 22) { upgradeTo22(d); d.version = 22; changed = true }
   return changed
+}
+
+/** The tools of version 21 (a Tool item's "tool" field, a recipe's "Crafted with"). */
+const TOOLS_21 = [
+  "Alchemist's Supplies", "Brewer's Supplies", "Calligrapher's Supplies", "Carpenter's Tools", "Cartographer's Tools",
+  "Cobbler's Tools", "Cook's Utensils", "Glassblower's Tools", "Jeweler's Tools", "Leatherworker's Tools", "Mason's Tools",
+  "Painter's Supplies", "Potter's Tools", "Smith's Tools", "Tinker's Tools", "Weaver's Tools", "Woodcarver's Tools",
+  'Disguise Kit', 'Forgery Kit', 'Gaming Set', 'Herbalism Kit', 'Musical Instrument', "Navigator's Tools", "Poisoner's Kit",
+  "Thieves' Tools", 'Vehicles (Land)', 'Vehicles (Water)',
+]
+
+/**
+ * 22: dropdowns became managed lists, used by reference, and tools became items.
+ * - A recipe's "Crafted with" and a character's (or the world Workbench's) tools point to Tool items; a tool with
+ *   no item yet gets one. The items' own "tool" field goes.
+ * - Weapons get their base weapon from the subtype ("Melee (Rapier)").
+ * - Any value in the data that isn't a list's starting option is added to that list, so every value is one.
+ */
+function upgradeTo22(d: Database) {
+  const low = (v: string) => v.toLowerCase().trim()
+  const items = () => Object.values(d.entries).filter(e => e.type === 'item')
+  const toolItem = (name: string): Id => {
+    const found = items().find(e => e.fields.kind === 'Tool' && (low(String((e.fields as Record<string, unknown>).tool ?? '')) === low(name) || low(e.name) === low(name)))
+    if (found) return found.id
+    const id = uniqueId(d, name)
+    const now = new Date().toISOString()
+    d.entries[id] = { id, type: 'item', name, aliases: [], tags: [], fields: { kind: 'Tool' }, body: '', visibility: 'known', created: now, updated: now }
+    return id
+  }
+  for (const e of items()) {
+    const f = e.fields as Record<string, unknown>
+    if (typeof f.craftingType === 'string' && !d.entries[f.craftingType]) {
+      if (f.craftingType === 'Other') delete f.craftingType
+      else f.craftingType = toolItem(f.craftingType)
+    }
+    if (e.fields.kind === 'Weapon' && !e.fields.baseWeapon) {
+      const sub = String(e.fields.subtype ?? '')
+      const base = sub.match(/\(([^)]+)\)/)?.[1].trim()
+      if (base) e.fields.baseWeapon = [...SIMPLE_WEAPONS, ...MARTIAL_WEAPONS].find(w => low(w) === low(base)) ?? base
+    }
+  }
+  const toIds = (tools: string[]) => [...new Set(tools.map(t => (d.entries[t] ? t : toolItem(t))))]
+  for (const e of Object.values(d.entries)) {
+    const p = e.type === 'pc' ? e.fields.sheet?.proficiencies : undefined
+    if (p?.tools?.length) p.tools = toIds(p.tools)
+  }
+  if (d.crafting?.tools.length) d.crafting.tools = toIds(d.crafting.tools)
+  for (const e of items()) delete (e.fields as Record<string, unknown>).tool
+  // Every value used becomes an option of its list.
+  const lists: Record<string, ListOption[]> = { ...d.meta.lists }
+  const add = (key: string, v: unknown) => {
+    if (typeof v !== 'string' || !v) return
+    const l = (lists[key] ??= optionsIn(d.meta, key).map(o => ({ ...o })))
+    if (!l.some(o => o.id === v)) l.push({ id: v, label: v })
+  }
+  for (const e of Object.values(d.entries)) {
+    for (const f of SCHEMA.find(t => t.type === e.type)?.fields ?? []) {
+      const key = listKeyOf(f)
+      if (!key) continue
+      const v = byKey(e.fields)[f.key]
+      for (const x of Array.isArray(v) ? v : [v]) if (x != null && !optionsIn(d.meta, key).some(o => o.id === x)) add(key, x)
+    }
+    const p = e.type === 'pc' ? e.fields.sheet?.proficiencies : undefined
+    for (const l of p?.languages ?? []) if (!optionsIn(d.meta, 'language').some(o => o.id === l)) add('language', l)
+  }
+  if (Object.keys(lists).length) d.meta.lists = lists
+}
+/** An id for a new entry made from a name: its slug, with a number if taken. */
+function uniqueId(d: Database, name: string) {
+  const slug = name.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'entry'
+  let id = slug
+  for (let n = 2; d.entries[id]; n++) id = `${slug}-${n}`
+  return id
 }
 
 /**
@@ -117,8 +192,8 @@ function upgradeTo21(d: Database) {
         if (t) f.armorType = t[0].toUpperCase() + t.slice(1).toLowerCase()
       }
       if (['Other', 'Adventuring Gear'].includes(String(f.kind ?? '')) && !f.recipe?.length) {
-        const tool = named(TOOLS, e.name) ?? TOOL_NAMES[low(e.name)]
-        if (tool) { f.kind = 'Tool'; f.tool = tool }
+        const tool = named(TOOLS_21, e.name) ?? TOOL_NAMES[low(e.name)]
+        if (tool) { f.kind = 'Tool'; (f as Record<string, unknown>).tool = tool }
       }
     }
     if (e.type === 'pc' && f.sheet) {
@@ -253,6 +328,28 @@ export const touch = () => {
   state.changes++
   scheduleSave()
 }
+
+// ---------- the dropdown lists (model/lists.ts) ----------
+
+/** A list's options in this world. */
+export const listOptions = (key: string | undefined): ListOption[] => (key ? optionsIn(state.db?.meta, key) : [])
+/** The options a field picks from (none for a field without a list). */
+export const fieldOptions = (f: FieldDef | undefined) => listOptions(listKeyOf(f))
+/** What a field's stored value reads as: an option's label, or for list fields each one's. */
+export function fieldLabel(f: FieldDef | undefined, v: unknown): string {
+  const key = listKeyOf(f)
+  return Array.isArray(v) ? v.map(x => labelIn(state.db?.meta, key, x)).join(', ') : labelIn(state.db?.meta, key, v)
+}
+/** An option's label in a list. */
+export const optionLabel = (key: string, id: unknown) => labelIn(state.db?.meta, key, id)
+/** Replace a list (the Lists page); stored only once changed. */
+export function setList(key: string, options: ListOption[]) {
+  if (!LIST_BY_KEY.has(key)) return
+  const m = db().meta
+  m.lists = { ...m.lists, [key]: options }
+  touch()
+}
+export { LISTS }
 
 /** Player mode: the app trimmed for a player's own world (see meta.mode). */
 export const playerMode = computed(() => state.db?.meta.mode === 'player')

@@ -2,6 +2,7 @@
 // Everything below an entry (places in places, organizations in organizations), as a nested list.
 // Branches with their own sub-entries can be folded; the first level starts open.
 import { computed } from 'vue'
+import { optionLabel } from '../store'
 import { childrenOf } from '../store'
 import type { Id } from '../model/types'
 import EntryLink from './EntryLink.vue'
@@ -11,7 +12,7 @@ const kids = computed(() => childrenOf.value.get(props.id) ?? [])
 function count(id: Id): number {
   return (childrenOf.value.get(id) ?? []).reduce((n, c) => n + 1 + count(c.id), 0)
 }
-const kind = (f: Record<string, unknown>) => (f.placeType || f.orgType) as string | undefined
+const kind = (f: Record<string, unknown>) => (f.placeType ? optionLabel('place.placeType', f.placeType) : f.orgType ? optionLabel('organization.orgType', f.orgType) : undefined)
 </script>
 
 <template>

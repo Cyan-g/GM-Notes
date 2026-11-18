@@ -444,7 +444,7 @@ function upgrade(d: Database) {
 function checkBeforeSave(d: Database, text: string): string {
   if (!d.meta || !d.entries || typeof d.entries !== 'object' || !Array.isArray(d.relations)) return 'the data is missing its main parts'
   const n = Object.keys(d.entries).length
-  if (!n) return 'there would be no entries left'
+  if (!n && savedCount > 0) return 'there would be no entries left'
   const lost = savedCount - n
   if (lost > 10) return `${lost} entries would disappear in one go (${savedCount} → ${n})`
   try { JSON.parse(text) } catch { return 'the file would not read back' }
@@ -570,6 +570,39 @@ export const touch = () => {
   state.dirty = true
   state.changes++
   scheduleSave()
+}
+
+/** Player mode: the app trimmed for a player's own world (see meta.mode). */
+export const playerMode = computed(() => state.db?.meta.mode === 'player')
+export function setMode(mode: 'dm' | 'player') {
+  const m = db().meta
+  if (mode === 'dm') delete m.mode; else m.mode = mode
+  touch()
+}
+
+/** Start a new, empty world in a folder that has none (a player's copy). It opens in player mode. */
+export async function createWorld(storage: Storage, title: string) {
+  if (await storage.readText(DB_FILE) != null) throw new Error(`There already is a world in "${storage.label}".`)
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+  const days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  const d: Database = {
+    version: DATA_VERSION,
+    meta: {
+      title: title.trim() || 'My world',
+      today: { year: 1, month: 1, day: 1 },
+      calendar: {
+        name: 'Calendar', months: months.map((name, i) => ({ name, days: days[i] })),
+        weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        leapMonth: 2, firstWeekDay: 1, moons: [], eras: [], holidays: [],
+      },
+      eventCategories: [],
+      mode: 'player',
+    },
+    entries: {},
+    relations: [],
+  }
+  await storage.writeText(DB_FILE, JSON.stringify(d, null, 1))
+  await open(storage)
 }
 
 export const entries = computed(() => { version.value; return state.db ? Object.values(state.db.entries) : [] })

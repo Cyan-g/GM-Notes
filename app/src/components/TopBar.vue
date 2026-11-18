@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // The menu bar at the top: one menu per category, cascading into types and entries.
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { MENUS } from '../menu'
+import { visibleMenus } from '../menu'
 import { db, save, state } from '../store'
 import { newEntry } from '../ui'
 import { route } from '../router'
@@ -36,7 +36,7 @@ const leave = () => { clearTimeout(timer); timer = window.setTimeout(close, 280)
 let touch = false
 const notePointer = (ev: PointerEvent) => { touch = ev.pointerType === 'touch' }
 function clickTitle(i: number, ev: MouseEvent) {
-  const m = MENUS[i]
+  const m = visibleMenus.value[i]
   if (m.home && !(touch && open.value !== i)) { close(); return }
   ev.preventDefault()
   // Hovering usually opened it already; a click keeps it open (Esc, a click elsewhere or leaving closes it).
@@ -50,23 +50,24 @@ const onKey = (ev: KeyboardEvent) => { if (ev.key === 'Escape' && open.value != 
 onMounted(() => { document.addEventListener('pointerdown', outside); window.addEventListener('keydown', onKey, true); window.addEventListener('resize', close) })
 onUnmounted(() => { document.removeEventListener('pointerdown', outside); window.removeEventListener('keydown', onKey, true); window.removeEventListener('resize', close) })
 watch(() => route.current, close)
+watch(visibleMenus, close)
 
 // Which menu the open page belongs to, so its title can be marked.
-const current = computed(() => MENUS.findIndex(m => m.owns(route.current)))
+const current = computed(() => visibleMenus.value.findIndex(m => m.owns(route.current)))
 </script>
 
 <template>
   <header class="topbar">
     <a class="brand" href="#/">{{ db().meta.title }}</a>
     <nav class="menubar" role="menubar">
-      <component :is="m.home ? 'a' : 'button'" v-for="(m, i) in MENUS" :key="m.title" class="menu-title" role="menuitem" aria-haspopup="menu"
+      <component :is="m.home ? 'a' : 'button'" v-for="(m, i) in visibleMenus" :key="m.title" class="menu-title" role="menuitem" aria-haspopup="menu"
               :href="m.home" :title="m.home ? `Open ${m.title.toLowerCase()} (hover for the menu)` : undefined"
               :aria-expanded="open === i" :class="{ open: open === i, current: current === i }"
               @pointerdown="notePointer" @click="clickTitle(i, $event)"
               @mouseenter="hoverTitle(i, $event)" @mouseleave="leave">{{ m.title }}</component>
     </nav>
     <div class="menu-host" @mouseenter="keep" @mouseleave="leave">
-      <MenuPanel v-if="open != null && anchor" :key="open" :items="MENUS[open].items()" :anchor="anchor" :level="0" @close="close" />
+      <MenuPanel v-if="open != null && anchor" :key="open" :items="visibleMenus[open].items()" :anchor="anchor" :level="0" @close="close" />
     </div>
     <div class="bar-tools">
       <button class="search-btn" @click="$emit('search')"><span>Search…</span><kbd>Ctrl K</kbd></button>

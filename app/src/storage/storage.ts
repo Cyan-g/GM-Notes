@@ -191,6 +191,20 @@ export async function pickFolder(): Promise<FileSystemDirectoryHandle> {
   return handle
 }
 
+/** Remember a folder as the data folder (used after starting a new world in it). */
+export const rememberFolder = (handle: FileSystemDirectoryHandle) => idbSet('data', handle)
+
+/**
+ * Where a new world goes in a picked folder: a `data` folder inside it when it holds the app's .html file
+ * (the app's own folder), otherwise the picked folder itself.
+ */
+export async function newWorldFolder(dir: FileSystemDirectoryHandle): Promise<FileSystemDirectoryHandle> {
+  for await (const [name, h] of (dir as any).entries()) {
+    if (h.kind === 'file' && /\.html?$/i.test(name)) return dir.getDirectoryHandle('data', { create: true })
+  }
+  return dir
+}
+
 /** The `data` folder inside a picked folder, when the picked one isn't the data folder itself. */
 async function dataFolderIn(dir: FileSystemDirectoryHandle): Promise<FileSystemDirectoryHandle | null> {
   const has = async (d: FileSystemDirectoryHandle, name: string) => { try { await d.getFileHandle(name); return true } catch { return false } }

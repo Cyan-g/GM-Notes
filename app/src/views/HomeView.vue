@@ -3,8 +3,8 @@
 // with their factions, the gods, peoples and subclasses, and a few links. Everything comes from the entries.
 import { computed, ref } from 'vue'
 import type { Entry, Id, WorldDate } from '../model/types'
-import { byType, childrenOf, db, entries, formatDate, get, placePath, touch } from '../store'
-import { hrefDashboard, hrefList } from '../router'
+import { byType, childrenOf, db, entries, formatDate, get, placePath, playerMode, touch } from '../store'
+import { hrefDashboard, hrefList, hrefMap } from '../router'
 import { DASHBOARDS } from '../dashboards'
 import { newEntry } from '../ui'
 import { toggleFavourite } from '../edit'
@@ -34,6 +34,12 @@ const TOOLS = [
   { icon: '⏳', label: 'Timeline', href: '#/atlas/timeline' },
   { icon: '📅', label: 'Calendar', href: '#/calendar' },
 ]
+
+// Player mode: only the player's tools, and the maps instead of the world's regions.
+const PLAYER_TOOLS = ['#/spellbook', '#/crafting']
+const tools = computed(() => (playerMode.value ? TOOLS.filter(t => PLAYER_TOOLS.includes(t.href)) : TOOLS))
+const desks = computed(() => DASHBOARDS.filter(x => x.id !== 'recent' && (!playerMode.value || ['spells', 'crafting'].includes(x.id))))
+const maps = computed(() => list('place').filter(p => p.fields.map).sort(byName))
 
 // ---- favourites ----
 const favourites = computed(() => (db().meta.favourites ?? []).map(id => get(id)).filter((e): e is Entry => !!e))
@@ -86,12 +92,12 @@ const sessionDate = (s: Entry) => { const d = s.fields.date as WorldDate | undef
   <div class="home">
     <header>
       <h1>{{ db().meta.title }}</h1>
-      <p class="muted">Today in the world: <a href="#/calendar"><b>{{ formatDate(db().meta.today) }}</b></a> · {{ entries.length }} entries</p>
+      <p v-if="!playerMode" class="muted">Today in the world: <a href="#/calendar"><b>{{ formatDate(db().meta.today) }}</b></a> · {{ entries.length }} entries</p>
     </header>
 
     <!-- the desk -->
     <div class="home-desk">
-      <section class="card home-campaign">
+      <section v-if="!playerMode" class="card home-campaign">
         <h3>🎲 Campaign</h3>
         <template v-if="current">
           <p class="home-current"><EntryLink :id="current.c.id" /> <span class="muted small">{{ current.sessions.length }} sessions</span></p>
@@ -116,8 +122,8 @@ const sessionDate = (s: Entry) => { const d = s.fields.date as WorldDate | undef
       <section class="card home-tools">
         <h3>🧰 Desk</h3>
         <div class="tool-grid">
-          <a v-for="d in DASHBOARDS.filter(x => x.id !== 'recent')" :key="d.id" class="tool" :href="hrefDashboard(d.id)"><span>{{ d.icon }}</span>{{ d.title }}</a>
-          <a v-for="t in TOOLS" :key="t.href" class="tool" :href="t.href"><span>{{ t.icon }}</span>{{ t.label }}</a>
+          <a v-for="d in desks" :key="d.id" class="tool" :href="hrefDashboard(d.id)"><span>{{ d.icon }}</span>{{ d.title }}</a>
+          <a v-for="t in tools" :key="t.href" class="tool" :href="t.href"><span>{{ t.icon }}</span>{{ t.label }}</a>
         </div>
         <template v-if="kits.length">
           <h4>Crafting kits</h4>
@@ -142,8 +148,15 @@ const sessionDate = (s: Entry) => { const d = s.fields.date as WorldDate | undef
       </section>
     </div>
 
+    <!-- the maps (player mode) -->
+    <section v-if="playerMode" class="card">
+      <h3>🗺 Maps</h3>
+      <ul v-if="maps.length" class="rel compact"><li v-for="m in maps" :key="m.id"><a :href="hrefMap(m.id)">{{ m.name }}</a></li></ul>
+      <p v-else class="muted small">Maps your DM shares show up here: ⚙ → Import from a file.</p>
+    </section>
+
     <!-- the world -->
-    <section v-if="world" class="card home-regions">
+    <section v-if="world && !playerMode" class="card home-regions">
       <h3>🌍 Regions of <EntryLink :id="world.id" /> <a class="muted small" href="#/atlas">Atlas →</a></h3>
       <div class="table-wrap">
         <table class="grid">
@@ -166,7 +179,7 @@ const sessionDate = (s: Entry) => { const d = s.fields.date as WorldDate | undef
 
     <!-- lore at hand -->
     <div class="home-lore">
-      <section class="card">
+      <section v-if="!playerMode" class="card">
         <h3>✨ Major deities <a v-if="pantheon" class="muted small" :href="`#/e/${pantheon.id}`">{{ pantheon.name }} →</a></h3>
         <ul class="rel compact">
           <li v-for="d in greater" :key="d.id"><EntryLink :id="d.id" /><span class="role">{{ epithet(d) }}</span></li>
@@ -174,7 +187,7 @@ const sessionDate = (s: Entry) => { const d = s.fields.date as WorldDate | undef
         <p v-if="lesser.length" class="muted small">Lesser: <template v-for="(d, i) in lesser" :key="d.id"><EntryLink :id="d.id" />{{ i < lesser.length - 1 ? ', ' : '' }}</template></p>
       </section>
 
-      <section class="card">
+      <section v-if="!playerMode" class="card">
         <h3>🧝 Races <a class="muted small" :href="hrefList('race')">all →</a></h3>
         <p class="home-inline"><span v-for="r in races" :key="r.id" class="home-tag"><EntryLink :id="r.id" /></span></p>
         <template v-if="subclasses.length">

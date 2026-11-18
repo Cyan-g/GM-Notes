@@ -191,6 +191,8 @@ export interface Database {
     favourites?: Id[]
     /** Web links kept on the home page (a watch-together room, a soundboard …). */
     links?: { label: string; url: string }[]
+    /** Who this world is for. Player mode trims the app to spells, crafting and maps and hides DM-only text. */
+    mode?: 'dm' | 'player'
     /** Colour theme and heading font (see theme.ts). */
     theme?: import('../theme').ThemeSettings
   }

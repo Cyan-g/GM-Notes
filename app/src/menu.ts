@@ -1,8 +1,9 @@
 // What the top menu bar shows. Children are built lazily, only when a submenu opens.
 import { SCHEMA } from './model/schema'
 import type { Entry, EntryType } from './model/types'
-import { byType, childrenOf, get, state } from './store'
-import { hrefDashboard, hrefEntry, hrefList, type Route } from './router'
+import { computed } from 'vue'
+import { byType, childrenOf, get, playerMode, state } from './store'
+import { hrefDashboard, hrefEntry, hrefList, hrefMap, type Route } from './router'
 import { newEntry } from './ui'
 import { DASHBOARDS } from './dashboards'
 
@@ -92,7 +93,8 @@ function typeNode(t: EntryType): MenuNode {
 
 /** `owns` says whether the open page belongs to this menu, so its title can be marked. */
 /** `home`: the menu's own dashboard, opened by clicking the title (hovering shows the menu). */
-export interface TopMenu { title: string; items: () => MenuNode[]; owns: (r: Route) => boolean; home?: string }
+/** `player`: shown in player mode too; `playerOnly`: shown only there. */
+export interface TopMenu { title: string; items: () => MenuNode[]; owns: (r: Route) => boolean; home?: string; player?: boolean; playerOnly?: boolean }
 
 /** Dashboards that have a top menu of their own, and the item kinds that belong to crafting. */
 const OWN_MENU = ['spells', 'crafting', 'people', 'armory']
@@ -146,6 +148,7 @@ export const MENUS: TopMenu[] = [
   {
     title: 'Spells',
     home: '#/spellbook',
+    player: true,
     owns: r => typeOf(r) === 'spell' || dashOf(r) === 'spells' || r.name === 'spellbook',
     // The spell tables first, then every spell by level.
     items: () => [
@@ -161,6 +164,7 @@ export const MENUS: TopMenu[] = [
   {
     title: 'Crafting',
     home: '#/crafting',
+    player: true,
     owns: r => dashOf(r) === 'crafting' || r.name === 'crafting' || (r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
     items: () => [
       { label: 'Workbench', icon: '⚗️', href: '#/crafting', hint: state.db?.crafting ? `${state.db.crafting.known.length} recipes` : undefined },
@@ -183,4 +187,19 @@ export const MENUS: TopMenu[] = [
     items: () => [{ label: 'Armory', icon: '⚔️', href: hrefDashboard('armory'), children: () => dashViews('armory') }, SEP,
       ...(['item', 'creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'] as EntryType[]).map(typeNode)],
   },
+  {
+    // Player mode's World: the maps in this world (usually ones the DM shared), each opening on its map.
+    title: 'Maps',
+    player: true,
+    playerOnly: true,
+    owns: r => r.name === 'map' || typeOf(r) === 'place',
+    items: () => {
+      const maps = (byType.value.get('place') ?? []).filter(p => p.fields.map).sort(byName)
+      return maps.length ? maps.map(p => ({ label: p.name, icon: '🗺', href: hrefMap(p.id) }))
+        : [{ label: 'No maps yet: import one with ⚙ → Import', hint: '' }]
+    },
+  },
 ]
+
+/** The menus for the current mode. */
+export const visibleMenus = computed(() => MENUS.filter(m => (playerMode.value ? m.player : !m.playerOnly)))

@@ -2,7 +2,7 @@
 // The ⚙ menu at the top right: the theme (colours, heading font), importing a shared spell, item or map,
 // and data & backups. The button shows when the last backup copy is overdue.
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { state } from '../store'
+import { playerMode, setMode, state } from '../store'
 import { daysSince } from '../backup'
 import { pickImport } from '../ui'
 import { go } from '../router'
@@ -47,6 +47,10 @@ onUnmounted(() => { document.removeEventListener('pointerdown', outside); window
             @click="toggle">⚙<span v-if="overdue" class="settings-dot" /></button>
     <div v-if="open === 'menu'" class="theme-panel settings-list" role="menu">
       <button role="menuitem" @click="open = 'theme'"><span>🎨</span>Theme &amp; colours<span class="hint">›</span></button>
+      <label class="settings-switch" title="Off: player mode, trimmed to spells, crafting and maps, without DM-only text">
+        <span>🎲</span>DM mode
+        <input type="checkbox" role="switch" :checked="!playerMode" :disabled="!!state.readOnly" @change="setMode(($event.target as HTMLInputElement).checked ? 'dm' : 'player')" />
+      </label>
       <button role="menuitem" @click="importFile"><span>⇪</span>Import from a file…<span class="hint">spell, item, map</span></button>
       <button role="menuitem" :class="{ warn: overdue }" @click="data"><span>💾</span>Data &amp; backups
         <span class="hint">{{ backupAge == null ? 'no copy yet' : backupAge === 0 ? 'copied today' : `copied ${backupAge} d ago` }}</span></button>

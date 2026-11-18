@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import { get, open, overwrite, save, state } from './store'
+import { createWorld, get, open, overwrite, save, state } from './store'
 import { ui } from './ui'
-import { FolderStorage, HttpStorage, folderApiAvailable, pickFolder, regrant, rememberedFolder } from './storage/storage'
+import { FolderStorage, HttpStorage, folderApiAvailable, newWorldFolder, pickFolder, regrant, rememberFolder, rememberedFolder } from './storage/storage'
 import { route } from './router'
 import TopBar from './components/TopBar.vue'
 import QuickSwitcher from './components/QuickSwitcher.vue'
@@ -29,13 +29,19 @@ import { syncTitle } from './title'
 
 syncTitle()
 
-const phase = ref<'starting' | 'need-folder' | 'no-api' | 'ready'>('starting')
+const phase = ref<'starting' | 'need-folder' | 'no-api' | 'new-world' | 'ready'>('starting')
 const remembered = ref<FileSystemDirectoryHandle | null>(null)
 const startError = ref('')
 
+/** A picked folder without a world in it: offered to start a new one there (a player's own copy). */
+const emptyFolder = ref<FileSystemDirectoryHandle | null>(null)
+const worldName = ref('')
+
 async function useHandle(h: FileSystemDirectoryHandle) {
   try {
-    await open(new FolderStorage(h))
+    const s = new FolderStorage(h)
+    if (await s.readText('eldoria.json') == null) { emptyFolder.value = h; phase.value = 'new-world'; return }
+    await open(s)
     phase.value = 'ready'
   } catch (e) {
     startError.value = (e as Error).message
@@ -55,6 +61,17 @@ onMounted(async () => {
   remembered.value = r?.handle ?? null
   phase.value = 'need-folder'
 })
+
+async function startWorld() {
+  if (!emptyFolder.value) return
+  startError.value = ''
+  try {
+    const dir = await newWorldFolder(emptyFolder.value)
+    await rememberFolder(dir)
+    await createWorld(new FolderStorage(dir), worldName.value)
+    phase.value = 'ready'
+  } catch (e) { startError.value = (e as Error).message }
+}
 
 async function reconnect() {
   startError.value = ''
@@ -127,6 +144,15 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
           <li><b>Brave:</b> open <code>brave://flags/#file-system-access-api</code>, set it to <i>Enabled</i>, restart Brave.</li>
           <li><b>Firefox / Safari:</b> not supported.</li>
         </ul>
+      </template>
+      <template v-else-if="phase === 'new-world' && emptyFolder">
+        <p>“{{ emptyFolder.name }}” has no world in it yet.</p>
+        <p class="muted small">Start a new one here, for example as a player keeping the spells, recipes and maps your DM shares.
+          It starts in player mode; ⚙ → DM mode switches.</p>
+        <input v-model="worldName" placeholder="Name, e.g. your character's name" @keydown.enter="startWorld" />
+        <button class="primary" @click="startWorld">Start a new world here</button>
+        <button @click="choose">Choose another folder…</button>
+        <p v-if="startError" class="error">{{ startError }}</p>
       </template>
       <template v-else>
         <p>Choose the folder this file is in (or the <b>data</b> folder inside it). The browser remembers it, so this is needed only once.</p>

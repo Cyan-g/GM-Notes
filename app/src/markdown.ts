@@ -1,6 +1,6 @@
 // Markdown rendering with [[id|label]] links, :::secret blocks, callouts and images from the data folder.
 import MarkdownIt from 'markdown-it'
-import { get } from './store'
+import { get, playerMode } from './store'
 import { hrefEntry } from './router'
 
 const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
@@ -57,7 +57,8 @@ md.renderer.rules.link_open = (tokens, idx, opts, env, self) => {
 
 /** Turn Obsidian-style callouts and :::secret blocks into HTML before parsing. */
 function preprocess(src: string): string {
-  src = src.replace(/^:::secret\s*\n([\s\S]*?)\n:::\s*$/gm, (_, inner) => `<div class="secret"><span class="secret-tag">DM only</span>\n\n${inner}\n\n</div>`)
+  // Player mode never shows DM-only text.
+  src = src.replace(/^:::secret\s*\n([\s\S]*?)\n:::\s*$/gm, (_, inner) => playerMode.value ? '' : `<div class="secret"><span class="secret-tag">DM only</span>\n\n${inner}\n\n</div>`)
   const lines = src.split('\n')
   const out: string[] = []
   for (let i = 0; i < lines.length; i++) {

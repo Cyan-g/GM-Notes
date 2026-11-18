@@ -1075,3 +1075,12 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .cs-item { font: inherit; color: var(--link); text-align: left; padding: 0; }
 .cs-item:hover { text-decoration: underline; }
 .item-modal .item-modal-text { margin-top: 1rem; }
+
+/* a character's equipped items and attunement slots (side card) */
+.equipped-card h4 { margin: .9rem 0 .4rem; font: 600 .95rem var(--serif); font-variant: small-caps; color: var(--accent); display: flex; gap: .5rem; align-items: baseline; }
+.attune-slots { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .3rem; }
+.attune-slots li { display: flex; align-items: center; gap: .5rem; padding: .3rem .55rem; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
+.attune-slots li::before { content: '◆'; color: var(--accent); font-size: 11px; }
+.attune-slots li.empty { border-style: dashed; }
+.attune-slots li.empty::before { content: '◇'; color: var(--muted); }
+.attune-slots li.over { border-color: #b33; }

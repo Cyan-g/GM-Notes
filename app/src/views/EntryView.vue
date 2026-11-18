@@ -23,6 +23,7 @@ import DataImage from '../components/DataImage.vue'
 import ItemCard from '../components/ItemCard.vue'
 import SpellCard from '../components/SpellCard.vue'
 import CharacterSheet from '../components/CharacterSheet.vue'
+import EquippedCard from '../components/EquippedCard.vue'
 import FeatCard from '../components/FeatCard.vue'
 import { describe } from '../describe'
 import TimelineChart from '../components/TimelineChart.vue'
@@ -357,8 +358,10 @@ const siblings = computed(() => {
         <StatblockView v-if="statblock && e.type !== 'creature'" :sb="statblock" :name="e.name" />
 
         <MembersCard v-if="e.type === 'organization'" :org="e" />
+        <!-- A character's sheet: what they're equipped with instead of the relation cards. -->
+        <EquippedCard v-if="e.type === 'pc'" :pc="e" />
 
-        <div v-for="[label, list] in relGroups" :key="label" class="card">
+        <div v-for="[label, list] in e.type === 'pc' ? [] : relGroups" :key="label" class="card">
           <h3>{{ label[0].toUpperCase() + label.slice(1) }}</h3>
           <ul class="rel rel-scroll">
             <li v-for="{ other, r } in list" :key="r.id" :class="{ ended: ended(r) }">

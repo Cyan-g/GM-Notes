@@ -69,7 +69,8 @@ const longRest = () => edit(x => { x.hp = x.maxHp; x.tempHp = undefined; x.hitDi
 // ---- inventory ----
 const itemOf = (l: InventoryLine) => get(l.item)
 const canEquip = (l: InventoryLine) => ['Weapon', 'Armor'].includes(String(itemOf(l)?.fields.kind ?? ''))
-const canAttune = (l: InventoryLine) => !!itemOf(l)?.fields.attunement
+/** Attunement: items marked as needing it, and (since few are marked) any magical item. */
+const canAttune = (l: InventoryLine) => !!(itemOf(l)?.fields.attunement || itemOf(l)?.fields.magical || l.attuned)
 const attunedCount = computed(() => s.value.inventory.filter(l => l.attuned).length)
 function addItem(id: string) {
   edit(x => {

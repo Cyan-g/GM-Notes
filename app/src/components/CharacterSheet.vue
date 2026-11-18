@@ -11,6 +11,7 @@ import type { CharacterSheet, ClassLine, Entry, Proficiencies } from '../model/t
 import { byType, get, listOptions, playerMode, setList, state } from '../store'
 import { CLASS_DIE, DICE, classText, classesOf, dieOf, hitDicePools } from '../model/classes'
 import { changed } from '../edit'
+import { hrefTab } from '../router'
 import {
   ABILITIES, SKILLS, armorClass, attacks, blankSheet, canAttune, canEquip, castingAbility, levelOf, mod, passivePerception,
   profBonus, profsOf, profsToEdit, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, currentPc, setCurrent, type Ability,
@@ -153,7 +154,6 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <button class="chip-toggle" :class="{ on: isCurrent }" :disabled="ro"
               :title="isCurrent ? 'The Spellbook, Workbench and Character menu use this character' : 'Use this character in the Spellbook, Workbench and Character menu'"
               @click="setCurrent(isCurrent ? undefined : pc.id)">{{ isCurrent ? '★ Current character' : '☆ Make current character' }}</button>
-      <template v-if="isCurrent"><a href="#/spellbook" class="small">Spellbook →</a><a href="#/crafting" class="small">Workbench →</a></template>
       <span v-if="!build && classLabel" class="cs-class-line">{{ classLabel }}</span>
     </div>
     <!-- building: the classes, each with its level, subclass and hit die -->
@@ -251,7 +251,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
           </select>
           <span v-else>{{ castLabel }}</span>
           <template v-if="cast"><span>Save DC <b>{{ 8 + prof + castMod }}</b></span><span>Attack <b>{{ signed(prof + castMod) }}</b></span></template>
-          <a href="#/spellbook" class="small">Spellbook →</a>
+          <a :href="hrefTab(pc.id, 'spellbook')" class="small">Spellbook →</a>
         </div>
 
         <h4>Proficiencies &amp; languages</h4>

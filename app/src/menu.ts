@@ -158,7 +158,6 @@ export const MENUS: TopMenu[] = [
   {
     title: 'Spells',
     home: '#/spellbook',
-    player: true,
     owns: r => typeOf(r) === 'spell' || dashOf(r) === 'spells' || r.name === 'spellbook',
     // The spell tables first, then every spell by level.
     items: () => [
@@ -174,7 +173,6 @@ export const MENUS: TopMenu[] = [
   {
     title: 'Crafting',
     home: '#/crafting',
-    player: true,
     owns: r => dashOf(r) === 'crafting' || r.name === 'crafting' || (r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
     items: () => [
       { label: 'Workbench', icon: '⚗️', href: '#/crafting', hint: benchKnown() != null ? `${benchKnown()} recipes` : undefined },

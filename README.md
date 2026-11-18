@@ -31,7 +31,7 @@ DnDesk is a desktop app for Windows and macOS. It's installed once and keeps the
 
 - **DM mode** (your Eldoria) shows everything.
 - **Player mode** is for a player's own copy.
-  - The menus are Character, Campaign (the campaigns, with their session notes), World (Atlas, Timeline, Calendar, places and events), Spells and Crafting. People, the Archive, Initiative and encounters are hidden.
+  - The menus are Character, Campaign (the campaigns, with their session notes) and World (Atlas, Timeline, Calendar, places and events). The spellbook and workbench are tabs on the character's page instead of the Spells and Crafting menus. People, the Archive, Initiative and encounters are hidden.
   - The home page shows the characters, the campaign, the tools, favourites, the regions and links, but not the deities and races.
   - New entries can be characters, campaigns, sessions, places, events, spells and items.
   - DM-only text is never shown.
@@ -77,6 +77,7 @@ A player character's page is its character sheet for play: HP, hit dice, inspira
 
 - **Spellbook:** shows the character's own spellbook: spells, slots and prepared spells. The spell attack and save DC come from their sheet once its scores and casting ability are filled in; until then they're typed in.
 - **Workbench:** uses the character's recipes and the tool proficiencies from their sheet (set on its ✎ Edit page; the recipes show which tools are missing). The ingredient pouch is the ingredients in their inventory, which the sheet lists separately as *Ingredient pouch*. Crafting takes the ingredients out of the inventory and puts the result in.
+- **Tabs:** a character's page has *Overview* (the sheet), *Family tree*, *📖 Spellbook* and *⚗️ Workbench*; the last two are that character's own, whether or not they're the current one.
 - **Character menu** (player mode): clicking it opens the current character's sheet; hovering offers *New character…* and *All characters*, the list where the current one is marked ★ current.
 
 With no current character, the Spellbook and Workbench use the world's own; the Spellbook then takes typed numbers, and the Workbench picks its tools itself.

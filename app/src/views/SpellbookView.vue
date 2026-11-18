@@ -6,18 +6,22 @@ import { optionLabel } from '../store'
 import type { Entry, Id, Spellbook } from '../model/types'
 import { db, get, touch } from '../store'
 import { activeSpellbook, currentPc, spellStats } from '../sheet'
+import type { Entry as PcEntry } from '../model/types'
 import EntryLink from '../components/EntryLink.vue'
 import { newEntry } from '../ui'
 import { hrefEntry } from '../router'
 import SpellModal from '../components/SpellModal.vue'
 import EntryPicker from '../components/edit/EntryPicker.vue'
 
+/** On a character's page (their tab) it's theirs; on its own page, the current character's or the world's. */
+const props = defineProps<{ pc?: PcEntry }>()
+const owner = computed(() => props.pc ?? currentPc.value)
 const ORD = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 
 // The current character's spellbook, or the world's when no character is current.
-const book = computed<Spellbook>(() => activeSpellbook())
+const book = computed<Spellbook>(() => activeSpellbook(props.pc))
 // The caster is the current character: their sheet gives attack and DC. Without one, the numbers are typed in.
-const caster = currentPc
+const caster = owner
 const fromSheet = computed(() => (caster.value ? spellStats(caster.value) : undefined))
 const attack = computed(() => fromSheet.value?.attack ?? book.value.attackBonus)
 const dc = computed(() => fromSheet.value?.dc ?? book.value.saveDC)
@@ -125,7 +129,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
 <template>
   <div class="spellbook">
     <header class="list-head">
-      <h1><span class="icon">📖</span>Spellbook<span v-if="currentPc" class="head-of">of <EntryLink :id="currentPc.id" /></span></h1>
+      <h1 v-if="!pc"><span class="icon">📖</span>Spellbook<span v-if="owner" class="head-of">of <EntryLink :id="owner.id" /></span></h1>
       <div class="row-btns">
         <button title="Every spell slot back" @click="longRest">🌙 Restore spell slots</button>
         <button @click="newEntry('spell')">＋ New spell</button>
@@ -135,7 +139,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
     <div class="sbk-top">
       <section class="card sbk-stats">
         <h3>Spellcasting</h3>
-        <p v-if="!currentPc" class="muted small">No current character: make one current on their sheet to use their spellbook and numbers.</p>
+        <p v-if="!owner" class="muted small">No current character: make one current on their sheet to use their spellbook and numbers.</p>
         <template v-if="fromSheet">
           <label><span>Spell attack</span><b>{{ fromSheet.attack >= 0 ? '+' : '' }}{{ fromSheet.attack }}</b></label>
           <label><span>Save DC</span><b>{{ fromSheet.dc }}</b></label>

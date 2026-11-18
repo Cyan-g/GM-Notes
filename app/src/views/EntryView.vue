@@ -4,7 +4,9 @@ import { computed, ref } from 'vue'
 import type { Entry, Relation, Statblock, WorldDate } from '../model/types'
 import { TYPES, RELATION_KINDS, byKey, type FieldDef } from '../model/schema'
 import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, placePath, playerMode, relationsOf, entries } from '../store'
-import { go, hrefEntry, hrefFamily, hrefList, hrefMap } from '../router'
+import { go, hrefEntry, hrefFamily, hrefList, hrefMap, hrefTab, type EntryTab } from '../router'
+import SpellbookView from './SpellbookView.vue'
+import CraftingView from './CraftingView.vue'
 import FamilyTree from '../components/FamilyTree.vue'
 import { familySize } from '../family'
 import MapView from '../components/MapView.vue'
@@ -34,11 +36,14 @@ import TimelineChart from '../components/TimelineChart.vue'
 import TimelineList from '../components/TimelineList.vue'
 import { allItems, filterItems } from '../timeline'
 
-const props = defineProps<{ id: string; tab?: 'family' }>()
+const props = defineProps<{ id: string; tab?: EntryTab }>()
 const e = computed(() => get(props.id))
 /** People have a second tab with their family tree. */
 const hasFamily = computed(() => e.value?.type === 'npc' || e.value?.type === 'pc')
 const onFamily = computed(() => hasFamily.value && props.tab === 'family')
+const onBook = computed(() => e.value?.type === 'pc' && props.tab === 'spellbook')
+const onBench = computed(() => e.value?.type === 'pc' && props.tab === 'crafting')
+const onOverview = computed(() => !onFamily.value && !onBook.value && !onBench.value)
 const def = computed(() => e.value ? TYPES[e.value.type] : undefined)
 const today = computed(() => db().meta.today)
 
@@ -270,10 +275,16 @@ const siblings = computed(() => {
 
     <MapView v-if="e.fields.map" :place="e" banner />
     <nav v-if="hasFamily" class="tabs entry-tabs">
-      <a :href="hrefEntry(e.id)" :class="{ on: !onFamily }">Overview</a>
+      <a :href="hrefEntry(e.id)" :class="{ on: onOverview }">Overview</a>
       <a :href="hrefFamily(e.id)" :class="{ on: onFamily }">🌳 Family tree <span v-if="familySize(e.id)" class="muted small">{{ familySize(e.id) }}</span></a>
+      <template v-if="e.type === 'pc'">
+        <a :href="hrefTab(e.id, 'spellbook')" :class="{ on: onBook }">📖 Spellbook <span v-if="e.fields.sheet?.spellbook?.prepared?.length" class="muted small">{{ e.fields.sheet.spellbook.prepared.length }}</span></a>
+        <a :href="hrefTab(e.id, 'crafting')" :class="{ on: onBench }">⚗️ Workbench <span v-if="e.fields.sheet?.crafting?.known?.length" class="muted small">{{ e.fields.sheet.crafting.known.length }}</span></a>
+      </template>
     </nav>
     <FamilyTree v-if="onFamily" :id="e.id" />
+    <SpellbookView v-else-if="onBook" :pc="e" />
+    <CraftingView v-else-if="onBench" :pc="e" />
     <div v-else class="entry-grid">
       <div class="entry-main">
         <div v-if="siblings" class="pager">

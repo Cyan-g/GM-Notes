@@ -2,10 +2,13 @@
 import { reactive } from 'vue'
 import type { EntryType, Id } from './model/types'
 
+/** A person's second tabs: the family tree, and a character's spellbook and workbench. */
+export type EntryTab = 'family' | 'spellbook' | 'crafting'
+const TABS: EntryTab[] = ['family', 'spellbook', 'crafting']
 export type Route =
   | { name: 'home' }
   | { name: 'list'; type: EntryType }
-  | { name: 'entry'; id: Id; edit: boolean; tab?: 'family' }
+  | { name: 'entry'; id: Id; edit: boolean; tab?: EntryTab }
   | { name: 'calendar'; year?: number; month?: number; edit?: boolean }
   | { name: 'tracker' }
   | { name: 'spellbook' }
@@ -33,7 +36,7 @@ function parse(): Route {
   if (kind === 'map' && arg) return { name: 'map', id: arg, pin: extra }
   if (kind === 'd' && arg) return { name: 'dashboard', id: arg, view: extra }
   if (kind === 't' && arg) return { name: 'list', type: arg as EntryType }
-  if (kind === 'e' && arg) return { name: 'entry', id: arg, edit: extra === 'edit', tab: extra === 'family' ? 'family' : undefined }
+  if (kind === 'e' && arg) return { name: 'entry', id: arg, edit: extra === 'edit', tab: TABS.includes(extra as EntryTab) ? (extra as EntryTab) : undefined }
   return { name: 'home' }
 }
 
@@ -48,6 +51,8 @@ window.addEventListener('hashchange', () => {
 export const hrefEntry = (id: Id, edit = false) => `#/e/${encodeURIComponent(id)}${edit ? '/edit' : ''}`
 /** A person's family tree tab. */
 export const hrefFamily = (id: Id) => `#/e/${encodeURIComponent(id)}/family`
+/** A character's Spellbook or Workbench tab. */
+export const hrefTab = (id: Id, tab: EntryTab) => `#/e/${encodeURIComponent(id)}/${tab}`
 export const hrefList = (type: EntryType) => `#/t/${type}`
 export const go = (href: string) => { location.hash = href.replace(/^#/, '') }
 export const hrefDashboard = (id: string, view?: string) => `#/d/${id}${view ? '/' + encodeURIComponent(view) : ''}`

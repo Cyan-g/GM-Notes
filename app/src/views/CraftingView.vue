@@ -7,12 +7,16 @@ import { computed, ref } from 'vue'
 import type { Entry, Id, RecipeLine } from '../model/types'
 import { byType, formatMoney, get } from '../store'
 import { activeBench, currentPc } from '../sheet'
+import type { Entry as PcEntry } from '../model/types'
 import { recipeCost } from '../columns'
 import { CRAFTING_RULE, craftingTime } from '../crafting'
 import EntryLink from '../components/EntryLink.vue'
 import EntryPicker from '../components/edit/EntryPicker.vue'
 
-const c = computed(() => activeBench())
+/** On a character's page (their tab) it's theirs; on its own page, the current character's or the world's. */
+const props = defineProps<{ pc?: PcEntry }>()
+const owner = computed(() => props.pc ?? currentPc.value)
+const c = computed(() => activeBench(props.pc))
 const message = ref('')
 
 // ---- proficiencies: the Tool items ----
@@ -63,7 +67,7 @@ const ingredientIds = computed(() => (byType.value.get('item') ?? []).filter(e =
 <template>
   <div class="workbench">
     <header class="list-head">
-      <h1><span class="icon">⚗️</span>Workbench<span v-if="currentPc" class="head-of">of <EntryLink :id="currentPc.id" /></span></h1>
+      <h1 v-if="!pc"><span class="icon">⚗️</span>Workbench<span v-if="owner" class="head-of">of <EntryLink :id="owner.id" /></span></h1>
       <span v-if="message" class="ok small">{{ message }}</span>
     </header>
 
@@ -103,7 +107,7 @@ const ingredientIds = computed(() => (byType.value.get('item') ?? []).filter(e =
       <aside class="wb-side">
         <!-- A current character's tools are the proficiencies on their sheet (set on its Edit page); only the world's
              own Workbench picks them here. -->
-        <section v-if="!currentPc" class="card">
+        <section v-if="!owner" class="card">
           <h3>Tool proficiencies</h3>
           <div class="seg wrap">
             <button v-for="t in TOOLS" :key="t.id" type="button" :class="{ on: c.tools.includes(t.id) }" @click="toggleTool(t.id)">{{ t.name }}</button>
@@ -113,7 +117,7 @@ const ingredientIds = computed(() => (byType.value.get('item') ?? []).filter(e =
 
         <section class="card">
           <h3>Ingredient pouch <span class="muted small">{{ formatMoney(pouchValue) }}</span></h3>
-          <p v-if="currentPc" class="muted small">The ingredients in {{ currentPc.name }}'s inventory.</p>
+          <p v-if="owner" class="muted small">The ingredients in {{ owner.name }}'s inventory.</p>
           <ul v-if="pouchRows.length" class="wb-list">
             <li v-for="r in pouchRows" :key="r.item">
               <EntryLink :id="r.item" />

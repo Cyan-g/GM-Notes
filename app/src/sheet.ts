@@ -91,9 +91,9 @@ export function setCurrent(id: Id | undefined) {
 
 const ORD = 9
 const emptyBook = (): Spellbook => ({ slots: Array.from({ length: ORD }, () => ({ max: 0, used: 0 })), known: [], prepared: [], always: [] })
-/** The spellbook in use: the current character's, or (with no current character) the world's. */
-export function activeSpellbook(): Spellbook {
-  const pc = currentPc.value
+/** The spellbook in use: the given character's, else the current character's, else the world's. */
+export function activeSpellbook(of?: Entry): Spellbook {
+  const pc = of ?? currentPc.value
   if (pc) {
     const s = pc.fields.sheet
     if (s?.spellbook) return s.spellbook
@@ -121,8 +121,8 @@ export interface Bench {
 }
 const isIngredient = (id: Id) => get(id)?.fields.kind === 'Ingredient'
 
-export function activeBench(): Bench {
-  const pc = currentPc.value
+export function activeBench(of?: Entry): Bench {
+  const pc = of ?? currentPc.value
   if (!pc) {
     const d = db()
     const c: Crafting = (d.crafting ??= { tools: [], known: [], pouch: [], made: [] })

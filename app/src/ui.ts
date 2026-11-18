@@ -12,6 +12,8 @@ export const ui = reactive({
   treeAsList: false,
   /** An exported file waiting to be imported (the import dialog shows it). */
   importPlan: null as ImportPlan | null,
+  /** The Export the world dialog. */
+  worldExport: false,
 })
 
 export function newEntry(type?: EntryType, fields: Record<string, unknown> = {}) {
@@ -29,7 +31,7 @@ async function startImport(file: File) {
   } catch (e) { alert((e as Error).message) }
 }
 
-/** Let the user pick an exported spell, item or map. */
+/** Let the user pick an exported file (an entry or a world). */
 export function pickImport() {
   const input = Object.assign(document.createElement('input'), { type: 'file', accept: '.json,application/json' })
   input.onchange = () => { const f = input.files?.[0]; if (f) startImport(f) }

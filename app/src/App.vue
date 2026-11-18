@@ -25,6 +25,7 @@ import DataView from './views/DataView.vue'
 import ListsView from './views/ListsView.vue'
 import NewEntryDialog from './components/NewEntryDialog.vue'
 import ImportDialog from './components/ImportDialog.vue'
+import ExportDialog from './components/ExportDialog.vue'
 import LinkPreview from './components/LinkPreview.vue'
 import { go, hrefEntry } from './router'
 import { toggleFavourite } from './edit'
@@ -138,6 +139,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
     <QuickSwitcher v-model="ui.switcher" />
     <NewEntryDialog v-model="ui.newOpen" :type="ui.newType" :fields="ui.newFields" />
     <ImportDialog v-model="ui.importPlan" />
+    <ExportDialog v-model="ui.worldExport" />
     <LinkPreview />
   </div>
 

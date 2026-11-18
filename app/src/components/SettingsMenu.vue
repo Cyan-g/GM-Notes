@@ -1,10 +1,10 @@
 <script setup lang="ts">
-// The ⚙ menu at the top right: the theme (colours, heading font), importing a shared spell, item or map,
+// The ⚙ menu at the top right: the theme (colours, heading font), exporting the world and importing a shared file,
 // and data & backups. The button shows when the last backup copy is overdue.
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { playerMode, setMode, state } from '../store'
 import { daysSince } from '../backup'
-import { pickImport } from '../ui'
+import { pickImport, ui } from '../ui'
 import { go } from '../router'
 import { COLOR_LABELS, FONTS, PRESETS, effectiveColors, setColor, setTheme, settings, type Preset, type ThemeColors } from '../theme'
 
@@ -14,6 +14,7 @@ const backupAge = computed(() => daysSince(state.db?.meta.externalBackup))
 const overdue = computed(() => backupAge.value == null || backupAge.value > 7)
 const toggle = () => { open.value = open.value ? null : 'menu' }
 function importFile() { open.value = null; pickImport() }
+function exportWorld() { open.value = null; ui.worldExport = true }
 function data() { open.value = null; go('#/data') }
 const root = ref<HTMLElement | null>(null)
 const s = computed(settings)
@@ -51,7 +52,8 @@ onUnmounted(() => { document.removeEventListener('pointerdown', outside); window
         <span>🎲</span>DM mode
         <input type="checkbox" role="switch" :checked="!playerMode" :disabled="!!state.readOnly" @change="setMode(($event.target as HTMLInputElement).checked ? 'dm' : 'player')" />
       </label>
-      <button role="menuitem" @click="importFile"><span>⇪</span>Import from a file…<span class="hint">spell, item, map</span></button>
+      <button role="menuitem" @click="exportWorld"><span>⇩</span>Export the world…<span class="hint">for a player</span></button>
+      <button role="menuitem" @click="importFile"><span>⇪</span>Import from a file…<span class="hint">entry or world</span></button>
       <button role="menuitem" :class="{ warn: overdue }" @click="data"><span>💾</span>Data &amp; backups
         <span class="hint">{{ backupAge == null ? 'no copy yet' : backupAge === 0 ? 'copied today' : `copied ${backupAge} d ago` }}</span></button>
     </div>

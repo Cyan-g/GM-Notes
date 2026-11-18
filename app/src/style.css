@@ -983,6 +983,7 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 
 /* ---------- export / import ---------- */
 .transfer { padding: 1.2rem; display: flex; flex-direction: column; gap: .55rem; max-height: 80vh; overflow-y: auto; }
+.transfer > * { flex-shrink: 0; }
 .transfer h3 { margin: 0; }
 .transfer h4 { margin: .5rem 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .transfer p { margin: 0; }
@@ -993,6 +994,13 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .transfer .check { display: flex; align-items: center; gap: .5rem; font-size: 14px; }
 .transfer .check input { width: auto; border: none; padding: 0; }
 .transfer .error { color: #b33; font-size: 14px; }
+.transfer .chip-btn.on .muted { color: inherit; opacity: .8; }
+.transfer-table { font-size: 14px; }
+.transfer-table td:not(:first-child), .transfer-table th:not(:first-child) { text-align: right; }
+.transfer ul.transfer-notes { list-style: disc; padding-left: 1.2rem; max-height: none; }
+.transfer ul.transfer-notes li { display: list-item; padding: 0; cursor: default; }
+.transfer .check.inline { display: inline-flex; font-size: 12px; text-transform: none; letter-spacing: 0; margin-left: .6rem; }
+.transfer-items li input { width: auto; border: none; padding: 0; }
 .transfer .actions, .new-entry .actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .4rem; }
 
 /* the DM mode switch in the ⚙ menu */

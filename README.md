@@ -39,7 +39,7 @@ DnDesk is a desktop app for Windows and macOS. It's installed once and keeps the
 To set up a player:
 1. They install DnDesk and choose an empty folder as the data folder.
 2. The app offers **Start a new world here**, which starts in player mode.
-3. They import the spells, items and maps you send them.
+3. They import the world (⚙ → Export the world…) or the entries you send them; importing a newer file later updates their copy.
 
 ### Character sheet
 
@@ -79,18 +79,22 @@ A player character's page is its character sheet, filled in right on the page.
 
 With no current character, the Spellbook and Workbench use the world's own; the Spellbook then takes typed numbers.
 
-### Sharing entries
+### Sharing entries and the world
 
-Spells, items and maps can be sent to someone else who has this app.
+An entry, or the whole world, can be sent to someone else who has this app, and sent again later to bring their copy up to date.
 
-- **⇩ Export** on a spell's, item's or map's page saves it as `<name>.dndesk.json`.
-  - **Spells and items** bring along what they need to work: a recipe's ingredients (and the ingredients of those) and the tool it's crafted with, a scroll's spell, and any spells linked in an item's text. Other links in the text become plain words. DM-only text is left out unless you tick the box.
-  - **Maps** are a place with only its name and map picture: no text, no pins, and no *Located in*.
-- **⚙ → Import from a file…** (top right) brings one in.
-  - If you already have an entry with the same type and name, you choose to keep yours or replace it. Replacing a map only swaps the picture; your text and pins stay.
-  - Ingredients, tools and spells you already have are reused as they are.
-  - Dropdown choices are matched to your lists by name; one you don't have is added to the list.
-- Relations never travel.
+- **⇩ Export** on an entry's page saves it as `<name>.dndesk.json`, with everything it points at, and what those point at in turn: *Located in*, race, recipes and their tools, a scroll's spell, shop stock, map pins, a character's inventory, spellbook, recipes and tools. Tick *Also what its text links to* to follow the `[[links]]` in the text too.
+- **⚙ → Export the world…** saves every entry, the connections between them, every dropdown list, the calendar and today's date.
+- **Never exported:** campaigns, sessions, encounters and creatures stay with the DM.
+- **DM-only text** is left out unless you tick *Include the DM-only parts of the text*. **Hidden entries** (not known to the players) go along unless you untick *Include entries hidden from the players*; their connections stay out with them.
+- **Choosing types:** the *Take along* chips leave whole types out.
+- **Links to what stays home** stay links, so they work wherever that entry exists (the other side has it, or it came in earlier); elsewhere a link becomes plain words and a field leaves it out. A field that loses something on import keeps your own value. A hidden entry left out is never linked in the file (a link to it keeps only its words).
+- **⚙ → Import from a file…** (top right) brings one in and shows what's new, what's updated and what's already the same.
+  - **Updating:** an entry you already have is updated. It counts as the same entry if it has the same id (it came from the same world, even if it was renamed since), or else the same type and name. Untick an updated one to keep yours.
+  - **DM-only text:** a file without DM-only text never wipes out DM-only text you have.
+  - **Connections:** they're matched by their two ends and kind, then added or updated.
+  - **Dropdown lists:** choices are matched to your options by id, then by name; one you don't have is added. A world's file also carries over renamed options.
+  - **Calendar:** a world's file can update the calendar and today's date (a tick box).
 
 Everything is saved in `data/`:
 

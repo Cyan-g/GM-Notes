@@ -25,6 +25,8 @@ const all = computed(() => [...(props.toggles ?? []), ...(props.suggest ?? [])])
 const labelOf = (id: string) => all.value.find(o => o.id === id)?.label ?? id
 const has = (id: string) => props.values.includes(id)
 const extras = computed(() => props.values.filter(v => !props.toggles?.some(t => t.id === v)))
+/** Disabled, only the toggles that are on show. */
+const shownToggles = computed(() => (props.disabled ? props.toggles?.filter(t => has(t.id)) : props.toggles) ?? [])
 const offered = computed(() => (props.suggest ?? []).filter(o => !has(o.id)))
 
 const toggle = (id: string) => emit('change', has(id) ? props.values.filter(x => x !== id) : [...props.values, id])
@@ -45,7 +47,7 @@ function add() {
   <div class="prof-row" :class="{ bare: !label }">
     <span v-if="label" class="prof-label">{{ label }}</span>
     <div class="prof-chips">
-      <button v-for="t in toggles" :key="t.id" type="button" class="chip-toggle" :class="{ on: has(t.id) }" :disabled="disabled" @click="toggle(t.id)">{{ t.label }}</button>
+      <button v-for="t in shownToggles" :key="t.id" type="button" class="chip-toggle" :class="{ on: has(t.id) }" :disabled="disabled" @click="toggle(t.id)">{{ t.label }}</button>
       <span v-for="v in extras" :key="v" class="chip prof-chip">{{ labelOf(v) }}<button v-if="!disabled" type="button" class="link-btn" :title="`Remove ${labelOf(v)}`" @click="remove(v)">×</button></span>
       <template v-if="!disabled && (create || offered.length)">
         <input v-model="typed" class="prof-add" :list="listId" :placeholder="placeholder ?? 'Add…'" @keydown.enter.prevent="add" @change="add" />

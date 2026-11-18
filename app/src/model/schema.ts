@@ -74,10 +74,17 @@ export const SCHEMA = [
   {
     type: 'pc', label: 'Player character', plural: 'Player characters', icon: '🛡️', fields: [
       { key: 'player', label: 'Player', kind: 'text' },
-      { key: 'race', label: 'Race', kind: 'ref', to: ['race'] },
       { key: 'class', label: 'Class', kind: 'text' },
       { key: 'level', label: 'Level', kind: 'number' },
       { key: 'campaigns', label: 'Campaigns', kind: 'refs', to: ['campaign'] },
+      // The same appearance as an NPC's.
+      { key: 'race', label: 'Race', kind: 'ref', to: ['race'], group: 'Appearance' },
+      { key: 'gender', label: 'Gender', kind: 'text', group: 'Appearance' },
+      { key: 'age', label: 'Age', kind: 'text', group: 'Appearance' },
+      { key: 'hair', label: 'Hair', kind: 'text', group: 'Appearance' },
+      { key: 'eyes', label: 'Eyes', kind: 'text', group: 'Appearance' },
+      { key: 'skin', label: 'Skin', kind: 'text', group: 'Appearance' },
+      { key: 'clothing', label: 'Clothing', kind: 'text', group: 'Appearance' },
       // Filled in on the PC's page, which is the character sheet.
       { key: 'sheet', label: 'Character sheet', kind: 'sheet' },
     ],

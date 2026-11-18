@@ -5,15 +5,13 @@ import { MENUS } from '../menu'
 import { db, save, state } from '../store'
 import { newEntry } from '../ui'
 import { route } from '../router'
-import { daysSince } from '../backup'
 import MenuPanel from './MenuPanel.vue'
-import ThemeMenu from './ThemeMenu.vue'
+import SettingsMenu from './SettingsMenu.vue'
 
 defineEmits<{ search: [] }>()
 
 const open = ref<number | null>(null)
 const anchor = ref<DOMRect | null>(null)
-const backupAge = computed(() => daysSince(state.db?.meta.externalBackup))
 
 function show(i: number, ev: Event) {
   anchor.value = (ev.currentTarget as HTMLElement).getBoundingClientRect()
@@ -80,9 +78,7 @@ const current = computed(() => MENUS.findIndex(m => m.owns(route.current)))
         <template v-else-if="state.dirty">Unsaved…</template>
         <template v-else-if="state.savedAt">✓ Saved</template>
       </span>
-      <a href="#/data" class="data-link" :class="{ warn: backupAge == null || backupAge > 7 }"
-         :title="backupAge == null ? 'Data & backups: never copied' : `Data & backups: last copy ${backupAge} days ago`">💾<span v-if="backupAge == null || backupAge > 7" class="data-warn">{{ backupAge == null ? 'no copy' : `${backupAge} d` }}</span></a>
-      <ThemeMenu />
+      <SettingsMenu />
     </div>
   </header>
 </template>

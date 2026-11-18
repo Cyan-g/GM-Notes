@@ -28,7 +28,7 @@ async function save() {
     <form class="qs transfer" @submit.prevent="save">
       <h3>Export {{ plan.main.name }}</h3>
       <p v-if="plan.main.type === 'place'" class="muted small">Saves the map picture under this name, without the text, pins or where it lies.</p>
-      <p v-else class="muted small">Saves a file that someone with this app can import with ＋ → Import from a file.</p>
+      <p v-else class="muted small">Saves a file that someone with this app can import with ⚙ → Import from a file.</p>
       <template v-if="plan.parts.length">
         <h4>Comes along, because it's needed</h4>
         <p class="transfer-list"><span v-for="e in plan.parts" :key="e.id"><EntryLink :id="e.id" icon /></span></p>

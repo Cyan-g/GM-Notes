@@ -97,10 +97,6 @@ kbd { font: 11px var(--sans); border: 1px solid var(--line); border-radius: 4px;
 .new-btn { padding: .45em .7em; }
 .save-status { font-size: 12px; color: var(--muted); white-space: nowrap; min-width: 4.5em; }
 .save-status.err { color: var(--accent); }
-.data-link { color: var(--ink-2); white-space: nowrap; font-size: 1.1rem; padding: .2em .3em; border-radius: 6px; }
-.data-link:hover { background: var(--panel); text-decoration: none; }
-.data-link.warn { color: var(--accent); }
-.data-warn { font-size: 11px; margin-left: .2em; vertical-align: middle; }
 
 /* dropdowns: position: fixed, placed by MenuPanel.vue */
 .menu-panel {
@@ -524,10 +520,20 @@ input.init { width: 4em; }
 .entry-head h1, .list-head h1, .home h1 { letter-spacing: .01em; }
 .list-head h1 { font-variant: small-caps; letter-spacing: .03em; }
 
-/* ---------- theme menu (🎨, top right) ---------- */
+/* ---------- settings menu (⚙, top right): theme, import, data & backups ---------- */
 .theme-menu { position: relative; }
 .theme-btn { border: none; background: none; font-size: 1.1rem; padding: .2em .35em; border-radius: 6px; }
 .theme-btn:hover, .theme-btn.open { background: var(--panel); box-shadow: var(--shadow); }
+.theme-btn { position: relative; color: var(--ink-2); }
+/* The last backup copy is overdue: a dot on the button, the item in the menu in the accent colour. */
+.settings-dot { position: absolute; top: .15em; right: .1em; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--bg); }
+.settings-list { width: 270px; padding: .35rem; }
+.settings-list button { display: flex; align-items: baseline; gap: .55rem; width: 100%; border: none; background: none; text-align: left; padding: .5rem .6rem; border-radius: 8px; font-size: 14px; }
+.settings-list button:hover { background: var(--chip); }
+.settings-list button > span:first-child { width: 1.3em; text-align: center; }
+.settings-list .hint { margin-left: auto; color: var(--muted); font-size: 12px; }
+.settings-list button.warn .hint { color: var(--accent); font-weight: 600; }
+.theme-panel h4 .back { font: 14px var(--sans, inherit); font-variant: normal; }
 .theme-panel {
   position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; width: 360px; max-width: calc(100vw - 16px);
   max-height: calc(100vh - var(--bar-h) - 16px); overflow-y: auto; overscroll-behavior: contain;
@@ -986,4 +992,3 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .transfer .check input { width: auto; border: none; padding: 0; }
 .transfer .error { color: #b33; font-size: 14px; }
 .transfer .actions, .new-entry .actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .4rem; }
-.new-entry .import-btn { margin-right: auto; }

@@ -24,7 +24,7 @@ Spells, items and maps can be sent to someone else who has this app.
 - **⇩ Export** on a spell's, item's or map's page saves it as `<name>.dndesk.json`.
   - **Spells and items** bring along what they need to work: a recipe's ingredients (and the ingredients of those), a scroll's spell, and any spells linked in an item's text. Other links in the text become plain words. DM-only text is left out unless you tick the box.
   - **Maps** are a place with only its name and map picture: no text, no pins, and no *Located in*.
-- **＋ → Import from a file…** brings one in.
+- **⚙ → Import from a file…** (top right) brings one in.
   - If you already have an entry with the same type and name, you choose to keep yours or replace it. Replacing a map only swaps the picture; your text and pins stay.
   - Ingredients and spells you already have are reused as they are.
 - Relations never travel.
@@ -41,9 +41,9 @@ Everything is saved in `data/`:
 
 ### Backups
 
-**💾** (Data & backups) at the right of the top bar has two tools:
+**⚙ → Data & backups** (top right) has two tools:
 
-- **Back up** copies the database, pictures and files into a folder you choose, for example on your PC. Each copy is a new folder named `DnDesk-backup-<date>`. The app remembers the folder, and the 💾 turns red when the last copy is more than a week old.
+- **Back up** copies the database, pictures and files into a folder you choose, for example on your PC. Each copy is a new folder named `DnDesk-backup-<date>`. The app remembers the folder, and the ⚙ gets a dot when the last copy is more than a week old.
 - **Earlier versions** lists the automatic backups in `data/backups`. **Go back to this** restores one, after saving the current state as a backup of its own, so a restore can be undone.
 
 The automatic backups keep everything from the last 2 hours, then the newest of each hour for 2 days, of each day for 2 months, and of each month for good. Only files named `eldoria-<date>.json` or `session-<date>.json` are ever deleted; anything else in that folder (like `before-migrate-…`) stays.

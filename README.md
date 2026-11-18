@@ -120,6 +120,11 @@ npm run dev        # http://localhost:5199, reads ../data; add ?write to the add
 npm run build      # type-checks and writes ../DnDesk.html
 ```
 
+`app/src/model/schema.ts` describes every entry type and its fields. Forms, pages, the data check (`validate.ts`) and the field types all come from it:
+- **Field types:** `EntryFields` gives each field key the type its kind stores, so `e.fields.recipe` is a `RecipeLine[]` and a misspelled key doesn't compile.
+- **Keys only known at runtime** (a table column, a form field) go through `byKey(e.fields)`.
+- **Adding a field:** adding it to the schema is enough.
+
 The switch from Obsidian happened on 2026-11-15. The vault was archived as `the old vault backup`, and from then on the app is the only place to edit. The import script was removed afterwards (it's in the git history, `app/scripts/migrate.mjs`), so nothing can overwrite the data with the old vault any more.
 
 Changes to the data's shape happen in `upgrade()` in `app/src/store.ts`: each step raises `version`, and runs once when the app opens older data. `DATA_VERSION` at the top must match the last step.

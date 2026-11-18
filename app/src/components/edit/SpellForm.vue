@@ -3,21 +3,22 @@
 // quick picks for the usual casting times, ranges and durations, V S M as one toggle group.
 import { computed, ref } from 'vue'
 import type { Entry } from '../../model/types'
-import { TYPES } from '../../model/schema'
+import { TYPES, byKey, type FieldKey } from '../../model/schema'
 import { changed } from '../../edit'
 
 const props = defineProps<{ entry: Entry }>()
-const f = computed(() => props.entry.fields as Record<string, any>)
+const f = computed(() => props.entry.fields)
 const opts = (key: string) => TYPES.spell.fields.find(x => x.key === key)?.options ?? []
 
-function set(key: string, value: unknown) {
-  if (value === undefined || value === '' || value === false || (Array.isArray(value) && !value.length)) delete f.value[key]
-  else f.value[key] = value
+function set(key: FieldKey, value: unknown) {
+  const raw = byKey(f.value)
+  if (value === undefined || value === '' || value === false || (Array.isArray(value) && !value.length)) delete raw[key]
+  else raw[key] = value
   changed(props.entry)
 }
-const toggle = (key: string) => set(key, !f.value[key])
-function toggleIn(key: string, v: string) {
-  const list: string[] = f.value[key] ?? []
+const toggle = (key: FieldKey) => set(key, !f.value[key])
+function toggleIn(key: FieldKey, v: string) {
+  const list = (f.value[key] ?? []) as string[]
   set(key, list.includes(v) ? list.filter(x => x !== v) : [...list, v])
 }
 
@@ -40,7 +41,7 @@ const materialText = computed(() => (f.value.material === 'yes' ? '' : f.value.m
 // Switching M off and on again brings back what was written.
 const lastMaterial = ref('yes')
 function toggleM() {
-  if (hasM.value) { lastMaterial.value = f.value.material; set('material', undefined) }
+  if (hasM.value) { lastMaterial.value = f.value.material ?? 'yes'; set('material', undefined) }
   else set('material', lastMaterial.value)
 }
 const setMaterial = (v: string) => set('material', v.trim() || 'yes')

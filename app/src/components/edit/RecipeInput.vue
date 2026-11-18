@@ -9,7 +9,7 @@ import { CRAFTING_RULE, craftingTime } from '../../crafting'
 const props = defineProps<{ modelValue?: RecipeLine[]; itemValue?: number }>()
 const emit = defineEmits<{ 'update:modelValue': [RecipeLine[]] }>()
 const lines = computed(() => props.modelValue ?? [])
-const price = (id: string) => get(id)?.fields.value as number | undefined
+const price = (id: string) => get(id)?.fields.value
 const total = computed(() => lines.value.reduce((s, l) => s + (price(l.item) ?? 0) * l.amount, 0))
 
 function update(i: number, patch: Partial<RecipeLine>) {

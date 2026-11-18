@@ -7,9 +7,9 @@ import { formatMoney } from '../store'
 import { renderInline } from '../markdown'
 
 const props = defineProps<{ e: Entry }>()
-const f = computed(() => props.e.fields as Record<string, any>)
+const f = computed(() => props.e.fields)
 const rows = computed(() => ([
-  ['Damage', [f.value.damage, f.value.damageType?.length && (f.value.damageType as string[]).join(' or ').toLowerCase()].filter(Boolean).join(' ')],
+  ['Damage', [f.value.damage, f.value.damageType?.length && f.value.damageType.join(' or ').toLowerCase()].filter(Boolean).join(' ')],
   ['Range', f.value.range],
   ['Armor class', f.value.armorClass],
   ['Slot', f.value.slot],

@@ -2,7 +2,7 @@
 // A key is a schema field ("level", "value") or a computed value starting with "@".
 import type { Entry, EntryType, RecipeLine, Statblock, WorldDate } from './model/types'
 import { craftingMinutes, craftingTime } from './crafting'
-import { SCHEMA, TYPES, type FieldDef } from './model/schema'
+import { SCHEMA, TYPES, byKey, type FieldDef } from './model/schema'
 import { dateKey, entries, get, isCurrent, relationsOf } from './store'
 
 export interface Col {
@@ -23,11 +23,11 @@ const current = (e: Entry, kind: string, mine: boolean) =>
   (relationsOf.value.get(e.id) ?? []).filter(r => r.kind === kind && (mine ? r.a === e.id : r.b === e.id) && isCurrent(r)).map(r => (mine ? r.b : r.a))
 
 export const recipeCost = (e: Entry) => {
-  const lines = e.fields.recipe as RecipeLine[] | undefined
+  const lines = e.fields.recipe
   if (!lines?.length) return undefined
-  return lines.reduce((s, l) => s + ((get(l.item)?.fields.value as number | undefined) ?? 0) * l.amount, 0)
+  return lines.reduce((s, l) => s + ((get(l.item)?.fields.value) ?? 0) * l.amount, 0)
 }
-const usedIn = (e: Entry) => entries.value.filter(n => ((n.fields.recipe as RecipeLine[] | undefined) ?? []).some(l => l.item === e.id)).length
+const usedIn = (e: Entry) => entries.value.filter(n => ((n.fields.recipe) ?? []).some(l => l.item === e.id)).length
 const crNum = (cr?: string) => { if (!cr) return 999; const [a, b] = cr.split('/').map(Number); return b ? a / b : a }
 const nameOf = (id?: string) => get(id)?.name ?? '~'
 
@@ -37,16 +37,16 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   '@lives-in': { label: 'Lives in', value: e => current(e, 'lives-in', true), sort: e => nameOf(current(e, 'lives-in', true)[0]), kind: 'ids' },
   '@member': { label: 'Member of', value: e => current(e, 'member', true), sort: e => nameOf(current(e, 'member', true)[0]), kind: 'ids' },
   '@members': { label: 'Members', value: e => current(e, 'member', false).length, sort: e => -current(e, 'member', false).length, kind: 'text' },
-  '@cr': { label: 'CR', value: e => (e.fields.statblock as Statblock | undefined)?.cr, sort: e => crNum((e.fields.statblock as Statblock | undefined)?.cr), kind: 'text' },
+  '@cr': { label: 'CR', value: e => (e.fields.statblock)?.cr, sort: e => crNum((e.fields.statblock)?.cr), kind: 'text' },
   '@recipeCost': { label: 'Ingredients', value: e => recipeCost(e), sort: e => recipeCost(e) ?? -1, kind: 'money' },
   '@margin': {
     label: 'Profit', kind: 'money',
-    value: e => { const c = recipeCost(e), v = e.fields.value as number | undefined; return c != null && v != null ? v - c : undefined },
-    sort: e => { const c = recipeCost(e), v = e.fields.value as number | undefined; return c != null && v != null ? v - c : -1e9 },
+    value: e => { const c = recipeCost(e), v = e.fields.value; return c != null && v != null ? v - c : undefined },
+    sort: e => { const c = recipeCost(e), v = e.fields.value; return c != null && v != null ? v - c : -1e9 },
   },
   '@craftTime': {
     label: 'Crafting time', kind: 'text',
-    value: e => ((e.fields.recipe as unknown[] | undefined)?.length ? craftingTime(e.fields.value) : ''),
+    value: e => ((e.fields.recipe)?.length ? craftingTime(e.fields.value) : ''),
     sort: e => craftingMinutes(e.fields.value) ?? 1e9,
   },
   '@usedIn': { label: 'Used in', value: e => usedIn(e) || '', sort: e => -usedIn(e), kind: 'text' },
@@ -58,12 +58,12 @@ export function column(key: string, type?: EntryType): Col {
   const c = COMPUTED[key]
   if (c) return { key, ...c }
   const field = (type && TYPES[type].fields.find(f => f.key === key)) || FIELD_BY_KEY.get(key)
-  if (!field) return { key, label: key, value: e => e.fields[key], sort: e => String(e.fields[key] ?? '~'), kind: 'text' }
+  if (!field) return { key, label: key, value: e => byKey(e.fields)[key], sort: e => String(byKey(e.fields)[key] ?? '~'), kind: 'text' }
   return {
     key, label: field.label, field,
-    value: e => e.fields[key],
+    value: e => byKey(e.fields)[key],
     sort: e => {
-      const v = e.fields[key]
+      const v = byKey(e.fields)[key]
       if (v == null || v === '' || (Array.isArray(v) && !v.length)) return field.kind === 'money' || field.kind === 'number' ? -1e12 : '~'
       if (field.kind === 'ref') return nameOf(v as string)
       if (field.kind === 'date') return dateKey(v as WorldDate)
@@ -97,7 +97,7 @@ export function facet(key: string, type?: EntryType): Facet {
   const field = (type && TYPES[type].fields.find(f => f.key === key)) || FIELD_BY_KEY.get(key)
   const label = field?.label ?? key
   const vals = (e: Entry): string[] => {
-    const v = e.fields[key]
+    const v = byKey(e.fields)[key]
     if (v == null || v === '') return []
     if (field?.kind === 'bool') return [v ? 'Yes' : 'No']
     if (field?.kind === 'ref') return [nameOf(v as string)]

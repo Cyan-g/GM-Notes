@@ -9,7 +9,7 @@ import MoneyInput from './MoneyInput.vue'
 const props = defineProps<{ modelValue?: StockLine[]; markup: number }>()
 const emit = defineEmits<{ 'update:modelValue': [StockLine[]] }>()
 const lines = computed(() => props.modelValue ?? [])
-const listPrice = (id: string) => { const v = get(id)?.fields.value as number | undefined; return v != null ? Math.round(v * props.markup) : undefined }
+const listPrice = (id: string) => { const v = get(id)?.fields.value; return v != null ? Math.round(v * props.markup) : undefined }
 
 function update(i: number, patch: Partial<StockLine>) {
   const next = lines.value.map((l, j) => {

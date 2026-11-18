@@ -15,12 +15,12 @@ const t = computed(() => tracker())
 const selected = ref<string | null>(null)
 const encounter = computed(() => get(t.value.encounter))
 const campaigns = computed(() => byType.value.get('campaign') ?? [])
-const partyCampaign = ref<string>((encounter.value?.fields.campaign as string) ?? '')
+const partyCampaign = ref<string>((encounter.value?.fields.campaign) ?? '')
 
 function load(id: string | null) {
   if (!id) return
   loadEncounter(id)
-  const c = get(id)?.fields.campaign as string | undefined
+  const c = get(id)?.fields.campaign
   if (c) partyCampaign.value = c
   selected.value = null
 }

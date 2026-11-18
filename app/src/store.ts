@@ -2,7 +2,7 @@
 import { reactive, computed, shallowRef } from 'vue'
 import type { Database, Entry, EntryType, Id, Relation, WorldDate } from './model/types'
 import type { Storage } from './storage/storage'
-import { OLD_PLACE_SIZES } from './model/schema'
+import { OLD_PLACE_SIZES, byKey } from './model/schema'
 
 const DB_FILE = 'eldoria.json'
 /** What changes during play (the fight, the spellbook, the crafting pouch) lives in its own small file, so a click
@@ -98,9 +98,11 @@ function takeLock(): Promise<boolean> {
 
 /** Bring older saved data up to date. Returns true if anything changed (it's then saved). */
 function upgrade(d: Database) {
+  // Old data has fields the schema no longer knows; the steps below read and remove them untyped.
+  const raw = (e: Entry) => byKey(e.fields) as Record<string, any>
   let changed = false
   for (const e of Object.values(d.entries)) {
-    if (e.type === 'place' && OLD_PLACE_SIZES.includes(e.fields.placeType as string)) { delete e.fields.placeType; changed = true }
+    if (e.type === 'place' && OLD_PLACE_SIZES.includes(e.fields.placeType ?? '')) { delete e.fields.placeType; changed = true }
   }
   // Version 2: places whose map was a picture in the text (the import only took a picture at the very top)
   // get it as their map banner. Runs once; afterwards pictures in the text stay where you put them.
@@ -164,7 +166,7 @@ function upgrade(d: Database) {
   if ((d.version ?? 1) < 5) {
     const RENAME: Record<string, string> = { 'Alchemy Kit': "Alchemist's Supplies" }
     for (const e of Object.values(d.entries)) {
-      const t = e.fields.craftingType as string | undefined
+      const t = e.fields.craftingType
       if (t && RENAME[t]) e.fields.craftingType = RENAME[t]
     }
     if (d.crafting) d.crafting.tools = [...new Set(d.crafting.tools.map(t => RENAME[t] ?? t))]
@@ -212,7 +214,7 @@ function upgrade(d: Database) {
       return id
     }
     for (const race of all().filter(x => x.type === 'race')) {
-      for (const item of (race.fields.subraces as string[] | undefined) ?? []) {
+      for (const item of (raw(race).subraces as string[] | undefined) ?? []) {
         const m = item.match(/^([^:]+):\s*(.*)$/)
         const sub = (m?.[1] ?? item).trim()
         const text = (m?.[2] ?? '').trim()
@@ -226,18 +228,18 @@ function upgrade(d: Database) {
         if (traits.length) fields.traits = traits
         subrace(race, sub, fields)
       }
-      delete race.fields.subraces
+      delete raw(race).subraces
     }
     for (const n of all().filter(x => x.type === 'npc' || x.type === 'pc')) {
-      const raw = String(n.fields.subrace ?? '').trim()
-      if (!raw) { delete n.fields.subrace; continue }
-      const m = raw.match(/^(.*?)\s*\((.*)\)$/)
-      const race = d.entries[n.fields.race as Id]
+      const typed = String(raw(n).subrace ?? '').trim()
+      if (!typed) { delete raw(n).subrace; continue }
+      const m = typed.match(/^(.*?)\s*\((.*)\)$/)
+      const race = n.fields.race ? d.entries[n.fields.race] : undefined
       if (race?.type === 'race') {
-        n.fields.race = subrace(race, (m?.[1] ?? raw).trim())
+        n.fields.race = subrace(race, (m?.[1] ?? typed).trim())
         if (m?.[2] && !n.tags.includes(m[2].trim())) n.tags.push(m[2].trim())
-      } else if (!n.tags.includes(raw)) n.tags.push(raw)
-      delete n.fields.subrace
+      } else if (!n.tags.includes(typed)) n.tags.push(typed)
+      delete raw(n).subrace
     }
     d.version = 9
     changed = true
@@ -430,10 +432,10 @@ function upgrade(d: Database) {
   // `raceText` was a race typed in that matched no entry. A typed "undead" survives as a tag.
   if ((d.version ?? 1) < 17) {
     for (const e of Object.values(d.entries)) {
-      delete e.fields.mapConfig
-      const typed = String(e.fields.raceText ?? '').trim()
+      delete raw(e).mapConfig
+      const typed = String(raw(e).raceText ?? '').trim()
       if (typed.toLowerCase() === 'undead' && !e.tags.includes('undead')) e.tags.push('undead')
-      delete e.fields.raceText
+      delete raw(e).raceText
     }
     d.version = 17
     changed = true
@@ -444,7 +446,7 @@ function upgrade(d: Database) {
   if ((d.version ?? 1) < 18) {
     const pc = d.spellbook?.caster ? d.entries[d.spellbook.caster] : undefined
     if (pc?.type === 'pc') {
-      const sheet = (pc.fields.sheet ??= {}) as Record<string, any>
+      const sheet = (raw(pc).sheet ??= {}) as Record<string, any>
       sheet.saves ??= []; sheet.skills ??= {}; sheet.features ??= []; sheet.inventory ??= []
       if (!sheet.spellbook) {
         const { caster: _caster, ...book } = d.spellbook!
@@ -485,7 +487,7 @@ function upgrade(d: Database) {
   // ("Slashing/Piercing" was one text the form couldn't show); characters lose the statblock the sheet replaced.
   if ((d.version ?? 1) < 20) {
     for (const e of Object.values(d.entries)) {
-      const dt = e.fields.damageType
+      const dt: unknown = raw(e).damageType
       if (typeof dt === 'string') {
         const list = dt.split('/').map(x => x.trim()).filter(Boolean)
         if (list.length) e.fields.damageType = list; else delete e.fields.damageType
@@ -695,7 +697,7 @@ export const relationsOf = computed(() => {
 export const childrenOf = computed(() => {
   const m = new Map<Id, Entry[]>()
   for (const e of entries.value) {
-    const p = e.fields.parent as Id | undefined
+    const p = e.fields.parent
     if (!p) continue
     if (!m.has(p)) m.set(p, [])
     m.get(p)!.push(e)
@@ -730,7 +732,7 @@ export function placePath(id: Id): Entry[] {
   while (cur && !seen.has(cur.id)) {
     seen.add(cur.id)
     out.unshift(cur)
-    cur = get(cur.fields.parent as Id)
+    cur = get(cur.fields.parent)
   }
   return out
 }

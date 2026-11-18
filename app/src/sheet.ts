@@ -29,10 +29,10 @@ export const blankSheet = (): CharacterSheet => ({
 })
 /** A PC's sheet for reading, with anything never filled in at its default. */
 export const sheetOf = (pc: Entry): CharacterSheet | undefined =>
-  pc.fields.sheet ? { ...blankSheet(), ...(pc.fields.sheet as Partial<CharacterSheet>) } : undefined
+  pc.fields.sheet ? { ...blankSheet(), ...(pc.fields.sheet) } : undefined
 /** A PC's stored sheet for changing: created, or completed, as needed. */
 export function sheetToEdit(pc: Entry): CharacterSheet {
-  const s = (pc.fields.sheet ??= {}) as Partial<CharacterSheet>
+  const s = (pc.fields.sheet ??= {} as CharacterSheet) as Partial<CharacterSheet>
   const blank = blankSheet() as unknown as Record<string, unknown>
   for (const k of ['abilities', 'saves', 'skills', 'inventory', 'features']) if ((s as Record<string, unknown>)[k] == null) (s as Record<string, unknown>)[k] = blank[k]
   return s as CharacterSheet
@@ -54,7 +54,7 @@ const emptyBook = (): Spellbook => ({ slots: Array.from({ length: ORD }, () => (
 export function activeSpellbook(): Spellbook {
   const pc = currentPc.value
   if (pc) {
-    const s = pc.fields.sheet as Partial<CharacterSheet> | undefined
+    const s = pc.fields.sheet
     if (s?.spellbook) return s.spellbook
     return (sheetToEdit(pc).spellbook = emptyBook())
   }
@@ -95,7 +95,7 @@ export function activeBench(): Bench {
       setKnown(k) { c.known = k; touch() },
     }
   }
-  const raw = pc.fields.sheet as Partial<CharacterSheet> | undefined
+  const raw = pc.fields.sheet
   const inv = raw?.inventory ?? []
   const wanted = (w: 'pouch' | 'made', id: Id) => (w === 'pouch') === isIngredient(id)
   const edit = (fn: (s: CharacterSheet) => void) => { const s = sheetToEdit(pc); fn(s); s.inventory = s.inventory.filter(l => !l.item || l.qty > 0); pc.updated = new Date().toISOString(); touch() }
@@ -103,7 +103,7 @@ export function activeBench(): Bench {
   return {
     tools: raw?.crafting?.tools ?? [], known: raw?.crafting?.known ?? [],
     // The pouch is the ingredients in the inventory; "crafted" is everything else made from a recipe.
-    list: w => inv.filter(l => l.item && wanted(w, l.item) && (w === 'pouch' || (get(l.item)?.fields.recipe as unknown[] | undefined)?.length)).map(l => ({ item: l.item!, qty: l.qty })),
+    list: w => inv.filter(l => l.item && wanted(w, l.item) && (w === 'pouch' || (get(l.item)?.fields.recipe)?.length)).map(l => ({ item: l.item!, qty: l.qty })),
     add(_w, id, n) { edit(s => { const l = s.inventory.find(x => x.item === id); if (l) l.qty += n; else if (n > 0) s.inventory.push({ item: id, qty: n }) }) },
     set(_w, id, qty) { edit(s => { const l = s.inventory.find(x => x.item === id); if (l) l.qty = qty }) },
     setTools(t) { crafting().tools = t; touch() },
@@ -133,7 +133,7 @@ export function castingAbility(pc: Entry, s: CharacterSheet): Ability | undefine
 /** A character's spell attack bonus and save DC, from their sheet; undefined without a casting ability. */
 export function spellStats(pc: Entry): { attack: number; dc: number; ability: Ability } | undefined {
   // Only once the scores are filled in; until then the spellbook's typed numbers count.
-  if (!(pc.fields.sheet as Partial<CharacterSheet> | undefined)?.abilities) return undefined
+  if (!(pc.fields.sheet)?.abilities) return undefined
   const s = sheetOf(pc)!
   const a = castingAbility(pc, s)
   if (!a) return undefined
@@ -175,7 +175,7 @@ export interface Attack { id: Id; name: string; toHit: number; damage: string; t
 /** One attack per equipped weapon: finesse weapons use the better of STR and DEX, ranged ones DEX. */
 export function attacks(s: CharacterSheet, prof: number): Attack[] {
   return equipped(s).filter(e => e.fields.kind === 'Weapon').map(e => {
-    const props = ((e.fields.properties as string[] | undefined) ?? []).map(p => p.toLowerCase())
+    const props = ((e.fields.properties) ?? []).map(p => p.toLowerCase())
     const ranged = props.includes('ammunition') || /bow|crossbow|sling|blowgun|dart/i.test(`${e.name} ${e.fields.subtype ?? ''}`)
     const str = mod(s.abilities.str), dex = mod(s.abilities.dex)
     const m = props.includes('finesse') ? Math.max(str, dex) : ranged ? dex : str
@@ -183,7 +183,7 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
     const dice = String(e.fields.damage ?? '').trim()
     const dmg = m + magic
     const damage = dice ? dice.split('/').map(d => `${d.trim()}${dmg ? ' ' + signed(dmg).replace('−', '− ').replace('+', '+ ') : ''}`).join(' / ') : '—'
-    return { id: e.id, name: e.name, toHit: m + prof + magic, damage, type: (e.fields.damageType as string[] | undefined)?.join('/'), note: e.fields.range as string | undefined }
+    return { id: e.id, name: e.name, toHit: m + prof + magic, damage, type: (e.fields.damageType)?.join('/'), note: e.fields.range }
   })
 }
 

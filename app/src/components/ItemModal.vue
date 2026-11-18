@@ -12,7 +12,7 @@ const props = defineProps<{ id: Id }>()
 const emit = defineEmits<{ close: [] }>()
 const e = computed(() => get(props.id))
 /** A scroll is its spell. */
-const spell = computed(() => (e.value?.fields.kind === 'Scroll' ? get(e.value.fields.spell as string) : undefined))
+const spell = computed(() => (e.value?.fields.kind === 'Scroll' ? get(e.value.fields.spell) : undefined))
 
 const onKey = (ev: KeyboardEvent) => { if (ev.key === 'Escape') { ev.stopPropagation(); emit('close') } }
 onMounted(() => window.addEventListener('keydown', onKey, true))

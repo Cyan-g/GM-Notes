@@ -21,7 +21,7 @@ const root = computed(() => roots.value.find(r => r.id === rootId.value) ?? root
 
 // ---- maps: every place with a map picture, outermost first ----
 const maps = computed(() => places.value.filter(p => p.fields.map)
-  .map(p => ({ p, path: placePath(p.id).slice(0, -1).map(x => x.name), pins: ((p.fields.pins as Pin[] | undefined) ?? []).length }))
+  .map(p => ({ p, path: placePath(p.id).slice(0, -1).map(x => x.name), pins: ((p.fields.pins) ?? []).length }))
   .sort((a, b) => a.path.length - b.path.length || a.p.name.localeCompare(b.p.name)))
 
 // ---- coming up: holidays (every year) and dated events after today, within the next year ----
@@ -36,7 +36,7 @@ const upcoming = computed(() => {
     out.push({ when, days: dayNumber(c, when) - tn, label: h.name, kind: 'holiday' })
   }
   for (const e of byType.value.get('event') ?? []) {
-    const d = e.fields.date as WorldDate | undefined
+    const d = e.fields.date
     if (!d?.year) continue
     const n = dayNumber(c, { year: d.year, month: d.month ?? 1, day: d.day ?? 1 })
     if (n >= tn && n - tn <= 366) out.push({ when: d, days: n - tn, label: e.name, id: e.id, kind: 'event' })
@@ -51,7 +51,7 @@ const factions = computed(() => (byType.value.get('organization') ?? [])
   .filter(o => !o.fields.parent)
   .map(o => ({ o, members: (relationsOf.value.get(o.id) ?? []).filter(r => r.kind === 'member' && r.b === o.id && isCurrent(r)).length }))
   .sort((a, b) => b.members - a.members || a.o.name.localeCompare(b.o.name)))
-const seat = (o: Entry) => o.fields.seat as string | undefined
+const seat = (o: Entry) => o.fields.seat
 </script>
 
 <template>
@@ -82,7 +82,7 @@ const seat = (o: Entry) => o.fields.seat as string | undefined
           <h3>Maps <span class="muted small">{{ maps.length }}</span></h3>
           <div class="map-gallery">
             <a v-for="m in maps" :key="m.p.id" class="map-tile" :href="hrefMap(m.p.id)" :title="`Open the map of ${m.p.name}`">
-              <DataImage :path="m.p.fields.map as string" :alt="m.p.name" />
+              <DataImage :path="m.p.fields.map" :alt="m.p.name" />
               <span class="map-tile-text">
                 <b>{{ m.p.name }}</b>
                 <span class="muted small">{{ m.path.slice(1).join(' › ') || m.path.join(' › ') }}<template v-if="m.pins"> · {{ m.pins }} pins</template></span>

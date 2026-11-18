@@ -17,12 +17,12 @@ const list = (t: Entry['type']) => byType.value.get(t) ?? []
 
 // ---- campaigns: the one with the latest session first ----
 const campaigns = computed(() => list('campaign').map(c => {
-  const s = list('session').filter(x => x.fields.campaign === c.id).sort((a, b) => ((b.fields.number as number) ?? 0) - ((a.fields.number as number) ?? 0))
+  const s = list('session').filter(x => x.fields.campaign === c.id).sort((a, b) => ((b.fields.number) ?? 0) - ((a.fields.number) ?? 0))
   return { c, sessions: s }
 }).sort((a, b) => b.sessions.length - a.sessions.length || byName(a.c, b.c)))
 const current = computed(() => campaigns.value[0]?.sessions.length ? campaigns.value[0] : undefined)
 const others = computed(() => campaigns.value.filter(x => x !== current.value))
-const nextNumber = computed(() => ((current.value?.sessions[0]?.fields.number as number | undefined) ?? 0) + 1)
+const nextNumber = computed(() => ((current.value?.sessions[0]?.fields.number) ?? 0) + 1)
 const newSession = () => current.value && newEntry('session', { campaign: current.value.c.id, number: nextNumber.value, date: { ...db().meta.today } })
 const notes = computed(() => list('note').sort(byName))
 
@@ -60,7 +60,7 @@ const within = (id: Id | undefined, region: Id) => !!id && placePath(id).some(p 
 const regions = computed(() => (world.value ? (childrenOf.value.get(world.value.id) ?? []).filter(c => c.type === 'place') : []).map(r => ({
   r,
   subs: (childrenOf.value.get(r.id) ?? []).filter(c => c.type === 'place').sort(byName),
-  orgs: list('organization').filter(o => !o.fields.parent && within(o.fields.seat as Id | undefined, r.id)).sort(byName),
+  orgs: list('organization').filter(o => !o.fields.parent && within(o.fields.seat, r.id)).sort(byName),
   maps: list('place').filter(p => p.id !== r.id && p.fields.map && within(p.id, r.id)).sort(byName),
 })).sort((a, b) => b.subs.length + b.orgs.length - (a.subs.length + a.orgs.length) || byName(a.r, b.r)))
 const homeless = computed(() => list('organization').filter(o => !o.fields.parent && !regions.value.some(r => r.orgs.includes(o))).sort(byName))
@@ -89,7 +89,7 @@ function addLink() {
   newLabel.value = ''; newUrl.value = ''; adding.value = false
 }
 function removeLink(i: number) { const m = db().meta; m.links = (m.links ?? []).filter((_, j) => j !== i); touch() }
-const sessionDate = (s: Entry) => { const d = s.fields.date as WorldDate | undefined; return d?.year ? formatDate(d) : '' }
+const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? formatDate(d) : '' }
 </script>
 
 <template>

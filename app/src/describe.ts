@@ -35,7 +35,7 @@ export function describe(e: Entry, { parent = true } = {}): string {
 /** A plain-text taste of the entry: its short description, or the first paragraph of its text. */
 export function excerpt(e: Entry, max = 260): string {
   const f = e.fields
-  const own = (f.summary ?? f.effect ?? f.description) as string | undefined
+  const own = f.summary ?? f.effect
   if (own) return cut(own, max)
   const para = e.body
     .replace(/:::secret[\s\S]*?:::/g, '')

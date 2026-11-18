@@ -22,7 +22,7 @@ export interface Entry {
   aliases: string[]
   tags: string[]
   /** Type-specific data, described by the schema (see schema.ts). */
-  fields: Record<string, unknown>
+  fields: import('./schema').EntryFields
   /** Markdown. Links are written [[id]] or [[id|label]]; `:::secret` blocks are DM-only. */
   body: string
   /** Whether the players know this entry exists. */

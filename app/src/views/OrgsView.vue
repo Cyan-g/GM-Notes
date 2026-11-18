@@ -23,7 +23,7 @@ const shown = computed(() => orgs.value.filter(o =>
 
 // ---- per organization ----
 const members = (o: Entry) => (relationsOf.value.get(o.id) ?? []).filter(r => r.kind === 'member' && r.b === o.id && isCurrent(r))
-const ranks = (o: Entry) => (o.fields.ranks as RankLine[] | undefined) ?? []
+const ranks = (o: Entry) => (o.fields.ranks) ?? []
 const LEADER = /\b(leader|head|king|queen|duke|duchess|chief|chieftain|general|archmage|vizier|saint|high[- ]?priest(ess)?|grandmaster|captain|matriarch|patriarch)\b/i
 /** Who leads it: the holder of the top rank, else a member whose role sounds like it. */
 function leader(o: Entry): { id: Id; role?: string } | undefined {
@@ -38,7 +38,7 @@ const subOrgs = (o: Entry) => (childrenOf.value.get(o.id) ?? []).filter(c => c.t
 const world = computed(() => (byType.value.get('place') ?? []).filter(p => !p.fields.parent)
   .sort((a, b) => (childrenOf.value.get(b.id)?.length ?? 0) - (childrenOf.value.get(a.id)?.length ?? 0))[0])
 function regionOf(o: Entry): Entry | undefined {
-  const seat = o.fields.seat as Id | undefined
+  const seat = o.fields.seat
   if (!seat) return undefined
   const path = placePath(seat)
   const i = path.findIndex(p => p.id === world.value?.id)
@@ -95,7 +95,7 @@ const people = computed(() => [
                 <a class="org-name" :href="hrefEntry(o.id)">{{ o.name }}</a>
                 <span v-if="o.fields.orgType" class="badge">{{ o.fields.orgType }}</span>
               </header>
-              <p v-if="o.fields.seat" class="org-line">📍 <EntryLink :id="o.fields.seat as string" /></p>
+              <p v-if="o.fields.seat" class="org-line">📍 <EntryLink :id="o.fields.seat" /></p>
               <p v-if="leader(o)" class="org-line">👑 <EntryLink :id="leader(o)!.id" /><span v-if="leader(o)!.role" class="muted small"> · {{ leader(o)!.role }}</span></p>
               <p class="org-line muted small">
                 {{ members(o).length }} {{ members(o).length === 1 ? 'member' : 'members' }}

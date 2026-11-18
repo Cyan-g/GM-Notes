@@ -1,6 +1,8 @@
 // Describes every entry type: its label, fields and dropdown options.
 // Forms and pages are generated from this, so adding a field here is enough.
-import type { EntryType, RelationKind } from './types'
+import type {
+  Abilities, CharacterSheet, Copper, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
+} from './types'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
@@ -10,11 +12,11 @@ export interface FieldDef {
   key: string
   label: string
   kind: FieldKind
-  options?: string[]
+  options?: readonly string[]
   /** For ref/refs: which entry types may be picked. */
-  to?: EntryType[]
+  to?: readonly EntryType[]
   /** Only show when another field has one of these values, e.g. weapon fields when kind = Weapon. */
-  when?: { field: string; is: string[] }
+  when?: { readonly field: string; readonly is: readonly string[] }
   group?: string
 }
 
@@ -23,7 +25,7 @@ export interface TypeDef {
   label: string
   plural: string
   icon: string
-  fields: FieldDef[]
+  fields: readonly FieldDef[]
 }
 
 const SIZES = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']
@@ -41,7 +43,7 @@ const A = { field: 'kind', is: ['Armor'] }
 const ING = { field: 'kind', is: ['Ingredient'] }
 const CRAFT = { field: 'kind', is: ['Potion', 'Poison', 'Scroll', 'Other'] }
 
-export const SCHEMA: TypeDef[] = [
+export const SCHEMA = [
   {
     type: 'npc', label: 'NPC', plural: 'NPCs', icon: '👤', fields: [
       { key: 'race', label: 'Race', kind: 'ref', to: ['race'], group: 'Appearance' },
@@ -214,9 +216,33 @@ export const SCHEMA: TypeDef[] = [
       { key: 'campaign', label: 'Campaign', kind: 'ref', to: ['campaign'] },
     ],
   },
-]
+] as const satisfies readonly TypeDef[]
 
-export const TYPES = Object.fromEntries(SCHEMA.map(t => [t.type, t])) as Record<EntryType, TypeDef>
+export const TYPES = Object.fromEntries(SCHEMA.map(t => [t.type, t])) as unknown as Record<EntryType, TypeDef>
+
+// ---------- the fields' types, worked out from the schema above ----------
+
+/** What a value of each field kind looks like in the data. */
+export interface KindValue {
+  text: string; longtext: string; number: number; bool: boolean; select: string; list: string[]
+  money: Copper; weight: number; ref: Id; refs: Id[]; date: WorldDate
+  recipe: RecipeLine[]; stock: StockLine[]; statblock: Statblock; abilities: Abilities
+  combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet
+}
+type Defs = (typeof SCHEMA)[number]['fields'][number]
+/** A field key used by any type. */
+export type FieldKey = Defs['key']
+/**
+ * The fields of an entry: every key any type has, with the value its kind stores. A key two types share with
+ * different kinds (a spell's level is a choice, a feat's a number) takes either. Typos don't compile.
+ */
+export type EntryFields = { [K in FieldKey]?: KindValue[Extract<Defs, { key: K }>['kind']] }
+/** The fields looked up by a key only known while running (a column, a form field): untyped on purpose. */
+export const byKey = (fields: EntryFields) => fields as Record<string, unknown>
+/** The fields of one type only. */
+export type FieldsOf<T extends EntryType> = {
+  [F in Extract<(typeof SCHEMA)[number], { type: T }>['fields'][number] as F['key']]?: KindValue[F['kind']]
+}
 
 /**
  * How each relation kind reads. `forward` is from a's side, `reverse` is the heading on b's page,

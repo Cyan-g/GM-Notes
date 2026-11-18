@@ -15,8 +15,8 @@ const props = defineProps<{ id: string }>()
 const e = computed(() => get(props.id))
 const field = (key: string) => TYPES.encounter.fields.find(f => f.key === key)!
 
-const campaign = computed(() => e.value?.fields.campaign as Id | undefined)
-const party = computed(() => (e.value?.fields.party as Id[] | undefined) ?? [])
+const campaign = computed(() => e.value?.fields.campaign)
+const party = computed(() => (e.value?.fields.party) ?? [])
 const campaignParty = computed(() => (campaign.value ? partyOf(campaign.value) : []))
 function useCampaignParty() {
   const x = e.value!
@@ -25,7 +25,7 @@ function useCampaignParty() {
 }
 
 // ---- totals ----
-const lines = computed(() => (e.value?.fields.creatures as EncounterLine[] | undefined) ?? [])
+const lines = computed(() => (e.value?.fields.creatures) ?? [])
 const count = computed(() => lines.value.reduce((s, l) => s + l.count, 0))
 const xp = computed(() => lines.value.reduce((s, l) => s + (lineInfo(l).xp ?? 0) * l.count, 0))
 const unknownXp = computed(() => lines.value.some(l => lineInfo(l).xp == null))

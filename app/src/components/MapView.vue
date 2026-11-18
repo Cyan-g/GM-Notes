@@ -24,7 +24,7 @@ function onLoad(ev: Event) {
   if (props.focusPin) centerOn(props.focusPin)
 }
 
-const pins = computed<Pin[]>(() => (props.place.fields.pins as Pin[] | undefined) ?? [])
+const pins = computed<Pin[]>(() => (props.place.fields.pins) ?? [])
 const pinName = (p: Pin) => get(p.entry)?.name ?? p.label ?? 'Pin'
 const pinIcon = (p: Pin) => { const e = get(p.entry); return e ? TYPES[e.type].icon : '📌' }
 const showLabels = ref(true)
@@ -132,7 +132,7 @@ function setPin(patch: Partial<Pin>) {
 }
 function removePin() {
   props.place.fields.pins = pins.value.filter(p => p.id !== selected.value)
-  if (!(props.place.fields.pins as Pin[]).length) delete props.place.fields.pins
+  if (!(props.place.fields.pins).length) delete props.place.fields.pins
   selected.value = null
   changed(props.place)
 }

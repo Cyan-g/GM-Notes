@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { Entry, Relation, Statblock, WorldDate } from '../model/types'
-import { TYPES, RELATION_KINDS, type FieldDef } from '../model/schema'
+import { TYPES, RELATION_KINDS, byKey, type FieldDef } from '../model/schema'
 import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, placePath, playerMode, relationsOf, entries } from '../store'
 import { go, hrefEntry, hrefFamily, hrefList, hrefMap } from '../router'
 import FamilyTree from '../components/FamilyTree.vue'
@@ -40,7 +40,7 @@ const def = computed(() => e.value ? TYPES[e.value.type] : undefined)
 const today = computed(() => db().meta.today)
 
 const empty = (v: unknown) => v == null || v === '' || (Array.isArray(v) && !v.length)
-const shown = (f: FieldDef, x: Entry) => !f.when || f.when.is.includes(String(x.fields[f.when.field] ?? ''))
+const shown = (f: FieldDef, x: Entry) => !f.when || f.when.is.includes(String(byKey(x.fields)[f.when.field] ?? ''))
 
 /** Simple fields grouped for the side card; big ones (statblock, recipe, stock) go elsewhere. */
 const groups = computed(() => {
@@ -50,17 +50,17 @@ const groups = computed(() => {
   const big = ['statblock', 'recipe', 'stock', 'combatants', 'ranks', 'sheet']
   const out = new Map<string, { def: FieldDef; value: unknown }[]>()
   for (const f of def.value.fields) {
-    if (big.includes(f.kind) || f.key === 'parent' || f.key === 'map' || f.key === 'pins' || !shown(f, x) || empty(x.fields[f.key])) continue
+    if (big.includes(f.kind) || f.key === 'parent' || f.key === 'map' || f.key === 'pins' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
     const g = f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
-    out.get(g)!.push({ def: f, value: x.fields[f.key] })
+    out.get(g)!.push({ def: f, value: byKey(x.fields)[f.key] })
   }
   return [...out]
 })
 const bigFields = computed(() => {
   const x = e.value
   if (!x || !def.value) return []
-  return def.value.fields.filter(f => ['recipe', 'stock', 'combatants', 'ranks'].includes(f.kind) && shown(f, x) && !empty(x.fields[f.key]))
+  return def.value.fields.filter(f => ['recipe', 'stock', 'combatants', 'ranks'].includes(f.kind) && shown(f, x) && !empty(byKey(x.fields)[f.key]))
 })
 /** The feats an entry grants (an organization's fighting styles and the like). */
 const grantedFeats = computed(() => (e.value ? (byType.value.get('feat') ?? []).filter(f => f.fields.source === e.value!.id).sort((a, b) => a.name.localeCompare(b.name)) : []))
@@ -106,16 +106,16 @@ const bodyParts = computed(() => {
   if (rest.trim()) parts.push({ md: rest })
   return { parts, placed: new Set(cuts.map(c => c.insert)) }
 })
-const scrollSpell = computed(() => (e.value?.type === 'item' && e.value.fields.kind === 'Scroll' ? get(e.value.fields.spell as string) : undefined))
-const statblock = computed(() => e.value?.fields.statblock as Statblock | undefined)
+const scrollSpell = computed(() => (e.value?.type === 'item' && e.value.fields.kind === 'Scroll' ? get(e.value.fields.spell) : undefined))
+const statblock = computed(() => e.value?.fields.statblock)
 
 const crumbs = computed(() => {
   const x = e.value
   if (!x) return []
   if (x.type === 'place') return placePath(x.id).slice(0, -1)
   const chain: Entry[] = []
-  let p = get(x.fields.parent as string)
-  while (p && chain.length < 10) { chain.unshift(p); p = get(p.fields.parent as string) }
+  let p = get(x.fields.parent)
+  while (p && chain.length < 10) { chain.unshift(p); p = get(p.fields.parent) }
   return chain
 })
 
@@ -146,7 +146,7 @@ const relGroups = computed(() => {
 const onMaps = computed(() => {
   const x = e.value
   if (!x) return []
-  return entries.value.flatMap(p => ((p.fields.pins as Pin[] | undefined) ?? []).filter(pin => pin.entry === x.id).map(pin => ({ place: p, pin })))
+  return entries.value.flatMap(p => ((p.fields.pins) ?? []).filter(pin => pin.entry === x.id).map(pin => ({ place: p, pin })))
 })
 
 // A place's kind shows as its badge, so a place has no lead line of its own.
@@ -198,11 +198,11 @@ const mentions = computed(() => {
 const raceMembers = computed(() => {
   if (e.value?.type !== 'race') return []
   const ids = new Set<string>([e.value.id])
-  for (let grew = true; grew;) { grew = false; for (const r of byType.value.get('race') ?? []) if (!ids.has(r.id) && ids.has(r.fields.parent as string)) { ids.add(r.id); grew = true } }
-  return entries.value.filter(n => (n.type === 'npc' || n.type === 'pc') && ids.has(n.fields.race as string))
+  for (let grew = true; grew;) { grew = false; for (const r of byType.value.get('race') ?? []) if (!ids.has(r.id) && !!r.fields.parent && ids.has(r.fields.parent)) { ids.add(r.id); grew = true } }
+  return entries.value.filter(n => (n.type === 'npc' || n.type === 'pc') && !!n.fields.race && ids.has(n.fields.race))
     .sort((a, b) => subraceName(a).localeCompare(subraceName(b)) || a.name.localeCompare(b.name))
 })
-const subraceName = (n: Entry) => (n.fields.race === e.value?.id ? '' : get(n.fields.race as string)?.name ?? '')
+const subraceName = (n: Entry) => (n.fields.race === e.value?.id ? '' : get(n.fields.race)?.name ?? '')
 const hasSubraceMembers = computed(() => raceMembers.value.some(n => subraceName(n)))
 const usedIn = computed(() => e.value?.type === 'item'
   ? entries.value.filter(n => ((n.fields.recipe as { item: string }[]) ?? []).some(l => l.item === e.value!.id)) : [])
@@ -215,14 +215,14 @@ function newSession() {
 }
 const exporting = ref(false)
 const sessions = computed(() => e.value?.type === 'campaign'
-  ? (byType.value.get('session') ?? []).filter(s => s.fields.campaign === e.value!.id).sort((a, b) => (a.fields.number as number ?? 0) - (b.fields.number as number ?? 0) || a.name.localeCompare(b.name))
+  ? (byType.value.get('session') ?? []).filter(s => s.fields.campaign === e.value!.id).sort((a, b) => (a.fields.number ?? 0) - (b.fields.number ?? 0) || a.name.localeCompare(b.name))
   : [])
 const campaignNotes = computed(() => e.value?.type === 'campaign'
-  ? entries.value.filter(n => (n.type === 'note' && n.fields.campaign === e.value!.id) || (n.type === 'pc' && ((n.fields.campaigns as string[]) ?? []).includes(e.value!.id))) : [])
+  ? entries.value.filter(n => (n.type === 'note' && n.fields.campaign === e.value!.id) || (n.type === 'pc' && ((n.fields.campaigns) ?? []).includes(e.value!.id))) : [])
 const siblings = computed(() => {
   const x = e.value
   if (x?.type !== 'session' || !x.fields.campaign) return null
-  const list = (byType.value.get('session') ?? []).filter(s => s.fields.campaign === x.fields.campaign).sort((a, b) => (a.fields.number as number ?? 0) - (b.fields.number as number ?? 0))
+  const list = (byType.value.get('session') ?? []).filter(s => s.fields.campaign === x.fields.campaign).sort((a, b) => (a.fields.number ?? 0) - (b.fields.number ?? 0))
   const i = list.findIndex(s => s.id === x.id)
   return { prev: list[i - 1], next: list[i + 1] }
 })
@@ -298,7 +298,7 @@ const siblings = computed(() => {
 
         <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => !(bodyParts.placed.has('ranks') && f.kind === 'ranks'))" :key="f.key">
           <h2>{{ f.label }}</h2>
-          <FieldValue :def="f" :value="e.fields[f.key]" :entry="e" />
+          <FieldValue :def="f" :value="byKey(e.fields)[f.key]" :entry="e" />
         </section>
 
         <section v-if="grantedFeats.length && !bodyParts.placed.has('feats')">
@@ -309,7 +309,7 @@ const siblings = computed(() => {
         <section v-if="e.type === 'campaign'">
           <h2>Sessions</h2>
           <ol v-if="sessions.length" class="plain">
-            <li v-for="s in sessions" :key="s.id"><EntryLink :id="s.id" /> <span class="muted">{{ formatDate(s.fields.date as WorldDate) }}</span></li>
+            <li v-for="s in sessions" :key="s.id"><EntryLink :id="s.id" /> <span class="muted">{{ formatDate(s.fields.date) }}</span></li>
           </ol>
           <button class="new-session" @click="newSession">+ New session</button>
         </section>
@@ -328,7 +328,7 @@ const siblings = computed(() => {
           <h2>{{ e.name }} characters</h2>
           <table class="mini">
             <thead><tr><th>Name</th><th v-if="hasSubraceMembers">Subrace</th></tr></thead>
-            <tbody><tr v-for="n in raceMembers" :key="n.id"><td><EntryLink :id="n.id" icon /></td><td v-if="hasSubraceMembers"><EntryLink v-if="subraceName(n)" :id="n.fields.race as string" /></td></tr></tbody>
+            <tbody><tr v-for="n in raceMembers" :key="n.id"><td><EntryLink :id="n.id" icon /></td><td v-if="hasSubraceMembers"><EntryLink v-if="subraceName(n)" :id="n.fields.race" /></td></tr></tbody>
           </table>
         </section>
       </div>
@@ -336,7 +336,7 @@ const siblings = computed(() => {
       <aside class="entry-side">
         <div v-for="f in e.type === 'item' ? bigFields : []" :key="f.key" class="card side-big">
           <h3>{{ f.label }}</h3>
-          <FieldValue :def="f" :value="e.fields[f.key]" :entry="e" />
+          <FieldValue :def="f" :value="byKey(e.fields)[f.key]" :entry="e" />
         </div>
         <div v-if="children.length" class="card subregions">
           <h3>{{ e.type === 'place' ? 'Subregions' : e.type === 'race' ? 'Subraces' : 'Part of this' }}

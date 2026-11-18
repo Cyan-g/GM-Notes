@@ -7,7 +7,7 @@
 import type { Entry, Id } from './model/types'
 import { db, get, state, touch } from './store'
 import { newId } from './edit'
-import { TYPES } from './model/schema'
+import { TYPES, byKey } from './model/schema'
 import { checkEntry, checkField } from './validate'
 
 export const FORMAT = 'dndesk-export'
@@ -68,7 +68,7 @@ export interface ExportPlan {
 export function planExport(id: Id): ExportPlan | null {
   const main = get(id)
   if (!main || !canExport(main)) return null
-  if (main.type === 'place') return { main, parts: [], files: [main.fields.map as string], hasSecrets: false }
+  if (main.type === 'place') return { main, parts: [], files: [main.fields.map!], hasSecrets: false }
   const all = new Map([[main.id, main]])
   const queue = [main]
   while (queue.length) {
@@ -96,7 +96,7 @@ function exportCopy(e: Entry, inFile: Set<Id>, secrets: boolean): Entry {
   c.body = c.body.replace(LINK, (all, ref: string, label?: string) =>
     inFile.has(ref.trim()) ? all : label ? label.replace(/^\\?\|/, '') : (get(ref.trim())?.name ?? ref))
   if (typeof c.fields.spell === 'string' && !inFile.has(c.fields.spell)) delete c.fields.spell
-  if (Array.isArray(c.fields.recipe)) c.fields.recipe = (c.fields.recipe as { item: Id }[]).filter(l => inFile.has(l.item))
+  if (Array.isArray(c.fields.recipe)) c.fields.recipe = c.fields.recipe.filter(l => inFile.has(l.item))
   return c
 }
 
@@ -213,14 +213,15 @@ export async function applyImport(plan: ImportPlan): Promise<Id> {
     c.id = id
     c.aliases ??= []; c.tags ??= []; c.body ??= ''; c.visibility ??= 'secret'
     // Only the fields this app knows, with values of the right kind.
-    for (const [k, v] of Object.entries(c.fields)) {
+    const fields = byKey(c.fields)
+    for (const [k, v] of Object.entries(fields)) {
       const f = TYPES[c.type].fields.find(x => x.key === k)
-      if (!f || checkField(f, v)) delete c.fields[k]
+      if (!f || checkField(f, v)) delete fields[k]
     }
     c.created = mine?.created ?? now
     c.updated = now
     if (typeof c.fields.spell === 'string') { const to = map.get(c.fields.spell); if (to) c.fields.spell = to; else delete c.fields.spell }
-    if (Array.isArray(c.fields.recipe)) c.fields.recipe = (c.fields.recipe as { item: Id }[]).flatMap(l => (map.has(l.item) ? [{ ...l, item: map.get(l.item)! }] : []))
+    if (Array.isArray(c.fields.recipe)) c.fields.recipe = c.fields.recipe.flatMap(l => (map.has(l.item) ? [{ ...l, item: map.get(l.item)! }] : []))
     c.body = c.body.replace(LINK, (_all, ref: string, label?: string) => {
       const to = map.get(ref.trim())
       return to ? `[[${to}${label ?? ''}]]` : label ? label.replace(/^\\?\|/, '') : ref

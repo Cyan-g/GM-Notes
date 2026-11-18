@@ -6,7 +6,7 @@ import { describe } from '../describe'
 import MarkdownView from './MarkdownView.vue'
 
 const props = defineProps<{ e: Entry }>()
-const f = computed(() => props.e.fields as Record<string, any>)
+const f = computed(() => props.e.fields)
 const components = computed(() => [f.value.verbal && 'V', f.value.somatic && 'S', f.value.material && `M (${f.value.material === 'yes' ? 'material' : f.value.material})`].filter(Boolean).join(', '))
 const grid = computed(() => ([
   ['Casting time', [f.value.castingTime, f.value.ritual && '(ritual)'].filter(Boolean).join(' ')],

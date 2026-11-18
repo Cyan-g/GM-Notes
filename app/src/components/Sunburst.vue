@@ -99,7 +99,7 @@ const shown = computed(() => nodes.value.filter(d => visible(d.cur)))
 
 const click = (d: HNode) => go(hrefEntry(d.data.id))
 // The centre is the entry itself: clicking it goes to the place it sits in.
-const up = computed(() => { const e = get(props.id); const p = e && get(e.fields.parent as string); return p && p.type === e.type ? p : null })
+const up = computed(() => { const e = get(props.id); const p = e && get(e.fields.parent); return p && p.type === e.type ? p : null })
 function goUp() { if (up.value) go(hrefEntry(up.value.id)) }
 
 const hovered = ref<HNode | null>(null)

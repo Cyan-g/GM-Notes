@@ -9,7 +9,7 @@ import { createEntry } from '../../edit'
 
 const props = withDefaults(defineProps<{
   modelValue?: string | null
-  types?: EntryType[]
+  types?: readonly EntryType[]
   placeholder?: string
   add?: boolean
   exclude?: string[]

@@ -1,5 +1,5 @@
 // What the top menu bar shows. Children are built lazily, only when a submenu opens.
-import { SCHEMA } from './model/schema'
+import { SCHEMA, byKey } from './model/schema'
 import type { Entry, EntryType } from './model/types'
 import { computed } from 'vue'
 import { byType, childrenOf, get, playerMode, state } from './store'
@@ -52,7 +52,7 @@ function grouped(list: Entry[], key: (e: Entry) => string, order?: string[], sor
   })
 }
 
-const refName = (e: Entry, key: string) => get(e.fields[key] as string)?.name ?? ''
+const refName = (e: Entry, key: string) => get(byKey(e.fields)[key] as string)?.name ?? ''
 const bySession = (a: Entry, b: Entry) => (Number(a.fields.number) || 0) - (Number(b.fields.number) || 0) || byName(a, b)
 
 function entriesOf(t: EntryType): MenuNode[] {
@@ -61,7 +61,7 @@ function entriesOf(t: EntryType): MenuNode[] {
     case 'place':
     case 'organization':
     case 'race':
-      return list.filter(e => get(e.fields.parent as string)?.type !== t).sort(byName).map(treeNode)
+      return list.filter(e => get(e.fields.parent)?.type !== t).sort(byName).map(treeNode)
     case 'session':
       return grouped(list, e => refName(e, 'campaign'), undefined, bySession)
     case 'encounter':
@@ -103,7 +103,7 @@ const OWN_MENU = ['spells', 'crafting', 'people', 'armory']
 const CRAFT_KINDS = ['Ingredient', 'Potion', 'Poison', 'Scroll']
 
 /** The spellbook and recipes in use (the current character's or the world's), for the menu hints; never creates them. */
-const charSheet = () => currentPc.value?.fields.sheet as Partial<CharacterSheet> | undefined
+const charSheet = () => currentPc.value?.fields.sheet
 const bookNow = () => (currentPc.value ? charSheet()?.spellbook : state.db?.spellbook)
 const benchKnown = () => (currentPc.value ? charSheet()?.crafting?.known.length : state.db?.crafting?.known.length)
 const typeOf = (r: Route) => (r.name === 'list' ? r.type : r.name === 'entry' ? get(r.id)?.type : undefined)
@@ -149,7 +149,7 @@ export const MENUS: TopMenu[] = [
     // (A table named like one of the lists below is left out: the list has its own "All …" link.)
     items: () => {
       const types = ['npc', 'organization'] as EntryType[]
-      const plurals = types.map(t => info(t).plural)
+      const plurals: string[] = types.map(t => info(t).plural)
       return [{ label: 'Overview', icon: '⚑', href: '#/organizations', hint: String(state.db ? (byType.value.get('organization')?.length ?? 0) : '') }, SEP,
         ...dashViews('people', '👥').filter(v => !plurals.includes(v.label)), SEP, ...types.map(typeNode)]
     },

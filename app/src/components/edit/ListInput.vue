@@ -2,7 +2,7 @@
 // A list of short texts as removable chips. Enter or comma adds one.
 import { ref } from 'vue'
 
-const props = defineProps<{ modelValue?: string[]; options?: string[]; placeholder?: string }>()
+const props = defineProps<{ modelValue?: string[]; options?: readonly string[]; placeholder?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [string[]] }>()
 const q = ref('')
 const id = `dl-${Math.random().toString(36).slice(2)}`

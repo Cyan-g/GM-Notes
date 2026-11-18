@@ -40,7 +40,7 @@ const pouchValue = computed(() => pouchRows.value.reduce((n, r) => n + r.qty * (
 // ---- recipes ----
 const known = computed(() => c.value.known.map(id => get(id)).filter((e): e is Entry => !!e)
   .sort((a, b) => String(a.fields.craftingType ?? '').localeCompare(String(b.fields.craftingType ?? '')) || a.name.localeCompare(b.name)))
-const lines = (e: Entry) => (e.fields.recipe as RecipeLine[] | undefined) ?? []
+const lines = (e: Entry) => (e.fields.recipe) ?? []
 const proficient = (e: Entry) => !e.fields.craftingType || c.value.tools.includes(String(e.fields.craftingType))
 const enough = (e: Entry) => lines(e).every(l => have(l.item) >= (l.amount || 1))
 const canCraft = (e: Entry) => proficient(e) && enough(e) && lines(e).length > 0
@@ -50,7 +50,7 @@ function craft(e: Entry) {
   addTo('made', e.id, 1)
   message.value = `Crafted ${e.name}.`
 }
-const learnable = computed(() => (byType.value.get('item') ?? []).filter(e => (e.fields.recipe as unknown[] | undefined)?.length).map(e => e.id))
+const learnable = computed(() => (byType.value.get('item') ?? []).filter(e => (e.fields.recipe)?.length).map(e => e.id))
 function learn(id: Id) { if (!c.value.known.includes(id)) c.value.setKnown([...c.value.known, id]) }
 function forget(id: Id) { c.value.setKnown(c.value.known.filter(x => x !== id)) }
 const ingredientIds = computed(() => (byType.value.get('item') ?? []).filter(e => e.fields.kind === 'Ingredient').map(e => e.id))

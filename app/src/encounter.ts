@@ -10,7 +10,7 @@ const XP: Record<string, number> = {
   '26': 90000, '27': 105000, '28': 120000, '29': 135000, '30': 155000,
 }
 export const xpFor = (cr?: string) => (cr ? XP[cr.trim()] : undefined)
-export const statsOf = (e?: Entry) => e?.fields.statblock as Statblock | undefined
+export const statsOf = (e?: Entry) => e?.fields.statblock
 export const mod = (score?: number) => (score == null ? 0 : Math.floor((score - 10) / 2))
 
 export function lineInfo(l: EncounterLine) {

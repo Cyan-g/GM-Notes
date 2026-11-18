@@ -16,11 +16,11 @@ export function loadEncounter(id: Id, replace = true) {
   const e = get(id)
   if (!e) return
   const t = tracker()
-  const monsters = combatantsFrom((e.fields.creatures as EncounterLine[] | undefined) ?? [])
+  const monsters = combatantsFrom((e.fields.creatures) ?? [])
   if (replace) {
     // The encounter's own party if it has one (keeping the HP of those already in the tracker), else whoever is there.
     const fresh = (c: Combatant) => ({ ...c, init: null, conditions: [] })
-    const party = (e.fields.party as Id[] | undefined) ?? []
+    const party = (e.fields.party) ?? []
     const players = party.length
       ? party.map(id => get(id)).filter((p): p is Entry => !!p).map(p => { const had = t.combatants.find(c => c.entry === p.id); return had ? fresh(had) : playerCombatant(p) })
       : t.combatants.filter(c => c.isPlayer).map(fresh)
@@ -35,7 +35,7 @@ export function loadEncounter(id: Id, replace = true) {
 /** The player characters of a campaign, or every PC when there's no campaign. */
 export function partyOf(campaign?: Id): Entry[] {
   const pcs = byType.value.get('pc') ?? []
-  return campaign ? pcs.filter(p => ((p.fields.campaigns as Id[] | undefined) ?? []).includes(campaign)) : pcs
+  return campaign ? pcs.filter(p => ((p.fields.campaigns) ?? []).includes(campaign)) : pcs
 }
 
 export function addPlayers(pcs: Entry[]) {

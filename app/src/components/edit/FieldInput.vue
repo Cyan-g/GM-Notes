@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Edits one schema field of an entry in place.
 import { computed } from 'vue'
-import type { FieldDef } from '../../model/schema'
+import { byKey, type FieldDef } from '../../model/schema'
 import type { Entry } from '../../model/types'
 import { changed } from '../../edit'
 import EntryPicker from './EntryPicker.vue'
@@ -17,9 +17,9 @@ import RanksInput from './RanksInput.vue'
 const props = defineProps<{ def: FieldDef; entry: Entry }>()
 
 const value = computed({
-  get: () => props.entry.fields[props.def.key] as any,
+  get: () => byKey(props.entry.fields)[props.def.key] as any,
   set: (v: unknown) => {
-    const f = props.entry.fields
+    const f = byKey(props.entry.fields)
     if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) delete f[props.def.key]
     else f[props.def.key] = v
     changed(props.entry)
@@ -53,8 +53,8 @@ function addRef(id: string) { if (!refs.value.includes(id)) value.value = [...re
     <EntryPicker add :types="def.to" :exclude="[entry.id, ...refs]" placeholder="Add…" @pick="addRef" />
   </div>
   <RanksInput v-else-if="def.kind === 'ranks'" v-model="value" />
-  <RecipeInput v-else-if="def.kind === 'recipe'" v-model="value" :item-value="entry.fields.value as number | undefined" />
-  <StockInput v-else-if="def.kind === 'stock'" v-model="value" :markup="(entry.fields.markup as number) ?? 1" />
+  <RecipeInput v-else-if="def.kind === 'recipe'" v-model="value" :item-value="entry.fields.value" />
+  <StockInput v-else-if="def.kind === 'stock'" v-model="value" :markup="(entry.fields.markup) ?? 1" />
   <EncounterInput v-else-if="def.kind === 'combatants'" v-model="value" />
   <StatblockInput v-else-if="def.kind === 'statblock'" v-model="value" />
   <input v-else :value="value ?? ''" @input="value = ($event.target as HTMLInputElement).value" />

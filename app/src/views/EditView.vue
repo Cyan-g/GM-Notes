@@ -2,7 +2,7 @@
 // Edit mode for one entry. Every change saves itself a moment later.
 import { computed } from 'vue'
 import type { EntryType, Statblock } from '../model/types'
-import { SCHEMA, TYPES, type FieldDef } from '../model/schema'
+import { SCHEMA, TYPES, byKey, type FieldDef } from '../model/schema'
 import { backlinks, get, relationsOf } from '../store'
 import { changed, deleteEntry } from '../edit'
 import { go, hrefEntry, hrefList } from '../router'
@@ -20,7 +20,7 @@ const props = defineProps<{ id: string }>()
 const e = computed(() => get(props.id))
 const def = computed(() => (e.value ? TYPES[e.value.type] : undefined))
 
-const shown = (f: FieldDef) => !f.when || f.when.is.includes(String(e.value!.fields[f.when.field] ?? ''))
+const shown = (f: FieldDef) => !f.when || f.when.is.includes(String(byKey(e.value!.fields)[f.when.field] ?? ''))
 // The character sheet is filled in on the PC's page itself.
 const BIG = ['recipe', 'stock', 'combatants', 'ranks', 'sheet']
 const groups = computed(() => {
@@ -48,8 +48,9 @@ const sheetFields = computed(() => (def.value?.fields ?? []).filter(f => f.key !
 const sheetBools = computed(() => sheetFields.value.filter(f => f.kind === 'bool'))
 function toggleBool(key: string) {
   const x = e.value!
-  if (x.fields[key]) delete x.fields[key]
-  else x.fields[key] = true
+  const f = byKey(x.fields)
+  if (f[key]) delete f[key]
+  else f[key] = true
   changed(x)
 }
 function setSummary(v: string) { if (v.trim()) e.value!.fields.summary = v; else delete e.value!.fields.summary; changed(e.value!) }
@@ -125,7 +126,7 @@ function remove() {
               <div v-if="sheetBools.length" class="sheet-field">
                 <span>{{ e.type === 'item' ? 'Magic' : 'Options' }}</span>
                 <div class="seg wrap">
-                  <button v-for="f in sheetBools" :key="f.key" type="button" :class="{ on: !!e.fields[f.key] }" @click="toggleBool(f.key)">{{ f.label }}</button>
+                  <button v-for="f in sheetBools" :key="f.key" type="button" :class="{ on: !!byKey(e.fields)[f.key] }" @click="toggleBool(f.key)">{{ f.label }}</button>
                 </div>
               </div>
               <label v-for="f in sheetFields.filter(x => ['list', 'longtext'].includes(x.kind))" :key="f.key" class="sheet-field" :class="'k-' + f.kind">
@@ -147,7 +148,7 @@ function remove() {
         <BodyEditor v-else :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
         <section v-if="e.type === 'place'">
           <h2>Map</h2>
-          <ImageInput :model-value="e.fields.map as string | undefined" :hint="e.name + ' map'" @update:model-value="setMap" />
+          <ImageInput :model-value="e.fields.map" :hint="e.name + ' map'" @update:model-value="setMap" />
           <MapView v-if="e.fields.map" :place="e" editable class="inline-map" />
         </section>
         <section v-for="f in e.type === 'item' ? [] : bigFields" :key="f.key">
@@ -158,7 +159,7 @@ function remove() {
 
       <!-- Sheets (spells) have nothing for the side: no picture, no relations. -->
       <aside v-if="creature" class="entry-side cf-preview">
-        <StatblockView v-if="e.fields.statblock" :sb="e.fields.statblock as Statblock" :name="e.name" />
+        <StatblockView v-if="e.fields.statblock" :sb="e.fields.statblock" :name="e.name" />
         <p v-else class="muted small">The statblock shows up here as you fill it in.</p>
       </aside>
       <aside v-else-if="!noSide" class="entry-side">

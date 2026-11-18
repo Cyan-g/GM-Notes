@@ -15,7 +15,7 @@ const props = defineProps<{ def: FieldDef; value: unknown; entry: Entry }>()
 const recipe = computed(() => {
   const lines = (props.value as RecipeLine[]) ?? []
   const rows = lines.map(l => {
-    const each = get(l.item)?.fields.value as number | undefined
+    const each = get(l.item)?.fields.value
     return { ...l, each, total: each != null ? each * l.amount : undefined }
   })
   const known = rows.every(r => r.total != null)
@@ -23,9 +23,9 @@ const recipe = computed(() => {
 })
 
 const stock = computed(() => {
-  const markup = (props.entry.fields.markup as number | undefined) ?? 1
+  const markup = (props.entry.fields.markup) ?? 1
   return ((props.value as StockLine[]) ?? []).map(l => {
-    const base = get(l.item)?.fields.value as number | undefined
+    const base = get(l.item)?.fields.value
     return { ...l, price: l.price ?? (base != null ? Math.round(base * markup) : undefined) }
   })
 })

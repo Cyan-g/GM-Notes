@@ -8,7 +8,7 @@ import EntryLink from './EntryLink.vue'
 import MarkdownView from './MarkdownView.vue'
 
 const props = defineProps<{ e: Entry; title?: boolean; source?: boolean }>()
-const f = computed(() => props.e.fields as Record<string, any>)
+const f = computed(() => props.e.fields)
 const requires = computed(() => ((f.value.requires as Id[] | undefined) ?? []).filter(id => get(id)))
 const hasPrereq = computed(() => f.value.level || requires.value.length || f.value.prerequisite)
 </script>

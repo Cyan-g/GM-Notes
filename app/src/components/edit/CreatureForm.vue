@@ -9,7 +9,7 @@ import { xpFor } from '../../encounter'
 import TokenField from './TokenField.vue'
 
 const props = defineProps<{ entry: Entry }>()
-const sb = computed<Statblock>(() => (props.entry.fields.statblock as Statblock | undefined) ?? {})
+const sb = computed<Statblock>(() => (props.entry.fields.statblock) ?? {})
 
 function set<K extends keyof Statblock>(key: K, v: Statblock[K] | undefined) {
   const next: Statblock = { ...sb.value }
@@ -31,7 +31,7 @@ const typeParts = computed(() => {
   return { base: m?.[1] ?? '', tags: m?.[2] ?? '' }
 })
 const typeValue = computed(() => {
-  const t = (props.entry.fields.creatureType as string | undefined) ?? typeParts.value.base
+  const t = (props.entry.fields.creatureType) ?? typeParts.value.base
   return TYPE_OPTIONS.find(o => o.toLowerCase() === t.toLowerCase()) ?? t
 })
 function setType(base: string, tags: string) {

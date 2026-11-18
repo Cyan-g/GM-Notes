@@ -32,7 +32,8 @@ const items = computed(() => {
   const byDay = new Map<number, Entry[]>()
   const monthOnly: Entry[] = []
   for (const e of dated.value) {
-    const d = e.fields.date as WorldDate
+    const d = e.fields.date
+    if (!d) continue
     if (d.year !== y || d.month !== m) continue
     if (!d.day) { monthOnly.push(e); continue }
     if (!byDay.has(d.day)) byDay.set(d.day, [])

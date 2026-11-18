@@ -131,7 +131,9 @@ ipcMain.handle('folder:pick', async (e, root) => {
   })
   if (r.canceled || !r.filePaths[0]) return null
   let dir = r.filePaths[0]
-  if (root === 'data' && !fs.existsSync(path.join(dir, 'eldoria.json')) && fs.existsSync(path.join(dir, 'data', 'eldoria.json'))) dir = path.join(dir, 'data')
+  // Picking the folder that holds data/ means data/ itself.
+  const world = d => WorldDb.exists(d) || fs.existsSync(path.join(d, 'eldoria.json'))
+  if (root === 'data' && !world(dir) && world(path.join(dir, 'data'))) dir = path.join(dir, 'data')
   if (root === 'data') closeWorld()
   config[ROOTS[root]] = dir
   writeConfig(config)

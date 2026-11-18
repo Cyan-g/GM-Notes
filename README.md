@@ -74,10 +74,10 @@ A player character's page is its character sheet, filled in right on the page.
 **The current character.** "☆ Make current character" at the top of a sheet makes that character the one the other tools are about:
 
 - **Spellbook:** shows the character's own spellbook: spells, slots and prepared spells. The spell attack and save DC come from their sheet once its scores and casting ability are filled in; until then they're typed in.
-- **Workbench:** uses the character's recipes and the tool proficiencies from their sheet (changing them on the Workbench changes the sheet). The ingredient pouch is the ingredients in their inventory, which the sheet lists separately as *Ingredient pouch*. Crafting takes the ingredients out of the inventory and puts the result in.
+- **Workbench:** uses the character's recipes and the tool proficiencies from their sheet (set on its ✎ Edit page; the recipes show which tools are missing). The ingredient pouch is the ingredients in their inventory, which the sheet lists separately as *Ingredient pouch*. Crafting takes the ingredients out of the inventory and puts the result in.
 - **Character menu** (player mode): clicking it opens the current character's sheet, and the menu marks them with ★.
 
-With no current character, the Spellbook and Workbench use the world's own; the Spellbook then takes typed numbers.
+With no current character, the Spellbook and Workbench use the world's own; the Spellbook then takes typed numbers, and the Workbench picks its tools itself.
 
 ### The calendar
 

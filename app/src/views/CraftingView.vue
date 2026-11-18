@@ -8,7 +8,6 @@ import { byType, formatMoney, get } from '../store'
 import { activeBench, currentPc } from '../sheet'
 import { recipeCost } from '../columns'
 import { CRAFTING_RULE, craftingTime } from '../crafting'
-import { hrefEntry } from '../router'
 import EntryLink from '../components/EntryLink.vue'
 import EntryPicker from '../components/edit/EntryPicker.vue'
 
@@ -16,7 +15,8 @@ const c = computed(() => activeBench())
 const message = ref('')
 
 // ---- proficiencies: the Tool items ----
-// With a current character these are the tool proficiencies on their sheet (the same list, changed from either place).
+// With a current character these are the tool proficiencies on their sheet, changed only there; the recipes show
+// which ones are missing. Without one, the world's Workbench picks them here.
 const TOOLS = computed(() => (byType.value.get('item') ?? []).filter(e => e.fields.kind === 'Tool').sort((a, b) => a.name.localeCompare(b.name)))
 function toggleTool(t: string) {
   c.value.setTools(c.value.tools.includes(t) ? c.value.tools.filter(x => x !== t) : [...c.value.tools, t])
@@ -110,9 +110,10 @@ const notIngredient = computed(() => (byType.value.get('item') ?? []).filter(e =
       </div>
 
       <aside class="wb-side">
-        <section class="card">
+        <!-- A current character's tools are the proficiencies on their sheet (set on its Edit page); only the world's
+             own Workbench picks them here. -->
+        <section v-if="!currentPc" class="card">
           <h3>Tool proficiencies</h3>
-          <p v-if="currentPc" class="muted small">From <a :href="hrefEntry(currentPc.id)">{{ currentPc.name }}'s character sheet</a>.</p>
           <div class="seg wrap">
             <button v-for="t in TOOLS" :key="t.id" type="button" :class="{ on: c.tools.includes(t.id) }" @click="toggleTool(t.id)">{{ t.name }}</button>
           </div>

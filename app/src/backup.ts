@@ -26,7 +26,7 @@ export async function backupTo(dest: Storage, onProgress: (done: number, total: 
     if (blob) await dest.writeBlob(`${folder}/${f}`, blob)
     onProgress(++done, files.length)
   }
-  // Remember the date without counting it as an edit (so it doesn't arm the migration lock by itself).
+  // Remember the date without counting it as an edit.
   state.db!.meta.externalBackup = new Date().toISOString()
   await save()
   return folder

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 // The caster's spellbook: attack bonus and save DC, spell slots to tick off, and the prepared spells
-// with their attack or save worked out. Replaces the Obsidian "Spell Tome" note.
+// with their attack or save worked out.
 import { computed, ref } from 'vue'
 import type { Entry, Id, Spellbook } from '../model/types'
-import { byType, db, get, touch } from '../store'
+import { db, get, touch } from '../store'
 import { activeSpellbook, currentPc, spellStats } from '../sheet'
 import EntryLink from '../components/EntryLink.vue'
 import { newEntry } from '../ui'
@@ -15,13 +15,11 @@ const ORD = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 
 // The current character's spellbook, or the world's when no character is current.
 const book = computed<Spellbook>(() => activeSpellbook())
-// The caster: a character picked here, or the only character there is. Their sheet gives attack and DC.
-const pcs = computed(() => (byType.value.get('pc') ?? []).slice().sort((a, b) => a.name.localeCompare(b.name)))
-const caster = computed(() => currentPc.value ?? get(book.value.caster) ?? (pcs.value.length === 1 ? pcs.value[0] : undefined))
+// The caster is the current character: their sheet gives attack and DC. Without one, the numbers are typed in.
+const caster = currentPc
 const fromSheet = computed(() => (caster.value ? spellStats(caster.value) : undefined))
 const attack = computed(() => fromSheet.value?.attack ?? book.value.attackBonus)
 const dc = computed(() => fromSheet.value?.dc ?? book.value.saveDC)
-function setCaster(id: string) { if (id) book.value.caster = id; else delete book.value.caster; touch() }
 const editSlots = ref(false)
 const shownSlots = computed(() => book.value.slots.map((s, i) => ({ ...s, i })).filter(s => editSlots.value || s.max > 0))
 
@@ -137,12 +135,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
       <section class="card sbk-stats">
         <h3>Spellcasting</h3>
         <p v-if="currentPc" class="sbk-owner">Spellbook of <EntryLink :id="currentPc.id" /></p>
-        <label v-else><span>Character</span>
-          <select :value="book.caster ?? ''" @change="setCaster(($event.target as HTMLSelectElement).value)">
-            <option value="">{{ pcs.length === 1 ? pcs[0].name : 'None (type the numbers)' }}</option>
-            <option v-for="p in pcs.length > 1 ? pcs : []" :key="p.id" :value="p.id">{{ p.name }}</option>
-          </select>
-        </label>
+        <p v-else class="muted small">No current character: make one current on their sheet to use their spellbook and numbers.</p>
         <template v-if="fromSheet">
           <label><span>Spell attack</span><b>{{ fromSheet.attack >= 0 ? '+' : '' }}{{ fromSheet.attack }}</b></label>
           <label><span>Save DC</span><b>{{ fromSheet.dc }}</b></label>

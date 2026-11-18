@@ -2,7 +2,6 @@
 import { reactive, computed, shallowRef } from 'vue'
 import type { Database, Entry, EntryType, Id, Relation, WorldDate } from './model/types'
 import type { Storage } from './storage/storage'
-import { OLD_PLACE_SIZES, byKey } from './model/schema'
 
 const DB_FILE = 'eldoria.json'
 /** What changes during play (the fight, the spellbook, the crafting pouch) lives in its own small file, so a click
@@ -13,6 +12,8 @@ const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
 /** The newest data version this build understands (the last step in upgrade()). Newer files open read-only. */
 export const DATA_VERSION = 20
+/** The oldest data version this build can still open; older data (an old backup) is refused instead of guessed at. */
+export const OLDEST_VERSION = 20
 
 import { checkDatabase, type Problem } from './validate'
 
@@ -58,6 +59,10 @@ export async function open(storage: Storage) {
   state.db = d
   state.dirty = false
   savedCount = Object.keys(d.entries ?? {}).length
+  if ((d.version ?? 1) < OLDEST_VERSION) {
+    state.readOnly = `This data is from an early test version of the app (data version ${d.version ?? 1}); this one opens data version ${OLDEST_VERSION} and newer. Nothing is saved here.`
+    return
+  }
   if ((d.version ?? 1) > DATA_VERSION) {
     state.readOnly = `This data was saved by a newer version of the app (data version ${d.version}, this one knows up to ${DATA_VERSION}). Reload to get the newer app; until then nothing is saved here.`
     return
@@ -76,6 +81,7 @@ export async function open(storage: Storage) {
  */
 export function adopt(d: Database) {
   if ((d.version ?? 1) > DATA_VERSION) throw new Error(`That backup is from a newer version of the app (data version ${d.version}).`)
+  if ((d.version ?? 1) < OLDEST_VERSION) throw new Error(`That backup is from an early test version of the app (data version ${d.version ?? 1}) and can't be restored.`)
   upgrade(d)
   // A backup restores the world; the fight, spellbook and pouch stay as they are now.
   for (const k of SESSION_KEYS) { const cur = (state.db as any)?.[k]; if (cur) (d as any)[k] = cur; else delete (d as any)[k] }
@@ -96,408 +102,15 @@ function takeLock(): Promise<boolean> {
   })
 }
 
-/** Bring older saved data up to date. Returns true if anything changed (it's then saved). */
-function upgrade(d: Database) {
-  // Old data has fields the schema no longer knows; the steps below read and remove them untyped.
-  const raw = (e: Entry) => byKey(e.fields) as Record<string, any>
-  let changed = false
-  for (const e of Object.values(d.entries)) {
-    if (e.type === 'place' && OLD_PLACE_SIZES.includes(e.fields.placeType ?? '')) { delete e.fields.placeType; changed = true }
-  }
-  // Version 2: places whose map was a picture in the text (the import only took a picture at the very top)
-  // get it as their map banner. Runs once; afterwards pictures in the text stay where you put them.
-  if ((d.version ?? 1) < 2) {
-    for (const e of Object.values(d.entries)) {
-      if (e.type !== 'place' || e.fields.map || !e.body) continue
-      const m = e.body.match(/!\[[^\]]*\]\((images\/[^)]+)\)/)
-      if (!m) continue
-      e.fields.map = decodeURIComponent(m[1])
-      e.body = e.body.replace(m[0], '')
-        .replace(/\n{3,}/g, '\n\n')
-        .replace(/(\n|^)#+ [^\n]*\s*$/, '') // a heading left with nothing under it at the end
-        .trim()
-    }
-    d.version = 2
-    changed = true
-  }
-  // Version 3: the "Spell Tome" note becomes the Spellbook page. The import lost the note's settings,
-  // so they're filled in from the Obsidian note as it was, and the empty note is removed.
-  if ((d.version ?? 1) < 3) {
-    if (!d.spellbook) {
-      const ids = (names: string[]) => names.map(n => Object.values(d.entries).find(e => e.type === 'spell' && e.name.toLowerCase() === n.toLowerCase())?.id).filter((x): x is string => !!x)
-      d.spellbook = {
-        attackBonus: 8, saveDC: 15, preparedMax: 15,
-        slots: [4, 4, 4, 3, 2, 1, 0, 0, 0].map(max => ({ max, used: 0 })),
-        known: [],
-        prepared: ids(['Tharns Might', 'Alarm', 'Bless']),
-        always: ids(['Acid Splash', 'Fire Bolt', 'Friends', 'Yawn']),
-      }
-    }
-    const tome = d.entries['spell-tome']
-    if (tome && tome.type === 'note' && tome.body.trim().length < 60) {
-      delete d.entries['spell-tome']
-      if (d.meta.favourites) d.meta.favourites = d.meta.favourites.filter(f => f !== 'spell-tome')
-    }
-    d.version = 3
-    changed = true
-  }
-  // Version 4: scrolls link the spell they hold instead of describing it. Each "Scroll of X" gets
-  // linked to the spell X (created empty if it doesn't exist yet), and the generated boilerplate goes.
-  if ((d.version ?? 1) < 4) {
-    for (const e of Object.values(d.entries)) {
-      if (e.type !== 'item' || e.fields.kind !== 'Scroll' || e.fields.spell) continue
-      const name = e.name.match(/^scroll of (.+)$/i)?.[1]?.trim()
-      if (!name) continue
-      let spell = Object.values(d.entries).find(x => x.type === 'spell' && x.name.toLowerCase() === name.toLowerCase())
-      if (!spell) {
-        const id = name.toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-        const now = new Date().toISOString()
-        spell = { id: d.entries[id] ? `${id}-spell` : id, type: 'spell', name, aliases: [], tags: [], fields: {}, body: '', visibility: e.visibility, created: now, updated: now }
-        d.entries[spell.id] = spell
-      }
-      e.fields.spell = spell.id
-      if (/lets you cast/i.test(String(e.fields.summary ?? ''))) delete e.fields.summary
-      if (/^\*\*Effect\*\*\s*Use an action to cast/i.test(e.body.trim())) e.body = ''
-    }
-    d.version = 4
-    changed = true
-  }
-  // Version 5: one name per tool. "Alchemy Kit" was the old name for Alchemist's Supplies.
-  if ((d.version ?? 1) < 5) {
-    const RENAME: Record<string, string> = { 'Alchemy Kit': "Alchemist's Supplies" }
-    for (const e of Object.values(d.entries)) {
-      const t = e.fields.craftingType
-      if (t && RENAME[t]) e.fields.craftingType = RENAME[t]
-    }
-    if (d.crafting) d.crafting.tools = [...new Set(d.crafting.tools.map(t => RENAME[t] ?? t))]
-    d.version = 5
-    changed = true
-  }
-  // Version 6: the spellbook gets a list of known spells; everything prepared is known.
-  if ((d.version ?? 1) < 6) {
-    if (d.spellbook) d.spellbook.known = [...new Set([...(d.spellbook.known ?? []), ...d.spellbook.always, ...d.spellbook.prepared])]
-    d.version = 6
-    changed = true
-  }
-  // Version 7: Harrowmere's map was lost in the move (the comma in its file name broke the link).
-  if ((d.version ?? 1) < 7) {
-    const u = d.entries['harrowmere']
-    if (u && !u.fields.map) u.fields.map = 'images/Harrowmere, the ashen empire.jpg'
-    d.version = 7
-    changed = true
-  }
-  // Version 8: the vault filed every brew as a potion. What the Poisoner's Kit makes is poison,
-  // and the kit itself is a tool like the other two kits.
-  if ((d.version ?? 1) < 8) {
-    for (const e of Object.values(d.entries)) {
-      if (e.type !== 'item' || e.fields.kind !== 'Potion') continue
-      if (e.fields.craftingType === "Poisoner's Kit") e.fields.kind = 'Poison'
-      else if (e.id === 'poisoners-kit') e.fields.kind = 'Other'
-    }
-    d.version = 8
-    changed = true
-  }
-  // Version 9: subraces are races of their own ("Hill Dwarf", Subrace of: Dwarf), like Sunfolk. The subrace lists on
-  // races become entries, and characters with a subrace get that entry as their race.
-  if ((d.version ?? 1) < 9) {
-    const now = new Date().toISOString()
-    const all = () => Object.values(d.entries)
-    const slugOf = (s: string) => s.toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-    /** The subrace entry `sub` of `race`: an existing race called "Sub Race" or "Sub", else a new one. */
-    function subrace(race: Entry, sub: string, fields: Record<string, unknown> = {}): Id {
-      const full = `${sub} ${race.name}`
-      const found = all().find(x => x.type === 'race' && x.id !== race.id && [full, sub].some(n => x.name.toLowerCase() === n.toLowerCase()))
-      if (found) { if (!found.fields.parent) found.fields.parent = race.id; return found.id }
-      let id = slugOf(full), i = 2
-      while (d.entries[id]) id = `${slugOf(full)}-${i++}`
-      d.entries[id] = { id, type: 'race', name: full, aliases: [], tags: [], fields: { parent: race.id, ...fields }, body: '', visibility: race.visibility, created: now, updated: now }
-      return id
-    }
-    for (const race of all().filter(x => x.type === 'race')) {
-      for (const item of (raw(race).subraces as string[] | undefined) ?? []) {
-        const m = item.match(/^([^:]+):\s*(.*)$/)
-        const sub = (m?.[1] ?? item).trim()
-        const text = (m?.[2] ?? '').trim()
-        // "+1 Wis, Dwarven Toughness (+1 HP per level)" → ability scores and traits; commas inside brackets stay.
-        const parts = text.split(/,\s*(?![^(]*\))/).map(p => p.trim()).filter(Boolean)
-        const ab = parts.filter(p => /^[+-]\d+\s+(str|dex|con|int|wis|cha)\b/i.test(p))
-        let traits = parts.filter(p => !ab.includes(p) && !/^see \[\[/i.test(p))
-        if (race.id === 'dragonborn' && traits.length === 1 && /^(acid|cold|fire|lightning|poison)$/i.test(traits[0])) traits = [`Draconic Ancestry: ${traits[0]} breath weapon and resistance`]
-        const fields: Record<string, unknown> = {}
-        if (ab.length) fields.abilityIncrease = ab.join(', ')
-        if (traits.length) fields.traits = traits
-        subrace(race, sub, fields)
-      }
-      delete raw(race).subraces
-    }
-    for (const n of all().filter(x => x.type === 'npc' || x.type === 'pc')) {
-      const typed = String(raw(n).subrace ?? '').trim()
-      if (!typed) { delete raw(n).subrace; continue }
-      const m = typed.match(/^(.*?)\s*\((.*)\)$/)
-      const race = n.fields.race ? d.entries[n.fields.race] : undefined
-      if (race?.type === 'race') {
-        n.fields.race = subrace(race, (m?.[1] ?? typed).trim())
-        if (m?.[2] && !n.tags.includes(m[2].trim())) n.tags.push(m[2].trim())
-      } else if (!n.tags.includes(typed)) n.tags.push(typed)
-      delete raw(n).subrace
-    }
-    d.version = 9
-    changed = true
-  }
-  // Version 10: families written in the notes become relations, so the family trees show them. Relatives who are
-  // named but had no entry (the Stonefist parents, Rowan's family) get one.
-  if ((d.version ?? 1) < 10) {
-    const now = new Date().toISOString()
-    let seq = 0
-    const person = (id: Id, name: string, fields: Record<string, unknown>, body: string) => {
-      if (!d.entries[id]) d.entries[id] = { id, type: 'npc', name, aliases: [], tags: [], fields, body, visibility: 'secret', created: now, updated: now }
-    }
-    person('vike-stonefist', 'Vike Stonefist', { race: 'human', gender: 'male', age: '52' },
-      '# History\nCarpenter in the 6th generation. A simple and traditional man, who wants his sons to take over his business when he retires. Doesn\'t understand [[doran-stonefist|Doran]]\' fascination with music and poetry.')
-    person('greta-stonefist', 'Greta Stonefist', { race: 'human', gender: 'female', age: '47' },
-      '# History\nFormerly a locally renowned musician, now helps Vike in the family business. She never lost her passion for music and passed it on to [[doran-stonefist|Doran]]: she taught him to play her lute and gifted it to him.')
-    person('bram-hale', 'Bram Hale', { gender: 'male' },
-      '# History\nFather of Tomas II, Edric and [[rowan-hale|Rowan]]. Deceased; since his death his brother Osric runs the family\'s affairs.')
-    person('ilsa-marsh', 'Ilsa Marsh', { gender: 'female' },
-      '# History\nMother of Tomas II, Edric and [[rowan-hale|Rowan]]. Since the death of her husband Bram she has kept her distance from the family and drinks.')
-    person('edric-hale', 'Edric Hale', { gender: 'male' },
-      '# History\nThe middle of the three Hale brothers. A learned philosopher who presses a few too many wisdoms on [[rowan-hale|Rowan]].')
-    person('osric-hale', 'Osric Hale', { gender: 'male' },
-      '# History\nCyrus\'s uncle. Has run the family\'s affairs since Bram died, until Tomas II turns 25 this year. A shrewd fox who has brought the family more wealth; he treats Tomas II like his own son, having only twin daughters himself.')
-    const has = (a: Id, b: Id, kind: Relation['kind']) => d.relations.some(r => r.kind === kind && ((r.a === a && r.b === b) || (r.a === b && r.b === a)))
-    const rel = (a: Id, b: Id, kind: Relation['kind'], role?: string) => {
-      if (!d.entries[a] || !d.entries[b] || has(a, b, kind)) return
-      d.relations.push({ id: `rfam${(seq++).toString(36)}${Date.now().toString(36)}`, a, b, kind, visibility: 'secret', ...(role ? { role } : {}) })
-    }
-    // From the notes
-    rel('doran-stonefist', 'adrian-stonefist', 'sibling')
-    rel('eldar', 'kael', 'parent'); rel('lysara', 'kael', 'parent'); rel('eldar', 'lysara', 'spouse')
-    rel('inaya-sugarscale', 'cualli-sugarscale', 'sibling')
-    rel('shawn-nettle', 'olivia-nettle', 'parent')
-    rel('james-miller', 'molly-miller', 'spouse')
-    rel('naphala-ular', 'akhim-ular', 'parent')
-    rel('tirbalt-westmarch', 'queen-lafira', 'spouse')
-    rel('high-priestess-zuhla', 'rell-astra', 'sibling')
-    rel('vega', 'antares-ashby', 'sibling', 'twin')
-    rel('bartholomeus-witchlight', 'wayland-witchlight', 'related', 'cousin')
-    // The Duuthalds
-    rel('vike-stonefist', 'greta-stonefist', 'spouse')
-    for (const kid of ['doran-stonefist', 'adrian-stonefist']) { rel('vike-stonefist', kid, 'parent'); rel('greta-stonefist', kid, 'parent') }
-    rel('vike-stonefist', 'mariners-peak', 'lives-in'); rel('greta-stonefist', 'mariners-peak', 'lives-in')
-    // The Mithras: three brothers, their parents, and their uncle
-    rel('bram-hale', 'ilsa-marsh', 'spouse')
-    for (const kid of ['tomas-hale', 'edric-hale', 'rowan-hale']) { rel('bram-hale', kid, 'parent'); rel('ilsa-marsh', kid, 'parent') }
-    rel('tomas-hale', 'edric-hale', 'sibling'); rel('tomas-hale', 'rowan-hale', 'sibling'); rel('edric-hale', 'rowan-hale', 'sibling')
-    rel('osric-hale', 'bram-hale', 'sibling')
-    d.version = 10
-    changed = true
-  }
-  // Version 11: the Hale family's spelling for Tomas, and Aria's mother.
-  if ((d.version ?? 1) < 11) {
-    const tomas = d.entries['tomas-hale']
-    if (tomas && tomas.name === 'Tomas Hale') tomas.name = 'Tomas Hale'
-    const [mum, kid] = ['lena-vance', 'aria-vance']
-    if (d.entries[mum] && d.entries[kid] && !d.relations.some(r => r.kind === 'parent' && r.a === mum && r.b === kid))
-      d.relations.push({ id: `rfam${Date.now().toString(36)}`, a: mum, b: kid, kind: 'parent', visibility: 'secret' })
-    d.version = 11
-    changed = true
-  }
-  // Version 12: Mira is Aria's sister.
-  if ((d.version ?? 1) < 12) {
-    const [a, b] = ['mira-vance', 'aria-vance']
-    if (d.entries[a] && d.entries[b] && !d.relations.some(r => r.kind === 'sibling' && ((r.a === a && r.b === b) || (r.a === b && r.b === a))))
-      d.relations.push({ id: `rfam${Date.now().toString(36)}s`, a, b, kind: 'sibling', visibility: 'secret' })
-    d.version = 12
-    changed = true
-  }
-  // Version 13: Lena is Mira's mother too.
-  if ((d.version ?? 1) < 13) {
-    const [mum, kid] = ['lena-vance', 'mira-vance']
-    if (d.entries[mum] && d.entries[kid] && !d.relations.some(r => r.kind === 'parent' && r.a === mum && r.b === kid))
-      d.relations.push({ id: `rfam${Date.now().toString(36)}m`, a: mum, b: kid, kind: 'parent', visibility: 'secret' })
-    d.version = 13
-    changed = true
-  }
-  // Version 14: organizations' rank tables (| Rank | Title | Renown | Station |) move out of the text into the Ranks field.
-  if ((d.version ?? 1) < 14) {
-    for (const e of Object.values(d.entries)) {
-      if (e.type !== 'organization' || e.fields.ranks) continue
-      const lines = e.body.split('\n')
-      const head = lines.findIndex(l => /^\s*\|\s*rank\s*\|\s*title\s*\|/i.test(l))
-      if (head < 0 || !/^\s*\|[\s:|-]+\|\s*$/.test(lines[head + 1] ?? '')) continue
-      const cols = lines[head].split('|').slice(1, -1).map(c => c.trim().toLowerCase())
-      let end = head + 2
-      const rows: { n: number; line: { title: string; renown?: number; station?: string } }[] = []
-      for (; end < lines.length && /^\s*\|/.test(lines[end]); end++) {
-        const cells = lines[end].split('|').slice(1, -1).map(c => c.trim())
-        const get = (name: string) => cells[cols.indexOf(name)] ?? ''
-        const title = get('title')
-        if (!title) continue
-        const renown = Number(get('renown'))
-        const station = get('station')
-        rows.push({ n: Number(get('rank')) || rows.length + 1, line: { title, ...(get('renown') !== '' && !Number.isNaN(renown) ? { renown } : {}), ...(station ? { station } : {}) } })
-      }
-      if (!rows.length) continue
-      e.fields.ranks = rows.sort((a, b) => a.n - b.n).map(r => r.line)
-      lines.splice(head, end - head)
-      e.body = lines.join('\n').replace(/\n{3,}/g, '\n\n')
-    }
-    d.version = 14
-    changed = true
-  }
-  // Version 15: feats written under a "Feats" heading become feat entries, granted by the entry they were in.
-  //   - **Ironwall** - Fighting Style            (with sub-bullets: Prerequisite, Ability Score increase, text)
-  //   **Origin Feat** - Sanguine expert             (the text on the following lines)
-  // Anything else in those sections (a subclass, a spell perk) stays as text.
-  if ((d.version ?? 1) < 15) {
-    const now = new Date().toISOString()
-    const isKind = (s: string) => /\b(feat|fighting style|boon)\b/i.test(s)
-    const kindOf = (s: string) => /origin/i.test(s) ? 'Origin Feat' : /fighting style/i.test(s) ? 'Fighting Style' : /boon/i.test(s) ? 'Epic Boon' : /feat/i.test(s) ? 'General Feat' : 'Other'
-    const slugOf = (s: string) => s.toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-    const needs: { feat: Entry; names: string[] }[] = []
-    for (const host of Object.values(d.entries)) {
-      const lines = host.body.split('\n')
-      const h = lines.findIndex(l => /^#{1,6}\s+feats?\s*$/i.test(l.trim()))
-      if (h < 0) continue
-      const level = lines[h].trim().match(/^#+/)![0].length
-      let end = lines.findIndex((l, i) => i > h && /^#{1,6}\s/.test(l.trim()) && l.trim().match(/^#+/)![0].length <= level)
-      if (end < 0) end = lines.length
-      const drop = new Set<number>()
-      for (let i = h + 1; i < end; i++) {
-        const a = lines[i].match(/^-\s*\*\*(.+?)\*\*\s*-\s*(.+?)\s*$/)
-        const b = lines[i].match(/^\*\*(.+?)\*\*\s*-\s*(.+?)\s*$/)
-        let name = '', kind = ''
-        const text: string[] = []
-        const f: Record<string, unknown> = {}
-        let j = i + 1
-        if (a && isKind(a[2])) {
-          name = a[1].trim(); kind = kindOf(a[2])
-          for (; j < end && (/^\s+-/.test(lines[j]) || (!lines[j].trim() && /^\s+-/.test(lines[j + 1] ?? ''))); j++) {
-            const t = lines[j].replace(/^\s+-\s*/, '').trim()
-            if (!t) continue
-            const pre = t.match(/^\*\*prerequisite\*\*\s*:?\s*(.*)$/i)
-            const asi = t.match(/^\*\*ability score increase:?\*\*\s*:?\s*(.*)$/i)
-            if (pre) {
-              const others: string[] = []
-              for (const p of pre[1].split('|').map(x => x.trim()).filter(Boolean)) {
-                const lv = p.match(/^level\s*(\d+)\+?$/i)
-                if (lv) f.level = Number(lv[1])
-                else others.push(p)
-              }
-              if (others.length) f.prerequisiteNames = others
-            } else if (asi) f.abilityIncrease = asi[1].trim()
-            else text.push(t)
-          }
-        } else if (b && isKind(b[1])) {
-          kind = kindOf(b[1]); name = b[2].trim()
-          name = name[0].toUpperCase() + name.slice(1)
-          for (; j < end && lines[j].trim() && !/^\*\*/.test(lines[j].trim()) && !/^#/.test(lines[j].trim()); j++) text.push(lines[j].trim())
-        } else continue
-        let id = slugOf(name), n = 2
-        while (d.entries[id]) id = `${slugOf(name)}-${n++}`
-        const names = (f.prerequisiteNames as string[] | undefined) ?? []
-        delete f.prerequisiteNames
-        const feat: Entry = {
-          id, type: 'feat', name, aliases: [], tags: [], body: '', visibility: host.visibility, created: now, updated: now,
-          fields: { category: kind, ...f, source: host.id, ...(text.length ? { summary: text.join('\n\n') } : {}) },
-        }
-        d.entries[id] = feat
-        if (names.length) needs.push({ feat, names })
-        for (let k = i; k < j; k++) drop.add(k)
-        i = j - 1
-      }
-      if (!drop.size) continue
-      host.body = lines.filter((_, k) => !drop.has(k)).join('\n').replace(/\n{3,}/g, '\n\n')
-    }
-    // "Prerequisite: Level 8+ | Barricade": a name that is a feat becomes a link, anything else stays as text.
-    for (const { feat, names } of needs) {
-      const ids: Id[] = [], rest: string[] = []
-      for (const nm of names) {
-        const hit = Object.values(d.entries).find(x => x.type === 'feat' && x.name.toLowerCase() === nm.toLowerCase())
-        if (hit) ids.push(hit.id); else rest.push(nm)
-      }
-      if (ids.length) feat.fields.requires = ids
-      if (rest.length) feat.fields.prerequisite = rest.join(', ')
-    }
-    d.version = 15
-    changed = true
-  }
-  // Version 16: the fight, spellbook and crafting pouch are saved in session.json instead of the world file.
-  // Nothing to convert in memory; the next save writes the two files. (Older app files open this read-only.)
-  if ((d.version ?? 1) < 16) {
-    d.version = 16
-    changed = true
-  }
-  // Version 17: leftovers from the Obsidian import go. `mapConfig` was the old map plugin's setting (unused);
-  // `raceText` was a race typed in that matched no entry. A typed "undead" survives as a tag.
-  if ((d.version ?? 1) < 17) {
-    for (const e of Object.values(d.entries)) {
-      delete raw(e).mapConfig
-      const typed = String(raw(e).raceText ?? '').trim()
-      if (typed.toLowerCase() === 'undead' && !e.tags.includes('undead')) e.tags.push('undead')
-      delete raw(e).raceText
-    }
-    d.version = 17
-    changed = true
-  }
-  // Version 18: spellbooks and workbenches belong to characters. The world's spellbook goes to the character it
-  // was set to, with the workbench: its recipes and tools onto their sheet, the pouch and crafted things into
-  // their inventory. That character becomes the current one. Without a character set, nothing moves.
-  if ((d.version ?? 1) < 18) {
-    const pc = d.spellbook?.caster ? d.entries[d.spellbook.caster] : undefined
-    if (pc?.type === 'pc') {
-      const sheet = (raw(pc).sheet ??= {}) as Record<string, any>
-      sheet.saves ??= []; sheet.skills ??= {}; sheet.features ??= []; sheet.inventory ??= []
-      if (!sheet.spellbook) {
-        const { caster: _caster, ...book } = d.spellbook!
-        sheet.spellbook = book
-        delete d.spellbook
-      }
-      if (d.crafting && !sheet.crafting) {
-        sheet.crafting = { tools: d.crafting.tools, known: d.crafting.known }
-        for (const l of [...d.crafting.pouch, ...d.crafting.made]) {
-          const have = sheet.inventory.find((x: { item?: string }) => x.item === l.item)
-          if (have) have.qty += l.qty; else sheet.inventory.push({ item: l.item, qty: l.qty })
-        }
-        delete d.crafting
-      }
-      d.meta.currentCharacter = pc.id
-      pc.updated = new Date().toISOString()
-    }
-    d.version = 18
-    changed = true
-  }
-  // Version 19: "Requires attunement" set on the items that need it (gone through with the DM on 2026-11-18):
-  // those whose text says so, the official rings, and the homebrew ones picked by hand.
-  if ((d.version ?? 1) < 19) {
-    const ATTUNED = [
-      'crown-of-the-sun-queen', 'the-crown-of-the-consumed-sun', 'mirrorsheen-glove', 'orb-of-entanglement',
-      'ring-of-the-chlorolymph', 'tome-of-the-fathomless-depths', 'duskbringer', 'the-iron-spine',
-      'staff-of-the-radiant-gaze', 'wand-of-surging-tides', 'wand-of-the-radiant-gaze',
-      'ring-of-protection', 'ring-of-resistance',
-      'ubtaos-fang', 'the-shade-anchor', 'pendant-of-gold', 'chainmasters-collar',
-      'nightfall', 'sword-of-the-desert-sun', 'thorn-of-ironhold', 'spine-of-ildran-the-mad',
-      'squallmasters-band', 'apprentices-folly', 'tome-of-merrow-the-sodden',
-    ]
-    for (const id of ATTUNED) { const e = d.entries[id]; if (e?.type === 'item') e.fields.attunement = true }
-    d.version = 19
-    changed = true
-  }
-  // Version 20 (found by the data check): a weapon's damage type is a list, since some do two
-  // ("Slashing/Piercing" was one text the form couldn't show); characters lose the statblock the sheet replaced.
-  if ((d.version ?? 1) < 20) {
-    for (const e of Object.values(d.entries)) {
-      const dt: unknown = raw(e).damageType
-      if (typeof dt === 'string') {
-        const list = dt.split('/').map(x => x.trim()).filter(Boolean)
-        if (list.length) e.fields.damageType = list; else delete e.fields.damageType
-      }
-      if (e.type === 'pc') delete e.fields.statblock
-    }
-    d.version = 20
-    changed = true
-  }
-  // Adding a step? Raise DATA_VERSION at the top to match, or the new data opens read-only in this build.
+/**
+ * Bring older saved data up to date. Returns true if anything changed (it's then saved).
+ * There are no steps yet: everything before data version 20 was converted and the steps removed.
+ * Adding one? Write it as `if ((d.version ?? 1) < 21) { …; d.version = 21; changed = true }`, raise DATA_VERSION
+ * to match, and lower OLDEST_VERSION only if the step can handle older data.
+ */
+function upgrade(d: Database): boolean {
+  const changed = false
+  void d
   return changed
 }
 

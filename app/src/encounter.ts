@@ -46,10 +46,9 @@ export function combatantsFrom(lines: EncounterLine[]): Combatant[] {
 }
 
 export function playerCombatant(pc: Entry): Combatant {
-  // From the character sheet; older PCs may still have a statblock.
-  const t = trackerStats(pc), sb = statsOf(pc)
-  if (t) return { id: newCombatantId(), name: pc.name, entry: pc.id, isPlayer: true, init: null, initMod: t.initMod, hp: t.hp, maxHp: t.maxHp, ac: t.ac, conditions: [] }
-  return { id: newCombatantId(), name: pc.name, entry: pc.id, isPlayer: true, init: null, initMod: mod(sb?.abilities?.dex), hp: sb?.hp, maxHp: sb?.hp, ac: sb?.ac, conditions: [] }
+  // From the character sheet (a character without one starts with nothing filled in).
+  const t = trackerStats(pc)
+  return { id: newCombatantId(), name: pc.name, entry: pc.id, isPlayer: true, init: null, initMod: t?.initMod ?? 0, hp: t?.hp, maxHp: t?.maxHp, ac: t?.ac, conditions: [] }
 }
 
 /** A small picture for every condition, for the toggles on the combatant cards. */

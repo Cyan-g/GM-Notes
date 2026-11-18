@@ -1,6 +1,6 @@
 # DnDesk
 
-A local campaign wiki for D&D, here holding the world of Eldoria. It replaced the Obsidian vault.
+A local campaign wiki and toolkit for D&D: the world, its people, the campaign, characters, spells and crafting. Here it holds the world of Eldoria.
 
 The data files keep their names (`data/eldoria.json`, `eldoria-…` backups): they belong to the world, not the app.
 
@@ -46,7 +46,7 @@ A player character's page is its character sheet, filled in right on the page.
 
 - **What you fill in:** level and ability scores. Each ability has a card with its saving throw and the skills that use it; click a save to mark proficiency, and click a skill to cycle it: proficient, then expertise, then none.
 - **Hit points:** current, max and temporary HP. Type `-7` or `+5` in *Damage / heal* to apply it; temporary HP soak up damage first. **Long rest** restores HP and gives back half your hit dice.
-- **Inventory:** items from the world with a quantity, plus anything else by name. Clicking an item opens its card in a pop-up, where it can also be equipped or attuned. Only items marked *Requires attunement* can be attuned (24 are, set in data version 19).
+- **Inventory:** items from the world with a quantity, plus anything else by name. Clicking an item opens its card in a pop-up, where it can also be equipped or attuned. Only items marked *Requires attunement* can be attuned.
 - **Equipped card** (beside the sheet, in place of the relation cards): the worn armor and wielded weapons, and the three attunement slots. What's equipped or attuned is shown there and not in the inventory.
 - **Drag and drop:** drag an item from the inventory onto *Equipped* to wear or wield it. A ring or other magical item is attuned instead. Drag it onto the attunement slots to attune it, and back to the inventory to take it off.
 - **Player mode:** the inventory sits beside the sheet under *Equipped*, where *Mentioned in* is in DM mode. Weapons and armor can be equipped, and magic items attuned.
@@ -65,7 +65,7 @@ A player character's page is its character sheet, filled in right on the page.
 - **Workbench:** uses the character's recipes and tool proficiencies. The ingredient pouch is the ingredients in their inventory, which the sheet lists separately as *Ingredient pouch*. Crafting takes the ingredients out of the inventory and puts the result in.
 - **Character menu** (player mode): clicking it opens the current character's sheet, and the menu marks them with ★.
 
-With no current character, the Spellbook and Workbench use the world's own, as before. Upgrading to data version 18 moved the world's spellbook, recipes, tools and pouch to the character the spellbook was set to (Aria) and made her the current character.
+With no current character, the Spellbook and Workbench use the world's own; the Spellbook then takes typed numbers.
 
 ### Sharing entries
 
@@ -87,7 +87,6 @@ Everything is saved in `data/`:
 | `data/session.json` | what changes during play: the initiative tracker, the spellbook and the crafting pouch (kept apart so a click in a fight doesn't rewrite the world) |
 | `data/images/`, `data/files/` | pictures and attached files (character sheets) |
 | `data/backups/` | earlier versions of both files (`eldoria-…`, `session-…`): one at most every 10 minutes, and only when that file changed, thinned out over time (see below) |
-| `data/migration-report.md` | what the last import from Obsidian couldn't convert |
 
 ### Backups
 
@@ -96,7 +95,7 @@ Everything is saved in `data/`:
 - **Back up** copies the database, pictures and files into a folder you choose, for example on your PC. Each copy is a new folder named `DnDesk-backup-<date>`. The app remembers the folder, and the ⚙ gets a dot when the last copy is more than a week old.
 - **Earlier versions** lists the automatic backups in `data/backups`. **Go back to this** restores one, after saving the current state as a backup of its own, so a restore can be undone.
 
-The automatic backups keep everything from the last 2 hours, then the newest of each hour for 2 days, of each day for 2 months, and of each month for good. Only files named `eldoria-<date>.json` or `session-<date>.json` are ever deleted; anything else in that folder (like `before-migrate-…`) stays.
+The automatic backups keep everything from the last 2 hours, then the newest of each hour for 2 days, of each day for 2 months, and of each month for good. Only files named `eldoria-<date>.json` or `session-<date>.json` are ever deleted; anything else in that folder stays.
 
 ### Data check
 
@@ -115,7 +114,7 @@ Imported files are checked too. A damaged file is refused, and fields the app do
 - **One tab edits.** The first tab to open the data edits it; any other tab opens read-only and says so in a bar under the menu.
 - **Changes made elsewhere aren't overwritten.** Before each save the app checks that `eldoria.json` and `session.json` are still the files it loaded. If something else changed it, saving stops and the bar offers *Reload* (take the other version) or *Overwrite* (keep this tab's; the other version goes to the backups first).
 - **Damaged data isn't saved.** If more than 10 entries would vanish in one save (deleting in the app goes one at a time), or the result wouldn't read back, the save is refused with a message, and *Reload* brings back the last saved state.
-- **Newer data stays safe from older app files.** If the data was saved by a newer `DnDesk.html` than the one open, it opens read-only.
+- **Newer data stays safe from older app files.** If the data was saved by a newer `DnDesk.html` than the one open, it opens read-only. Data and backups from before data version 20 (early test versions) aren't opened or restored: the conversions for them were removed.
 
 ## Developing it
 
@@ -159,6 +158,5 @@ Building onto the USB stick fails: it's FAT32, which stores file times in 2-seco
 
 While the repository is private, the apps can't see its releases, so update checks quietly find nothing. That changes once it's public.
 
-The switch from Obsidian happened on 2026-11-15. The vault was archived as `the old vault backup`, and from then on the app is the only place to edit. The import script was removed afterwards (it's in the git history, `app/scripts/migrate.mjs`), so nothing can overwrite the data with the old vault any more.
 
 Changes to the data's shape happen in `upgrade()` in `app/src/store.ts`: each step raises `version`, and runs once when the app opens older data. `DATA_VERSION` at the top must match the last step.

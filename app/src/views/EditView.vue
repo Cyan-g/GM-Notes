@@ -40,7 +40,7 @@ const noSide = computed(() => e.value?.type === 'spell' || e.value?.type === 'fe
 // A scroll is described by the spell it holds, so it has no description of its own.
 const showDesc = computed(() => !(e.value?.type === 'item' && e.value.fields.kind === 'Scroll'))
 // Creatures are their statblock: the form on the left, the finished block on the right, no text editor
-// (old notes stay reachable, folded, if there are any).
+// (notes written under the statblock stay reachable, folded, if there are any).
 const creature = computed(() => e.value?.type === 'creature')
 const sheet = computed(() => !!e.value && SHEET_TYPES.includes(e.value.type))
 const sheetFields = computed(() => (def.value?.fields ?? []).filter(f => f.key !== 'summary' && !BIG.includes(f.kind) && shown(f)))
@@ -110,7 +110,7 @@ function remove() {
         <template v-if="creature">
           <CreatureForm :entry="e" />
           <details v-if="e.body.trim()" class="sheet-notes">
-            <summary>Notes <span class="muted small">(old text under the statblock)</span></summary>
+            <summary>Notes</summary>
             <BodyEditor :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
           </details>
         </template>

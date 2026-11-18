@@ -1,4 +1,4 @@
-// Markdown rendering with [[id|label]] links, :::secret blocks, callouts and images from the data folder.
+// Markdown rendering with [[id|label]] links, :::secret blocks, callout boxes (> [!note]) and images from the data folder.
 import MarkdownIt from 'markdown-it'
 import { get, playerMode } from './store'
 import { hrefEntry } from './router'
@@ -55,7 +55,7 @@ md.renderer.rules.link_open = (tokens, idx, opts, env, self) => {
   return defaultLink(tokens, idx, opts, env, self)
 }
 
-/** Turn Obsidian-style callouts and :::secret blocks into HTML before parsing. */
+/** Turn callout boxes ("> [!tip] Title", foldable with + or -) and :::secret blocks into HTML before parsing. */
 function preprocess(src: string): string {
   // Player mode never shows DM-only text.
   src = src.replace(/^:::secret\s*\n([\s\S]*?)\n:::\s*$/gm, (_, inner) => playerMode.value ? '' : `<div class="secret"><span class="secret-tag">DM only</span>\n\n${inner}\n\n</div>`)

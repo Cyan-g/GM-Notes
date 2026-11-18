@@ -34,8 +34,6 @@ const DAMAGE = ['Acid', 'Bludgeoning', 'Cold', 'Fire', 'Force', 'Lightning', 'Ne
 const CLASSES = ['Artificer', 'Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard']
 
 export const PLACE_KINDS = ['Shop', 'Tavern', 'Temple', 'Dungeon', 'Landmark', 'Plane']
-/** Old size categories, removed from saved data when it's opened. */
-export const OLD_PLACE_SIZES = ['World', 'Continent', 'Region', 'Settlement', 'District', 'Building', 'Other']
 export const ITEM_KINDS = ['Weapon', 'Armor', 'Potion', 'Poison', 'Ingredient', 'Scroll', 'Tome', 'Ring', 'Accessory', 'Instrument', 'Adventuring Gear', 'Flask', 'Other']
 
 const W = { field: 'kind', is: ['Weapon'] }

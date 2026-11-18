@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// The DM desk, after the old Overview note: the campaign at hand, the tools, favourites, the regions of the world
+// The DM desk: the campaign at hand, the tools, favourites, the regions of the world
 // with their factions, the gods, peoples and subclasses, and a few links. Everything comes from the entries.
 import { computed, ref } from 'vue'
 import type { Entry, Id, WorldDate } from '../model/types'

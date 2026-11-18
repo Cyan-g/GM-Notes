@@ -85,7 +85,7 @@ async function restore(name: string) {
 }
 const pretty = (n: string) => {
   const m = n.match(/(\d{4})-(\d\d)-(\d\d)-(\d\d)-?(\d\d)-?(\d\d)?/)
-  const kind = n.startsWith('before-restore') ? ' (before a restore)' : n.startsWith('before-migrate') ? ' (before a migration)' : ''
+  const kind = n.startsWith('before-restore') ? ' (before a restore)' : ''
   return m ? `${m[3]}.${m[2]}.${m[1]} ${m[4]}:${m[5]}${kind}` : n
 }
 </script>
@@ -104,7 +104,7 @@ const pretty = (n: string) => {
           <dt>Entries</dt><dd>{{ entries.length }}, with {{ db().relations.length }} relations</dd>
           <dt>Saved</dt><dd>{{ state.saving ? 'saving…' : state.dirty ? 'unsaved changes' : state.savedAt ? new Date(state.savedAt).toLocaleTimeString() : 'nothing changed yet' }} <button v-if="state.dirty" class="link-btn" @click="save()">Save now</button></dd>
           <dt v-if="version">App</dt><dd v-if="version">DnDesk {{ version }}</dd>
-          <dt>Last edit</dt><dd>{{ edited ? new Date(edited).toLocaleString() : 'none since the import from Obsidian' }}</dd>
+          <dt>Last edit</dt><dd>{{ edited ? new Date(edited).toLocaleString() : 'none yet' }}</dd>
         </dl>
       </section>
 

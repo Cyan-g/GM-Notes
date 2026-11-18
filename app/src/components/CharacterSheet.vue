@@ -169,9 +169,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <div class="cs-stat"><span>Proficiency</span><b>{{ signed(prof) }}</b></div>
       <div class="cs-stat cs-ac" :class="{ warn: ac.untrained.length }" :title="`From ${ac.from}` + (ac.untrained.length ? `\nNot proficient with ${ac.untrained.join(', ')}: disadvantage on STR and DEX rolls, no spellcasting` : '')"><span>Armor class<template v-if="ac.untrained.length"> ⚠</template></span><b>{{ ac.ac }}</b>
         <input v-if="build" class="cs-mini" type="number" :value="s.acOverride ?? ''" placeholder="auto" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></div>
-      <div class="cs-stat"><span>Initiative</span><b>{{ signed(mod(s.abilities.dex) + (s.initBonus ?? 0)) }}</b></div>
       <label class="cs-stat"><span>Speed</span><input :value="s.speed ?? ''" placeholder="30 ft" :disabled="locked" @change="edit(x => x.speed = text($event))" /></label>
-      <div class="cs-stat"><span>Passive perception</span><b>{{ passivePerception(s, prof) }}</b></div>
       <button v-if="!build" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" title="Inspiration" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>Inspiration</span><b>{{ s.inspiration ? '★' : '☆' }}</b></button>
     </div>
 
@@ -227,6 +225,9 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
           <button class="cs-skill cs-save" :class="{ on: s.saves.includes(a.key) }" :disabled="locked" :title="build ? `${a.label} saving throw: click for proficiency` : `${a.label} saving throw`" @click="toggleSave(a.key)">
             <span class="cs-dot">{{ s.saves.includes(a.key) ? '●' : '○' }}</span><b>{{ signed(saveBonus(s, a.key, prof)) }}</b><span>Saving throw</span>
           </button>
+          <!-- What else comes from this ability: initiative (DEX), passive perception (WIS). -->
+          <div v-if="a.key === 'dex'" class="cs-derived" title="Initiative: DEX modifier plus any bonus"><span class="cs-dot">⚡</span><b>{{ signed(mod(s.abilities.dex) + (s.initBonus ?? 0)) }}</b><span>Initiative</span></div>
+          <div v-if="a.key === 'wis'" class="cs-derived" title="Passive perception: 10 + Perception"><span class="cs-dot">👁</span><b>{{ passivePerception(s, prof) }}</b><span>Passive perception</span></div>
           <button v-for="sk in skillsOf(a.key)" :key="sk.name" class="cs-skill" :class="{ on: s.skills[sk.name] }" :disabled="locked" :title="build ? 'Click: proficient, expertise, none' : SKILL_LEVEL[s.skills[sk.name] ?? 0] ?? ''" @click="cycleSkill(sk.name)">
             <span class="cs-dot">{{ skillMark(sk.name) }}</span><b>{{ signed(skillBonus(s, sk.name, prof)) }}</b><span>{{ sk.name }}</span>
           </button>

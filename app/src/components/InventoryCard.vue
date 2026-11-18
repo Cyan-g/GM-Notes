@@ -18,11 +18,11 @@ const num = (ev: Event) => { const v = (ev.target as HTMLInputElement).value.tri
 const text = (ev: Event) => (ev.target as HTMLInputElement).value.trim() || undefined
 
 const weight = computed(() => carried(s.value))
-const attunedCount = computed(() => s.value.inventory.filter(l => l.attuned).length)
 const itemOf = (i: number) => get(s.value.inventory[i]?.item)
 // Ingredients are the crafting pouch: listed apart, under the gear.
 const lines = computed(() => s.value.inventory.map((l, i) => ({ l, i, e: get(l.item) })))
-const gear = computed(() => lines.value.filter(x => x.e?.fields.kind !== 'Ingredient'))
+// What's equipped or attuned is on the Equipped card instead, so it's never listed twice.
+const gear = computed(() => lines.value.filter(x => x.e?.fields.kind !== 'Ingredient' && !x.l.equipped && !x.l.attuned))
 const pouch = computed(() => lines.value.filter(x => x.e?.fields.kind === 'Ingredient'))
 
 function addItem(id: string) {
@@ -51,16 +51,15 @@ function onDrop(ev: DragEvent) {
 <template>
   <section class="cs-inventory" :class="{ card: side, 'cs-inv-side': side, 'drop-over': over }"
            @dragover="onDragOver" @dragleave="over = false" @drop="onDrop">
-    <component :is="side ? 'h3' : 'h4'">Inventory <span class="muted small">{{ weight ? `${Math.round(weight * 10) / 10} lb` : '' }}{{ attunedCount ? ` · ${attunedCount}/3 attuned` : '' }}</span></component>
+    <component :is="side ? 'h3' : 'h4'">Inventory <span class="muted small">{{ weight ? `${Math.round(weight * 10) / 10} lb, with what's equipped` : '' }}</span></component>
     <table class="cs-inv">
-      <tr v-for="{ l, i, e } in gear" :key="i" :draggable="!ro && !!e" :class="{ worn: l.equipped || l.attuned }"
+      <tr v-for="{ l, i, e } in gear" :key="i" :draggable="!ro && !!e"
           @dragstart="startDrag($event, pc, i, 'inventory')" @dragend="endDrag">
         <td class="cs-qty"><input type="number" min="0" :value="l.qty" :disabled="ro" @change="edit(x => x.inventory[i].qty = num($event) ?? 0)" /></td>
         <td class="cs-iname">
           <button v-if="e" class="link-btn cs-item" @click="shown = i">{{ e.name }}</button>
           <input v-else :value="l.name ?? ''" placeholder="Name" :disabled="ro" @change="edit(x => x.inventory[i].name = text($event))" />
           <span v-if="e?.fields.kind && !side" class="muted small cs-kind">{{ e.fields.kind }}</span>
-          <span v-if="side && (l.equipped || l.attuned)" class="muted small cs-kind">{{ l.equipped ? 'equipped' : 'attuned' }}</span>
         </td>
         <template v-if="!side">
           <td><button v-if="canEquip(l)" class="chip-toggle" :class="{ on: l.equipped }" :disabled="ro" @click="edit(x => x.inventory[i].equipped = !l.equipped || undefined)">{{ l.equipped ? 'Equipped' : 'Equip' }}</button></td>

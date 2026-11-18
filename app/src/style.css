@@ -1086,7 +1086,6 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .attune-slots li.over { border-color: #b33; }
 /* drag and drop between the inventory and the Equipped card */
 .cs-inv tr[draggable="true"] { cursor: grab; }
-.cs-inv tr.worn .cs-item { font-weight: 600; }
 .equipped-card li[draggable="true"], .attune-slots .cs-item[draggable="true"] { cursor: grab; }
 .drop-zone { border-radius: 8px; transition: background .12s, box-shadow .12s; }
 .drop-over { background: color-mix(in srgb, var(--accent) 12%, transparent); box-shadow: 0 0 0 2px var(--accent); }

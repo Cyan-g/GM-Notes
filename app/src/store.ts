@@ -12,7 +12,7 @@ const SESSION_KEYS = ['tracker', 'spellbook', 'crafting'] as const
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
 /** The newest data version this build understands (the last step in upgrade()). Newer files open read-only. */
-export const DATA_VERSION = 18
+export const DATA_VERSION = 19
 
 export const state = reactive({
   storage: null as Storage | null,
@@ -458,6 +458,22 @@ function upgrade(d: Database) {
       pc.updated = new Date().toISOString()
     }
     d.version = 18
+    changed = true
+  }
+  // Version 19: "Requires attunement" set on the items that need it (gone through with the DM on 2026-11-18):
+  // those whose text says so, the official rings, and the homebrew ones picked by hand.
+  if ((d.version ?? 1) < 19) {
+    const ATTUNED = [
+      'crown-of-the-sun-queen', 'the-crown-of-the-consumed-sun', 'mirrorsheen-glove', 'orb-of-entanglement',
+      'ring-of-the-chlorolymph', 'tome-of-the-fathomless-depths', 'duskbringer', 'the-iron-spine',
+      'staff-of-the-radiant-gaze', 'wand-of-surging-tides', 'wand-of-the-radiant-gaze',
+      'ring-of-protection', 'ring-of-resistance',
+      'ubtaos-fang', 'the-shade-anchor', 'pendant-of-gold', 'chainmasters-collar',
+      'nightfall', 'sword-of-the-desert-sun', 'thorn-of-ironhold', 'spine-of-ildran-the-mad',
+      'squallmasters-band', 'apprentices-folly', 'tome-of-merrow-the-sodden',
+    ]
+    for (const id of ATTUNED) { const e = d.entries[id]; if (e?.type === 'item') e.fields.attunement = true }
+    d.version = 19
     changed = true
   }
   // Adding a step? Raise DATA_VERSION at the top to match, or the new data opens read-only in this build.

@@ -201,15 +201,8 @@ export function trackerStats(pc: Entry) {
 
 /** Weapons and armor can be equipped. */
 export const canEquip = (l: InventoryLine) => ['Weapon', 'Armor'].includes(String(get(l.item)?.fields.kind ?? ''))
-/**
- * Attunement: few items say whether they need it, so anything that could be a magic item can be attuned:
- * rings, accessories, tomes, weapons, armor and the like. Not things that are used up or plain gear.
- */
-const NEVER_ATTUNED = ['Ingredient', 'Potion', 'Poison', 'Scroll', 'Flask', 'Adventuring Gear']
-export const canAttune = (l: InventoryLine) => {
-  const e = get(l.item)
-  return !!e && (!!l.attuned || !!e.fields.attunement || !!e.fields.magical || !NEVER_ATTUNED.includes(String(e.fields.kind ?? '')))
-}
+/** Attunement: only items marked "Requires attunement" (and anything already attuned, so it can be taken off). */
+export const canAttune = (l: InventoryLine) => !!l.attuned || !!get(l.item)?.fields.attunement
 
 /** Change a PC's sheet and mark the PC as changed (nothing happens in a tab that doesn't save). */
 export function editSheet(pc: Entry, fn: (s: CharacterSheet) => void) {

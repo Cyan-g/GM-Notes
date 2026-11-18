@@ -159,7 +159,12 @@ Building onto the USB stick fails: it's FAT32, which stores file times in 2-seco
 2. Commit, then tag the commit, e.g. `v0.2.0`.
 3. Push the commit and the tag.
 
-`.github/workflows/release.yml` then builds the Windows installer and the Mac `.dmg`/`.zip` on GitHub's machines and publishes them as a GitHub release, which is where the apps look for updates.
+`.github/workflows/release.yml` then:
+1. creates a draft release for the tag;
+2. builds the Windows installer and the Mac `.dmg`/`.zip` on GitHub's machines, each uploading into the draft;
+3. publishes the release once both are done. That's where the apps look for updates.
+
+A tag's run uses the workflow as it was in that commit, so a fix to the workflow needs a new version and tag.
 
 While the repository is private, the apps can't see its releases, so update checks quietly find nothing. That changes once it's public.
 

@@ -1,7 +1,7 @@
 {
   "name": "dndesk",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -76,7 +76,7 @@
         "provider": "github",
         "owner": "Cyan-g",
         "repo": "DnDesk",
-        "releaseType": "release"
+        "releaseType": "draft"
       }
     ]
   }

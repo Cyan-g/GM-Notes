@@ -1,5 +1,8 @@
 # Builds the desktop app for Windows and macOS when a version tag (v1.2.3) is pushed, and publishes the
 # installers as a GitHub release. The Windows app updates itself from these releases; the Mac app is told.
+#
+# The release is made once, as a draft, before the builds; both builds upload into it (two builds creating it at
+# the same moment made one fail), and it's published only when both are done.
 name: Release desktop app
 
 on:
@@ -10,9 +13,28 @@ on:
 permissions:
   contents: write
 
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  TAG: ${{ github.ref_name }}
+
 jobs:
+  draft:
+    runs-on: ubuntu-latest
+    steps:
+      # A draft release for the tag. If one exists already (a run being repeated), it's reused, and a published one
+      # becomes a draft again until the new builds are in.
+      - run: |
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit "$TAG" -R "$GITHUB_REPOSITORY" --draft=true
+          else
+            gh release create "$TAG" -R "$GITHUB_REPOSITORY" --draft --title "DnDesk ${TAG#v}" --generate-notes
+          fi
+
   build:
+    needs: draft
     strategy:
+      # One platform failing shouldn't cancel the other.
+      fail-fast: false
       matrix:
         os: [windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
@@ -29,6 +51,11 @@ jobs:
       - run: npm ci
       - run: npm run release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # The Mac build isn't signed (no Apple Developer ID); don't look for a certificate.
           CSC_IDENTITY_AUTO_DISCOVERY: false
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh release edit "$TAG" -R "$GITHUB_REPOSITORY" --draft=false --latest

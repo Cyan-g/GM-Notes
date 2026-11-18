@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 
-const DATA = path.resolve(__dirname, '../data')
+const DATA = path.resolve(import.meta.dirname, '../data')
 
 // Dev only: serve and save the data folder's pictures and files over HTTP, so the pages can be tested in a
 // browser. The desktop app talks to the folder directly.

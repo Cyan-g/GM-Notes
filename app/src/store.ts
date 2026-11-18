@@ -3,7 +3,7 @@ import { reactive, computed, shallowRef } from 'vue'
 import type { Database, Entry, EntryType, Id, Relation, WorldDate } from './model/types'
 import type { Storage } from './storage/storage'
 import type { Backend, Changes } from './storage/backend'
-import { SCHEMA, RELATION_KINDS } from './model/schema'
+import { SCHEMA, RELATION_KINDS, MARTIAL_WEAPONS, SIMPLE_WEAPONS, TOOLS } from './model/schema'
 import { checkDatabase, type Problem } from './validate'
 
 /** The play state (the fight, the world's own spellbook and workbench): saved like the rest, but not a "world edit". */
@@ -11,7 +11,7 @@ const PLAY_KEYS = ['tracker', 'spellbook', 'crafting'] as const
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
 /** The newest data version this build understands (the last step in upgrade()). Newer data opens read-only. */
-export const DATA_VERSION = 20
+export const DATA_VERSION = 21
 /** The oldest data version this build can still open; older data is refused instead of guessed at. */
 export const OLDEST_VERSION = 20
 /** What the database must allow: every entry type and relation kind the app knows. */
@@ -84,14 +84,53 @@ export async function open(backend: Backend, storage: Storage): Promise<boolean>
 
 /**
  * Bring older saved data up to date. Returns true if anything changed (it's then saved).
- * There are no steps yet: everything before data version 20 was converted and the steps removed.
- * Adding one? Write it as `if ((d.version ?? 1) < 21) { …; d.version = 21; changed = true }`, raise DATA_VERSION
+ * Everything before data version 20 was converted and those steps removed.
+ * Adding one? Write it as `if ((d.version ?? 1) < 22) { …; d.version = 22; changed = true }`, raise DATA_VERSION
  * to match, and lower OLDEST_VERSION only if the step can handle older data.
  */
 function upgrade(d: Database): boolean {
-  const changed = false
-  void d
+  let changed = false
+  if ((d.version ?? 1) < 21) { upgradeTo21(d); d.version = 21; changed = true }
   return changed
+}
+
+/**
+ * 21: proficiencies became lists the items match. Items get what they were only written in their subtype
+ * (a weapon's Simple/Martial, an armor's Light/Medium/Heavy/Shield/Clothing) and kits become Tool items;
+ * a sheet's proficiency text moves to "other", and its Workbench tools become its tool proficiencies.
+ */
+function upgradeTo21(d: Database) {
+  const low = (v: string) => v.toLowerCase().trim()
+  const named = (list: readonly string[], v: string) => list.find(x => low(x) === low(v))
+  const TOOL_NAMES: Record<string, string> = { 'alchemy kit': "Alchemist's Supplies", "alchemist's kit": "Alchemist's Supplies", "thieves tools": "Thieves' Tools" }
+  for (const e of Object.values(d.entries)) {
+    const f = e.fields
+    if (e.type === 'item') {
+      const sub = String(f.subtype ?? '')
+      if (f.kind === 'Weapon' && !f.weaponCategory) {
+        const base = sub.match(/\(([^)]+)\)/)?.[1] ?? sub
+        f.weaponCategory = named(SIMPLE_WEAPONS, base) ? 'Simple' : named(MARTIAL_WEAPONS, base) ? 'Martial' : undefined
+        if (!f.weaponCategory) delete f.weaponCategory
+      }
+      if (f.kind === 'Armor' && !f.armorType) {
+        const t = sub.match(/^\s*(light|medium|heavy)\s+armor/i)?.[1] ?? (/^\s*shield/i.test(sub) ? 'Shield' : /^\s*clothing/i.test(sub) ? 'Clothing' : undefined)
+        if (t) f.armorType = t[0].toUpperCase() + t.slice(1).toLowerCase()
+      }
+      if (['Other', 'Adventuring Gear'].includes(String(f.kind ?? '')) && !f.recipe?.length) {
+        const tool = named(TOOLS, e.name) ?? TOOL_NAMES[low(e.name)]
+        if (tool) { f.kind = 'Tool'; f.tool = tool }
+      }
+    }
+    if (e.type === 'pc' && f.sheet) {
+      const s = f.sheet as unknown as Record<string, unknown> & { crafting?: { tools?: string[]; known: Id[] } }
+      const old = s.proficiencies
+      const p = { armor: [] as string[], weapons: [] as string[], tools: [] as string[], languages: [] as string[], ...(typeof old === 'object' && old ? old : {}) } as { armor: string[]; weapons: string[]; tools: string[]; languages: string[]; other?: string }
+      if (typeof old === 'string' && old.trim()) p.other = old
+      for (const t of s.crafting?.tools ?? []) if (!p.tools.includes(t)) p.tools.push(t)
+      if (s.crafting) delete s.crafting.tools
+      if (old != null || p.tools.length) s.proficiencies = p
+    }
+  }
 }
 
 /** What changed since the last save; `world` says whether entries or relations did. */

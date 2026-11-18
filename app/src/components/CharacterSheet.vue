@@ -3,14 +3,16 @@
 // (In player mode the inventory sits beside the sheet, under the Equipped card.)
 // Modifiers, saves, skills, AC, attacks and spellcasting are worked out from them.
 import { computed, ref } from 'vue'
-import type { CharacterSheet, Entry } from '../model/types'
+import type { CharacterSheet, Entry, Proficiencies } from '../model/types'
+import { ARMOR_PROFS, MARTIAL_WEAPONS, SIMPLE_WEAPONS, TOOLS, WEAPON_CATEGORIES } from '../model/schema'
 import { playerMode, state } from '../store'
 import { changed } from '../edit'
 import {
   ABILITIES, SKILLS, armorClass, attacks, blankSheet, canAttune, canEquip, castingAbility, levelOf, mod, passivePerception,
-  profBonus, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, currentPc, setCurrent, type Ability,
+  profBonus, profsOf, profsToEdit, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, currentPc, setCurrent, type Ability,
 } from '../sheet'
 import InventoryCard from './InventoryCard.vue'
+import ProfChips from './ProfChips.vue'
 import ItemModal from './ItemModal.vue'
 
 const props = defineProps<{ pc: Entry }>()
@@ -72,6 +74,12 @@ const shownLine = computed(() => (shown.value != null ? s.value.inventory[shown.
 const showItem = (id: string) => { const i = s.value.inventory.findIndex(l => l.item === id); if (i >= 0) shown.value = i }
 const isCurrent = computed(() => currentPc.value?.id === props.pc.id)
 
+// ---- proficiencies: picked from the lists items use, so attacks, armor and the Workbench can check them ----
+const profs = computed(() => profsOf(s.value))
+const WEAPONS = [...SIMPLE_WEAPONS, ...MARTIAL_WEAPONS].sort()
+const LANGUAGES = ['Common', 'Dwarvish', 'Elvish', 'Giant', 'Gnomish', 'Goblin', 'Halfling', 'Orc', 'Abyssal', 'Celestial', 'Draconic', 'Deep Speech', 'Infernal', 'Primordial', 'Sylvan', 'Undercommon', "Thieves' Cant", 'Druidic']
+const setProfs = (k: Exclude<keyof Proficiencies, 'other'>, v: string[]) => edit(x => { profsToEdit(x)[k] = v })
+
 // ---- features ----
 const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
 </script>
@@ -88,7 +96,7 @@ const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
     <div class="cs-strip">
       <label class="cs-stat"><span>Level</span><input type="number" min="1" max="20" :value="pc.fields.level ?? ''" placeholder="1" :disabled="ro" @change="setLevel" /></label>
       <div class="cs-stat"><span>Proficiency</span><b>{{ signed(prof) }}</b></div>
-      <div class="cs-stat cs-ac" :title="`From ${ac.from}`"><span>Armor class</span><b>{{ ac.ac }}</b>
+      <div class="cs-stat cs-ac" :class="{ warn: ac.untrained.length }" :title="`From ${ac.from}` + (ac.untrained.length ? `\nNot proficient with ${ac.untrained.join(', ')}: disadvantage on STR and DEX rolls, no spellcasting` : '')"><span>Armor class<template v-if="ac.untrained.length"> ⚠</template></span><b>{{ ac.ac }}</b>
         <input class="cs-mini" type="number" :value="s.acOverride ?? ''" placeholder="auto" title="Type an AC to use instead of the worked-out one" :disabled="ro" @change="edit(x => x.acOverride = num($event))" /></div>
       <div class="cs-stat"><span>Initiative</span><b>{{ signed(mod(s.abilities.dex) + (s.initBonus ?? 0)) }}</b></div>
       <label class="cs-stat"><span>Speed</span><input :value="s.speed ?? ''" placeholder="30 ft" :disabled="ro" @change="edit(x => x.speed = text($event))" /></label>
@@ -142,7 +150,7 @@ const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
       <section class="cs-side">
         <h4>Attacks</h4>
         <table v-if="atks.length" class="cs-attacks">
-          <tr v-for="a in atks" :key="a.id"><td><button class="link-btn cs-item" @click="showItem(a.id)">{{ a.name }}</button></td><td><b>{{ signed(a.toHit) }}</b></td><td>{{ a.damage }} <span class="muted small">{{ a.type }}</span></td></tr>
+          <tr v-for="a in atks" :key="a.id"><td><button class="link-btn cs-item" @click="showItem(a.id)">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> ⚠</span></td><td><b>{{ signed(a.toHit) }}</b></td><td>{{ a.damage }} <span class="muted small">{{ a.type }}</span></td></tr>
         </table>
         <p v-else class="muted small">Equip a weapon in the inventory to see its attack here.</p>
 
@@ -157,7 +165,13 @@ const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
         </div>
 
         <h4>Proficiencies &amp; languages</h4>
-        <textarea rows="4" :value="s.proficiencies ?? ''" placeholder="Light armor, simple weapons, thieves' tools; Common, Elvish" :disabled="ro" @change="edit(x => x.proficiencies = text($event))" />
+        <div class="cs-profs">
+          <ProfChips label="Armor" :values="profs.armor" :toggles="ARMOR_PROFS" :disabled="ro" @change="setProfs('armor', $event)" />
+          <ProfChips label="Weapons" :values="profs.weapons" :toggles="WEAPON_CATEGORIES" :suggest="WEAPONS" free placeholder="Add a weapon…" :disabled="ro" @change="setProfs('weapons', $event)" />
+          <ProfChips label="Tools" :values="profs.tools" :suggest="TOOLS" placeholder="Add a tool…" :disabled="ro" @change="setProfs('tools', $event)" />
+          <ProfChips label="Languages" :values="profs.languages" :suggest="LANGUAGES" free placeholder="Add a language…" :disabled="ro" @change="setProfs('languages', $event)" />
+          <textarea rows="2" :value="profs.other ?? ''" placeholder="Anything else" :disabled="ro" @change="edit(x => profsToEdit(x).other = text($event))" />
+        </div>
       </section>
     </div>
 

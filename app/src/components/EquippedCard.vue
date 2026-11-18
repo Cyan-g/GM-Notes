@@ -5,7 +5,7 @@ import { computed, ref } from 'vue'
 import type { Entry, InventoryLine } from '../model/types'
 import { get, state } from '../store'
 import { changed } from '../edit'
-import { canAttune, canEquip, draggedLine, dragged, editSheet, endDrag, sheetOf, sheetToEdit, startDrag } from '../sheet'
+import { canAttune, canEquip, draggedLine, dragged, editSheet, endDrag, proficientWith, sheetOf, sheetToEdit, startDrag } from '../sheet'
 import ItemModal from './ItemModal.vue'
 
 const props = defineProps<{ pc: Entry }>()
@@ -16,6 +16,8 @@ const label = (x: { e?: Entry }) => (x.e!.fields.kind === 'Armor' ? String(x.e!.
 const worn = computed(() => lines.value.filter(x => x.l.equipped && x.e!.fields.kind === 'Armor'))
 const wielded = computed(() => lines.value.filter(x => x.l.equipped && x.e!.fields.kind === 'Weapon'))
 const attuned = computed(() => lines.value.filter(x => x.l.attuned))
+/** Worn or wielded without the proficiency for it. */
+const untrained = (x: { e?: Entry }) => proficientWith(sheetOf(props.pc), x.e!) === false
 const slots = computed(() => Array.from({ length: Math.max(ATTUNE_SLOTS, attuned.value.length) }, (_, i) => attuned.value[i]))
 
 // ---- dragging: from the inventory onto the equipped list or the attunement slots, or between them ----
@@ -59,6 +61,7 @@ function toggle(key: 'equipped' | 'attuned') {
     <ul v-if="worn.length || wielded.length" class="rel">
       <li v-for="x in [...worn, ...wielded]" :key="x.i" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'equipped')" @dragend="endDrag">
         <button class="link-btn cs-item" @click="shown = x.i">{{ x.e!.name }}</button>
+        <span v-if="untrained(x)" class="cs-untrained" :title="x.e!.fields.kind === 'Weapon' ? 'Not proficient: no proficiency bonus to hit' : 'Not proficient: disadvantage on STR and DEX rolls, no spellcasting'">⚠</span>
         <span class="role">{{ label(x) }}</span>
       </li>
     </ul>

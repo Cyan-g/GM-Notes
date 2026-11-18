@@ -1,7 +1,8 @@
 // A player character's sheet: what's stored on the PC entry (fields.sheet) and the numbers worked out from it
 // with the 5e rules: modifiers, proficiency bonus, saves, skills, armor class, attacks and spellcasting.
 import { computed, reactive } from 'vue'
-import type { Abilities, CharacterSheet, Crafting, Entry, Id, InventoryLine, Spellbook } from './model/types'
+import type { Abilities, CharacterSheet, Crafting, Entry, Id, InventoryLine, Proficiencies, Spellbook } from './model/types'
+import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from './model/schema'
 import { db, get, state, touch } from './store'
 
 export type Ability = keyof Abilities
@@ -38,6 +39,52 @@ export function sheetToEdit(pc: Entry): CharacterSheet {
   return s as CharacterSheet
 }
 
+// ---------- proficiencies ----------
+
+export const blankProfs = (): Proficiencies => ({ armor: [], weapons: [], tools: [], languages: [] })
+/** A sheet's proficiencies for reading, with empty lists for anything never filled in. */
+export const profsOf = (s?: CharacterSheet): Proficiencies => ({ ...blankProfs(), ...s?.proficiencies })
+/** A sheet's stored proficiencies for changing. */
+export function profsToEdit(s: CharacterSheet): Proficiencies {
+  const p = (s.proficiencies ??= blankProfs())
+  for (const k of ['armor', 'weapons', 'tools', 'languages'] as const) p[k] ??= []
+  return p
+}
+
+/** A weapon's base weapon: "Rapier" from the subtype "Melee (Rapier)", else the subtype, else the name. */
+export function baseWeapon(e: Entry): string {
+  const sub = String(e.fields.subtype ?? '').trim()
+  return sub.match(/\(([^)]+)\)/)?.[1].trim() || sub || e.name
+}
+const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
+/** The category of a standard weapon by name ("Light crossbow" → Simple), if it is one. */
+export function categoryOf(weapon: string): 'Simple' | 'Martial' | undefined {
+  if (SIMPLE_WEAPONS.some(w => same(w, weapon))) return 'Simple'
+  if (MARTIAL_WEAPONS.some(w => same(w, weapon))) return 'Martial'
+  return undefined
+}
+
+/**
+ * Whether a character is proficient with an item: a weapon by its category or by its base weapon, armor by its
+ * type, a tool by the tool it is. Undefined when the item needs no proficiency or doesn't say which it needs.
+ */
+export function proficientWith(s: CharacterSheet | undefined, e: Entry): boolean | undefined {
+  const p = profsOf(s)
+  const has = (list: string[], v: string) => list.some(x => same(x, v))
+  if (e.fields.kind === 'Weapon') {
+    const base = baseWeapon(e)
+    const cat = e.fields.weaponCategory ?? categoryOf(base)
+    if (!cat) return has(p.weapons, base) || has(p.weapons, e.name) ? true : undefined
+    return has(p.weapons, cat) || has(p.weapons, base) || has(p.weapons, e.name)
+  }
+  if (e.fields.kind === 'Armor') {
+    const t = e.fields.armorType
+    return !t || t === 'Clothing' ? undefined : has(p.armor, t)
+  }
+  if (e.fields.kind === 'Tool' && e.fields.tool) return has(p.tools, e.fields.tool)
+  return undefined
+}
+
 // ---------- the current character ----------
 
 /** The character the Spellbook, the Workbench and the Character menu are about. */
@@ -65,7 +112,7 @@ export function activeSpellbook(): Spellbook {
 /** An item and how many: an ingredient in the pouch, or something crafted. */
 export interface Held { item: Id; qty: number }
 /**
- * The Workbench's data: the current character's (recipes and tools on the sheet, ingredients and crafted
+ * The Workbench's data: the current character's (recipes and tool proficiencies on the sheet, ingredients and crafted
  * things in the inventory) or, with no current character, the world's own.
  */
 export interface Bench {
@@ -99,14 +146,15 @@ export function activeBench(): Bench {
   const inv = raw?.inventory ?? []
   const wanted = (w: 'pouch' | 'made', id: Id) => (w === 'pouch') === isIngredient(id)
   const edit = (fn: (s: CharacterSheet) => void) => { const s = sheetToEdit(pc); fn(s); s.inventory = s.inventory.filter(l => !l.item || l.qty > 0); pc.updated = new Date().toISOString(); touch() }
-  const crafting = () => (sheetToEdit(pc).crafting ??= { tools: [], known: [] })
+  const crafting = () => (sheetToEdit(pc).crafting ??= { known: [] })
   return {
-    tools: raw?.crafting?.tools ?? [], known: raw?.crafting?.known ?? [],
+    // The tools are the sheet's tool proficiencies.
+    tools: raw?.proficiencies?.tools ?? [], known: raw?.crafting?.known ?? [],
     // The pouch is the ingredients in the inventory; "crafted" is everything else made from a recipe.
     list: w => inv.filter(l => l.item && wanted(w, l.item) && (w === 'pouch' || (get(l.item)?.fields.recipe)?.length)).map(l => ({ item: l.item!, qty: l.qty })),
     add(_w, id, n) { edit(s => { const l = s.inventory.find(x => x.item === id); if (l) l.qty += n; else if (n > 0) s.inventory.push({ item: id, qty: n }) }) },
     set(_w, id, qty) { edit(s => { const l = s.inventory.find(x => x.item === id); if (l) l.qty = qty }) },
-    setTools(t) { crafting().tools = t; touch() },
+    setTools(t) { profsToEdit(sheetToEdit(pc)).tools = t; pc.updated = new Date().toISOString(); touch() },
     setKnown(k) { crafting().known = k; touch() },
   }
 }
@@ -151,8 +199,10 @@ const magicBonus = (e: Entry) => { const m = String(e.fields.bonus ?? '').match(
  * Armor class from what's worn: body armor ("14 + dex(max 2)", "16"), plus shields and other worn bonuses
  * ("+2", or "+2 AC" in Bonus). Without body armor it's 10 + DEX. A number typed on the sheet wins.
  */
-export function armorClass(s: CharacterSheet): { ac: number; from: string } {
-  if (s.acOverride != null) return { ac: s.acOverride, from: 'typed on the sheet' }
+export function armorClass(s: CharacterSheet): { ac: number; from: string; untrained: string[] } {
+  // Armor worn without its proficiency (disadvantage on STR and DEX rolls, no spellcasting).
+  const untrained = equipped(s).filter(e => e.fields.kind === 'Armor' && proficientWith(s, e) === false).map(e => e.name)
+  if (s.acOverride != null) return { ac: s.acOverride, from: 'typed on the sheet', untrained }
   const dex = mod(s.abilities.dex)
   let base = 10 + dex, from = 'unarmored', extra = 0
   const parts: string[] = []
@@ -167,12 +217,15 @@ export function armorClass(s: CharacterSheet): { ac: number; from: string } {
     const ac = String(e.fields.bonus ?? '').match(/\+\s*(\d+)\s*ac/i)
     if (ac) { extra += Number(ac[1]); parts.push(e.name) }
   }
-  return { ac: base + extra + (s.acBonus ?? 0), from: [from, ...parts].join(' + ') }
+  return { ac: base + extra + (s.acBonus ?? 0), from: [from, ...parts].join(' + '), untrained }
 }
 
-export interface Attack { id: Id; name: string; toHit: number; damage: string; type?: string; note?: string }
+export interface Attack { id: Id; name: string; toHit: number; damage: string; type?: string; note?: string; untrained?: boolean }
 
-/** One attack per equipped weapon: finesse weapons use the better of STR and DEX, ranged ones DEX. */
+/**
+ * One attack per equipped weapon: finesse weapons use the better of STR and DEX, ranged ones DEX.
+ * The proficiency bonus is only added if the character is proficient with the weapon (or it doesn't say).
+ */
 export function attacks(s: CharacterSheet, prof: number): Attack[] {
   return equipped(s).filter(e => e.fields.kind === 'Weapon').map(e => {
     const props = ((e.fields.properties) ?? []).map(p => p.toLowerCase())
@@ -183,7 +236,8 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
     const dice = String(e.fields.damage ?? '').trim()
     const dmg = m + magic
     const damage = dice ? dice.split('/').map(d => `${d.trim()}${dmg ? ' ' + signed(dmg).replace('−', '− ').replace('+', '+ ') : ''}`).join(' / ') : '—'
-    return { id: e.id, name: e.name, toHit: m + prof + magic, damage, type: (e.fields.damageType)?.join('/'), note: e.fields.range }
+    const untrained = proficientWith(s, e) === false
+    return { id: e.id, name: e.name, toHit: m + (untrained ? 0 : prof) + magic, damage, type: (e.fields.damageType)?.join('/'), note: e.fields.range, untrained }
   })
 }
 

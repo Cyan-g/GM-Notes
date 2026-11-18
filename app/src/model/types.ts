@@ -101,12 +101,23 @@ export interface CharacterSheet {
   inventory: InventoryLine[]
   money?: Copper
   features: Feature[]
-  /** Armor, weapons, tools and languages, as text. */
-  proficiencies?: string
+  /** Armor, weapons, tools and languages (see Proficiencies). */
+  proficiencies?: Proficiencies
   /** The character's own spellbook (the Spellbook page shows it while they're the current character). */
   spellbook?: Spellbook
-  /** Tool proficiencies and known recipes for the Workbench; the ingredients are in the inventory. */
-  crafting?: { tools: string[]; known: Id[] }
+  /** Known recipes for the Workbench; the tools are in the proficiencies, the ingredients in the inventory. */
+  crafting?: { known: Id[] }
+}
+/**
+ * What a character is proficient with, picked from the same lists items use (schema.ts): armor types,
+ * weapon categories or single weapons ("Rapier"), tools; plus languages and anything else as text.
+ */
+export interface Proficiencies {
+  armor: string[]
+  weapons: string[]
+  tools: string[]
+  languages: string[]
+  other?: string
 }
 /** An item carried: an item entry (so weapons and armor count) or just a name. */
 export interface InventoryLine { item?: Id; name?: string; qty: number; equipped?: boolean; attuned?: boolean }

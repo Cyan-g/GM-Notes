@@ -124,7 +124,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
 <template>
   <div class="spellbook">
     <header class="list-head">
-      <h1><span class="icon">📖</span>Spellbook</h1>
+      <h1><span class="icon">📖</span>Spellbook<span v-if="currentPc" class="head-of">of <EntryLink :id="currentPc.id" /></span></h1>
       <div class="row-btns">
         <button title="Every spell slot back" @click="longRest">🌙 Restore spell slots</button>
         <button @click="newEntry('spell')">＋ New spell</button>
@@ -134,17 +134,16 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
     <div class="sbk-top">
       <section class="card sbk-stats">
         <h3>Spellcasting</h3>
-        <p v-if="currentPc" class="sbk-owner">Spellbook of <EntryLink :id="currentPc.id" /></p>
-        <p v-else class="muted small">No current character: make one current on their sheet to use their spellbook and numbers.</p>
+        <p v-if="!currentPc" class="muted small">No current character: make one current on their sheet to use their spellbook and numbers.</p>
         <template v-if="fromSheet">
           <label><span>Spell attack</span><b>{{ fromSheet.attack >= 0 ? '+' : '' }}{{ fromSheet.attack }}</b></label>
           <label><span>Save DC</span><b>{{ fromSheet.dc }}</b></label>
-          <p class="muted small">From <EntryLink :id="caster!.id" />'s sheet ({{ fromSheet.ability.toUpperCase() }}).</p>
+          <p class="muted small">From the character sheet ({{ fromSheet.ability.toUpperCase() }}).</p>
         </template>
         <template v-else>
           <label><span>Spell attack</span><input type="number" :value="book.attackBonus" @change="setNum('attackBonus', ($event.target as HTMLInputElement).value)" /></label>
           <label><span>Save DC</span><input type="number" :value="book.saveDC" @change="setNum('saveDC', ($event.target as HTMLInputElement).value)" /></label>
-          <p v-if="caster" class="muted small"><EntryLink :id="caster.id" />'s sheet has no casting ability yet.</p>
+          <p v-if="caster" class="muted small">The character sheet has no casting ability yet.</p>
         </template>
         <label><span>Prepared</span><b :class="{ over: full }">{{ book.prepared.length }}</b> / <input type="number" min="0" :value="book.preparedMax" @change="setNum('preparedMax', ($event.target as HTMLInputElement).value)" /></label>
       </section>

@@ -4,21 +4,22 @@
 // With a current character it's theirs: recipes and tools on their sheet, ingredients and crafted things in their inventory.
 import { computed, ref } from 'vue'
 import type { Entry, Id, RecipeLine } from '../model/types'
-import { TYPES } from '../model/schema'
 import { byType, formatMoney, get } from '../store'
 import { activeBench, currentPc } from '../sheet'
 import { recipeCost } from '../columns'
 import { CRAFTING_RULE, craftingTime } from '../crafting'
+import { hrefEntry } from '../router'
 import EntryLink from '../components/EntryLink.vue'
 import EntryPicker from '../components/edit/EntryPicker.vue'
 
 const c = computed(() => activeBench())
 const message = ref('')
 
-// ---- proficiencies: the tools named in the schema plus any written on a recipe ----
+// ---- proficiencies: the tools recipes are crafted with, plus any the character is proficient in ----
+// With a current character these are the tool proficiencies on their sheet (the same list, changed from either place).
 const TOOLS = computed(() => {
-  const set = new Set<string>(TYPES.item.fields.find(f => f.key === 'craftingType')?.options?.filter(o => o !== 'Other') ?? [])
-  for (const e of byType.value.get('item') ?? []) if (e.fields.recipe && e.fields.craftingType) set.add(String(e.fields.craftingType))
+  const set = new Set<string>(c.value.tools)
+  for (const e of byType.value.get('item') ?? []) if (e.fields.recipe?.length && e.fields.craftingType && e.fields.craftingType !== 'Other') set.add(e.fields.craftingType)
   return [...set].sort()
 })
 function toggleTool(t: string) {
@@ -60,8 +61,7 @@ const notIngredient = computed(() => (byType.value.get('item') ?? []).filter(e =
 <template>
   <div class="workbench">
     <header class="list-head">
-      <h1><span class="icon">⚗️</span>Workbench</h1>
-      <span v-if="currentPc" class="muted">of <EntryLink :id="currentPc.id" /></span>
+      <h1><span class="icon">⚗️</span>Workbench<span v-if="currentPc" class="head-of">of <EntryLink :id="currentPc.id" /></span></h1>
       <span v-if="message" class="ok small">{{ message }}</span>
     </header>
 
@@ -114,7 +114,8 @@ const notIngredient = computed(() => (byType.value.get('item') ?? []).filter(e =
 
       <aside class="wb-side">
         <section class="card">
-          <h3>Proficiencies</h3>
+          <h3>Tool proficiencies</h3>
+          <p v-if="currentPc" class="muted small">From <a :href="hrefEntry(currentPc.id)">{{ currentPc.name }}'s character sheet</a>.</p>
           <div class="seg wrap">
             <button v-for="t in TOOLS" :key="t" type="button" :class="{ on: c.tools.includes(t) }" @click="toggleTool(t)">{{ t }}</button>
           </div>

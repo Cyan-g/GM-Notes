@@ -74,7 +74,11 @@ const SMALL = ['of', 'the', 'and', 'a', 'an', 'in']
 const epithet = (e: Entry) => (e.aliases[0] ?? '').split(' ').map((w, i) => (i > 0 && SMALL.includes(w.toLowerCase()) ? w.toLowerCase() : w[0]?.toUpperCase() + w.slice(1))).join(' ')
 const races = computed(() => list('race').sort(byName))
 const subclasses = computed(() => list('subclass').sort(byName))
-const kits = computed(() => list('item').filter(i => /kit$|supplies$/i.test(i.name) && i.fields.kind !== 'Ingredient').sort(byName))
+/** Tool items for the tools recipes are crafted with. */
+const kits = computed(() => {
+  const used = new Set(list('item').filter(i => i.fields.recipe?.length).map(i => i.fields.craftingType))
+  return list('item').filter(i => i.fields.kind === 'Tool' && used.has(i.fields.tool)).sort(byName)
+})
 
 // ---- links: web pages you keep at hand (a watch-together room, a soundboard …) ----
 const links = computed(() => db().meta.links ?? [])

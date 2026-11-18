@@ -47,19 +47,30 @@ A player character's page is its character sheet, filled in right on the page.
 - **Equipped card** (beside the sheet, in place of the relation cards): the worn armor and wielded weapons, and the three attunement slots. What's equipped or attuned is shown there and not in the inventory.
 - **Drag and drop:** drag an item from the inventory onto *Equipped* to wear or wield it. A ring or other magical item is attuned instead. Drag it onto the attunement slots to attune it, and back to the inventory to take it off.
 - **Player mode:** the inventory sits beside the sheet under *Equipped*, where *Mentioned in* is in DM mode. Weapons and armor can be equipped, and magic items attuned.
-- **Also:** money, speed, inspiration, proficiencies and languages, and features.
+- **Proficiencies:** picked from the same lists the items use:
+  - armor: Light, Medium, Heavy, Shield
+  - weapons: Simple, Martial, or single weapons such as Rapier
+  - tools, from the standard 5e list
+  - languages, plus a line for anything else
+- **Also:** money, speed, inspiration and features.
 - **Worked out for you:**
   - modifiers and the proficiency bonus (from the level)
   - saves, skills and passive Perception
   - armor class from the equipped armor and shield, e.g. "14 + dex(max 2)", or 10 + DEX without armor. A number typed under AC overrides it.
-  - an attack line for each equipped weapon: finesse weapons use the better of STR and DEX, ranged weapons DEX, and a "+1" in the item's Bonus field counts
+  - an attack line for each equipped weapon: finesse weapons use the better of STR and DEX, ranged weapons DEX, and a "+1" in the item's Bonus field counts. The proficiency bonus is added only if the character is proficient with the weapon; ⚠ marks one they aren't
+  - ⚠ on the AC and in *Equipped* for armor or a shield worn without the proficiency for it
   - the spell save DC and attack bonus, from the class's casting ability unless you pick another
 - **In a fight:** the initiative tracker takes the PC's AC, HP and initiative from the sheet.
+
+**How items match proficiencies.** Each item says what it needs:
+- **A weapon:** its *Category* (Simple or Martial), or a standard base weapon in its subtype, e.g. "Melee (Rapier)". A weapon with neither, such as a wand, needs no proficiency.
+- **Armor:** its *Armor type*. Clothing needs no proficiency.
+- **A Tool item:** its *Tool*. The same tool list is used for a recipe's *Crafted with*.
 
 **The current character.** "☆ Make current character" at the top of a sheet makes that character the one the other tools are about:
 
 - **Spellbook:** shows the character's own spellbook: spells, slots and prepared spells. The spell attack and save DC come from their sheet once its scores and casting ability are filled in; until then they're typed in.
-- **Workbench:** uses the character's recipes and tool proficiencies. The ingredient pouch is the ingredients in their inventory, which the sheet lists separately as *Ingredient pouch*. Crafting takes the ingredients out of the inventory and puts the result in.
+- **Workbench:** uses the character's recipes and the tool proficiencies from their sheet (changing them on the Workbench changes the sheet). The ingredient pouch is the ingredients in their inventory, which the sheet lists separately as *Ingredient pouch*. Crafting takes the ingredients out of the inventory and puts the result in.
 - **Character menu** (player mode): clicking it opens the current character's sheet, and the menu marks them with ★.
 
 With no current character, the Spellbook and Workbench use the world's own; the Spellbook then takes typed numbers.

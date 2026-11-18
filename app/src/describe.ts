@@ -15,7 +15,7 @@ export function describe(e: Entry, { parent = true } = {}): string {
     case 'pc': return join(name(f.race), [f.class, f.level && `level ${f.level}`].filter(Boolean).join(' '), f.player && `played by ${f.player}`)
     case 'organization': return join(f.orgType, parent && f.parent && `part of ${name(f.parent)}`, f.seat && `seat: ${name(f.seat)}`)
     case 'place': return join(f.placeType, parent && f.parent && `in ${name(f.parent)}`)
-    case 'item': return join([f.rarity, f.magical && !f.rarity ? 'magical' : '', f.subtype || f.kind].filter(Boolean).join(' '), f.attunement && 'requires attunement')
+    case 'item': return join([f.rarity, f.magical && !f.rarity ? 'magical' : '', f.subtype || f.tool || f.kind].filter(Boolean).join(' '), f.attunement && 'requires attunement')
     case 'spell': return f.level === 'Cantrip' ? join(`${f.school ?? ''} cantrip`.trim()) : join(f.level ? `${ord(String(f.level))}-level ${String(f.school ?? '').toLowerCase()}`.trim() : f.school)
     case 'creature': {
       const sb = f.statblock as Statblock | undefined

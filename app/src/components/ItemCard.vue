@@ -10,10 +10,13 @@ const props = defineProps<{ e: Entry }>()
 const f = computed(() => props.e.fields)
 const rows = computed(() => ([
   ['Damage', [f.value.damage, f.value.damageType?.length && f.value.damageType.join(' or ').toLowerCase()].filter(Boolean).join(' ')],
+  ['Category', f.value.weaponCategory],
   ['Range', f.value.range],
+  ['Armor type', f.value.armorType],
   ['Armor class', f.value.armorClass],
   ['Slot', f.value.slot],
   ['Bonus', f.value.bonus],
+  ['Tool', f.value.tool],
   ['Crafted with', f.value.craftingType],
   ['Ingredient type', f.value.category],
   ['Weight', f.value.weight != null ? `${f.value.weight} lb` : ''],

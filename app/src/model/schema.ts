@@ -34,7 +34,24 @@ const DAMAGE = ['Acid', 'Bludgeoning', 'Cold', 'Fire', 'Force', 'Lightning', 'Ne
 const CLASSES = ['Artificer', 'Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard']
 
 export const PLACE_KINDS = ['Shop', 'Tavern', 'Temple', 'Dungeon', 'Landmark', 'Plane']
-export const ITEM_KINDS = ['Weapon', 'Armor', 'Potion', 'Poison', 'Ingredient', 'Scroll', 'Tome', 'Ring', 'Accessory', 'Instrument', 'Adventuring Gear', 'Flask', 'Other']
+export const ITEM_KINDS = ['Weapon', 'Armor', 'Tool', 'Potion', 'Poison', 'Ingredient', 'Scroll', 'Tome', 'Ring', 'Accessory', 'Instrument', 'Adventuring Gear', 'Flask', 'Other']
+
+// What a character can be proficient with. An item says which of these it is (a weapon's category, an armor's
+// type, the tool a tool item is), and the character sheet's proficiencies are picked from the same lists.
+export const WEAPON_CATEGORIES = ['Simple', 'Martial']
+export const ARMOR_TYPES = ['Light', 'Medium', 'Heavy', 'Shield', 'Clothing']
+/** Armor types a character can be proficient in (clothing needs no proficiency). */
+export const ARMOR_PROFS = ['Light', 'Medium', 'Heavy', 'Shield']
+export const TOOLS = [
+  "Alchemist's Supplies", "Brewer's Supplies", "Calligrapher's Supplies", "Carpenter's Tools", "Cartographer's Tools",
+  "Cobbler's Tools", "Cook's Utensils", "Glassblower's Tools", "Jeweler's Tools", "Leatherworker's Tools", "Mason's Tools",
+  "Painter's Supplies", "Potter's Tools", "Smith's Tools", "Tinker's Tools", "Weaver's Tools", "Woodcarver's Tools",
+  'Disguise Kit', 'Forgery Kit', 'Gaming Set', 'Herbalism Kit', 'Musical Instrument', "Navigator's Tools", "Poisoner's Kit",
+  "Thieves' Tools", 'Vehicles (Land)', 'Vehicles (Water)',
+]
+/** The standard weapons and their category, so a weapon's category can be told from its base weapon. */
+export const SIMPLE_WEAPONS = ['Club', 'Dagger', 'Greatclub', 'Handaxe', 'Javelin', 'Light Hammer', 'Mace', 'Quarterstaff', 'Sickle', 'Spear', 'Dart', 'Light Crossbow', 'Shortbow', 'Sling']
+export const MARTIAL_WEAPONS = ['Battleaxe', 'Flail', 'Glaive', 'Greataxe', 'Greatsword', 'Halberd', 'Lance', 'Longsword', 'Maul', 'Morningstar', 'Pike', 'Rapier', 'Scimitar', 'Shortsword', 'Trident', 'War Pick', 'Warhammer', 'Whip', 'Blowgun', 'Hand Crossbow', 'Heavy Crossbow', 'Longbow', 'Net']
 
 const W = { field: 'kind', is: ['Weapon'] }
 const A = { field: 'kind', is: ['Armor'] }
@@ -122,15 +139,18 @@ export const SCHEMA = [
       { key: 'value', label: 'Value', kind: 'money' },
       { key: 'weight', label: 'Weight', kind: 'weight' },
       { key: 'summary', label: 'Short description', kind: 'longtext' },
+      { key: 'weaponCategory', label: 'Category', kind: 'select', options: WEAPON_CATEGORIES, when: W, group: 'Weapon' },
       { key: 'damage', label: 'Damage', kind: 'text', when: W, group: 'Weapon' },
       { key: 'damageType', label: 'Damage type', kind: 'list', options: DAMAGE, when: W, group: 'Weapon' },
       { key: 'range', label: 'Range', kind: 'text', when: W, group: 'Weapon' },
       { key: 'properties', label: 'Properties', kind: 'list', when: { field: 'kind', is: ['Weapon', 'Ingredient'] } },
       { key: 'bonus', label: 'Bonus', kind: 'text', when: { field: 'kind', is: ['Weapon', 'Armor'] } },
+      { key: 'armorType', label: 'Armor type', kind: 'select', options: ARMOR_TYPES, when: A, group: 'Armor' },
       { key: 'armorClass', label: 'Armor class', kind: 'text', when: A, group: 'Armor' },
       { key: 'slot', label: 'Slot', kind: 'select', options: ['Head', 'Chest', 'Cloak', 'Gloves', 'Boots', 'Shield'], when: A, group: 'Armor' },
+      { key: 'tool', label: 'Tool', kind: 'select', options: TOOLS, when: { field: 'kind', is: ['Tool'] } },
       { key: 'category', label: 'Ingredient type', kind: 'select', options: ['Plant', 'Mineral', 'Body Part', 'Fluid', 'Other'], when: ING, group: 'Ingredient' },
-      { key: 'craftingType', label: 'Crafted with', kind: 'select', options: ["Alchemist's Supplies", "Herbalism Kit", "Poisoner's Kit", "Calligrapher's Supplies", 'Other'], when: CRAFT, group: 'Crafting' },
+      { key: 'craftingType', label: 'Crafted with', kind: 'select', options: [...TOOLS, 'Other'], when: CRAFT, group: 'Crafting' },
       { key: 'effect', label: 'Effect', kind: 'longtext', when: { field: 'kind', is: ['Potion', 'Poison', 'Other'] }, group: 'Crafting' },
       { key: 'recipe', label: 'Recipe', kind: 'recipe', when: CRAFT, group: 'Crafting' },
     ],

@@ -95,7 +95,7 @@ function typeNode(t: EntryType): MenuNode {
 export interface TopMenu { title: string; items: () => MenuNode[]; owns: (r: Route) => boolean; home?: string }
 
 /** Dashboards that have a top menu of their own, and the item kinds that belong to crafting. */
-const OWN_MENU = ['spells', 'crafting', 'people']
+const OWN_MENU = ['spells', 'crafting', 'people', 'armory']
 const CRAFT_KINDS = ['Ingredient', 'Potion', 'Poison', 'Scroll']
 
 const typeOf = (r: Route) => (r.name === 'list' ? r.type : r.name === 'entry' ? get(r.id)?.type : undefined)
@@ -113,9 +113,8 @@ const kindNode = (k: string, plural: string): MenuNode => {
 export const MENUS: TopMenu[] = [
   {
     title: 'Dashboards',
-    owns: r => ['calendar', 'tracker'].includes(r.name) || (!!dashOf(r) && !OWN_MENU.includes(dashOf(r)!)),
+    owns: r => r.name === 'tracker' || (!!dashOf(r) && !OWN_MENU.includes(dashOf(r)!)),
     items: () => [
-      { label: 'Calendar', icon: '📅', href: '#/calendar' },
       { label: 'Initiative', icon: '⚔', href: '#/tracker', hint: state.db?.tracker?.round ? `R${state.db.tracker.round}` : undefined },
       {
         label: 'Favourites', icon: '★', href: '#/', hint: String(state.db?.meta.favourites?.length ?? 0),
@@ -138,9 +137,9 @@ export const MENUS: TopMenu[] = [
   {
     title: 'World',
     home: '#/atlas',
-    owns: r => r.name === 'atlas' || ['place', 'event'].includes(typeOf(r) ?? ''),
+    owns: r => r.name === 'atlas' || r.name === 'calendar' || ['place', 'event'].includes(typeOf(r) ?? ''),
     // The world's places first, cascading by "Located in" (Eldoria › Ardenvale › Desolation), then the lists.
-    items: () => [{ label: 'Atlas', icon: '🗺', href: '#/atlas' }, { label: 'Timeline', icon: '⏳', href: '#/atlas/timeline' }, SEP, ...entriesOf('place'), SEP, ...(['place', 'event'] as EntryType[]).map(typeNode)],
+    items: () => [{ label: 'Atlas', icon: '🗺', href: '#/atlas' }, { label: 'Timeline', icon: '⏳', href: '#/atlas/timeline' }, { label: 'Calendar', icon: '📅', href: '#/calendar' }, SEP, ...entriesOf('place'), SEP, ...(['place', 'event'] as EntryType[]).map(typeNode)],
   },
   {
     title: 'People',
@@ -190,7 +189,9 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'Archive',
-    owns: r => ['item', 'creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
-    items: () => (['item', 'creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'] as EntryType[]).map(typeNode),
+    owns: r => dashOf(r) === 'armory' || (['item', 'creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? '')))),
+    // The armory tables (weapons, armor, other items), then every kind of entry kept for reference.
+    items: () => [{ label: 'Armory', icon: '⚔️', href: hrefDashboard('armory'), children: () => dashViews('armory') }, SEP,
+      ...(['item', 'creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'] as EntryType[]).map(typeNode)],
   },
 ]

@@ -132,7 +132,8 @@ export const MENUS: TopMenu[] = [
   {
     title: 'Campaign',
     owns: r => ['campaign', 'session', 'encounter', 'pc'].includes(typeOf(r) ?? ''),
-    items: () => (['campaign', 'session', 'encounter', 'pc'] as EntryType[]).map(typeNode),
+    // Sessions have no item of their own: each campaign's page lists its sessions and starts new ones.
+    items: () => (['campaign', 'encounter', 'pc'] as EntryType[]).map(typeNode),
   },
   {
     title: 'World',

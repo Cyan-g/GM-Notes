@@ -9,7 +9,7 @@ import { familySize } from '../family'
 import MapView from '../components/MapView.vue'
 import SubTree from '../components/SubTree.vue'
 import Sunburst from '../components/Sunburst.vue'
-import { ui } from '../ui'
+import { newEntry, ui } from '../ui'
 import { isFavourite, toggleFavourite } from '../edit'
 import type { Pin } from '../model/types'
 import EntryLink from '../components/EntryLink.vue'
@@ -203,6 +203,11 @@ const usedIn = computed(() => e.value?.type === 'item'
   ? entries.value.filter(n => ((n.fields.recipe as { item: string }[]) ?? []).some(l => l.item === e.value!.id)) : [])
 const soldAt = computed(() => e.value?.type === 'item'
   ? entries.value.filter(n => ((n.fields.stock as { item: string }[]) ?? []).some(l => l.item === e.value!.id)) : [])
+/** A new session of this campaign, numbered after the last one. */
+function newSession() {
+  const next = Math.max(0, ...sessions.value.map(s => Number(s.fields.number) || 0)) + 1
+  newEntry('session', { campaign: e.value!.id, number: next })
+}
 const sessions = computed(() => e.value?.type === 'campaign'
   ? (byType.value.get('session') ?? []).filter(s => s.fields.campaign === e.value!.id).sort((a, b) => (a.fields.number as number ?? 0) - (b.fields.number as number ?? 0) || a.name.localeCompare(b.name))
   : [])
@@ -292,11 +297,12 @@ const siblings = computed(() => {
           <div class="feat-list"><FeatCard v-for="f in grantedFeats" :key="f.id" :e="f" title /></div>
         </section>
 
-        <section v-if="sessions.length">
+        <section v-if="e.type === 'campaign'">
           <h2>Sessions</h2>
-          <ol class="plain">
+          <ol v-if="sessions.length" class="plain">
             <li v-for="s in sessions" :key="s.id"><EntryLink :id="s.id" /> <span class="muted">{{ formatDate(s.fields.date as WorldDate) }}</span></li>
           </ol>
+          <button class="new-session" @click="newSession">+ New session</button>
         </section>
         <section v-if="campaignNotes.length">
           <h2>Characters & notes</h2>

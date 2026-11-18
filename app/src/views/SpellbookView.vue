@@ -4,7 +4,7 @@
 import { computed, ref } from 'vue'
 import type { Entry, Id, Spellbook } from '../model/types'
 import { byType, db, get, touch } from '../store'
-import { spellStats } from '../sheet'
+import { activeSpellbook, currentPc, spellStats } from '../sheet'
 import EntryLink from '../components/EntryLink.vue'
 import { newEntry } from '../ui'
 import { hrefEntry } from '../router'
@@ -13,14 +13,11 @@ import EntryPicker from '../components/edit/EntryPicker.vue'
 
 const ORD = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 
-const book = computed<Spellbook>(() => {
-  const d = db()
-  if (!d.spellbook) d.spellbook = { slots: ORD.map(() => ({ max: 0, used: 0 })), known: [], prepared: [], always: [] }
-  return d.spellbook
-})
+// The current character's spellbook, or the world's when no character is current.
+const book = computed<Spellbook>(() => activeSpellbook())
 // The caster: a character picked here, or the only character there is. Their sheet gives attack and DC.
 const pcs = computed(() => (byType.value.get('pc') ?? []).slice().sort((a, b) => a.name.localeCompare(b.name)))
-const caster = computed(() => get(book.value.caster) ?? (pcs.value.length === 1 ? pcs.value[0] : undefined))
+const caster = computed(() => currentPc.value ?? get(book.value.caster) ?? (pcs.value.length === 1 ? pcs.value[0] : undefined))
 const fromSheet = computed(() => (caster.value ? spellStats(caster.value) : undefined))
 const attack = computed(() => fromSheet.value?.attack ?? book.value.attackBonus)
 const dc = computed(() => fromSheet.value?.dc ?? book.value.saveDC)
@@ -139,7 +136,8 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
     <div class="sbk-top">
       <section class="card sbk-stats">
         <h3>Spellcasting</h3>
-        <label><span>Character</span>
+        <p v-if="currentPc" class="sbk-owner">Spellbook of <EntryLink :id="currentPc.id" /></p>
+        <label v-else><span>Character</span>
           <select :value="book.caster ?? ''" @change="setCaster(($event.target as HTMLSelectElement).value)">
             <option value="">{{ pcs.length === 1 ? pcs[0].name : 'None (type the numbers)' }}</option>
             <option v-for="p in pcs.length > 1 ? pcs : []" :key="p.id" :value="p.id">{{ p.name }}</option>

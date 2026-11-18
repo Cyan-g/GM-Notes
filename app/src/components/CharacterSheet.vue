@@ -8,7 +8,7 @@ import { changed } from '../edit'
 import { hrefEntry } from '../router'
 import {
   ABILITIES, SKILLS, armorClass, attacks, blankSheet, carried, castingAbility, levelOf, mod, passivePerception,
-  profBonus, saveBonus, sheetOf, signed, skillBonus, type Ability,
+  profBonus, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, currentPc, setCurrent, type Ability,
 } from '../sheet'
 import EntryLink from './EntryLink.vue'
 import EntryPicker from './edit/EntryPicker.vue'
@@ -28,8 +28,7 @@ const weight = computed(() => carried(s.value))
 
 function edit(fn: (s: CharacterSheet) => void) {
   if (ro.value) return
-  if (!props.pc.fields.sheet) props.pc.fields.sheet = blankSheet()
-  fn(props.pc.fields.sheet as CharacterSheet)
+  fn(sheetToEdit(props.pc))
   changed(props.pc)
 }
 const num = (ev: Event) => { const v = (ev.target as HTMLInputElement).value.trim(); return v === '' ? undefined : Number(v) }
@@ -80,7 +79,11 @@ function addItem(id: string) {
   })
 }
 const addNamed = () => edit(x => { x.inventory.push({ name: 'New thing', qty: 1 }) })
-const sorted = computed(() => s.value.inventory.map((l, i) => ({ l, i })))
+// Ingredients are the crafting pouch: listed apart, under the gear (the Workbench uses them).
+const lines = computed(() => s.value.inventory.map((l, i) => ({ l, i })))
+const gear = computed(() => lines.value.filter(x => itemOf(x.l)?.fields.kind !== 'Ingredient'))
+const pouch = computed(() => lines.value.filter(x => itemOf(x.l)?.fields.kind === 'Ingredient'))
+const isCurrent = computed(() => currentPc.value?.id === props.pc.id)
 
 // ---- features ----
 const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
@@ -88,6 +91,12 @@ const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
 
 <template>
   <div class="char-sheet" :class="{ ro }">
+    <div class="cs-current">
+      <button class="chip-toggle" :class="{ on: isCurrent }" :disabled="ro"
+              :title="isCurrent ? 'The Spellbook, Workbench and Character menu use this character' : 'Use this character in the Spellbook, Workbench and Character menu'"
+              @click="setCurrent(isCurrent ? undefined : pc.id)">{{ isCurrent ? '★ Current character' : '☆ Make current character' }}</button>
+      <template v-if="isCurrent"><a href="#/spellbook" class="small">Spellbook →</a><a href="#/crafting" class="small">Workbench →</a></template>
+    </div>
     <!-- the strip at the top: the numbers looked at most -->
     <div class="cs-strip">
       <label class="cs-stat"><span>Level</span><input type="number" min="1" max="20" :value="pc.fields.level ?? ''" placeholder="1" :disabled="ro" @change="setLevel" /></label>
@@ -172,7 +181,7 @@ const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
     <section class="cs-inventory">
       <h4>Inventory <span class="muted small">{{ weight ? `${Math.round(weight * 10) / 10} lb` : '' }}{{ attunedCount ? ` · ${attunedCount}/3 attuned` : '' }}</span></h4>
       <table class="cs-inv">
-        <tr v-for="{ l, i } in sorted" :key="i">
+        <tr v-for="{ l, i } in gear" :key="i">
           <td class="cs-qty"><input type="number" min="0" :value="l.qty" :disabled="ro" @change="edit(x => x.inventory[i].qty = num($event) ?? 0)" /></td>
           <td class="cs-iname">
             <a v-if="itemOf(l)" :href="hrefEntry(l.item!)">{{ itemOf(l)!.name }}</a>
@@ -184,6 +193,16 @@ const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
           <td><button class="link-btn" title="Remove" :disabled="ro" @click="edit(x => x.inventory.splice(i, 1))">✕</button></td>
         </tr>
       </table>
+      <template v-if="pouch.length">
+        <h5 class="cs-sub">Ingredient pouch</h5>
+        <table class="cs-inv">
+          <tr v-for="{ l, i } in pouch" :key="i">
+            <td class="cs-qty"><input type="number" min="0" :value="l.qty" :disabled="ro" @change="edit(x => x.inventory[i].qty = num($event) ?? 0)" /></td>
+            <td class="cs-iname"><a :href="hrefEntry(l.item!)">{{ itemOf(l)!.name }}</a></td>
+            <td><button class="link-btn" title="Remove" :disabled="ro" @click="edit(x => x.inventory.splice(i, 1))">✕</button></td>
+          </tr>
+        </table>
+      </template>
       <div v-if="!ro" class="cs-inv-add">
         <EntryPicker add :types="['item']" placeholder="Add an item…" @pick="addItem" />
         <button class="link-btn" @click="addNamed">＋ Something else</button>

@@ -1,20 +1,18 @@
 <script setup lang="ts">
 // The crafter's workbench: tool proficiencies, known recipes (can I make it right now?),
 // the ingredient pouch, and what's been crafted. Crafting takes the ingredients out of the pouch.
+// With a current character it's theirs: recipes and tools on their sheet, ingredients and crafted things in their inventory.
 import { computed, ref } from 'vue'
-import type { Crafting, Entry, Id, RecipeLine } from '../model/types'
+import type { Entry, Id, RecipeLine } from '../model/types'
 import { TYPES } from '../model/schema'
-import { byType, db, formatMoney, get, touch } from '../store'
+import { byType, formatMoney, get } from '../store'
+import { activeBench, currentPc } from '../sheet'
 import { recipeCost } from '../columns'
 import { CRAFTING_RULE, craftingTime } from '../crafting'
 import EntryLink from '../components/EntryLink.vue'
 import EntryPicker from '../components/edit/EntryPicker.vue'
 
-const c = computed<Crafting>(() => {
-  const d = db()
-  if (!d.crafting) d.crafting = { tools: [], known: [], pouch: [], made: [] }
-  return d.crafting
-})
+const c = computed(() => activeBench())
 const message = ref('')
 
 // ---- proficiencies: the tools named in the schema plus any written on a recipe ----
@@ -24,27 +22,14 @@ const TOOLS = computed(() => {
   return [...set].sort()
 })
 function toggleTool(t: string) {
-  c.value.tools = c.value.tools.includes(t) ? c.value.tools.filter(x => x !== t) : [...c.value.tools, t]
-  touch()
+  c.value.setTools(c.value.tools.includes(t) ? c.value.tools.filter(x => x !== t) : [...c.value.tools, t])
 }
 
 // ---- pouch ----
-const have = (id: Id) => c.value.pouch.find(p => p.item === id)?.qty ?? 0
-function addTo(list: 'pouch' | 'made', id: Id, n = 1) {
-  const line = c.value[list].find(p => p.item === id)
-  if (line) line.qty += n
-  else c.value[list].push({ item: id, qty: n })
-  c.value[list] = c.value[list].filter(p => p.qty > 0)
-  touch()
-}
-const setQty = (list: 'pouch' | 'made', id: Id, v: string) => {
-  const line = c.value[list].find(p => p.item === id)
-  if (!line) return
-  line.qty = Math.max(0, Math.floor(Number(v) || 0))
-  c.value[list] = c.value[list].filter(p => p.qty > 0)
-  touch()
-}
-const rows = (list: 'pouch' | 'made') => c.value[list]
+const have = (id: Id) => c.value.list('pouch').find(p => p.item === id)?.qty ?? 0
+const addTo = (list: 'pouch' | 'made', id: Id, n = 1) => c.value.add(list, id, n)
+const setQty = (list: 'pouch' | 'made', id: Id, v: string) => c.value.set(list, id, Math.max(0, Math.floor(Number(v) || 0)))
+const rows = (list: 'pouch' | 'made') => c.value.list(list)
   .map(p => ({ ...p, e: get(p.item) }))
   .filter((r): r is { item: Id; qty: number; e: Entry } => !!r.e)
   .sort((a, b) => a.e.name.localeCompare(b.e.name))
@@ -66,8 +51,8 @@ function craft(e: Entry) {
   message.value = `Crafted ${e.name}.`
 }
 const learnable = computed(() => (byType.value.get('item') ?? []).filter(e => (e.fields.recipe as unknown[] | undefined)?.length).map(e => e.id))
-function learn(id: Id) { if (!c.value.known.includes(id)) { c.value.known.push(id); touch() } }
-function forget(id: Id) { c.value.known = c.value.known.filter(x => x !== id); touch() }
+function learn(id: Id) { if (!c.value.known.includes(id)) c.value.setKnown([...c.value.known, id]) }
+function forget(id: Id) { c.value.setKnown(c.value.known.filter(x => x !== id)) }
 const ingredientIds = computed(() => (byType.value.get('item') ?? []).filter(e => e.fields.kind === 'Ingredient').map(e => e.id))
 const notIngredient = computed(() => (byType.value.get('item') ?? []).filter(e => e.fields.kind !== 'Ingredient').map(e => e.id))
 </script>
@@ -76,6 +61,7 @@ const notIngredient = computed(() => (byType.value.get('item') ?? []).filter(e =
   <div class="workbench">
     <header class="list-head">
       <h1><span class="icon">⚗️</span>Workbench</h1>
+      <span v-if="currentPc" class="muted">of <EntryLink :id="currentPc.id" /></span>
       <span v-if="message" class="ok small">{{ message }}</span>
     </header>
 
@@ -136,6 +122,7 @@ const notIngredient = computed(() => (byType.value.get('item') ?? []).filter(e =
 
         <section class="card">
           <h3>Ingredient pouch <span class="muted small">{{ formatMoney(pouchValue) }}</span></h3>
+          <p v-if="currentPc" class="muted small">The ingredients in {{ currentPc.name }}'s inventory.</p>
           <ul v-if="pouchRows.length" class="wb-list">
             <li v-for="r in pouchRows" :key="r.item">
               <EntryLink :id="r.item" />

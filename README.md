@@ -45,7 +45,14 @@ A player character's page is its character sheet, filled in right on the page.
   - an attack line for each equipped weapon: finesse weapons use the better of STR and DEX, ranged weapons DEX, and a "+1" in the item's Bonus field counts
   - the spell save DC and attack bonus, from the class's casting ability unless you pick another
 - **In a fight:** the initiative tracker takes the PC's AC, HP and initiative from the sheet.
-- **The Spellbook** takes its spell attack and save DC from the character picked at the top (in a world with one character, that one). With no character picked, you type them in.
+
+**The current character.** "☆ Make current character" at the top of a sheet makes that character the one the other tools are about:
+
+- **Spellbook:** shows the character's own spellbook: spells, slots and prepared spells. The spell attack and save DC come from their sheet once its scores and casting ability are filled in; until then they're typed in.
+- **Workbench:** uses the character's recipes and tool proficiencies. The ingredient pouch is the ingredients in their inventory, which the sheet lists separately as *Ingredient pouch*. Crafting takes the ingredients out of the inventory and puts the result in.
+- **Character menu** (player mode): clicking it opens the current character's sheet, and the menu marks them with ★.
+
+With no current character, the Spellbook and Workbench use the world's own, as before. Upgrading to data version 18 moved the world's spellbook, recipes, tools and pouch to the character the spellbook was set to (Aria) and made her the current character.
 
 ### Sharing entries
 

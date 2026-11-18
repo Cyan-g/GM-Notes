@@ -1,7 +1,8 @@
 // A player character's sheet: what's stored on the PC entry (fields.sheet) and the numbers worked out from it
 // with the 5e rules: modifiers, proficiency bonus, saves, skills, armor class, attacks and spellcasting.
-import type { Abilities, CharacterSheet, Entry, Id } from './model/types'
-import { get } from './store'
+import { computed } from 'vue'
+import type { Abilities, CharacterSheet, Crafting, Entry, Id, Spellbook } from './model/types'
+import { db, get, state, touch } from './store'
 
 export type Ability = keyof Abilities
 export const ABILITIES: { key: Ability; label: string; short: string }[] = [
@@ -26,7 +27,89 @@ export const blankSheet = (): CharacterSheet => ({
   abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
   saves: [], skills: {}, inventory: [], features: [],
 })
-export const sheetOf = (pc: Entry): CharacterSheet | undefined => pc.fields.sheet as CharacterSheet | undefined
+/** A PC's sheet for reading, with anything never filled in at its default. */
+export const sheetOf = (pc: Entry): CharacterSheet | undefined =>
+  pc.fields.sheet ? { ...blankSheet(), ...(pc.fields.sheet as Partial<CharacterSheet>) } : undefined
+/** A PC's stored sheet for changing: created, or completed, as needed. */
+export function sheetToEdit(pc: Entry): CharacterSheet {
+  const s = (pc.fields.sheet ??= {}) as Partial<CharacterSheet>
+  const blank = blankSheet() as unknown as Record<string, unknown>
+  for (const k of ['abilities', 'saves', 'skills', 'inventory', 'features']) if ((s as Record<string, unknown>)[k] == null) (s as Record<string, unknown>)[k] = blank[k]
+  return s as CharacterSheet
+}
+
+// ---------- the current character ----------
+
+/** The character the Spellbook, the Workbench and the Character menu are about. */
+export const currentPc = computed(() => { const e = get(state.db?.meta.currentCharacter); return e?.type === 'pc' ? e : undefined })
+export function setCurrent(id: Id | undefined) {
+  const m = db().meta
+  if (id) m.currentCharacter = id; else delete m.currentCharacter
+  touch()
+}
+
+const ORD = 9
+const emptyBook = (): Spellbook => ({ slots: Array.from({ length: ORD }, () => ({ max: 0, used: 0 })), known: [], prepared: [], always: [] })
+/** The spellbook in use: the current character's, or (with no current character) the world's. */
+export function activeSpellbook(): Spellbook {
+  const pc = currentPc.value
+  if (pc) {
+    const s = pc.fields.sheet as Partial<CharacterSheet> | undefined
+    if (s?.spellbook) return s.spellbook
+    return (sheetToEdit(pc).spellbook = emptyBook())
+  }
+  const d = db()
+  return (d.spellbook ??= emptyBook())
+}
+
+/** An item and how many: an ingredient in the pouch, or something crafted. */
+export interface Held { item: Id; qty: number }
+/**
+ * The Workbench's data: the current character's (recipes and tools on the sheet, ingredients and crafted
+ * things in the inventory) or, with no current character, the world's own.
+ */
+export interface Bench {
+  tools: string[]
+  known: Id[]
+  list(which: 'pouch' | 'made'): Held[]
+  /** Add (or with a negative n, take out) some of an item. */
+  add(which: 'pouch' | 'made', id: Id, n: number): void
+  set(which: 'pouch' | 'made', id: Id, qty: number): void
+  setTools(t: string[]): void
+  setKnown(k: Id[]): void
+}
+const isIngredient = (id: Id) => get(id)?.fields.kind === 'Ingredient'
+
+export function activeBench(): Bench {
+  const pc = currentPc.value
+  if (!pc) {
+    const d = db()
+    const c: Crafting = (d.crafting ??= { tools: [], known: [], pouch: [], made: [] })
+    const tidy = (w: 'pouch' | 'made') => { c[w] = c[w].filter(p => p.qty > 0) }
+    return {
+      tools: c.tools, known: c.known,
+      list: w => c[w],
+      add(w, id, n) { const l = c[w].find(p => p.item === id); if (l) l.qty += n; else c[w].push({ item: id, qty: n }); tidy(w); touch() },
+      set(w, id, qty) { const l = c[w].find(p => p.item === id); if (l) l.qty = qty; tidy(w); touch() },
+      setTools(t) { c.tools = t; touch() },
+      setKnown(k) { c.known = k; touch() },
+    }
+  }
+  const raw = pc.fields.sheet as Partial<CharacterSheet> | undefined
+  const inv = raw?.inventory ?? []
+  const wanted = (w: 'pouch' | 'made', id: Id) => (w === 'pouch') === isIngredient(id)
+  const edit = (fn: (s: CharacterSheet) => void) => { const s = sheetToEdit(pc); fn(s); s.inventory = s.inventory.filter(l => !l.item || l.qty > 0); pc.updated = new Date().toISOString(); touch() }
+  const crafting = () => (sheetToEdit(pc).crafting ??= { tools: [], known: [] })
+  return {
+    tools: raw?.crafting?.tools ?? [], known: raw?.crafting?.known ?? [],
+    // The pouch is the ingredients in the inventory; "crafted" is everything else made from a recipe.
+    list: w => inv.filter(l => l.item && wanted(w, l.item) && (w === 'pouch' || (get(l.item)?.fields.recipe as unknown[] | undefined)?.length)).map(l => ({ item: l.item!, qty: l.qty })),
+    add(_w, id, n) { edit(s => { const l = s.inventory.find(x => x.item === id); if (l) l.qty += n; else if (n > 0) s.inventory.push({ item: id, qty: n }) }) },
+    set(_w, id, qty) { edit(s => { const l = s.inventory.find(x => x.item === id); if (l) l.qty = qty }) },
+    setTools(t) { crafting().tools = t; touch() },
+    setKnown(k) { crafting().known = k; touch() },
+  }
+}
 
 export const mod = (score?: number) => (score == null ? 0 : Math.floor((score - 10) / 2))
 export const signed = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`)
@@ -49,8 +132,9 @@ export function castingAbility(pc: Entry, s: CharacterSheet): Ability | undefine
 
 /** A character's spell attack bonus and save DC, from their sheet; undefined without a casting ability. */
 export function spellStats(pc: Entry): { attack: number; dc: number; ability: Ability } | undefined {
-  const s = sheetOf(pc)
-  if (!s) return undefined
+  // Only once the scores are filled in; until then the spellbook's typed numbers count.
+  if (!(pc.fields.sheet as Partial<CharacterSheet> | undefined)?.abilities) return undefined
+  const s = sheetOf(pc)!
   const a = castingAbility(pc, s)
   if (!a) return undefined
   const p = profBonus(levelOf(pc)), m = mod(s.abilities[a])

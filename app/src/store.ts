@@ -12,7 +12,7 @@ const SESSION_KEYS = ['tracker', 'spellbook', 'crafting'] as const
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
 /** The newest data version this build understands (the last step in upgrade()). Newer files open read-only. */
-export const DATA_VERSION = 17
+export const DATA_VERSION = 18
 
 export const state = reactive({
   storage: null as Storage | null,
@@ -431,6 +431,33 @@ function upgrade(d: Database) {
       delete e.fields.raceText
     }
     d.version = 17
+    changed = true
+  }
+  // Version 18: spellbooks and workbenches belong to characters. The world's spellbook goes to the character it
+  // was set to, with the workbench: its recipes and tools onto their sheet, the pouch and crafted things into
+  // their inventory. That character becomes the current one. Without a character set, nothing moves.
+  if ((d.version ?? 1) < 18) {
+    const pc = d.spellbook?.caster ? d.entries[d.spellbook.caster] : undefined
+    if (pc?.type === 'pc') {
+      const sheet = (pc.fields.sheet ??= {}) as Record<string, any>
+      sheet.saves ??= []; sheet.skills ??= {}; sheet.features ??= []; sheet.inventory ??= []
+      if (!sheet.spellbook) {
+        const { caster: _caster, ...book } = d.spellbook!
+        sheet.spellbook = book
+        delete d.spellbook
+      }
+      if (d.crafting && !sheet.crafting) {
+        sheet.crafting = { tools: d.crafting.tools, known: d.crafting.known }
+        for (const l of [...d.crafting.pouch, ...d.crafting.made]) {
+          const have = sheet.inventory.find((x: { item?: string }) => x.item === l.item)
+          if (have) have.qty += l.qty; else sheet.inventory.push({ item: l.item, qty: l.qty })
+        }
+        delete d.crafting
+      }
+      d.meta.currentCharacter = pc.id
+      pc.updated = new Date().toISOString()
+    }
+    d.version = 18
     changed = true
   }
   // Adding a step? Raise DATA_VERSION at the top to match, or the new data opens read-only in this build.

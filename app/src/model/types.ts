@@ -103,6 +103,10 @@ export interface CharacterSheet {
   features: Feature[]
   /** Armor, weapons, tools and languages, as text. */
   proficiencies?: string
+  /** The character's own spellbook (the Spellbook page shows it while they're the current character). */
+  spellbook?: Spellbook
+  /** Tool proficiencies and known recipes for the Workbench; the ingredients are in the inventory. */
+  crafting?: { tools: string[]; known: Id[] }
 }
 /** An item carried: an item entry (so weapons and armor count) or just a name. */
 export interface InventoryLine { item?: Id; name?: string; qty: number; equipped?: boolean; attuned?: boolean }
@@ -224,6 +228,8 @@ export interface Database {
     favourites?: Id[]
     /** Web links kept on the home page (a watch-together room, a soundboard …). */
     links?: { label: string; url: string }[]
+    /** The character whose spellbook, recipes and inventory the Spellbook and Workbench use. */
+    currentCharacter?: Id
     /** Who this world is for. Player mode trims the app to spells, crafting and maps and hides DM-only text. */
     mode?: 'dm' | 'player'
     /** Colour theme and heading font (see theme.ts). */

@@ -3,6 +3,8 @@ import { SCHEMA } from './model/schema'
 import type { Entry, EntryType } from './model/types'
 import { computed } from 'vue'
 import { byType, childrenOf, get, playerMode, state } from './store'
+import { currentPc } from './sheet'
+import type { CharacterSheet } from './model/types'
 import { hrefDashboard, hrefEntry, hrefList, type Route } from './router'
 import { newEntry } from './ui'
 import { DASHBOARDS } from './dashboards'
@@ -100,6 +102,10 @@ export interface TopMenu { title: string; items: () => MenuNode[]; owns: (r: Rou
 const OWN_MENU = ['spells', 'crafting', 'people', 'armory']
 const CRAFT_KINDS = ['Ingredient', 'Potion', 'Poison', 'Scroll']
 
+/** The spellbook and recipes in use (the current character's or the world's), for the menu hints; never creates them. */
+const charSheet = () => currentPc.value?.fields.sheet as Partial<CharacterSheet> | undefined
+const bookNow = () => (currentPc.value ? charSheet()?.spellbook : state.db?.spellbook)
+const benchKnown = () => (currentPc.value ? charSheet()?.crafting?.known.length : state.db?.crafting?.known.length)
 const typeOf = (r: Route) => (r.name === 'list' ? r.type : r.name === 'entry' ? get(r.id)?.type : undefined)
 const dashOf = (r: Route) => (r.name === 'dashboard' ? r.id : undefined)
 const dashViews = (id: string, icon = '📋') => {
@@ -155,7 +161,7 @@ export const MENUS: TopMenu[] = [
     owns: r => typeOf(r) === 'spell' || dashOf(r) === 'spells' || r.name === 'spellbook',
     // The spell tables first, then every spell by level.
     items: () => [
-      { label: 'Spellbook', icon: '📖', href: '#/spellbook', hint: state.db?.spellbook ? `${(state.db.spellbook.prepared.length)} prepared` : undefined },
+      { label: 'Spellbook', icon: '📖', href: '#/spellbook', hint: bookNow() ? `${bookNow()!.prepared.length} prepared` : undefined },
       SEP,
       ...dashViews('spells'),
       SEP,
@@ -170,7 +176,7 @@ export const MENUS: TopMenu[] = [
     player: true,
     owns: r => dashOf(r) === 'crafting' || r.name === 'crafting' || (r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
     items: () => [
-      { label: 'Workbench', icon: '⚗️', href: '#/crafting', hint: state.db?.crafting ? `${state.db.crafting.known.length} recipes` : undefined },
+      { label: 'Workbench', icon: '⚗️', href: '#/crafting', hint: benchKnown() != null ? `${benchKnown()} recipes` : undefined },
       SEP,
       ...dashViews('crafting'),
       SEP,
@@ -195,9 +201,14 @@ export const MENUS: TopMenu[] = [
     title: 'Character',
     player: true,
     playerOnly: true,
+    // Clicking the title opens the current character's sheet.
+    get home() { return currentPc.value ? hrefEntry(currentPc.value.id) : undefined },
     owns: r => typeOf(r) === 'pc',
     items: () => [
-      ...(byType.value.get('pc') ?? []).slice().sort(byName).map(p => ({ label: p.name, icon: '🛡️', href: hrefEntry(p.id), hint: p.fields.level ? `Lv ${p.fields.level}` : undefined })),
+      ...(byType.value.get('pc') ?? []).slice().sort(byName).map(p => ({
+        label: p.name, icon: p.id === currentPc.value?.id ? '★' : '🛡️', href: hrefEntry(p.id),
+        hint: [p.id === currentPc.value?.id ? 'current' : '', p.fields.level ? `Lv ${p.fields.level}` : ''].filter(Boolean).join(' · ') || undefined,
+      })),
       SEP,
       { label: 'New character…', action: () => newEntry('pc') },
     ],

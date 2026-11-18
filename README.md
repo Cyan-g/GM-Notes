@@ -59,7 +59,7 @@ The automatic backups keep everything from the last 2 hours, then the newest of 
 
 The source is in `app/` (Vue 3 + TypeScript + Vite). Node is only needed for development, not for using the app.
 
-The folder is a git repository for the app's code and `DnDesk.html`. `data/` is ignored: the campaign data is protected by the backups above, not by git. The stick is FAT32, which doesn't record file owners, so on another PC (or under another drive letter) git refuses with "dubious ownership" until you run `git config --global --add safe.directory <path>`, for example `D:/Worlds/Eldoria-App`.
+The folder is a git repository for the app's code and `DnDesk.html`. `data/` is ignored: the campaign data is protected by the backups above, not by git. The stick is FAT32, which doesn't record file owners, so on another PC (or under another drive letter) git refuses with "dubious ownership" until you run `git config --global --add safe.directory <path>`, for example `D:/Worlds/DnDesk`.
 
 ```bash
 cd app

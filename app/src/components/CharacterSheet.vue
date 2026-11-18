@@ -217,20 +217,25 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <!-- one card per ability: score, modifier, saving throw and the skills that use it -->
       <section class="cs-abilities">
         <div v-for="a in ABILITIES" :key="a.key" class="cs-ability">
+          <!-- name, modifier and the score in its box -->
           <div class="cs-ab-head">
             <span class="cs-short" :title="a.label">{{ a.short }}</span>
             <b class="cs-mod">{{ signed(mod(s.abilities[a.key])) }}</b>
-            <input type="number" min="1" max="30" :value="s.abilities[a.key]" :disabled="locked" :title="`${a.label} score`" @change="edit(x => x.abilities[a.key] = num($event) ?? 10)" />
+            <input class="cs-score" type="number" min="1" max="30" :value="s.abilities[a.key]" :disabled="locked" :title="`${a.label} score`" @change="edit(x => x.abilities[a.key] = num($event) ?? 10)" />
           </div>
+          <!-- the saving throw, on its own band apart from the skills -->
           <button class="cs-skill cs-save" :class="{ on: s.saves.includes(a.key) }" :disabled="locked" :title="build ? `${a.label} saving throw: click for proficiency` : `${a.label} saving throw`" @click="toggleSave(a.key)">
             <span class="cs-dot">{{ s.saves.includes(a.key) ? '●' : '○' }}</span><b>{{ signed(saveBonus(s, a.key, prof)) }}</b><span>Saving throw</span>
           </button>
-          <!-- What else comes from this ability: initiative (DEX), passive perception (WIS). -->
-          <div v-if="a.key === 'dex'" class="cs-derived" title="Initiative: DEX modifier plus any bonus"><span class="cs-dot">⚡</span><b>{{ signed(mod(s.abilities.dex) + (s.initBonus ?? 0)) }}</b><span>Initiative</span></div>
-          <div v-if="a.key === 'wis'" class="cs-derived" title="Passive perception: 10 + Perception"><span class="cs-dot">👁</span><b>{{ passivePerception(s, prof) }}</b><span>Passive perception</span></div>
-          <button v-for="sk in skillsOf(a.key)" :key="sk.name" class="cs-skill" :class="{ on: s.skills[sk.name] }" :disabled="locked" :title="build ? 'Click: proficient, expertise, none' : SKILL_LEVEL[s.skills[sk.name] ?? 0] ?? ''" @click="cycleSkill(sk.name)">
-            <span class="cs-dot">{{ skillMark(sk.name) }}</span><b>{{ signed(skillBonus(s, sk.name, prof)) }}</b><span>{{ sk.name }}</span>
-          </button>
+          <div class="cs-skills">
+            <button v-for="sk in skillsOf(a.key)" :key="sk.name" class="cs-skill" :class="{ on: s.skills[sk.name] }" :disabled="locked" :title="build ? 'Click: proficient, expertise, none' : SKILL_LEVEL[s.skills[sk.name] ?? 0] ?? ''" @click="cycleSkill(sk.name)">
+              <span class="cs-dot">{{ skillMark(sk.name) }}</span><b>{{ signed(skillBonus(s, sk.name, prof)) }}</b><span>{{ sk.name }}</span>
+            </button>
+            <p v-if="!skillsOf(a.key).length" class="cs-noskill">no skills</p>
+          </div>
+          <!-- what else scales with it, at the bottom: initiative (DEX), passive perception (WIS) -->
+          <div v-if="a.key === 'dex'" class="cs-foot" title="Initiative: DEX modifier plus any bonus"><span>Initiative</span><b>{{ signed(mod(s.abilities.dex) + (s.initBonus ?? 0)) }}</b></div>
+          <div v-else-if="a.key === 'wis'" class="cs-foot" title="Passive perception: 10 + Perception"><span>Passive perception</span><b>{{ passivePerception(s, prof) }}</b></div>
         </div>
       </section>
 

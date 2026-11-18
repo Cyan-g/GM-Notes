@@ -210,9 +210,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <button v-if="!build" class="cs-rest" :disabled="ro" title="Full HP, no temp HP, every spell slot and half your hit dice back" @click="rest">Long rest</button>
     </div>
     </div>
-    </div>
-    </div>
-
+    <!-- abilities, then attacks, spellcasting and proficiencies, in the same column -->
     <div class="cs-grid">
       <!-- one card per ability: score, modifier, saving throw and the skills that use it -->
       <section class="cs-abilities">
@@ -269,6 +267,9 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         </div>
       </section>
     </div>
+    </div>
+    </div>
+
 
     <!-- inventory (in player mode it sits beside the sheet instead) -->
     <InventoryCard v-if="!playerMode" :pc="pc" />

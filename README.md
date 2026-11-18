@@ -15,6 +15,12 @@ A local campaign wiki that replaces the Obsidian vault.
 - Relations (memberships, family, home, ...) are edited on either entry and show up on both.
 - Keep the app open in one tab only: two tabs would overwrite each other's saves.
 
+### Sharing entries
+
+- **⇩ Export** on an entry's page saves it as `<name>.eldoria.json`, to send to someone with this app. The file also carries the entries it can't work without (a potion's ingredients, a scroll's spell), its pictures and files, and its relations. DM-only text is left out unless you tick the box.
+- To import, use **＋ → Import from a file…**, or drop the file onto the app. The preview shows what's new and what you already have (same type and name). For each existing entry you choose *keep yours*, *replace yours*, or *add as a second one*.
+- Links to entries that weren't in the file (a race, a home town, an organization) reconnect to your entries of the same type and name. Links with no match are left out: a link in the text becomes plain text.
+
 Everything is saved in `data/`:
 
 | Path | What |

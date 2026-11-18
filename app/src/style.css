@@ -972,3 +972,20 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
   background: color-mix(in srgb, #d08a24 18%, var(--panel)); border-bottom: 1px solid #d08a24; font-size: 14px; }
 .save-banner.err { background: color-mix(in srgb, #b33 14%, var(--panel)); border-bottom-color: #b33; }
 .save-banner > span { flex: 1 1 30rem; }
+
+/* ---------- export / import ---------- */
+.transfer { padding: 1.2rem; display: flex; flex-direction: column; gap: .55rem; max-height: 80vh; overflow-y: auto; }
+.transfer h3 { margin: 0; }
+.transfer h4 { margin: .5rem 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.transfer p { margin: 0; }
+.transfer-list { display: flex; flex-wrap: wrap; gap: .3rem .9rem; }
+.transfer ul.transfer-items { padding: 0; max-height: none; }
+.transfer-items li { display: flex; align-items: center; gap: .6rem; padding: .35rem .2rem; cursor: default; border-bottom: 1px solid var(--line); }
+.transfer-items li .name { flex: 1; font-weight: 500; }
+.transfer-items li.part .name { font-weight: 400; }
+.transfer-items select { width: auto; }
+.transfer .check { display: flex; align-items: center; gap: .5rem; font-size: 14px; }
+.transfer .check input { width: auto; border: none; padding: 0; }
+.transfer .error { color: #b33; font-size: 14px; }
+.transfer .actions, .new-entry .actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .4rem; }
+.new-entry .import-btn { margin-right: auto; }

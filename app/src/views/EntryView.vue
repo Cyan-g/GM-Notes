@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { Entry, Relation, Statblock, WorldDate } from '../model/types'
 import { TYPES, RELATION_KINDS, type FieldDef } from '../model/schema'
 import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, placePath, relationsOf, entries } from '../store'
@@ -13,6 +13,7 @@ import { newEntry, ui } from '../ui'
 import { isFavourite, toggleFavourite } from '../edit'
 import type { Pin } from '../model/types'
 import EntryLink from '../components/EntryLink.vue'
+import ExportDialog from '../components/ExportDialog.vue'
 import MarkdownView from '../components/MarkdownView.vue'
 import FieldValue from '../components/FieldValue.vue'
 import StatblockView from '../components/Statblock.vue'
@@ -208,6 +209,7 @@ function newSession() {
   const next = Math.max(0, ...sessions.value.map(s => Number(s.fields.number) || 0)) + 1
   newEntry('session', { campaign: e.value!.id, number: next })
 }
+const exporting = ref(false)
 const sessions = computed(() => e.value?.type === 'campaign'
   ? (byType.value.get('session') ?? []).filter(s => s.fields.campaign === e.value!.id).sort((a, b) => (a.fields.number as number ?? 0) - (b.fields.number as number ?? 0) || a.name.localeCompare(b.name))
   : [])
@@ -231,8 +233,10 @@ const siblings = computed(() => {
     <header class="entry-head" :class="{ 'has-portrait': e.image }">
       <div class="head-actions">
         <button class="fav-btn" :class="{ on: isFavourite(e.id) }" :title="isFavourite(e.id) ? 'Remove from favourites (F)' : 'Add to favourites (F)'" :aria-pressed="isFavourite(e.id)" @click="toggleFavourite(e.id)">{{ isFavourite(e.id) ? '★' : '☆' }}</button>
+        <button class="export-btn" title="Save as a file to share (someone else can import it)" @click="exporting = true">⇩ Export</button>
         <a class="button edit-btn" :href="hrefEntry(e.id, true)" title="Edit (E)">✎ Edit</a>
       </div>
+      <ExportDialog v-model="exporting" :ids="[e.id]" />
       <DataImage v-if="e.image" :path="e.image" :alt="e.name" class="portrait head-portrait" />
       <div class="head-text">
       <div class="title-line">

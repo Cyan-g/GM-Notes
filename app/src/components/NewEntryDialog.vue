@@ -5,6 +5,7 @@ import type { EntryType } from '../model/types'
 import { SCHEMA } from '../model/schema'
 import { createEntry } from '../edit'
 import { go, hrefEntry } from '../router'
+import { pickImport } from '../ui'
 
 const open = defineModel<boolean>({ required: true })
 const props = defineProps<{ type?: EntryType; fields?: Record<string, unknown> }>()
@@ -37,6 +38,7 @@ function create() {
       </label>
       <label><span>Name</span><input ref="input" v-model="name" placeholder="Name" /></label>
       <div class="actions">
+        <button type="button" class="link-btn import-btn" title="Add a spell, item, NPC … that someone exported" @click="open = false; pickImport()">⇪ Import from a file…</button>
         <button type="button" @click="open = false">Cancel</button>
         <button type="submit" class="primary" :disabled="!name.trim()">Create</button>
       </div>

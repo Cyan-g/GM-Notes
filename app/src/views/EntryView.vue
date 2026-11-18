@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { entryIcon } from '../model/classes'
 import { computed, ref } from 'vue'
 import type { Entry, Relation, Statblock, WorldDate } from '../model/types'
 import { TYPES, RELATION_KINDS, byKey, type FieldDef } from '../model/schema'
@@ -49,10 +50,10 @@ const groups = computed(() => {
   const x = e.value
   if (!x || !def.value) return []
   if (x.type === 'item' || x.type === 'spell' || x.type === 'feat') return []
-  const big = ['statblock', 'recipe', 'stock', 'combatants', 'ranks', 'sheet']
+  const big = ['statblock', 'recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes']
   const out = new Map<string, { def: FieldDef; value: unknown }[]>()
   for (const f of def.value.fields) {
-    if (big.includes(f.kind) || f.key === 'parent' || f.key === 'map' || f.key === 'pins' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
+    if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || f.key === 'parent' || f.key === 'map' || f.key === 'pins' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
     const g = f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
     out.get(g)!.push({ def: f, value: byKey(x.fields)[f.key] })
@@ -249,7 +250,7 @@ const siblings = computed(() => {
       <DataImage v-if="e.image" :path="e.image" :alt="e.name" class="portrait head-portrait" />
       <div class="head-text">
       <div class="title-line">
-        <h1><span class="icon">{{ def.icon }}</span>{{ e.name }}</h1>
+        <h1><span class="icon">{{ entryIcon(e) }}</span>{{ e.name }}</h1>
         <div class="sub">
           <span class="badge">{{ (e.type === 'place' && e.fields.placeType) || (e.type === 'item' && e.fields.kind) || def.label }}</span>
           <span v-if="e.visibility === 'secret'" class="badge dm-only" title="Players don't know this entry yet">DM only</span>

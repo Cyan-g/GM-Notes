@@ -3,11 +3,13 @@
 // (In player mode the inventory sits beside the sheet, under the Equipped card.)
 // Modifiers, saves, skills, AC, attacks and spellcasting are worked out from them.
 // On the character's page it's for play: only what changes at the table (HP, hit dice, inspiration, inventory).
-// On the Edit page (`build`) it also opens what's set when building the character: level, max HP, hit die, AC,
-// speed, scores, proficiencies, spellcasting and features.
+// On the Edit page (`build`) it also opens what's set when building the character: classes and their levels
+// (multiclassing), max HP, AC, speed, scores, proficiencies, spellcasting and features.
+// Hit dice come from the classes, one pool per die size, each spent on its own.
 import { computed, ref } from 'vue'
-import type { CharacterSheet, Entry, Proficiencies } from '../model/types'
-import { byType, listOptions, playerMode, setList, state } from '../store'
+import type { CharacterSheet, ClassLine, Entry, Proficiencies } from '../model/types'
+import { byType, get, listOptions, playerMode, setList, state } from '../store'
+import { CLASS_DIE, DICE, classText, classesOf, dieOf, hitDicePools } from '../model/classes'
 import { changed } from '../edit'
 import {
   ABILITIES, SKILLS, armorClass, attacks, blankSheet, canAttune, canEquip, castingAbility, levelOf, mod, passivePerception,
@@ -45,6 +47,41 @@ function setLevel(ev: Event) {
   changed(props.pc)
 }
 
+// ---- classes: each with its level, subclass and (for a class without a standard one) hit die ----
+const classes = computed(() => classesOf(props.pc))
+const classLabel = computed(() => classText(props.pc, state.db?.meta, id => get(id)?.name))
+function setClasses(fn: (l: ClassLine[]) => void) {
+  if (locked.value) return
+  const l: ClassLine[] = JSON.parse(JSON.stringify(classes.value))
+  fn(l)
+  if (l.length) { props.pc.fields.classLevels = l; delete props.pc.fields.level } else delete props.pc.fields.classLevels
+  changed(props.pc)
+}
+const classOptions = (cur: string) => listOptions('class').filter(o => o.id === cur || !classes.value.some(l => l.class === o.id))
+const subclassesOf = (cls: string) => (byType.value.get('subclass') ?? []).filter(e => e.fields.class === cls)
+function addClass() {
+  const free = classOptions('')[0]
+  if (!free) return
+  // The first class takes over a plain level the character had.
+  setClasses(l => l.push({ class: free.id, level: l.length ? 1 : Math.min(20, Math.max(1, Number(props.pc.fields.level) || 1)) }))
+}
+const setClass = (i: number, cls: string) => setClasses(l => { l[i] = { class: cls, level: l[i].level } })
+const setClassLevel = (i: number, v: number | undefined) => setClasses(l => { l[i].level = Math.min(20, Math.max(1, Math.round(v ?? 1))) })
+const setSubclass = (i: number, id: string) => setClasses(l => { if (id) l[i].subclass = id; else delete l[i].subclass })
+const setDie = (i: number, die: string) => setClasses(l => { if (die && die !== CLASS_DIE[l[i].class]) l[i].die = die; else delete l[i].die })
+const levelOver = computed(() => classes.value.reduce((n, l) => n + (Number(l.level) || 0), 0) > 20)
+
+// ---- hit dice: one pool per die size ----
+const pools = computed(() => hitDicePools(props.pc, s.value))
+function setLeft(die: string, total: number, v: number | undefined) {
+  edit(x => {
+    const spent = Math.min(total, Math.max(0, total - (v ?? total)))
+    const m = { ...(x.hitDiceSpent ?? {}) }
+    if (spent) m[die] = spent; else delete m[die]
+    if (Object.keys(m).length) x.hitDiceSpent = m; else delete x.hitDiceSpent
+  })
+}
+
 const toggleSave = (a: Ability) => build.value && edit(x => { x.saves = x.saves.includes(a) ? x.saves.filter(y => y !== a) : [...x.saves, a] })
 /** Skill proficiency cycles: none → proficient → expertise → none. */
 const cycleSkill = (name: string) => build.value && edit(x => {
@@ -71,7 +108,19 @@ function hit(ev: Event) {
     x.hp = hp
   })
 }
-const longRest = () => edit(x => { x.hp = x.maxHp; x.tempHp = undefined; x.hitDiceUsed = Math.max(0, (x.hitDiceUsed ?? 0) - Math.max(1, Math.floor(level.value / 2))) || undefined })
+/** Full HP, no temp HP, and back half the total level in hit dice (at least one), biggest dice first. */
+const longRest = () => edit(x => {
+  x.hp = x.maxHp
+  x.tempHp = undefined
+  let back = Math.max(1, Math.floor(level.value / 2))
+  const m = { ...(x.hitDiceSpent ?? {}) }
+  for (const p of pools.value) {
+    const n = Math.min(back, p.spent)
+    if (n) { m[p.die] = p.spent - n; back -= n }
+    if (!m[p.die]) delete m[p.die]
+  }
+  if (Object.keys(m).length) x.hitDiceSpent = m; else delete x.hitDiceSpent
+})
 
 // ---- items in the attack lines open in a pop-up ----
 const shown = ref<number | null>(null)
@@ -105,10 +154,33 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
               :title="isCurrent ? 'The Spellbook, Workbench and Character menu use this character' : 'Use this character in the Spellbook, Workbench and Character menu'"
               @click="setCurrent(isCurrent ? undefined : pc.id)">{{ isCurrent ? '★ Current character' : '☆ Make current character' }}</button>
       <template v-if="isCurrent"><a href="#/spellbook" class="small">Spellbook →</a><a href="#/crafting" class="small">Workbench →</a></template>
+      <span v-if="!build && classLabel" class="cs-class-line">{{ classLabel }}</span>
     </div>
+    <!-- building: the classes, each with its level, subclass and hit die -->
+    <section v-if="build" class="cs-classes">
+      <h4>Classes <span v-if="classes.length" class="muted small">level {{ level }}</span><button class="link-btn" :disabled="!classOptions('').length" @click="addClass">＋ Class</button></h4>
+      <p v-if="!classes.length" class="muted small">No class yet: the level below counts on its own.</p>
+      <div v-for="(l, i) in classes" :key="i" class="cs-class-row">
+        <select :value="l.class" :aria-label="`Class ${i + 1}`" @change="setClass(i, ($event.target as HTMLSelectElement).value)">
+          <option v-for="o in classOptions(l.class)" :key="o.id" :value="o.id">{{ o.label }}</option>
+        </select>
+        <label class="small">Level <input type="number" min="1" max="20" :value="l.level" @change="setClassLevel(i, num($event))" /></label>
+        <select :value="l.subclass ?? ''" :aria-label="`Subclass of class ${i + 1}`" :disabled="!subclassesOf(l.class).length && !l.subclass" @change="setSubclass(i, ($event.target as HTMLSelectElement).value)">
+          <option value="">{{ subclassesOf(l.class).length ? 'Subclass…' : 'No subclasses' }}</option>
+          <option v-for="sc in subclassesOf(l.class)" :key="sc.id" :value="sc.id">{{ sc.name }}</option>
+        </select>
+        <select v-if="!CLASS_DIE[l.class]" :value="dieOf(l)" title="This class's hit die" @change="setDie(i, ($event.target as HTMLSelectElement).value)">
+          <option v-for="d in DICE" :key="d" :value="d">{{ d }}</option>
+        </select>
+        <span v-else class="muted small" title="The class's hit die">{{ dieOf(l) }}</span>
+        <button class="link-btn x" title="Remove this class" @click="setClasses(x => x.splice(i, 1))">✕</button>
+      </div>
+      <p v-if="levelOver" class="error small">The class levels add up to more than 20; the sheet counts 20.</p>
+    </section>
     <!-- the strip at the top: the numbers looked at most -->
     <div class="cs-strip">
-      <label class="cs-stat"><span>Level</span><input type="number" min="1" max="20" :value="pc.fields.level ?? ''" placeholder="1" :disabled="locked" @change="setLevel" /></label>
+      <label v-if="!classes.length" class="cs-stat"><span>Level</span><input type="number" min="1" max="20" :value="pc.fields.level ?? ''" placeholder="1" :disabled="locked" @change="setLevel" /></label>
+      <div v-else class="cs-stat" :title="classLabel"><span>Level</span><b>{{ level }}</b></div>
       <div class="cs-stat"><span>Proficiency</span><b>{{ signed(prof) }}</b></div>
       <div class="cs-stat cs-ac" :class="{ warn: ac.untrained.length }" :title="`From ${ac.from}` + (ac.untrained.length ? `\nNot proficient with ${ac.untrained.join(', ')}: disadvantage on STR and DEX rolls, no spellcasting` : '')"><span>Armor class<template v-if="ac.untrained.length"> ⚠</template></span><b>{{ ac.ac }}</b>
         <input v-if="build" class="cs-mini" type="number" :value="s.acOverride ?? ''" placeholder="auto" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></div>
@@ -133,10 +205,13 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <label class="cs-hp-change"><span class="cs-label">Damage / heal</span><input placeholder="−7 or +5" :disabled="ro" @keydown.enter="hit" @change="hit" /></label>
       <div class="cs-hitdice">
         <span class="cs-label">Hit dice</span>
-        <div class="cs-hp-row">
-          <input type="number" min="0" :max="level" :value="level - (s.hitDiceUsed ?? 0)" :disabled="ro" title="Hit dice left" @change="edit(x => x.hitDiceUsed = Math.max(0, level - (num($event) ?? level)) || undefined)" />
-          <span class="muted">/ {{ level }}</span>
-          <input class="cs-die" :value="s.hitDie ?? ''" :placeholder="build ? 'd8' : ''" :disabled="locked" @change="edit(x => x.hitDie = text($event))" />
+        <div v-for="p in pools" :key="p.die" class="cs-hp-row">
+          <input type="number" min="0" :max="p.total" :value="p.total - p.spent" :disabled="ro" :title="`${p.die} left`" @change="setLeft(p.die, p.total, num($event))" />
+          <span class="muted">/ {{ p.total }}</span>
+          <select v-if="build && !classes.length" class="cs-die" :value="s.hitDie || 'd8'" title="Hit die" @change="edit(x => x.hitDie = ($event.target as HTMLSelectElement).value)">
+            <option v-for="d in DICE" :key="d" :value="d">{{ d }}</option>
+          </select>
+          <b v-else class="cs-die-label">{{ p.die }}</b>
         </div>
       </div>
       <button class="cs-rest" :disabled="ro" title="Full HP, no temp HP, half your hit dice back" @click="longRest">Long rest</button>

@@ -23,11 +23,11 @@ const def = computed(() => (e.value ? TYPES[e.value.type] : undefined))
 
 const shown = (f: FieldDef) => !f.when || f.when.is.includes(String(byKey(e.value!.fields)[f.when.field] ?? ''))
 // A character's sheet is the main column of its Edit page.
-const BIG = ['recipe', 'stock', 'combatants', 'ranks', 'sheet']
+const BIG = ['recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes']
 const groups = computed(() => {
   const out = new Map<string, FieldDef[]>()
   for (const f of def.value?.fields ?? []) {
-    if (BIG.includes(f.kind) || !shown(f) || f.key === 'pins' || f.key === 'map') continue
+    if (BIG.includes(f.kind) || (e.value?.type === 'pc' && f.key === 'level') || !shown(f) || f.key === 'pins' || f.key === 'map') continue
     const g = f.kind === 'statblock' ? 'Stats' : f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
     out.get(g)!.push(f)
@@ -154,7 +154,7 @@ function remove() {
           <ImageInput :model-value="e.fields.map" :hint="e.name + ' map'" @update:model-value="setMap" />
           <MapView v-if="e.fields.map" :place="e" editable class="inline-map" />
         </section>
-        <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => f.kind !== 'sheet')" :key="f.key">
+        <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => f.kind !== 'sheet' && f.kind !== 'classes')" :key="f.key">
           <h2>{{ f.label }}</h2>
           <FieldInput :def="f" :entry="e" />
         </section>

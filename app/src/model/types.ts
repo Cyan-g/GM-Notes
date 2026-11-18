@@ -63,6 +63,8 @@ export type Copper = number
 export interface RecipeLine { item: Id; amount: number }
 /** One rank of an organization, highest first. `renown` is what it takes; none for a rank that is appointed. */
 export interface RankLine { title: string; renown?: number; station?: string }
+/** One of a character's classes: an option of the "class" list, its level, a subclass entry, a hit die for a class without a standard one. */
+export interface ClassLine { class: string; level: number; subclass?: Id; die?: string }
 
 /** One line of an encounter: a creature entry (or just a name) and how many. */
 export interface EncounterLine { creature?: Id; name?: string; count: number; hp?: number; ac?: number; init?: number }
@@ -86,9 +88,10 @@ export interface CharacterSheet {
   hp?: number
   maxHp?: number
   tempHp?: number
-  /** e.g. "d8"; how many are spent. */
+  /** The hit die of a character without classes (with classes, each class brings its own). */
   hitDie?: string
-  hitDiceUsed?: number
+  /** Hit dice spent, by die ("d8": 2). */
+  hitDiceSpent?: Record<string, number>
   speed?: string
   /** Armor class typed by hand, instead of the one worked out from what's worn. */
   acOverride?: number

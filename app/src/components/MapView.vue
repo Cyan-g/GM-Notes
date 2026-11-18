@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // A place's map: drag to pan, wheel or buttons to zoom, pins that link to entries.
 // With `editable`, pins can be added, dragged, linked and removed.
+import { entryIcon } from '../model/classes'
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import type { Entry, Pin } from '../model/types'
 import { TYPES } from '../model/schema'
@@ -26,7 +27,7 @@ function onLoad(ev: Event) {
 
 const pins = computed<Pin[]>(() => (props.place.fields.pins) ?? [])
 const pinName = (p: Pin) => get(p.entry)?.name ?? p.label ?? 'Pin'
-const pinIcon = (p: Pin) => { const e = get(p.entry); return e ? TYPES[e.type].icon : '📌' }
+const pinIcon = (p: Pin) => { const e = get(p.entry); return e ? entryIcon(e) : '📌' }
 const showLabels = ref(true)
 
 // ---- pan & zoom ----
@@ -178,7 +179,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
       </div>
       <div v-if="unpinned.length" class="unpinned">
         <span class="muted small">Not on the map yet:</span>
-        <button v-for="c in unpinned" :key="c.id" class="chip-btn" :class="{ on: placing && placing.entry === c.id }" @click="placing = { entry: c.id }">{{ TYPES[c.type].icon }} {{ c.name }}</button>
+        <button v-for="c in unpinned" :key="c.id" class="chip-btn" :class="{ on: placing && placing.entry === c.id }" @click="placing = { entry: c.id }">{{ entryIcon(c) }} {{ c.name }}</button>
       </div>
       <template v-if="sel">
         <h4>Pin</h4>

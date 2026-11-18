@@ -1050,6 +1050,11 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .cs-skill { display: grid; grid-template-columns: 1em 2.1em 1fr; align-items: baseline; gap: .3rem; border: none; background: none; padding: .1rem .25rem; border-radius: 6px; text-align: left; font-size: 13px; cursor: pointer; color: var(--ink-2); }
 .cs-skill:hover:not(:disabled) { background: var(--chip); }
 .char-sheet .cs-skill:disabled, .char-sheet .chip-toggle.on:disabled { opacity: 1; cursor: default; }
+.cs-class-line { margin-left: auto; font: 600 1rem var(--serif); color: var(--ink-2); }
+.cs-classes { padding: .7rem .9rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.cs-class-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-bottom: .4rem; }
+.cs-class-row label input { width: 3.6em; text-align: center; margin-left: .3rem; }
+.cs-die-label { font-size: 13px; color: var(--ink-2); }
 .cs-other { margin: 0; font-size: 14px; white-space: pre-line; }
 .cs-feature-list { margin: 0; }
 .cs-feature-list dt { font-weight: 600; margin-top: .5rem; }
@@ -1162,3 +1167,4 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .history-text { white-space: pre-wrap; font-size: 14px; max-height: 40vh; overflow-y: auto; }
 .deleted-list li { display: flex; gap: .6rem; align-items: baseline; }
 .wb-owned input { width: 3.6em; text-align: center; padding: .1rem; }
+.current-mark { margin-left: .5rem; font-size: 12px; color: var(--accent); white-space: nowrap; }

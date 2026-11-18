@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Hovering a link to an entry shows a small card with what it is, without leaving the page.
+import { entryIcon } from '../model/classes'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { get } from '../store'
 import { TYPES } from '../model/schema'
@@ -58,7 +59,7 @@ onUnmounted(() => {
   <div v-if="e" class="link-preview" :class="{ above: pos.above }" :style="{ left: pos.x + 'px', top: pos.y + 'px' }">
     <DataImage v-if="e.image" :path="e.image" class="lp-img" />
     <div class="lp-text">
-      <div class="lp-type">{{ TYPES[e.type].icon }} {{ TYPES[e.type].label }}<span v-if="e.visibility === 'secret'" class="lp-secret">DM only</span></div>
+      <div class="lp-type">{{ entryIcon(e) }} {{ TYPES[e.type].label }}<span v-if="e.visibility === 'secret'" class="lp-secret">DM only</span></div>
       <div class="lp-name">{{ e.name }}</div>
       <div v-if="describe(e)" class="lp-lead">{{ describe(e) }}</div>
       <p v-if="excerpt(e)" class="lp-excerpt">{{ excerpt(e) }}</p>

@@ -43,10 +43,12 @@ To set up a player:
 
 ### Character sheet
 
-A player character's page is its character sheet, filled in right on the page.
+A player character's page is its character sheet for play: HP, hit dice, inspiration and the inventory change there. The character is built on its **✎ Edit** page, which shows the whole sheet with everything else editable (the text editor isn't there: the character's notes are written in the *Notes* box at the bottom of its page, with ✎ Write).
 
-- **What you fill in:** level and ability scores. Each ability has a card with its saving throw and the skills that use it; click a save to mark proficiency, and click a skill to cycle it: proficient, then expertise, then none.
-- **Hit points:** current, max and temporary HP. Type `-7` or `+5` in *Damage / heal* to apply it; temporary HP soak up damage first. **Long rest** restores HP and gives back half your hit dice.
+- **Classes (multiclassing):** on the Edit page, *＋ Class* adds a class from the Classes list, each with its own level and, if there are Subclass entries for it, a subclass. The character's level is the sum; a character without a class has a plain level instead. The icon follows the highest level class (🪓 Barbarian, 🎵 Bard, ☀️ Cleric, 🌿 Druid, ⚔️ Fighter, 👊 Monk, 🛡️ Paladin, 🏹 Ranger, 🗡️ Rogue, 🔥 Sorcerer, 👁️ Warlock, 📘 Wizard, ⚙️ Artificer).
+- **What you fill in:** the classes and ability scores. Each ability has a card with its saving throw and the skills that use it; click a save to mark proficiency, and click a skill to cycle it: proficient, then expertise, then none.
+- **Hit points:** current, max and temporary HP. Type `-7` or `+5` in *Damage / heal* to apply it; temporary HP soak up damage first.
+- **Hit dice:** each class brings its die (d12 Barbarian; d10 Fighter, Paladin, Ranger; d6 Sorcerer, Wizard; d8 the others, and a homebrew class picks one). The sheet has a row per die size, each spent on its own. **Long rest** restores HP and gives back half the level in hit dice, biggest dice first.
 - **Inventory:** items from the world with a quantity, plus anything else by name. Clicking an item opens its card in a pop-up, where it can also be equipped or attuned. Only items marked *Requires attunement* can be attuned.
 - **Equipped card** (beside the sheet, in place of the relation cards): the worn armor and wielded weapons, and the three attunement slots. What's equipped or attuned is shown there and not in the inventory.
 - **Drag and drop:** drag an item from the inventory onto *Equipped* to wear or wield it. A ring or other magical item is attuned instead. Drag it onto the attunement slots to attune it, and back to the inventory to take it off.
@@ -63,7 +65,7 @@ A player character's page is its character sheet, filled in right on the page.
   - armor class from the equipped armor and shield, e.g. "14 + dex(max 2)", or 10 + DEX without armor. A number typed under AC overrides it.
   - an attack line for each equipped weapon: finesse weapons use the better of STR and DEX, ranged weapons DEX, and a "+1" in the item's Bonus field counts. The proficiency bonus is added only if the character is proficient with the weapon; ⚠ marks one they aren't
   - ⚠ on the AC and in *Equipped* for armor or a shield worn without the proficiency for it
-  - the spell save DC and attack bonus, from the class's casting ability unless you pick another
+  - the spell save DC and attack bonus, from the casting ability of the highest level spellcasting class unless you pick another
 - **In a fight:** the initiative tracker takes the PC's AC, HP and initiative from the sheet.
 
 **How items match proficiencies.** Each item says what it needs:
@@ -75,7 +77,7 @@ A player character's page is its character sheet, filled in right on the page.
 
 - **Spellbook:** shows the character's own spellbook: spells, slots and prepared spells. The spell attack and save DC come from their sheet once its scores and casting ability are filled in; until then they're typed in.
 - **Workbench:** uses the character's recipes and the tool proficiencies from their sheet (set on its ✎ Edit page; the recipes show which tools are missing). The ingredient pouch is the ingredients in their inventory, which the sheet lists separately as *Ingredient pouch*. Crafting takes the ingredients out of the inventory and puts the result in.
-- **Character menu** (player mode): clicking it opens the current character's sheet, and the menu marks them with ★.
+- **Character menu** (player mode): clicking it opens the current character's sheet; hovering offers *New character…* and *All characters*, the list where the current one is marked ★ current.
 
 With no current character, the Spellbook and Workbench use the world's own; the Spellbook then takes typed numbers, and the Workbench picks its tools itself.
 

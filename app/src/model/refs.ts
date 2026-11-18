@@ -67,6 +67,18 @@ export function mapRefs(e: Entry, to: RefMap, word: (id: Id) => string = id => i
         break
       }
       case 'sheet': mapSheet(v as CharacterSheet, to, word); break
+      case 'classes': {
+        if (!Array.isArray(v)) break
+        f[def.key] = (v as { subclass?: Id }[]).map(l => {
+          if (!l.subclass) return l
+          const n = to(l.subclass)
+          if (n != null) return { ...l, subclass: n }
+          cut.add(def.key)
+          const { subclass, ...rest } = l
+          return rest
+        })
+        break
+      }
     }
   }
   if (text) {

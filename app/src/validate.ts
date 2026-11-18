@@ -66,6 +66,9 @@ export function checkField(f: FieldDef, v: unknown, exists?: (id: string) => Ent
       }
       return undefined
     }
+    case 'classes':
+      if (!Array.isArray(v) || !v.every(l => isObj(l) && isStr(l.class) && isNum(l.level))) return 'should be a list of classes with levels'
+      return v.map(l => (l.subclass != null ? link(l.subclass) : undefined)).find(Boolean)
     case 'ranks': return Array.isArray(v) && v.every(r => isObj(r) && isStr(r.title)) ? undefined : 'should be a list of ranks with titles'
     case 'statblock': case 'abilities': return isObj(v) ? undefined : 'should be a statblock'
     case 'sheet': {

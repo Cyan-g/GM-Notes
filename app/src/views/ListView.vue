@@ -12,7 +12,7 @@ const def = computed(() => TYPES[props.type])
 // Which columns and filters each type's list shows.
 const COLS: Partial<Record<EntryType, { cols: string[]; facets?: string[] }>> = {
   npc: { cols: ['race', '@lives-in', '@member'], facets: ['race', '@lives-in', '@member'] },
-  pc: { cols: ['player', 'race', 'class', 'level', 'campaigns'] },
+  pc: { cols: ['player', 'race', '@classes', '@level', 'campaigns'] },
   organization: { cols: ['orgType', 'parent', 'seat', '@members'], facets: ['orgType'] },
   place: { cols: ['placeType', 'parent'], facets: ['placeType', 'parent'] },
   feat: { cols: ['category', 'level', 'source', 'abilityIncrease'], facets: ['category', 'source'] },

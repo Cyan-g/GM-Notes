@@ -28,6 +28,7 @@ function usersOf(l: ListDef): Map<string, Entry[]> {
       const v = byKey(e.fields)[def.key]
       for (const id of Array.isArray(v) ? v : [v]) add(id, e)
     }
+    if (l.key === 'class' && e.type === 'pc') for (const c of e.fields.classLevels ?? []) add(c.class, e)
     const p = l.sheet && e.type === 'pc' ? e.fields.sheet?.proficiencies : undefined
     if (p && l.sheet) for (const id of p[l.sheet] ?? []) add(id, e)
   }
@@ -74,7 +75,7 @@ function add() {
   save([...options.value, { id, label }])
   newLabel.value = ''
 }
-const usedBy = (l: ListDef) => [...l.fields.map(f => `${f.def.label} of ${f.type === 'pc' ? 'characters' : f.type}s`), ...(l.sheet ? ['character sheet proficiencies'] : [])].join(', ')
+const usedBy = (l: ListDef) => [...l.fields.map(f => `${f.def.label} of ${f.type === 'pc' ? 'characters' : f.type}s`), ...(l.sheet ? ['character sheet proficiencies'] : []), ...(l.key === 'class' ? ["characters' classes"] : [])].join(', ')
 </script>
 
 <template>

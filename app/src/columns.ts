@@ -3,7 +3,8 @@
 import type { Entry, EntryType, RecipeLine, Statblock, WorldDate } from './model/types'
 import { craftingMinutes, craftingTime } from './crafting'
 import { SCHEMA, TYPES, byKey, type FieldDef } from './model/schema'
-import { dateKey, entries, fieldLabel, fieldOptions, get, isCurrent, relationsOf } from './store'
+import { dateKey, entries, fieldLabel, fieldOptions, get, isCurrent, relationsOf, state } from './store'
+import { classText, totalLevel } from './model/classes'
 import { listKeyOf } from './model/lists'
 
 export interface Col {
@@ -38,6 +39,8 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   '@lives-in': { label: 'Lives in', value: e => current(e, 'lives-in', true), sort: e => nameOf(current(e, 'lives-in', true)[0]), kind: 'ids' },
   '@member': { label: 'Member of', value: e => current(e, 'member', true), sort: e => nameOf(current(e, 'member', true)[0]), kind: 'ids' },
   '@members': { label: 'Members', value: e => current(e, 'member', false).length, sort: e => -current(e, 'member', false).length, kind: 'text' },
+  '@classes': { label: 'Classes', value: e => classText(e, state.db?.meta, id => get(id)?.name), sort: e => classText(e, state.db?.meta).toLowerCase() || '~', kind: 'text' },
+  '@level': { label: 'Level', value: e => (e.type === 'pc' ? totalLevel(e) : ''), sort: e => (e.type === 'pc' ? -totalLevel(e) : 0), kind: 'text' },
   '@cr': { label: 'CR', value: e => (e.fields.statblock)?.cr, sort: e => crNum((e.fields.statblock)?.cr), kind: 'text' },
   '@recipeCost': { label: 'Ingredients', value: e => recipeCost(e), sort: e => recipeCost(e) ?? -1, kind: 'money' },
   '@margin': {

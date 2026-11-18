@@ -1,12 +1,12 @@
 // Describes every entry type: its label, fields and dropdown options.
 // Forms and pages are generated from this, so adding a field here is enough.
 import type {
-  Abilities, CharacterSheet, Copper, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
+  Abilities, CharacterSheet, ClassLine, Copper, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
 } from './types'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
-  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet'
+  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes'
 
 export interface FieldDef {
   key: string
@@ -74,7 +74,8 @@ export const SCHEMA = [
   {
     type: 'pc', label: 'Player character', plural: 'Player characters', icon: '🛡️', fields: [
       { key: 'player', label: 'Player', kind: 'text' },
-      { key: 'class', label: 'Class', kind: 'text' },
+      // Classes and their levels are set on the sheet (Edit page); the level is the sum, or this one without a class.
+      { key: 'classLevels', label: 'Classes', kind: 'classes' },
       { key: 'level', label: 'Level', kind: 'number' },
       { key: 'campaigns', label: 'Campaigns', kind: 'refs', to: ['campaign'] },
       // The same appearance as an NPC's.
@@ -252,7 +253,7 @@ export interface KindValue {
   text: string; longtext: string; number: number; bool: boolean; select: string; list: string[]
   money: Copper; weight: number; ref: Id; refs: Id[]; date: WorldDate
   recipe: RecipeLine[]; stock: StockLine[]; statblock: Statblock; abilities: Abilities
-  combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet
+  combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]
 }
 type Defs = (typeof SCHEMA)[number]['fields'][number]
 /** A field key used by any type. */

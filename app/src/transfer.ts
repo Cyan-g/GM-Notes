@@ -12,6 +12,7 @@
 //   own value.
 // - Import matches each entry to one already here (same id, else same type and name) and updates it; the rest are
 //   added. The import preview says what's new, what changes and what's already the same.
+import { parseClassText } from './model/classes'
 // - Choices (kind, rarity, school…) travel with their labels: one this world doesn't have is added to its list;
 //   from a world's file, a renamed option is renamed here too.
 import type { Database, Entry, EntryType, Id, Relation } from './model/types'
@@ -178,6 +179,7 @@ function optionsUsed(entries: Entry[]): Record<string, ListOption[]> {
     }
     const p = e.type === 'pc' ? e.fields.sheet?.proficiencies : undefined
     if (p) for (const l of LISTS) if (l.sheet) for (const id of p[l.sheet] ?? []) put(l.key, id)
+    if (e.type === 'pc') for (const l of e.fields.classLevels ?? []) put('class', l.class)
   }
   return out
 }
@@ -335,6 +337,11 @@ export async function readImport(file: File): Promise<ImportPlan> {
     c.visibility = c.visibility === 'known' ? 'known' : 'secret'
     // Only the fields this app knows, with values of the right kind, and choices as this world's options.
     const fields = c.fields as Record<string, unknown>
+    // A character from before multiclassing: its class text becomes class lines.
+    if (c.type === 'pc' && typeof fields.class === 'string') {
+      if (fields.class.trim() && !Array.isArray(fields.classLevels)) { fields.classLevels = parseClassText(fields.class, fields.level, n => opt('class', n)); delete fields.level }
+      delete fields.class
+    }
     for (const [k, v] of Object.entries(fields)) {
       const f = TYPES[c.type].fields.find(x => x.key === k)
       if (!f || checkField(f, v)) { delete fields[k]; continue }
@@ -343,6 +350,7 @@ export async function readImport(file: File): Promise<ImportPlan> {
     }
     // References to the file's entries go to where they land; to anything else, to the same entry here if there is one.
     const lost = mapRefs(c, id => map.get(id) ?? (d.entries[id] ? id : null), id => (typeof b.names?.[id] === 'string' ? b.names[id] : id.replace(/-/g, ' ')))
+    if (c.type === 'pc' && Array.isArray(c.fields.classLevels)) c.fields.classLevels = c.fields.classLevels.map(l => ({ ...l, class: opt('class', String(l.class)) }))
     const p = c.type === 'pc' ? c.fields.sheet?.proficiencies : undefined
     if (p) for (const k of ['armor', 'weapons', 'languages'] as const) if (Array.isArray(p[k])) p[k] = [...new Set(p[k].map(id => prof(k, String(id))))]
     // Pictures and files at their path here.

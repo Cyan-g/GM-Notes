@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Pick an entry by typing its name. Single mode shows the current pick; add mode clears after each pick.
+import { entryIcon } from '../../model/classes'
 import { computed, nextTick, ref, watch } from 'vue'
 import type { EntryType } from '../../model/types'
 import { TYPES } from '../../model/schema'
@@ -60,7 +61,7 @@ function blur() { setTimeout(() => { if (!props.add) editing.value = false; q.va
   <div class="picker">
     <div v-if="!add && !editing" class="picker-current">
       <button type="button" class="picker-value" @click="start">
-        <template v-if="current"><span class="icon">{{ TYPES[current.type].icon }}</span>{{ current.name }}</template>
+        <template v-if="current"><span class="icon">{{ entryIcon(current) }}</span>{{ current.name }}</template>
         <span v-else class="muted">{{ placeholder || 'Choose…' }}</span>
       </button>
       <button v-if="modelValue" type="button" class="x" title="Clear" @click="emit('update:modelValue', null)">×</button>
@@ -70,7 +71,7 @@ function blur() { setTimeout(() => { if (!props.add) editing.value = false; q.va
       <ul v-if="editing && q && options.length" class="picker-list">
         <li v-for="(o, i) in options" :key="o.e?.id ?? 'create'" :class="{ sel: i === sel }" @mousedown.prevent="choose(i)" @mousemove="sel = i">
           <template v-if="o.kind === 'pick'">
-            <span class="icon">{{ TYPES[o.e!.type].icon }}</span>{{ o.e!.name }}
+            <span class="icon">{{ entryIcon(o.e!) }}</span>{{ o.e!.name }}
             <span class="muted small">{{ TYPES[o.e!.type].label }}</span>
           </template>
           <template v-else>＋ Create {{ TYPES[createType!].label.toLowerCase() }} “{{ q.trim() }}”</template>

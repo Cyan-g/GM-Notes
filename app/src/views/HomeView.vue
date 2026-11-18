@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The DM desk: the campaign at hand, the tools, favourites, the regions of the world
 // with their factions, the gods, peoples and subclasses, and a few links. Everything comes from the entries.
+import { classText, totalLevel } from '../model/classes'
 import { computed, ref } from 'vue'
 import { optionLabel } from '../store'
 import type { Entry, Id, WorldDate } from '../model/types'
@@ -109,7 +110,7 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
       <section v-if="playerMode" class="card home-campaign">
         <h3>🛡️ Character</h3>
         <ul v-if="characters.length" class="rel">
-          <li v-for="c in characters" :key="c.p.id"><EntryLink :id="c.p.id" /><span class="when">{{ [c.p.fields.class, c.p.fields.level && 'Lv ' + c.p.fields.level, c.ac, c.hp].filter(Boolean).join(' · ') }}</span></li>
+          <li v-for="c in characters" :key="c.p.id"><EntryLink :id="c.p.id" /><span class="when">{{ [classText(c.p, db().meta), 'Lv ' + totalLevel(c.p), c.ac, c.hp].filter(Boolean).join(' · ') }}</span></li>
         </ul>
         <button class="chip-btn" @click="newEntry('pc')">＋ {{ characters.length ? 'Another character' : 'Your character' }}</button>
       </section>

@@ -1,6 +1,7 @@
 // A player character's sheet: what's stored on the PC entry (fields.sheet) and the numbers worked out from it
 // with the 5e rules: modifiers, proficiency bonus, saves, skills, armor class, attacks and spellcasting.
 import { computed, reactive } from 'vue'
+import { classesOf, totalLevel } from './model/classes'
 import type { Abilities, CharacterSheet, Crafting, Entry, Id, InventoryLine, Proficiencies, Spellbook } from './model/types'
 import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from './model/schema'
 import { db, get, state, touch } from './store'
@@ -154,7 +155,7 @@ export function activeBench(): Bench {
 
 export const mod = (score?: number) => (score == null ? 0 : Math.floor((score - 10) / 2))
 export const signed = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`)
-export const levelOf = (pc: Entry) => Math.min(20, Math.max(1, Number(pc.fields.level) || 1))
+export const levelOf = (pc: Entry) => totalLevel(pc)
 export const profBonus = (level: number) => 2 + Math.floor((level - 1) / 4)
 
 export const saveBonus = (s: CharacterSheet, a: Ability, prof: number) => mod(s.abilities[a]) + (s.saves.includes(a) ? prof : 0)
@@ -167,8 +168,10 @@ export const passivePerception = (s: CharacterSheet, prof: number) => 10 + skill
 /** The ability a character casts with: picked on the sheet, else the one their class uses. */
 export function castingAbility(pc: Entry, s: CharacterSheet): Ability | undefined {
   if (s.spellAbility) return s.spellAbility
-  const cls = String(pc.fields.class ?? '').toLowerCase()
-  return Object.entries(CASTING).find(([c]) => cls.includes(c))?.[1]
+  // The highest level class that casts.
+  const lines = [...classesOf(pc)].sort((a, b) => (Number(b.level) || 0) - (Number(a.level) || 0))
+  for (const l of lines) { const a = CASTING[l.class.toLowerCase()]; if (a) return a }
+  return undefined
 }
 
 /** A character's spell attack bonus and save DC, from their sheet; undefined without a casting ability. */

@@ -1,19 +1,20 @@
 // The loaded world plus lookups the pages need, and saving it (only what changed) with backups.
 import { reactive, computed, shallowRef } from 'vue'
-import type { Database, Entry, EntryType, Id, Relation, WorldDate } from './model/types'
+import type { ClassLine, Database, Entry, EntryType, Id, Relation, WorldDate } from './model/types'
 import type { Storage } from './storage/storage'
 import type { Backend, Changes } from './storage/backend'
 import { SCHEMA, RELATION_KINDS, MARTIAL_WEAPONS, SIMPLE_WEAPONS, byKey, type FieldDef } from './model/schema'
 import { LIST_BY_KEY, LISTS, labelIn, listKeyOf, optionsIn, type ListOption } from './model/lists'
 import { checkDatabase, type Problem } from './validate'
 import { defaultCalendar, formatYear } from './calendar'
+import { classFinder, dieOf, parseClassText } from './model/classes'
 
 /** The play state (the fight, the world's own spellbook and workbench): saved like the rest, but not a "world edit". */
 const PLAY_KEYS = ['tracker', 'spellbook', 'crafting'] as const
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
 /** The newest data version this build understands (the last step in upgrade()). Newer data opens read-only. */
-export const DATA_VERSION = 22
+export const DATA_VERSION = 23
 /** The oldest data version this build can still open; older data is refused instead of guessed at. */
 export const OLDEST_VERSION = 20
 /** What the database must allow: every entry type and relation kind the app knows. */
@@ -94,7 +95,36 @@ function upgrade(d: Database): boolean {
   let changed = false
   if ((d.version ?? 1) < 21) { upgradeTo21(d); d.version = 21; changed = true }
   if ((d.version ?? 1) < 22) { upgradeTo22(d); d.version = 22; changed = true }
+  if ((d.version ?? 1) < 23) { upgradeTo23(d); d.version = 23; changed = true }
   return changed
+}
+
+/**
+ * 23: characters have classes with levels (multiclassing) instead of a class text, and hit dice spent per die.
+ * - "Warlock/Fighter" becomes the class list's Warlock and Fighter (a name the list doesn't have is added to it).
+ *   One class takes the old level; several start at level 1 each. Without a class, the plain level stays.
+ * - The spent hit dice count for the old hit die, or the main class's.
+ */
+function upgradeTo23(d: Database) {
+  const finder = classFinder(d.meta)
+  const before = finder.list.length
+  for (const e of Object.values(d.entries)) {
+    if (e.type !== 'pc') continue
+    const f = e.fields as Record<string, unknown>
+    if (typeof f.class === 'string' && f.class.trim() && !Array.isArray(f.classLevels)) {
+      f.classLevels = parseClassText(f.class, f.level, finder.find)
+      delete f.level
+    }
+    delete f.class
+    const s = f.sheet as (Record<string, unknown> & { hitDie?: string }) | undefined
+    if (s && 'hitDiceUsed' in s) {
+      const used = Number(s.hitDiceUsed) || 0
+      const main = Array.isArray(f.classLevels) ? (f.classLevels as ClassLine[])[0] : undefined
+      if (used > 0) s.hitDiceSpent = { [s.hitDie || (main ? dieOf(main) : 'd8')]: used }
+      delete s.hitDiceUsed
+    }
+  }
+  if (finder.list.length > before) d.meta.lists = { ...(d.meta.lists ?? {}), class: finder.list }
 }
 
 /** The tools of version 21 (a Tool item's "tool" field, a recipe's "Crafted with"). */

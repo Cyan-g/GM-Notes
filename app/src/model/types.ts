@@ -243,8 +243,15 @@ export interface Spellbook {
   saveDC?: number
   /** How many spells may be prepared. */
   preparedMax?: number
-  /** Index 0 is 1st level … 8 is 9th level. */
-  slots: { max: number; used: number }[]
+  /**
+   * Index 0 is 1st level … 8 is 9th level. A character with classes gets the count from the rules (slots.ts); `max`
+   * counts only when typed in (`own`). Without classes (and for the world's book) `max` is always the count.
+   */
+  slots: { max: number; used: number; own?: boolean }[]
+  /** Warlock pact slots spent, and a typed count instead of the rules' one. */
+  pact?: { used: number; max?: number }
+  /** Mystic Arcanum levels (6…9) used since the last long rest. */
+  arcanaUsed?: number[]
   /** Every spell in the book. `prepared` and `always` are taken from these. */
   known: Id[]
   prepared: Id[]

@@ -8,6 +8,8 @@ import type { Entry, Id, Spellbook } from '../model/types'
 import { db, get, touch } from '../store'
 import { activeSpellbook, currentPc, editSheet, longRest, sheetOf, spellStats } from '../sheet'
 import { castFromItem, grantedSpells, restItems, unuse, type GrantedSpell } from '../gear'
+import { classesOf } from '../model/classes'
+import { restSlots, setSlotCount, slotFor, slotRows, useSlot, type SlotRow } from '../slots'
 import type { Entry as PcEntry } from '../model/types'
 import EntryLink from '../components/EntryLink.vue'
 import { newEntry } from '../ui'
@@ -28,50 +30,55 @@ const fromSheet = computed(() => (caster.value ? spellStats(caster.value) : unde
 const attack = computed(() => fromSheet.value?.attack ?? book.value.attackBonus)
 const dc = computed(() => fromSheet.value?.dc ?? book.value.saveDC)
 const editSlots = ref(false)
-const shownSlots = computed(() => book.value.slots.map((s, i) => ({ ...s, i })).filter(s => editSlots.value || s.max > 0))
+/** The slot rows: worked out from the character's classes (or typed), pact slots, Mystic Arcanum. */
+const rows = computed(() => slotRows(book.value, owner.value))
+/** A character with classes: the counts are the rules' unless typed in. */
+const classesKnown = computed(() => !!owner.value && classesOf(owner.value).length > 0)
+const shownSlots = computed(() => rows.value.filter(r => r.kind !== 'arcanum' && (editSlots.value || r.max > 0)))
+const arcana = computed(() => rows.value.filter(r => r.kind === 'arcanum'))
+const rowLabel = (r: SlotRow) => (r.kind === 'pact' ? `Pact · ${ORD[r.level - 1]}` : ORD[r.level - 1])
 
 // ---- changes ----
 function setNum(key: 'attackBonus' | 'saveDC' | 'preparedMax', v: string) {
   const n = v.trim() === '' ? undefined : Number(v)
   if (n === undefined || Number.isFinite(n)) { book.value[key] = n; touch() }
 }
-function setMax(i: number, v: string) {
-  const s = book.value.slots[i]
-  s.max = Math.max(0, Math.min(9, Math.floor(Number(v) || 0)))
-  s.used = Math.min(s.used, s.max)
+/** A typed count. With classes it replaces the rules' count (↺ goes back); without, it is the count. */
+function setMax(r: SlotRow, v: string) {
+  const n = Math.max(0, Math.min(9, Math.floor(Number(v) || 0)))
+  if (classesKnown.value && r.kind === 'slot' && r.rule == null && n === r.max) return
+  setSlotCount(book.value, r, n)
   touch()
 }
-/** Pip p of a level: filled pips are slots left. Clicking a filled one spends it, an empty one gives it back. */
-function pip(i: number, p: number) {
-  const s = book.value.slots[i]
-  const left = s.max - s.used
-  s.used = p < left ? s.used + 1 : s.used - 1
+function resetMax(r: SlotRow) { setSlotCount(book.value, r, null); touch() }
+/** Pip p of a row: filled pips are slots left. Clicking a filled one spends it, an empty one gives it back. */
+function pip(r: SlotRow, p: number) {
+  useSlot(book.value, r, p < r.max - r.used ? 1 : -1)
   touch()
 }
 /** A character's long rest is the whole one (HP and hit dice too); the world's book only gets its slots back. */
 function rest() {
   if (owner.value) { longRest(owner.value); return }
-  for (const s of book.value.slots) s.used = 0
+  restSlots(book.value, 'long')
   touch()
 }
 /** Cast a levelled spell: spend a slot of its level, or the lowest higher one left. */
 function cast(e: Entry) {
-  const lvl = Number(e.fields.level)
-  const i = book.value.slots.findIndex((s, k) => k >= lvl - 1 && s.used < s.max)
-  if (i < 0) return
-  book.value.slots[i].used++
+  const r = slotFor(rows.value, Number(e.fields.level))
+  if (!r) return
+  useSlot(book.value, r, 1)
   touch()
 }
 const canCast = (e: Entry) => {
   const lvl = Number(e.fields.level)
-  return lvl > 0 && book.value.slots.some((s, k) => k >= lvl - 1 && s.used < s.max)
+  return lvl > 0 && !!slotFor(rows.value, lvl)
 }
 // ---- spells from the items the character uses (gear.ts): cast for charges, once per rest, at will, or prepared ----
 const granted = computed(() => (owner.value ? grantedSpells(sheetOf(owner.value)) : []))
 const castItem = (g: GrantedSpell) => { if (owner.value) editSheet(owner.value, s => castFromItem(s, g)) }
 const giveBack = (g: GrantedSpell) => { if (owner.value) editSheet(owner.value, s => unuse(s, g)) }
-const shortRest = () => { if (owner.value) editSheet(owner.value, s => restItems(s, 'short')) }
-const hasShort = computed(() => granted.value.some(g => g.spell.how === 'short'))
+const shortRest = () => { if (owner.value) editSheet(owner.value, s => { restItems(s, 'short'); restSlots(s.spellbook, 'short') }) }
+const hasShort = computed(() => granted.value.some(g => g.spell.how === 'short') || rows.value.some(r => r.kind === 'pact'))
 
 // ---- known / prepared ----
 function learn(id: Id) { if (!book.value.known.includes(id)) { book.value.known.push(id); touch() } }
@@ -148,6 +155,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
     <header class="list-head">
       <h1 v-if="!pc"><span class="icon"><AppIcon ui="spellbook" /></span>Spellbook<span v-if="owner" class="head-of">of <EntryLink :id="owner.id" /></span></h1>
       <div class="row-btns">
+        <button v-if="hasShort" title="Pact slots and once-per-short-rest item spells back" @click="shortRest">☕ Short rest</button>
         <button :title="owner ? 'Full HP, every spell slot and half the hit dice back' : 'Every spell slot back'" @click="rest">🌙 {{ owner ? 'Long rest' : 'Restore spell slots' }}</button>
         <button @click="newEntry('spell')">＋ New spell</button>
       </div>
@@ -174,17 +182,27 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
       <section class="card sbk-slots">
         <h3>Spell slots <button class="link-btn" @click="editSlots = !editSlots">{{ editSlots ? 'Done' : 'Edit' }}</button></h3>
         <div class="slot-cols">
-        <div v-for="s in shownSlots" :key="s.i" class="slot-row">
-          <span class="slot-lvl">{{ ORD[s.i] }}</span>
+        <div v-for="s in shownSlots" :key="s.key" class="slot-row" :class="{ pact: s.kind === 'pact' }">
+          <span class="slot-lvl" :title="s.kind === 'pact' ? 'Warlock pact slots: all of this level, back on a short rest' : undefined">{{ rowLabel(s) }}</span>
           <span class="pips">
             <button v-for="p in s.max" :key="p" class="pip" :class="{ on: p - 1 < s.max - s.used }"
-                    :title="p - 1 < s.max - s.used ? 'Spend this slot' : 'Get this slot back'" @click="pip(s.i, p - 1)" />
+                    :title="p - 1 < s.max - s.used ? 'Spend this slot' : 'Get this slot back'" @click="pip(s, p - 1)" />
           </span>
           <span class="slot-left">{{ s.max - s.used }} / {{ s.max }}</span>
-          <input v-if="editSlots" class="slot-max" type="number" min="0" max="9" :value="s.max" title="Slots of this level" @change="setMax(s.i, ($event.target as HTMLInputElement).value)" />
+          <template v-if="editSlots">
+            <input class="slot-max" type="number" min="0" max="9" :value="s.max" :title="classesKnown ? 'Slots of this level: typing a number replaces the one from the class levels' : 'Slots of this level'" @change="setMax(s, ($event.target as HTMLInputElement).value)" />
+            <button v-if="s.rule != null" class="link-btn small" :title="`Back to the class levels' ${s.rule}`" @click="resetMax(s)">↺ {{ s.rule }}</button>
+          </template>
+          <span v-else-if="s.rule != null" class="slot-own" :title="`Typed in; the class levels give ${s.rule}`">✎</span>
+        </div>
+        <div v-for="a in arcana" :key="a.key" class="slot-row arcanum">
+          <span class="slot-lvl" title="Mystic Arcanum: one casting of a spell of this level per long rest">Arcanum · {{ ORD[a.level - 1] }}</span>
+          <span class="pips"><button class="pip" :class="{ on: !a.used }" :title="a.used ? 'Get it back' : 'Use it'" @click="pip(a, 0)" /></span>
+          <span class="slot-left">{{ 1 - a.used }} / 1</span>
         </div>
         </div>
-        <p v-if="!shownSlots.length" class="muted small">No slots yet: click Edit to set them.</p>
+        <p v-if="!shownSlots.length && !arcana.length" class="muted small">{{ classesKnown ? 'Their classes give no spell slots.' : 'No slots yet: click Edit to set them.' }}</p>
+        <p v-else-if="classesKnown && !editSlots" class="muted small slot-src">From the class levels{{ rows.some(r => r.rule != null) ? ', with typed changes (✎)' : '' }}.</p>
       </section>
     </div>
 
@@ -248,7 +266,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
       </section>
       <section v-if="granted.length" class="card sbk-list sbk-items">
         <h3>From items <span class="muted small">{{ granted.length }}</span>
-          <button v-if="hasShort" class="link-btn" title="Give back the once-per-short-rest spells" @click="shortRest">Short rest</button>
+
         </h3>
         <table class="grid">
           <thead><tr><th>Spell</th><th>Level</th><th>Item</th><th>How</th><th>Casting time</th><th>Range</th><th>Attack / save</th><th></th></tr></thead>

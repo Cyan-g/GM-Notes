@@ -1,6 +1,7 @@
 // A player character's sheet: what's stored on the PC entry (fields.sheet) and the numbers worked out from it
 // with the 5e rules: modifiers, proficiency bonus, saves, skills, armor class, attacks and spellcasting.
 import { computed, reactive } from 'vue'
+import { restSlots } from './slots'
 import { classesOf, hitDicePools, totalLevel } from './model/classes'
 import type { Abilities, CharacterSheet, Crafting, Entry, Id, InventoryLine, Proficiencies, Spellbook } from './model/types'
 import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from './model/schema'
@@ -325,7 +326,7 @@ export function longRest(pc: Entry) {
   const s = sheetToEdit(pc)
   s.hp = maxHpOf(s)
   delete s.tempHp
-  for (const slot of s.spellbook?.slots ?? []) slot.used = 0
+  restSlots(s.spellbook, 'long')
   restItems(s, 'long')
   let back = Math.max(1, Math.floor(totalLevel(pc) / 2))
   const m = { ...(s.hitDiceSpent ?? {}) }

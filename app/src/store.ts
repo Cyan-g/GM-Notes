@@ -473,37 +473,42 @@ interface Seed {
   relations: Database['relations']
 }
 
+/** What a new world starts with: the D&D 5e seed (SRD spells, feats, races, lists, calendar), or next to nothing. */
+export type WorldStart = 'srd' | 'empty'
+
 /**
- * Start a new world in a folder that has none (a player's copy). It opens in player mode, with the seed's lists,
- * calendar, races, subclasses, spells, feats and tools; a seed from an older data version is brought up to date
- * like any older data. Without a usable seed it starts empty, with a plain calendar.
+ * Start a new world in a folder that has none, in DM or player mode. 'srd': the seed's lists, calendar, races,
+ * subclasses, spells, feats and tools (a seed from an older data version is brought up to date like any older data).
+ * 'empty', or a seed that can't be used: no entries, a plain calendar, and in each dropdown list only the options
+ * the app relies on.
  */
-export async function createWorld(backend: Backend, storage: Storage, title: string) {
-  const seed = (await import('./seed/world.json')).default as unknown as Seed
-  if (seed?.dataVersion >= OLDEST_VERSION && seed.dataVersion <= DATA_VERSION) {
-    const d: Database = {
+export async function createWorld(backend: Backend, storage: Storage, title: string, start: WorldStart = 'srd', mode: 'dm' | 'player' = 'player') {
+  const seed = start === 'srd' ? (await import('./seed/world.json')).default as unknown as Seed : undefined
+  const name = title.trim() || 'My world'
+  let d: Database
+  if (seed && seed.dataVersion >= OLDEST_VERSION && seed.dataVersion <= DATA_VERSION) {
+    d = {
       version: seed.dataVersion,
-      meta: { title: title.trim() || 'My world', ...JSON.parse(JSON.stringify(seed.meta)), mode: 'player' },
+      meta: { title: name, ...JSON.parse(JSON.stringify(seed.meta)) },
       entries: Object.fromEntries(seed.entries.map(e => [e.id, JSON.parse(JSON.stringify(e)) as Entry])),
       relations: JSON.parse(JSON.stringify(seed.relations)),
     }
     upgrade(d)
-    await backend.create(d, TYPES_LIST, KINDS_LIST)
-    await open(backend, storage)
-    return
+  } else {
+    d = {
+      version: DATA_VERSION,
+      meta: {
+        title: name,
+        today: { year: 1, month: 1, day: 1 },
+        calendar: defaultCalendar(),
+        eventCategories: [],
+        lists: Object.fromEntries(LISTS.map(l => [l.key, l.fixed.map(id => ({ id, label: id }))])),
+      },
+      entries: {},
+      relations: [],
+    }
   }
-  const d: Database = {
-    version: DATA_VERSION,
-    meta: {
-      title: title.trim() || 'My world',
-      today: { year: 1, month: 1, day: 1 },
-      calendar: defaultCalendar(),
-      eventCategories: [],
-      mode: 'player',
-    },
-    entries: {},
-    relations: [],
-  }
+  if (mode === 'player') d.meta.mode = 'player'; else delete d.meta.mode
   await backend.create(d, TYPES_LIST, KINDS_LIST)
   await open(backend, storage)
 }

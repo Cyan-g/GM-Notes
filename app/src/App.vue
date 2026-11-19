@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
-import { createWorld, get, open, overwrite, save, state } from './store'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { createWorld, get, open, overwrite, save, state, type WorldStart } from './store'
 import { ui } from './ui'
 import { DesktopStorage, desktop, folderName, type UpdateInfo } from './storage/desktop'
 import { HttpStorage } from './storage/storage'
@@ -44,6 +44,10 @@ const startError = ref('')
 /** The chosen data folder has no world in it yet: offered to start a new one there (a player's own copy). */
 const emptyName = ref('')
 const worldName = ref('')
+/** The new world's starting content and mode: 5e starts as a player's copy, an empty world as the DM's, unless picked. */
+const worldStart = ref<WorldStart>('srd')
+const modePicked = ref<'dm' | 'player' | null>(null)
+const worldMode = computed(() => modePicked.value ?? (worldStart.value === 'srd' ? 'player' : 'dm'))
 
 /** A new version of the desktop app: downloaded and ready to install (Windows), or out to download (Mac). */
 const update = ref<UpdateInfo | null>(null)
@@ -76,7 +80,8 @@ onMounted(async () => {
     pending = sessionStorage.getItem(PENDING_NEW_WORLD); joining = !!sessionStorage.getItem(PENDING_JOIN)
     sessionStorage.removeItem(PENDING_NEW_WORLD); sessionStorage.removeItem(PENDING_JOIN)
   } catch { /* asked on the start screen */ }
-  if (pending && phase.value === 'new-world') { worldName.value = pending; await startWorld() }
+  // a joined world takes the 5e start in player mode; a new one asks for its start on the start screen
+  if (pending && phase.value === 'new-world') { worldName.value = pending; if (joining) await startWorld() }
   // A world that follows a shared one: up to date on start, then every few minutes.
   else if (phase.value === 'ready') await startFollowing()
   if (joining && syncStatus.note) syncStatus.note = `Joined. ${syncStatus.note}`
@@ -85,7 +90,7 @@ onMounted(async () => {
 async function startWorld() {
   startError.value = ''
   try {
-    await createWorld(state.backend!, state.storage!, worldName.value)
+    await createWorld(state.backend!, state.storage!, worldName.value, worldStart.value, worldMode.value)
     phase.value = 'ready'
     // A joined world gets its shared world right away.
     await startFollowing()
@@ -179,11 +184,27 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <h1>DnDesk</h1>
       <template v-if="phase === 'starting'"><p class="muted">Opening…</p></template>
       <template v-else-if="phase === 'new-world'">
-        <p>“{{ emptyName }}” has no world in it yet.</p>
-        <p class="muted small">Start a new one here, for example as a player keeping what your DM shares. It comes with the dropdown lists, a standard calendar to make your own, races, subclasses, spells, feats and tools.
-          It starts in player mode; ⚙ → DM mode switches.</p>
-        <input v-model="worldName" placeholder="Name, e.g. your character's name" @keydown.enter="startWorld" />
-        <button class="primary" @click="startWorld">Start a new world here</button>
+        <p>“{{ emptyName }}” has no world in it yet. Start a new one here.</p>
+        <input v-model="worldName" class="start-name" placeholder="Name, e.g. your campaign or your character's name" aria-label="Name of the new world" @keydown.enter="startWorld" />
+        <h4 class="start-sub">Start with</h4>
+        <div class="start-choices" role="radiogroup" aria-label="Start with">
+          <label class="start-choice" :class="{ on: worldStart === 'srd' }">
+            <input v-model="worldStart" type="radio" value="srd" />
+            <b>D&amp;D 5e</b>
+            <span class="muted small">The spells, feats and other rules content of the SRD 5.2.1, races, subclasses and tools, every dropdown list, and a standard calendar to make your own.</span>
+          </label>
+          <label class="start-choice" :class="{ on: worldStart === 'empty' }">
+            <input v-model="worldStart" type="radio" value="empty" />
+            <b>Empty world</b>
+            <span class="muted small">No entries, a plain calendar, and in the dropdown lists only the options the app relies on. For your own system or setting.</span>
+          </label>
+        </div>
+        <div class="start-mode" role="radiogroup" aria-label="Who are you">
+          <label><input type="radio" :checked="worldMode === 'dm'" @change="modePicked = 'dm'" /> I'm the DM</label>
+          <label><input type="radio" :checked="worldMode === 'player'" @change="modePicked = 'player'" /> I'm a player</label>
+          <span class="muted small">⚙ → DM mode switches later.</span>
+        </div>
+        <button class="primary" @click="startWorld">Start the new world</button>
         <button v-if="desktop" @click="choose">Choose another folder…</button>
         <p v-if="startError" class="error">{{ startError }}</p>
       </template>

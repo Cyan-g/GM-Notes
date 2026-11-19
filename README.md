@@ -7,7 +7,7 @@ A local campaign wiki and toolkit for D&D: the world, its people, the campaign, 
 DnDesk is a desktop app for Windows and macOS. It's installed once and keeps the world in a database in a `data` folder you choose.
 
 - **First start:** choose the data folder in a normal folder dialog, or the folder that holds it. The app remembers it; ⚙ → Data & backups shows where it is and can change it.
-  - **A folder with no world yet:** the app offers to start a new one, as a player would.
+  - **A folder with no world yet:** the app offers to start a new one. Give it a name, then choose what it starts with: **D&D 5e** (the SRD 5.2.1 spells and feats, races, subclasses, tools, every dropdown list and a standard calendar) or an **Empty world** (no entries, a plain calendar, and in the dropdown lists only the options the app relies on). Then choose *I'm the DM* or *I'm a player*; it's preset to player for D&D 5e and to DM for an empty world, and ⚙ → DM mode switches later.
   - **A folder from before the database:** one holding an early version's JSON world file is converted once, by itself and checked, and the old JSON files stay where they are.
 - **Windows:** the installer (`DnDesk-Setup-<version>.exe`) installs for your user only and updates itself. When a new version is downloaded, a bar offers *Restart and update*.
 - **macOS:** the app isn't signed with an Apple Developer ID, so the first time, right-click it and choose *Open*. It can't install updates itself; a bar says when a new version is out, with a download link.
@@ -145,7 +145,7 @@ A place with a map picture shows it with pins for the places in it (✎ Edit pin
 
 The desktop app can keep several worlds (your campaign, a one-shot, a player's own copy) and switch between them. Each world is its own folder with its database, pictures, files and backups.
 - **Switching:** click the world's name at the top left (it also has *Home*), or ⚙ → *Switch world*. Both list your worlds, last opened first. The open one is saved before switching. The start screen lists them too.
-- **New world…** asks for a name and makes a folder for it inside your worlds folder (chosen the first time). The world starts from the starting world, in player mode.
+- **New world…** asks for a name and makes a folder for it inside your worlds folder (chosen the first time). The start screen then asks what it starts with and whether you're the DM or a player, as for a new folder. A world joined from a shared folder starts with D&D 5e, in player mode.
 - **Open a world folder…** opens a world anywhere else (and adds it to the list). ✕ takes a world off the list; its folder stays.
 - **World ID:** every world gets a permanent ID the first time it's opened. It's kept by backups and restores and isn't part of exports. Sharing with players will use it, so a player's world only ever follows the right one of your worlds.
 - **Copies:** if the same ID turns up in a second folder that still holds a world, the app asks: *Make it a separate world* (a new ID, e.g. after copying a world to start a new campaign from it) or *It's the same world, moved* (the list forgets the old folder). A world whose old folder is gone simply moved.
@@ -241,7 +241,7 @@ npm run build      # type-checks and builds the pages into dist/ (what the deskt
 
 ### The starting world
 
-Every new world starts from `app/src/seed/world.json`, which ships inside the app. It holds:
+A new world that starts with D&D 5e gets a copy of `app/src/seed/world.json`, which ships inside the app (an empty world doesn't use it). It holds:
 - every dropdown list;
 - the standard calendar: Gregorian months and leap day, the real moon, BC and AD, today 1 January of year 1, and the sessions' timeline colour. It's not taken from your world: a world makes its own on the Calendar page (*⚙ Edit calendar*), and a player gets yours by importing your world;
 - the races, subclasses, spells, feats and Tool items, without DM-only text or pictures. Links to anything else become plain words.

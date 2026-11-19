@@ -1284,7 +1284,18 @@ h1 .icon svg.gi { color: var(--accent); }
 .effect-row .effect-value { width: 4.5em; }
 .effect-row .effect-text { min-width: 14em; }
 .effect-say { font-size: 12px; }
-.ic-gear { margin: .4rem 0; }
+/* An item card's "While attuned" block: effects as small chips, spells one per line with how they're cast. */
+.ic-gear { margin: .8rem 0 .2rem; padding: .55rem .8rem; border-left: 3px solid var(--rc, var(--accent)); background: var(--panel-2); border-radius: 0 8px 8px 0; }
+.ic-gear-head { font: 600 .9rem var(--serif); font-variant: small-caps; color: var(--accent); margin-bottom: .3rem; }
+.ic-gear-lines { margin: .35rem 0 0; padding-left: 1.1rem; font-size: 14px; }
+.ic-gear-lines li { margin: .1rem 0; }
+.ic-gear-lines li::marker { color: var(--accent); }
+.ic-gear-sub { font-size: 12px; color: var(--muted); margin: .45rem 0 .15rem; }
+.ic-gear-effects { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: .25rem .4rem; }
+.ic-gear-effects li { background: var(--chip); border-radius: 999px; padding: .05em .6em; font-size: 13px; }
+.ic-gear-spells { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: max-content 1fr; gap: .15rem 1rem; }
+.ic-gear-spells li { display: contents; }
+.ic-gear-spells .muted { font-size: 13px; }
 .gear-mod { color: var(--accent); }
 .gear-mod::after { content: '✦'; font-size: .6em; vertical-align: super; margin-left: .1em; }
 .active-gear { margin: .5rem 0 0; padding: 0; list-style: none; font-size: 13px; }

@@ -35,23 +35,34 @@ const propList = computed(() => {
 })
 /** What it does to the one who wears it, as "+1 AC", "Resistance: fire". */
 const effects = computed(() => effectsOf(props.e).map(describeEffect).filter(Boolean))
+/** Short effects as chips ("+1 AC"), feature sentences as lines of their own. */
+const chipEffects = computed(() => effectsOf(props.e).filter(x => x.on !== 'feature').map(describeEffect).filter(Boolean))
+const lineEffects = computed(() => effectsOf(props.e).filter(x => x.on === 'feature').map(describeEffect).filter(Boolean))
 const effectsWhen = computed(() => (f.value.attunement ? 'While attuned' : f.value.kind === 'Weapon' ? 'While wielded' : 'While worn'))
 const spells = computed(() => spellsOf(props.e).filter(x => get(x.spell)))
+/** The kind line, starting with a capital: "Magical Melee (Quarterstaff) · requires attunement". */
+const kindLine = computed(() => { const t = describe(props.e) || L('kind'); return t.charAt(0).toUpperCase() + t.slice(1) })
 const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magical' : 'mundane')).toLowerCase().replace(' ', '-'))
 </script>
 
 <template>
   <div class="item-card" :class="'r-' + rarity">
-    <div class="ic-line">{{ describe(e) || L('kind') }}</div>
+    <div class="ic-line">{{ kindLine }}</div>
     <div class="ic-body">
       <div class="ic-text">
         <p v-if="f.summary" class="ic-summary" v-html="renderInline(f.summary)" />
         <p v-if="f.effect" class="ic-effect"><b>Effect.</b> <span v-html="renderInline(f.effect)" /></p>
-        <p v-if="effects.length" class="ic-gear"><b>{{ effectsWhen }}:</b> {{ effects.join(' · ') }}</p>
-        <p v-if="spells.length" class="ic-gear"><b>{{ effectsWhen }}, cast:</b>
-          <template v-for="(x, i) in spells" :key="i"><template v-if="i"> · </template><EntryLink :id="x.spell" /> <span class="muted">({{ howCast(x) }})</span></template>
-        </p>
         <div v-if="propList.length" class="chips"><span v-for="p in propList" :key="p.id" class="chip" :class="{ tip: 'note' in p && p.note }" :data-tip="'note' in p ? p.note : undefined">{{ p.label }}</span></div>
+        <!-- What it does while in use: its effects, then the spells it casts, one per line. -->
+        <div v-if="effects.length || spells.length" class="ic-gear">
+          <div class="ic-gear-head">{{ effectsWhen }}</div>
+          <ul v-if="chipEffects.length" class="ic-gear-effects"><li v-for="(x, i) in chipEffects" :key="i">{{ x }}</li></ul>
+          <ul v-if="lineEffects.length" class="ic-gear-lines"><li v-for="(x, i) in lineEffects" :key="i">{{ x }}</li></ul>
+          <template v-if="spells.length">
+            <div class="ic-gear-sub">Spells</div>
+            <ul class="ic-gear-spells"><li v-for="(x, i) in spells" :key="i"><EntryLink :id="x.spell" /><span class="muted">{{ howCast(x) }}</span></li></ul>
+          </template>
+        </div>
       </div>
       <dl v-if="rows.length" class="ic-stats">
         <template v-for="[k, v] in rows" :key="k"><dt>{{ k }}</dt><dd>{{ v }}</dd></template>

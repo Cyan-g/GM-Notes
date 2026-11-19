@@ -13,6 +13,7 @@ import ListInput from '../components/edit/ListInput.vue'
 import BodyEditor from '../components/edit/BodyEditor.vue'
 import CharacterSheet from '../components/CharacterSheet.vue'
 import SpellForm from '../components/edit/SpellForm.vue'
+import ItemForm from '../components/edit/ItemForm.vue'
 import CreatureForm from '../components/edit/CreatureForm.vue'
 import StatblockView from '../components/Statblock.vue'
 import RelationsEditor from '../components/edit/RelationsEditor.vue'
@@ -114,6 +115,7 @@ function remove() {
         <template v-else-if="sheet">
           <section class="card sheet-form">
             <SpellForm v-if="e.type === 'spell'" :entry="e" />
+            <ItemForm v-else-if="e.type === 'item'" :entry="e" />
             <div v-else class="sheet-grid">
               <!-- Short fields in two columns, then the yes/no toggles, then the full-width ones. -->
               <label v-for="f in sheetFields.filter(x => !['bool', 'list', 'longtext'].includes(x.kind))" :key="f.key" class="sheet-field" :class="'k-' + f.kind">
@@ -121,7 +123,7 @@ function remove() {
                 <FieldInput :id="`f-${f.key}`" :def="f" :entry="e" />
               </label>
               <div v-if="sheetBools.length" class="sheet-field">
-                <span>{{ e.type === 'item' ? 'Properties' : 'Options' }}</span>
+                <span>Options</span>
                 <div class="seg wrap">
                   <button v-for="f in sheetBools" :key="f.key" type="button" :class="{ on: !!byKey(e.fields)[f.key] }" @click="toggleBool(f.key)">{{ f.label }}</button>
                 </div>
@@ -137,8 +139,8 @@ function remove() {
               <BodyEditor compact :model-value="String(e.fields.summary ?? '')" :hint="e.name" @update:model-value="setSummary" />
             </div>
           </section>
-          <details class="sheet-notes" :open="!!e.body.trim()">
-            <summary>Text <span class="muted small">(under the card)</span></summary>
+          <details class="sheet-notes" :class="{ empty: !e.body.trim() }" :open="!!e.body.trim()">
+            <summary>Text <span class="muted small">(under the card{{ e.body.trim() ? '' : ', none yet' }})</span></summary>
             <BodyEditor :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
           </details>
         </template>

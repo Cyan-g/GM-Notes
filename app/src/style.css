@@ -1304,3 +1304,27 @@ h1 .icon svg.gi { color: var(--accent); }
 .eq-charges .link-btn { padding: 0 .25rem; }
 .sbk-items { margin-top: 1rem; }
 .sbk-items tr.dim td { opacity: .55; }
+
+/* The item Edit form (ItemForm.vue): sections with a heading, optional features added from the bar at the bottom. */
+.item-form { display: flex; flex-direction: column; }
+.if-section { padding: .2rem 0 1rem; border-bottom: 1px solid var(--line); margin-bottom: .9rem; }
+.if-section h4 { margin: 0 0 .6rem; font: 600 .95rem var(--serif); font-variant: small-caps; color: var(--accent); display: flex; align-items: baseline; gap: .5rem; }
+.if-close { margin-left: auto; font-size: 13px; opacity: .6; }
+.if-close:hover { opacity: 1; }
+.if-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem 1.2rem; }
+@media (max-width: 900px) { .if-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .if-grid { grid-template-columns: minmax(0, 1fr); } }
+.if-grid .sheet-field > select, .if-grid .sheet-field > input, .if-grid .sheet-field > .money-input { max-width: none; width: 100%; }
+.if-wide { margin-top: .7rem; display: flex; flex-direction: column; gap: .25rem; }
+.if-bools { margin-top: .7rem; }
+.if-add { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 1rem; }
+/* One line per effect or spell. */
+.item-form .effect-row { flex-wrap: nowrap; }
+.item-form .effect-row > .picker { flex: 0 0 15rem; }
+.item-form .effect-row select { flex: 0 0 auto; }
+.item-form .effect-row .effect-say { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-form .effects-input > .picker { width: 15rem; }
+@media (max-width: 700px) { .item-form .effect-row { flex-wrap: wrap; } }
+/* Text under the card: a quiet line while it's empty. */
+.sheet-notes.empty:not([open]) > summary { font: 400 13px var(--sans, inherit); color: var(--muted); }
+.item-form > .if-section:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: .4rem; }

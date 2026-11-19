@@ -1486,3 +1486,4 @@ h1 > .count { font-size: 16px; }
 .qs-snippet { font-size: 13px; color: var(--muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .qs-snippet mark { background: color-mix(in srgb, var(--accent) 30%, transparent); color: var(--ink); border-radius: 3px; padding: 0 1px; }
 .qs li .icon { flex: none; width: 1.2em; text-align: center; }
+.md table td:first-child { min-width: 3.5em; }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from './components/AppIcon.vue'
 import { stage, withProgress } from './progress'
 import ProgressBar from './components/ProgressBar.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
@@ -65,8 +66,8 @@ async function readWorldFile(ev: Event) {
   startError.value = ''
   try {
     const b = JSON.parse(await file.text())
-    if (b?.format !== EXPORT_FORMAT || !Array.isArray(b.entries)) throw new Error(`${file.name} isn't a world's file. Use one made with ⚙ → Export the world.`)
-    if (b.main) throw new Error(`${file.name} holds one entry and what it links to, not a world. Start a world, then import it with ⚙ → Import from a file.`)
+    if (b?.format !== EXPORT_FORMAT || !Array.isArray(b.entries)) throw new Error(`${file.name} isn't a world's file. Use one made with Settings → Export the world.`)
+    if (b.main) throw new Error(`${file.name} holds one entry and what it links to, not a world. Start a world, then import it with Settings → Import from a file.`)
     worldFile.value = { file, from: String(b.from ?? ''), exported: String(b.exported ?? ''), entries: b.entries.length, dmText: b.dmText }
     worldStart.value = 'file'
     if (!worldName.value.trim() && b.from) worldName.value = String(b.from)
@@ -173,17 +174,17 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
   <div v-if="phase === 'ready' && state.db" class="shell">
     <TopBar @search="ui.switcher = true" />
     <div v-if="state.readOnly || state.error" class="save-banner" :class="{ err: state.conflict || !!state.error }" role="alert">
-      <span>{{ state.readOnly ? '🔒 ' + state.readOnly : '⚠ ' + state.error }}</span>
+      <span><AppIcon :ui="state.readOnly ? 'padlock' : 'warning'" /> {{ state.readOnly || state.error }}</span>
       <button @click="reload">Reload</button>
       <button v-if="state.conflict" class="danger" @click="overwrite">Overwrite with this window's version</button>
       <button v-else-if="state.error" @click="save()">Try again</button>
     </div>
     <div v-if="state.problems.some(p => p.serious) && !state.readOnly && !state.error" class="save-banner" role="status">
-      <span>⚠ The data check found {{ state.problems.filter(p => p.serious).length }} serious problem(s) in the data. Nothing was changed.</span>
+      <span><AppIcon ui="warning" /> The data check found {{ state.problems.filter(p => p.serious).length }} serious problem(s) in the data. Nothing was changed.</span>
       <a class="button" href="#/data">Show them</a>
     </div>
     <div v-if="syncStatus.note || syncStatus.error" class="save-banner" :class="{ 'update-banner': !syncStatus.error }" role="status">
-      <span>{{ syncStatus.error ? '⚠ ' + syncStatus.error : '✓ ' + syncStatus.note }}</span>
+      <span><template v-if="syncStatus.error"><AppIcon ui="warning" /> {{ syncStatus.error }}</template><template v-else>✓ {{ syncStatus.note }}</template></span>
       <button v-if="syncStatus.error" :disabled="syncStatus.busy" @click="checkShared(true)">Try again</button>
       <button @click="syncStatus.note = ''; syncStatus.error = ''">OK</button>
     </div>
@@ -197,8 +198,8 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <button @click="state.converted = null">OK</button>
     </div>
     <div v-if="update" class="save-banner update-banner" role="status">
-      <template v-if="update.state === 'ready'"><span>⬆ GM Notes {{ update.version }} is downloaded.</span><button class="primary" @click="installUpdate">Restart and update</button></template>
-      <template v-else><span>⬆ GM Notes {{ update.version }} is out.</span><button class="primary" @click="desktop!.open(update.url!)">Download</button></template>
+      <template v-if="update.state === 'ready'"><span><AppIcon ui="upgrade" /> GM Notes {{ update.version }} is downloaded.</span><button class="primary" @click="installUpdate">Restart and update</button></template>
+      <template v-else><span><AppIcon ui="upgrade" /> GM Notes {{ update.version }} is out.</span><button class="primary" @click="desktop!.open(update.url!)">Download</button></template>
       <button @click="update = null">Later</button>
     </div>
     <main class="main">
@@ -250,14 +251,14 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
           <button type="button" class="start-choice" :class="{ on: worldStart === 'file' }" role="radio" :aria-checked="worldStart === 'file'" @click="pickWorldFile">
             <b>From a file…</b>
             <span v-if="worldFile" class="muted small"><b>{{ worldFile.file.name }}</b>: {{ worldFile.from || 'a world' }}, {{ worldFile.entries }} entries{{ worldFile.exported ? `, exported ${new Date(worldFile.exported).toLocaleDateString()}` : '' }}{{ worldFile.dmText === false ? ', without DM-only text' : '' }}. Click to pick another.</span>
-            <span v-else class="muted small">A world's file, made with ⚙ → Export the world: its entries, lists, calendar and pictures, nothing else.</span>
+            <span v-else class="muted small">A world's file, made with Settings → Export the world: its entries, lists, calendar and pictures, nothing else.</span>
           </button>
           <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="readWorldFile" />
         </div>
         <div class="start-mode" role="radiogroup" aria-label="Who are you">
           <label><input type="radio" :checked="worldMode === 'dm'" @change="modePicked = 'dm'" /> I'm the DM</label>
           <label><input type="radio" :checked="worldMode === 'player'" @change="modePicked = 'player'" /> I'm a player</label>
-          <span class="muted small">⚙ → DM mode switches later.</span>
+          <span class="muted small">Settings → DM mode switches later.</span>
         </div>
         <button class="primary" @click="startWorld">Start the new world</button>
         <button v-if="desktop" @click="choose">Choose another folder…</button>

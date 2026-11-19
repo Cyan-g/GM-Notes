@@ -113,11 +113,11 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
       <h1><span class="icon"><AppIcon ui="combat" /></span>Combat <span v-if="t.round" class="count">round {{ t.round }}</span></h1>
       <span v-if="encounter" class="muted"><EntryLink :id="encounter.id" icon /></span>
       <span class="spacer" />
-      <button v-if="t.combatants.length" title="Roll d20 + Dex for every monster without an initiative" @click="rollInitiative()">🎲 Roll for monsters</button>
+      <button v-if="t.combatants.length" title="Roll d20 + Dex for every monster without an initiative" @click="rollInitiative()"><AppIcon ui="dice" /> Roll for monsters</button>
       <button v-if="t.combatants.length" class="danger" title="End the fight: monsters go, player characters stay, keeping the HP on their sheets" @click="clearAll">Clear</button>
       <div class="cal-nav">
         <button title="Previous turn (P)" :disabled="t.turn < 0" @click="nextTurn(-1)">◀</button>
-        <button class="primary" title="Next turn (N or Space)" :disabled="!t.combatants.length" @click="nextTurn()">{{ t.turn < 0 ? '⚔ Start combat' : 'Next ▶' }}</button>
+        <button class="primary" title="Next turn (N or Space)" :disabled="!t.combatants.length" @click="nextTurn()"><template v-if="t.turn < 0"><AppIcon ui="combat" /> Start combat</template><template v-else>Next ▶</template></button>
       </div>
     </header>
 
@@ -158,7 +158,7 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
 
     <div class="sides">
       <section class="side-col">
-        <h2 class="side-title">🛡 Party &amp; allies <span class="muted small">{{ party.length }}</span></h2>
+        <h2 class="side-title"><AppIcon ui="shield" /> Party &amp; allies <span class="muted small">{{ party.length }}</span></h2>
         <CombatantCard v-for="c in party" :key="c.id" :c="c" :current="current(c)" :selected="selected === c.id" @select="selected = c.id" @stats="shown = c.id" />
         <!-- Adding: a big card while the side is empty, a slim one under the fighters after. -->
         <div class="card side-add" :class="{ slim: party.length }">
@@ -172,7 +172,7 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
         </div>
       </section>
       <section class="side-col enemies">
-        <h2 class="side-title">☠ Enemies <span v-if="enemies.length" class="muted small">{{ enemies.filter(c => stripState(c) !== 'down').length }} / {{ enemies.length }} standing</span></h2>
+        <h2 class="side-title"><AppIcon ui="skull" /> Enemies <span v-if="enemies.length" class="muted small">{{ enemies.filter(c => stripState(c) !== 'down').length }} / {{ enemies.length }} standing</span></h2>
         <CombatantCard v-for="c in enemies" :key="c.id" :c="c" :current="current(c)" :selected="selected === c.id" @select="selected = c.id" @stats="shown = c.id" />
         <div class="card side-add" :class="{ slim: enemies.length }">
           <label><span>Encounter</span><EntryPicker :model-value="t.encounter ?? null" :types="['encounter']" placeholder="Load an encounter…" @update:model-value="load" /></label>

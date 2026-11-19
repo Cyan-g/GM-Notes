@@ -6,6 +6,7 @@
 // On the Edit page (`build`) it also opens what's set when building the character: classes and their levels
 // (multiclassing), max HP, AC, speed, scores, proficiencies, spellcasting and features.
 // Hit dice come from the classes, one pool per die size, each spent on its own.
+import AppIcon from './AppIcon.vue'
 import ConditionIcon from './ConditionIcon.vue'
 import { computed, ref } from 'vue'
 import type { CharacterSheet, ClassLine, Entry, Proficiencies } from '../model/types'
@@ -185,10 +186,10 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <label v-if="!classes.length" class="cs-stat"><span>Level</span><input type="number" min="1" max="20" :value="pc.fields.level ?? ''" placeholder="1" :disabled="locked" @change="setLevel" /></label>
       <div v-else class="cs-stat" :title="classLabel"><span>Level</span><b>{{ level }}</b></div>
       <div class="cs-stat"><span>Proficiency</span><b>{{ signed(prof) }}</b></div>
-      <div class="cs-stat cs-ac tip" :class="{ warn: ac.untrained.length }" :data-tip="ac.from + (ac.untrained.length ? ` — not proficient with ${ac.untrained.join(', ')}: disadvantage on STR and DEX rolls, no spellcasting` : '')"><span>Armor class<template v-if="ac.untrained.length"> ⚠</template></span><b :class="{ 'gear-mod': gt.ac.length }">{{ ac.ac }}</b>
+      <div class="cs-stat cs-ac tip" :class="{ warn: ac.untrained.length }" :data-tip="ac.from + (ac.untrained.length ? ` — not proficient with ${ac.untrained.join(', ')}: disadvantage on STR and DEX rolls, no spellcasting` : '')"><span>Armor class<template v-if="ac.untrained.length"> <AppIcon ui="warning" /></template></span><b :class="{ 'gear-mod': gt.ac.length }">{{ ac.ac }}</b>
         <input v-if="build" class="cs-mini" type="number" :value="s.acOverride ?? ''" placeholder="auto" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></div>
       <label class="cs-stat" :class="{ tip: gt.speed.length }" :data-tip="breakdown(`${s.speed ?? '30 ft'} without gear`, gt.speed)"><span :class="{ 'gear-mod': gt.speed.length }">Speed</span><input :value="(locked ? speedOf(s) : s.speed) ?? ''" placeholder="30 ft" :disabled="locked" @change="edit(x => x.speed = text($event))" /></label>
-      <button v-if="!build" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" title="Inspiration" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>Inspiration</span><b>{{ s.inspiration ? '★' : '☆' }}</b></button>
+      <button v-if="!build" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" title="Inspiration" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>Inspiration</span><b><AppIcon ui="star" :class="{ off: !(s.inspiration) }" /></b></button>
     </div>
 
     <div class="cs-hp-cards">
@@ -260,7 +261,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         <template v-if="build">
         <h4>Attacks</h4>
         <table v-if="atks.length" class="cs-attacks">
-          <tr v-for="a in atks" :key="a.id"><td><button class="link-btn cs-item" @click="showItem(a.id)">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> ⚠</span></td><td><b :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td><td>{{ a.damage }} <span class="muted small">{{ a.type }}</span></td></tr>
+          <tr v-for="a in atks" :key="a.id"><td><button class="link-btn cs-item" @click="showItem(a.id)">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> <AppIcon ui="warning" /></span></td><td><b :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td><td>{{ a.damage }} <span class="muted small">{{ a.type }}</span></td></tr>
         </table>
         <p v-else class="muted small">Equip a weapon in the inventory to see its attack here.</p>
         </template>

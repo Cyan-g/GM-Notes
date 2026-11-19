@@ -58,7 +58,7 @@ export const DASHBOARDS: Dashboard[] = [
     ],
   },
   {
-    id: 'recent', title: 'Recently edited', icon: '🕘', views: [
+    id: 'recent', title: 'Recently edited', icon: '🕘', uiIcon: 'history', views: [
       { name: 'Last 50 changes', filter: () => true, cols: ['@type', '@updated'], facets: ['@type'], sort: { key: '@updated', dir: 1 }, limit: 50 },
     ],
   },

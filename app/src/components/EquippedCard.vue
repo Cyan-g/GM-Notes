@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // A character's side card: what they wear and wield, and their three attunement slots.
 // Each item has a button to take it off (or end the attunement); it also opens in a pop-up.
+import AppIcon from './AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Entry, InventoryLine } from '../model/types'
 import { get, state } from '../store'
@@ -82,8 +83,8 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
     <ul v-if="worn.length || wielded.length || other.length" class="rel">
       <li v-for="x in [...worn, ...wielded, ...other]" :key="x.i" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'equipped')" @dragend="endDrag">
         <button class="link-btn cs-item" @click="shown = x.i">{{ x.e!.name }}</button>
-        <span v-if="untrained(x)" class="cs-untrained" :title="x.e!.fields.kind === 'Weapon' ? 'Not proficient: no proficiency bonus to hit' : 'Not proficient: disadvantage on STR and DEX rolls, no spellcasting'">⚠</span>
-        <span v-if="unfit(x)" class="cs-untrained tip" :data-tip="unfit(x)">⚠</span>
+        <span v-if="untrained(x)" class="cs-untrained" :title="x.e!.fields.kind === 'Weapon' ? 'Not proficient: no proficiency bonus to hit' : 'Not proficient: disadvantage on STR and DEX rolls, no spellcasting'"><AppIcon ui="warning" /></span>
+        <span v-if="unfit(x)" class="cs-untrained tip" :data-tip="unfit(x)"><AppIcon ui="warning" /></span>
         <span class="role">{{ label(x) }}</span>
         <button v-if="!ro" class="link-btn eq-off" :title="`Take off ${x.e!.name} (it stays in the inventory)`" @click="off(x.i, 'equipped')">Unequip</button>
       </li>
@@ -97,7 +98,7 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
       <li v-for="(x, n) in slots" :key="n" :class="{ empty: !x, over: n >= ATTUNE_SLOTS }">
         <button v-if="x" class="link-btn cs-item" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'attuned')" @dragend="endDrag" @click="shown = x.i">{{ x.e!.name }}</button>
         <span v-else class="muted small">empty</span>
-        <span v-if="x && unfit(x)" class="cs-untrained tip" :data-tip="unfit(x)">⚠</span>
+        <span v-if="x && unfit(x)" class="cs-untrained tip" :data-tip="unfit(x)"><AppIcon ui="warning" /></span>
         <button v-if="x && !ro" class="link-btn eq-off" :title="`End the attunement to ${x.e!.name} (it stays in the inventory)`" @click="off(x.i, 'attuned')">Unattune</button>
       </li>
     </ol>
@@ -108,7 +109,7 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
         <li v-for="g in active" :key="g.i"><b>{{ g.name }}</b> <span class="muted">{{ g.says }}</span>
           <span v-if="g.max" class="eq-charges tip" :data-tip="`Charges left${g.recharge ? '; regains ' + g.recharge : ''}`">
             <button class="link-btn" :disabled="ro || !g.left" title="Spend a charge" @click="charge(g.i, (g.left ?? 0) - 1)">−</button>
-            ⚡ {{ g.left }} / {{ g.max }}
+            <AppIcon ui="charges" /> {{ g.left }} / {{ g.max }}
             <button class="link-btn" :disabled="ro || g.left === g.max" title="Get a charge back" @click="charge(g.i, (g.left ?? 0) + 1)">＋</button>
           </span>
         </li>

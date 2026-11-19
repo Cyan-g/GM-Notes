@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The ⚙ menu at the top right: the theme (colours, heading and text fonts), exporting the world and importing a shared file,
 // and data & backups. The button shows when the last backup copy is overdue.
+import AppIcon from './AppIcon.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { playerMode, setMode, state } from '../store'
 import { daysSince } from '../backup'
@@ -50,19 +51,19 @@ onUnmounted(() => { document.removeEventListener('pointerdown', outside); window
   <div ref="root" class="theme-menu">
     <button class="theme-btn" :class="{ open: !!open, warn: overdue }" :aria-expanded="!!open" aria-haspopup="menu"
             :title="overdue ? `Theme, import, data & backups. ${backupAge == null ? 'No backup copy yet' : `Last backup copy ${backupAge} days ago`}` : 'Theme, import, data & backups'"
-            @click="toggle">⚙<span v-if="overdue" class="settings-dot" /></button>
+            @click="toggle"><AppIcon ui="cog" /><span v-if="overdue" class="settings-dot" /></button>
     <div v-if="open === 'menu'" class="theme-panel settings-list" role="menu">
-      <button v-if="desktop" role="menuitem" @click="open = 'worlds'"><span>🌍</span>Switch world<span class="hint">{{ state.db?.meta.title }} ›</span></button>
-      <button role="menuitem" @click="open = 'theme'"><span>🎨</span>Theme &amp; colours<span class="hint">›</span></button>
+      <button v-if="desktop" role="menuitem" @click="open = 'worlds'"><span><AppIcon ui="world" /></span>Switch world<span class="hint">{{ state.db?.meta.title }} ›</span></button>
+      <button role="menuitem" @click="open = 'theme'"><span><AppIcon ui="palette" /></span>Theme &amp; colours<span class="hint">›</span></button>
       <label class="settings-switch" title="Off: player mode, trimmed to spells, crafting and maps, without DM-only text">
-        <span>🎲</span>DM mode
+        <span><AppIcon ui="dice" /></span>DM mode
         <input type="checkbox" role="switch" :checked="!playerMode" :disabled="!!state.readOnly" @change="setMode(($event.target as HTMLInputElement).checked ? 'dm' : 'player')" />
       </label>
-      <button v-if="desktop && !state.db?.follow" role="menuitem" @click="openPublish"><span>⇪</span>Publish for players…<span class="hint">{{ state.db?.meta.lastPublished ? 'shared folder' : 'not yet' }}</span></button>
-      <button v-if="state.db?.follow" role="menuitem" :disabled="syncStatus.busy" @click="checkShared(true)"><span>⇣</span>Check for updates<span class="hint">from {{ state.db.follow.title }}</span></button>
-      <button role="menuitem" @click="exportWorld"><span>⇩</span>Export the world…<span class="hint">{{ playerMode ? 'to share' : 'for a player' }}</span></button>
-      <button role="menuitem" @click="importFile"><span>⇪</span>Import from a file…<span class="hint">entry or world</span></button>
-      <button role="menuitem" :class="{ warn: overdue }" @click="data"><span>💾</span>Data &amp; backups
+      <button v-if="desktop && !state.db?.follow" role="menuitem" @click="openPublish"><span><AppIcon ui="share" /></span>Publish for players…<span class="hint">{{ state.db?.meta.lastPublished ? 'shared folder' : 'not yet' }}</span></button>
+      <button v-if="state.db?.follow" role="menuitem" :disabled="syncStatus.busy" @click="checkShared(true)"><span><AppIcon ui="download" /></span>Check for updates<span class="hint">from {{ state.db.follow.title }}</span></button>
+      <button role="menuitem" @click="exportWorld"><span><AppIcon ui="exportFile" /></span>Export the world…<span class="hint">{{ playerMode ? 'to share' : 'for a player' }}</span></button>
+      <button role="menuitem" @click="importFile"><span><AppIcon ui="importFile" /></span>Import from a file…<span class="hint">entry or world</span></button>
+      <button role="menuitem" :class="{ warn: overdue }" @click="data"><span><AppIcon ui="save" /></span>Data &amp; backups
         <span class="hint">{{ backupAge == null ? 'no backup copy yet' : backupAge === 0 ? 'backup copy today' : `backup copy ${backupAge} d ago` }}</span></button>
     </div>
     <div v-if="open === 'worlds'" class="theme-panel" role="dialog" aria-label="Worlds">

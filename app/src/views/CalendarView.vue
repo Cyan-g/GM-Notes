@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // A month of the world calendar: holidays, events, sessions and moon phases, plus moving "today".
+import MoonPhase from '../components/MoonPhase.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { computed, ref, watch } from 'vue'
 import type { Entry, WorldDate } from '../model/types'
@@ -49,7 +50,7 @@ const cells = computed(() => {
   const y = year.value, m = month.value
   const n = monthDays(cal.value, y, m)
   const lead = weekday(cal.value, { year: y, month: m, day: 1 })
-  const out: ({ day: number; moon: string | null } | null)[] = Array(lead).fill(null)
+  const out: ({ day: number; moon: ReturnType<typeof moonMark> } | null)[] = Array(lead).fill(null)
   for (let d = 1; d <= n; d++) out.push({ day: d, moon: moonMark(cal.value, { year: y, month: m, day: d }) })
   while (out.length % cal.value.weekdays.length) out.push(null)
   return out
@@ -82,7 +83,7 @@ const yearInput = (v: string) => { const y = Number(v); if (v.trim() && !Number.
         <button title="Previous month" @click="shift(-1)">‹</button>
         <button @click="go(href(today.year, today.month ?? 1))">Today</button>
         <button title="Next month" @click="shift(1)">›</button>
-        <a v-if="!db().follow" class="chip-btn" href="#/calendar/edit" title="Months, weekdays, moons, eras, holidays and the timeline's colours">⚙ Edit calendar</a>
+        <a v-if="!db().follow" class="chip-btn" href="#/calendar/edit" title="Months, weekdays, moons, eras, holidays and the timeline's colours"><AppIcon ui="cog" /> Edit calendar</a>
       </div>
     </header>
 
@@ -109,7 +110,7 @@ const yearInput = (v: string) => { const y = Number(v); if (v.trim() && !Number.
           <template v-for="(c, i) in cells" :key="i">
             <div v-if="!c" class="cal-cell empty" />
             <div v-else class="cal-cell" :class="{ today: same(today, year, month, c.day), sel: selected === c.day }" @click="selected = c.day">
-              <div class="cal-day"><span>{{ c.day }}</span><span v-if="c.moon" class="moon" :title="c.moon.slice(3)">{{ c.moon.slice(0, 2) }}</span></div>
+              <div class="cal-day"><span>{{ c.day }}</span><span v-if="c.moon" class="moon" :title="c.moon.name"><MoonPhase :phase="c.moon.phase" /></span></div>
               <div v-for="h in holidays.filter(h => h.day === c.day)" :key="h.name" class="cal-item holiday">{{ h.name }}</div>
               <a v-for="e in items.byDay.get(c.day) ?? []" :key="e.id" class="cal-item" :href="'#/e/' + e.id" :style="{ '--c': colorOf(e) ?? 'var(--accent-2)' }" @click.stop>{{ e.name }}</a>
             </div>
@@ -119,9 +120,9 @@ const yearInput = (v: string) => { const y = Number(v); if (v.trim() && !Number.
 
       <aside v-if="selDate" class="card day-panel">
         <h3>{{ cal.weekdays[weekday(cal, selDate)] }}, {{ formatDate(selDate) }}</h3>
-        <p v-if="moonMark(cal, selDate)" class="muted small">{{ moonMark(cal, selDate) }}</p>
+        <p v-if="moonMark(cal, selDate)" class="muted small"><MoonPhase :phase="moonMark(cal, selDate)!.phase" /> {{ moonMark(cal, selDate)!.name }}</p>
         <ul class="rel">
-          <li v-for="h in holidays.filter(h => h.day === selected)" :key="h.name">🎉 {{ h.name }}</li>
+          <li v-for="h in holidays.filter(h => h.day === selected)" :key="h.name"><AppIcon ui="holiday" /> {{ h.name }}</li>
           <li v-for="e in items.byDay.get(selected!) ?? []" :key="e.id"><EntryLink :id="e.id" icon /></li>
         </ul>
         <p v-if="!(items.byDay.get(selected!)?.length) && !holidays.some(h => h.day === selected)" class="muted small">Nothing on this day.</p>

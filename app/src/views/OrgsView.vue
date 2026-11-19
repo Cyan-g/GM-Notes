@@ -97,8 +97,8 @@ const people = computed(() => [
                 <a class="org-name" :href="hrefEntry(o.id)">{{ o.name }}</a>
                 <span v-if="o.fields.orgType" class="badge">{{ optionLabel('organization.orgType', o.fields.orgType) }}</span>
               </header>
-              <p v-if="o.fields.seat" class="org-line">📍 <EntryLink :id="o.fields.seat" /></p>
-              <p v-if="leader(o)" class="org-line">👑 <EntryLink :id="leader(o)!.id" /><span v-if="leader(o)!.role" class="muted small"> · {{ leader(o)!.role }}</span></p>
+              <p v-if="o.fields.seat" class="org-line"><TypeIcon type="place" /> <EntryLink :id="o.fields.seat" /></p>
+              <p v-if="leader(o)" class="org-line"><AppIcon ui="crown" /> <EntryLink :id="leader(o)!.id" /><span v-if="leader(o)!.role" class="muted small"> · {{ leader(o)!.role }}</span></p>
               <p class="org-line muted small">
                 {{ members(o).length }} {{ members(o).length === 1 ? 'member' : 'members' }}
                 <template v-if="ranks(o).length"> · {{ ranks(o).length }} ranks</template>
@@ -118,7 +118,7 @@ const people = computed(() => [
 
       <aside class="orgs-side">
         <section class="card">
-          <h3>👥 People</h3>
+          <h3><AppIcon ui="overview" /> People</h3>
           <ul class="rel compact">
             <li v-for="p in people" :key="p.label"><span><TypeIcon :type="p.type" /></span><a :href="p.href">{{ p.label }}</a></li>
           </ul>

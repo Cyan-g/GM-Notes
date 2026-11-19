@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The DM desk: the campaign at hand, the tools, favourites, the regions of the world
 // with their factions, the gods, peoples and subclasses, and a few links. Everything comes from the entries.
+import TypeIcon from '../components/TypeIcon.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { classText, classesOf, totalLevel } from '../model/classes'
 import { computed, ref } from 'vue'
@@ -34,12 +35,12 @@ const notes = computed(() => list('note').sort(byName))
 /** What the dashboard tiles hold (the Crafting tables aren't the Workbench). */
 const DESK_HINT: Record<string, string> = { spells: 'Tables of every spell', crafting: 'Tables of recipes, ingredients and crafting kits', armory: 'Tables of weapons, armor and other items' }
 const TOOLS = [
-  { icon: '📖', ui: 'spellbook' as const, label: 'Spellbook', href: '#/spellbook', hint: "The current character's spells and slots" },
-  { icon: '🛠', ui: 'workbench' as const, label: 'Workbench', href: '#/crafting', hint: "Craft from the current character's recipes and ingredients" },
-  { icon: '⚔', ui: 'combat' as const, label: 'Combat', href: '#/tracker', hint: 'Initiative, HP and conditions in a fight' },
-  { icon: '🗺', ui: 'atlas' as const, label: 'Atlas', href: '#/atlas' },
-  { icon: '⏳', ui: 'timeline' as const, label: 'Timeline', href: '#/atlas/timeline' },
-  { icon: '📅', ui: 'calendar' as const, label: 'Calendar', href: '#/calendar' },
+  { ui: 'spellbook' as const, label: 'Spellbook', href: '#/spellbook', hint: "The current character's spells and slots" },
+  { ui: 'workbench' as const, label: 'Workbench', href: '#/crafting', hint: "Craft from the current character's recipes and ingredients" },
+  { ui: 'combat' as const, label: 'Combat', href: '#/tracker', hint: 'Initiative, HP and conditions in a fight' },
+  { ui: 'atlas' as const, label: 'Atlas', href: '#/atlas' },
+  { ui: 'timeline' as const, label: 'Timeline', href: '#/atlas/timeline' },
+  { ui: 'calendar' as const, label: 'Calendar', href: '#/calendar' },
 ]
 
 // Player mode: the player's tools and the world, without the DM's (the fight, the armory, the lore cards).
@@ -118,14 +119,14 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
     <!-- the desk -->
     <div class="home-desk" :class="{ four: playerMode }">
       <section v-if="playerMode" class="card home-campaign">
-        <h3>🛡️ Character</h3>
+        <h3><TypeIcon type="pc" /> Character</h3>
         <ul v-if="characters.length" class="rel">
           <li v-for="c in characters" :key="c.p.id"><EntryLink :id="c.p.id" /><span class="when">{{ [c.cls, c.ac, c.hp].filter(Boolean).join(' · ') }}</span></li>
         </ul>
         <button class="chip-btn" @click="newEntry('pc')">＋ {{ characters.length ? 'Another character' : 'Your character' }}</button>
       </section>
       <section class="card home-campaign">
-        <h3>🎲 Campaign</h3>
+        <h3><TypeIcon type="campaign" /> Campaign</h3>
         <template v-if="current">
           <p class="home-current"><EntryLink :id="current.c.id" /> <span class="muted small">{{ current.sessions.length }} sessions</span></p>
           <ul class="rel">
@@ -147,7 +148,7 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
       </section>
 
       <section class="card home-tools">
-        <h3>🧰 Desk</h3>
+        <h3><AppIcon ui="desk" /> Desk</h3>
         <div class="tool-grid">
           <a v-for="d in desks" :key="d.id" class="tool" :href="hrefDashboard(d.id)" :title="DESK_HINT[d.id]"><span><AppIcon :ui="d.uiIcon" :type="d.typeIcon" :text="d.icon" /></span>{{ d.title }}</a>
           <a v-for="t in tools" :key="t.href" class="tool" :href="t.href" :title="'hint' in t ? t.hint : undefined"><span><AppIcon :ui="t.ui" /></span>{{ t.label }}</a>
@@ -159,7 +160,7 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
       </section>
 
       <section class="card favourites">
-        <h3>★ Favourites</h3>
+        <h3><AppIcon ui="star" /> Favourites</h3>
         <ul v-if="favourites.length" class="rel">
           <li v-for="e in favourites" :key="e.id">
             <EntryLink :id="e.id" icon />
@@ -167,8 +168,8 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
             <button class="link-btn unfav" title="Remove from favourites" @click="toggleFavourite(e.id)">✕</button>
           </li>
         </ul>
-        <p v-else class="muted small">Star an entry with ☆ next to its Edit button (or press F on its page) to keep it here.</p>
-        <h4>🕘 Recently edited <a class="muted small" :href="hrefDashboard('recent')">more →</a></h4>
+        <p v-else class="muted small">Star an entry with <AppIcon ui="star" /> next to its Edit button (or press F on its page) to keep it here.</p>
+        <h4><AppIcon ui="history" /> Recently edited <a class="muted small" :href="hrefDashboard('recent')">more →</a></h4>
         <ul class="rel compact">
           <li v-for="e in recent" :key="e.id"><EntryLink :id="e.id" icon /><span class="when">{{ ago(e.updated) }}</span></li>
         </ul>
@@ -177,7 +178,7 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
 
     <!-- the world -->
     <section v-if="world" class="card home-regions">
-      <h3>🌍 Regions of <EntryLink :id="world.id" /> <a class="muted small" href="#/atlas">Atlas →</a></h3>
+      <h3><AppIcon ui="world" /> Regions of <EntryLink :id="world.id" /> <a class="muted small" href="#/atlas">Atlas →</a></h3>
       <div class="table-wrap">
         <table class="grid">
           <thead><tr><th>Region</th><th>Subregions</th><th>Organizations</th><th>Mapped places</th></tr></thead>
@@ -186,7 +187,7 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
               <td class="home-region"><EntryLink :id="x.r.id" /></td>
               <td><span v-for="s in x.subs" :key="s.id" class="home-tag"><EntryLink :id="s.id" /></span></td>
               <td><span v-for="o in x.orgs" :key="o.id" class="home-tag"><EntryLink :id="o.id" /><span v-if="o.fields.orgType" class="muted small"> {{ optionLabel('organization.orgType', o.fields.orgType) }}</span></span></td>
-              <td><span v-for="m in x.maps" :key="m.id" class="home-tag"><a :href="`#/map/${encodeURIComponent(m.id)}`" title="Open the map">🗺</a> <EntryLink :id="m.id" /></span></td>
+              <td><span v-for="m in x.maps" :key="m.id" class="home-tag"><a :href="`#/map/${encodeURIComponent(m.id)}`" title="Open the map"><AppIcon ui="map" /></a> <EntryLink :id="m.id" /></span></td>
             </tr>
             <tr v-if="homeless.length">
               <td class="muted">Elsewhere</td><td />
@@ -200,7 +201,7 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
     <!-- lore at hand -->
     <div class="home-lore">
       <section v-if="!playerMode" class="card">
-        <h3>✨ Major deities <a v-if="pantheon" class="muted small" :href="`#/e/${pantheon.id}`">{{ pantheon.name }} →</a></h3>
+        <h3><TypeIcon type="deity" /> Major deities <a v-if="pantheon" class="muted small" :href="`#/e/${pantheon.id}`">{{ pantheon.name }} →</a></h3>
         <ul class="rel compact">
           <li v-for="d in greater" :key="d.id"><EntryLink :id="d.id" /><span class="role">{{ epithet(d) }}</span></li>
         </ul>
@@ -208,7 +209,7 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
       </section>
 
       <section v-if="!playerMode" class="card">
-        <h3>🧝 Races <a class="muted small" :href="hrefList('race')">all →</a></h3>
+        <h3><TypeIcon type="race" /> Races <a class="muted small" :href="hrefList('race')">all →</a></h3>
         <p class="home-inline"><span v-for="r in races" :key="r.id" class="home-tag"><EntryLink :id="r.id" /></span></p>
         <template v-if="subclasses.length">
           <h4>Subclasses</h4>
@@ -217,14 +218,14 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
       </section>
 
       <section class="card home-links">
-        <h3>🔗 Links <button class="link-btn" :title="adding ? 'Cancel' : 'Add a link'" @click="adding = !adding">{{ adding ? '×' : '＋' }}</button></h3>
+        <h3><AppIcon ui="link" /> Links <button class="link-btn" :title="adding ? 'Cancel' : 'Add a link'" @click="adding = !adding">{{ adding ? '×' : '＋' }}</button></h3>
         <ul v-if="links.length" class="rel compact">
           <li v-for="(l, i) in links" :key="l.url + i">
             <a :href="l.url" target="_blank" rel="noopener">{{ l.label }}</a>
             <button class="link-btn unfav" title="Remove this link" @click="removeLink(i)">✕</button>
           </li>
         </ul>
-        <p v-else-if="!adding" class="muted small">Web pages you keep at hand, like a watch-together room. Entries go in ★ Favourites.</p>
+        <p v-else-if="!adding" class="muted small">Web pages you keep at hand, like a watch-together room. Entries go in <AppIcon ui="star" /> Favourites.</p>
         <form v-if="adding" class="home-link-form" @submit.prevent="addLink">
           <input v-model="newLabel" placeholder="Name (optional)" />
           <input v-model="newUrl" placeholder="https://…" required />

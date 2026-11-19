@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The known worlds, to open one, start a new one or open a world's folder. Shown in ⚙ → Switch world, under the
 // world's name at the top left, and on the start screen.
+import AppIcon from './AppIcon.vue'
 import { onMounted, ref } from 'vue'
 import { forgetWorld, joinWorld, loadWorlds, newWorld, openWorldFolder, switchWorld, worlds } from '../worlds'
 import { desktop } from '../storage/desktop'
@@ -51,7 +52,7 @@ async function create() {
     </div>
     <div v-else class="world-actions">
       <button type="button" @click="naming = true">＋ New world…</button>
-      <button type="button" title="A world your DM publishes in a shared folder (e.g. Google Drive)" @click="scan">⇣ Join a shared world…</button>
+      <button type="button" title="A world your DM publishes in a shared folder (e.g. Google Drive)" @click="scan"><AppIcon ui="download" /> Join a shared world…</button>
       <button type="button" @click="openWorldFolder">Open a world folder…</button>
     </div>
   </div>

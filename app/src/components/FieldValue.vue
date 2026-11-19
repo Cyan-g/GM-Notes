@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Shows one schema field of an entry, read-only.
+import AppIcon from './AppIcon.vue'
 import { computed } from 'vue'
 import type { FieldDef } from '../model/schema'
 import type { Entry, RecipeLine, StockLine, WorldDate } from '../model/types'
@@ -67,7 +68,7 @@ const stock = computed(() => {
       </tbody>
       <tfoot>
         <tr><td colspan="3">Ingredient cost{{ recipe.known ? '' : ' (some prices unknown)' }}</td><td class="num">{{ formatMoney(recipe.total) }}</td></tr>
-        <tr class="craft-time" :title="CRAFTING_RULE"><td colspan="3">⏳ Crafting time</td><td class="num">{{ craftingTime(entry.fields.value) || '—' }}</td></tr>
+        <tr class="craft-time" :title="CRAFTING_RULE"><td colspan="3"><AppIcon ui="timeline" /> Crafting time</td><td class="num">{{ craftingTime(entry.fields.value) || '—' }}</td></tr>
       </tfoot>
     </table>
   </template>

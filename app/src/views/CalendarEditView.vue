@@ -9,7 +9,7 @@ import { computed, reactive, ref } from 'vue'
 import type { Calendar, Database, WorldDate } from '../model/types'
 import { SCHEMA, byKey } from '../model/schema'
 import { db, entries, formatDate, listOptions, state, touch } from '../store'
-import { ERA_START, dayNumber, eraShort, monthDays, moonPhase } from '../calendar'
+import { ERA_START, dayNumber, eraShort, monthDays, moonPhase, PHASE_NAMES } from '../calendar'
 import { go, hrefEntry } from '../router'
 
 type Category = Database['meta']['eventCategories'][number]
@@ -23,7 +23,7 @@ const cal = reactive<Draft>(clone(old))
 /** Each month remembers its number before editing, so dates can follow it. */
 cal.months.forEach((m, i) => { m.from = i + 1 })
 cal.eras.sort((a, b) => a.fromYear - b.fromYear)
-const PHASES = ['🌑 New moon', '🌒 Waxing crescent', '🌓 First quarter', '🌔 Waxing gibbous', '🌕 Full moon', '🌖 Waning gibbous', '🌗 Last quarter', '🌘 Waning crescent']
+const PHASES = PHASE_NAMES
 /** Today's weekday, and per moon today's exact phase (0–1) plus the eighth picked here (null: left as it is). */
 const todayWeekday = ref(Math.max(0, ((old.firstWeekDay + dayNumber(old, today.value)) % (old.weekdays.length || 7) + (old.weekdays.length || 7)) % (old.weekdays.length || 7)))
 const phases = reactive(cal.moons.map((_, i) => ({ exact: moonPhase(old, today.value, i) ?? 0, picked: null as number | null })))

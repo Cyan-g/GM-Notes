@@ -155,8 +155,8 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
     <header class="list-head">
       <h1 v-if="!pc"><span class="icon"><AppIcon ui="spellbook" /></span>Spellbook<span v-if="owner" class="head-of">of <EntryLink :id="owner.id" /></span></h1>
       <div class="row-btns">
-        <button v-if="hasShort" title="Pact slots and once-per-short-rest item spells back" @click="shortRest">☕ Short rest</button>
-        <button :title="owner ? 'Full HP, every spell slot and half the hit dice back' : 'Every spell slot back'" @click="rest">🌙 {{ owner ? 'Long rest' : 'Restore spell slots' }}</button>
+        <button v-if="hasShort" title="Pact slots and once-per-short-rest item spells back" @click="shortRest"><AppIcon ui="shortRest" /> Short rest</button>
+        <button :title="owner ? 'Full HP, every spell slot and half the hit dice back' : 'Every spell slot back'" @click="rest"><AppIcon ui="longRest" /> {{ owner ? 'Long rest' : 'Restore spell slots' }}</button>
         <button @click="newEntry('spell')">＋ New spell</button>
       </div>
     </header>
@@ -246,7 +246,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
             <tr v-for="e in preparedList" :key="e.id" :class="{ dragging: dragging?.id === e.id }" draggable="true"
                 title="Drag back to Known spells to unprepare" @dragstart="dragStart($event, e.id, 'prepared')" @dragend="dragEnd">
               <td>
-                <button class="link-btn always" :class="{ on: book.always.includes(e.id) }" :title="alwaysTitle(e.id)" @click="toggleAlways(e.id)">★</button>
+                <button class="link-btn always" :class="{ on: book.always.includes(e.id) }" :title="alwaysTitle(e.id)" @click="toggleAlways(e.id)"><AppIcon ui="star" /></button>
                 <a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a>
               </td>
               <td>{{ levelLabel(e) }}</td>

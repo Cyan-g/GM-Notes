@@ -2,6 +2,7 @@
 // One fighter in the initiative tracker: name, AC, initiative, an HP bar with damage and healing, the conditions in
 // effect (with rounds left), concentration saves to roll and, for a party member at 0 HP, death saves.
 // A player character's AC, initiative bonus and HP are their sheet's.
+import AppIcon from './AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Combatant } from '../model/types'
 import { touch } from '../store'
@@ -115,9 +116,9 @@ function switchSide() { c.value.side = isParty(c.value) ? 'enemy' : 'party'; tou
         </span>
       </div>
       <input v-model="amount" class="hp-amount" placeholder="dmg / heal" title="Amount. Enter = damage; or type +5 heal, =20 set, t5 temporary" @click.stop @focus="selectAll" @keydown.enter="hp('')" />
-      <button type="button" class="hp-btn dmg" title="Damage" @click.stop="hp('-')">🗡</button>
+      <button type="button" class="hp-btn dmg" title="Damage" @click.stop="hp('-')"><AppIcon ui="dagger" /></button>
       <button type="button" class="hp-btn heal" title="Heal" @click.stop="hp('+')">✚</button>
-      <button type="button" class="hp-btn tmp" title="Temporary HP" @click.stop="hp('t')">🛡</button>
+      <button type="button" class="hp-btn tmp" title="Temporary HP" @click.stop="hp('t')"><AppIcon ui="shield" /></button>
     </div>
 
     <div v-if="dying" class="death-saves" @click.stop>
@@ -133,7 +134,7 @@ function switchSide() { c.value.side = isParty(c.value) ? 'enemy' : 'party'; tou
     </div>
 
     <div v-for="(dc, i) in c.concChecks ?? []" :key="'cc' + i" class="conc-check" @click.stop>
-      <span>🎯 Concentration: <b>CON save DC {{ dc }}</b></span>
+      <span><ConditionIcon name="Concentrating" /> Concentration: <b>CON save DC {{ dc }}</b></span>
       <button type="button" class="chip-btn" @click="concDone(i, true)">Kept</button>
       <button type="button" class="chip-btn" @click="concDone(i, false)">Lost</button>
     </div>

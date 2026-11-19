@@ -13,11 +13,6 @@ export const CLASS_DIE: Record<string, string> = {
   Sorcerer: 'd6', Wizard: 'd6',
 }
 export const DICE = ['d12', 'd10', 'd8', 'd6']
-/** A character's icon by their main class. */
-export const CLASS_ICON: Record<string, string> = {
-  Artificer: '⚙️', Barbarian: '🪓', Bard: '🎵', Cleric: '☀️', Druid: '🌿', Fighter: '⚔️', Monk: '👊', Paladin: '🛡️',
-  Ranger: '🏹', Rogue: '🗡️', Sorcerer: '🔥', Warlock: '👁️', Wizard: '📘',
-}
 
 /** A character's class lines (only well-formed ones). */
 export function classesOf(pc: Entry): ClassLine[] {
@@ -72,11 +67,6 @@ export function classIcon(e: Entry): { body: string; label: string } | undefined
   return svg ? { body: svg.body, label: m!.class } : undefined
 }
 
-/** An entry's icon as text: a character's by their main class, anything else by its type. */
-export function entryIcon(e: Entry): string {
-  if (e.type === 'pc') { const m = mainClass(e); if (m && CLASS_ICON[m.class]) return CLASS_ICON[m.class] }
-  return TYPES[e.type]?.icon ?? ''
-}
 
 /**
  * Class lines from the old free text ("Warlock/Fighter", "Druid and Cleric"): each name as the class list's option

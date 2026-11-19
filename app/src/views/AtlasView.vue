@@ -99,7 +99,7 @@ const seat = (o: Entry) => o.fields.seat
           <p class="atlas-today"><a href="#/calendar">{{ formatDate(today) }}</a></p>
           <ul v-if="upcoming.length" class="rel">
             <li v-for="u in upcoming" :key="u.kind + u.label + u.days">
-              <span>{{ u.kind === 'holiday' ? '🎉' : '⏳' }}</span>
+              <span><AppIcon :ui="u.kind === 'holiday' ? 'holiday' : 'timeline'" /></span>
               <EntryLink v-if="u.id" :id="u.id" /><b v-else>{{ u.label }}</b>
               <span class="when">{{ inDays(u.days) }}</span>
             </li>

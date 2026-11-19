@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Markdown editor: typing [[ suggests entries, pasted or dropped pictures are saved to data/images.
+import AppIcon from '../AppIcon.vue'
 import TypeIcon from '../TypeIcon.vue'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { TYPES } from '../../model/schema'
@@ -151,8 +152,8 @@ async function onPick(ev: Event) {
       <button type="button" title="Heading" @click="linePrefix('## ')">H</button>
       <button type="button" title="List item" @click="linePrefix('- ')">•</button>
       <button type="button" title="Link to an entry (or type [[)" @click="link">[[ ]]</button>
-      <button type="button" title="DM-only block" @click="secret">🔒 Secret</button>
-      <button type="button" title="Insert picture (or paste / drop one)" @click="fileInput?.click()">🖼 Picture</button>
+      <button type="button" title="DM-only block" @click="secret"><AppIcon ui="padlock" /> Secret</button>
+      <button type="button" title="Insert picture (or paste / drop one)" @click="fileInput?.click()"><AppIcon ui="picture" /> Picture</button>
       <input ref="fileInput" type="file" accept="image/*" multiple hidden @change="onPick" />
       <span class="muted small">{{ busy }}</span>
       <span class="be-modes">

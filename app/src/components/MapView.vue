@@ -3,7 +3,7 @@
 // With `editable`, pins can be added, dragged, linked and removed, and the map's scale set.
 // Measure (travel.ts): click points or pins to lay a route; it shows the distance, the travel time at a pace or in
 // a vehicle and the arrival date, and can be saved by name to show on the map again.
-import { entryIcon } from '../model/classes'
+import AppIcon from './AppIcon.vue'
 import EntryIcon from './EntryIcon.vue'
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import type { Entry, MapRoute, MapScale, Pin } from '../model/types'
@@ -32,7 +32,6 @@ function onLoad(ev: Event) {
 
 const pins = computed<Pin[]>(() => (props.place.fields.pins) ?? [])
 const pinName = (p: Pin) => get(p.entry)?.name ?? p.label ?? 'Pin'
-const pinIcon = (p: Pin) => { const e = get(p.entry); return e ? entryIcon(e) : '📌' }
 const showLabels = ref(true)
 
 // ---- pan & zoom ----
@@ -280,7 +279,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
             :style="{ left: p.x * 100 + '%', top: p.y * 100 + '%', transform: `translate(-50%, -100%) scale(${1 / view.s})` }"
             :title="p.note ? pinName(p) + '\n' + p.note : pinName(p)"
             @pointerdown.stop="down($event, p.id)" @click="tool && $event.preventDefault()">
-            <span class="pin-head"><EntryIcon v-if="get(p.entry)" :e="get(p.entry)!" /><template v-else>📌</template></span>
+            <span class="pin-head"><EntryIcon v-if="get(p.entry)" :e="get(p.entry)!" /><template v-else><AppIcon ui="pin" /></template></span>
             <span v-if="showLabels" class="pin-label">{{ pinName(p) }}</span>
           </component>
         </template>
@@ -293,8 +292,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
       <button title="Zoom out" @click="zoomButton(1 / 1.4)">－</button>
       <button title="Fit" @click="fit">⤢</button>
       <label class="toggle"><input v-model="showLabels" type="checkbox" /> Labels</label>
-      <button v-if="url && (!banner || scale)" :class="{ primary: tool === 'measure' }" title="Measure a route: distance, travel time and arrival" @click="startMeasure">📏 Measure</button>
-      <button v-if="editable && url" :class="{ primary: tool === 'scale' }" :title="scale ? 'Scale: ' + scaleText + '. Click to set it again' : 'Set the map\'s scale from two points a known distance apart'" @click="startScale">{{ scale ? '⚖ Scale' : '⚖ Set scale' }}</button>
+      <button v-if="url && (!banner || scale)" :class="{ primary: tool === 'measure' }" title="Measure a route: distance, travel time and arrival" @click="startMeasure"><AppIcon ui="measure" /> Measure</button>
+      <button v-if="editable && url" :class="{ primary: tool === 'scale' }" :title="scale ? 'Scale: ' + scaleText + '. Click to set it again' : 'Set the map\'s scale from two points a known distance apart'" @click="startScale"><AppIcon ui="scales" /> {{ scale ? 'Scale' : 'Set scale' }}</button>
       <a v-if="!tall" :href="hrefMap(place.id)" class="small">Open large map</a>
     </div>
 
@@ -325,7 +324,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
     <div v-if="tool === 'measure' || (!banner && routes.length)" class="card map-travel">
       <template v-if="tool === 'measure'">
         <h4>Measure <span class="muted small">click the map or pins to add points</span></h4>
-        <p v-if="!scale" class="muted small">This map has no scale yet: <template v-if="editable">set one with ⚖ Set scale.</template><template v-else>set one with ✎ Edit pins → ⚖ Set scale.</template></p>
+        <p v-if="!scale" class="muted small">This map has no scale yet: <template v-if="editable">set one with <b>Set scale</b>.</template><template v-else>set one with <b>Edit pins → Set scale</b>.</template></p>
         <div class="row">
           <select v-model="draft.mode" aria-label="Pace or vehicle">
             <option v-for="m in modes" :key="m.id" :value="m.id">{{ m.label }} · {{ m.mph }} mph{{ m.allDay ? ', all day' : '' }}</option>

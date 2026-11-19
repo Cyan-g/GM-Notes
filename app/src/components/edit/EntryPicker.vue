@@ -1,6 +1,5 @@
 <script setup lang="ts">
 // Pick an entry by typing its name. Single mode shows the current pick; add mode clears after each pick.
-import { entryIcon } from '../../model/classes'
 import EntryIcon from '../EntryIcon.vue'
 import { computed, nextTick, ref, watch } from 'vue'
 import type { EntryType } from '../../model/types'

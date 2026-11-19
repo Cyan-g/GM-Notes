@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Recipe lines: any number of ingredient + amount, with live cost.
+import AppIcon from '../AppIcon.vue'
 import { computed } from 'vue'
 import type { RecipeLine } from '../../model/types'
 import { formatMoney, get } from '../../store'
@@ -34,7 +35,7 @@ function add(id: string) { emit('update:modelValue', [...lines.value, { item: id
     </tbody>
     <tfoot>
       <tr><td colspan="2">Ingredient cost</td><td class="num">{{ formatMoney(total) }}</td><td /></tr>
-      <tr class="craft-time" :title="CRAFTING_RULE"><td colspan="2">⏳ Crafting time <span v-if="!itemValue" class="muted small">(set the item's value)</span></td><td class="num">{{ craftingTime(itemValue) || '—' }}</td><td /></tr>
+      <tr class="craft-time" :title="CRAFTING_RULE"><td colspan="2"><AppIcon ui="timeline" /> Crafting time <span v-if="!itemValue" class="muted small">(set the item's value)</span></td><td class="num">{{ craftingTime(itemValue) || '—' }}</td><td /></tr>
     </tfoot>
   </table>
 </template>

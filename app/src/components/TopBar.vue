@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // The menu bar at the top: one menu per category, cascading into types and entries.
+import AppIcon from './AppIcon.vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { visibleMenus } from '../menu'
 import { db, playerMode, save, state } from '../store'
@@ -73,7 +74,7 @@ const current = computed(() => visibleMenus.value.findIndex(m => m.owns(route.cu
       <button v-if="desktop" class="brand" :aria-expanded="worldsOpen" aria-haspopup="dialog" title="Home and your worlds" @click="worldsOpen = !worldsOpen">{{ db().meta.title }} <span class="brand-caret">▾</span></button>
       <a v-else class="brand" href="#/">{{ db().meta.title }}</a>
       <div v-if="worldsOpen" class="theme-panel brand-panel" role="dialog" aria-label="Home and worlds">
-        <a class="brand-home" href="#/" @click="worldsOpen = false">🏠 Home of {{ db().meta.title }}</a>
+        <a class="brand-home" href="#/" @click="worldsOpen = false"><AppIcon ui="home" /> Home of {{ db().meta.title }}</a>
         <h4>Worlds</h4>
         <WorldList @done="worldsOpen = false" />
       </div>
@@ -92,13 +93,13 @@ const current = computed(() => visibleMenus.value.findIndex(m => m.owns(route.cu
       <button class="search-btn" @click="$emit('search')"><span>Search…</span><kbd>Ctrl K</kbd></button>
       <button class="new-btn" title="New entry" @click="newEntry()">＋</button>
       <span class="save-status" :class="{ err: !!state.error }">
-        <template v-if="state.readOnly"><span :title="state.readOnly">🔒 Not saving</span></template>
-        <template v-else-if="state.error">⚠ Not saved <button class="link-btn" :title="state.error" @click="save()">Retry</button></template>
+        <template v-if="state.readOnly"><span :title="state.readOnly"><AppIcon ui="padlock" /> Not saving</span></template>
+        <template v-else-if="state.error"><AppIcon ui="warning" /> Not saved <button class="link-btn" :title="state.error" @click="save()">Retry</button></template>
         <template v-else-if="state.saving">Saving…</template>
         <template v-else-if="state.dirty">Unsaved…</template>
         <template v-else-if="state.savedAt">✓ Saved</template>
       </span>
-      <button class="mode-tag" :title="`${playerMode ? 'Player' : 'DM'} mode: switch it in ⚙`" @click.stop="settingsMenu?.toggle()">{{ playerMode ? 'Player mode' : 'DM mode' }}</button>
+      <button class="mode-tag" :title="`${playerMode ? 'Player' : 'DM'} mode: switch it in Settings`" @click.stop="settingsMenu?.toggle()">{{ playerMode ? 'Player mode' : 'DM mode' }}</button>
       <SettingsMenu ref="settingsMenu" />
     </div>
   </header>

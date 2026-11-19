@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // An entry's earlier versions (kept by the database at most every 10 minutes of editing, the last 40):
 // see what it said, and go back to one. Going back is itself a change, so it can be undone the same way.
+import AppIcon from './AppIcon.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { Entry } from '../model/types'
 import type { Version } from '../storage/backend'
@@ -53,7 +54,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true))
   <div class="modal-back" @mousedown.self="emit('close')">
     <div class="modal history-modal" role="dialog" :aria-label="`Earlier versions of ${entry.name}`">
       <header class="modal-head">
-        <h2>🕘 {{ entry.name }}: earlier versions</h2>
+        <h2><AppIcon ui="history" /> {{ entry.name }}: earlier versions</h2>
         <span class="spacer" />
         <button class="x" title="Close (Esc)" @click="emit('close')">×</button>
       </header>

@@ -82,19 +82,19 @@ export function moonPhase(cal: Calendar, d: WorldDate, moon = 0): number | null 
   return (p + 1) % 1
 }
 
-const MOON_ICONS = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘']
-export const moonIcon = (phase: number) => MOON_ICONS[Math.round(phase * 8) % 8]
+/** The names of the eight phases, from new moon on (an eighth of the cycle each). */
+export const PHASE_NAMES = ['New moon', 'Waxing crescent', 'First quarter', 'Waxing gibbous', 'Full moon', 'Waning gibbous', 'Last quarter', 'Waning crescent']
 
-/** Only mark the four main phases, on the day closest to them. */
-export function moonMark(cal: Calendar, d: WorldDate): string | null {
+/** Only mark the four main phases, on the day closest to them (drawn by MoonPhase.vue). */
+export function moonMark(cal: Calendar, d: WorldDate): { phase: number; name: string } | null {
   const m = cal.moons[0]
   if (!m) return null
   const p = moonPhase(cal, d)!
   const step = 1 / m.cycle
-  for (const [target, icon, name] of [[0, '🌑', 'New moon'], [0.25, '🌓', 'First quarter'], [0.5, '🌕', 'Full moon'], [0.75, '🌗', 'Last quarter']] as const) {
+  for (const [target, name] of [[0, 'New moon'], [0.25, 'First quarter'], [0.5, 'Full moon'], [0.75, 'Last quarter']] as const) {
     let diff = Math.abs(p - target)
     diff = Math.min(diff, 1 - diff)
-    if (diff < step / 2) return `${icon} ${name}`
+    if (diff < step / 2) return { phase: target, name }
   }
   return null
 }

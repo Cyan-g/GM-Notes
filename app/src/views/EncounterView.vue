@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // An encounter is something you prepare and then run, so it has one page that is both view and editor:
 // where and when, who fights on the party's side, and the creatures. No text, picture or relations.
+import TypeIcon from '../components/TypeIcon.vue'
+import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { EncounterLine, Id } from '../model/types'
 import { TYPES } from '../model/schema'
@@ -44,12 +46,12 @@ function remove() {
 <template>
   <article v-if="e" class="entry encounter-page">
     <header class="enc-head">
-      <span class="icon">⚔</span>
+      <span class="icon"><TypeIcon type="encounter" /></span>
       <input class="name-input" :value="e.name" aria-label="Name" @change="setName(($event.target as HTMLInputElement).value)" />
       <span class="muted small">changes save automatically</span>
       <span class="spacer" />
-      <button class="fav-btn" :class="{ on: isFavourite(e.id) }" :title="isFavourite(e.id) ? 'Remove from favourites' : 'Add to favourites'" :aria-pressed="isFavourite(e.id)" @click="toggleFavourite(e.id)">{{ isFavourite(e.id) ? '★' : '☆' }}</button>
-      <button class="export-btn" title="Earlier versions of this encounter" @click="showHistory = true">🕘 History</button>
+      <button class="fav-btn" :class="{ on: isFavourite(e.id) }" :title="isFavourite(e.id) ? 'Remove from favourites' : 'Add to favourites'" :aria-pressed="isFavourite(e.id)" @click="toggleFavourite(e.id)"><AppIcon ui="star" :class="{ off: !(isFavourite(e.id)) }" /></button>
+      <button class="export-btn" title="Earlier versions of this encounter" @click="showHistory = true"><AppIcon ui="history" /> History</button>
       <HistoryDialog v-if="showHistory" :entry="e" @close="showHistory = false" />
       <button class="danger" @click="remove">Delete</button>
       <button class="primary" :disabled="!lines.length && !party.length" title="Load it into Combat, with this party" @click="run">▶ Run</button>
@@ -63,7 +65,7 @@ function remove() {
         <label class="sheet-field"><span>Where</span><FieldInput :def="field('location')" :entry="e" /></label>
 
         <h3 class="enc-party-title">
-          <span>🛡 Party</span>
+          <span><AppIcon ui="shield" /> Party</span>
           <button v-if="campaignParty.length" type="button" class="chip-btn" :title="`Set the party to the ${campaignParty.length} player characters of the campaign`" @click="useCampaignParty">Replace with the campaign's party</button>
         </h3>
         <FieldInput :def="field('party')" :entry="e" />
@@ -72,7 +74,7 @@ function remove() {
 
       <section class="card enc-creatures">
         <h3>
-          <span>☠ Creatures</span>
+          <span><AppIcon ui="skull" /> Creatures</span>
           <span class="muted small">{{ count }} creature{{ count === 1 ? '' : 's' }} · {{ xp.toLocaleString() }} XP<template v-if="unknownXp"> · some without stats</template></span>
         </h3>
         <FieldInput :def="field('creatures')" :entry="e" />

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // A character's attacks (from what they wield) with their spellcasting numbers beside them, and their proficiencies:
 // beside the sheet between Equipped and the inventory. Read-only: these are set on the character's Edit page.
+import AppIcon from './AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Entry, Id } from '../model/types'
 import { byType, listOptions } from '../store'
@@ -34,7 +35,7 @@ const none = (k: 'armor' | 'weapons' | 'tools' | 'languages') => !profs.value[k]
         <h3>Attacks</h3>
         <table v-if="atks.length" class="cs-attacks">
           <tr v-for="a in atks" :key="a.id">
-            <td><button class="link-btn cs-item" @click="shown = a.id">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> ⚠</span></td>
+            <td><button class="link-btn cs-item" @click="shown = a.id">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> <AppIcon ui="warning" /></span></td>
             <td><b :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td>
             <td>{{ a.damage }} <span class="muted small">{{ a.type }}</span></td>
           </tr>

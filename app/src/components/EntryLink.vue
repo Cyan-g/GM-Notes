@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { entryIcon } from '../model/classes'
 import EntryIcon from './EntryIcon.vue'
 import { computed } from 'vue'
 import { get } from '../store'

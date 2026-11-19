@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '../components/AppIcon.vue'
 import { TYPES } from '../model/schema'
 import { hrefEntry } from '../router'
 // Where the data lives, copying it somewhere safe, and going back to an earlier version.
@@ -92,7 +93,7 @@ const open = (url: string) => (desktop ? desktop.open(url) : window.open(url, '_
 
 <template>
   <div class="data-view">
-    <header class="list-head"><h1><span class="icon">💾</span>Data & backups</h1></header>
+    <header class="list-head"><h1><span class="icon"><AppIcon ui="save" /></span>Data & backups</h1></header>
 
     <div class="home-grid">
       <section class="card">

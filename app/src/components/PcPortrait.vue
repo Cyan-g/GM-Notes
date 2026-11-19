@@ -5,7 +5,6 @@ import { ref } from 'vue'
 import type { Entry } from '../model/types'
 import { state } from '../store'
 import { changed, saveImage } from '../edit'
-import { entryIcon } from '../model/classes'
 import EntryIcon from './EntryIcon.vue'
 import DataImage from './DataImage.vue'
 

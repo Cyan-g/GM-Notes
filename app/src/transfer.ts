@@ -243,7 +243,7 @@ export async function readImport(file: File): Promise<ImportPlan> {
   let b: Bundle
   await stage(progress.title || 'Importing', 'Reading the file')
   try { b = JSON.parse(await file.text()) } catch { throw new Error(`${file.name} isn't a file this app can read.`) }
-  if (b?.format !== FORMAT || !Array.isArray(b.entries)) throw new Error(`${file.name} isn't an exported file. Use a file made with ⇩ Export on an entry's page, or with ⚙ → Export the world.`)
+  if (b?.format !== FORMAT || !Array.isArray(b.entries)) throw new Error(`${file.name} isn't an exported file. Use a file made with Export on an entry's page, or with Settings → Export the world.`)
   if (b.version > VERSION) throw new Error(`${file.name} was made by a newer version of the app. Update this one first.`)
   const d = db()
   const warnings: string[] = []

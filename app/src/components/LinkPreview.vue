@@ -1,6 +1,5 @@
 <script setup lang="ts">
 // Hovering a link to an entry shows a small card with what it is, without leaving the page.
-import { entryIcon } from '../model/classes'
 import EntryIcon from './EntryIcon.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { get } from '../store'

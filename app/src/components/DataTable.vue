@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // A sortable, filterable table of entries.
+import AppIcon from './AppIcon.vue'
 import { activeSpellbook, currentPc } from '../sheet'
 import { state as store, touch } from '../store'
 import SpellModal from './SpellModal.vue'
@@ -102,7 +103,7 @@ defineExpose({ count: computed(() => shown.value.length) })
         </thead>
         <tbody>
           <tr v-for="e in shown" :key="e.id">
-            <td class="name" @click.capture="open($event, e)"><EntryLink :id="e.id" :icon="e.type === 'pc'" /><span v-if="e.id === currentPc?.id" class="current-mark" title="The current character">★ current</span></td>
+            <td class="name" @click.capture="open($event, e)"><EntryLink :id="e.id" :icon="e.type === 'pc'" /><span v-if="e.id === currentPc?.id" class="current-mark" title="The current character"><AppIcon ui="star" /> current</span></td>
             <td v-for="c in columns" :key="c.key" :class="{ num: c.kind === 'money' || c.field?.kind === 'money', clip: c.field?.kind === 'longtext' }">
               <template v-if="empty(c.value(e))" />
               <FieldValue v-else-if="c.field" :def="c.field" :value="c.value(e)" :entry="e" />

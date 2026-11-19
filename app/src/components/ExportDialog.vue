@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Save an entry and everything it points at (or the whole world) as a file someone else can import.
+import AppIcon from './AppIcon.vue'
 import { withProgress } from '../progress'
 import TypeIcon from './TypeIcon.vue'
 import { computed, reactive, ref } from 'vue'
@@ -63,7 +64,7 @@ async function save() {
       <p v-if="error" class="error">{{ error }}</p>
       <div class="actions">
         <button type="button" @click="open = false">Cancel</button>
-        <button type="submit" class="primary" :disabled="busy">{{ busy ? 'Saving…' : '⇩ Save file' }}</button>
+        <button type="submit" class="primary" :disabled="busy"><template v-if="busy">Saving…</template><template v-else><AppIcon ui="exportFile" /> Save file</template></button>
       </div>
     </form>
   </div>

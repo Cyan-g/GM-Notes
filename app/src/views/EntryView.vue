@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import AppIcon from '../components/AppIcon.vue'
 import TypeIcon from '../components/TypeIcon.vue'
-import { entryIcon } from '../model/classes'
 import EntryIcon from '../components/EntryIcon.vue'
 import { NOTE_TYPES, isShared } from '../sync'
 import PlayerNotes from '../components/PlayerNotes.vue'
@@ -261,11 +260,11 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
     </nav>
     <header class="entry-head" :class="{ 'has-portrait': e.image && e.type !== 'pc' }">
       <div class="head-actions">
-        <button class="fav-btn" :class="{ on: isFavourite(e.id) }" :title="isFavourite(e.id) ? 'Remove from favourites (F)' : 'Add to favourites (F)'" :aria-pressed="isFavourite(e.id)" @click="toggleFavourite(e.id)">{{ isFavourite(e.id) ? '★' : '☆' }}</button>
-        <button class="export-btn" title="Earlier versions of this entry" @click="showHistory = true">🕘 History</button>
-        <button v-if="canExport(e)" class="export-btn" title="Save as a file to share (someone else can import it)" @click="exporting = true">⇩ Export</button>
+        <button class="fav-btn" :class="{ on: isFavourite(e.id) }" :title="isFavourite(e.id) ? 'Remove from favourites (F)' : 'Add to favourites (F)'" :aria-pressed="isFavourite(e.id)" @click="toggleFavourite(e.id)"><AppIcon ui="star" :class="{ off: !(isFavourite(e.id)) }" /></button>
+        <button class="export-btn" title="Earlier versions of this entry" @click="showHistory = true"><AppIcon ui="history" /> History</button>
+        <button v-if="canExport(e)" class="export-btn" title="Save as a file to share (someone else can import it)" @click="exporting = true"><AppIcon ui="exportFile" /> Export</button>
         <a v-if="!shared" class="button edit-btn" :href="hrefEntry(e.id, true)" title="Edit (E)">✎ Edit</a>
-        <span v-else class="badge shared-badge" :title="`Shared by your DM from ${state.db?.follow?.title}; updated from there`">⇣ from {{ state.db?.follow?.title }}</span>
+        <span v-else class="badge shared-badge" :title="`Shared by your DM from ${state.db?.follow?.title}; updated from there`"><AppIcon ui="download" /> from {{ state.db?.follow?.title }}</span>
       </div>
       <ExportDialog v-if="canExport(e)" v-model="exporting" :id="e.id" />
       <HistoryDialog v-if="showHistory" :entry="e" @close="showHistory = false" />
@@ -278,7 +277,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
           <!-- A character: whether the Spellbook, Workbench and Character menu use them. -->
           <button v-if="e.type === 'pc'" class="chip-toggle current-toggle" :class="{ on: currentPc?.id === e.id }" :disabled="!!state.readOnly"
                   :title="currentPc?.id === e.id ? 'The Spellbook, Workbench and Character menu use this character' : 'Use this character in the Spellbook, Workbench and Character menu'"
-                  @click="setCurrent(currentPc?.id === e.id ? undefined : e.id)">{{ currentPc?.id === e.id ? '★ Current character' : '☆ Make current' }}</button>
+                  @click="setCurrent(currentPc?.id === e.id ? undefined : e.id)"><AppIcon ui="star" :class="{ off: !(currentPc?.id === e.id) }" /> {{ currentPc?.id === e.id ? 'Current character' : 'Make current' }}</button>
           <span v-if="e.visibility === 'secret'" class="badge dm-only" title="Players don't know this entry yet">DM only</span>
           <span v-if="e.aliases.length" class="aliases">also: {{ e.aliases.join(' · ') }}</span>
         </div>
@@ -296,7 +295,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
     <MapView v-if="e.fields.map" :place="e" banner />
     <nav v-if="hasFamily" class="tabs entry-tabs">
       <a :href="hrefEntry(e.id)" :class="{ on: onOverview }">Overview</a>
-      <a :href="hrefFamily(e.id)" :class="{ on: onFamily }">🌳 Family tree <span v-if="familySize(e.id)" class="muted small">{{ familySize(e.id) }}</span></a>
+      <a :href="hrefFamily(e.id)" :class="{ on: onFamily }"><AppIcon ui="family" /> Family tree <span v-if="familySize(e.id)" class="muted small">{{ familySize(e.id) }}</span></a>
       <template v-if="e.type === 'pc'">
         <a :href="hrefTab(e.id, 'spellbook')" :class="{ on: onBook }"><AppIcon ui="spellbook" /> Spellbook <span v-if="e.fields.sheet?.spellbook?.prepared?.length" class="muted small">{{ e.fields.sheet.spellbook.prepared.length }}</span></a>
         <a :href="hrefTab(e.id, 'crafting')" :class="{ on: onBench }"><AppIcon ui="workbench" /> Workbench <span v-if="e.fields.sheet?.crafting?.known?.length" class="muted small">{{ e.fields.sheet.crafting.known.length }}</span></a>
@@ -314,7 +313,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         </div>
         <!-- A scroll shows the spell it holds. -->
         <section v-if="scrollSpell" class="scroll-spell">
-          <h2>🔮 <EntryLink :id="scrollSpell.id" /></h2>
+          <h2><TypeIcon type="spell" /> <EntryLink :id="scrollSpell.id" /></h2>
           <SpellCard :e="scrollSpell" />
         </section>
         <SpellCard v-if="e.type === 'spell'" :e="e" />
@@ -436,7 +435,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
 
         <div v-if="onMaps.length" class="card">
           <h3>On the map</h3>
-          <ul class="rel"><li v-for="m in onMaps" :key="m.place.id + m.pin.id"><a :href="hrefMap(m.place.id, m.pin.id)">🗺 {{ m.place.name }}</a></li></ul>
+          <ul class="rel"><li v-for="m in onMaps" :key="m.place.id + m.pin.id"><a :href="hrefMap(m.place.id, m.pin.id)"><AppIcon ui="map" /> {{ m.place.name }}</a></li></ul>
         </div>
 
         <div v-if="knownBy.length" class="card">

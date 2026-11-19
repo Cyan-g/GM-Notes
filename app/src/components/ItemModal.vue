@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // An item's card in a pop-up, so the character sheet stays where it is. Esc or a click outside closes it.
+import TypeIcon from './TypeIcon.vue'
 import { computed, onMounted, onUnmounted } from 'vue'
 import type { Id } from '../model/types'
 import { get } from '../store'
@@ -23,7 +24,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true))
   <div class="modal-back" @mousedown.self="emit('close')">
     <div v-if="e" class="modal spell-modal item-modal" role="dialog" :aria-label="e.name">
       <header class="modal-head">
-        <h2>🗡️ {{ e.name }}</h2>
+        <h2><TypeIcon type="item" /> {{ e.name }}</h2>
         <span class="spacer" />
         <slot name="actions" />
         <a class="button" :href="hrefEntry(e.id)" @click="emit('close')">Open page</a>

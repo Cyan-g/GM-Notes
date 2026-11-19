@@ -7,7 +7,7 @@ import { hierarchy, partition, type HierarchyRectangularNode } from 'd3-hierarch
 import { arc as d3arc } from 'd3-shape'
 import { childrenOf, get } from '../store'
 import { effectiveColors } from '../theme'
-import { go, hrefEntry } from '../router'
+import { go, hrefEntry, route } from '../router'
 import type { Entry, Id } from '../model/types'
 
 // `rings`: how many levels show at once (2 on place pages, more on the Atlas).
@@ -98,9 +98,12 @@ const short = (s: string, p: Pos) => {
 const shown = computed(() => nodes.value.filter(d => visible(d.cur)))
 
 const click = (d: HNode) => go(hrefEntry(d.data.id))
-// The centre is the entry itself: clicking it goes to the place it sits in.
+// The centre is the entry itself. On its own page, clicking it goes to the place it sits in; anywhere else (the
+// Atlas's world rings) it opens the entry, so the world (the place that holds all others) is a click away.
 const up = computed(() => { const e = get(props.id); const p = e && get(e.fields.parent); return p && p.type === e.type ? p : null })
-function goUp() { if (up.value) go(hrefEntry(up.value.id)) }
+const onOwnPage = computed(() => route.current.name === 'entry' && route.current.id === props.id)
+const centreTo = computed(() => (onOwnPage.value ? up.value : get(props.id)) ?? null)
+function goUp() { if (centreTo.value) go(hrefEntry(centreTo.value.id)) }
 
 const hovered = ref<HNode | null>(null)
 const ring1 = computed(() => (root.value?.children ?? []) as HNode[])
@@ -121,7 +124,7 @@ const inside = (d: HNode) => d.descendants().length - 1
       <g class="sb-labels" pointer-events="none">
         <text v-for="d in shown.filter(n => labelFits(n.cur))" :key="'t' + d.data.id + d.depth" :transform="labelTransform(d.cur)" :fill="textOn(color(d))" dy="0.35em">{{ short(d.data.name, d.cur) }}</text>
       </g>
-      <circle :r="ringW - 2" class="sb-centre" :class="{ up: !!up }" @click="goUp"><title v-if="up">Up to {{ up.name }}</title></circle>
+      <circle :r="ringW - 2" class="sb-centre" :class="{ up: !!centreTo }" @click="goUp"><title v-if="centreTo">{{ onOwnPage ? 'Up to' : 'Open' }} {{ centreTo.name }}</title></circle>
       <text class="sb-centre-label" dy="0.35em" pointer-events="none">{{ short(root.data.name, { x0: 0, x1: 7, y0: 0, y1: 1.15 }) }}</text>
     </svg>
     <div class="sb-side">

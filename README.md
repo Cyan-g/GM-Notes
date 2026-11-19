@@ -1,16 +1,17 @@
-# DnDesk
+# GM Notes
 
 A local campaign wiki and toolkit for D&D: the world, its people, the campaign, characters, spells and crafting.
 
 ## Using it
 
-DnDesk is a desktop app for Windows and macOS. It's installed once and keeps the world in a database in a `data` folder you choose.
+GM Notes is a desktop app for Windows and macOS. It's installed once and keeps the world in a database in a `data` folder you choose.
 
 - **First start:** choose the data folder in a normal folder dialog, or the folder that holds it. The app remembers it; ⚙ → Data & backups shows where it is and can change it.
   - **A folder with no world yet:** the app offers to start a new one. Give it a name, then choose what it starts with: **D&D 5e** (the SRD 5.2.1 spells and feats, races, subclasses, tools, every dropdown list and a standard calendar) or an **Empty world** (no entries, a plain calendar, and in the dropdown lists only the options the app relies on). Then choose *I'm the DM* or *I'm a player*; it's preset to player for D&D 5e and to DM for an empty world, and ⚙ → DM mode switches later.
   - **A folder from before the database:** one holding an early version's JSON world file is converted once, by itself and checked, and the old JSON files stay where they are.
-- **Windows:** the installer (`DnDesk-Setup-<version>.exe`) installs for your user only and updates itself. When a new version is downloaded, a bar offers *Restart and update*.
+- **Windows:** the installer (`GM-Notes-Setup-<version>.exe`) installs for your user only and updates itself. When a new version is downloaded, a bar offers *Restart and update*.
 - **macOS:** the app isn't signed with an Apple Developer ID, so the first time, right-click it and choose *Open*. It can't install updates itself; a bar says when a new version is out, with a download link.
+- **Renamed:** GM Notes was called DnDesk before. Updating replaces it, and the first start takes over its settings (the data folder and the list of worlds). The database file keeps its name, `dndesk.sqlite`, as do exports (`.dndesk.json`), so older worlds, backups and players' copies keep working.
 - **Only one copy runs at a time.** Starting it again brings the open window forward.
 
 ### Editing
@@ -44,7 +45,7 @@ DnDesk is a desktop app for Windows and macOS. It's installed once and keeps the
   - DM-only text is never shown.
 
 To set up a player:
-1. They install DnDesk and choose an empty folder as the data folder.
+1. They install GM Notes and choose an empty folder as the data folder.
 2. The app offers **Start a new world here**, which starts in player mode. The new world already has every dropdown list, the standard calendar, the races, subclasses, spells, feats and Tool items (see *The starting world* below).
 3. They import the world (⚙ → Export the world…) or the entries you send them; importing a newer file later updates their copy.
 
@@ -158,7 +159,7 @@ Players' worlds can follow yours through a shared folder, e.g. a Google Drive fo
 - **Joining (a player):** in the world list (the world's name at the top left, or ⚙ → *Switch world*), *Join a shared world…* → pick the shared folder → *Join*. A new world is made and filled from it.
 - **Staying up to date:** a joined world checks on start and every 5 minutes (⚙ → *Check for updates* any time). A backup is made, then the shared entries are replaced, entries you stopped sharing are removed (the player's own entries keep the name where they pointed at them), your lists win (options the player added stay), and the calendar and today's date are yours.
 - **Shared entries are read-only** for the player (no Edit; the page says where they come from). On people and places (NPCs, organizations, places, deities, events) players have **Your notes**, which updates never touch. Their characters, campaigns, sessions and notes are all theirs.
-- **Versions:** a publish from a newer DnDesk asks the player to update first.
+- **Versions:** a publish from a newer GM Notes asks the player to update first.
 
 ### Sharing entries and the world
 
@@ -189,7 +190,7 @@ Everything is saved in `data/`:
 
 **⚙ → Data & backups** (top right) has two tools:
 
-- **Make a backup copy** copies the database (with SQLite's own safe copy), pictures and files into a folder you choose, for example on your PC. Each copy is a new folder named `DnDesk-backup-<world>-<date>`, so copies of several worlds can share the folder. The app remembers the folder, and the ⚙ gets a dot when the last backup copy is more than a week old.
+- **Make a backup copy** copies the database (with SQLite's own safe copy), pictures and files into a folder you choose, for example on your PC. Each copy is a new folder named `GM-Notes-backup-<world>-<date>`, so copies of several worlds can share the folder. The app remembers the folder, and the ⚙ gets a dot when the last backup copy is more than a week old.
 - **Earlier versions** lists the automatic backups in `data/backups`. **Go back to this** restores one, after saving the current database as `before-restore-<date>.sqlite`, so a restore can be undone.
 - **Deleted entries** lists every deleted entry the database still remembers. **Bring back** restores it; its relations have to be added again.
 
@@ -267,7 +268,7 @@ A new world that starts with D&D 5e gets a copy of `app/src/seed/world.json`, wh
 ```bash
 cd app
 npm run desktop    # build the pages and open them in the desktop app
-npm run dist       # Windows installer, into %LOCALAPPDATA%\DnDesk-build
+npm run dist       # Windows installer, into %LOCALAPPDATA%\GM-Notes-build
 ```
 
 Building onto a FAT32 drive fails: it stores file times in 2-second steps, and the packager's lock file needs finer ones. So `npm run dist` builds on the local disk.

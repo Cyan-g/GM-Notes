@@ -47,9 +47,9 @@ async function go() {
   <div v-if="open" class="qs-backdrop" @mousedown.self="open = false" @keydown.esc="open = false">
     <div class="qs transfer publish">
       <h3>Publish for players</h3>
-      <p class="muted small">Writes what players may know into a shared folder (e.g. a Google Drive folder shared with them as <i>Viewer</i>). Their DnDesk follows it and updates itself. Nothing ever comes back from it.</p>
+      <p class="muted small">Writes what players may know into a shared folder (e.g. a Google Drive folder shared with them as <i>Viewer</i>). Their GM Notes follows it and updates itself. Nothing ever comes back from it.</p>
       <template v-if="!folder">
-        <p>Choose the shared folder first. DnDesk remembers it for this world.</p>
+        <p>Choose the shared folder first. GM Notes remembers it for this world.</p>
         <div class="actions"><button type="button" @click="open = false">Cancel</button><button class="primary" @click="choose">Choose folder…</button></div>
       </template>
       <template v-else>

@@ -9,7 +9,7 @@ const stamp = () => {
 }
 
 /**
- * Copy the database, pictures and files into `<backup folder>/DnDesk-backup-<world>-<date>/`. The database is copied by
+ * Copy the database, pictures and files into `<backup folder>/GM-Notes-backup-<world>-<date>/`. The database is copied by
  * SQLite itself, so the copy is complete and consistent. The app's own backups folder isn't copied.
  */
 export async function backupTo(dest: Storage, onProgress: (done: number, total: number) => void): Promise<string> {
@@ -17,7 +17,7 @@ export async function backupTo(dest: Storage, onProgress: (done: number, total: 
   await save()
   // Named after the world, so copies of several worlds in one backup folder don't mix up.
   const world = (state.db?.meta.title ?? 'world').replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim() || 'world'
-  const folder = `DnDesk-backup-${world}-${stamp()}`
+  const folder = `GM-Notes-backup-${world}-${stamp()}`
   const files: string[] = []
   for (const dir of ['images', 'files']) for (const n of await src.list(dir)) files.push(`${dir}/${n}`)
   let done = 0

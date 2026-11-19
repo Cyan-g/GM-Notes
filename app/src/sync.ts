@@ -125,9 +125,9 @@ export async function syncNow(): Promise<SyncResult | null> {
   if (!raw) throw new Error("The shared world isn't in the shared folder (yet). Is the folder synced to this computer?")
   const pub = JSON.parse(raw) as Published
   const d = db()
-  if (pub.format !== PUBLISH_FORMAT) throw new Error("The shared folder's world.json isn't a DnDesk world.")
+  if (pub.format !== PUBLISH_FORMAT) throw new Error("The shared folder's world.json isn't a GM Notes world.")
   if (d.follow && pub.worldId !== d.follow.worldId) throw new Error(`The shared folder holds “${pub.title}”, not the world this one follows.`)
-  if (pub.dataVersion > DATA_VERSION) throw new Error(`“${pub.title}” was published by a newer DnDesk (data version ${pub.dataVersion}). Update DnDesk to get it.`)
+  if (pub.dataVersion > DATA_VERSION) throw new Error(`“${pub.title}” was published by a newer GM Notes (data version ${pub.dataVersion}). Update GM Notes to get it.`)
   if (d.follow?.published === pub.published) return null
 
   await backupNow()

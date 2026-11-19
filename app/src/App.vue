@@ -148,8 +148,8 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <button @click="state.converted = null">OK</button>
     </div>
     <div v-if="update" class="save-banner update-banner" role="status">
-      <template v-if="update.state === 'ready'"><span>⬆ DnDesk {{ update.version }} is downloaded.</span><button class="primary" @click="installUpdate">Restart and update</button></template>
-      <template v-else><span>⬆ DnDesk {{ update.version }} is out.</span><button class="primary" @click="desktop!.open(update.url!)">Download</button></template>
+      <template v-if="update.state === 'ready'"><span>⬆ GM Notes {{ update.version }} is downloaded.</span><button class="primary" @click="installUpdate">Restart and update</button></template>
+      <template v-else><span>⬆ GM Notes {{ update.version }} is out.</span><button class="primary" @click="desktop!.open(update.url!)">Download</button></template>
       <button @click="update = null">Later</button>
     </div>
     <main class="main">
@@ -181,7 +181,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
 
   <div v-else class="start">
     <div class="start-card">
-      <h1>DnDesk</h1>
+      <h1>GM Notes</h1>
       <template v-if="phase === 'starting'"><p class="muted">Opening…</p></template>
       <template v-else-if="phase === 'new-world'">
         <p>“{{ emptyName }}” has no world in it yet. Start a new one here.</p>

@@ -1,4 +1,4 @@
-// DnDesk as a desktop app: one window showing the same pages as DnDesk.html, but reading and writing the
+// GM Notes as a desktop app: one window showing the same pages as index.html, but reading and writing the
 // data folder directly (no browser permission). The folder is picked once and remembered.
 // Windows installs updates by itself; the Mac app (unsigned) is told about new versions and links to them.
 const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require('electron')
@@ -7,12 +7,23 @@ const crypto = require('node:crypto')
 const path = require('node:path')
 const { WorldDb, convertFromJson } = require('./db.cjs')
 
-const REPO = { owner: 'Cyan-g', repo: 'DnDesk' }
+const REPO = { owner: 'Cyan-g', repo: 'GM-Notes' }
 const RELEASES = `https://github.com/${REPO.owner}/${REPO.repo}/releases/latest`
 
 // ---------- remembered settings ----------
 
 const configFile = () => path.join(app.getPath('userData'), 'config.json')
+/** The app was called DnDesk: its remembered settings (data folder, worlds) are copied once into GM Notes' folder. */
+function carryOverSettings() {
+  try {
+    const old = path.join(app.getPath('appData'), 'DnDesk', 'config.json')
+    if (!fs.existsSync(configFile()) && fs.existsSync(old)) {
+      fs.mkdirSync(path.dirname(configFile()), { recursive: true })
+      fs.copyFileSync(old, configFile())
+    }
+  } catch { /* the app then asks for the data folder */ }
+}
+carryOverSettings()
 function readConfig() {
   try { return JSON.parse(fs.readFileSync(configFile(), 'utf8')) } catch { return {} }
 }
@@ -362,7 +373,7 @@ function checkForUpdates(win) {
     updater.checkForUpdates().catch(() => {})
   } else {
     // Mac (unsigned, so it can't install updates itself): look at the latest release and point to it.
-    fetch(`https://api.github.com/repos/${REPO.owner}/${REPO.repo}/releases/latest`, { headers: { 'User-Agent': 'DnDesk' } })
+    fetch(`https://api.github.com/repos/${REPO.owner}/${REPO.repo}/releases/latest`, { headers: { 'User-Agent': 'GM Notes' } })
       .then(r => (r.ok ? r.json() : null))
       .then(rel => { if (rel?.tag_name && newer(rel.tag_name, app.getVersion())) tell({ state: 'available', version: rel.tag_name.replace(/^v/, ''), url: rel.html_url || RELEASES }) })
       .catch(() => {})
@@ -375,7 +386,7 @@ ipcMain.handle('update:install', () => { updater?.quitAndInstall(); return true 
 function createWindow() {
   const win = new BrowserWindow({
     width: 1440, height: 920, minWidth: 720, minHeight: 500,
-    title: 'DnDesk',
+    title: 'GM Notes',
     backgroundColor: '#17120e',
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false },
   })

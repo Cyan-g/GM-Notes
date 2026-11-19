@@ -1,5 +1,5 @@
 {
-  "name": "dndesk",
+  "name": "gm-notes",
   "private": true,
   "version": "0.2.1",
   "type": "module",
@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "desktop": "npm run build && electron .",
-    "dist": "npm run build && electron-builder --publish never -c.directories.output=%LOCALAPPDATA%/DnDesk-build",
+    "dist": "npm run build && electron-builder --publish never -c.directories.output=%LOCALAPPDATA%/GM-Notes-build",
     "release": "npm run build && electron-builder --publish always",
     "seed": "jiti scripts/seed.ts"
   },
@@ -40,7 +40,7 @@
   "main": "electron/main.cjs",
   "build": {
     "appId": "io.github.cyan-g.dndesk",
-    "productName": "DnDesk",
+    "productName": "GM Notes",
     "directories": {
       "output": "release",
       "buildResources": "build"
@@ -59,7 +59,7 @@
     "nsis": {
       "oneClick": true,
       "perMachine": false,
-      "artifactName": "DnDesk-Setup-${version}.${ext}"
+      "artifactName": "GM-Notes-Setup-${version}.${ext}"
     },
     "mac": {
       "target": [
@@ -71,13 +71,13 @@
       "identity": null
     },
     "dmg": {
-      "artifactName": "DnDesk-${version}-${arch}.${ext}"
+      "artifactName": "GM-Notes-${version}-${arch}.${ext}"
     },
     "publish": [
       {
         "provider": "github",
         "owner": "Cyan-g",
-        "repo": "DnDesk",
+        "repo": "GM-Notes",
         "releaseType": "draft"
       }
     ]

@@ -40,7 +40,7 @@ function pageName(r: Route): string {
 /** Keep document.title in step with the route and with names as they change. */
 export function syncTitle() {
   watchEffect(() => {
-    const app = state.db ? db().meta.title || 'DnDesk' : 'DnDesk'
+    const app = state.db ? db().meta.title || 'GM Notes' : 'GM Notes'
     const page = state.db ? pageName(route.current) : ''
     document.title = page ? `${page} · ${app}` : app
   })

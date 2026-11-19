@@ -5,6 +5,7 @@ import { computed, ref } from 'vue'
 import type { Entry, Id } from '../model/types'
 import { byType, listOptions } from '../store'
 import { attacks, blankSheet, castingAbility, levelOf, mod, profBonus, profsOf, sheetOf, signed } from '../sheet'
+import { breakdown, gearTotals, scoreWith, sum } from '../gear'
 import { hrefTab } from '../router'
 import ProfChips from './ProfChips.vue'
 import ItemModal from './ItemModal.vue'
@@ -14,7 +15,11 @@ const s = computed(() => sheetOf(props.pc) ?? blankSheet())
 const prof = computed(() => profBonus(levelOf(props.pc)))
 const atks = computed(() => attacks(s.value, prof.value))
 const cast = computed(() => castingAbility(props.pc, s.value))
-const castMod = computed(() => (cast.value ? mod(s.value.abilities[cast.value]) : 0))
+// Gear counts: a raised casting score, a +1 to spell attacks or the save DC (an Amulet of the Devout).
+const gt = computed(() => gearTotals(s.value))
+const castMod = computed(() => (cast.value ? mod(scoreWith(s.value, cast.value, gt.value)) : 0))
+const dc = computed(() => 8 + prof.value + castMod.value + sum(gt.value.spellDC))
+const spellAtk = computed(() => prof.value + castMod.value + sum(gt.value.spellAttack))
 const profs = computed(() => profsOf(s.value))
 const armorTypes = computed(() => listOptions('item.armorType').filter(o => o.id !== 'Clothing'))
 const tools = computed(() => (byType.value.get('item') ?? []).filter(e => e.fields.kind === 'Tool').map(e => ({ id: e.id, label: e.name })))
@@ -30,7 +35,7 @@ const none = (k: 'armor' | 'weapons' | 'tools' | 'languages') => !profs.value[k]
         <table v-if="atks.length" class="cs-attacks">
           <tr v-for="a in atks" :key="a.id">
             <td><button class="link-btn cs-item" @click="shown = a.id">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> ⚠</span></td>
-            <td><b>{{ signed(a.toHit) }}</b></td>
+            <td><b :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td>
             <td>{{ a.damage }} <span class="muted small">{{ a.type }}</span></td>
           </tr>
         </table>
@@ -40,8 +45,8 @@ const none = (k: 'armor' | 'weapons' | 'tools' | 'languages') => !profs.value[k]
         <h3>Spells</h3>
         <template v-if="cast">
           <div class="atk-spell-row"><span>{{ cast.toUpperCase() }}</span><b>{{ signed(castMod) }}</b></div>
-          <div class="atk-spell-row"><span>Save DC</span><b>{{ 8 + prof + castMod }}</b></div>
-          <div class="atk-spell-row"><span>Attack</span><b>{{ signed(prof + castMod) }}</b></div>
+          <div class="atk-spell-row"><span>Save DC</span><b :class="{ 'gear-mod tip': gt.spellDC.length }" :data-tip="breakdown(`${dc - sum(gt.spellDC)} without gear`, gt.spellDC)">{{ dc }}</b></div>
+          <div class="atk-spell-row"><span>Attack</span><b :class="{ 'gear-mod tip': gt.spellAttack.length }" :data-tip="breakdown(`${signed(spellAtk - sum(gt.spellAttack))} without gear`, gt.spellAttack)">{{ signed(spellAtk) }}</b></div>
         </template>
         <p v-else class="muted small">No casting ability.</p>
         <a :href="hrefTab(pc.id, 'spellbook')" class="small">Spellbook →</a>

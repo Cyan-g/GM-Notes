@@ -1,6 +1,6 @@
 // The loaded world plus lookups the pages need, and saving it (only what changed) with backups.
 import { reactive, computed, shallowRef } from 'vue'
-import type { ClassLine, Database, Entry, EntryType, Id, Relation, WorldDate } from './model/types'
+import type { ClassLine, Database, Entry, EntryType, GearEffect, Id, Relation, WorldDate } from './model/types'
 import type { Storage } from './storage/storage'
 import type { Backend, Changes } from './storage/backend'
 import { SCHEMA, RELATION_KINDS, MARTIAL_WEAPONS, SIMPLE_WEAPONS, byKey, type FieldDef } from './model/schema'
@@ -14,7 +14,7 @@ const PLAY_KEYS = ['tracker', 'spellbook', 'crafting', 'follow', 'playerNotes'] 
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
 /** The newest data version this build understands (the last step in upgrade()). Newer data opens read-only. */
-export const DATA_VERSION = 24
+export const DATA_VERSION = 25
 /** The oldest data version this build can still open; older data is refused instead of guessed at. */
 export const OLDEST_VERSION = 20
 /** What the database must allow: every entry type and relation kind the app knows. */
@@ -102,7 +102,28 @@ function upgrade(d: Database): boolean {
   if ((d.version ?? 1) < 22) { upgradeTo22(d); d.version = 22; changed = true }
   if ((d.version ?? 1) < 23) { upgradeTo23(d); d.version = 23; changed = true }
   if ((d.version ?? 1) < 24) { upgradeTo24(d); d.version = 24; changed = true }
+  if ((d.version ?? 1) < 25) { upgradeTo25(d); d.version = 25; changed = true }
   return changed
+}
+
+/**
+ * 25: items' Bonus text became effects (gear.ts). A weapon's "+1" is +1 to hit and +1 damage; armor's "+1" or
+ * "+2 AC" is AC; anything else is kept as a feature line.
+ */
+function upgradeTo25(d: Database) {
+  for (const e of Object.values(d.entries)) {
+    if (e.type !== 'item') continue
+    const f = e.fields as Record<string, unknown>
+    const text = typeof f.bonus === 'string' ? f.bonus.trim() : ''
+    delete f.bonus
+    if (!text) continue
+    const effects: GearEffect[] = Array.isArray(f.effects) ? [...(f.effects as GearEffect[])] : []
+    const plain = text.match(/^\+\s*(\d+)$/), ac = text.match(/^\+\s*(\d+)\s*ac$/i)
+    if (ac || (plain && f.kind === 'Armor')) effects.push({ on: 'ac', value: Number((ac ?? plain)![1]) })
+    else if (plain && f.kind === 'Weapon') effects.push({ on: 'attack', value: Number(plain[1]) }, { on: 'damage', value: Number(plain[1]) })
+    else effects.push({ on: 'feature', text })
+    f.effects = effects
+  }
 }
 
 /**

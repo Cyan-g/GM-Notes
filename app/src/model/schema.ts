@@ -1,12 +1,12 @@
 // Describes every entry type: its label, fields and dropdown options.
 // Forms and pages are generated from this, so adding a field here is enough.
 import type {
-  Abilities, CharacterSheet, ClassLine, Copper, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
+  Abilities, CharacterSheet, ClassLine, Copper, GearEffect, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
 } from './types'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
-  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes'
+  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects'
 
 export interface FieldDef {
   key: string
@@ -155,10 +155,11 @@ export const SCHEMA = [
       { key: 'range', label: 'Range', kind: 'text', when: W, group: 'Weapon' },
       { key: 'properties', label: 'Properties', kind: 'list', options: WEAPON_PROPERTIES, list: 'weaponProperty', when: { field: 'kind', is: ['Weapon'] } },
       { key: 'traits', label: 'Properties', kind: 'list', options: [], list: 'ingredientProperty', when: { field: 'kind', is: ['Ingredient'] } },
-      { key: 'bonus', label: 'Bonus', kind: 'text', when: { field: 'kind', is: ['Weapon', 'Armor'] } },
       { key: 'armorType', label: 'Armor type', kind: 'select', options: ARMOR_TYPES, fixed: ARMOR_TYPES, when: A, group: 'Armor' },
       { key: 'armorClass', label: 'Armor class', kind: 'text', when: A, group: 'Armor' },
       { key: 'slot', label: 'Slot', kind: 'select', options: ['Head', 'Chest', 'Cloak', 'Gloves', 'Boots', 'Shield'], when: A, group: 'Armor' },
+      // What it does to whoever wears, wields or attunes it (gear.ts); not for consumables and ingredients.
+      { key: 'effects', label: 'Effects', kind: 'effects', when: { field: 'kind', is: ['Weapon', 'Armor', 'Tool', 'Tome', 'Ring', 'Accessory', 'Instrument', 'Adventuring Gear', 'Flask', 'Other'] } },
       { key: 'category', label: 'Ingredient type', kind: 'select', options: ['Plant', 'Mineral', 'Body Part', 'Fluid', 'Other'], when: ING, group: 'Ingredient' },
       // The Tool item a recipe is crafted with (proficiency in it is what the Workbench checks).
       { key: 'craftingType', label: 'Crafted with', kind: 'ref', to: ['item'], pick: { field: 'kind', is: ['Tool'] }, when: CRAFT, group: 'Crafting' },
@@ -257,7 +258,7 @@ export interface KindValue {
   text: string; longtext: string; number: number; bool: boolean; select: string; list: string[]
   money: Copper; weight: number; ref: Id; refs: Id[]; date: WorldDate
   recipe: RecipeLine[]; stock: StockLine[]; statblock: Statblock; abilities: Abilities
-  combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]
+  combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]; effects: GearEffect[]
 }
 type Defs = (typeof SCHEMA)[number]['fields'][number]
 /** A field key used by any type. */

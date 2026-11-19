@@ -52,7 +52,7 @@ A player character's page is its character sheet for play: HP, hit dice, inspira
 - **Hit dice:** each class brings its die (d12 Barbarian; d10 Fighter, Paladin, Ranger; d6 Sorcerer, Wizard; d8 the others, and a homebrew class picks one). The sheet has a row per die size, each spent on its own. **Long rest** restores HP and gives back half the level in hit dice, biggest dice first.
 - **Inventory:** items from the world with a quantity, plus anything else by name. Clicking an item opens its card in a pop-up, where it can also be equipped or attuned. Only items marked *Requires attunement* can be attuned.
 - **Equipped card** (beside the sheet, in place of the relation cards): the worn armor and wielded weapons, and the three attunement slots. What's equipped or attuned is shown there and not in the inventory.
-- **Drag and drop:** drag an item from the inventory onto *Equipped* to wear or wield it. A ring or other magical item is attuned instead. Drag it onto the attunement slots to attune it, and back to the inventory to take it off.
+- **Drag and drop:** drag an item from the inventory onto *Equipped* to wear or wield it (weapons, armor, and anything else with effects, such as boots or a cloak). An item that requires attunement is attuned instead. Drag it onto the attunement slots to attune it, and back to the inventory to take it off.
 - **Player mode:** the inventory sits beside the sheet under *Equipped*, where *Mentioned in* is in DM mode. Weapons and armor can be equipped, and magic items attuned.
 - **Proficiencies:** picked from the same lists the items use:
   - armor: Light, Medium, Heavy, Shield
@@ -63,10 +63,17 @@ A player character's page is its character sheet for play: HP, hit dice, inspira
 - **Worked out for you:**
   - modifiers and the proficiency bonus (from the level)
   - saves, skills and passive Perception
-  - armor class from the equipped armor and shield, e.g. "14 + dex(max 2)", or 10 + DEX without armor. A number typed under AC overrides it.
-  - an attack line for each equipped weapon: finesse weapons use the better of STR and DEX, ranged weapons DEX, and a "+1" in the item's Bonus field counts. The proficiency bonus is added only if the character is proficient with the weapon; ⚠ marks one they aren't
+  - armor class from the equipped armor and shield, e.g. "14 + dex(max 2)", or 10 + DEX without armor, plus the AC effects of the gear. A number typed under AC overrides it.
+  - an attack line for each equipped weapon: finesse weapons use the better of STR and DEX, ranged weapons DEX, plus the attack and damage effects of the gear. The proficiency bonus is added only if the character is proficient with the weapon; ⚠ marks one they aren't
   - ⚠ on the AC and in *Equipped* for armor or a shield worn without the proficiency for it
   - the spell save DC and attack bonus, from the casting ability of the highest level spellcasting class unless you pick another
+- **Gear effects:** an item's *Effects* (on its ✎ Edit page) say what it does to whoever uses it: AC, an ability score
+  (added, or set to a value like Gauntlets of Ogre Power's STR 19), all saves or one, attack and damage rolls, spell
+  attack and save DC, a skill, speed, initiative, max HP, a resistance, or a feature line. They count while the item is
+  worn or wielded, or, for an item that requires attunement, while attuned. A weapon's attack and damage effects count
+  for that weapon only. Numbers changed by gear get a ✦; hovering shows where they come from ("16 Chain mail · +1 Ring
+  of Protection"), and *Equipped* lists the active gear with what each item adds. Gear resistances and features show
+  under *Features & traits*. (Data version 25 turned the old free-text Bonus field into effects.)
 - **In a fight:** Combat (the initiative tracker) takes the PC's AC, HP and initiative from the sheet.
 
 **How items match proficiencies.** Each item says what it needs:

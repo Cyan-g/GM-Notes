@@ -7,6 +7,7 @@ import { TYPES, byKey } from '../model/schema'
 import { fieldLabel, formatMoney, get, state } from '../store'
 import { optionsIn } from '../model/lists'
 import { renderInline } from '../markdown'
+import { describeEffect, effectsOf } from '../gear'
 
 const props = defineProps<{ e: Entry }>()
 const f = computed(() => props.e.fields)
@@ -19,7 +20,6 @@ const rows = computed(() => ([
   ['Armor type', L('armorType')],
   ['Armor class', f.value.armorClass],
   ['Slot', L('slot')],
-  ['Bonus', f.value.bonus],
   ['Crafted with', get(f.value.craftingType)?.name],
   ['Ingredient type', L('category')],
   ['Weight', f.value.weight != null ? `${f.value.weight} lb` : ''],
@@ -31,6 +31,9 @@ const propList = computed(() => {
   const opts = optionsIn(state.db?.meta, key)
   return ids.map(id => opts.find(o => o.id === id) ?? { id, label: id })
 })
+/** What it does to the one who wears it, as "+1 AC", "Resistance: fire". */
+const effects = computed(() => effectsOf(props.e).map(describeEffect).filter(Boolean))
+const effectsWhen = computed(() => (f.value.attunement ? 'While attuned' : f.value.kind === 'Weapon' ? 'While wielded' : 'While worn'))
 const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magical' : 'mundane')).toLowerCase().replace(' ', '-'))
 </script>
 
@@ -41,6 +44,7 @@ const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magic
       <div class="ic-text">
         <p v-if="f.summary" class="ic-summary" v-html="renderInline(f.summary)" />
         <p v-if="f.effect" class="ic-effect"><b>Effect.</b> <span v-html="renderInline(f.effect)" /></p>
+        <p v-if="effects.length" class="ic-gear"><b>{{ effectsWhen }}:</b> {{ effects.join(' · ') }}</p>
         <div v-if="propList.length" class="chips"><span v-for="p in propList" :key="p.id" class="chip" :class="{ tip: 'note' in p && p.note }" :data-tip="'note' in p ? p.note : undefined">{{ p.label }}</span></div>
       </div>
       <dl v-if="rows.length" class="ic-stats">

@@ -13,9 +13,10 @@ import { CLASS_DIE, DICE, classText, classesOf, dieOf, hitDicePools } from '../m
 import { changed } from '../edit'
 import { hrefTab } from '../router'
 import {
-  ABILITIES, SKILLS, armorClass, attacks, blankSheet, canAttune, canEquip, castingAbility, levelOf, mod, passivePerception,
-  profBonus, profsOf, profsToEdit, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, longRest, type Ability,
+  ABILITIES, SKILLS, armorClass, attacks, blankSheet, canAttune, canEquip, castingAbility, initiative, levelOf, maxHpOf, mod,
+  passivePerception, profBonus, profsOf, profsToEdit, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, speedOf, longRest, type Ability,
 } from '../sheet'
+import { breakdown, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../gear'
 import InventoryCard from './InventoryCard.vue'
 import ProfChips from './ProfChips.vue'
 import ItemModal from './ItemModal.vue'
@@ -33,7 +34,18 @@ const prof = computed(() => profBonus(level.value))
 const ac = computed(() => armorClass(s.value))
 const atks = computed(() => attacks(s.value, prof.value))
 const cast = computed(() => castingAbility(props.pc, s.value))
-const castMod = computed(() => (cast.value ? mod(s.value.abilities[cast.value]) : 0))
+// ---- what the active gear changes (gear.ts): the numbers below include it, a ✦ marks them, hovering says why ----
+const gt = computed(() => gearTotals(s.value))
+const scoreOf = (a: Ability) => scoreWith(s.value, a, gt.value)
+const scoreTip = (a: Ability) => scoreBreakdown(s.value, a, gt.value)
+/** A total's tooltip: what it is without gear, then each item's part. */
+const tipOf = (total: number, parts: Part[], fmt = signed) => breakdown(`${fmt(total - sum(parts))} without gear`, parts)
+const saveParts = (a: Ability) => [...gt.value.saves, ...(gt.value.save[a] ?? [])]
+const initTotal = computed(() => initiative(s.value))
+const maxHp = computed(() => maxHpOf(s.value))
+const castMod = computed(() => (cast.value ? mod(scoreOf(cast.value)) : 0))
+const spellDC = computed(() => 8 + prof.value + castMod.value + sum(gt.value.spellDC))
+const spellAtk = computed(() => prof.value + castMod.value + sum(gt.value.spellAttack))
 
 function edit(fn: (s: CharacterSheet) => void) {
   if (ro.value) return
@@ -100,13 +112,13 @@ function hit(ev: Event) {
   input.value = ''
   if (!n) return
   edit(x => {
-    let hp = x.hp ?? x.maxHp ?? 0
+    let hp = x.hp ?? maxHp.value ?? 0
     if (n < 0) {
       let dmg = -n
       const soak = Math.min(x.tempHp ?? 0, dmg)
       if (soak) { x.tempHp = (x.tempHp ?? 0) - soak || undefined; dmg -= soak }
       hp = Math.max(0, hp - dmg)
-    } else hp = x.maxHp != null ? Math.min(x.maxHp, hp + n) : hp + n
+    } else hp = maxHp.value != null ? Math.min(maxHp.value, hp + n) : hp + n
     x.hp = hp
   })
 }
@@ -167,9 +179,9 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <label v-if="!classes.length" class="cs-stat"><span>Level</span><input type="number" min="1" max="20" :value="pc.fields.level ?? ''" placeholder="1" :disabled="locked" @change="setLevel" /></label>
       <div v-else class="cs-stat" :title="classLabel"><span>Level</span><b>{{ level }}</b></div>
       <div class="cs-stat"><span>Proficiency</span><b>{{ signed(prof) }}</b></div>
-      <div class="cs-stat cs-ac" :class="{ warn: ac.untrained.length }" :title="`From ${ac.from}` + (ac.untrained.length ? `\nNot proficient with ${ac.untrained.join(', ')}: disadvantage on STR and DEX rolls, no spellcasting` : '')"><span>Armor class<template v-if="ac.untrained.length"> ⚠</template></span><b>{{ ac.ac }}</b>
+      <div class="cs-stat cs-ac tip" :class="{ warn: ac.untrained.length }" :data-tip="ac.from + (ac.untrained.length ? ` — not proficient with ${ac.untrained.join(', ')}: disadvantage on STR and DEX rolls, no spellcasting` : '')"><span>Armor class<template v-if="ac.untrained.length"> ⚠</template></span><b :class="{ 'gear-mod': gt.ac.length }">{{ ac.ac }}</b>
         <input v-if="build" class="cs-mini" type="number" :value="s.acOverride ?? ''" placeholder="auto" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></div>
-      <label class="cs-stat"><span>Speed</span><input :value="s.speed ?? ''" placeholder="30 ft" :disabled="locked" @change="edit(x => x.speed = text($event))" /></label>
+      <label class="cs-stat" :class="{ tip: gt.speed.length }" :data-tip="breakdown(`${s.speed ?? '30 ft'} without gear`, gt.speed)"><span :class="{ 'gear-mod': gt.speed.length }">Speed</span><input :value="(locked ? speedOf(s) : s.speed) ?? ''" placeholder="30 ft" :disabled="locked" @change="edit(x => x.speed = text($event))" /></label>
       <button v-if="!build" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" title="Inspiration" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>Inspiration</span><b>{{ s.inspiration ? '★' : '☆' }}</b></button>
     </div>
 
@@ -179,16 +191,16 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         <span class="cs-label">{{ build ? 'Maximum hit points' : 'Hit points' }}</span>
         <div class="cs-hp-row">
           <template v-if="!build">
-            <input class="cs-hp-now" type="number" :value="s.hp ?? s.maxHp ?? ''" :disabled="ro" title="Current HP" @change="edit(x => x.hp = num($event))" />
+            <input class="cs-hp-now" type="number" :value="s.hp ?? maxHp ?? ''" :disabled="ro" title="Current HP" @change="edit(x => x.hp = num($event))" />
             <span class="muted">/</span>
           </template>
-          <input type="number" :value="s.maxHp ?? ''" :placeholder="build ? 'max' : '—'" :disabled="locked" title="Maximum HP" @change="edit(x => x.maxHp = num($event))" />
+          <span :class="{ tip: gt.maxHp.length && !build, 'gear-mod': gt.maxHp.length && !build }" :data-tip="build ? undefined : breakdown(`${s.maxHp ?? 0} without gear`, gt.maxHp)"><input type="number" :value="(build ? s.maxHp : maxHp) ?? ''" :placeholder="build ? 'max' : '—'" :disabled="locked" title="Maximum HP" @change="edit(x => x.maxHp = num($event))" /></span>
           <template v-if="!build">
             <span class="muted small">temp</span>
             <input type="number" :value="s.tempHp ?? ''" placeholder="0" :disabled="ro" title="Temporary HP" @change="edit(x => x.tempHp = num($event) || undefined)" />
           </template>
         </div>
-        <div v-if="s.maxHp && !build" class="cs-hp-bar"><i :style="{ width: Math.min(100, Math.round(100 * (s.hp ?? s.maxHp) / s.maxHp)) + '%' }" /></div>
+        <div v-if="maxHp && !build" class="cs-hp-bar"><i :style="{ width: Math.min(100, Math.round(100 * (s.hp ?? maxHp) / maxHp)) + '%' }" /></div>
       </div>
       <label v-if="!build" class="cs-hp-change"><span class="cs-label">Damage / heal</span><input placeholder="−7 or +5" :disabled="ro" @keydown.enter="hit" @change="hit" /></label>
     </div>
@@ -218,21 +230,21 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
           <!-- name, modifier and the score in its box -->
           <div class="cs-ab-head">
             <span class="cs-short" :title="a.label">{{ a.short }}</span>
-            <b class="cs-mod">{{ signed(mod(s.abilities[a.key])) }}</b>
-            <input class="cs-score" type="number" min="1" max="30" :value="s.abilities[a.key]" :disabled="locked" :title="`${a.label} score`" @change="edit(x => x.abilities[a.key] = num($event) ?? 10)" />
+            <b class="cs-mod" :class="{ 'gear-mod': scoreTip(a.key), tip: scoreTip(a.key) }" :data-tip="scoreTip(a.key)">{{ signed(mod(scoreOf(a.key))) }}</b>
+            <input class="cs-score" type="number" min="1" max="30" :value="locked ? scoreOf(a.key) : s.abilities[a.key]" :disabled="locked" :title="scoreTip(a.key) ? undefined : `${a.label} score`" @change="edit(x => x.abilities[a.key] = num($event) ?? 10)" />
           </div>
           <!-- the saving throw, on its own band apart from the skills -->
           <button class="cs-skill cs-save" :class="{ on: s.saves.includes(a.key) }" :disabled="locked" :title="build ? `${a.label} saving throw: click for proficiency` : `${a.label} saving throw`" @click="toggleSave(a.key)">
-            <span class="cs-dot">{{ s.saves.includes(a.key) ? '●' : '○' }}</span><b>{{ signed(saveBonus(s, a.key, prof)) }}</b><span>Saving throw</span>
+            <span class="cs-dot">{{ s.saves.includes(a.key) ? '●' : '○' }}</span><b :class="{ 'gear-mod': saveParts(a.key).length, tip: saveParts(a.key).length }" :data-tip="tipOf(saveBonus(s, a.key, prof), saveParts(a.key))">{{ signed(saveBonus(s, a.key, prof)) }}</b><span>Saving throw</span>
           </button>
           <div class="cs-skills">
             <button v-for="sk in skillsOf(a.key)" :key="sk.name" class="cs-skill" :class="{ on: s.skills[sk.name] }" :disabled="locked" :title="build ? 'Click: proficient, expertise, none' : SKILL_LEVEL[s.skills[sk.name] ?? 0] ?? ''" @click="cycleSkill(sk.name)">
-              <span class="cs-dot">{{ skillMark(sk.name) }}</span><b>{{ signed(skillBonus(s, sk.name, prof)) }}</b><span>{{ sk.name }}</span>
+              <span class="cs-dot">{{ skillMark(sk.name) }}</span><b :class="{ 'gear-mod': gt.skill[sk.name]?.length, tip: gt.skill[sk.name]?.length }" :data-tip="tipOf(skillBonus(s, sk.name, prof), gt.skill[sk.name] ?? [])">{{ signed(skillBonus(s, sk.name, prof)) }}</b><span>{{ sk.name }}</span>
             </button>
             <p v-if="!skillsOf(a.key).length" class="cs-noskill">no skills</p>
           </div>
           <!-- what else scales with it, at the bottom: initiative (DEX), passive perception (WIS) -->
-          <div v-if="a.key === 'dex'" class="cs-foot" title="Initiative: DEX modifier plus any bonus"><span>Initiative</span><b>{{ signed(mod(s.abilities.dex) + (s.initBonus ?? 0)) }}</b></div>
+          <div v-if="a.key === 'dex'" class="cs-foot tip" :data-tip="tipOf(initTotal, gt.initiative) ?? 'Initiative: DEX modifier plus any bonus'"><span>Initiative</span><b :class="{ 'gear-mod': gt.initiative.length }">{{ signed(initTotal) }}</b></div>
           <div v-else-if="a.key === 'wis'" class="cs-foot" title="Passive perception: 10 + Perception"><span>Passive perception</span><b>{{ passivePerception(s, prof) }}</b></div>
         </div>
       </section>
@@ -242,7 +254,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         <template v-if="build">
         <h4>Attacks</h4>
         <table v-if="atks.length" class="cs-attacks">
-          <tr v-for="a in atks" :key="a.id"><td><button class="link-btn cs-item" @click="showItem(a.id)">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> ⚠</span></td><td><b>{{ signed(a.toHit) }}</b></td><td>{{ a.damage }} <span class="muted small">{{ a.type }}</span></td></tr>
+          <tr v-for="a in atks" :key="a.id"><td><button class="link-btn cs-item" @click="showItem(a.id)">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> ⚠</span></td><td><b :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td><td>{{ a.damage }} <span class="muted small">{{ a.type }}</span></td></tr>
         </table>
         <p v-else class="muted small">Equip a weapon in the inventory to see its attack here.</p>
         </template>
@@ -255,7 +267,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
             <option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.short }}</option>
           </select>
           <span v-else>{{ castLabel }}</span>
-          <template v-if="cast"><span>Save DC <b>{{ 8 + prof + castMod }}</b></span><span>Attack <b>{{ signed(prof + castMod) }}</b></span></template>
+          <template v-if="cast"><span>Save DC <b :class="{ 'gear-mod tip': gt.spellDC.length }" :data-tip="tipOf(spellDC, gt.spellDC, String)">{{ spellDC }}</b></span><span>Attack <b :class="{ 'gear-mod tip': gt.spellAttack.length }" :data-tip="tipOf(spellAtk, gt.spellAttack)">{{ signed(spellAtk) }}</b></span></template>
           <a :href="hrefTab(pc.id, 'spellbook')" class="small">Spellbook →</a>
         </div>
         </template>
@@ -292,6 +304,10 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       </template>
       <dl v-else-if="s.features.length" class="cs-feature-list">
         <template v-for="(f, i) in s.features" :key="i"><dt>{{ f.name }}</dt><dd>{{ f.text }}</dd></template>
+      </dl>
+      <dl v-if="!build && (gt.resistances.length || gt.features.length)" class="cs-feature-list cs-gear-features">
+        <template v-for="(r, i) in gt.resistances" :key="'r' + i"><dt>Resistance: {{ r.type.toLowerCase() }}</dt><dd class="muted">from {{ r.from }}</dd></template>
+        <template v-for="(f, i) in gt.features" :key="'f' + i"><dt>{{ f.text }}</dt><dd class="muted">from {{ f.from }}</dd></template>
       </dl>
       <p v-if="!s.features.length" class="muted small">Class features, racial traits, feats<template v-if="!build && !ro">: add them with ✎ Edit</template>.</p>
     </section>

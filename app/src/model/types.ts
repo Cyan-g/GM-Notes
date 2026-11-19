@@ -63,6 +63,20 @@ export type Copper = number
 export interface RecipeLine { item: Id; amount: number }
 /** One rank of an organization, highest first. `renown` is what it takes; none for a rank that is appointed. */
 export interface RankLine { title: string; renown?: number; station?: string }
+/**
+ * One thing an item does to whoever wears, wields or attunes it (see gear.ts). `value` is added, or with `set` an
+ * ability score is set to it (Gauntlets of Ogre Power: STR 19). `ability`, `skill`, `type` (a damage type, for
+ * resistance) and `text` (a feature) say what it applies to.
+ */
+export interface GearEffect {
+  on: 'ac' | 'ability' | 'saves' | 'save' | 'attack' | 'damage' | 'spellAttack' | 'spellDC' | 'skill' | 'speed' | 'initiative' | 'maxHp' | 'resistance' | 'feature'
+  value?: number
+  set?: boolean
+  ability?: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
+  skill?: string
+  type?: string
+  text?: string
+}
 /** One of a character's classes: an option of the "class" list, its level, a subclass entry, a hit die for a class without a standard one. */
 export interface ClassLine { class: string; level: number; subclass?: Id; die?: string }
 

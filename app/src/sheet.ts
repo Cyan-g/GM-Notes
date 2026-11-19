@@ -5,6 +5,7 @@ import { classesOf, hitDicePools, totalLevel } from './model/classes'
 import type { Abilities, CharacterSheet, Crafting, Entry, Id, InventoryLine, Proficiencies, Spellbook } from './model/types'
 import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from './model/schema'
 import { db, get, state, touch } from './store'
+import { breakdown, gearTotals, scoreWith, sum } from './gear'
 
 export type Ability = keyof Abilities
 export const ABILITIES: { key: Ability; label: string; short: string }[] = [
@@ -158,10 +159,27 @@ export const signed = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`)
 export const levelOf = (pc: Entry) => totalLevel(pc)
 export const profBonus = (level: number) => 2 + Math.floor((level - 1) / 4)
 
-export const saveBonus = (s: CharacterSheet, a: Ability, prof: number) => mod(s.abilities[a]) + (s.saves.includes(a) ? prof : 0)
+/** An ability score with the active gear (set by a belt, raised by a tome…). */
+export const score = (s: CharacterSheet, a: Ability) => scoreWith(s, a, gearTotals(s))
+export const saveBonus = (s: CharacterSheet, a: Ability, prof: number) => {
+  const t = gearTotals(s)
+  return mod(scoreWith(s, a, t)) + (s.saves.includes(a) ? prof : 0) + sum(t.saves) + sum(t.save[a])
+}
 export const skillBonus = (s: CharacterSheet, name: string, prof: number) => {
   const sk = SKILLS.find(x => x.name === name)!
-  return mod(s.abilities[sk.ability]) + (s.skills[name] ?? 0) * prof
+  const t = gearTotals(s)
+  return mod(scoreWith(s, sk.ability, t)) + (s.skills[name] ?? 0) * prof + sum(t.skill[name])
+}
+/** Initiative: DEX (with gear), the sheet's own bonus and any gear. */
+export const initiative = (s: CharacterSheet) => { const t = gearTotals(s); return mod(scoreWith(s, 'dex', t)) + (s.initBonus ?? 0) + sum(t.initiative) }
+/** Maximum HP with gear (a Belt of Dwarvenkind-style +n); undefined while none is set. */
+export const maxHpOf = (s: CharacterSheet) => (s.maxHp == null ? undefined : s.maxHp + sum(gearTotals(s).maxHp))
+/** Speed with gear: the number in the sheet's speed ("30 ft") plus any bonus; the text as typed when there's none. */
+export function speedOf(s: CharacterSheet): string | undefined {
+  const add = sum(gearTotals(s).speed)
+  if (!add) return s.speed
+  const m = String(s.speed ?? '30 ft').match(/(\d+)/)
+  return m ? String(s.speed ?? '30 ft').replace(m[1], String(Number(m[1]) + add)) : s.speed
 }
 export const passivePerception = (s: CharacterSheet, prof: number) => 10 + skillBonus(s, 'Perception', prof)
 
@@ -181,25 +199,25 @@ export function spellStats(pc: Entry): { attack: number; dc: number; ability: Ab
   const s = sheetOf(pc)!
   const a = castingAbility(pc, s)
   if (!a) return undefined
-  const p = profBonus(levelOf(pc)), m = mod(s.abilities[a])
-  return { attack: p + m, dc: 8 + p + m, ability: a }
+  const t = gearTotals(s)
+  const p = profBonus(levelOf(pc)), m = mod(scoreWith(s, a, t))
+  return { attack: p + m + sum(t.spellAttack), dc: 8 + p + m + sum(t.spellDC), ability: a }
 }
 
 // ---------- what the inventory adds up to ----------
 
 const equipped = (s: CharacterSheet) => s.inventory.filter(l => l.equipped).map(l => get(l.item)).filter((e): e is Entry => !!e)
-/** A "+1" written in an item's Bonus field (not the "+2 AC" of a shield). */
-const magicBonus = (e: Entry) => { const m = String(e.fields.bonus ?? '').match(/^\s*\+(\d+)\s*$/); return m ? Number(m[1]) : 0 }
 
 /**
- * Armor class from what's worn: body armor ("14 + dex(max 2)", "16"), plus shields and other worn bonuses
- * ("+2", or "+2 AC" in Bonus). Without body armor it's 10 + DEX. A number typed on the sheet wins.
+ * Armor class from what's worn: body armor ("14 + dex(max 2)", "16") and shields ("+2"), plus the AC effects of the
+ * active gear (a +1 shield, a Ring of Protection). Without body armor it's 10 + DEX. A number typed on the sheet wins.
  */
 export function armorClass(s: CharacterSheet): { ac: number; from: string; untrained: string[] } {
   // Armor worn without its proficiency (disadvantage on STR and DEX rolls, no spellcasting).
   const untrained = equipped(s).filter(e => e.fields.kind === 'Armor' && proficientWith(s, e) === false).map(e => e.name)
   if (s.acOverride != null) return { ac: s.acOverride, from: 'typed on the sheet', untrained }
-  const dex = mod(s.abilities.dex)
+  const t = gearTotals(s)
+  const dex = mod(scoreWith(s, 'dex', t))
   let base = 10 + dex, from = 'unarmored', extra = 0
   const parts: string[] = []
   for (const e of equipped(s)) {
@@ -207,33 +225,39 @@ export function armorClass(s: CharacterSheet): { ac: number; from: string; untra
     const body = text.match(/^\s*(\d+)\s*(\+\s*dex(?:\s*\(\s*max\s*(\d+)\s*\))?)?/)
     const plus = text.match(/^\s*\+\s*(\d+)/)
     if (e.fields.kind === 'Armor' && body) {
-      base = Number(body[1]) + (body[2] ? (body[3] ? Math.min(dex, Number(body[3])) : dex) : 0) + magicBonus(e)
-      from = e.name
-    } else if (e.fields.kind === 'Armor' && plus) { extra += Number(plus[1]) + magicBonus(e); parts.push(e.name) }
-    const ac = String(e.fields.bonus ?? '').match(/\+\s*(\d+)\s*ac/i)
-    if (ac) { extra += Number(ac[1]); parts.push(e.name) }
+      base = Number(body[1]) + (body[2] ? (body[3] ? Math.min(dex, Number(body[3])) : dex) : 0)
+      from = `${base} ${e.name}`
+    } else if (e.fields.kind === 'Armor' && plus) { extra += Number(plus[1]); parts.push(`+${plus[1]} ${e.name}`) }
   }
-  return { ac: base + extra + (s.acBonus ?? 0), from: [from, ...parts].join(' + '), untrained }
+  if (from === 'unarmored') from = `${base} unarmored (10 + DEX)`
+  for (const p of t.ac) { extra += p.n; parts.push(`${p.n >= 0 ? '+' : '−'}${Math.abs(p.n)} ${p.label}`) }
+  if (s.acBonus) parts.push(`${s.acBonus >= 0 ? '+' : '−'}${Math.abs(s.acBonus)} typed bonus`)
+  return { ac: base + extra + (s.acBonus ?? 0), from: [from, ...parts].join(' · '), untrained }
 }
 
-export interface Attack { id: Id; name: string; toHit: number; damage: string; type?: string; note?: string; untrained?: boolean }
+export interface Attack { id: Id; name: string; toHit: number; damage: string; type?: string; note?: string; untrained?: boolean
+  /** What gear adds to hit and to damage, for the tooltip. */
+  gear?: string }
 
 /**
  * One attack per equipped weapon: finesse weapons use the better of STR and DEX, ranged ones DEX.
  * The proficiency bonus is only added if the character is proficient with the weapon (or it doesn't say).
  */
 export function attacks(s: CharacterSheet, prof: number): Attack[] {
+  const t = gearTotals(s)
   return equipped(s).filter(e => e.fields.kind === 'Weapon').map(e => {
     const props = ((e.fields.properties) ?? []).map(p => p.toLowerCase())
     const ranged = props.includes('ammunition') || /bow|crossbow|sling|blowgun|dart/i.test(`${e.name} ${e.fields.subtype ?? ''}`)
-    const str = mod(s.abilities.str), dex = mod(s.abilities.dex)
+    const str = mod(scoreWith(s, 'str', t)), dex = mod(scoreWith(s, 'dex', t))
     const m = props.includes('finesse') ? Math.max(str, dex) : ranged ? dex : str
-    const magic = magicBonus(e)
+    const magic = sum(t.attackOf[e.id]) + sum(t.attackAll)
     const dice = String(e.fields.damage ?? '').trim()
-    const dmg = m + magic
+    const dmg = m + sum(t.damageOf[e.id]) + sum(t.damageAll)
     const damage = dice ? dice.split('/').map(d => `${d.trim()}${dmg ? ' ' + signed(dmg).replace('−', '− ').replace('+', '+ ') : ''}`).join(' / ') : '—'
     const untrained = proficientWith(s, e) === false
-    return { id: e.id, name: e.name, toHit: m + (untrained ? 0 : prof) + magic, damage, type: (e.fields.damageType)?.join('/'), note: e.fields.range, untrained }
+    const hitParts = [...(t.attackOf[e.id] ?? []), ...t.attackAll], dmgParts = [...(t.damageOf[e.id] ?? []), ...t.damageAll]
+    const gear = [breakdown('To hit', hitParts), breakdown('Damage', dmgParts)].filter(Boolean).join('\n') || undefined
+    return { id: e.id, name: e.name, toHit: m + (untrained ? 0 : prof) + magic, damage, type: (e.fields.damageType)?.join('/'), note: e.fields.range, untrained, gear }
   })
 }
 
@@ -244,13 +268,13 @@ export const carried = (s: CharacterSheet) => s.inventory.reduce((t, l) => t + (
 export function trackerStats(pc: Entry) {
   const s = sheetOf(pc)
   if (!s) return undefined
-  return { ac: armorClass(s).ac, hp: s.hp ?? s.maxHp, maxHp: s.maxHp, initMod: mod(s.abilities.dex) + (s.initBonus ?? 0) }
+  return { ac: armorClass(s).ac, hp: s.hp ?? maxHpOf(s), maxHp: maxHpOf(s), initMod: initiative(s) }
 }
 
 // ---------- inventory: what can be done with a line, and dragging lines around ----------
 
-/** Weapons and armor can be equipped. */
-export const canEquip = (l: InventoryLine) => ['Weapon', 'Armor'].includes(String(get(l.item)?.fields.kind ?? ''))
+/** Weapons and armor can be equipped, and anything else worn for its effects (a ring, a cloak, boots). */
+export const canEquip = (l: InventoryLine) => { const e = get(l.item); return ['Weapon', 'Armor'].includes(String(e?.fields.kind ?? '')) || (!!e?.fields.effects?.length && !e.fields.attunement) }
 /** Attunement: only items marked "Requires attunement" (and anything already attuned, so it can be taken off). */
 export const canAttune = (l: InventoryLine) => !!l.attuned || !!get(l.item)?.fields.attunement
 
@@ -279,7 +303,7 @@ export const draggedLine = (pc: Entry) => (dragged.pc === pc.id ? sheetOf(pc)?.i
  */
 export function longRest(pc: Entry) {
   const s = sheetToEdit(pc)
-  s.hp = s.maxHp
+  s.hp = maxHpOf(s)
   delete s.tempHp
   for (const slot of s.spellbook?.slots ?? []) slot.used = 0
   let back = Math.max(1, Math.floor(totalLevel(pc) / 2))

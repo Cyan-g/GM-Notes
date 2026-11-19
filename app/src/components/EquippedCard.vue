@@ -7,6 +7,7 @@ import { get, state } from '../store'
 import { changed } from '../edit'
 import { canAttune, canEquip, draggedLine, dragged, editSheet, endDrag, proficientWith, sheetOf, sheetToEdit, startDrag } from '../sheet'
 import ItemModal from './ItemModal.vue'
+import { activeGear, describeEffect } from '../gear'
 
 const props = defineProps<{ pc: Entry }>()
 const ATTUNE_SLOTS = 3
@@ -15,6 +16,10 @@ const lines = computed(() => (sheetOf(props.pc)?.inventory ?? []).map((l, i) => 
 const label = (x: { e?: Entry }) => (x.e!.fields.kind === 'Armor' ? String(x.e!.fields.slot ?? 'Armor') : String(x.e!.fields.kind ?? ''))
 const worn = computed(() => lines.value.filter(x => x.l.equipped && x.e!.fields.kind === 'Armor'))
 const wielded = computed(() => lines.value.filter(x => x.l.equipped && x.e!.fields.kind === 'Weapon'))
+/** Other things worn for their effects: a cloak, boots, a ring that needs no attunement. */
+const other = computed(() => lines.value.filter(x => x.l.equipped && !['Armor', 'Weapon'].includes(String(x.e!.fields.kind))))
+/** What each item in use does right now (gear.ts). */
+const active = computed(() => activeGear(sheetOf(props.pc)).map(g => ({ id: g.item.id, name: g.item.name, says: g.effects.map(describeEffect).filter(Boolean).join(' · ') })))
 const attuned = computed(() => lines.value.filter(x => x.l.attuned))
 /** Worn or wielded without the proficiency for it. */
 const untrained = (x: { e?: Entry }) => proficientWith(sheetOf(props.pc), x.e!) === false
@@ -58,14 +63,14 @@ function toggle(key: 'equipped' | 'attuned') {
   <div class="card equipped-card">
     <h3>Equipped</h3>
     <div class="drop-zone" :class="{ 'drop-over': over === 'equipped' }" @dragover="onDragOver($event, 'equipped')" @dragleave="over = ''" @drop="onDrop($event, 'equipped')">
-    <ul v-if="worn.length || wielded.length" class="rel">
-      <li v-for="x in [...worn, ...wielded]" :key="x.i" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'equipped')" @dragend="endDrag">
+    <ul v-if="worn.length || wielded.length || other.length" class="rel">
+      <li v-for="x in [...worn, ...wielded, ...other]" :key="x.i" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'equipped')" @dragend="endDrag">
         <button class="link-btn cs-item" @click="shown = x.i">{{ x.e!.name }}</button>
         <span v-if="untrained(x)" class="cs-untrained" :title="x.e!.fields.kind === 'Weapon' ? 'Not proficient: no proficiency bonus to hit' : 'Not proficient: disadvantage on STR and DEX rolls, no spellcasting'">⚠</span>
         <span class="role">{{ label(x) }}</span>
       </li>
     </ul>
-    <p v-else class="muted small">Nothing worn or wielded. Drag weapons and armor here from the inventory.</p>
+    <p v-else class="muted small">Nothing worn or wielded. Drag weapons, armor and other gear here from the inventory.</p>
     </div>
 
     <h4>Attunement <span class="muted small">{{ attuned.length }} / {{ ATTUNE_SLOTS }}</span></h4>
@@ -75,6 +80,13 @@ function toggle(key: 'equipped' | 'attuned') {
         <span v-else class="muted small">empty</span>
       </li>
     </ol>
+
+    <template v-if="active.length">
+      <h4>Active gear</h4>
+      <ul class="active-gear">
+        <li v-for="g in active" :key="g.id"><b>{{ g.name }}</b> <span class="muted">{{ g.says }}</span></li>
+      </ul>
+    </template>
 
     <ItemModal v-if="shownLine?.item" :id="shownLine.item" @close="shown = null">
       <template #actions>

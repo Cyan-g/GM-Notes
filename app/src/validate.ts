@@ -66,6 +66,7 @@ export function checkField(f: FieldDef, v: unknown, exists?: (id: string) => Ent
       }
       return undefined
     }
+    case 'effects': return Array.isArray(v) && v.every(x => isObj(x) && isStr(x.on)) ? undefined : 'should be a list of effects'
     case 'classes':
       if (!Array.isArray(v) || !v.every(l => isObj(l) && isStr(l.class) && isNum(l.level))) return 'should be a list of classes with levels'
       return v.map(l => (l.subclass != null ? link(l.subclass) : undefined)).find(Boolean)

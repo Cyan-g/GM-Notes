@@ -10,6 +10,8 @@ import EncounterTable from './EncounterTable.vue'
 import RanksTable from './RanksTable.vue'
 import { renderInline } from '../markdown'
 import { CRAFTING_RULE, craftingTime } from '../crafting'
+import { describeEffect } from '../gear'
+import type { GearEffect } from '../model/types'
 
 const props = defineProps<{ def: FieldDef; value: unknown; entry: Entry }>()
 
@@ -50,6 +52,9 @@ const stock = computed(() => {
     <span class="chips"><span v-for="(v, i) in (value as string[])" :key="i" class="chip" v-html="renderInline(String(v))" /></span>
   </template>
   <template v-else-if="def.kind === 'longtext'"><span v-html="renderInline(String(value))" /></template>
+  <template v-else-if="def.kind === 'effects'">
+    <span class="chips"><span v-for="(x, i) in (value as GearEffect[])" :key="i" class="chip">{{ describeEffect(x) }}</span></span>
+  </template>
   <RanksTable v-else-if="def.kind === 'ranks'" :ranks="(value as any[]) ?? []" :org="entry" />
   <template v-else-if="def.kind === 'recipe'">
     <table class="mini">

@@ -12,7 +12,7 @@ import { DASHBOARDS } from '../dashboards'
 import { newEntry } from '../ui'
 import { toggleFavourite } from '../edit'
 import { describe } from '../describe'
-import { armorClass, sheetOf } from '../sheet'
+import { armorClass, sheetOf, maxHpOf } from '../sheet'
 import EntryLink from '../components/EntryLink.vue'
 
 const byName = (a: Entry, b: Entry) => a.name.localeCompare(b.name)
@@ -52,7 +52,7 @@ const characters = computed(() => list('pc').sort(byName).map(p => {
   const cls = classText(p, db().meta)
   return {
     p, cls: cls && classesOf(p).length > 1 ? `${cls} · Lv ${totalLevel(p)}` : cls || `Lv ${totalLevel(p)}`,
-    hp: s?.maxHp != null ? `${s.hp ?? s.maxHp} / ${s.maxHp} HP` : '', ac: filled ? `AC ${armorClass(s!).ac}` : '',
+    hp: s?.maxHp != null ? `${s.hp ?? maxHpOf(s)} / ${maxHpOf(s)} HP` : '', ac: filled ? `AC ${armorClass(s!).ac}` : '',
   }
 }))
 

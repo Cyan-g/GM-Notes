@@ -1266,10 +1266,24 @@ h1 .icon svg.gi { color: var(--accent); }
 .tip-layer {
   position: fixed; z-index: 1000; max-width: min(22rem, calc(100vw - 16px)); padding: .45rem .6rem; border-radius: 8px;
   background: var(--panel); color: var(--ink); border: 1px solid var(--line); box-shadow: var(--shadow);
-  font: 400 13px/1.45 var(--sans, inherit); pointer-events: none;
+  font: 400 13px/1.45 var(--sans, inherit); pointer-events: none; white-space: pre-line;
 }
 .choice-list { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
 .choice-list .chip .link-btn { margin-left: .25rem; }
 .choice-add { width: auto; min-width: 11rem; }
 /* a long "Mentioned in" list scrolls inside its card */
 .mentions-list { max-height: 18rem; overflow-y: auto; }
+
+/* An item's effects (gear.ts): editor rows, and the sheet's gear marks. */
+.effects-input { display: flex; flex-direction: column; gap: .35rem; align-items: flex-start; }
+.effect-row { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
+.effect-row select, .effect-row input { width: auto; }
+.effect-row .effect-value { width: 4.5em; }
+.effect-row .effect-text { min-width: 14em; }
+.effect-say { font-size: 12px; }
+.ic-gear { margin: .4rem 0; }
+.gear-mod { color: var(--accent); }
+.gear-mod::after { content: '✦'; font-size: .6em; vertical-align: super; margin-left: .1em; }
+.active-gear { margin: .5rem 0 0; padding: 0; list-style: none; font-size: 13px; }
+.active-gear li { padding: .15rem 0; }
+.active-gear .muted { font-size: 12px; }

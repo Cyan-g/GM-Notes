@@ -1,12 +1,12 @@
 // Describes every entry type: its label, fields and dropdown options.
 // Forms and pages are generated from this, so adding a field here is enough.
 import type {
-  Abilities, CharacterSheet, ClassLine, Copper, GearEffect, ItemSpell, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
+  Abilities, CharacterSheet, ClassLine, Copper, GearEffect, ItemSpell, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
 } from './types'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
-  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells'
+  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires'
 
 export interface FieldDef {
   key: string
@@ -161,6 +161,8 @@ export const SCHEMA = [
       { key: 'armorClass', label: 'Armor class', kind: 'text', when: A, group: 'Armor' },
       { key: 'slot', label: 'Slot', kind: 'select', options: ['Head', 'Chest', 'Cloak', 'Gloves', 'Boots', 'Shield'], when: A, group: 'Armor' },
       // What it does to whoever wears, wields or attunes it (gear.ts); not for consumables and ingredients.
+      // Who can use it (requirements.ts): checked when it's equipped, or attuned if it needs attunement.
+      { key: 'requirements', label: 'Requirements', kind: 'requires', when: GEAR },
       { key: 'effects', label: 'Effects', kind: 'effects', when: GEAR },
       // Spells it lets its user cast, and the charges they cost (gear.ts).
       { key: 'charges', label: 'Charges', kind: 'number', when: GEAR },
@@ -264,7 +266,7 @@ export interface KindValue {
   text: string; longtext: string; number: number; bool: boolean; select: string; list: string[]
   money: Copper; weight: number; ref: Id; refs: Id[]; date: WorldDate
   recipe: RecipeLine[]; stock: StockLine[]; statblock: Statblock; abilities: Abilities
-  combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]; effects: GearEffect[]; itemSpells: ItemSpell[]
+  combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]; effects: GearEffect[]; itemSpells: ItemSpell[]; requires: Requirements
 }
 type Defs = (typeof SCHEMA)[number]['fields'][number]
 /** A field key used by any type. */

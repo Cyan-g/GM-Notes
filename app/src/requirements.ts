@@ -1,0 +1,74 @@
+// What an item asks of whoever uses it (its Requirements field): minimum ability scores, a class (or any
+// spellcaster), a race (or a subrace of it), skill proficiencies. An item that doesn't fit can't be equipped,
+// or attuned if it needs attunement. Heavy armor is the exception: below its Strength it can still be worn,
+// at −10 ft speed (gear.ts).
+import type { CharacterSheet, Entry, Id, Requirements } from './model/types'
+import { get } from './store'
+import { classesOf } from './model/classes'
+
+const ABILITY_SHORT: Record<string, string> = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' }
+const orList = (l: string[]) => (l.length < 2 ? l.join('') : `${l.slice(0, -1).join(', ')} or ${l[l.length - 1]}`)
+
+/** An item's requirements, or undefined without any. */
+export function requirementsOf(e: Entry | undefined): Requirements | undefined {
+  const r = e?.fields.requirements
+  if (!r) return undefined
+  const any = r.scores?.length || r.classes?.length || r.spellcaster || r.races?.length || r.skills?.length || r.note?.trim()
+  return any ? r : undefined
+}
+
+/** Heavy armor's Strength minimum: it doesn't block wearing, it slows (5e). */
+export const isHeavyStrength = (e: Entry, ability: string) => e.fields.kind === 'Armor' && e.fields.armorType === 'Heavy' && ability === 'str'
+
+/** The classes asked for: "a Druid", "a Wizard, Sorcerer, Warlock or Bard", "a spellcaster". */
+const whoText = (r: Requirements) => `a ${orList([...(r.classes ?? []), ...(r.spellcaster ? ['spellcaster'] : [])])}`
+
+/** The requirements in a few words: "STR 13", "a druid", "Wizard, Sorcerer, Warlock or Bard", "an Elf", "Performance". */
+export function describeRequirements(e: Entry): string {
+  const r = requirementsOf(e)
+  if (!r) return ''
+  const races = (r.races ?? []).map(id => get(id)?.name ?? id)
+  const parts = [
+    ...(r.scores ?? []).map(x => `${ABILITY_SHORT[x.ability] ?? x.ability} ${x.min}`),
+    ...(r.classes?.length || r.spellcaster ? [whoText(r)] : []),
+    ...(races.length ? [`someone of ${orList(races)} heritage`] : []),
+    ...(r.skills?.length ? [`proficiency in ${orList(r.skills)}`] : []),
+    ...(r.note?.trim() ? [r.note.trim()] : []),
+  ]
+  return parts.join(' · ')
+}
+
+/** Whether a race is one of the given races or a subrace of one. */
+function raceFits(raceId: Id | undefined, races: Id[]): boolean {
+  const seen = new Set<Id>()
+  for (let id = raceId; id && !seen.has(id); id = get(id)?.fields.parent as Id | undefined) {
+    if (races.includes(id)) return true
+    seen.add(id)
+  }
+  return false
+}
+
+/**
+ * What a character lacks to use an item, as reasons ("needs STR 15 (has 12)"); empty when it fits.
+ * `score` gives the character's ability scores (with their gear); `caster` whether they cast spells.
+ * Heavy armor's Strength isn't a reason (it slows instead).
+ */
+export function unmet(pc: Entry, s: CharacterSheet, e: Entry, score: (a: string) => number, caster: boolean): string[] {
+  const r = requirementsOf(e)
+  if (!r) return []
+  const out: string[] = []
+  for (const x of r.scores ?? []) {
+    if (isHeavyStrength(e, x.ability)) continue
+    const have = score(x.ability)
+    if (have < x.min) out.push(`needs ${ABILITY_SHORT[x.ability] ?? x.ability} ${x.min} (has ${have})`)
+  }
+  const classes = (r.classes ?? []).map(c => c.toLowerCase())
+  if (classes.length || r.spellcaster) {
+    const mine = classesOf(pc).map(l => l.class.toLowerCase())
+    const ok = mine.some(c => classes.includes(c)) || (r.spellcaster && caster)
+    if (!ok) out.push(`needs ${whoText(r)}`)
+  }
+  if (r.races?.length && !raceFits(pc.fields.race as Id | undefined, r.races)) out.push(`needs ${orList(r.races.map(id => get(id)?.name ?? id))} heritage`)
+  for (const sk of r.skills ?? []) if (!s.skills[sk]) out.push(`needs proficiency in ${sk}`)
+  return out
+}

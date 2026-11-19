@@ -4,9 +4,9 @@
 import { computed, ref } from 'vue'
 import type { Entry, InventoryLine } from '../model/types'
 import { get, state } from '../store'
-import { changed } from '../edit'
-import { canAttune, canEquip, draggedLine, dragged, editSheet, endDrag, proficientWith, sheetOf, sheetToEdit, startDrag } from '../sheet'
+import { blockedFor, canAttune, canEquip, draggedLine, dragged, editSheet, endDrag, proficientWith, sheetOf, startDrag } from '../sheet'
 import ItemModal from './ItemModal.vue'
+import GearToggles from './GearToggles.vue'
 import { chargesLeft, describeEffect, effectsOf, itemsInUse, setCharges, spellsOf } from '../gear'
 
 const props = defineProps<{ pc: Entry }>()
@@ -29,6 +29,8 @@ const charge = (i: number, n: number) => { if (!ro.value) editSheet(props.pc, x 
 const attuned = computed(() => lines.value.filter(x => x.l.attuned))
 /** Worn or wielded without the proficiency for it. */
 const untrained = (x: { e?: Entry }) => proficientWith(sheetOf(props.pc), x.e!) === false
+/** An item in use whose requirements the character doesn't meet (e.g. a score dropped since). */
+const unfit = (x: { l: InventoryLine; e?: Entry }) => blockedFor(props.pc, { ...x.l, equipped: undefined, attuned: undefined }, x.e?.fields.attunement ? 'attuned' : 'equipped')
 const slots = computed(() => Array.from({ length: Math.max(ATTUNE_SLOTS, attuned.value.length) }, (_, i) => attuned.value[i]))
 
 // ---- dragging: from the inventory onto the equipped list or the attunement slots, or between them ----
@@ -40,11 +42,22 @@ const fits = (zone: 'equipped' | 'attuned') => {
   return zone === 'equipped' ? canEquip(l) || (!canEquip(l) && canAttune(l)) : canAttune(l)
 }
 function onDragOver(ev: DragEvent, zone: 'equipped' | 'attuned') { if (fits(zone)) { ev.preventDefault(); over.value = zone } }
+/** Why the last drop was refused (the item's requirements), shown for a few seconds. */
+const refused = ref('')
+let refusedTimer: ReturnType<typeof setTimeout> | undefined
 function onDrop(ev: DragEvent, zone: 'equipped' | 'attuned') {
   over.value = ''
   if (!fits(zone)) return
   ev.preventDefault()
   const i = dragged.i
+  const l = sheetOf(props.pc)?.inventory[i]
+  const why = l && (blockedFor(props.pc, l, 'equipped') ?? blockedFor(props.pc, l, 'attuned'))
+  if (why) {
+    refused.value = why
+    clearTimeout(refusedTimer); refusedTimer = setTimeout(() => (refused.value = ''), 5000)
+    endDrag()
+    return
+  }
   editSheet(props.pc, x => {
     const l = x.inventory[i]
     // Dropped on Equipped: worn or wielded; a ring or amulet (nothing to wield) is attuned instead.
@@ -60,12 +73,6 @@ const off = (i: number, key: 'equipped' | 'attuned') => { if (!ro.value) editShe
 
 const shown = ref<number | null>(null)
 const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null ? sheetOf(props.pc)?.inventory[shown.value] : undefined))
-function toggle(key: 'equipped' | 'attuned') {
-  if (ro.value || shown.value == null) return
-  const l = sheetToEdit(props.pc).inventory[shown.value]
-  l[key] = !l[key] || undefined
-  changed(props.pc)
-}
 </script>
 
 <template>
@@ -76,6 +83,7 @@ function toggle(key: 'equipped' | 'attuned') {
       <li v-for="x in [...worn, ...wielded, ...other]" :key="x.i" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'equipped')" @dragend="endDrag">
         <button class="link-btn cs-item" @click="shown = x.i">{{ x.e!.name }}</button>
         <span v-if="untrained(x)" class="cs-untrained" :title="x.e!.fields.kind === 'Weapon' ? 'Not proficient: no proficiency bonus to hit' : 'Not proficient: disadvantage on STR and DEX rolls, no spellcasting'">⚠</span>
+        <span v-if="unfit(x)" class="cs-untrained tip" :data-tip="unfit(x)">⚠</span>
         <span class="role">{{ label(x) }}</span>
         <button v-if="!ro" class="link-btn eq-off" :title="`Take off ${x.e!.name} (it stays in the inventory)`" @click="off(x.i, 'equipped')">Unequip</button>
       </li>
@@ -83,11 +91,13 @@ function toggle(key: 'equipped' | 'attuned') {
     <p v-else class="muted small">Nothing worn or wielded. Drag weapons, armor and other gear here from the inventory.</p>
     </div>
 
+    <p v-if="refused" class="error small">Can't: {{ refused }}.</p>
     <h4>Attunement <span class="muted small">{{ attuned.length }} / {{ ATTUNE_SLOTS }}</span></h4>
     <ol class="attune-slots drop-zone" :class="{ 'drop-over': over === 'attuned' }" @dragover="onDragOver($event, 'attuned')" @dragleave="over = ''" @drop="onDrop($event, 'attuned')">
       <li v-for="(x, n) in slots" :key="n" :class="{ empty: !x, over: n >= ATTUNE_SLOTS }">
         <button v-if="x" class="link-btn cs-item" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'attuned')" @dragend="endDrag" @click="shown = x.i">{{ x.e!.name }}</button>
         <span v-else class="muted small">empty</span>
+        <span v-if="x && unfit(x)" class="cs-untrained tip" :data-tip="unfit(x)">⚠</span>
         <button v-if="x && !ro" class="link-btn eq-off" :title="`End the attunement to ${x.e!.name} (it stays in the inventory)`" @click="off(x.i, 'attuned')">Unattune</button>
       </li>
     </ol>
@@ -107,8 +117,7 @@ function toggle(key: 'equipped' | 'attuned') {
 
     <ItemModal v-if="shownLine?.item" :id="shownLine.item" @close="shown = null">
       <template #actions>
-        <button v-if="canEquip(shownLine)" class="chip-toggle" :class="{ on: shownLine.equipped }" :disabled="ro" @click="toggle('equipped')">{{ shownLine.equipped ? 'Equipped' : 'Equip' }}</button>
-        <button v-if="canAttune(shownLine)" class="chip-toggle" :class="{ on: shownLine.attuned }" :disabled="ro" @click="toggle('attuned')">{{ shownLine.attuned ? 'Attuned' : 'Attune' }}</button>
+        <GearToggles :pc="pc" :i="shown!" />
       </template>
     </ItemModal>
   </div>

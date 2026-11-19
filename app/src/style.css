@@ -1357,3 +1357,14 @@ h1 .icon svg.gi { color: var(--accent); }
 .effects-input > .effect-row { align-self: stretch; }
 .effects-input > .chip-btn, .effects-input > .picker { align-self: flex-start; }
 .effect-row .effect-text { flex: 1 1 12em; }
+
+/* An item's requirements in the editor, and the Equip / Attune pair in the inventory. */
+.req-input { display: flex; flex-direction: column; gap: .5rem; }
+.req-row { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .5rem; }
+.req-label { width: 7.5rem; font-size: 12px; color: var(--muted); }
+.req-score { display: inline-flex; align-items: center; gap: .25rem; }
+.req-row .effect-text { flex: 1 1 14em; }
+.req-row .picker { width: 16rem; }
+.cs-toggles { white-space: nowrap; }
+.cs-toggles .chip-toggle + .chip-toggle { margin-left: .3rem; }
+.chip-toggle:disabled.tip { cursor: not-allowed; }

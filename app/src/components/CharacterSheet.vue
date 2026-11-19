@@ -21,6 +21,7 @@ import InventoryCard from './InventoryCard.vue'
 import EquippedCard from './EquippedCard.vue'
 import ProfChips from './ProfChips.vue'
 import ItemModal from './ItemModal.vue'
+import GearToggles from './GearToggles.vue'
 import PcPortrait from './PcPortrait.vue'
 
 const props = defineProps<{ pc: Entry; build?: boolean }>()
@@ -324,8 +325,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
     <ItemModal v-if="shownLine?.item" :id="shownLine.item" @close="shown = null">
       <template #actions>
         <span class="muted small">× {{ shownLine.qty }}</span>
-        <button v-if="canEquip(shownLine)" class="chip-toggle" :class="{ on: shownLine.equipped }" :disabled="ro" @click="edit(x => x.inventory[shown!].equipped = !shownLine!.equipped || undefined)">{{ shownLine.equipped ? 'Equipped' : 'Equip' }}</button>
-        <button v-if="canAttune(shownLine)" class="chip-toggle" :class="{ on: shownLine.attuned }" :disabled="ro" @click="edit(x => x.inventory[shown!].attuned = !shownLine!.attuned || undefined)">{{ shownLine.attuned ? 'Attuned' : 'Attune' }}</button>
+        <GearToggles :pc="pc" :i="shown!" />
       </template>
     </ItemModal>
   </div>

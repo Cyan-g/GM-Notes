@@ -19,6 +19,7 @@ import EncounterInput from './EncounterInput.vue'
 import RanksInput from './RanksInput.vue'
 import EffectsInput from './EffectsInput.vue'
 import ItemSpellsInput from './ItemSpellsInput.vue'
+import RequirementsInput from './RequirementsInput.vue'
 
 const props = defineProps<{ def: FieldDef; entry: Entry }>()
 
@@ -74,6 +75,7 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
   <RanksInput v-else-if="def.kind === 'ranks'" v-model="value" />
   <EffectsInput v-else-if="def.kind === 'effects'" v-model="value" />
   <ItemSpellsInput v-else-if="def.kind === 'itemSpells'" v-model="value" />
+  <RequirementsInput v-else-if="def.kind === 'requires'" v-model="value" />
   <RecipeInput v-else-if="def.kind === 'recipe'" v-model="value" :item-value="entry.fields.value" />
   <StockInput v-else-if="def.kind === 'stock'" v-model="value" :markup="(entry.fields.markup) ?? 1" />
   <EncounterInput v-else-if="def.kind === 'combatants'" v-model="value" />

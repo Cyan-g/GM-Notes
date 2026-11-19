@@ -15,6 +15,7 @@ const fields = computed(() => TYPES.item.fields.filter(d => shown(d) && d.key !=
 
 /** The optional features and the fields each holds. */
 const FEATURES = [
+  { id: 'requirements', label: 'Requirements', keys: ['requirements'], hint: 'Who can equip it, or attune to it if it needs attunement' },
   { id: 'effects', label: 'Effects', keys: ['effects'], hint: 'What it does to whoever wears, wields or attunes it' },
   { id: 'spells', label: 'Spells & charges', keys: ['charges', 'recharge', 'spells'], hint: 'Spells its user can cast, and its charges' },
 ]
@@ -43,7 +44,7 @@ const groups = computed(() => {
   for (const d of fields.value) if (d.group && !FEATURE_KEYS.includes(d.key)) out.set(d.group, [...(out.get(d.group) ?? []), d])
   return [...out]
 })
-const WIDE = ['list', 'longtext', 'effects', 'itemSpells']
+const WIDE = ['list', 'longtext', 'effects', 'itemSpells', 'requires']
 const short = (l: FieldDef[]) => l.filter(d => !WIDE.includes(d.kind) && d.kind !== 'bool')
 const wide = (l: FieldDef[]) => l.filter(d => WIDE.includes(d.kind))
 const bools = computed(() => basics.value.filter(d => d.kind === 'bool'))

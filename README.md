@@ -76,6 +76,11 @@ A player character's page is its character sheet for play: HP, hit dice, inspira
   for that weapon only. Numbers changed by gear get a ✦; hovering shows where they come from ("16 Chain mail · +1 Ring
   of Protection"), and *Equipped* lists the active gear with what each item adds. Gear resistances and features show
   under *Features & traits*. (Data version 25 turned the old free-text Bonus field into effects.)
+- **Requirements:** an item's *Requirements* (on its Edit page) name minimum ability scores, classes (or any
+  spellcaster), races (a subrace counts) and skill proficiencies, plus a note that isn't checked. A character who
+  doesn't meet them can't equip the item, or attune to it if it needs attunement: the button is greyed out and says
+  why, and a drop onto *Equipped* is refused. Heavy armor is the exception: below its Strength it can be worn, at
+  −10 ft speed. An item already in use that no longer fits gets a ⚠. The card shows "Requires" or "Attunement by".
 - **Spells and charges from items:** an item's *Spells* (on its ✎ Edit page) are spells its user can cast while it's
   in use: for some of its *Charges*, once per short or long rest or per day, at will, or *prepared* (cast with the
   character's own slots), optionally at a set level. *Regains* notes how charges come back (e.g. "1d4 at dawn"; that's

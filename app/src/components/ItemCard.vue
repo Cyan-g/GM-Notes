@@ -9,6 +9,7 @@ import { optionsIn } from '../model/lists'
 import { renderInline } from '../markdown'
 import { describeEffect, effectsOf, howCast, spellsOf } from '../gear'
 import EntryLink from './EntryLink.vue'
+import { describeRequirements } from '../requirements'
 
 const props = defineProps<{ e: Entry }>()
 const f = computed(() => props.e.fields)
@@ -21,6 +22,7 @@ const rows = computed(() => ([
   ['Armor type', L('armorType')],
   ['Armor class', f.value.armorClass],
   ['Slot', L('slot')],
+  [f.value.attunement ? 'Attunement by' : 'Requires', describeRequirements(props.e)],
   ['Charges', f.value.charges ? [f.value.charges, f.value.recharge && `regains ${f.value.recharge}`].filter(Boolean).join(', ') : ''],
   ['Crafted with', get(f.value.craftingType)?.name],
   ['Ingredient type', L('category')],

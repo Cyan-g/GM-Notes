@@ -3,6 +3,7 @@
 // The sheet's numbers add them up, and every total can say where it comes from (shown on hover).
 import type { Abilities, CharacterSheet, Entry, GearEffect, Id, InventoryLine, ItemSpell } from './model/types'
 import { get } from './store'
+import { isHeavyStrength, requirementsOf } from './requirements'
 
 type Ability = keyof Abilities
 /** One contribution to a number: what it comes from and how much. */
@@ -213,6 +214,12 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
         case 'sense': t.senses.push({ sense: f.sense ?? 'Darkvision', range: n, from: item.name }); break
         case 'immunity': if (f.condition) t.immunities.push({ condition: f.condition, from: item.name }); break
       }
+    }
+  }
+  // Heavy armor worn without its Strength: −10 ft speed (5e).
+  for (const { item } of itemsInUse(s)) {
+    for (const x of requirementsOf(item)?.scores ?? []) {
+      if (isHeavyStrength(item, x.ability) && scoreWith(s!, 'str', t) < x.min) t.speed.push({ label: `${item.name} (needs STR ${x.min})`, n: -10 })
     }
   }
   return t

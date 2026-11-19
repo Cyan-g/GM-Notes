@@ -89,6 +89,18 @@ export interface GearEffect {
   condition?: string
 }
 /**
+ * What an item asks of whoever uses it (requirements.ts): minimum ability scores, one of some classes (or any
+ * spellcaster), a race or a subrace of it, skill proficiencies, and a note for anything else.
+ */
+export interface Requirements {
+  scores?: { ability: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'; min: number }[]
+  classes?: string[]
+  spellcaster?: boolean
+  races?: Id[]
+  skills?: string[]
+  note?: string
+}
+/**
  * A spell an item lets its user cast while it's worn, wielded or attuned (gear.ts): for `cost` of the item's charges,
  * once per short or long rest or per day, at will, or `prepared` (added to the prepared spells, cast with the
  * character's own slots). `level`: cast at that level.

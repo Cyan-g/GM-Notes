@@ -10,6 +10,7 @@ import { blankSheet, canAttune, canEquip, carried, draggedLine, dragged, editShe
 import EntryPicker from './edit/EntryPicker.vue'
 import MoneyInput from './edit/MoneyInput.vue'
 import ItemModal from './ItemModal.vue'
+import GearToggles from './GearToggles.vue'
 
 const props = defineProps<{ pc: Entry; side?: boolean }>()
 const ro = computed(() => !!state.readOnly)
@@ -63,8 +64,7 @@ function onDrop(ev: DragEvent) {
           <span v-if="e?.fields.kind && !side" class="muted small cs-kind">{{ optionLabel('item.kind', e.fields.kind) }}</span>
         </td>
         <template v-if="!side">
-          <td><button v-if="canEquip(l)" class="chip-toggle" :class="{ on: l.equipped }" :disabled="ro" @click="edit(x => x.inventory[i].equipped = !l.equipped || undefined)">{{ l.equipped ? 'Equipped' : 'Equip' }}</button></td>
-          <td><button v-if="canAttune(l)" class="chip-toggle" :class="{ on: l.attuned }" :disabled="ro" @click="edit(x => x.inventory[i].attuned = !l.attuned || undefined)">{{ l.attuned ? 'Attuned' : 'Attune' }}</button></td>
+          <td class="cs-toggles"><GearToggles :pc="pc" :i="i" /></td>
         </template>
         <td><button class="link-btn" title="Remove" :disabled="ro" @click="edit(x => x.inventory.splice(i, 1))">✕</button></td>
       </tr>
@@ -89,8 +89,7 @@ function onDrop(ev: DragEvent) {
     <ItemModal v-if="shownLine?.item" :id="shownLine.item" @close="shown = null">
       <template #actions>
         <span class="muted small">× {{ shownLine.qty }}</span>
-        <button v-if="canEquip(shownLine)" class="chip-toggle" :class="{ on: shownLine.equipped }" :disabled="ro" @click="edit(x => x.inventory[shown!].equipped = !shownLine!.equipped || undefined)">{{ shownLine.equipped ? 'Equipped' : 'Equip' }}</button>
-        <button v-if="canAttune(shownLine)" class="chip-toggle" :class="{ on: shownLine.attuned }" :disabled="ro" @click="edit(x => x.inventory[shown!].attuned = !shownLine!.attuned || undefined)">{{ shownLine.attuned ? 'Attuned' : 'Attune' }}</button>
+        <GearToggles :pc="pc" :i="shown!" />
       </template>
     </ItemModal>
   </section>

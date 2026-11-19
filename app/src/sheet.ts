@@ -6,6 +6,7 @@ import type { Abilities, CharacterSheet, Crafting, Entry, Id, InventoryLine, Pro
 import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from './model/schema'
 import { db, get, state, touch } from './store'
 import { breakdown, gearTotals, restItems, scoreWith, spellsOf, sum } from './gear'
+import { unmet } from './requirements'
 
 export type Ability = keyof Abilities
 export const ABILITIES: { key: Ability; label: string; short: string }[] = [
@@ -284,6 +285,18 @@ export const canEquip = (l: InventoryLine) => {
 }
 /** Attunement: only items marked "Requires attunement" (and anything already attuned, so it can be taken off). */
 export const canAttune = (l: InventoryLine) => !!l.attuned || !!get(l.item)?.fields.attunement
+
+/**
+ * Why a character can't equip (or attune, for an item that needs attunement) an inventory line's item now, from
+ * the item's requirements; undefined when they can, or when it's the other toggle (which isn't checked).
+ */
+export function blockedFor(pc: Entry, l: InventoryLine, key: 'equipped' | 'attuned'): string | undefined {
+  const e = get(l.item), s = sheetOf(pc)
+  if (!e || !s) return undefined
+  if (key !== (e.fields.attunement ? 'attuned' : 'equipped')) return undefined
+  const why = unmet(pc, s, e, a => score(s, a as Ability), !!castingAbility(pc, s))
+  return why.length ? `${e.name} ${why.join(', ')}` : undefined
+}
 
 /** Change a PC's sheet and mark the PC as changed (nothing happens in a tab that doesn't save). */
 export function editSheet(pc: Entry, fn: (s: CharacterSheet) => void) {

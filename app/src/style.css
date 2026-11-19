@@ -354,7 +354,16 @@ ul.rel-scroll { max-height: 22rem; overflow-y: auto; overscroll-behavior: contai
 
 .new-entry { padding: 1.2rem; display: flex; flex-direction: column; gap: .7rem; }
 .new-entry h3 { margin: 0; }
-.new-entry label { display: grid; grid-template-columns: 4em 1fr; align-items: center; gap: .5rem; font-size: 13px; color: var(--muted); }
+.new-entry .new-name { font-size: 17px; padding: .55rem .75rem; }
+/* the types as a grid of icon buttons */
+.new-types { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: .3rem; }
+.new-type-btn { display: flex; align-items: center; gap: .4rem; padding: .35rem .55rem; font-size: 13px; text-align: left; border-radius: 8px; background: transparent; }
+.new-type-btn svg.gi { width: 1.25em; height: 1.25em; color: var(--accent); flex: none; }
+.new-type-btn.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--panel)); color: var(--ink); font-weight: 600; }
+.new-similar { list-style: none; margin: -.2rem 0 0; padding: .4rem .6rem; border-radius: 8px; font-size: 13px; background: var(--secret-bg); border: 1px solid var(--secret-line); }
+.new-similar li { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+.new-similar svg.gi { width: 1.1em; height: 1.1em; color: var(--accent); }
+.new-in { display: flex; align-items: center; gap: .45rem; font-size: 14px; }
 .new-entry .actions { display: flex; justify-content: flex-end; gap: .5rem; }
 .entry.editing .entry-grid { grid-template-columns: minmax(0, 1fr) clamp(400px, 30vw, 640px); }
 @media (max-width: 1100px) { .entry.editing .entry-grid { grid-template-columns: 1fr; } .body-editor.split .be-panes { grid-template-columns: 1fr; } }

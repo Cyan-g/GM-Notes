@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // A player character's sheet, filled in right here: scores, proficiencies, HP, inventory and features.
-// (In player mode the inventory sits beside the sheet, under the Equipped card.)
+// Under it, what they wear and wield (Equipped) sits beside the inventory, half and half.
 // Modifiers, saves, skills, AC, attacks and spellcasting are worked out from them.
 // On the character's page it's for play: only what changes at the table (HP, hit dice, inspiration, inventory).
 // On the Edit page (`build`) it also opens what's set when building the character: classes and their levels
@@ -8,7 +8,7 @@
 // Hit dice come from the classes, one pool per die size, each spent on its own.
 import { computed, ref } from 'vue'
 import type { CharacterSheet, ClassLine, Entry, Proficiencies } from '../model/types'
-import { byType, get, listOptions, playerMode, setList, state } from '../store'
+import { byType, get, listOptions, setList, state } from '../store'
 import { CLASS_DIE, DICE, classText, classesOf, dieOf, hitDicePools } from '../model/classes'
 import { changed } from '../edit'
 import { hrefTab } from '../router'
@@ -18,6 +18,7 @@ import {
 } from '../sheet'
 import { breakdown, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../gear'
 import InventoryCard from './InventoryCard.vue'
+import EquippedCard from './EquippedCard.vue'
 import ProfChips from './ProfChips.vue'
 import ItemModal from './ItemModal.vue'
 import PcPortrait from './PcPortrait.vue'
@@ -289,8 +290,12 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
     </div>
 
 
-    <!-- inventory (in player mode it sits beside the sheet instead) -->
-    <InventoryCard v-if="!playerMode" :pc="pc" />
+    <!-- what's worn and wielded beside the inventory, half and half (the Edit page shows only the inventory) -->
+    <div v-if="!build" class="cs-gear-row">
+      <EquippedCard :pc="pc" />
+      <InventoryCard :pc="pc" />
+    </div>
+    <InventoryCard v-else :pc="pc" />
 
     <!-- features and traits -->
     <section class="cs-features">

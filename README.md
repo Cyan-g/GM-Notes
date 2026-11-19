@@ -53,7 +53,7 @@ A player character's page is its character sheet for play: HP, hit dice, inspira
 - **Inventory:** items from the world with a quantity, plus anything else by name. Clicking an item opens its card in a pop-up, where it can also be equipped or attuned. Only items marked *Requires attunement* can be attuned.
 - **Equipped card** (beside the sheet, in place of the relation cards): the worn armor and wielded weapons, and the three attunement slots. What's equipped or attuned is shown there and not in the inventory.
 - **Drag and drop:** drag an item from the inventory onto *Equipped* to wear or wield it (weapons, armor, and anything else with effects, such as boots or a cloak). An item that requires attunement is attuned instead. Drag it onto the attunement slots to attune it, and back to the inventory to take it off.
-- **Player mode:** the inventory sits beside the sheet under *Equipped*, where *Mentioned in* is in DM mode. Weapons and armor can be equipped, and magic items attuned.
+- **Equipped and inventory:** under the sheet, *Equipped* (what is worn and wielded, the attunement slots and the active gear) sits beside the inventory, half and half; in DM and player mode alike.
 - **Proficiencies:** picked from the same lists the items use:
   - armor: Light, Medium, Heavy, Shield
   - weapons: Simple, Martial, or single base weapons such as Rapier

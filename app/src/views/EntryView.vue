@@ -34,9 +34,7 @@ import ItemCard from '../components/ItemCard.vue'
 import SpellCard from '../components/SpellCard.vue'
 import CharacterSheet from '../components/CharacterSheet.vue'
 import PcNotes from '../components/PcNotes.vue'
-import EquippedCard from '../components/EquippedCard.vue'
 import AttacksCard from '../components/AttacksCard.vue'
-import InventoryCard from '../components/InventoryCard.vue'
 import FeatCard from '../components/FeatCard.vue'
 import { describe } from '../describe'
 import TimelineChart from '../components/TimelineChart.vue'
@@ -403,11 +401,8 @@ const siblings = computed(() => {
         <StatblockView v-if="statblock && e.type !== 'creature'" :sb="statblock" :name="e.name" />
 
         <MembersCard v-if="e.type === 'organization'" :org="e" />
-        <!-- A character's sheet: what they're equipped with instead of the relation cards. -->
-        <EquippedCard v-if="e.type === 'pc'" :pc="e" />
+        <!-- A character's attacks and proficiencies instead of the relation cards (Equipped and the inventory are under the sheet). -->
         <AttacksCard v-if="e.type === 'pc'" :pc="e" />
-        <!-- Player mode: the inventory sits under it, where "Mentioned in" would be. -->
-        <InventoryCard v-if="e.type === 'pc' && playerMode" :pc="e" side />
         <!-- A character's details and appearance come after what they carry. -->
         <div v-for="[g, fs] in e.type === 'pc' ? groups : []" :key="'pc-' + g" class="card">
           <h3>{{ g }}</h3>

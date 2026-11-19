@@ -266,6 +266,11 @@ textarea { width: 100%; resize: vertical; }
 .edit-bar { position: sticky; top: var(--bar-h); z-index: 5; display: flex; align-items: center; gap: .6rem; padding: .6rem 0; background: var(--bg); border-bottom: 1px solid var(--line); margin-bottom: .5rem; }
 .edit-bar .spacer { flex: 1; }
 .name-input { font: 600 2rem var(--serif); width: 100%; padding: .2rem .5rem; margin: .3rem 0 .6rem; }
+/* the edit page's header: the name (at most half the width) with type, Known to players and aliases beside it */
+.edit-head { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1.2rem; }
+.edit-head .name-input { flex: 1 1 18rem; max-width: 50%; margin: .3rem 0; }
+.edit-head .edit-meta { flex: 1 1 24rem; }
+@media (max-width: 760px) { .edit-head .name-input { max-width: none; } }
 .edit-meta { display: flex; flex-wrap: wrap; gap: .6rem 1.2rem; align-items: center; }
 .edit-meta > label { display: flex; align-items: center; gap: .4rem; font-size: 13px; color: var(--muted); }
 .edit-meta > label.grow { flex: 1 1 280px; }

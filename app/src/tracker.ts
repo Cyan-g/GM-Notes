@@ -2,7 +2,7 @@
 import type { Combatant, Entry, Id, Tracker } from './model/types'
 import { byType, db, get, touch } from './store'
 import { combatantsFrom, playerCombatant } from './encounter'
-import type { EncounterLine } from './model/types'
+import { armorClass, initiative, maxHpOf, sheetOf, sheetToEdit } from './sheet'
 
 export function tracker(): Tracker {
   const d = db()
@@ -12,6 +12,56 @@ export function tracker(): Tracker {
 
 const d20 = () => 1 + Math.floor(Math.random() * 20)
 
+// ---- a combatant's numbers: a player character's come from their sheet ----
+
+/** The character whose sheet a combatant's numbers come from. */
+const sheetPc = (c: Combatant) => (c.isPlayer && c.entry ? get(c.entry) : undefined)
+
+export interface FighterStats {
+  hp?: number; maxHp?: number; tempHp?: number; ac?: number; initMod: number
+  /** AC and initiative come from the sheet; HP too once the sheet has a max HP. */
+  acFromSheet: boolean; hpFromSheet: boolean
+}
+export function fighterStats(c: Combatant): FighterStats {
+  const pc = sheetPc(c)
+  const s = pc && sheetOf(pc)
+  if (!s) return { hp: c.hp, maxHp: c.maxHp, tempHp: c.tempHp, ac: c.ac, initMod: c.initMod, acFromSheet: false, hpFromSheet: false }
+  const max = maxHpOf(s)
+  const linked = max != null
+  return {
+    ac: armorClass(s).ac, initMod: initiative(s), acFromSheet: true, hpFromSheet: linked,
+    hp: linked ? s.hp ?? max : c.hp, maxHp: linked ? max : c.maxHp, tempHp: linked ? s.tempHp : c.tempHp,
+  }
+}
+/**
+ * Changes HP (and temporary HP): on the sheet for a linked character, else on the combatant. Dropping to 0 ends
+ * concentration, and knocks a party member unconscious; back above 0, they wake and their death saves end.
+ */
+export function setHp(c: Combatant, hp: number | undefined, temp: number | undefined) {
+  const pc = sheetPc(c)
+  const before = fighterStats(c)
+  const wasDown = before.hp != null && before.hp <= 0
+  if (hp != null && hp <= 0 && !wasDown && before.maxHp) {
+    c.conditions = c.conditions.filter(x => x !== 'Concentrating')
+    delete c.concChecks
+    if (c.rounds) delete c.rounds.Concentrating
+    if (isParty(c) && !c.conditions.includes('Unconscious')) c.conditions = [...c.conditions, 'Unconscious']
+  }
+  if (wasDown && (hp ?? 0) > 0) c.conditions = c.conditions.filter(x => x !== 'Unconscious')
+  if (pc && before.hpFromSheet) {
+    const s = sheetToEdit(pc)
+    s.hp = hp
+    s.tempHp = temp || undefined
+    pc.updated = new Date().toISOString()
+  } else {
+    c.hp = hp
+    c.tempHp = temp || undefined
+  }
+  if ((hp ?? 0) > 0) delete c.deathSaves
+  touch()
+}
+const isDown = (c: Combatant) => { const s = fighterStats(c); return s.hp != null && s.hp <= 0 && !!s.maxHp }
+
 export function loadEncounter(id: Id, replace = true) {
   const e = get(id)
   if (!e) return
@@ -19,7 +69,7 @@ export function loadEncounter(id: Id, replace = true) {
   const monsters = combatantsFrom((e.fields.creatures) ?? [])
   if (replace) {
     // The encounter's own party if it has one (keeping the HP of those already in the tracker), else whoever is there.
-    const fresh = (c: Combatant) => ({ ...c, init: null, conditions: [] })
+    const fresh = (c: Combatant): Combatant => ({ ...c, init: null, conditions: [], rounds: undefined, concChecks: undefined })
     const party = (e.fields.party) ?? []
     const players = party.length
       ? party.map(id => get(id)).filter((p): p is Entry => !!p).map(p => { const had = t.combatants.find(c => c.entry === p.id); return had ? fresh(had) : playerCombatant(p) })
@@ -58,14 +108,14 @@ export function removeCombatant(id: string) {
 
 /** Roll for everyone without an initiative (monsters by default; players usually say their own). */
 export function rollInitiative(includePlayers = false) {
-  for (const c of tracker().combatants) if (c.init == null && (includePlayers || !c.isPlayer)) c.init = d20() + c.initMod
+  for (const c of tracker().combatants) if (c.init == null && (includePlayers || !c.isPlayer)) c.init = d20() + fighterStats(c).initMod
   sortByInitiative()
 }
 
 export function sortByInitiative() {
   const t = tracker()
   const current = t.combatants[t.turn]?.id
-  t.combatants.sort((a, b) => (b.init ?? -99) - (a.init ?? -99) || b.initMod - a.initMod || Number(b.isPlayer) - Number(a.isPlayer))
+  t.combatants.sort((a, b) => (b.init ?? -99) - (a.init ?? -99) || fighterStats(b).initMod - fighterStats(a).initMod || Number(b.isPlayer) - Number(a.isPlayer))
   if (current) t.turn = t.combatants.findIndex(c => c.id === current)
   touch()
 }
@@ -73,13 +123,24 @@ export function sortByInitiative() {
 /** Party and allies stand on the left, enemies on the right. */
 export const isParty = (c: Combatant) => (c.side ? c.side === 'party' : c.isPlayer)
 /** Fallen enemies are skipped; fallen party members still get their turn (death saves). */
-const skipped = (c: Combatant) => !isParty(c) && c.hp != null && c.hp <= 0
+const skipped = (c: Combatant) => !isParty(c) && isDown(c)
+
+/** Conditions with rounds left count down at the end of the combatant's turn, and end at 0. */
+function endTurn(c: Combatant) {
+  if (!c.rounds) return
+  for (const [x, n] of Object.entries(c.rounds)) {
+    if (n > 1) c.rounds[x] = n - 1
+    else { delete c.rounds[x]; c.conditions = c.conditions.filter(y => y !== x) }
+  }
+  if (!Object.keys(c.rounds).length) delete c.rounds
+}
 
 export function nextTurn(step = 1) {
   const t = tracker()
   const n = t.combatants.length
   if (!n) return
   if (t.turn < 0) { sortByInitiative(); t.turn = 0; t.round = 1; touch(); return }
+  if (step > 0) endTurn(t.combatants[t.turn])
   let turn = t.turn
   for (let k = 0; k < n; k++) {
     turn += step
@@ -91,27 +152,53 @@ export function nextTurn(step = 1) {
   touch()
 }
 
-/** "-7" damages, "+5" heals, "=20" sets, "t5" gives temporary HP. Damage takes temporary HP first. */
+/** The DC of the Constitution save to keep concentrating after taking this much damage. */
+export const concentrationDc = (dmg: number) => Math.max(10, Math.floor(dmg / 2))
+
+/**
+ * "-7" damages, "+5" heals, "=20" sets, "t5" gives temporary HP. Damage takes temporary HP first, asks for a
+ * concentration save from someone concentrating, and is a failed death save for a party member already at 0.
+ */
 export function applyHp(c: Combatant, input: string) {
   const m = input.trim().toLowerCase().match(/^([+\-=t]?)\s*(\d+)$/)
   if (!m) return false
   const n = Number(m[2])
   const op = m[1] || '-'
-  if (op === 't') c.tempHp = Math.max(c.tempHp ?? 0, n) || undefined
-  else if (op === '=') c.hp = n
-  else if (op === '+') c.hp = c.maxHp != null ? Math.min(c.maxHp, (c.hp ?? 0) + n) : (c.hp ?? 0) + n
+  const s = fighterStats(c)
+  let hp = s.hp, temp = s.tempHp
+  if (op === 't') temp = Math.max(temp ?? 0, n) || undefined
+  else if (op === '=') hp = n
+  else if (op === '+') hp = s.maxHp != null ? Math.min(s.maxHp, Math.max(0, hp ?? 0) + n) : (hp ?? 0) + n
   else {
+    if (!n) return true
+    const wasDown = hp != null && hp <= 0
     let dmg = n
-    if (c.tempHp) { const used = Math.min(c.tempHp, dmg); c.tempHp -= used; dmg -= used }
-    c.hp = Math.max(0, (c.hp ?? 0) - dmg)
+    if (temp) { const used = Math.min(temp, dmg); temp -= used; dmg -= used }
+    hp = Math.max(0, (hp ?? 0) - dmg)
+    if (c.conditions.includes('Concentrating') && hp > 0) c.concChecks = [...(c.concChecks ?? []), concentrationDc(n)]
+    if (wasDown && isParty(c)) addDeathSave(c, false)
   }
-  touch()
+  setHp(c, hp, temp)
   return true
 }
 
+/** A death saving throw: three successes and the character is stable, three failures and they die. */
+export function addDeathSave(c: Combatant, ok: boolean, by = 1) {
+  const d = c.deathSaves ?? { ok: 0, fail: 0 }
+  if (ok) d.ok = Math.min(3, d.ok + by); else d.fail = Math.min(3, d.fail + by)
+  c.deathSaves = d
+  touch()
+}
+
+/** End the fight: monsters go. Player characters stay; those without a sheet's HP get their full HP back. */
 export function clearTracker(keepPlayers = true) {
   const t = tracker()
-  t.combatants = keepPlayers ? t.combatants.filter(c => c.isPlayer).map(c => ({ ...c, init: null, conditions: [], hp: c.maxHp, tempHp: undefined })) : []
+  t.combatants = keepPlayers
+    ? t.combatants.filter(c => c.isPlayer).map(c => {
+      const own = !fighterStats(c).hpFromSheet
+      return { ...c, init: null, conditions: [], rounds: undefined, concChecks: undefined, deathSaves: undefined, ...(own ? { hp: c.maxHp, tempHp: undefined } : {}) }
+    })
+    : []
   t.round = 0
   t.turn = -1
   t.encounter = undefined

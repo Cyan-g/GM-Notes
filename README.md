@@ -88,7 +88,8 @@ A player character's page is its character sheet for play: HP, hit dice, inspira
   done by hand). The Spellbook's *From items* card lists them with their item, attack or save and a *Cast* button that
   spends the charges or marks the use; *Short rest* there and *Long rest* give uses back. *Equipped* shows each item's
   charges with − and ＋.
-- **In a fight:** Combat (the initiative tracker) takes the PC's AC, HP and initiative from the sheet.
+- **In a fight:** Combat (the initiative tracker) shows the PC's AC and initiative bonus from the sheet, always current. HP is shared with the sheet once it has a max HP: damage in the fight changes the sheet, and the other way round (until then the card keeps its own HP).
+- **Combat cards:** only the conditions in effect show, as chips; *＋ Condition* adds one. A number in a chip is the rounds left, counting down at the end of that creature's turn. Damage to someone *Concentrating* asks for a CON save (DC 10, or half the damage) with *Kept* / *Lost*. Dropping to 0 HP ends concentration; a party member falls *Unconscious* and gets death-save boxes (damage at 0 HP adds a failure; *Nat 20* brings them back with 1 HP).
 
 **How items match proficiencies.** Each item says what it needs:
 - **A weapon:** its *Weapon category* (Simple or Martial) and its *Base weapon* (Rapier). A standard base weapon also tells the category. A weapon with neither, such as a wand, needs no proficiency.

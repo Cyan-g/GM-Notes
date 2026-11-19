@@ -762,7 +762,8 @@ table.grid.wb-recipes th:nth-last-child(2) { width: 7.5em; }
 .init-chip.party { background: color-mix(in srgb, var(--link) 9%, var(--panel)); }
 .init-chip.now { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); font-weight: 600; transform: scale(1.04); margin: 0 .25rem; }
 .init-chip.sel { outline: 1px dashed var(--accent-2); }
-.init-chip.down { opacity: .4; text-decoration: line-through; }
+.init-chip.down:not(.party) { opacity: .4; text-decoration: line-through; }
+.init-chip.down.party { color: var(--accent); }
 .init-num { font-weight: 700; color: var(--accent); min-width: 1.4em; text-align: right; }
 .init-cond { font-size: 11px; background: var(--secret-bg); border-radius: 99px; padding: 0 .4em; }
 .init-hp { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--line); }
@@ -785,8 +786,10 @@ table.grid.wb-recipes th:nth-last-child(2) { width: 7.5em; }
 .side-col.enemies .fighter { border-left-color: var(--accent); }
 .fighter.current { box-shadow: 0 0 0 2px var(--accent), var(--shadow); }
 .fighter.selected:not(.current) { outline: 1px dashed var(--accent-2); }
-.fighter.down { opacity: .55; }
-.fighter.down .fighter-name { text-decoration: line-through; }
+.fighter.down:not(.party) { opacity: .55; }
+.fighter.down:not(.party) .fighter-name { text-decoration: line-through; }
+/* a party member at 0 HP is dying, not gone: marked, still fully usable */
+.fighter.down.party { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
 .fighter-head { display: flex; align-items: center; gap: .5rem; }
 .fighter-head .spacer { flex: 1; }
 .fighter-name { font-weight: 600; font-size: 15px; color: var(--ink); text-align: left; }
@@ -812,11 +815,32 @@ table.grid.wb-recipes th:nth-last-child(2) { width: 7.5em; }
 .hp-btn.heal { color: #3f8a3b; }
 .hp-btn.tmp:hover { border-color: #3a6fc4; }
 
-.cond-icons { display: flex; flex-wrap: wrap; gap: 2px; }
-.cond-icon { border: 1px solid transparent; background: none; padding: 0 2px; font-size: 15px; line-height: 1.4; border-radius: 6px; filter: grayscale(1); opacity: .28; cursor: pointer; }
-.cond-icon:hover { opacity: .7; }
-.cond-icon.on { filter: none; opacity: 1; background: var(--secret-bg); border-color: var(--secret-line); }
-.cond-names { font-size: 12px; color: var(--accent); margin-top: .2rem; }
+/* conditions in effect as chips (rounds left inside), then the add menu */
+.conds { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; margin-top: .35rem; }
+.cond-chip { display: inline-flex; align-items: center; gap: .25rem; padding: .1rem .2rem .1rem .45rem; border-radius: 999px; font-size: 13px;
+  background: var(--secret-bg); border: 1px solid var(--secret-line); color: var(--ink); }
+.cond-ic { font-size: 14px; }
+.cond-rounds { width: 2.6em; height: 22px; padding: 0 .2em; font-size: 12px; text-align: center; border-radius: 999px; -moz-appearance: textfield; }
+.cond-rounds::-webkit-inner-spin-button, .cond-rounds::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.cond-x { border: none; background: none; padding: 0 .3rem; color: var(--muted); font-size: 15px; line-height: 1; cursor: pointer; }
+.cond-x:hover { color: var(--accent); }
+.cond-add { width: auto; padding: .15rem .5rem; font-size: 12px; color: var(--muted); background: transparent; border-style: dashed; border-radius: 999px; cursor: pointer; }
+.cond-add:hover, .cond-add:focus { color: var(--ink); border-color: var(--accent-2); }
+/* a PC's AC from the sheet */
+.fighter-ac { display: inline-flex; align-items: center; justify-content: center; min-width: 2.2em; height: 34px; padding: 0 .3em; font-size: 17px; color: var(--ink);
+  border: 1px solid var(--line); border-radius: 6px 6px 50% 50% / 6px 6px 40% 40%; background: color-mix(in srgb, var(--panel) 60%, transparent); text-transform: none; }
+.fighter-stat input.unset::placeholder { color: var(--muted); font-weight: 400; font-size: 12px; }
+.hp-max-ro { min-width: 2em; text-align: left; }
+.conc-check { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem; margin-top: .4rem; padding: .3rem .5rem; border-radius: 8px; font-size: 13px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel)); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+.conc-check > span { margin-right: auto; }
+.death-saves { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; margin-top: .4rem; font-size: 13px; }
+.ds-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.ds-row { display: inline-flex; align-items: center; gap: .2rem; }
+.ds-row.ok { color: #5fae5f; } .ds-row.fail { color: var(--accent); }
+.ds-box { width: 16px; height: 16px; padding: 0; border-radius: 50%; border: 2px solid currentColor; background: transparent; cursor: pointer; }
+.ds-box.on { background: currentColor; }
+.ds-fate.stable { color: #5fae5f; } .ds-fate.dead { color: var(--accent); }
 
 /* encounter: adding sits in each column; big while the side is empty, slim and quiet once there are fighters */
 .init-strip.empty { min-height: 48px; align-items: center; justify-content: center; border-style: dashed; box-shadow: none; }

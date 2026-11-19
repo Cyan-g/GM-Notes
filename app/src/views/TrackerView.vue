@@ -5,7 +5,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Combatant, Id, Statblock } from '../model/types'
 import { byType, get, touch } from '../store'
 import { mod, newCombatantId, statsOf } from '../encounter'
-import { addCombatant, addPlayers, clearTracker, isParty, loadEncounter, nextTurn, partyOf, rollInitiative, sortByInitiative, tracker } from '../tracker'
+import { addCombatant, addPlayers, clearTracker, isParty, loadEncounter, nextTurn, partyOf, rollInitiative, sortByInitiative, fighterStats, tracker } from '../tracker'
 import { hrefEntry } from '../router'
 import EntryLink from '../components/EntryLink.vue'
 import EntryPicker from '../components/edit/EntryPicker.vue'
@@ -84,8 +84,8 @@ const order = computed(() => {
   return { left, centre: list[at], right: build(rightIdx, 'right') }
 })
 const current = (c: Combatant) => t.value.combatants[t.value.turn]?.id === c.id
-const stripState = (c: Combatant) => (c.hp == null || !c.maxHp ? '' : c.hp <= 0 ? 'down' : c.hp <= c.maxHp / 2 ? 'bloodied' : '')
-const hpPct = (c: Combatant) => (c.maxHp ? Math.max(0, Math.min(100, ((c.hp ?? 0) / c.maxHp) * 100)) : null)
+const stripState = (c: Combatant) => { const s = fighterStats(c); return s.hp == null || !s.maxHp ? '' : s.hp <= 0 ? 'down' : s.hp <= s.maxHp / 2 ? 'bloodied' : '' }
+const hpPct = (c: Combatant) => { const s = fighterStats(c); return s.maxHp ? Math.max(0, Math.min(100, ((s.hp ?? 0) / s.maxHp) * 100)) : null }
 // Typing an initiative re-sorts the order straight away.
 watch(() => t.value.combatants.map(c => c.init).join(','), () => sortByInitiative())
 
@@ -113,7 +113,7 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
       <span v-if="encounter" class="muted"><EntryLink :id="encounter.id" icon /></span>
       <span class="spacer" />
       <button v-if="t.combatants.length" title="Roll d20 + Dex for every monster without an initiative" @click="rollInitiative()">🎲 Roll for monsters</button>
-      <button v-if="t.combatants.length" class="danger" title="End the fight: monsters go, player characters stay with full HP" @click="clearAll">Clear</button>
+      <button v-if="t.combatants.length" class="danger" title="End the fight: monsters go, player characters stay, keeping the HP on their sheets" @click="clearAll">Clear</button>
       <div class="cal-nav">
         <button title="Previous turn (P)" :disabled="t.turn < 0" @click="nextTurn(-1)">◀</button>
         <button class="primary" title="Next turn (N or Space)" :disabled="!t.combatants.length" @click="nextTurn()">{{ t.turn < 0 ? '⚔ Start combat' : 'Next ▶' }}</button>
@@ -171,7 +171,7 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
         </div>
       </section>
       <section class="side-col enemies">
-        <h2 class="side-title">☠ Enemies <span v-if="enemies.length" class="muted small">{{ enemies.filter(c => !(c.hp != null && c.hp <= 0)).length }} / {{ enemies.length }} standing</span></h2>
+        <h2 class="side-title">☠ Enemies <span v-if="enemies.length" class="muted small">{{ enemies.filter(c => stripState(c) !== 'down').length }} / {{ enemies.length }} standing</span></h2>
         <CombatantCard v-for="c in enemies" :key="c.id" :c="c" :current="current(c)" :selected="selected === c.id" @select="selected = c.id" @stats="shown = c.id" />
         <div class="card side-add" :class="{ slim: enemies.length }">
           <label><span>Encounter</span><EntryPicker :model-value="t.encounter ?? null" :types="['encounter']" placeholder="Load an encounter…" @update:model-value="load" /></label>

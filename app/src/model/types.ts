@@ -274,12 +274,20 @@ export interface Combatant {
   /** Which column it stands in; players are party and everyone else an enemy unless set. */
   side?: 'party' | 'enemy'
   init: number | null
+  /** AC, HP and the initiative bonus of a player character with a sheet come from the sheet (see tracker.ts statsOf);
+   * these are kept for everyone else, and for HP until the sheet has a max HP. */
   initMod: number
   hp?: number
   maxHp?: number
   tempHp?: number
   ac?: number
   conditions: string[]
+  /** Rounds left on a condition, counting down at the end of this combatant's turn. */
+  rounds?: Record<string, number>
+  /** Concentration saves still to roll (their DCs), from damage taken while concentrating. */
+  concChecks?: number[]
+  /** Death saving throws of a party member at 0 HP. */
+  deathSaves?: { ok: number; fail: number }
   note?: string
 }
 

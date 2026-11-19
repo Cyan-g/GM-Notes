@@ -1469,3 +1469,11 @@ h1 > .count { font-size: 16px; }
 :is(h1, h2, h3, h4) .muted.small.over { color: var(--accent); font-weight: 600; }
 /* the same for small buttons in a heading ("Edit", "Replace with the campaign's party") */
 :is(h2, h3, h4) :is(.link-btn, .chip-btn) { font-family: var(--sans); font-variant: normal; text-transform: none; letter-spacing: 0; font-size: 13px; }
+
+/* Ctrl+K: group headings, text hits with an excerpt */
+.qs li.qs-head { display: block; padding: .5rem .7rem .15rem; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); cursor: default; }
+.qs li.qs-text { align-items: flex-start; }
+.qs-text-body { display: flex; flex-direction: column; min-width: 0; gap: .1rem; }
+.qs-snippet { font-size: 13px; color: var(--muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.qs-snippet mark { background: color-mix(in srgb, var(--accent) 30%, transparent); color: var(--ink); border-radius: 3px; padding: 0 1px; }
+.qs li .icon { flex: none; width: 1.2em; text-align: center; }

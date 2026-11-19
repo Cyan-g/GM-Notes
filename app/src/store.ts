@@ -456,6 +456,9 @@ export { LISTS }
 
 /** Player mode: the app trimmed for a player's own world (see meta.mode). */
 export const playerMode = computed(() => state.db?.meta.mode === 'player')
+/** The DM's fight material, which player mode leaves out of search and lists: encounters and creatures. */
+export const DM_TYPES: string[] = ['encounter', 'creature']
+export const hiddenFromPlayers = (e: Entry | undefined) => !!e && playerMode.value && DM_TYPES.includes(e.type)
 export function setMode(mode: 'dm' | 'player') {
   const m = db().meta
   if (mode === 'dm') delete m.mode; else m.mode = mode

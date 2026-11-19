@@ -4,7 +4,7 @@
 import { computed } from 'vue'
 import type { Entry, EntryType } from '../model/types'
 import { TYPES } from '../model/schema'
-import { byType, formatDate, get, playerMode, state } from '../store'
+import { byType, formatDate, get, hiddenFromPlayers, playerMode, state } from '../store'
 import { weekday } from '../calendar'
 import { newEntry } from '../ui'
 import EntryLink from './EntryLink.vue'
@@ -39,7 +39,7 @@ const linked = computed(() => {
   for (const [, raw] of body.matchAll(/\[\[([^\]|#]+)/g)) {
     const id = raw.replace(/\\$/, '').trim()
     const x = get(id)
-    if (!x || seen.has(id) || x.type === 'encounter' || x.type === 'session') continue
+    if (!x || seen.has(id) || x.type === 'encounter' || x.type === 'session' || hiddenFromPlayers(x)) continue
     seen.add(id)
     if (!groups.has(x.type)) groups.set(x.type, [])
     groups.get(x.type)!.push(x)

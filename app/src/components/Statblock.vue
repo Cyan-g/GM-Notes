@@ -20,10 +20,12 @@ const sections = computed(() => ([
   ['Reactions', props.sb.reactions], ['Legendary Actions', props.sb.legendary],
 ] as const).filter(([, f]) => f?.length))
 const onlyAbilities = computed(() => Object.keys(props.sb).every(k => ['abilities', 'hp', 'ac'].includes(k)))
+/** Nothing filled in: every score still 10 and no HP or AC. Shown as nothing rather than as real numbers. */
+const blank = computed(() => onlyAbilities.value && props.sb.hp == null && props.sb.ac == null && (!props.sb.abilities || ABIL.every(a => Number(props.sb.abilities![a]) === 10)))
 </script>
 
 <template>
-  <div class="statblock" :class="{ compact: onlyAbilities }">
+  <div v-if="!blank" class="statblock" :class="{ compact: onlyAbilities }">
     <template v-if="!onlyAbilities">
       <h3>{{ name }}</h3>
       <div class="sb-sub" v-if="sb.size || sb.creatureType || sb.alignment">

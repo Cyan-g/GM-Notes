@@ -9,7 +9,7 @@ import { currentPc, setCurrent } from '../sheet'
 import { computed, ref } from 'vue'
 import type { Entry, Relation, Statblock, WorldDate } from '../model/types'
 import { TYPES, RELATION_KINDS, byKey, type FieldDef } from '../model/schema'
-import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, placePath, playerMode, relationsOf, entries, state } from '../store'
+import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, hiddenFromPlayers, placePath, playerMode, relationsOf, entries, state } from '../store'
 import { go, hrefEntry, hrefFamily, hrefList, hrefMap, hrefTab, type EntryTab } from '../router'
 import SpellbookView from './SpellbookView.vue'
 import CraftingView from './CraftingView.vue'
@@ -121,8 +121,8 @@ const bodyParts = computed(() => {
   if (rest.trim()) parts.push({ md: rest, from, to: lines.length })
   return { parts, placed: new Set(cuts.map(c => c.insert)) }
 })
-/** Checklist boxes in the text can be ticked in read mode, except in player mode, a read-only or a shared entry. */
-const canTick = computed(() => !state.readOnly && !playerMode.value && !shared.value)
+/** Checklist boxes in the text can be ticked in read mode, except on a read-only or a shared entry (players tick their own notes). */
+const canTick = computed(() => !state.readOnly && !shared.value)
 /** A ticked box: its part of the text, changed, goes back in its place. */
 function setPart(p: { from?: number; to?: number }, md: string) {
   const x = e.value
@@ -222,7 +222,7 @@ const mentions = computed(() => {
   const related = new Set((relationsOf.value.get(x.id) ?? []).flatMap(r => [r.a, r.b]))
   // Leave out what another card already lists.
   const kids = new Set([...children.value, ...usedIn.value, ...soldAt.value, ...raceMembers.value, ...knownBy.value, ...carriedBy.value].map(c => c.id))
-  return [...(backlinks.value.get(x.id) ?? [])].map(get).filter((m): m is Entry => !!m && !related.has(m.id) && !kids.has(m.id))
+  return [...(backlinks.value.get(x.id) ?? [])].map(get).filter((m): m is Entry => !!m && !related.has(m.id) && !kids.has(m.id) && !hiddenFromPlayers(m))
     .sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name))
 })
 

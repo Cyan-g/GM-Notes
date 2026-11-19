@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Bring in an exported entry or world: shows what's new, what it updates and what's already the same, then imports.
+import TypeIcon from './TypeIcon.vue'
 import { computed, ref } from 'vue'
 import { SCHEMA } from '../model/schema'
 import { applyImport, importChanges, type ImportItem, type ImportPlan } from '../transfer'
@@ -39,7 +40,7 @@ const close = () => { plan.value = null }
 <template>
   <div v-if="plan" class="qs-backdrop" @mousedown.self="close" @keydown.esc="close">
     <form class="qs transfer" @submit.prevent="run">
-      <h3 v-if="main">Import {{ icon(main.entry.type) }} {{ main.entry.name }}</h3>
+      <h3 v-if="main">Import <TypeIcon :type="main.entry.type" /> {{ main.entry.name }}</h3>
       <h3 v-else>Import the world “{{ plan.from }}”</h3>
       <p class="muted small">From “{{ plan.from }}”<template v-if="when(plan.exported)">, exported {{ when(plan.exported) }}</template>.
         Entries you already have (the same one, or the same type and name) are updated; the rest are added.</p>
@@ -48,7 +49,7 @@ const close = () => { plan.value = null }
         <thead><tr><th></th><th>New</th><th>Updated</th><th>Already the same</th></tr></thead>
         <tbody>
           <tr v-for="r in table" :key="r.t.type">
-            <td>{{ r.t.icon }} {{ r.t.plural }}</td>
+            <td><TypeIcon :type="r.t.type" /> {{ r.t.plural }}</td>
             <td>{{ r.new || '' }}</td><td>{{ r.changed || '' }}</td><td class="muted">{{ r.same || '' }}</td>
           </tr>
         </tbody>
@@ -60,14 +61,14 @@ const close = () => { plan.value = null }
         <ul class="transfer-items">
           <li v-for="i in of('changed')" :key="i.ready.id">
             <input v-model="i.take" type="checkbox" :aria-label="`Update ${i.here!.name}`" />
-            <span class="name">{{ icon(i.entry.type) }} <a :href="hrefEntry(i.here!.id)" target="_blank">{{ i.here!.name }}</a></span>
+            <span class="name"><TypeIcon :type="i.entry.type" /> <a :href="hrefEntry(i.here!.id)" target="_blank">{{ i.here!.name }}</a></span>
             <span v-if="i.here!.name !== i.ready.name" class="muted small">becomes “{{ i.ready.name }}”</span>
           </li>
         </ul>
       </template>
       <details v-if="of('new').length" class="small">
         <summary>{{ of('new').length }} new</summary>
-        <p class="transfer-list"><span v-for="i in of('new')" :key="i.ready.id">{{ icon(i.entry.type) }} {{ i.ready.name }}</span></p>
+        <p class="transfer-list"><span v-for="i in of('new')" :key="i.ready.id"><TypeIcon :type="i.entry.type" /> {{ i.ready.name }}</span></p>
       </details>
 
       <ul class="transfer-notes small">

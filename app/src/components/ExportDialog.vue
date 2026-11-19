@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Save an entry and everything it points at (or the whole world) as a file someone else can import.
+import TypeIcon from './TypeIcon.vue'
 import { computed, reactive, ref } from 'vue'
 import type { EntryType, Id } from '../model/types'
 import { SCHEMA } from '../model/schema'
@@ -46,7 +47,7 @@ async function save() {
         <h4>Take along</h4>
         <div class="chips">
           <button v-for="t in types" :key="t.type" type="button" class="chip-btn" :class="{ on: !opts.skip.includes(t.type) }" @click="toggle(t.type)">
-            {{ t.icon }} {{ t.plural }} <span class="muted">{{ plan.counts[t.type] }}</span>
+            <TypeIcon :type="t.type" /> {{ t.plural }} <span class="muted">{{ plan.counts[t.type] }}</span>
           </button>
         </div>
       </template>
@@ -55,7 +56,7 @@ async function save() {
         {{ plan.entries.length }} {{ plan.entries.length === 1 ? 'entry' : 'entries' }}<template v-if="plan.relations.length">, {{ plan.relations.length }} connection(s)</template>
       </p>
       <details v-for="g in byType" :key="g.t.type" class="small">
-        <summary>{{ g.t.icon }} {{ g.list.length }} {{ g.list.length === 1 ? g.t.label : g.t.plural }}</summary>
+        <summary><TypeIcon :type="g.t.type" /> {{ g.list.length }} {{ g.list.length === 1 ? g.t.label : g.t.plural }}</summary>
         <p class="transfer-list"><span v-for="e in g.list.slice(0, 200)" :key="e.id"><EntryLink :id="e.id" /></span><span v-if="g.list.length > 200" class="muted">… and {{ g.list.length - 200 }} more</span></p>
       </details>
       <p v-if="error" class="error">{{ error }}</p>

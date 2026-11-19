@@ -13,6 +13,8 @@ import { DASHBOARDS } from './dashboards'
 export interface MenuNode {
   label: string
   icon?: string
+  /** An entry type whose icon is shown (instead of `icon`). */
+  typeIcon?: EntryType
   href?: string
   action?: () => void
   /** Shown greyed on the right (a count, a shortcut). */
@@ -85,7 +87,7 @@ function typeNode(t: EntryType): MenuNode {
   const s = info(t)
   const n = byType.value.get(t)?.length ?? 0
   return {
-    label: s.plural, icon: s.icon, href: hrefList(t), hint: String(n),
+    label: s.plural, typeIcon: t, href: hrefList(t), hint: String(n),
     children: () => [
       { label: `All ${s.plural.toLowerCase()}`, href: hrefList(t), hint: String(n) },
       { label: `New ${s.label.toLowerCase()}…`, action: () => newEntry(t) },
@@ -133,7 +135,7 @@ function sessionNodes(): MenuNode[] {
   const p = playing()
   if (!p) return []
   return [
-    { label: 'Latest session', icon: '📅', href: hrefEntry(p.latest.id), hint: p.latest.name },
+    { label: 'Latest session', typeIcon: 'session', href: hrefEntry(p.latest.id), hint: p.latest.name },
     { label: 'New session…', icon: '＋', hint: p.campaign.name, action: () => newEntry('session', { campaign: p.campaign.id, number: p.next, date: { ...state.db!.meta.today } }) },
     SEP,
   ]
@@ -172,7 +174,7 @@ export const MENUS: TopMenu[] = [
     items: () => {
       const types = ['npc', 'organization'] as EntryType[]
       const plurals: string[] = types.map(t => info(t).plural)
-      return [{ label: 'Overview', icon: '⚑', href: '#/organizations', hint: String(state.db ? (byType.value.get('organization')?.length ?? 0) : '') }, SEP,
+      return [{ label: 'Overview', typeIcon: 'organization', href: '#/organizations', hint: String(state.db ? (byType.value.get('organization')?.length ?? 0) : '') }, SEP,
         ...dashViews('people', '👥').filter(v => !plurals.includes(v.label)), SEP, ...types.map(typeNode)]
     },
   },
@@ -224,7 +226,7 @@ export const MENUS: TopMenu[] = [
     // Hovering offers only a new character and the list of them all, not every character.
     items: () => [
       { label: 'New character…', icon: '＋', action: () => newEntry('pc') },
-      { label: 'All characters', icon: '🛡️', href: hrefList('pc'), hint: String((byType.value.get('pc') ?? []).length) },
+      { label: 'All characters', typeIcon: 'pc', href: hrefList('pc'), hint: String((byType.value.get('pc') ?? []).length) },
     ],
   },
 ]

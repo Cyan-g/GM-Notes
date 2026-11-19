@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // One dropdown panel. A row with children opens another panel beside it (hover, or the › button on touch).
 // Panels are position: fixed so a scrolling parent never clips its submenus.
+import TypeIcon from './TypeIcon.vue'
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import type { MenuNode } from '../menu'
 
@@ -74,7 +75,8 @@ function pick(n: MenuNode, i: number, ev: Event) {
                  :href="n.href" :class="{ open: openIndex === i, sub: !!n.children }"
                  :aria-haspopup="n.children ? 'menu' : undefined" :aria-expanded="n.children ? openIndex === i : undefined"
                  @mouseenter="hover(i, $event)" @click="pick(n, i, $event)">
-        <span v-if="n.icon" class="icon">{{ n.icon }}</span>
+        <span v-if="n.typeIcon" class="icon"><TypeIcon :type="n.typeIcon" /></span>
+        <span v-else-if="n.icon" class="icon">{{ n.icon }}</span>
         <span class="menu-label">{{ n.label }}</span>
         <span v-if="n.hint" class="menu-hint">{{ n.hint }}</span>
         <span v-if="n.children" class="menu-arrow" title="Open submenu" @click.stop.prevent="toggle(i, $event)">›</span>

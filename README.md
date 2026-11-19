@@ -205,6 +205,7 @@ Every new world starts from `app/src/seed/world.json`, which ships inside the ap
 
 ### Credits
 
+- **Entry type icons:** also [game-icons.net](https://game-icons.net), same artists and licence: person, character, vertical-banner, position-marker, elf-ear, angel-wings, spiked-dragon-head, swap-bag, sparkles, laurels, scroll-unfurled, hourglass, rolling-dices, campfire, crossed-sabres, quill-ink, notebook. They're in `app/src/icons/types.ts`.
 - **Class icons:** [game-icons.net](https://game-icons.net) by Lorc, Delapouite and the other game-icons.net artists, under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). The chosen icons (tinker, battle-axe, lyre, holy-symbol, oak-leaf, crossed-swords, fist, templar-shield, bow-arrow, cloak-dagger, magic-swirl, warlock-eye, spell-book) are in `app/src/icons/classes.ts`, taken from the `@iconify-json/game-icons` package. The same credit is on the Data page.
 
 ### The desktop app

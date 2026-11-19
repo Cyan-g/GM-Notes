@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TypeIcon from '../components/TypeIcon.vue'
 import { isShared } from '../sync'
 // Edit mode for one entry. Every change saves itself a moment later.
 import { computed } from 'vue'
@@ -96,7 +97,7 @@ function remove() {
       <input class="name-input" :value="e.name" aria-label="Name" @change="setName(($event.target as HTMLInputElement).value)" />
       <div class="edit-meta">
         <!-- The type is chosen when the entry is made and can't change after (its fields and pages depend on it). -->
-        <span class="edit-type">{{ TYPES[e.type].icon }} {{ TYPES[e.type].label }}</span>
+        <span class="edit-type"><TypeIcon :type="e.type" /> {{ TYPES[e.type].label }}</span>
         <label class="toggle" :title="e.visibility === 'secret' ? 'Players don\'t know about this yet' : 'Players know this exists'">
           <input type="checkbox" :checked="e.visibility === 'known'" @change="toggleSecret" />
           <span>Known to players</span><span v-if="e.visibility !== 'known'" class="badge dm-only">DM only</span>

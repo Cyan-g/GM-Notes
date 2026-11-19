@@ -1245,3 +1245,6 @@ button.brand { background: none; border: none; padding: 0; cursor: pointer; }
 svg.gi { width: 1.1em; height: 1.1em; vertical-align: -0.18em; flex: none; }
 .pc-portrait-icon svg.gi { width: 1em; height: 1em; color: var(--accent); }
 h1 .icon svg.gi { color: var(--accent); }
+.new-type { display: flex; align-items: center; gap: .5rem; }
+.new-type svg.gi { width: 1.6em; height: 1.6em; color: var(--accent); }
+.menu-panel .icon svg.gi, .crumb-root svg.gi { color: var(--accent); }

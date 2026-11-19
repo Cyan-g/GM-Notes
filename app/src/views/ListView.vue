@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TypeIcon from '../components/TypeIcon.vue'
 import { computed } from 'vue'
 import type { EntryType } from '../model/types'
 import { TYPES } from '../model/schema'
@@ -36,7 +37,7 @@ const rows = computed(() => byType.value.get(props.type) ?? [])
 <template>
   <div class="list-view">
     <header class="list-head">
-      <h1><span class="icon">{{ def.icon }}</span>{{ def.plural }} <span class="count">{{ rows.length }}</span></h1>
+      <h1><span class="icon"><TypeIcon :type="type" /></span>{{ def.plural }} <span class="count">{{ rows.length }}</span></h1>
       <button class="primary" @click="newEntry(type)">＋ New {{ def.label.toLowerCase() }}</button>
     </header>
     <DataTable :key="type" :rows="rows" :cols="cfg.cols" :facets="cfg.facets" :type="type" />

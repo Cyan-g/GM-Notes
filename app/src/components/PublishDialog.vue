@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Publish for players: write what players may know into the shared folder, after showing what would change.
+import TypeIcon from './TypeIcon.vue'
 import { computed, ref, watch } from 'vue'
 import { SCHEMA } from '../model/schema'
 import { desktop } from '../storage/desktop'
@@ -58,15 +59,15 @@ async function go() {
         <template v-else-if="plan">
           <p class="muted small">Shared: every entry marked <b>Known to players</b>, without DM-only text, with the dropdown lists, the calendar and today's date. Never: characters, campaigns, sessions, encounters, creatures, or anything <b>DM only</b>.</p>
           <p class="small">{{ plan.pub.entries.length }} entries · {{ plan.pub.relations.length }} connections · {{ plan.blobs.size }} pictures and files</p>
-          <p class="publish-types small"><span v-for="t in byType" :key="t.s.type">{{ t.s.icon }} {{ t.n }} {{ t.n === 1 ? t.s.label : t.s.plural }}</span></p>
+          <p class="publish-types small"><span v-for="t in byType" :key="t.s.type"><TypeIcon :type="t.s.type" /> {{ t.n }} {{ t.n === 1 ? t.s.label : t.s.plural }}</span></p>
           <template v-if="plan.previous">
             <p v-if="nothingNew" class="muted">Nothing changed since the last publish.</p>
             <template v-else>
               <h4>Since the last publish</h4>
               <details v-if="plan.added.length" class="small"><summary>{{ plan.added.length }} new</summary>
-                <p class="transfer-list"><span v-for="e in plan.added" :key="e.id">{{ icon(e.type) }} {{ e.name }}</span></p></details>
+                <p class="transfer-list"><span v-for="e in plan.added" :key="e.id"><TypeIcon :type="e.type" /> {{ e.name }}</span></p></details>
               <details v-if="plan.changed.length" class="small"><summary>{{ plan.changed.length }} changed</summary>
-                <p class="transfer-list"><span v-for="e in plan.changed" :key="e.id">{{ icon(e.type) }} {{ e.name }}</span></p></details>
+                <p class="transfer-list"><span v-for="e in plan.changed" :key="e.id"><TypeIcon :type="e.type" /> {{ e.name }}</span></p></details>
               <details v-if="plan.removed.length" class="small" open><summary>{{ plan.removed.length }} no longer shared (players lose them)</summary>
                 <p class="transfer-list"><span v-for="e in plan.removed" :key="e.id">{{ e.name }}</span></p></details>
             </template>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TypeIcon from '../components/TypeIcon.vue'
 import { entryIcon } from '../model/classes'
 import EntryIcon from '../components/EntryIcon.vue'
 import { NOTE_TYPES, isShared } from '../sync'
@@ -253,7 +254,7 @@ const siblings = computed(() => {
 <template>
   <article v-if="e && def" class="entry">
     <nav class="crumbs">
-      <a class="crumb-root" :href="hrefList(e.type)">{{ def.icon }} {{ def.plural }}</a>
+      <a class="crumb-root" :href="hrefList(e.type)"><TypeIcon :type="e.type" /> {{ def.plural }}</a>
       <template v-for="c in crumbs" :key="c.id"><span class="sep">›</span><EntryLink :id="c.id" /></template>
     </nav>
     <header class="entry-head" :class="{ 'has-portrait': e.image && e.type !== 'pc' }">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Markdown editor: typing [[ suggests entries, pasted or dropped pictures are saved to data/images.
+import TypeIcon from '../TypeIcon.vue'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { TYPES } from '../../model/schema'
 import { search } from '../../search'
@@ -166,7 +167,7 @@ async function onPick(ev: Event) {
           @input="onInput" @keydown="onKey" @blur="ac = null" @paste="onPaste" @drop="onDrop" @dragover.prevent />
         <ul v-if="ac && results.length" class="picker-list ac" :style="{ top: ac.top + 'px', left: ac.left + 'px' }">
           <li v-for="(e, i) in results" :key="e.id" :class="{ sel: i === sel }" @mousedown.prevent="insertLink(i)" @mousemove="sel = i">
-            <span class="icon">{{ TYPES[e.type].icon }}</span>{{ e.name }} <span class="muted small">{{ TYPES[e.type].label }}</span>
+            <span class="icon"><TypeIcon :type="e.type" /></span>{{ e.name }} <span class="muted small">{{ TYPES[e.type].label }}</span>
           </li>
         </ul>
       </div>

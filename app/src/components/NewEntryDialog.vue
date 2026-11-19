@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Create an entry: pick a type, give it a name, then it opens in edit mode.
+import TypeIcon from './TypeIcon.vue'
 import { nextTick, ref, watch } from 'vue'
 import type { EntryType } from '../model/types'
 import { SCHEMA } from '../model/schema'
@@ -36,9 +37,10 @@ function create() {
     <form class="qs new-entry" @submit.prevent="create">
       <h3>New entry</h3>
       <label><span>Type</span>
+        <span class="new-type"><TypeIcon v-if="type" :type="type" />
         <select v-model="type">
-          <option v-for="t in types" :key="t.type" :value="t.type">{{ t.icon }} {{ t.label }}</option>
-        </select>
+          <option v-for="t in types" :key="t.type" :value="t.type">{{ t.label }}</option>
+        </select></span>
       </label>
       <label><span>Name</span><input ref="input" v-model="name" placeholder="Name" /></label>
       <div class="actions">

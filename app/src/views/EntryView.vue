@@ -29,6 +29,7 @@ import MarkdownView from '../components/MarkdownView.vue'
 import FieldValue from '../components/FieldValue.vue'
 import StatblockView from '../components/Statblock.vue'
 import MembersCard from '../components/MembersCard.vue'
+import SessionSide from '../components/SessionSide.vue'
 import DataImage from '../components/DataImage.vue'
 import ItemCard from '../components/ItemCard.vue'
 import SpellCard from '../components/SpellCard.vue'
@@ -63,7 +64,7 @@ const groups = computed(() => {
   const big = ['statblock', 'recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes']
   const out = new Map<string, { def: FieldDef; value: unknown }[]>()
   for (const f of def.value.fields) {
-    if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'creature' && f.key === 'creatureType') || (x.type === 'session' && ['campaign', 'number', 'date'].includes(f.key)) || f.key === 'parent' || f.key === 'map' || f.key === 'pins' || f.kind === 'mapData' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
+    if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'creature' && f.key === 'creatureType') || (x.type === 'session' && ['campaign', 'number', 'date', 'playedOn', 'players'].includes(f.key)) || f.key === 'parent' || f.key === 'map' || f.key === 'pins' || f.kind === 'mapData' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
     const g = f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
     out.get(g)!.push({ def: f, value: byKey(x.fields)[f.key] })
@@ -251,13 +252,6 @@ const sessions = computed(() => e.value?.type === 'campaign'
   : [])
 const campaignNotes = computed(() => e.value?.type === 'campaign'
   ? entries.value.filter(n => (n.type === 'note' && n.fields.campaign === e.value!.id) || (n.type === 'pc' && ((n.fields.campaigns) ?? []).includes(e.value!.id))) : [])
-const siblings = computed(() => {
-  const x = e.value
-  if (x?.type !== 'session' || !x.fields.campaign) return null
-  const list = (byType.value.get('session') ?? []).filter(s => s.fields.campaign === x.fields.campaign).sort((a, b) => (a.fields.number ?? 0) - (b.fields.number ?? 0))
-  const i = list.findIndex(s => s.id === x.id)
-  return { prev: list[i - 1], next: list[i + 1] }
-})
 </script>
 
 <template>
@@ -314,11 +308,6 @@ const siblings = computed(() => {
     <CraftingView v-else-if="onBench" :pc="e" />
     <div v-else class="entry-grid">
       <div class="entry-main">
-        <div v-if="siblings" class="pager">
-          <EntryLink v-if="siblings.prev" :id="siblings.prev.id" :label="'← ' + siblings.prev.name" />
-          <span v-else />
-          <EntryLink v-if="siblings.next" :id="siblings.next.id" :label="siblings.next.name + ' →'" />
-        </div>
 
         <!-- An item's card takes the main two thirds; its recipe is the first card on the right (as when editing). -->
         <div v-if="e.type === 'item'" class="item-top">
@@ -386,6 +375,7 @@ const siblings = computed(() => {
       </div>
 
       <aside class="entry-side">
+        <SessionSide v-if="e.type === 'session'" :e="e" />
         <div v-for="f in e.type === 'item' ? bigFields : []" :key="f.key" class="card side-big">
           <h3>{{ f.label }}</h3>
           <FieldValue :def="f" :value="byKey(e.fields)[f.key]" :entry="e" />

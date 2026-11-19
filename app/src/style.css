@@ -1447,3 +1447,11 @@ h1 .icon svg.gi { color: var(--accent); }
 .slot-own { font-size: 11px; color: var(--accent); }
 .slot-src { margin: .5rem 0 0; }
 .book-col { width: 1%; white-space: nowrap; text-align: right; }
+
+/* the session side column */
+.session-facts dl { margin: 0; }
+.session-pager { margin: .7rem 0 0; padding-top: .6rem; border-top: 1px solid var(--line); gap: .8rem; font-size: 14px; }
+.session-linked h4 { margin: .8rem 0 .2rem; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.session-linked h4:first-of-type { margin-top: .2rem; }
+.card h3 .push-right { float: right; font-family: var(--sans, inherit); text-transform: none; font-variant: normal; }
+.md li.task-item > p { margin: .15rem 0; }

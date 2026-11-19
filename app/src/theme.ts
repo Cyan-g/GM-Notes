@@ -12,6 +12,8 @@ export interface ThemeSettings {
   colors?: Partial<ThemeColors>
   /** Heading font id. */
   font?: string
+  /** Text font id: body text, menus, tabs and tables. */
+  textFont?: string
 }
 export interface Preset { id: string; name: string; note: string; dark: boolean; colors: ThemeColors }
 
@@ -34,11 +36,29 @@ export const PRESETS: Preset[] = [
     colors: { bg: '#f5ecf2', panel: '#fffafd', ink: '#2b1f2b', accent: '#a23b7a', link: '#8e2f6a' } },
 ]
 
+const SERIF = '"Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif'
+/** Heading fonts: the system's first, then the ones shipped with the app (fonts/, SIL Open Font License). */
 export const FONTS = [
   { id: 'book', name: 'Book', css: '"Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif' },
   { id: 'classic', name: 'Classic', css: 'Constantia, Cambria, Georgia, serif' },
   { id: 'scribe', name: 'Scribe', css: 'Gabriola, "Palatino Linotype", Palatino, serif' },
   { id: 'chronicle', name: 'Chronicle', css: '"Book Antiqua", "Palatino Linotype", Garamond, serif' },
+  { id: 'cinzel', name: 'Cinzel', css: `"Cinzel", ${SERIF}` },
+  { id: 'eb-garamond', name: 'EB Garamond', css: `"EB Garamond", ${SERIF}` },
+  { id: 'cormorant', name: 'Cormorant', css: `"Cormorant Garamond", ${SERIF}` },
+  { id: 'im-fell', name: 'IM Fell', css: `"IM Fell English", ${SERIF}` },
+  { id: 'uncial', name: 'Uncial', css: `"Uncial Antiqua", ${SERIF}` },
+  { id: 'medievalsharp', name: 'MedievalSharp', css: `"MedievalSharp", ${SERIF}` },
+  { id: 'almendra', name: 'Almendra', css: `"Almendra", ${SERIF}` },
+]
+const SANS = '"Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif'
+/** Text fonts: the system's own, then shipped ones made for reading. */
+export const TEXT_FONTS = [
+  { id: 'system', name: 'System', css: SANS },
+  { id: 'atkinson', name: 'Atkinson Hyperlegible', css: `"Atkinson Hyperlegible", ${SANS}` },
+  { id: 'alegreya', name: 'Alegreya', css: `"Alegreya", ${SERIF}` },
+  { id: 'crimson-pro', name: 'Crimson Pro', css: `"Crimson Pro", ${SERIF}` },
+  { id: 'lora', name: 'Lora', css: `"Lora", ${SERIF}` },
 ]
 
 export const COLOR_LABELS: Record<keyof ThemeColors, string> = {
@@ -107,6 +127,8 @@ export function applyTheme() {
   for (const [k, v] of Object.entries(tokens(effectiveColors(s)))) root.style.setProperty(k, v)
   const font = FONTS.find(f => f.id === s.font) ?? FONTS[0]
   root.style.setProperty('--serif', font.css)
+  const text = TEXT_FONTS.find(f => f.id === s.textFont) ?? TEXT_FONTS[0]
+  root.style.setProperty('--sans', text.css)
   // The browser's own UI (address bar on phones) follows the background.
   let meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null
   if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.append(meta) }

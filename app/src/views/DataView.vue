@@ -160,6 +160,7 @@ const open = (url: string) => (desktop ? desktop.open(url) : window.open(url, '_
     </section>
 
     <p class="muted small credits">Icons from <a href="https://game-icons.net" @click.prevent="open('https://game-icons.net')">game-icons.net</a> by Lorc, Delapouite and the other game-icons.net artists, under <a href="https://creativecommons.org/licenses/by/3.0/" @click.prevent="open('https://creativecommons.org/licenses/by/3.0/')">CC BY 3.0</a>.</p>
+    <p class="muted small credits">Fonts Cinzel, EB Garamond, Cormorant Garamond, IM Fell English, Uncial Antiqua, MedievalSharp, Almendra, Alegreya, Crimson Pro, Lora and Atkinson Hyperlegible, under the <a href="https://openfontlicense.org" @click.prevent="open('https://openfontlicense.org')">SIL Open Font License 1.1</a>.</p>
     <p class="muted small credits">This work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of the Coast LLC, available at <a href="https://www.dndbeyond.com/srd" @click.prevent="open('https://www.dndbeyond.com/srd')">dndbeyond.com/srd</a>. The SRD 5.2.1 is licensed under the <a href="https://creativecommons.org/licenses/by/4.0/legalcode" @click.prevent="open('https://creativecommons.org/licenses/by/4.0/legalcode')">Creative Commons Attribution 4.0 International License</a>.</p>
   </div>
 </template>

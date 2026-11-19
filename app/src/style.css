@@ -55,7 +55,7 @@ body {
 }
 a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; }
-h1, h2, h3, h4 { font-family: var(--serif); font-weight: 600; line-height: 1.25; }
+h1, h2, h3, h4, h5, h6 { font-family: var(--serif); font-weight: 600; line-height: 1.25; }
 code { background: var(--chip); padding: .05em .35em; border-radius: 4px; font-size: .9em; }
 button {
   font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
@@ -339,7 +339,7 @@ textarea { width: 100%; resize: vertical; }
 /* Long relation lists scroll inside their card instead of stretching the page. */
 .rel-rows { display: flex; flex-direction: column; gap: .2rem; max-height: 26rem; overflow-y: auto; overscroll-behavior: contain; padding-right: .3rem; }
 ul.rel-scroll { max-height: 22rem; overflow-y: auto; overscroll-behavior: contain; padding-right: .3rem; }
-.rel-group h4 { margin: .2rem 0 .3rem; font: 600 12px var(--sans); text-transform: uppercase; letter-spacing: .06em; color: var(--accent); }
+.rel-group h4 { margin: .2rem 0 .3rem; font: 600 12px var(--serif); text-transform: uppercase; letter-spacing: .06em; color: var(--accent); }
 .rel-group h4 .muted { font-weight: 400; }
 .rel-group + .rel-group { margin-top: .4rem; }
 .rel-row { padding: .15rem 0; border-radius: 8px; }
@@ -393,7 +393,7 @@ td.clip { max-width: 360px; }
 .tl-grid { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--line); opacity: .6; pointer-events: none; }
 .tl-now { position: absolute; top: 0; bottom: 0; border-left: 2px solid var(--accent); z-index: 2; pointer-events: none; }
 .tl-now span { position: absolute; top: -2px; left: 4px; font-size: 11px; color: var(--accent); }
-.tl-group-title { font: 600 13px var(--sans); color: var(--ink-2); margin: .7rem 0 .25rem; position: relative; z-index: 1; }
+.tl-group-title { font: 600 13px var(--serif); color: var(--ink-2); margin: .7rem 0 .25rem; position: relative; z-index: 1; }
 .tl-events { position: relative; }
 .tl-event { position: absolute; display: flex; align-items: center; gap: .35rem; white-space: nowrap; font-size: 13px; color: var(--ink); transform: translateX(-5px); z-index: 1; }
 .tl-event:hover { z-index: 3; text-decoration: none; }
@@ -573,7 +573,7 @@ input.init { width: 4em; }
 .color-row input[type=color] { width: 34px; height: 26px; padding: 1px; border-radius: 6px; cursor: pointer; }
 .color-row span { flex: 1; }
 .color-row code { font-size: 11px; color: var(--muted); }
-.font-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: .35rem; }
+.font-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: .35rem; }
 .font-row button { padding: .35em .2em; font-size: 15px; }
 .font-row button.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// The ⚙ menu at the top right: the theme (colours, heading font), exporting the world and importing a shared file,
+// The ⚙ menu at the top right: the theme (colours, heading and text fonts), exporting the world and importing a shared file,
 // and data & backups. The button shows when the last backup copy is overdue.
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { playerMode, setMode, state } from '../store'
@@ -9,7 +9,7 @@ import { go } from '../router'
 import { desktop } from '../storage/desktop'
 import WorldList from './WorldList.vue'
 import { checkShared, syncStatus } from '../sync'
-import { COLOR_LABELS, FONTS, PRESETS, effectiveColors, setColor, setTheme, settings, type Preset, type ThemeColors } from '../theme'
+import { COLOR_LABELS, FONTS, PRESETS, TEXT_FONTS, effectiveColors, setColor, setTheme, settings, type Preset, type ThemeColors } from '../theme'
 
 /** Closed, the short menu, or the theme panel. */
 const open = ref<null | 'menu' | 'theme' | 'worlds'>(null)
@@ -99,6 +99,10 @@ onUnmounted(() => { document.removeEventListener('pointerdown', outside); window
       <h4>Heading font</h4>
       <div class="font-row">
         <button v-for="f in FONTS" :key="f.id" :class="{ on: (s.font ?? 'book') === f.id }" :style="{ fontFamily: f.css }" @click="setTheme({ font: f.id })">{{ f.name }}</button>
+      </div>
+      <h4>Text font</h4>
+      <div class="font-row">
+        <button v-for="f in TEXT_FONTS" :key="f.id" :class="{ on: (s.textFont ?? 'system') === f.id }" :style="{ fontFamily: f.css }" title="Body text, menus, tabs and tables" @click="setTheme({ textFont: f.id })">{{ f.name }}</button>
       </div>
       <p class="small muted">Saved with your data, so the stick looks the same on every computer.</p>
     </div>

@@ -3,6 +3,7 @@
 // Windows installs updates by itself; the Mac app (unsigned) is told about new versions and links to them.
 const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require('electron')
 const fs = require('node:fs')
+const crypto = require('node:crypto')
 const path = require('node:path')
 const { WorldDb, convertFromJson } = require('./db.cjs')
 
@@ -89,10 +90,105 @@ ipcMain.handle('db:load', (_e, types, kinds) => {
   }
   const w = openWorld()
   w.allow(types, kinds)
-  return { ...w.load(), converted }
+  const loaded = w.load()
+  return { ...loaded, converted, ...identify(w, loaded.data?.meta?.title) }
 })
 ipcMain.handle('db:create', (_e, d, types, kinds) => openWorld().create(d, types, kinds))
-ipcMain.handle('db:save', (_e, changes) => openWorld().save(changes))
+ipcMain.handle('db:save', (_e, changes) => {
+  const rev = openWorld().save(changes)
+  // A renamed world is renamed in the list of worlds too.
+  if (changes?.meta?.title) {
+    const id = openWorld().setting('worldId')
+    const known = (config.worlds ?? []).find(x => x.id === id && same(x.dir, rootDir('data')))
+    if (known && known.title !== changes.meta.title) { known.title = changes.meta.title; writeConfig(config) }
+  }
+  return rev
+})
+
+// ---------- worlds: each in its own folder, with a permanent ID; the app keeps a list of them ----------
+
+const same = (a, b) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase()
+function remember(id, title, dir) {
+  const rest = (config.worlds ?? []).filter(x => !same(x.dir, dir))
+  config.worlds = [{ id, title: title || path.basename(dir), dir, opened: new Date().toISOString() }, ...rest]
+  writeConfig(config)
+}
+/**
+ * The open world's ID (made once, when it has none) and whether it looks like a copy: the same ID in another
+ * folder that still holds a world. A world found in a new folder whose old one is gone simply moved.
+ */
+function identify(w, title) {
+  const dir = rootDir('data')
+  let worldId = w.setting('worldId')
+  if (!worldId) { worldId = crypto.randomUUID(); w.setSetting('worldId', worldId) }
+  const other = (config.worlds ?? []).find(x => x.id === worldId && !same(x.dir, dir))
+  if (other && WorldDb.exists(other.dir)) return { worldId, copyOf: { title: other.title, dir: other.dir } }
+  if (other) config.worlds = config.worlds.filter(x => x !== other)
+  remember(worldId, title, dir)
+  return { worldId }
+}
+/** The known worlds, last opened first, with whether their folder still holds a world. */
+ipcMain.handle('worlds:list', () => {
+  const current = config.dataDir
+  return {
+    current,
+    worldsDir: config.worldsDir ?? null,
+    worlds: (config.worlds ?? []).map(x => ({ ...x, exists: WorldDb.exists(x.dir), current: !!current && same(x.dir, current) })),
+  }
+})
+/** Open another world (the pages reload afterwards). */
+ipcMain.handle('worlds:switch', (_e, dir) => {
+  if (!dir || !WorldDb.exists(dir)) throw new Error('There is no world in that folder any more.')
+  closeWorld()
+  config.dataDir = dir
+  writeConfig(config)
+  return true
+})
+/** Take a world off the list. Its folder and data stay where they are. */
+ipcMain.handle('worlds:forget', (_e, dir) => {
+  config.worlds = (config.worlds ?? []).filter(x => !same(x.dir, dir))
+  writeConfig(config)
+  return true
+})
+/**
+ * Make the folder for a new world inside the worlds folder (chosen once, the first time) and switch to it; the
+ * pages then start the world there. Returns the folder, or null if no worlds folder was chosen.
+ */
+ipcMain.handle('worlds:create', async (e, name) => {
+  if (!config.worldsDir || !fs.existsSync(config.worldsDir)) {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    const r = await dialog.showOpenDialog(win, {
+      title: 'Choose the folder for your worlds (each new world gets a folder in it)',
+      properties: ['openDirectory', 'createDirectory'],
+      defaultPath: config.dataDir ? path.dirname(config.dataDir) : undefined,
+    })
+    if (r.canceled || !r.filePaths[0]) return null
+    config.worldsDir = r.filePaths[0]
+  }
+  const base = String(name || 'New world').replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim() || 'New world'
+  let dir = path.join(config.worldsDir, base)
+  for (let n = 2; fs.existsSync(dir); n++) dir = path.join(config.worldsDir, `${base} ${n}`)
+  fs.mkdirSync(dir, { recursive: true })
+  closeWorld()
+  config.dataDir = dir
+  writeConfig(config)
+  return dir
+})
+/** The open world is a copy: give it its own ID, so it's a world of its own. */
+ipcMain.handle('worlds:new-id', (_e, title) => {
+  const w = openWorld()
+  const worldId = crypto.randomUUID()
+  w.setSetting('worldId', worldId)
+  remember(worldId, title, rootDir('data'))
+  return worldId
+})
+/** The open world is the same world, moved: the list forgets its old folder. */
+ipcMain.handle('worlds:moved', (_e, title) => {
+  const worldId = openWorld().setting('worldId')
+  config.worlds = (config.worlds ?? []).filter(x => x.id !== worldId)
+  remember(worldId, title, rootDir('data'))
+  return true
+})
 ipcMain.handle('db:history', (_e, id) => openWorld().history(id))
 ipcMain.handle('db:deleted', () => openWorld().deleted())
 /** A copy of the database: an automatic backup in data/backups, or into the backup folder. */

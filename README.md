@@ -96,6 +96,15 @@ With no current character, the Spellbook and Workbench use the world's own; the 
   - a date in another removed month keeps only its year;
   - a day past a shortened month's end stays as it is.
 
+### Several worlds
+
+The desktop app can keep several worlds (your campaign, a one-shot, a player's own copy) and switch between them. Each world is its own folder with its database, pictures, files and backups.
+- **Switching:** click the world's name at the top left (it also has *Home*), or ⚙ → *Switch world*. Both list your worlds, last opened first. The open one is saved before switching. The start screen lists them too.
+- **New world…** asks for a name and makes a folder for it inside your worlds folder (chosen the first time). The world starts from the starting world, in player mode.
+- **Open a world folder…** opens a world anywhere else (and adds it to the list). ✕ takes a world off the list; its folder stays.
+- **World ID:** every world gets a permanent ID the first time it's opened. It's kept by backups and restores and isn't part of exports. Sharing with players will use it, so a player's world only ever follows the right one of your worlds.
+- **Copies:** if the same ID turns up in a second folder that still holds a world, the app asks: *Make it a separate world* (a new ID, e.g. after copying a world to start a new campaign from it) or *It's the same world, moved* (the list forgets the old folder). A world whose old folder is gone simply moved.
+
 ### Sharing entries and the world
 
 An entry, or the whole world, can be sent to someone else who has this app, and sent again later to bring their copy up to date.
@@ -125,7 +134,7 @@ Everything is saved in `data/`:
 
 **⚙ → Data & backups** (top right) has two tools:
 
-- **Make a backup copy** copies the database (with SQLite's own safe copy), pictures and files into a folder you choose, for example on your PC. Each copy is a new folder named `DnDesk-backup-<date>`. The app remembers the folder, and the ⚙ gets a dot when the last backup copy is more than a week old.
+- **Make a backup copy** copies the database (with SQLite's own safe copy), pictures and files into a folder you choose, for example on your PC. Each copy is a new folder named `DnDesk-backup-<world>-<date>`, so copies of several worlds can share the folder. The app remembers the folder, and the ⚙ gets a dot when the last backup copy is more than a week old.
 - **Earlier versions** lists the automatic backups in `data/backups`. **Go back to this** restores one, after saving the current database as `before-restore-<date>.sqlite`, so a restore can be undone.
 - **Deleted entries** lists every deleted entry the database still remembers. **Bring back** restores it; its relations have to be added again.
 

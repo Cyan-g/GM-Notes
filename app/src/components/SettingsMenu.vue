@@ -6,10 +6,12 @@ import { playerMode, setMode, state } from '../store'
 import { daysSince } from '../backup'
 import { pickImport, ui } from '../ui'
 import { go } from '../router'
+import { desktop } from '../storage/desktop'
+import WorldList from './WorldList.vue'
 import { COLOR_LABELS, FONTS, PRESETS, effectiveColors, setColor, setTheme, settings, type Preset, type ThemeColors } from '../theme'
 
 /** Closed, the short menu, or the theme panel. */
-const open = ref<null | 'menu' | 'theme'>(null)
+const open = ref<null | 'menu' | 'theme' | 'worlds'>(null)
 const backupAge = computed(() => daysSince(state.db?.meta.externalBackup))
 const overdue = computed(() => backupAge.value == null || backupAge.value > 7)
 const toggle = () => { open.value = open.value ? null : 'menu' }
@@ -37,7 +39,7 @@ function resetColor(k: keyof ThemeColors) {
 const preview = (p: Preset) => ({ '--p-bg': p.colors.bg, '--p-panel': p.colors.panel, '--p-ink': p.colors.ink, '--p-accent': p.colors.accent })
 
 function outside(ev: PointerEvent) { if (open.value && !root.value?.contains(ev.target as Node)) open.value = null }
-const onKey = (ev: KeyboardEvent) => { if (ev.key === 'Escape' && open.value) { ev.stopPropagation(); open.value = open.value === 'theme' ? 'menu' : null } }
+const onKey = (ev: KeyboardEvent) => { if (ev.key === 'Escape' && open.value) { ev.stopPropagation(); open.value = open.value === 'menu' ? null : 'menu' } }
 onMounted(() => { document.addEventListener('pointerdown', outside); window.addEventListener('keydown', onKey, true) })
 onUnmounted(() => { document.removeEventListener('pointerdown', outside); window.removeEventListener('keydown', onKey, true) })
 </script>
@@ -48,6 +50,7 @@ onUnmounted(() => { document.removeEventListener('pointerdown', outside); window
             :title="overdue ? `Theme, import, data & backups. ${backupAge == null ? 'No backup copy yet' : `Last backup copy ${backupAge} days ago`}` : 'Theme, import, data & backups'"
             @click="toggle">⚙<span v-if="overdue" class="settings-dot" /></button>
     <div v-if="open === 'menu'" class="theme-panel settings-list" role="menu">
+      <button v-if="desktop" role="menuitem" @click="open = 'worlds'"><span>🌍</span>Switch world<span class="hint">{{ state.db?.meta.title }} ›</span></button>
       <button role="menuitem" @click="open = 'theme'"><span>🎨</span>Theme &amp; colours<span class="hint">›</span></button>
       <label class="settings-switch" title="Off: player mode, trimmed to spells, crafting and maps, without DM-only text">
         <span>🎲</span>DM mode
@@ -57,6 +60,11 @@ onUnmounted(() => { document.removeEventListener('pointerdown', outside); window
       <button role="menuitem" @click="importFile"><span>⇪</span>Import from a file…<span class="hint">entry or world</span></button>
       <button role="menuitem" :class="{ warn: overdue }" @click="data"><span>💾</span>Data &amp; backups
         <span class="hint">{{ backupAge == null ? 'no backup copy yet' : backupAge === 0 ? 'backup copy today' : `backup copy ${backupAge} d ago` }}</span></button>
+    </div>
+    <div v-if="open === 'worlds'" class="theme-panel" role="dialog" aria-label="Worlds">
+      <h4><button class="link-btn back" @click="open = 'menu'">‹ Back</button></h4>
+      <h4>Worlds</h4>
+      <WorldList @done="open = null" />
     </div>
     <div v-if="open === 'theme'" class="theme-panel" role="dialog" aria-label="Theme and colours">
       <h4><button class="link-btn back" @click="open = 'menu'">‹ Back</button></h4>

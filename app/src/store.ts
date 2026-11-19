@@ -42,6 +42,9 @@ export const state = reactive({
   conflict: false,
   /** The data was just converted from the JSON files of an earlier version. */
   converted: null as { entries: number; relations: number } | null,
+  /** The open world's permanent ID (desktop app), and the world it may be a copy of. */
+  worldId: null as string | null,
+  copyOf: null as { title: string; dir: string } | null,
 })
 
 /** The world as last loaded or saved, piece by piece (as JSON), to find what changed. */
@@ -69,6 +72,8 @@ export async function open(backend: Backend, storage: Storage): Promise<boolean>
   const d = l.data
   rev = l.rev ?? 0
   state.converted = l.converted ?? null
+  state.worldId = l.worldId ?? null
+  state.copyOf = l.copyOf ?? null
   state.db = d
   state.dirty = false
   remember(d)

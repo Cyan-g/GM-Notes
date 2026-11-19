@@ -1219,3 +1219,19 @@ th.sortable:hover::after { content: ' ↕'; opacity: .5; }
 .atk-spell { border-left: 1px solid var(--line); padding-left: .7rem; font-size: 13px; }
 .atk-spell-row { display: flex; justify-content: space-between; gap: .4rem; line-height: 1.6; }
 .atk-spell-row span { color: var(--muted); }
+/* worlds: the list in ⚙, under the world's name and on the start screen */
+.world-list ul { list-style: none; margin: 0 0 .5rem; padding: 0; display: grid; gap: .15rem; }
+.world-list li { display: flex; align-items: center; gap: .3rem; }
+.world-open { flex: 1; display: flex; justify-content: space-between; gap: .6rem; text-align: left; background: none; border: 1px solid transparent; border-radius: 8px; padding: .3rem .5rem; }
+.world-open:hover:not(:disabled) { border-color: var(--line); background: var(--chip); }
+.world-list li.current .world-open { font-weight: 600; opacity: 1; cursor: default; }
+.world-list li.gone .world-name { text-decoration: line-through; color: var(--muted); }
+.world-actions, .world-new { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.world-new input { flex: 1; min-width: 10rem; }
+.world-new p { flex-basis: 100%; margin: .2rem 0 0; }
+.brand-box { position: relative; }
+button.brand { background: none; border: none; padding: 0; cursor: pointer; }
+.brand-caret { font-size: .6em; color: var(--muted); }
+.brand-panel { left: 0; right: auto; top: calc(100% + .4rem); min-width: 20rem; }
+.brand-home { display: block; margin-bottom: .5rem; }
+.start-sub { margin: .8rem 0 .3rem; }

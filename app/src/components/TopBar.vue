@@ -7,6 +7,15 @@ import { newEntry } from '../ui'
 import { route } from '../router'
 import MenuPanel from './MenuPanel.vue'
 import SettingsMenu from './SettingsMenu.vue'
+import WorldList from './WorldList.vue'
+import { desktop } from '../storage/desktop'
+/** The world's name: a menu with Home and the known worlds (desktop app). */
+const worldsOpen = ref(false)
+const brandBox = ref<HTMLElement | null>(null)
+function brandOutside(ev: PointerEvent) { if (worldsOpen.value && !brandBox.value?.contains(ev.target as Node)) worldsOpen.value = false }
+onMounted(() => document.addEventListener('pointerdown', brandOutside))
+onUnmounted(() => document.removeEventListener('pointerdown', brandOutside))
+watch(() => route.current, () => { worldsOpen.value = false })
 const settingsMenu = ref<InstanceType<typeof SettingsMenu> | null>(null)
 
 defineEmits<{ search: [] }>()
@@ -59,7 +68,15 @@ const current = computed(() => visibleMenus.value.findIndex(m => m.owns(route.cu
 
 <template>
   <header class="topbar">
-    <a class="brand" href="#/">{{ db().meta.title }}</a>
+    <div ref="brandBox" class="brand-box">
+      <button v-if="desktop" class="brand" :aria-expanded="worldsOpen" aria-haspopup="dialog" title="Home and your worlds" @click="worldsOpen = !worldsOpen">{{ db().meta.title }} <span class="brand-caret">▾</span></button>
+      <a v-else class="brand" href="#/">{{ db().meta.title }}</a>
+      <div v-if="worldsOpen" class="theme-panel brand-panel" role="dialog" aria-label="Home and worlds">
+        <a class="brand-home" href="#/" @click="worldsOpen = false">🏠 Home of {{ db().meta.title }}</a>
+        <h4>Worlds</h4>
+        <WorldList @done="worldsOpen = false" />
+      </div>
+    </div>
     <nav class="menubar" role="menubar">
       <component :is="m.home ? 'a' : 'button'" v-for="(m, i) in visibleMenus" :key="m.title" class="menu-title" role="menuitem" aria-haspopup="menu"
               :href="m.home" :title="m.home ? `Open ${m.title.toLowerCase()} (hover for the menu)` : undefined"

@@ -28,6 +28,8 @@ import NewEntryDialog from './components/NewEntryDialog.vue'
 import ImportDialog from './components/ImportDialog.vue'
 import ExportDialog from './components/ExportDialog.vue'
 import LinkPreview from './components/LinkPreview.vue'
+import WorldList from './components/WorldList.vue'
+import { PENDING_NEW_WORLD, settleCopy } from './worlds'
 import { go, hrefEntry } from './router'
 import { toggleFavourite } from './edit'
 import { syncTitle } from './title'
@@ -63,8 +65,12 @@ async function start(dir?: string) {
 onMounted(async () => {
   if (!desktop) return start()
   const dir = await desktop.getFolder('data')
-  if (dir) return start(dir)
-  phase.value = 'need-folder'
+  if (dir) await start(dir)
+  else phase.value = 'need-folder'
+  // "New world…" made the folder and reloaded: start the world there with the name given.
+  let pending: string | null = null
+  try { pending = sessionStorage.getItem(PENDING_NEW_WORLD); sessionStorage.removeItem(PENDING_NEW_WORLD) } catch { /* asked on the start screen */ }
+  if (pending && phase.value === 'new-world') { worldName.value = pending; await startWorld() }
 })
 
 async function startWorld() {
@@ -110,6 +116,11 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
     <div v-if="state.problems.some(p => p.serious) && !state.readOnly && !state.error" class="save-banner" role="status">
       <span>⚠ The data check found {{ state.problems.filter(p => p.serious).length }} serious problem(s) in the data. Nothing was changed.</span>
       <a class="button" href="#/data">Show them</a>
+    </div>
+    <div v-if="state.copyOf" class="save-banner" role="status">
+      <span>This world looks like a copy of “{{ state.copyOf.title }}” ({{ state.copyOf.dir }}): both have the same world ID.</span>
+      <button title="Give this one its own ID; players following the other world won't get this one" @click="settleCopy(true)">Make it a separate world</button>
+      <button title="Forget the old folder in the list of worlds" @click="settleCopy(false)">It's the same world, moved</button>
     </div>
     <div v-if="state.converted" class="save-banner update-banner" role="status">
       <span>✓ Your data moved into the database (dndesk.sqlite): {{ state.converted.entries }} entries and {{ state.converted.relations }} relations, all checked. The old eldoria.json and session.json stay in the data folder, untouched.</span>
@@ -159,7 +170,11 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
         <p v-if="startError" class="error">{{ startError }}</p>
       </template>
       <template v-else>
-        <p v-if="desktop">Choose your <b>data</b> folder (or the folder that holds it). DnDesk remembers it, so this is needed only once.</p>
+        <template v-if="desktop">
+          <h4 class="start-sub">Your worlds</h4>
+          <WorldList />
+        </template>
+        <p v-if="desktop" class="muted small">Or choose a <b>data</b> folder (or the folder that holds it).</p>
         <p v-else>The dev server couldn't open the data.</p>
         <button v-if="desktop" class="primary" @click="choose">Choose folder…</button>
         <p v-if="startError" class="error">{{ startError }}</p>

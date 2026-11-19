@@ -18,7 +18,13 @@ export interface Changes {
   /** Entries whose replaced version is kept in the history even if one was kept a moment ago. */
   keep?: Id[]
 }
-export interface Loaded { empty?: true; data?: Database; rev?: number; converted?: { entries: number; relations: number } }
+export interface Loaded {
+  empty?: true; data?: Database; rev?: number; converted?: { entries: number; relations: number }
+  /** The world's permanent ID (desktop app). */
+  worldId?: string
+  /** The same ID is in another folder that still holds a world: this one may be a copy. */
+  copyOf?: { title: string; dir: string }
+}
 export interface Version { saved: string; deleted: boolean; entry: Entry }
 
 export interface Backend {

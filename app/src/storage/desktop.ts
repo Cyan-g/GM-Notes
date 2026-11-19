@@ -22,6 +22,14 @@ interface Bridge {
     copyTo(root: string, rel: string): Promise<boolean>
     restore(name: string): Promise<boolean>
   }
+  worlds: {
+    list(): Promise<{ current: string | null; worldsDir: string | null; worlds: import('../worlds').KnownWorld[] }>
+    switch(dir: string): Promise<boolean>
+    forget(dir: string): Promise<boolean>
+    create(name: string): Promise<string | null>
+    newId(title?: string): Promise<string>
+    moved(title?: string): Promise<boolean>
+  }
   onUpdate(cb: (info: UpdateInfo) => void): void
   installUpdate(): Promise<boolean>
 }

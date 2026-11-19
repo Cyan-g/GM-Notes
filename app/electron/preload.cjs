@@ -20,6 +20,14 @@ contextBridge.exposeInMainWorld('dndesk', {
     copyTo: (root, rel) => ipcRenderer.invoke('db:copy-to', root, rel),
     restore: name => ipcRenderer.invoke('db:restore', name),
   },
+  worlds: {
+    list: () => ipcRenderer.invoke('worlds:list'),
+    switch: dir => ipcRenderer.invoke('worlds:switch', dir),
+    forget: dir => ipcRenderer.invoke('worlds:forget', dir),
+    create: name => ipcRenderer.invoke('worlds:create', name),
+    newId: title => ipcRenderer.invoke('worlds:new-id', title),
+    moved: title => ipcRenderer.invoke('worlds:moved', title),
+  },
   onUpdate: cb => ipcRenderer.on('update', (_e, info) => cb(info)),
   installUpdate: () => ipcRenderer.invoke('update:install'),
 })

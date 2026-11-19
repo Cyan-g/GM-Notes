@@ -6,6 +6,7 @@
 // On the Edit page (`build`) it also opens what's set when building the character: classes and their levels
 // (multiclassing), max HP, AC, speed, scores, proficiencies, spellcasting and features.
 // Hit dice come from the classes, one pool per die size, each spent on its own.
+import ConditionIcon from './ConditionIcon.vue'
 import { computed, ref } from 'vue'
 import type { CharacterSheet, ClassLine, Entry, Proficiencies } from '../model/types'
 import { byType, get, listOptions, setList, state } from '../store'
@@ -317,7 +318,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <dl v-if="!build && (gt.resistances.length || gt.features.length || gt.senses.length || gt.immunities.length)" class="cs-feature-list cs-gear-features">
         <template v-for="(r, i) in gt.senses" :key="'s' + i"><dt>{{ r.sense }} {{ r.range }} ft</dt><dd class="muted">from {{ r.from }}</dd></template>
         <template v-for="(r, i) in gt.resistances" :key="'r' + i"><dt>Resistance: {{ r.type.toLowerCase() }}</dt><dd class="muted">from {{ r.from }}</dd></template>
-        <template v-for="(r, i) in gt.immunities" :key="'i' + i"><dt>Immune: {{ r.condition.toLowerCase() }}</dt><dd class="muted">from {{ r.from }}</dd></template>
+        <template v-for="(r, i) in gt.immunities" :key="'i' + i"><dt><ConditionIcon :name="r.condition" /> Immune: {{ r.condition.toLowerCase() }}</dt><dd class="muted">from {{ r.from }}</dd></template>
         <template v-for="(f, i) in gt.features" :key="'f' + i"><dt>{{ f.text }}</dt><dd class="muted">from {{ f.from }}</dd></template>
       </dl>
       <p v-if="!s.features.length" class="muted small">Class features, racial traits, feats<template v-if="!build && !ro">: add them with ✎ Edit</template>.</p>

@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { Statblock } from '../model/types'
 import { renderInline } from '../markdown'
+import ConditionIcon from './ConditionIcon.vue'
 
 const props = defineProps<{ sb: Statblock; name: string }>()
 const ABIL = ['str', 'dex', 'con', 'int', 'wis', 'cha'] as const
@@ -42,7 +43,7 @@ const onlyAbilities = computed(() => Object.keys(props.sb).every(k => ['abilitie
     </template>
     <template v-if="lines.length">
       <hr />
-      <div class="sb-line" v-for="[k, v] in lines" :key="k"><b>{{ k }}</b> {{ v }}</div>
+      <div class="sb-line" v-for="[k, v] in lines" :key="k"><b>{{ k }}</b>{{ ' ' }}<template v-if="k === 'Condition Immunities'"><template v-for="(w, i) in v!.split(/\s*[,;]\s*/)" :key="i">{{ i ? ', ' : '' }}<span class="cond-word"><ConditionIcon :name="w" />{{ w }}</span></template></template><template v-else>{{ v }}</template></div>
     </template>
     <template v-for="[title, feats] in sections" :key="title">
       <h4 v-if="title">{{ title }}</h4>

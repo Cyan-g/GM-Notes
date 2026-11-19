@@ -765,7 +765,8 @@ table.grid.wb-recipes th:nth-last-child(2) { width: 7.5em; }
 .init-chip.down:not(.party) { opacity: .4; text-decoration: line-through; }
 .init-chip.down.party { color: var(--accent); }
 .init-num { font-weight: 700; color: var(--accent); min-width: 1.4em; text-align: right; }
-.init-cond { font-size: 11px; background: var(--secret-bg); border-radius: 99px; padding: 0 .4em; }
+.init-cond { display: inline-flex; gap: 1px; align-items: center; color: var(--accent); }
+.init-cond .cond-gi { width: 13px; height: 13px; }
 .init-hp { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--line); }
 .init-hp > span { display: block; height: 100%; background: #4f9a4a; }
 .init-chip.bloodied .init-hp > span { background: #d08a24; }
@@ -819,7 +820,10 @@ table.grid.wb-recipes th:nth-last-child(2) { width: 7.5em; }
 .conds { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; margin-top: .35rem; }
 .cond-chip { display: inline-flex; align-items: center; gap: .25rem; padding: .1rem .2rem .1rem .45rem; border-radius: 999px; font-size: 13px;
   background: var(--secret-bg); border: 1px solid var(--secret-line); color: var(--ink); }
-.cond-ic { font-size: 14px; }
+.cond-gi { width: 1.05em; height: 1.05em; vertical-align: -.15em; flex: none; }
+.cond-chip .cond-gi { width: 15px; height: 15px; color: var(--accent); }
+.cond-word { white-space: nowrap; }
+.cond-word .cond-gi { margin-right: .2em; color: var(--sb-line, var(--accent)); }
 .cond-rounds { width: 2.6em; height: 22px; padding: 0 .2em; font-size: 12px; text-align: center; border-radius: 999px; -moz-appearance: textfield; }
 .cond-rounds::-webkit-inner-spin-button, .cond-rounds::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .cond-x { border: none; background: none; padding: 0 .3rem; color: var(--muted); font-size: 15px; line-height: 1; cursor: pointer; }
@@ -1455,3 +1459,13 @@ h1 .icon svg.gi { color: var(--accent); }
 .session-linked h4:first-of-type { margin-top: .2rem; }
 .card h3 .push-right { float: right; font-family: var(--sans, inherit); text-transform: none; font-variant: normal; }
 .md li.task-item > p { margin: .15rem 0; }
+
+/* the text after a heading's title (counts, notes like "1 creature · 0 XP"): plain, readable, not tiny small caps */
+:is(h1, h2, h3, h4) :is(.muted.small, .count, .muted.small *) {
+  font: 400 13px var(--sans); font-variant: normal; text-transform: none; letter-spacing: 0; color: var(--muted);
+}
+:is(h1, h2, h3, h4) > :is(.muted.small, .count) { margin-left: .35em; }
+h1 > .count { font-size: 16px; }
+:is(h1, h2, h3, h4) .muted.small.over { color: var(--accent); font-weight: 600; }
+/* the same for small buttons in a heading ("Edit", "Replace with the campaign's party") */
+:is(h2, h3, h4) :is(.link-btn, .chip-btn) { font-family: var(--sans); font-variant: normal; text-transform: none; letter-spacing: 0; font-size: 13px; }

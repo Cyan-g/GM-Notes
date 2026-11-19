@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Combat: initiative order, HP, conditions, and the statblock of whoever is acting.
+import ConditionIcon from '../components/ConditionIcon.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Combatant, Id, Statblock } from '../model/types'
@@ -130,7 +131,7 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
             <button v-else type="button" class="init-chip done" :class="[stripState(it.c), { party: isParty(it.c), sel: selected === it.c.id }]"
                     :title="`${it.c.name}${it.c.init != null ? ' · initiative ' + it.c.init : ''} · already went`" @click="selected = it.c.id">
               <span class="init-num">{{ it.c.init ?? '–' }}</span><span class="init-name">{{ it.c.name }}</span>
-              <span v-if="it.c.conditions.length" class="init-cond" :title="it.c.conditions.join(', ')">{{ it.c.conditions.length }}</span>
+              <span v-if="it.c.conditions.length" class="init-cond" :title="it.c.conditions.join(', ')"><ConditionIcon v-for="x in it.c.conditions" :key="x" :name="x" /></span>
               <span v-if="hpPct(it.c) != null" class="init-hp"><span :style="{ width: hpPct(it.c) + '%' }" /></span>
             </button>
           </template>
@@ -138,7 +139,7 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
         <button v-if="order.centre" type="button" class="init-chip centre" :class="[stripState(order.centre), { now: t.turn >= 0, party: isParty(order.centre), sel: selected === order.centre.id }]"
                 :title="t.turn >= 0 ? `${order.centre.name}'s turn` : `${order.centre.name} goes first`" @click="selected = order.centre!.id">
           <span class="init-num">{{ order.centre.init ?? '–' }}</span><span class="init-name">{{ order.centre.name }}</span>
-          <span v-if="order.centre.conditions.length" class="init-cond" :title="order.centre.conditions.join(', ')">{{ order.centre.conditions.length }}</span>
+          <span v-if="order.centre.conditions.length" class="init-cond" :title="order.centre.conditions.join(', ')"><ConditionIcon v-for="x in order.centre.conditions" :key="x" :name="x" /></span>
           <span v-if="hpPct(order.centre) != null" class="init-hp"><span :style="{ width: hpPct(order.centre) + '%' }" /></span>
         </button>
         <div class="init-side right">
@@ -147,7 +148,7 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
             <button v-else type="button" class="init-chip" :class="[stripState(it.c), { party: isParty(it.c), sel: selected === it.c.id }]"
                     :title="`${it.c.name}${it.c.init != null ? ' · initiative ' + it.c.init : ''}`" @click="selected = it.c.id">
               <span class="init-num">{{ it.c.init ?? '–' }}</span><span class="init-name">{{ it.c.name }}</span>
-              <span v-if="it.c.conditions.length" class="init-cond" :title="it.c.conditions.join(', ')">{{ it.c.conditions.length }}</span>
+              <span v-if="it.c.conditions.length" class="init-cond" :title="it.c.conditions.join(', ')"><ConditionIcon v-for="x in it.c.conditions" :key="x" :name="x" /></span>
               <span v-if="hpPct(it.c) != null" class="init-hp"><span :style="{ width: hpPct(it.c) + '%' }" /></span>
             </button>
           </template>

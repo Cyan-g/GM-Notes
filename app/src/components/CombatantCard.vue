@@ -5,7 +5,8 @@
 import { computed, ref } from 'vue'
 import type { Combatant } from '../model/types'
 import { touch } from '../store'
-import { CONDITIONS, CONDITION_ICONS } from '../encounter'
+import { CONDITIONS } from '../encounter'
+import ConditionIcon from './ConditionIcon.vue'
 import { applyHp, isParty, removeCombatant, fighterStats } from '../tracker'
 
 const props = defineProps<{ c: Combatant; current: boolean; selected: boolean }>()
@@ -139,13 +140,13 @@ function switchSide() { c.value.side = isParty(c.value) ? 'enemy' : 'party'; tou
 
     <div class="conds" @click.stop>
       <span v-for="x in c.conditions" :key="x" class="cond-chip">
-        <span class="cond-ic">{{ CONDITION_ICONS[x] ?? '•' }}</span>{{ x }}
+        <ConditionIcon :name="x" />{{ x }}
         <input type="number" min="1" class="cond-rounds" :value="c.rounds?.[x] ?? ''" placeholder="∞" :title="`Rounds left (counts down at the end of ${c.name}'s turn); empty: until removed`" @focus="selectAll" @change="setRounds(x, ($event.target as HTMLInputElement).value)" />
         <button type="button" class="cond-x" :title="`Remove ${x}`" @click="remove(x)">×</button>
       </span>
       <select class="cond-add" :aria-label="`Add a condition to ${c.name}`" @change="add">
         <option value="">＋ Condition</option>
-        <option v-for="x in missing" :key="x" :value="x">{{ CONDITION_ICONS[x] ?? '' }} {{ x }}</option>
+        <option v-for="x in missing" :key="x" :value="x">{{ x }}</option>
       </select>
     </div>
   </article>

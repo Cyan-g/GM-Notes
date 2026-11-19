@@ -1250,3 +1250,9 @@ h1 .icon svg.gi { color: var(--accent); }
 .menu-panel .icon svg.gi, .crumb-root svg.gi { color: var(--accent); }
 .tool > span svg.gi { width: 1.4em; height: 1.4em; color: var(--accent); }
 .tabs svg.gi { color: var(--accent); }
+.ic-props { margin: .4rem 0 0; font-size: 13px; }
+.ic-props dt { font-weight: 600; display: inline; }
+.ic-props dt::after { content: ' — '; font-weight: 400; color: var(--muted); }
+.ic-props dd { display: inline; margin: 0; }
+.ic-props dd::after { content: ''; display: block; margin-bottom: .2rem; }
+.lists-table input.lists-note { display: block; width: min(34rem, 100%); margin-top: .25rem; font-size: 12.5px; color: var(--ink-2); }

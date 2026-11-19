@@ -50,6 +50,8 @@ const WEAPON_CATEGORIES = ['Simple', 'Martial']
 const ARMOR_TYPES = ['Light', 'Medium', 'Heavy', 'Shield', 'Clothing']
 /** The standard weapons and their category, so a weapon's category can be told from its base weapon. */
 export const SIMPLE_WEAPONS = ['Club', 'Dagger', 'Greatclub', 'Handaxe', 'Javelin', 'Light Hammer', 'Mace', 'Quarterstaff', 'Sickle', 'Spear', 'Dart', 'Light Crossbow', 'Shortbow', 'Sling']
+/** The standard weapon properties (the Weapon properties list starts with them; more can be added there). */
+export const WEAPON_PROPERTIES = ['Ammunition', 'Finesse', 'Heavy', 'Light', 'Loading', 'Reach', 'Special', 'Thrown', 'Two-Handed', 'Versatile']
 export const MARTIAL_WEAPONS = ['Battleaxe', 'Flail', 'Glaive', 'Greataxe', 'Greatsword', 'Halberd', 'Lance', 'Longsword', 'Maul', 'Morningstar', 'Pike', 'Rapier', 'Scimitar', 'Shortsword', 'Trident', 'War Pick', 'Warhammer', 'Whip', 'Blowgun', 'Hand Crossbow', 'Heavy Crossbow', 'Longbow', 'Net']
 
 const W = { field: 'kind', is: ['Weapon'] }
@@ -151,7 +153,8 @@ export const SCHEMA = [
       { key: 'damage', label: 'Damage', kind: 'text', when: W, group: 'Weapon' },
       { key: 'damageType', label: 'Damage type', kind: 'list', options: DAMAGE, when: W, group: 'Weapon' },
       { key: 'range', label: 'Range', kind: 'text', when: W, group: 'Weapon' },
-      { key: 'properties', label: 'Properties', kind: 'list', when: { field: 'kind', is: ['Weapon', 'Ingredient'] } },
+      { key: 'properties', label: 'Properties', kind: 'list', options: WEAPON_PROPERTIES, list: 'weaponProperty', when: { field: 'kind', is: ['Weapon'] } },
+      { key: 'traits', label: 'Properties', kind: 'list', options: [], list: 'ingredientProperty', when: { field: 'kind', is: ['Ingredient'] } },
       { key: 'bonus', label: 'Bonus', kind: 'text', when: { field: 'kind', is: ['Weapon', 'Armor'] } },
       { key: 'armorType', label: 'Armor type', kind: 'select', options: ARMOR_TYPES, fixed: ARMOR_TYPES, when: A, group: 'Armor' },
       { key: 'armorClass', label: 'Armor class', kind: 'text', when: A, group: 'Armor' },

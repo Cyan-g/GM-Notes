@@ -41,7 +41,7 @@ export const DASHBOARDS: Dashboard[] = [
   {
     id: 'crafting', title: 'Crafting', icon: '⚗️', uiIcon: 'recipes', views: [
       { name: 'Recipes', filter: e => kind(...CRAFTED)(e) && !!(e.fields.recipe)?.length, cols: ['kind', 'craftingType', '@recipeCost', 'value', '@margin', '@craftTime', 'effect'], facets: ['kind', 'craftingType'], sort: { key: 'craftingType', dir: 1 }, creates: 'item' },
-      { name: 'Ingredients', filter: kind('Ingredient'), cols: ['category', 'value', '@usedIn', 'properties', 'summary'], facets: ['category', 'properties'], sort: { key: 'category', dir: 1 }, creates: 'item' },
+      { name: 'Ingredients', filter: kind('Ingredient'), cols: ['category', 'value', '@usedIn', 'traits', 'summary'], facets: ['category', 'traits'], sort: { key: 'category', dir: 1 }, creates: 'item' },
       { name: 'Potions & poisons', filter: kind('Potion', 'Poison'), cols: ['kind', 'craftingType', 'value', 'effect'], facets: ['kind', 'craftingType'], creates: 'item' },
       { name: 'Scrolls', filter: kind('Scroll'), cols: ['spell', 'rarity', 'value', 'summary'], facets: ['rarity'], creates: 'item' },
     ],

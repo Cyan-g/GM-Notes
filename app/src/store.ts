@@ -14,7 +14,7 @@ const PLAY_KEYS = ['tracker', 'spellbook', 'crafting', 'follow', 'playerNotes'] 
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
 /** The newest data version this build understands (the last step in upgrade()). Newer data opens read-only. */
-export const DATA_VERSION = 23
+export const DATA_VERSION = 24
 /** The oldest data version this build can still open; older data is refused instead of guessed at. */
 export const OLDEST_VERSION = 20
 /** What the database must allow: every entry type and relation kind the app knows. */
@@ -101,7 +101,45 @@ function upgrade(d: Database): boolean {
   if ((d.version ?? 1) < 21) { upgradeTo21(d); d.version = 21; changed = true }
   if ((d.version ?? 1) < 22) { upgradeTo22(d); d.version = 22; changed = true }
   if ((d.version ?? 1) < 23) { upgradeTo23(d); d.version = 23; changed = true }
+  if ((d.version ?? 1) < 24) { upgradeTo24(d); d.version = 24; changed = true }
   return changed
+}
+
+/**
+ * 24: weapon and ingredient properties became two managed lists (Archive → Lists).
+ * - An ingredient's properties move to its own field ("traits", still shown as Properties).
+ * - Each list gets every value in use that it doesn't have yet (a value matching an option but for upper/lower
+ *   case is changed to that option).
+ */
+function upgradeTo24(d: Database) {
+  const lists = { ...(d.meta.lists ?? {}) }
+  const take = (key: string, values: string[][]) => {
+    const list = (lists[key] ?? optionsIn(d.meta, key)).map(o => ({ ...o }))
+    const fixed = new Map<string, string>()
+    for (const v of values.flat()) {
+      if (typeof v !== 'string' || !v.trim()) continue
+      const same = list.find(o => o.id === v || o.label.toLowerCase() === v.trim().toLowerCase())
+      if (same) { fixed.set(v, same.id); continue }
+      list.push({ id: v.trim(), label: v.trim() })
+      fixed.set(v, v.trim())
+    }
+    lists[key] = list
+    return (vs: string[]) => [...new Set(vs.map(v => fixed.get(v) ?? v))]
+  }
+  const items = Object.values(d.entries).filter(e => e.type === 'item')
+  const props = (e: Entry) => (Array.isArray((e.fields as Record<string, unknown>).properties) ? (e.fields as Record<string, unknown>).properties as string[] : [])
+  for (const e of items) {
+    const f = e.fields as Record<string, unknown>
+    if (f.kind === 'Ingredient' && props(e).length) { f.traits = props(e); delete f.properties }
+  }
+  const weapon = take('weaponProperty', items.filter(e => e.fields.kind !== 'Ingredient').map(props))
+  const ingredient = take('ingredientProperty', items.map(e => (e.fields as Record<string, unknown>).traits as string[] ?? []))
+  for (const e of items) {
+    const f = e.fields as Record<string, unknown>
+    if (props(e).length) f.properties = weapon(props(e))
+    if (Array.isArray(f.traits)) f.traits = ingredient(f.traits as string[])
+  }
+  d.meta.lists = lists
 }
 
 /**

@@ -3,8 +3,8 @@
 import { computed } from 'vue'
 import type { FieldDef } from '../model/schema'
 import type { Entry, RecipeLine, StockLine, WorldDate } from '../model/types'
-import { fieldLabel, formatDate, formatMoney, get } from '../store'
-import { listKeyOf } from '../model/lists'
+import { fieldLabel, formatDate, formatMoney, get, state } from '../store'
+import { listKeyOf, noteIn } from '../model/lists'
 import EntryLink from './EntryLink.vue'
 import EncounterTable from './EncounterTable.vue'
 import RanksTable from './RanksTable.vue'
@@ -44,7 +44,7 @@ const stock = computed(() => {
   <template v-else-if="def.kind === 'date'">{{ formatDate(value as WorldDate) }}</template>
   <template v-else-if="def.kind === 'select'">{{ fieldLabel(def, value) }}</template>
   <template v-else-if="def.kind === 'list' && listed">
-    <span class="chips"><span v-for="(v, i) in (value as string[])" :key="i" class="chip">{{ fieldLabel(def, v) }}</span></span>
+    <span class="chips"><span v-for="(v, i) in (value as string[])" :key="i" class="chip" :title="noteIn(state.db?.meta, listKeyOf(def), v)">{{ fieldLabel(def, v) }}</span></span>
   </template>
   <template v-else-if="def.kind === 'list'">
     <span class="chips"><span v-for="(v, i) in (value as string[])" :key="i" class="chip" v-html="renderInline(String(v))" /></span>

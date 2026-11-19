@@ -4,7 +4,8 @@ import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { describe } from '../describe'
 import { TYPES, byKey } from '../model/schema'
-import { fieldLabel, formatMoney, get } from '../store'
+import { fieldLabel, formatMoney, get, state } from '../store'
+import { optionsIn } from '../model/lists'
 import { renderInline } from '../markdown'
 
 const props = defineProps<{ e: Entry }>()
@@ -24,6 +25,12 @@ const rows = computed(() => ([
   ['Weight', f.value.weight != null ? `${f.value.weight} lb` : ''],
   ['Value', formatMoney(f.value.value)],
 ] as [string, string][]).filter(([, v]) => v))
+/** A weapon's (or an ingredient's) properties as their list options, with descriptions. */
+const propList = computed(() => {
+  const [key, ids] = f.value.kind === 'Ingredient' ? ['ingredientProperty', f.value.traits ?? []] : ['weaponProperty', f.value.properties ?? []]
+  const opts = optionsIn(state.db?.meta, key)
+  return ids.map(id => opts.find(o => o.id === id) ?? { id, label: id })
+})
 const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magical' : 'mundane')).toLowerCase().replace(' ', '-'))
 </script>
 
@@ -34,7 +41,10 @@ const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magic
       <div class="ic-text">
         <p v-if="f.summary" class="ic-summary" v-html="renderInline(f.summary)" />
         <p v-if="f.effect" class="ic-effect"><b>Effect.</b> <span v-html="renderInline(f.effect)" /></p>
-        <div v-if="f.properties?.length" class="chips"><span v-for="p in f.properties" :key="p" class="chip">{{ p }}</span></div>
+        <div v-if="propList.length" class="chips"><span v-for="p in propList" :key="p.id" class="chip" :title="p.note">{{ p.label }}</span></div>
+        <dl v-if="propList.some(p => p.note)" class="ic-props">
+          <template v-for="p in propList.filter(x => x.note)" :key="p.id"><dt>{{ p.label }}</dt><dd>{{ p.note }}</dd></template>
+        </dl>
       </div>
       <dl v-if="rows.length" class="ic-stats">
         <template v-for="[k, v] in rows" :key="k"><dt>{{ k }}</dt><dd>{{ v }}</dd></template>

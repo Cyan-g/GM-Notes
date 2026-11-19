@@ -6,7 +6,12 @@
 import { SCHEMA, type FieldDef } from './schema'
 import type { Database, EntryType } from './types'
 
-export interface ListOption { id: string; label: string }
+export interface ListOption {
+  id: string
+  label: string
+  /** What the option means (a weapon property's rule, for example); shown on hover and in item cards. */
+  note?: string
+}
 export interface ListDef {
   key: string
   /** "Item · Kind", or the shared list's own name. */
@@ -24,6 +29,8 @@ export interface ListDef {
 /** Lists shared by several fields, or used outside the entry fields: their names and starting options. */
 const SHARED: Record<string, { label: string; options?: readonly string[]; sheet?: ListDef['sheet'] }> = {
   class: { label: 'Classes' },
+  weaponProperty: { label: 'Weapon properties' },
+  ingredientProperty: { label: 'Ingredient properties' },
   ability: { label: 'Abilities' },
   size: { label: 'Sizes' },
   language: {
@@ -56,11 +63,27 @@ export const LIST_BY_KEY = new Map(LISTS.map(l => [l.key, l]))
 /** The list a field picks from, if it does. */
 export const listKeyOf = (f: FieldDef | undefined) => (f ? keyOf.get(f) : undefined)
 
+/** Descriptions the starting options come with. */
+const DEFAULT_NOTES: Record<string, Record<string, string>> = {
+  weaponProperty: {
+    Ammunition: 'Needs ammunition to make a ranged attack; each attack uses a piece. Drawing it is part of the attack.',
+    Finesse: 'Use Strength or Dexterity for the attack and damage rolls.',
+    Heavy: 'Small creatures have disadvantage on attack rolls with it.',
+    Light: 'Small and easy to handle: good for fighting with two weapons.',
+    Loading: 'Fire only one piece of ammunition per action, bonus action or reaction, whatever the number of attacks.',
+    Reach: 'Adds 5 feet to your reach when you attack with it, and for opportunity attacks.',
+    Special: 'Has unusual rules, described with the weapon.',
+    Thrown: 'Can be thrown for a ranged attack, using the same ability as for melee attacks.',
+    'Two-Handed': 'Needs two hands to attack with.',
+    Versatile: 'Can be used with one or two hands; the damage in brackets is for two hands.',
+  },
+}
 /** A list's options in a world: the stored ones, or the starting ones; fixed options are always there. */
 export function optionsIn(meta: Database['meta'] | undefined, key: string): ListOption[] {
   const def = LIST_BY_KEY.get(key)
   const stored = meta?.lists?.[key]
-  const list = stored ?? (def?.defaults ?? []).map(id => ({ id, label: id }))
+  const notes = DEFAULT_NOTES[key] ?? {}
+  const list = stored ?? (def?.defaults ?? []).map(id => (notes[id] ? { id, label: id, note: notes[id] } : { id, label: id }))
   const missing = (def?.fixed ?? []).filter(id => !list.some(o => o.id === id)).map(id => ({ id, label: id }))
   return missing.length ? [...list, ...missing] : list
 }
@@ -69,4 +92,9 @@ export function labelIn(meta: Database['meta'] | undefined, key: string | undefi
   if (id == null) return ''
   if (!key) return String(id)
   return optionsIn(meta, key).find(o => o.id === id)?.label ?? String(id)
+}
+
+/** An option's description, if it has one. */
+export function noteIn(meta: Database['meta'] | undefined, key: string | undefined, id: unknown): string | undefined {
+  return key ? optionsIn(meta, key).find(o => o.id === id)?.note : undefined
 }

@@ -60,6 +60,12 @@ function move(i: number, by: number) {
   ;[l[i], l[j]] = [l[j], l[i]]
   save(l)
 }
+/** Lists whose options carry a description (shown on hover and in item cards). */
+const describes = computed(() => ['weaponProperty', 'ingredientProperty'].includes(pickedKey.value) || options.value.some(o => o.note))
+function describe(o: ListOption, ev: Event) {
+  const note = (ev.target as HTMLInputElement).value.trim()
+  save(options.value.map(x => (x.id === o.id ? (note ? { ...x, note } : { id: x.id, label: x.label }) : x)))
+}
 function sortAz() { save([...options.value].sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))) }
 function remove(o: ListOption) {
   if (fixed(o) || users.value.get(o.id)?.length) return
@@ -114,6 +120,7 @@ const usedBy = (l: ListDef) => [...l.fields.map(f => `${f.def.label} of ${f.type
                 <input :value="o.label" :disabled="ro" :aria-label="`Name of ${o.label}`" @change="rename(o, $event)" @keydown.enter="($event.target as HTMLInputElement).blur()" />
                 <span v-if="fixed(o)" class="lists-lock" :title="`The app relies on this option (${list.why}): it can be renamed but not removed.`">🔒</span>
                 <span v-if="o.label !== o.id" class="muted small" title="The option's id, which entries store; it stays the same when it's renamed"> was “{{ o.id }}”</span>
+                <input v-if="describes" class="lists-note" :value="o.note ?? ''" :disabled="ro" placeholder="What it does (optional)" :aria-label="`Description of ${o.label}`" @change="describe(o, $event)" @keydown.enter="($event.target as HTMLInputElement).blur()" />
               </td>
               <td>
                 <button v-if="users.get(o.id)?.length" class="link-btn small" @click="shownUsers = shownUsers === o.id ? null : o.id">{{ users.get(o.id)!.length }} {{ users.get(o.id)!.length === 1 ? 'entry' : 'entries' }}</button>

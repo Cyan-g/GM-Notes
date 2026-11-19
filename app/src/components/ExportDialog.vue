@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Save an entry and everything it points at (or the whole world) as a file someone else can import.
+import { withProgress } from '../progress'
 import TypeIcon from './TypeIcon.vue'
 import { computed, reactive, ref } from 'vue'
 import type { EntryType, Id } from '../model/types'
@@ -23,7 +24,7 @@ async function save() {
   if (!plan.value) return
   busy.value = true; error.value = ''
   try {
-    const { blob, name } = await buildExport(plan.value)
+    const { blob, name } = await withProgress('Exporting', () => buildExport(plan.value!))
     download(blob, name)
     open.value = false
   } catch (e) { error.value = (e as Error).message }

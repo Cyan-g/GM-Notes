@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { stage, withProgress } from './progress'
+import ProgressBar from './components/ProgressBar.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { createWorld, get, open, overwrite, save, state, type WorldStart } from './store'
 import { FORMAT as EXPORT_FORMAT, applyImport, readImport } from './transfer'
@@ -119,11 +121,14 @@ async function startWorld() {
       const f = worldFile.value
       if (!f) { pickWorldFile(); return }
       // an empty world, then everything in the file, with its calendar and today's date
-      await createWorld(state.backend!, state.storage!, worldName.value, 'empty', worldMode.value)
-      const plan = await readImport(f.file)
-      if (plan.world) plan.world.take = true
-      await applyImport(plan)
-      await save()
+      await withProgress('Starting the world', async () => {
+        await createWorld(state.backend!, state.storage!, worldName.value, 'empty', worldMode.value)
+        const plan = await readImport(f.file)
+        if (plan.world) plan.world.take = true
+        await applyImport(plan)
+        await stage('Starting the world', 'Saving')
+        await save()
+      })
     } else await createWorld(state.backend!, state.storage!, worldName.value, worldStart.value, worldMode.value)
     phase.value = 'ready'
     // A joined world gets its shared world right away.
@@ -270,4 +275,5 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       </template>
     </div>
   </div>
+  <ProgressBar />
 </template>

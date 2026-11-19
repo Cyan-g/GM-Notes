@@ -1,4 +1,5 @@
 // Small bits of UI state shared between components.
+import { withProgress } from './progress'
 import { markRaw, reactive } from 'vue'
 import type { EntryType } from './model/types'
 import { readImport, type ImportPlan } from './transfer'
@@ -27,7 +28,7 @@ export function newEntry(type?: EntryType, fields: Record<string, unknown> = {})
 /** Read an exported file and show what importing it would do. */
 async function startImport(file: File) {
   try {
-    const plan = await readImport(file)
+    const plan = await withProgress('Reading the file', () => readImport(file))
     plan.bundle = markRaw(plan.bundle)
     ui.importPlan = plan
   } catch (e) { alert((e as Error).message) }

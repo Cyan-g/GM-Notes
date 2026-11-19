@@ -12,6 +12,7 @@
 //   own value.
 // - Import matches each entry to one already here (same id, else same type and name) and updates it; the rest are
 //   added. The import preview says what's new, what changes and what's already the same.
+import { progress, stage, tick } from './progress'
 import { parseClassText } from './model/classes'
 // - Choices (kind, rarity, school…) travel with their labels: one this world doesn't have is added to its list;
 //   from a world's file, a renamed option is renamed here too.
@@ -153,10 +154,14 @@ export function outgoingEntries(plan: ExportPlan): { entries: Entry[]; names: Re
 export async function buildExport(plan: ExportPlan): Promise<{ blob: Blob; name: string }> {
   const { entries, names } = outgoingEntries(plan)
   const files: Record<string, string> = {}
-  for (const p of new Set(entries.flatMap(dataPaths))) {
+  const paths = [...new Set(entries.flatMap(dataPaths))]
+  await stage(progress.title || 'Exporting', 'Pictures and files', paths.length)
+  for (const p of paths) {
     const b = await state.storage!.readBlob(p)
     if (b) files[p] = await toDataUrl(b)
+    await tick()
   }
+  await stage(progress.title || 'Exporting', 'Writing the file')
   const meta = db().meta
   const bundle: Bundle = {
     format: FORMAT, version: VERSION, exported: new Date().toISOString(), from: meta.title,
@@ -236,6 +241,7 @@ const PROF_LIST = { armor: 'item.armorType', weapons: 'item.baseWeapon', languag
 
 export async function readImport(file: File): Promise<ImportPlan> {
   let b: Bundle
+  await stage(progress.title || 'Importing', 'Reading the file')
   try { b = JSON.parse(await file.text()) } catch { throw new Error(`${file.name} isn't a file this app can read.`) }
   if (b?.format !== FORMAT || !Array.isArray(b.entries)) throw new Error(`${file.name} isn't an exported file. Use a file made with ⇩ Export on an entry's page, or with ⚙ → Export the world.`)
   if (b.version > VERSION) throw new Error(`${file.name} was made by a newer version of the app. Update this one first.`)
@@ -327,7 +333,10 @@ export async function readImport(file: File): Promise<ImportPlan> {
   const used = new Set(ok.flatMap(dataPaths))
   const dirs = new Map<string, Set<string>>()
   const reserved = new Set<string>()
-  for (const [path, url] of Object.entries(isObj(b.files) ? b.files : {})) {
+  const fileList = Object.entries(isObj(b.files) ? b.files : {})
+  await stage(progress.title || 'Importing', 'Comparing pictures and files', fileList.length)
+  for (const [path, url] of fileList) {
+    await tick()
     if (!used.has(path) || !SAFE_PATH.test(path) || typeof url !== 'string' || !url.startsWith('data:')) continue
     const p = await placeFile(path, await (await fetch(url)).blob(), dirs, reserved)
     paths.set(path, p.path)
@@ -432,7 +441,10 @@ export async function applyImport(plan: ImportPlan): Promise<Id | undefined> {
   const items = plan.items.filter(i => i.status === 'new' || (i.status === 'changed' && i.take))
   // Pictures and files first (nothing in the data changes until they're stored).
   const need = new Set(items.flatMap(i => dataPaths(i.ready)))
-  for (const [to, from] of plan.writes) if (need.has(to)) await state.storage!.writeBlob(to, await (await fetch(b.files[from])).blob())
+  const writes = plan.writes.filter(([to]) => need.has(to))
+  await stage(progress.title || 'Importing', 'Storing pictures and files', writes.length)
+  for (const [to, from] of writes) { await state.storage!.writeBlob(to, await (await fetch(b.files[from])).blob()); await tick() }
+  await stage(progress.title || 'Importing', `Adding ${items.length} entries`)
   for (const [key, list] of Object.entries(plan.lists.changed)) setList(key, clone(list))
   for (const i of items) d.entries[i.ready.id] = clone(i.ready)
   for (const r of plan.relations.add) Object.assign(addRelation(r.a, r.b, r.kind), clone(r))

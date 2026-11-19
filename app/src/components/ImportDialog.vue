@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Bring in an exported entry or world: shows what's new, what it updates and what's already the same, then imports.
+import { withProgress } from '../progress'
 import TypeIcon from './TypeIcon.vue'
 import { computed, ref } from 'vue'
 import { SCHEMA } from '../model/schema'
@@ -28,7 +29,7 @@ async function run() {
   if (!plan.value) return
   busy.value = true; error.value = ''
   try {
-    const id = anything.value ? await applyImport(plan.value) : main.value?.here?.id
+    const id = anything.value ? await withProgress('Importing', () => applyImport(plan.value!)) : main.value?.here?.id
     plan.value = null
     go(id ? hrefEntry(id) : '#/')
   } catch (e) { error.value = (e as Error).message }

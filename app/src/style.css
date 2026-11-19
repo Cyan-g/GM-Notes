@@ -1504,3 +1504,16 @@ button.start-choice { margin: 0; text-align: left; align-items: flex-start; font
 .nav-back { flex: none; width: 32px; height: 32px; padding: 0; margin-right: -.6rem; border-radius: 8px; font-size: 18px; line-height: 1; background: transparent; border-color: transparent; color: var(--ink-2); }
 .nav-back:hover:not(:disabled) { background: var(--chip); color: var(--ink); border-color: var(--line); }
 .nav-back:disabled { opacity: .3; cursor: default; }
+
+/* the bar of a long job (importing, exporting): above everything, at the bottom of the window */
+.progress-toast { position: fixed; left: 50%; bottom: 1.5rem; transform: translateX(-50%); z-index: 100; width: min(440px, calc(100vw - 32px));
+  padding: .7rem .9rem .8rem; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); box-shadow: 0 12px 40px rgb(0 0 0 / .35); }
+.progress-head { display: flex; align-items: baseline; gap: .5rem; font-size: 14px; margin-bottom: .45rem; }
+.progress-head .muted { font-size: 13px; }
+.progress-count { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.progress-track { height: 8px; border-radius: 99px; background: var(--chip); overflow: hidden; }
+.progress-track > span { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width .15s; }
+/* no count yet: a moving stripe */
+.progress-track.busy > span { width: 30%; animation: progress-busy 1.1s ease-in-out infinite; }
+@keyframes progress-busy { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+@media (prefers-reduced-motion: reduce) { .progress-track.busy > span { animation: none; width: 100%; opacity: .5; } }

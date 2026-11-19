@@ -19,7 +19,7 @@ import MapView from '../components/MapView.vue'
 import SubTree from '../components/SubTree.vue'
 import Sunburst from '../components/Sunburst.vue'
 import { newEntry, ui } from '../ui'
-import { isFavourite, toggleFavourite } from '../edit'
+import { changed, isFavourite, toggleFavourite } from '../edit'
 import type { Pin } from '../model/types'
 import EntryLink from '../components/EntryLink.vue'
 import ExportDialog from '../components/ExportDialog.vue'
@@ -85,7 +85,7 @@ const ranksDef = computed(() => def.value?.fields.find(f => f.kind === 'ranks'))
  */
 const bodyParts = computed(() => {
   const x = e.value
-  if (!x) return { parts: [] as { md?: string; insert?: 'ranks' | 'feats' }[], placed: new Set<string>() }
+  if (!x) return { parts: [] as { md?: string; from?: number; to?: number; insert?: 'ranks' | 'feats' }[], placed: new Set<string>() }
   const lines = x.body.split('\n')
   const heading = (name: string) => lines.findIndex(l => new RegExp(`^#{1,6}\\s+${name}\\s*$`, 'i').test(l.trim()))
   const sectionEnd = (h: number) => {
@@ -107,18 +107,28 @@ const bodyParts = computed(() => {
     if (h >= 0) cuts.push({ at: h + 1, insert: 'feats' })
   }
   cuts.sort((p, q) => p.at - q.at)
-  const parts: { md?: string; insert?: 'ranks' | 'feats' }[] = []
+  const parts: { md?: string; from?: number; to?: number; insert?: 'ranks' | 'feats' }[] = []
   let from = 0
   for (const c of cuts) {
     const md = lines.slice(from, c.at).join('\n')
-    if (md.trim()) parts.push({ md })
+    if (md.trim()) parts.push({ md, from, to: c.at })
     parts.push({ insert: c.insert })
     from = c.at
   }
   const rest = lines.slice(from).join('\n')
-  if (rest.trim()) parts.push({ md: rest })
+  if (rest.trim()) parts.push({ md: rest, from, to: lines.length })
   return { parts, placed: new Set(cuts.map(c => c.insert)) }
 })
+/** Checklist boxes in the text can be ticked in read mode, except in player mode, a read-only or a shared entry. */
+const canTick = computed(() => !state.readOnly && !playerMode.value && !shared.value)
+/** A ticked box: its part of the text, changed, goes back in its place. */
+function setPart(p: { from?: number; to?: number }, md: string) {
+  const x = e.value
+  if (!x || p.from == null || p.to == null) return
+  const lines = x.body.split('\n')
+  x.body = [...lines.slice(0, p.from), md, ...lines.slice(p.to)].join('\n')
+  changed(x)
+}
 const scrollSpell = computed(() => (e.value?.type === 'item' && e.value.fields.kind === 'Scroll' ? get(e.value.fields.spell) : undefined))
 const statblock = computed(() => e.value?.fields.statblock)
 
@@ -324,7 +334,7 @@ const siblings = computed(() => {
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
         <FeatCard v-if="e.type === 'feat'" :e="e" source />
         <template v-for="(p, i) in e.type === 'pc' ? [] : bodyParts.parts" :key="i">
-          <MarkdownView v-if="p.md" :source="p.md" />
+          <MarkdownView v-if="p.md" :source="p.md" :tasks="canTick" @update:source="v => setPart(p, v)" />
           <FieldValue v-else-if="p.insert === 'ranks' && ranksDef" :def="ranksDef" :value="e.fields.ranks" :entry="e" />
           <div v-else-if="p.insert === 'feats'" class="feat-list"><FeatCard v-for="f in grantedFeats" :key="f.id" :e="f" title /></div>
         </template>

@@ -1,11 +1,21 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { renderMarkdown } from '../markdown'
+import { toggleTask } from '../checklist'
 import { state } from '../store'
 
-const props = defineProps<{ source: string }>()
+/** `tasks`: checklist boxes can be ticked; each tick sends the changed text as `update:source`. */
+const props = defineProps<{ source: string; tasks?: boolean }>()
+const emit = defineEmits<{ 'update:source': [string] }>()
 const root = ref<HTMLElement>()
-const html = computed(() => renderMarkdown(props.source))
+const html = computed(() => renderMarkdown(props.source, { tasks: props.tasks }))
+
+function click(ev: MouseEvent) {
+  const box = ev.target as HTMLInputElement
+  if (!box.matches?.('input.task')) return
+  if (!props.tasks) { ev.preventDefault(); return }
+  emit('update:source', toggleTask(props.source, Number(box.dataset.task), box.checked))
+}
 
 // Images and file links point into the data folder; swap in real URLs after rendering.
 async function resolveFiles() {
@@ -30,5 +40,5 @@ watch(html, resolveFiles)
 </script>
 
 <template>
-  <div ref="root" class="md" v-html="html" />
+  <div ref="root" class="md" v-html="html" @click="click" />
 </template>

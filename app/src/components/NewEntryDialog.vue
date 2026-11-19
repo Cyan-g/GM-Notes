@@ -5,7 +5,8 @@ import { nextTick, ref, watch } from 'vue'
 import type { EntryType } from '../model/types'
 import { SCHEMA } from '../model/schema'
 import { createEntry } from '../edit'
-import { playerMode } from '../store'
+import { byType, get, playerMode } from '../store'
+import { carryOver } from '../checklist'
 import { computed } from 'vue'
 import { go, hrefEntry } from '../router'
 
@@ -26,7 +27,15 @@ watch(open, async v => {
 })
 function create() {
   if (!name.value.trim()) return
-  const e = createEntry(type.value, name.value, JSON.parse(JSON.stringify(props.fields ?? {})))
+  const fields = JSON.parse(JSON.stringify(props.fields ?? {}))
+  const e = createEntry(type.value, name.value, fields)
+  // a campaign's next session starts with the last one's headings and open checklist items
+  if (e.type === 'session' && fields.campaign) {
+    const before = (byType.value.get('session') ?? [])
+      .filter(s => s.id !== e.id && s.fields.campaign === fields.campaign && (fields.number == null || (Number(s.fields.number) || 0) < fields.number))
+      .sort((a, b) => (Number(b.fields.number) || 0) - (Number(a.fields.number) || 0) || b.created.localeCompare(a.created))[0]
+    if (before?.body.trim()) get(e.id)!.body = carryOver(before.body)
+  }
   open.value = false
   go(hrefEntry(e.id, true))
 }

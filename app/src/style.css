@@ -1407,3 +1407,11 @@ h1 .icon svg.gi { color: var(--accent); }
 .travel-modes summary { cursor: pointer; }
 .nowrap { white-space: nowrap; }
 .tl-bar.ongoing.outside .tl-bar-label { left: calc(100% + 14px); }
+
+/* checklists: a box instead of the bullet; ticked items fade */
+.md li.task-item { list-style: none; position: relative; }
+.md li.task-item > input.task, .md li.task-item > p > input.task { position: absolute; left: -1.45em; top: .3em; margin: 0; width: 1em; height: 1em; padding: 0; accent-color: var(--accent); cursor: pointer; }
+.md li.task-item input.task:disabled { cursor: default; opacity: .8; }
+.md li.task-item.done > p, .md li.task-item.done { color: var(--muted); }
+.md li.task-item.done > :not(ul):not(ol) a { color: inherit; }
+.md li.task-item:not(.done) { color: var(--ink); }

@@ -1,6 +1,6 @@
 // Markdown rendering with [[id|label]] links, :::secret blocks, callout boxes (> [!note]) and images from the data folder.
 import MarkdownIt from 'markdown-it'
-import { get, playerMode } from './store'
+import { get, playerMode, state } from './store'
 import { hrefEntry } from './router'
 
 const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
@@ -34,6 +34,27 @@ md.inline.ruler.before('link', 'wikilink', (state, silent) => {
   return true
 })
 
+// Checklist items ("- [ ] open", "- [x] done") become checkboxes, numbered in order (see checklist.ts); they can be
+// ticked only where the page passes `tasks: true`.
+md.core.ruler.after('inline', 'tasks', st => {
+  const env = st.env as { tasks?: boolean; taskN?: number }
+  const toks = st.tokens
+  for (let i = 2; i < toks.length; i++) {
+    const t = toks[i]
+    if (t.type !== 'inline' || toks[i - 1].type !== 'paragraph_open' || toks[i - 2].type !== 'list_item_open') continue
+    const first = t.children?.[0]
+    const m = first?.type === 'text' ? first.content.match(/^\[([ xX])\](\s+|$)/) : null
+    if (!m || !first) continue
+    const n = env.taskN = (env.taskN ?? -1) + 1
+    first.content = first.content.slice(m[0].length)
+    const box = new st.Token('html_inline', '', 0)
+    box.content = `<input type="checkbox" class="task" data-task="${n}"${m[1] === ' ' ? '' : ' checked'}${env.tasks ? '' : ' disabled'}>`
+    t.children!.unshift(box)
+    toks[i - 2].attrJoin('class', 'task-item')
+    if (m[1] !== ' ') toks[i - 2].attrJoin('class', 'done')
+  }
+})
+
 // Images and files inside the data folder are resolved after rendering (see MarkdownView).
 const defaultImage = md.renderer.rules.image!
 md.renderer.rules.image = (tokens, idx, opts, env, self) => {
@@ -59,6 +80,9 @@ md.renderer.rules.link_open = (tokens, idx, opts, env, self) => {
 function preprocess(src: string): string {
   // Player mode never shows DM-only text.
   src = src.replace(/^:::secret\s*\n([\s\S]*?)\n:::\s*$/gm, (_, inner) => playerMode.value ? '' : `<div class="secret"><span class="secret-tag">DM only</span>\n\n${inner}\n\n</div>`)
+  // "- 24. August 892" is a date, not a list numbered from 24
+  const months = state.db?.meta.calendar?.months.map(m => m.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) ?? []
+  if (months.length) src = src.replace(new RegExp(`^(\\s*(?:[-*+]\\s+)?)(\\d+)\\.(?=[ \\t]+(?:${months.join('|')})\\b)`, 'gm'), '$1$2\\.')
   const lines = src.split('\n')
   const out: string[] = []
   for (let i = 0; i < lines.length; i++) {
@@ -76,5 +100,5 @@ function preprocess(src: string): string {
   return out.join('\n')
 }
 
-export const renderMarkdown = (src: string) => md.render(preprocess(src || ''))
+export const renderMarkdown = (src: string, opts: { tasks?: boolean } = {}) => md.render(preprocess(src || ''), { tasks: !!opts.tasks })
 export const renderInline = (src: string) => md.renderInline(src || '')

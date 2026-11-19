@@ -63,7 +63,7 @@ const groups = computed(() => {
   const big = ['statblock', 'recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes']
   const out = new Map<string, { def: FieldDef; value: unknown }[]>()
   for (const f of def.value.fields) {
-    if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'session' && ['campaign', 'number', 'date'].includes(f.key)) || f.key === 'parent' || f.key === 'map' || f.key === 'pins' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
+    if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'session' && ['campaign', 'number', 'date'].includes(f.key)) || f.key === 'parent' || f.key === 'map' || f.key === 'pins' || f.kind === 'mapData' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
     const g = f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
     out.get(g)!.push({ def: f, value: byKey(x.fields)[f.key] })

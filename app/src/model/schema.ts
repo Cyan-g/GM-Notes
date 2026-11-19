@@ -1,12 +1,12 @@
 // Describes every entry type: its label, fields and dropdown options.
 // Forms and pages are generated from this, so adding a field here is enough.
 import type {
-  Abilities, CharacterSheet, ClassLine, Copper, GearEffect, ItemSpell, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
+  Abilities, CharacterSheet, ClassLine, Copper, GearEffect, ItemSpell, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
 } from './types'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
-  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires'
+  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData'
 
 export interface FieldDef {
   key: string
@@ -112,6 +112,9 @@ export const SCHEMA = [
       { key: 'stock', label: 'Stock', kind: 'stock', when: { field: 'placeType', is: ['Shop', 'Tavern'] }, group: 'Shop' },
       { key: 'map', label: 'Map image', kind: 'text', group: 'Map' },
       { key: 'pins', label: 'Pins', kind: 'pins', group: 'Map' },
+      // Set and drawn on the map itself (travel.ts), not in the form.
+      { key: 'mapScale', label: 'Map scale', kind: 'mapData', group: 'Map' },
+      { key: 'routes', label: 'Routes', kind: 'mapData', group: 'Map' },
     ],
   },
   {
@@ -266,7 +269,7 @@ export interface KindValue {
   text: string; longtext: string; number: number; bool: boolean; select: string; list: string[]
   money: Copper; weight: number; ref: Id; refs: Id[]; date: WorldDate
   recipe: RecipeLine[]; stock: StockLine[]; statblock: Statblock; abilities: Abilities
-  combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]; effects: GearEffect[]; itemSpells: ItemSpell[]; requires: Requirements
+  combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]; effects: GearEffect[]; itemSpells: ItemSpell[]; requires: Requirements; mapData: MapScale | MapRoute[]
 }
 type Defs = (typeof SCHEMA)[number]['fields'][number]
 /** A field key used by any type. */

@@ -119,6 +119,13 @@ export interface EncounterLine { creature?: Id; name?: string; count: number; hp
 
 /** A pin on a place's map. x and y are 0–1 across and down the picture. */
 export interface Pin { id: string; x: number; y: number; entry?: Id; label?: string; note?: string }
+/**
+ * A map's scale (travel.ts): two points (fractions of the map's width and height) `distance` miles or feet apart,
+ * with the picture's size in pixels when it was set.
+ */
+export interface MapScale { a: { x: number; y: number }; b: { x: number; y: number }; distance: number; unit: 'mi' | 'ft'; w: number; h: number }
+/** A saved route on a map: its points, which legs (by number, from 0) are difficult terrain, and how it's travelled. */
+export interface MapRoute { id: string; name: string; points: { x: number; y: number }[]; difficult?: number[]; mode?: string }
 
 export interface StockLine { item: Id; price?: Copper; stock?: number }
 
@@ -304,6 +311,8 @@ export interface Database {
     lists?: Record<string, import('./lists').ListOption[]>
     /** When this world was last published for players (see sync.ts). */
     lastPublished?: string
+    /** Paces and vehicles added for travel on maps (travel.ts); the 5e ones are built in. */
+    travelModes?: import('../travel').TravelMode[]
     /** Colour theme and heading font (see theme.ts). */
     theme?: import('../theme').ThemeSettings
   }

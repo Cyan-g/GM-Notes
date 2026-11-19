@@ -1368,3 +1368,27 @@ h1 .icon svg.gi { color: var(--accent); }
 .cs-toggles { white-space: nowrap; }
 .cs-toggles .chip-toggle + .chip-toggle { margin-left: .3rem; }
 .chip-toggle:disabled.tip { cursor: not-allowed; }
+
+/* Travel on maps (travel.ts): routes drawn over the map, and the Measure / Set scale panel. */
+.map-routes { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+/* The map layer is zoomed with a CSS transform, so line widths and dashes are scaled back by the zoom (--sw …). */
+.map-routes line { stroke-width: var(--sw); stroke-linecap: round; }
+.map-routes .draft line { stroke: var(--accent); }
+.map-routes .saved line { stroke: #3a6fc4; }
+.map-routes .scale line { stroke: #d08a1e; stroke-dasharray: var(--d3) var(--d2); }
+.map-routes line.difficult { stroke-dasharray: var(--d1) var(--d2); stroke-linecap: butt; }
+.map-routes circle { fill: var(--accent); stroke: #fff; stroke-width: calc(var(--sw) / 2); }
+.map-routes .scale circle { fill: #d08a1e; }
+.map-travel { margin-top: .6rem; display: flex; flex-direction: column; gap: .5rem; }
+.map-travel h4 { margin: .2rem 0 0; display: flex; gap: .6rem; align-items: baseline; }
+.map-travel .row { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.travel-num { width: 6.5em; }
+.travel-name { width: 14em; }
+.travel-legs { margin: 0; padding-left: 1.4rem; font-size: 14px; }
+.travel-legs li { display: flex; gap: 1rem; align-items: baseline; }
+.travel-legs li > span { min-width: 5em; }
+.travel-total { margin: .1rem 0; }
+.travel-routes { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: .2rem; }
+.travel-routes li { display: flex; gap: .7rem; align-items: baseline; flex-wrap: wrap; }
+.travel-routes li.open { font-weight: 600; }
+.travel-modes summary { cursor: pointer; }

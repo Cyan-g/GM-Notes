@@ -30,7 +30,7 @@ const BIG = ['recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes']
 const groups = computed(() => {
   const out = new Map<string, FieldDef[]>()
   for (const f of def.value?.fields ?? []) {
-    if (BIG.includes(f.kind) || (e.value?.type === 'pc' && f.key === 'level') || !shown(f) || f.key === 'pins' || f.key === 'map') continue
+    if (BIG.includes(f.kind) || (e.value?.type === 'pc' && f.key === 'level') || !shown(f) || f.key === 'pins' || f.key === 'map' || f.kind === 'mapData') continue
     const g = f.kind === 'statblock' ? 'Stats' : f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
     out.get(g)!.push(f)

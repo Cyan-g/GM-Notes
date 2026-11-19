@@ -103,6 +103,21 @@ A player character's page is its character sheet for play: HP, hit dice, inspira
 
 With no current character, the Spellbook and Workbench use the world's own; the Spellbook then takes typed numbers, and the Workbench picks its tools itself.
 
+### Maps and travel
+
+A place with a map picture shows it with pins for the places in it (✎ Edit pins adds, moves and links them).
+
+- **Scale:** in ✎ Edit pins, *⚖ Set scale*: click two points a known distance apart (the ends of the map's scale
+  bar, or two towns) and type the distance in miles or feet. Each map has its own.
+- **Measure:** *📏 Measure* on a map, then click points or pins to lay a route of several legs. It shows each leg's
+  length, the total, the travel time and the arrival date in the world calendar (setting out today). Pick a pace or
+  vehicle: the 5e slow, normal and fast paces (18 / 24 / 30 miles in an 8-hour travel day) or a ship, galley,
+  airship and the like, which travel around the clock. A leg can be marked difficult terrain (half speed).
+- **Routes:** name a route and save it; the map's *Routes* list shows each with its distance and time, a box to draw
+  it on the map, *Open* to change it and ✕ to delete it.
+- **Own paces and vehicles** (a griffon, a sand skiff): *Paces & vehicles…* under Measure, with their mph and
+  whether they travel all day.
+
 ### The calendar
 
 **World → Calendar → ⚙ Edit calendar** changes the world's calendar:

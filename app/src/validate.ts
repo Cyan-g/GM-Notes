@@ -66,6 +66,7 @@ export function checkField(f: FieldDef, v: unknown, exists?: (id: string) => Ent
       }
       return undefined
     }
+    case 'mapData': return isObj(v) || Array.isArray(v) ? undefined : 'should be map data'
     case 'requires': return isObj(v) ? undefined : 'should be a set of requirements'
     case 'itemSpells': return Array.isArray(v) && v.every(x => isObj(x) && isStr(x.spell) && isStr(x.how)) ? undefined : 'should be a list of spells'
     case 'effects': return Array.isArray(v) && v.every(x => isObj(x) && isStr(x.on)) ? undefined : 'should be a list of effects'

@@ -77,7 +77,7 @@ const yearInput = (v: string) => { const y = Number(v); if (v.trim() && !Number.
 <template>
   <div class="calendar-view">
     <header class="list-head">
-      <h1><span class="icon"><AppIcon ui="calendar" /></span>{{ cal.months[month - 1]?.name }} <input class="year-input" type="number" :value="year" @change="yearInput(($event.target as HTMLInputElement).value)" /> <span class="muted era">{{ era }}</span></h1>
+      <h1><span class="icon"><AppIcon ui="calendar" /></span>{{ cal.months[month - 1]?.name }} <input class="year-input" type="number" :value="year" :style="{ width: `${String(year).length + 0.4}ch` }" title="Type a year to jump to it" @change="yearInput(($event.target as HTMLInputElement).value)" /> <span class="muted era">{{ era }}</span></h1>
       <div class="cal-nav">
         <button title="Previous month" @click="shift(-1)">‹</button>
         <button @click="go(href(today.year, today.month ?? 1))">Today</button>
@@ -101,8 +101,7 @@ const yearInput = (v: string) => { const y = Number(v); if (v.trim() && !Number.
 
     <div class="cal-layout">
       <div>
-        <div v-if="items.monthOnly.length || holidays.length" class="month-notes">
-          <span v-for="h in holidays" :key="h.name" class="badge holiday">🎉 {{ h.day }}: {{ h.name }}</span>
+        <div v-if="items.monthOnly.length" class="month-notes">
           <span v-for="e in items.monthOnly" :key="e.id" class="badge">This month: <EntryLink :id="e.id" /></span>
         </div>
         <div class="cal-grid" :style="{ '--cols': cal.weekdays.length }">

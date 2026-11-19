@@ -409,6 +409,7 @@ td.clip { max-width: 360px; }
 
 .tl-event.flip { flex-direction: row-reverse; transform: translateX(calc(-100% + 5px)); }
 .tl-bar.flip .tl-bar-label { left: auto; right: calc(100% + 6px); }
+.tl-bar.outside .tl-bar-label { left: calc(100% + 6px); }
 .tl-bar.ongoing.flip .tl-bar-label { right: calc(100% + 6px); }
 
 /* ---------- rich pages ---------- */
@@ -423,7 +424,7 @@ td.clip { max-width: 360px; }
 .image-input:focus-visible { outline: 2px solid var(--accent-2); border-radius: 8px; }
 .image-input .portrait { max-height: 260px; width: 100%; }
 .image-input .row { display: flex; gap: .4rem; }
-.statblock.wide { max-width: 720px; margin-bottom: 1.5rem; }
+.statblock.wide { margin-bottom: 1.5rem; }
 .md.map { margin-bottom: 1rem; }
 
 .item-card, .spell-card { max-width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.2rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border-top: 4px solid var(--rc, var(--line)); }
@@ -450,7 +451,10 @@ td.clip { max-width: 360px; }
 
 /* ---------- calendar ---------- */
 .cal-nav { display: flex; gap: .3rem; }
-.year-input { width: 5.5em; font: inherit; font-size: .8em; padding: .05em .3em; }
+/* the year reads as part of the heading; it shows it can be typed in on hover or focus */
+.year-input { font: inherit; color: inherit; padding: 0 .1em; border: 1px solid transparent; background: transparent; box-shadow: none; -moz-appearance: textfield; }
+.year-input::-webkit-inner-spin-button, .year-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.year-input:hover, .year-input:focus { border-color: var(--line); background: var(--panel); }
 .era { font-size: .6em; }
 .today-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-bottom: 1rem; }
 .today-bar .spacer, .tracker-tools .spacer { flex: 1; }
@@ -892,18 +896,22 @@ tr.craft-time td { color: var(--ink-2); font-weight: 600; border-top: 0; }
 @media (max-width: 700px) { .home-desk, .home-lore { grid-template-columns: 1fr; } }
 .home h3 { display: flex; align-items: baseline; gap: .5rem; }
 .home h3 > a.muted, .home h3 > .link-btn { margin-left: auto; font-weight: 400; }
-.home h4 { margin: .8rem 0 .3rem; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.home h4 { display: flex; align-items: baseline; gap: .5rem; margin: .8rem 0 .3rem; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.home h4 > a { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 400; }
 .home-current { font-size: 1.15rem; font-weight: 600; margin: 0 0 .3rem; }
 .home ul.rel.compact li { padding: .15rem 0; }
-.tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: .4rem; }
-.tool { display: flex; flex-direction: column; align-items: center; gap: .15rem; padding: .55rem .3rem; border: 1px solid var(--line); border-radius: 10px;
-  text-decoration: none; color: var(--ink); font-size: 13px; background: color-mix(in srgb, var(--accent) 3%, var(--panel)); transition: border-color .12s, transform .12s; }
-.tool > span { font-size: 1.35rem; }
+/* two rows of five small tiles; wider where the card takes the whole row */
+.tool-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .35rem; }
+@media (max-width: 700px) { .tool-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); } }
+.tool { display: flex; flex-direction: column; align-items: center; gap: .1rem; padding: .45rem .15rem; border: 1px solid var(--line); border-radius: 10px; text-align: center;
+  text-decoration: none; color: var(--ink); font-size: 12px; line-height: 1.2; overflow-wrap: anywhere; background: color-mix(in srgb, var(--accent) 3%, var(--panel)); transition: border-color .12s, transform .12s; }
+.tool > span { font-size: 1.15rem; }
 .tool:hover { border-color: var(--accent); transform: translateY(-1px); }
 .home-regions { margin: 1rem 0; }
 .home-regions td { vertical-align: top; }
 .home-region { font-weight: 600; white-space: nowrap; }
 .home-tag { display: inline-block; margin: 0 .7rem .2rem 0; }
+.home-tag > .muted { margin-left: .3em; }
 .home-inline { margin: 0; line-height: 1.8; }
 .home-link-form { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .4rem; }
 .home-link-form input { flex: 1 1 8rem; min-width: 0; }
@@ -1036,6 +1044,10 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 /* the top: portrait, then the stat cards and the HP / hit dice cards beside it */
 .cs-top { display: grid; gap: .6rem; }
 .cs-top.with-portrait { grid-template-columns: minmax(200px, 1fr) minmax(0, 2.1fr); align-items: start; }
+/* no picture yet: a slim placeholder, so the numbers get the room */
+.cs-top.with-portrait.no-portrait { grid-template-columns: 120px minmax(0, 1fr); }
+.no-portrait .pc-portrait-empty { aspect-ratio: auto; min-height: 120px; font-size: .8rem; padding: .6rem; }
+.no-portrait .pc-portrait-icon { font-size: 2rem; }
 .cs-skill span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cs-hp-row { flex-wrap: wrap; }
 @media (max-width: 640px) { .cs-top.with-portrait { grid-template-columns: 1fr; } }
@@ -1059,7 +1071,8 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .cs-hp-main { flex: 1 1 10rem; }
 .cs-dice { justify-content: space-between; }
 .cs-hp-row { display: flex; align-items: center; gap: .4rem; }
-.cs-hp-row input { width: 3.2em; text-align: center; }
+.cs-hp-row input { width: 3.6em; text-align: center; -moz-appearance: textfield; }
+.cs-hp-row input::-webkit-inner-spin-button, .cs-hp-row input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .cs-hp-row .cs-hp-now { width: 3.4em; font: 600 1.25rem var(--serif); }
 .cs-hp-row .cs-die { width: 3.2em; }
 .cs-hp-bar { height: 6px; margin-top: .4rem; border-radius: 3px; background: var(--line); overflow: hidden; }
@@ -1392,3 +1405,5 @@ h1 .icon svg.gi { color: var(--accent); }
 .travel-routes li { display: flex; gap: .7rem; align-items: baseline; flex-wrap: wrap; }
 .travel-routes li.open { font-weight: 600; }
 .travel-modes summary { cursor: pointer; }
+.nowrap { white-space: nowrap; }
+.tl-bar.ongoing.outside .tl-bar-label { left: calc(100% + 14px); }

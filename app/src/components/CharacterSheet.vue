@@ -176,7 +176,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       </div>
       <p v-if="levelOver" class="error small">The class levels add up to more than 20; the sheet counts 20.</p>
     </section>
-    <div class="cs-top" :class="{ 'with-portrait': !build }">
+    <div class="cs-top" :class="{ 'with-portrait': !build, 'no-portrait': !build && !pc.image }">
     <PcPortrait v-if="!build" :pc="pc" />
     <div class="cs-top-right">
     <!-- the strip at the top: the numbers looked at most -->
@@ -196,10 +196,10 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         <span class="cs-label">{{ build ? 'Maximum hit points' : 'Hit points' }}</span>
         <div class="cs-hp-row">
           <template v-if="!build">
-            <input class="cs-hp-now" type="number" :value="s.hp ?? maxHp ?? ''" :disabled="ro" title="Current HP" @change="edit(x => x.hp = num($event))" />
+            <input class="cs-hp-now" type="number" :value="s.hp ?? maxHp ?? ''" placeholder="now" :disabled="ro" title="Current HP" @change="edit(x => x.hp = num($event))" />
             <span class="muted">/</span>
           </template>
-          <span :class="{ tip: gt.maxHp.length && !build, 'gear-mod': gt.maxHp.length && !build }" :data-tip="build ? undefined : breakdown(`${s.maxHp ?? 0} without gear`, gt.maxHp)"><input type="number" :value="(build ? s.maxHp : maxHp) ?? ''" :placeholder="build ? 'max' : '—'" :disabled="locked" title="Maximum HP" @change="edit(x => x.maxHp = num($event))" /></span>
+          <span :class="{ tip: gt.maxHp.length && !build, 'gear-mod': gt.maxHp.length && !build }" :data-tip="build ? undefined : breakdown(`${s.maxHp ?? 0} without gear`, gt.maxHp)"><input type="number" :value="(build ? s.maxHp : maxHp) ?? ''" :placeholder="'max'" :disabled="locked" title="Maximum HP" @change="edit(x => x.maxHp = num($event))" /></span>
           <template v-if="!build">
             <span class="muted small">temp</span>
             <input type="number" :value="s.tempHp ?? ''" placeholder="0" :disabled="ro" title="Temporary HP" @change="edit(x => x.tempHp = num($event) || undefined)" />

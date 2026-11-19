@@ -24,7 +24,7 @@ const anyHolders = computed(() => holders.value.some(h => h.length))
         <td class="rank-title">{{ k.title }}</td>
         <td class="num">{{ k.renown ?? '—' }}</td>
         <td>{{ k.station }}</td>
-        <td v-if="anyHolders"><template v-for="(id, j) in holders[i]" :key="id"><template v-if="j">, </template><EntryLink :id="id" /></template></td>
+        <td v-if="anyHolders"><template v-for="(id, j) in holders[i]" :key="id"><template v-if="j">, </template><span class="nowrap"><EntryLink :id="id" /></span></template></td>
       </tr>
     </tbody>
   </table>

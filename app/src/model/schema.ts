@@ -309,3 +309,6 @@ export const RELATION_KINDS: Record<RelationKind, { forward: string; reverse: st
   involved: { forward: 'involved in', reverse: 'involved', verb: 'involves', dated: false, b: ['event', 'session', 'campaign', 'encounter'] },
   related: { forward: 'related to', reverse: 'related to', verb: 'related to', symmetric: true, dated: false },
 }
+
+/** A type's name inside a sentence: lower case, but an abbreviation stays as it is ("New NPC", "New place"). */
+export const typeWord = (t: EntryType) => TYPES[t].label.split(' ').map(w => (/^[A-Z]{2,}$/.test(w) ? w : w.toLowerCase())).join(' ')

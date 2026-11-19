@@ -85,9 +85,12 @@ const groups = computed(() => {
     const right = clamp(pct(endY))
     const left = it.start ? clamp(pct(yearPos(it.start))) : Math.max(0, right - LEAD)
     g.first = Math.min(g.first, it.start ? yearPos(it.start) : endY - 1)
+    const label = `${get(r.a)?.name ?? '?'}${r.role ? ' · ' + r.role : ''}`
+    // a bar too short for its label has the label beside it, not running out of it
+    const outside = left <= 62 && (Math.max(0.6, right - left) * width.value) / 100 < label.length * 6.6 + 14
     g.bars.push({
-      key: r.id, flip: left > 62, left, width: Math.max(0.6, right - left), unknownStart: !it.start, ongoing: !it.end,
-      who: r.a, label: `${get(r.a)?.name ?? '?'}${r.role ? ' · ' + r.role : ''}`,
+      key: r.id, flip: left > 62, outside, left, width: Math.max(0.6, right - left), unknownStart: !it.start, ongoing: !it.end,
+      who: r.a, label,
       title: `${get(r.a)?.name} ${k.forward} ${get(r.b)?.name}${r.role ? ` (${r.role})` : ''}\n${it.start ? formatDate(it.start) : 'before records'} – ${it.end ? formatDate(it.end) : 'now'}`,
     })
   }
@@ -120,7 +123,7 @@ const nowPct = computed(() => pct(now.value))
       <div v-for="g in groups" :key="g.id" class="tl-group">
         <div class="tl-group-title"><a :href="hrefEntry(g.id)">{{ g.label }}</a></div>
         <div v-for="b in g.bars" :key="b.key" class="tl-row">
-          <div class="tl-bar" :class="{ unknown: b.unknownStart, ongoing: b.ongoing, flip: b.flip }" :style="{ left: b.left + '%', width: b.width + '%' }"
+          <div class="tl-bar" :class="{ unknown: b.unknownStart, ongoing: b.ongoing, flip: b.flip, outside: b.outside }" :style="{ left: b.left + '%', width: b.width + '%' }"
                :title="b.title" @click="go(hrefEntry(b.who))">
             <span class="tl-bar-label">{{ b.label }}</span>
           </div>

@@ -4,7 +4,7 @@ import { entryIcon } from '../../model/classes'
 import EntryIcon from '../EntryIcon.vue'
 import { computed, nextTick, ref, watch } from 'vue'
 import type { EntryType } from '../../model/types'
-import { TYPES } from '../../model/schema'
+import { TYPES, typeWord } from '../../model/schema'
 import { search } from '../../search'
 import { get } from '../../store'
 import { createEntry } from '../../edit'
@@ -17,8 +17,10 @@ const props = withDefaults(defineProps<{
   exclude?: string[]
   /** If given, only these entries can be picked. */
   only?: string[]
+  /** Offer to use the typed text as it is (an option labelled "＋ Add “…” {freeText}"), emitted as `text`. */
+  freeText?: string
 }>(), { modelValue: null, add: false })
-const emit = defineEmits<{ 'update:modelValue': [string | null]; pick: [string] }>()
+const emit = defineEmits<{ 'update:modelValue': [string | null]; pick: [string]; text: [string] }>()
 
 const editing = ref(false)
 const q = ref('')
@@ -31,6 +33,8 @@ const options = computed(() => [
   ...results.value.map(e => ({ kind: 'pick' as const, e })),
   ...(createType.value && q.value.trim() && !results.value.some(e => e.name.toLowerCase() === q.value.trim().toLowerCase())
     ? [{ kind: 'create' as const, e: null }] : []),
+  ...(props.freeText && q.value.trim() && !results.value.some(e => e.name.toLowerCase() === q.value.trim().toLowerCase())
+    ? [{ kind: 'text' as const, e: null }] : []),
 ])
 watch(q, () => { sel.value = 0 })
 
@@ -43,6 +47,7 @@ async function start() {
 function choose(i = sel.value) {
   const o = options.value[i]
   if (!o) return
+  if (o.kind === 'text') { emit('text', q.value.trim()); q.value = ''; return }
   const id = o.kind === 'pick' ? o.e!.id : createEntry(createType.value!, q.value.trim()).id
   if (props.add) emit('pick', id)
   else emit('update:modelValue', id)
@@ -70,12 +75,13 @@ function blur() { setTimeout(() => { if (!props.add) editing.value = false; q.va
     <template v-else>
       <input ref="input" v-model="q" :placeholder="placeholder || 'Type a name…'" @keydown="key" @blur="blur" @focus="editing = true" />
       <ul v-if="editing && q && options.length" class="picker-list">
-        <li v-for="(o, i) in options" :key="o.e?.id ?? 'create'" :class="{ sel: i === sel }" @mousedown.prevent="choose(i)" @mousemove="sel = i">
+        <li v-for="(o, i) in options" :key="o.e?.id ?? o.kind" :class="{ sel: i === sel }" @mousedown.prevent="choose(i)" @mousemove="sel = i">
           <template v-if="o.kind === 'pick'">
             <span class="icon"><EntryIcon :e="o.e!" /></span>{{ o.e!.name }}
             <span class="muted small">{{ TYPES[o.e!.type].label }}</span>
           </template>
-          <template v-else>＋ Create {{ TYPES[createType!].label.toLowerCase() }} “{{ q.trim() }}”</template>
+          <template v-else-if="o.kind === 'text'">＋ Add “{{ q.trim() }}” <span class="muted small">{{ freeText }}</span></template>
+          <template v-else>＋ Create {{ typeWord(createType!) }} “{{ q.trim() }}”</template>
         </li>
       </ul>
     </template>

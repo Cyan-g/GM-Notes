@@ -5,7 +5,7 @@ import { computed, ref, watch } from 'vue'
 import type { Entry, EntryType } from '../model/types'
 import { column, facet } from '../columns'
 import { formatMoney } from '../store'
-import { TYPES } from '../model/schema'
+import { TYPES, typeWord } from '../model/schema'
 import { newEntry } from '../ui'
 import EntryLink from './EntryLink.vue'
 import FieldValue from './FieldValue.vue'
@@ -95,7 +95,7 @@ defineExpose({ count: computed(() => shown.value.length) })
           </tr>
         </tbody>
       </table>
-      <p v-if="!base.length" class="muted pad">No {{ (TYPES[creates ?? type ?? 'note']?.plural ?? 'entries').toLowerCase() }} yet<template v-if="creates ?? type"> — <button class="link-btn" @click="newEntry((creates ?? type)!)">＋ New {{ TYPES[(creates ?? type)!].label.toLowerCase() }}</button></template>.</p>
+      <p v-if="!base.length" class="muted pad">No {{ (TYPES[creates ?? type ?? 'note']?.plural ?? 'entries').toLowerCase() }} yet<template v-if="creates ?? type"> — <button class="link-btn" @click="newEntry((creates ?? type)!)">＋ New {{ typeWord((creates ?? type)!) }}</button></template>.</p>
       <p v-else-if="!shown.length" class="muted pad">Nothing matches.</p>
     </div>
   </div>

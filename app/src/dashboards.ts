@@ -1,6 +1,9 @@
 // Dashboards: named tables over entries, each with a few views. Add or change views here.
 import type { Entry, EntryType } from './model/types'
 
+/** The Spells table's tab for each spell level (1st…9th). */
+export const SPELL_LEVEL_TABS = ['1st level', '2nd level', '3rd level', '4th level', '5th level', '6th level', '7th level', '8th level', '9th level']
+
 export interface DashView {
   name: string
   filter: (e: Entry) => boolean
@@ -25,8 +28,9 @@ export const DASHBOARDS: Dashboard[] = [
   {
     id: 'spells', title: 'Spells', icon: '🔮', typeIcon: 'spell', views: [
       { name: 'All spells', filter: is('spell'), cols: ['@spellLevel', 'school', 'castingTime', '@attackSave', 'range', 'duration', '@concRitual', 'classes'], facets: ['level', 'school', '@attackSave', 'classes', 'concentration', 'ritual'], sort: { key: '@spellLevel', dir: 1 }, creates: 'spell' },
-      { name: 'Cantrips', filter: e => e.type === 'spell' && e.fields.level === 'Cantrip', cols: ['school', 'castingTime', '@attackSave', 'range', 'duration', '@concRitual', 'classes'], facets: ['school', '@attackSave', 'classes'], creates: 'spell' },
-      { name: 'Leveled spells', filter: e => e.type === 'spell' && e.fields.level !== 'Cantrip', cols: ['@spellLevel', 'school', 'castingTime', '@attackSave', 'range', 'duration', '@concRitual', 'classes'], facets: ['level', 'school', '@attackSave', 'classes', 'concentration', 'ritual'], sort: { key: '@spellLevel', dir: 1 }, creates: 'spell' },
+      { name: 'Cantrips', filter: e => e.type === 'spell' && e.fields.level === 'Cantrip', cols: ['school', 'castingTime', '@attackSave', 'range', 'duration', '@concRitual', 'classes'], facets: ['school', '@attackSave', 'classes', 'concentration'], creates: 'spell' },
+      // a tab per spell level; within one level the level column and filter would say nothing
+      ...SPELL_LEVEL_TABS.map((name, i) => ({ name, filter: (e: Entry) => e.type === 'spell' && e.fields.level === String(i + 1), cols: ['school', 'castingTime', '@attackSave', 'range', 'duration', '@concRitual', 'classes'], facets: ['school', '@attackSave', 'classes', 'concentration', 'ritual'], creates: 'spell' as const })),
     ],
   },
   {

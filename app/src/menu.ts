@@ -7,6 +7,7 @@ import { computed } from 'vue'
 import { byType, get, playerMode, state } from './store'
 import { currentPc } from './sheet'
 import { hrefDashboard, hrefEntry, hrefList, type Route } from './router'
+import { SPELL_LEVEL_TABS } from './dashboards'
 import { newEntry } from './ui'
 import type { UiIcon } from './icons/ui'
 
@@ -120,7 +121,10 @@ export const MENUS: TopMenu[] = [
       SEP,
       { label: 'All spells', typeIcon: 'spell', href: hrefDashboard('spells', 'All spells'), hint: count('spell') },
       viewLink('spells', 'Cantrips', 'cantrips', count('spell', e => e.fields.level === 'Cantrip')),
-      viewLink('spells', 'Leveled spells', 'leveled', count('spell', e => e.fields.level !== 'Cantrip')),
+      {
+        label: 'By level', uiIcon: 'leveled', hint: count('spell', e => e.fields.level !== 'Cantrip'),
+        children: () => SPELL_LEVEL_TABS.map((t, i) => ({ label: t, href: hrefDashboard('spells', t), hint: count('spell', e => e.fields.level === String(i + 1)) })),
+      },
     ],
   },
   {

@@ -248,6 +248,8 @@ export interface Database {
     mode?: 'dm' | 'player'
     /** The dropdown lists as changed on the Lists page (model/lists.ts); a list never changed isn't stored. */
     lists?: Record<string, import('./lists').ListOption[]>
+    /** When this world was last published for players (see sync.ts). */
+    lastPublished?: string
     /** Colour theme and heading font (see theme.ts). */
     theme?: import('../theme').ThemeSettings
   }
@@ -256,4 +258,21 @@ export interface Database {
   tracker?: Tracker
   spellbook?: Spellbook
   crafting?: Crafting
+  /** A player's world that follows a DM's published world (see sync.ts). */
+  follow?: Follow
+  /** The player's own notes on entries shared by the DM, by entry id (a sync never touches them). */
+  playerNotes?: Record<Id, string>
+}
+
+/** The published world this world follows, and what the last update brought. */
+export interface Follow {
+  worldId: string
+  title: string
+  /** When the update that's in this world was published. */
+  published?: string
+  /** The shared entries and connections (read-only here, replaced by every update). */
+  ids: Id[]
+  relations: string[]
+  /** Pictures and files: data path → the file's name in the shared folder (by its content). */
+  files: Record<string, string>
 }

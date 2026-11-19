@@ -22,6 +22,12 @@ interface Bridge {
     copyTo(root: string, rel: string): Promise<boolean>
     restore(name: string): Promise<boolean>
   }
+  publish: { folder(): Promise<string | null>; pick(): Promise<string | null> }
+  shared: {
+    scan(): Promise<{ folder: string; worlds: { worldId: string; title: string; published: string; dataVersion: number }[] } | null>
+    follow(folder: string, worldId: string): Promise<boolean>
+    get(): Promise<{ folder: string; worldId: string } | null>
+  }
   worlds: {
     list(): Promise<{ current: string | null; worldsDir: string | null; worlds: import('../worlds').KnownWorld[] }>
     switch(dir: string): Promise<boolean>
@@ -37,7 +43,7 @@ interface Bridge {
 /** The desktop bridge, if this runs in the desktop app. */
 export const desktop: Bridge | undefined = (window as unknown as { dndesk?: Bridge }).dndesk
 
-export type DesktopRoot = 'data' | 'backup'
+export type DesktopRoot = 'data' | 'backup' | 'publish' | 'shared'
 
 export class DesktopStorage implements Storage {
   private urls = new Map<string, string>()

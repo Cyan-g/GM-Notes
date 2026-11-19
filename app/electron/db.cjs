@@ -15,7 +15,7 @@ const HISTORY_EVERY_MS = 10 * 60 * 1000
 /** And at most this many versions per entry. */
 const HISTORY_KEEP = 40
 /** What's kept as plain settings: the world's meta data and the play state. */
-const PLAY_KEYS = ['tracker', 'spellbook', 'crafting']
+const PLAY_KEYS = ['tracker', 'spellbook', 'crafting', 'follow', 'playerNotes']
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS settings (

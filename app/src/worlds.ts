@@ -58,3 +58,16 @@ export async function settleCopy(separate: boolean) {
   state.copyOf = null
   await loadWorlds()
 }
+
+/** Set after "Join": the new world syncs from its shared folder once it's started (see App.vue). */
+export const PENDING_JOIN = 'dndesk:join'
+
+/** Make a new world that follows a world published in a shared folder. */
+export async function joinWorld(folder: string, w: { worldId: string; title: string }) {
+  await leave()
+  const dir = await desktop!.worlds.create(w.title)
+  if (!dir) return
+  await desktop!.shared.follow(folder, w.worldId)
+  try { sessionStorage.setItem(PENDING_NEW_WORLD, w.title); sessionStorage.setItem(PENDING_JOIN, '1') } catch { /* the start screen asks instead */ }
+  location.reload()
+}

@@ -25,6 +25,18 @@ let config = {}
 /** The folders the pages may use: the data folder and the folder backups are copied to. */
 const ROOTS = { data: 'dataDir', backup: 'backupDir' }
 function rootDir(root) {
+  // Publishing: <the shared folder chosen for this world>/<world id>. Following: <shared folder>/<followed world id>.
+  if (root === 'publish') {
+    const id = openWorld().setting('worldId')
+    const base = config.publishDirs?.[id]
+    if (!base) throw new Error('No shared folder chosen for publishing yet')
+    return path.join(base, id)
+  }
+  if (root === 'shared') {
+    const f = followOf(config.dataDir)
+    if (!f) throw new Error('This world follows no shared world')
+    return path.join(f.folder, f.worldId)
+  }
   const key = ROOTS[root]
   if (!key) throw new Error(`Unknown folder "${root}"`)
   const dir = config[key]
@@ -127,6 +139,56 @@ function identify(w, title) {
   remember(worldId, title, dir)
   return { worldId }
 }
+// ---------- sharing through a shared folder (e.g. Google Drive): publish on the DM's side, follow on a player's ----------
+
+const followOf = dir => (dir ? Object.entries(config.follow ?? {}).find(([d]) => same(d, dir))?.[1] : undefined)
+/** The shared folder this world publishes to, if one was chosen. */
+ipcMain.handle('publish:folder', () => config.publishDirs?.[openWorld().setting('worldId')] ?? null)
+ipcMain.handle('publish:pick', async e => {
+  const id = openWorld().setting('worldId')
+  const win = BrowserWindow.fromWebContents(e.sender)
+  const r = await dialog.showOpenDialog(win, {
+    title: 'Choose the shared folder to publish to (e.g. a Google Drive folder shared with your players)',
+    properties: ['openDirectory', 'createDirectory'],
+    defaultPath: config.publishDirs?.[id] || undefined,
+  })
+  if (r.canceled || !r.filePaths[0]) return null
+  config.publishDirs = { ...(config.publishDirs ?? {}), [id]: r.filePaths[0] }
+  writeConfig(config)
+  return r.filePaths[0]
+})
+/** The worlds published in a folder: each a subfolder named by its ID with a world.json. */
+function scanShared(folder) {
+  const out = []
+  for (const name of (() => { try { return fs.readdirSync(folder) } catch { return [] } })()) {
+    try {
+      const w = JSON.parse(fs.readFileSync(path.join(folder, name, 'world.json'), 'utf8'))
+      if (w?.format === 'dndesk-publish' && w.worldId === name) out.push({ worldId: w.worldId, title: w.title, published: w.published, dataVersion: w.dataVersion })
+    } catch {}
+  }
+  return out
+}
+/** Pick a shared folder and list the worlds published in it (to join one). */
+ipcMain.handle('shared:scan', async e => {
+  const win = BrowserWindow.fromWebContents(e.sender)
+  const r = await dialog.showOpenDialog(win, {
+    title: 'Choose the shared folder your DM publishes to',
+    properties: ['openDirectory'],
+    defaultPath: config.lastShared || undefined,
+  })
+  if (r.canceled || !r.filePaths[0]) return null
+  config.lastShared = r.filePaths[0]
+  writeConfig(config)
+  return { folder: r.filePaths[0], worlds: scanShared(r.filePaths[0]) }
+})
+/** The open world follows this published world from now on. */
+ipcMain.handle('shared:follow', (_e, folder, worldId) => {
+  config.follow = { ...(config.follow ?? {}), [config.dataDir]: { folder, worldId } }
+  writeConfig(config)
+  return true
+})
+ipcMain.handle('shared:get', () => followOf(config.dataDir) ?? null)
+
 /** The known worlds, last opened first, with whether their folder still holds a world. */
 ipcMain.handle('worlds:list', () => {
   const current = config.dataDir

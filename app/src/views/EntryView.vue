@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { entryIcon } from '../model/classes'
+import { NOTE_TYPES, isShared } from '../sync'
+import PlayerNotes from '../components/PlayerNotes.vue'
 import { currentPc, setCurrent } from '../sheet'
 import { computed, ref } from 'vue'
 import type { Entry, Relation, Statblock, WorldDate } from '../model/types'
@@ -196,6 +198,8 @@ const history = computed(() => {
 
 const children = computed(() => (e.value ? childrenOf.value.get(e.value.id) ?? [] : []))
 
+/** Shared by the DM's world this one follows: read-only here. */
+const shared = computed(() => isShared(e.value))
 /** The characters with this spell in their spellbook, or this item in their inventory. */
 const knownBy = computed(() => (e.value?.type === 'spell' ? (byType.value.get('pc') ?? []).filter(p => p.fields.sheet?.spellbook?.known?.includes(e.value!.id)) : []))
 const carriedBy = computed(() => (e.value?.type === 'item' ? (byType.value.get('pc') ?? []).filter(p => p.fields.sheet?.inventory?.some(l => l.item === e.value!.id && l.qty > 0)) : []))
@@ -256,7 +260,8 @@ const siblings = computed(() => {
         <button class="fav-btn" :class="{ on: isFavourite(e.id) }" :title="isFavourite(e.id) ? 'Remove from favourites (F)' : 'Add to favourites (F)'" :aria-pressed="isFavourite(e.id)" @click="toggleFavourite(e.id)">{{ isFavourite(e.id) ? '★' : '☆' }}</button>
         <button class="export-btn" title="Earlier versions of this entry" @click="showHistory = true">🕘 History</button>
         <button v-if="canExport(e)" class="export-btn" title="Save as a file to share (someone else can import it)" @click="exporting = true">⇩ Export</button>
-        <a class="button edit-btn" :href="hrefEntry(e.id, true)" title="Edit (E)">✎ Edit</a>
+        <a v-if="!shared" class="button edit-btn" :href="hrefEntry(e.id, true)" title="Edit (E)">✎ Edit</a>
+        <span v-else class="badge shared-badge" :title="`Shared by your DM from ${state.db?.follow?.title}; updated from there`">⇣ from {{ state.db?.follow?.title }}</span>
       </div>
       <ExportDialog v-if="canExport(e)" v-model="exporting" :id="e.id" />
       <HistoryDialog v-if="showHistory" :entry="e" @close="showHistory = false" />
@@ -325,6 +330,7 @@ const siblings = computed(() => {
         </template>
         <p v-if="!e.body && !['item', 'spell', 'feat', 'creature', 'encounter', 'pc'].includes(e.type)" class="muted">No text yet<template v-if="!state.readOnly"> — <a :href="hrefEntry(e.id) + '/edit'">✎ Edit</a> to write some</template>.</p>
         <PcNotes v-if="e.type === 'pc'" :pc="e" />
+        <PlayerNotes v-if="shared && NOTE_TYPES.includes(e.type)" :entry="e" />
 
         <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => !(bodyParts.placed.has('ranks') && f.kind === 'ranks'))" :key="f.key">
           <h2>{{ f.label }}</h2>

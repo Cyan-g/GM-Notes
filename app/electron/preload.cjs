@@ -20,6 +20,15 @@ contextBridge.exposeInMainWorld('dndesk', {
     copyTo: (root, rel) => ipcRenderer.invoke('db:copy-to', root, rel),
     restore: name => ipcRenderer.invoke('db:restore', name),
   },
+  publish: {
+    folder: () => ipcRenderer.invoke('publish:folder'),
+    pick: () => ipcRenderer.invoke('publish:pick'),
+  },
+  shared: {
+    scan: () => ipcRenderer.invoke('shared:scan'),
+    follow: (folder, worldId) => ipcRenderer.invoke('shared:follow', folder, worldId),
+    get: () => ipcRenderer.invoke('shared:get'),
+  },
   worlds: {
     list: () => ipcRenderer.invoke('worlds:list'),
     switch: dir => ipcRenderer.invoke('worlds:switch', dir),

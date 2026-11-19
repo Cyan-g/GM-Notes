@@ -81,18 +81,21 @@ const yearInput = (v: string) => { const y = Number(v); if (v.trim() && !Number.
         <button title="Previous month" @click="shift(-1)">‹</button>
         <button @click="go(href(today.year, today.month ?? 1))">Today</button>
         <button title="Next month" @click="shift(1)">›</button>
-        <a class="chip-btn" href="#/calendar/edit" title="Months, weekdays, moons, eras, holidays and the timeline's colours">⚙ Edit calendar</a>
+        <a v-if="!db().follow" class="chip-btn" href="#/calendar/edit" title="Months, weekdays, moons, eras, holidays and the timeline's colours">⚙ Edit calendar</a>
       </div>
     </header>
 
     <div class="card today-bar">
       <span>Today in the world: <b>{{ weekday(cal, today) >= 0 ? cal.weekdays[weekday(cal, today)] + ', ' : '' }}{{ formatDate(today) }}</b></span>
       <span class="spacer" />
+      <span v-if="db().follow" class="muted small">The date comes from {{ db().follow!.title }}.</span>
+      <template v-else>
       <span class="muted small">Move time:</span>
       <button @click="advance(-1)">−1 day</button>
       <button @click="advance(1)">+1 day</button>
       <button @click="advance(7)">+1 week</button>
       <button @click="advance(30)">+30 days</button>
+      </template>
     </div>
 
     <div class="cal-layout">

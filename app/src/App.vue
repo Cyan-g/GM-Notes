@@ -29,7 +29,9 @@ import ImportDialog from './components/ImportDialog.vue'
 import ExportDialog from './components/ExportDialog.vue'
 import LinkPreview from './components/LinkPreview.vue'
 import WorldList from './components/WorldList.vue'
-import { PENDING_NEW_WORLD, settleCopy } from './worlds'
+import PublishDialog from './components/PublishDialog.vue'
+import { checkShared, isShared, startFollowing, syncStatus } from './sync'
+import { PENDING_JOIN, PENDING_NEW_WORLD, settleCopy } from './worlds'
 import { go, hrefEntry } from './router'
 import { toggleFavourite } from './edit'
 import { syncTitle } from './title'
@@ -68,9 +70,15 @@ onMounted(async () => {
   if (dir) await start(dir)
   else phase.value = 'need-folder'
   // "New world…" made the folder and reloaded: start the world there with the name given.
-  let pending: string | null = null
-  try { pending = sessionStorage.getItem(PENDING_NEW_WORLD); sessionStorage.removeItem(PENDING_NEW_WORLD) } catch { /* asked on the start screen */ }
+  let pending: string | null = null, joining = false
+  try {
+    pending = sessionStorage.getItem(PENDING_NEW_WORLD); joining = !!sessionStorage.getItem(PENDING_JOIN)
+    sessionStorage.removeItem(PENDING_NEW_WORLD); sessionStorage.removeItem(PENDING_JOIN)
+  } catch { /* asked on the start screen */ }
   if (pending && phase.value === 'new-world') { worldName.value = pending; await startWorld() }
+  // A world that follows a shared one: up to date on start, then every few minutes.
+  else if (phase.value === 'ready') await startFollowing()
+  if (joining && syncStatus.note) syncStatus.note = `Joined. ${syncStatus.note}`
 })
 
 async function startWorld() {
@@ -78,6 +86,8 @@ async function startWorld() {
   try {
     await createWorld(state.backend!, state.storage!, worldName.value)
     phase.value = 'ready'
+    // A joined world gets its shared world right away.
+    await startFollowing()
   } catch (e) { startError.value = (e as Error).message }
 }
 
@@ -92,7 +102,7 @@ function onKey(ev: KeyboardEvent) {
   if (mod && ev.key.toLowerCase() === 'k') { ev.preventDefault(); ui.switcher = !ui.switcher }
   else if (mod && ev.key.toLowerCase() === 's') { ev.preventDefault(); save() }
   else if (!mod && !ev.altKey && !typing(ev.target) && route.current.name === 'entry' && !ui.switcher && !ui.newOpen) {
-    if (ev.key === 'e' && !route.current.edit) { ev.preventDefault(); go(hrefEntry(route.current.id, true)) }
+    if (ev.key === 'e' && !route.current.edit && !isShared(get(route.current.id))) { ev.preventDefault(); go(hrefEntry(route.current.id, true)) }
     else if (ev.key === 'f' && !route.current.edit) { ev.preventDefault(); toggleFavourite(route.current.id) }
     else if (ev.key === 'Escape' && route.current.edit) go(hrefEntry(route.current.id))
   }
@@ -116,6 +126,11 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
     <div v-if="state.problems.some(p => p.serious) && !state.readOnly && !state.error" class="save-banner" role="status">
       <span>⚠ The data check found {{ state.problems.filter(p => p.serious).length }} serious problem(s) in the data. Nothing was changed.</span>
       <a class="button" href="#/data">Show them</a>
+    </div>
+    <div v-if="syncStatus.note || syncStatus.error" class="save-banner" :class="{ 'update-banner': !syncStatus.error }" role="status">
+      <span>{{ syncStatus.error ? '⚠ ' + syncStatus.error : '✓ ' + syncStatus.note }}</span>
+      <button v-if="syncStatus.error" :disabled="syncStatus.busy" @click="checkShared(true)">Try again</button>
+      <button @click="syncStatus.note = ''; syncStatus.error = ''">OK</button>
     </div>
     <div v-if="state.copyOf" class="save-banner" role="status">
       <span>This world looks like a copy of “{{ state.copyOf.title }}” ({{ state.copyOf.dir }}): both have the same world ID.</span>
@@ -153,6 +168,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
     <NewEntryDialog v-model="ui.newOpen" :type="ui.newType" :fields="ui.newFields" />
     <ImportDialog v-model="ui.importPlan" />
     <ExportDialog v-model="ui.worldExport" />
+    <PublishDialog v-model="ui.publishOpen" />
     <LinkPreview />
   </div>
 

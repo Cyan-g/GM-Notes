@@ -10,7 +10,7 @@ import { defaultCalendar, formatYear } from './calendar'
 import { classFinder, dieOf, parseClassText } from './model/classes'
 
 /** The play state (the fight, the world's own spellbook and workbench): saved like the rest, but not a "world edit". */
-const PLAY_KEYS = ['tracker', 'spellbook', 'crafting'] as const
+const PLAY_KEYS = ['tracker', 'spellbook', 'crafting', 'follow', 'playerNotes'] as const
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
 /** The newest data version this build understands (the last step in upgrade()). Newer data opens read-only. */
@@ -337,6 +337,14 @@ export async function save(force = false) {
     state.saving = false
     if (state.dirty && !state.error && !state.readOnly) scheduleSave()
   }
+}
+
+/** A backup of the database right now (as the automatic ones, so they're thinned out the same way). */
+export async function backupNow() {
+  const b = state.backend
+  if (!b || b.readOnly) return
+  await save()
+  await b.copyTo('data', `${BACKUP_DIR}/dndesk-${stampOf(new Date())}.sqlite`)
 }
 
 /** After a conflict: write this window's version anyway (the database is backed up first). */

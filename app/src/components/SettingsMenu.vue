@@ -8,6 +8,7 @@ import { pickImport, ui } from '../ui'
 import { go } from '../router'
 import { desktop } from '../storage/desktop'
 import WorldList from './WorldList.vue'
+import { checkShared, syncStatus } from '../sync'
 import { COLOR_LABELS, FONTS, PRESETS, effectiveColors, setColor, setTheme, settings, type Preset, type ThemeColors } from '../theme'
 
 /** Closed, the short menu, or the theme panel. */
@@ -18,6 +19,7 @@ const toggle = () => { open.value = open.value ? null : 'menu' }
 defineExpose({ toggle })
 function importFile() { open.value = null; pickImport() }
 function exportWorld() { open.value = null; ui.worldExport = true }
+function openPublish() { open.value = null; ui.publishOpen = true }
 function data() { open.value = null; go('#/data') }
 const root = ref<HTMLElement | null>(null)
 const s = computed(settings)
@@ -56,6 +58,8 @@ onUnmounted(() => { document.removeEventListener('pointerdown', outside); window
         <span>🎲</span>DM mode
         <input type="checkbox" role="switch" :checked="!playerMode" :disabled="!!state.readOnly" @change="setMode(($event.target as HTMLInputElement).checked ? 'dm' : 'player')" />
       </label>
+      <button v-if="desktop && !state.db?.follow" role="menuitem" @click="openPublish"><span>⇪</span>Publish for players…<span class="hint">{{ state.db?.meta.lastPublished ? 'shared folder' : 'not yet' }}</span></button>
+      <button v-if="state.db?.follow" role="menuitem" :disabled="syncStatus.busy" @click="checkShared(true)"><span>⇣</span>Check for updates<span class="hint">from {{ state.db.follow.title }}</span></button>
       <button role="menuitem" @click="exportWorld"><span>⇩</span>Export the world…<span class="hint">{{ playerMode ? 'to share' : 'for a player' }}</span></button>
       <button role="menuitem" @click="importFile"><span>⇪</span>Import from a file…<span class="hint">entry or world</span></button>
       <button role="menuitem" :class="{ warn: overdue }" @click="data"><span>💾</span>Data &amp; backups

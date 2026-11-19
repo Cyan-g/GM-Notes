@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { isShared } from '../sync'
 // Edit mode for one entry. Every change saves itself a moment later.
 import { computed } from 'vue'
 import type { EntryType, Statblock } from '../model/types'
 import { TYPES, byKey, type FieldDef } from '../model/schema'
-import { backlinks, get, relationsOf } from '../store'
+import { backlinks, get, relationsOf, state } from '../store'
 import { changed, deleteEntry } from '../edit'
 import { go, hrefEntry, hrefList } from '../router'
 import FieldInput from '../components/edit/FieldInput.vue'
@@ -80,7 +81,10 @@ function remove() {
 </script>
 
 <template>
-  <article v-if="e && def" class="entry editing">
+  <article v-if="e && def && isShared(e)" class="entry">
+    <p class="muted">“{{ e.name }}” is shared by your DM from {{ state.db?.follow?.title }}, so it's updated from there and can't be edited here. <a :href="hrefEntry(e.id)">Back to it</a></p>
+  </article>
+  <article v-else-if="e && def" class="entry editing">
     <div class="edit-bar">
       <span class="muted small">Editing · changes save automatically</span>
       <span class="spacer" />

@@ -63,10 +63,10 @@ const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v))
 const norm = (s: string) => s.trim().toLowerCase()
 const isObj = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v)
 /** JSON with sorted keys, to tell whether two things are the same. */
-const stable = (v: unknown) => JSON.stringify(v, (_k, x) => (isObj(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) : x))
+export const stable = (v: unknown) => JSON.stringify(v, (_k, x) => (isObj(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) : x))
 
 /** Paths of the pictures and files an entry uses. */
-function dataPaths(e: Entry): string[] {
+export function dataPaths(e: Entry): string[] {
   const out = new Set<string>()
   if (e.image) out.add(e.image)
   if (typeof e.fields.map === 'string' && e.fields.map) out.add(e.fields.map)
@@ -131,7 +131,11 @@ export function planExport(start: Id | null, opts: ExportOptions): ExportPlan | 
 
 const toDataUrl = (b: Blob) => new Promise<string>((ok, fail) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => fail(r.error); r.readAsDataURL(b) })
 
-export async function buildExport(plan: ExportPlan): Promise<{ blob: Blob; name: string }> {
+/**
+ * The plan's entries as they leave this world: DM-only text out unless asked, references to what doesn't go along
+ * as plain words (or, for entries that stay home but aren't hidden, kept with their name in `names`).
+ */
+export function outgoingEntries(plan: ExportPlan): { entries: Entry[]; names: Record<Id, string> } {
   const ids = new Set(plan.entries.map(e => e.id))
   const word = (id: Id) => get(id)?.name ?? id
   /** References kept: what's in the file, and what stays home unless it's hidden and hidden ones stay out. */
@@ -143,6 +147,11 @@ export async function buildExport(plan: ExportPlan): Promise<{ blob: Blob; name:
     mapRefs(c, id => { if (!keep(id)) return null; if (!ids.has(id)) names[id] = word(id); return id }, word)
     return c
   })
+  return { entries, names }
+}
+
+export async function buildExport(plan: ExportPlan): Promise<{ blob: Blob; name: string }> {
+  const { entries, names } = outgoingEntries(plan)
   const files: Record<string, string> = {}
   for (const p of new Set(entries.flatMap(dataPaths))) {
     const b = await state.storage!.readBlob(p)

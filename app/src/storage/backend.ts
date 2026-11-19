@@ -10,7 +10,7 @@ export interface Changes {
   version?: number
   meta?: Database['meta']
   /** The play state: a key set to null is removed. */
-  play?: Partial<Record<'tracker' | 'spellbook' | 'crafting', unknown>>
+  play?: Partial<Record<'tracker' | 'spellbook' | 'crafting' | 'follow' | 'playerNotes', unknown>>
   upsert: Entry[]
   remove: Id[]
   relUpsert: Relation[]

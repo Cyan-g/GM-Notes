@@ -105,6 +105,16 @@ The desktop app can keep several worlds (your campaign, a one-shot, a player's o
 - **World ID:** every world gets a permanent ID the first time it's opened. It's kept by backups and restores and isn't part of exports. Sharing with players will use it, so a player's world only ever follows the right one of your worlds.
 - **Copies:** if the same ID turns up in a second folder that still holds a world, the app asks: *Make it a separate world* (a new ID, e.g. after copying a world to start a new campaign from it) or *It's the same world, moved* (the list forgets the old folder). A world whose old folder is gone simply moved.
 
+### Sharing with players through a shared folder
+
+Players' worlds can follow yours through a shared folder, e.g. a Google Drive folder you share with them as *Viewer* (each player adds it to their own Drive so it syncs to their computer). One way only: nothing ever comes back.
+- **Publishing (you):** ⚙ → *Publish for players…* asks for the shared folder once, then shows what would go out and what changed since the last publish, including what players will lose. *Publish now* writes `<shared folder>/<world ID>/world.json` and the pictures and files, named by their content so Drive only moves what changed.
+- **What's shared:** every entry marked *Known to players*, without DM-only text, the dropdown lists, the calendar and today's date. Never: characters, campaigns, sessions, encounters, creatures, or anything *DM only*.
+- **Joining (a player):** in the world list (the world's name at the top left, or ⚙ → *Switch world*), *Join a shared world…* → pick the shared folder → *Join*. A new world is made and filled from it.
+- **Staying up to date:** a joined world checks on start and every 5 minutes (⚙ → *Check for updates* any time). A backup is made, then the shared entries are replaced, entries you stopped sharing are removed (the player's own entries keep the name where they pointed at them), your lists win (options the player added stay), and the calendar and today's date are yours.
+- **Shared entries are read-only** for the player (no Edit; the page says where they come from). On people and places (NPCs, organizations, places, deities, events) players have **Your notes**, which updates never touch. Their characters, campaigns, sessions and notes are all theirs.
+- **Versions:** a publish from a newer DnDesk asks the player to update first.
+
 ### Sharing entries and the world
 
 An entry, or the whole world, can be sent to someone else who has this app, and sent again later to bring their copy up to date.

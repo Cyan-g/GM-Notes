@@ -14,6 +14,8 @@ export const ui = reactive({
   importPlan: null as ImportPlan | null,
   /** The Export the world dialog. */
   worldExport: false,
+  /** The Publish for players dialog. */
+  publishOpen: false,
 })
 
 export function newEntry(type?: EntryType, fields: Record<string, unknown> = {}) {

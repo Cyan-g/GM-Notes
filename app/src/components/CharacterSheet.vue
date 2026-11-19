@@ -16,7 +16,7 @@ import {
   ABILITIES, SKILLS, armorClass, attacks, blankSheet, canAttune, canEquip, castingAbility, initiative, levelOf, maxHpOf, mod,
   passivePerception, profBonus, profsOf, profsToEdit, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, speedOf, longRest, type Ability,
 } from '../sheet'
-import { breakdown, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../gear'
+import { advOf, breakdown, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../gear'
 import InventoryCard from './InventoryCard.vue'
 import EquippedCard from './EquippedCard.vue'
 import ProfChips from './ProfChips.vue'
@@ -41,6 +41,9 @@ const scoreOf = (a: Ability) => scoreWith(s.value, a, gt.value)
 const scoreTip = (a: Ability) => scoreBreakdown(s.value, a, gt.value)
 /** A total's tooltip: what it is without gear, then each item's part. */
 const tipOf = (total: number, parts: Part[], fmt = signed) => breakdown(`${fmt(total - sum(parts))} without gear`, parts)
+/** Advantage or disadvantage from gear on a skill or a save (they cancel out). */
+const skillAdv = (name: string) => advOf(gt.value.skillAdv[name])
+const saveAdv = (a: Ability) => advOf(gt.value.saveAdv[a])
 const saveParts = (a: Ability) => [...gt.value.saves, ...(gt.value.save[a] ?? [])]
 const initTotal = computed(() => initiative(s.value))
 const maxHp = computed(() => maxHpOf(s.value))
@@ -236,11 +239,11 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
           </div>
           <!-- the saving throw, on its own band apart from the skills -->
           <button class="cs-skill cs-save" :class="{ on: s.saves.includes(a.key) }" :disabled="locked" :title="build ? `${a.label} saving throw: click for proficiency` : `${a.label} saving throw`" @click="toggleSave(a.key)">
-            <span class="cs-dot">{{ s.saves.includes(a.key) ? '●' : '○' }}</span><b :class="{ 'gear-mod': saveParts(a.key).length, tip: saveParts(a.key).length }" :data-tip="tipOf(saveBonus(s, a.key, prof), saveParts(a.key))">{{ signed(saveBonus(s, a.key, prof)) }}</b><span>Saving throw</span>
+            <span class="cs-dot">{{ s.saves.includes(a.key) ? '●' : '○' }}</span><b :class="{ 'gear-mod': saveParts(a.key).length, tip: saveParts(a.key).length }" :data-tip="tipOf(saveBonus(s, a.key, prof), saveParts(a.key))">{{ signed(saveBonus(s, a.key, prof)) }}</b><span>Saving throw</span><i v-if="saveAdv(a.key).tip" class="cs-adv tip" :class="saveAdv(a.key).mode" :data-tip="saveAdv(a.key).tip">{{ saveAdv(a.key).mode ?? '±' }}</i>
           </button>
           <div class="cs-skills">
             <button v-for="sk in skillsOf(a.key)" :key="sk.name" class="cs-skill" :class="{ on: s.skills[sk.name] }" :disabled="locked" :title="build ? 'Click: proficient, expertise, none' : SKILL_LEVEL[s.skills[sk.name] ?? 0] ?? ''" @click="cycleSkill(sk.name)">
-              <span class="cs-dot">{{ skillMark(sk.name) }}</span><b :class="{ 'gear-mod': gt.skill[sk.name]?.length, tip: gt.skill[sk.name]?.length }" :data-tip="tipOf(skillBonus(s, sk.name, prof), gt.skill[sk.name] ?? [])">{{ signed(skillBonus(s, sk.name, prof)) }}</b><span>{{ sk.name }}</span>
+              <span class="cs-dot">{{ skillMark(sk.name) }}</span><b :class="{ 'gear-mod': gt.skill[sk.name]?.length, tip: gt.skill[sk.name]?.length }" :data-tip="tipOf(skillBonus(s, sk.name, prof), gt.skill[sk.name] ?? [])">{{ signed(skillBonus(s, sk.name, prof)) }}</b><span>{{ sk.name }}</span><i v-if="skillAdv(sk.name).tip" class="cs-adv tip" :class="skillAdv(sk.name).mode" :data-tip="skillAdv(sk.name).tip">{{ skillAdv(sk.name).mode ?? '±' }}</i>
             </button>
             <p v-if="!skillsOf(a.key).length" class="cs-noskill">no skills</p>
           </div>
@@ -310,8 +313,10 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <dl v-else-if="s.features.length" class="cs-feature-list">
         <template v-for="(f, i) in s.features" :key="i"><dt>{{ f.name }}</dt><dd>{{ f.text }}</dd></template>
       </dl>
-      <dl v-if="!build && (gt.resistances.length || gt.features.length)" class="cs-feature-list cs-gear-features">
+      <dl v-if="!build && (gt.resistances.length || gt.features.length || gt.senses.length || gt.immunities.length)" class="cs-feature-list cs-gear-features">
+        <template v-for="(r, i) in gt.senses" :key="'s' + i"><dt>{{ r.sense }} {{ r.range }} ft</dt><dd class="muted">from {{ r.from }}</dd></template>
         <template v-for="(r, i) in gt.resistances" :key="'r' + i"><dt>Resistance: {{ r.type.toLowerCase() }}</dt><dd class="muted">from {{ r.from }}</dd></template>
+        <template v-for="(r, i) in gt.immunities" :key="'i' + i"><dt>Immune: {{ r.condition.toLowerCase() }}</dt><dd class="muted">from {{ r.from }}</dd></template>
         <template v-for="(f, i) in gt.features" :key="'f' + i"><dt>{{ f.text }}</dt><dd class="muted">from {{ f.from }}</dd></template>
       </dl>
       <p v-if="!s.features.length" class="muted small">Class features, racial traits, feats<template v-if="!build && !ro">: add them with ✎ Edit</template>.</p>

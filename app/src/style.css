@@ -1328,3 +1328,17 @@ h1 .icon svg.gi { color: var(--accent); }
 /* Text under the card: a quiet line while it's empty. */
 .sheet-notes.empty:not([open]) > summary { font: 400 13px var(--sans, inherit); color: var(--muted); }
 .item-form > .if-section:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: .4rem; }
+
+/* A feature's text takes the rest of its row (nothing is repeated beside it). */
+.effect-row .effect-text { flex: 1 1 auto; min-width: 14em; width: auto; }
+.item-form .effect-row:has(.effect-text) { flex-wrap: nowrap; }
+
+/* Advantage / disadvantage from gear on a skill or a save. */
+.cs-adv { font-style: normal; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; margin-left: auto; padding: 0 .35em; border-radius: 6px; background: var(--chip); color: var(--ink-2); }
+.cs-adv.adv { color: #3c8d4f; }
+.cs-adv.dis { color: #b33; }
+.effect-check { display: inline-flex; align-items: center; gap: .25rem; white-space: nowrap; }
+/* Rows take the full width so a feature's text (or a save's "when") can grow into it. */
+.effects-input > .effect-row { align-self: stretch; }
+.effects-input > .chip-btn, .effects-input > .picker { align-self: flex-start; }
+.effect-row .effect-text { flex: 1 1 12em; }

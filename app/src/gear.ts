@@ -8,23 +8,32 @@ type Ability = keyof Abilities
 /** One contribution to a number: what it comes from and how much. */
 export interface Part { label: string; n: number }
 
+/** What an effect needs besides a number, in the editor. */
+export type EffectNeed = 'ability' | 'skill' | 'type' | 'text' | 'mode' | 'note' | 'dice' | 'proficient' | 'sense' | 'condition'
 /** What an effect can change, for the editor and the item card. */
-export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: 'ability' | 'skill' | 'type' | 'text'; canSet?: boolean; noValue?: boolean }[] = [
+export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: EffectNeed[]; canSet?: boolean; noValue?: boolean }[] = [
   { on: 'ac', label: 'Armor class' },
-  { on: 'ability', label: 'Ability score', needs: 'ability', canSet: true },
+  { on: 'ability', label: 'Ability score', needs: ['ability'], canSet: true },
   { on: 'saves', label: 'All saving throws' },
-  { on: 'save', label: 'One saving throw', needs: 'ability' },
+  { on: 'save', label: 'One saving throw', needs: ['ability'] },
+  { on: 'saveAdv', label: 'Save: advantage / disadvantage', needs: ['ability', 'mode', 'note'], noValue: true },
   { on: 'attack', label: 'Attack rolls' },
   { on: 'damage', label: 'Damage rolls' },
+  { on: 'extraDamage', label: 'Extra damage (typed)', needs: ['dice', 'type', 'proficient'], noValue: true },
   { on: 'spellAttack', label: 'Spell attack' },
   { on: 'spellDC', label: 'Spell save DC' },
-  { on: 'skill', label: 'A skill', needs: 'skill' },
+  { on: 'skill', label: 'A skill', needs: ['skill'] },
+  { on: 'skillAdv', label: 'Skill: advantage / disadvantage', needs: ['skill', 'mode'], noValue: true },
   { on: 'speed', label: 'Speed (ft)' },
   { on: 'initiative', label: 'Initiative' },
   { on: 'maxHp', label: 'Maximum HP' },
-  { on: 'resistance', label: 'Resistance', needs: 'type', noValue: true },
-  { on: 'feature', label: 'Feature', needs: 'text', noValue: true },
+  { on: 'resistance', label: 'Resistance', needs: ['type'], noValue: true },
+  { on: 'immunity', label: 'Condition immunity', needs: ['condition'], noValue: true },
+  { on: 'sense', label: 'Sense (ft)', needs: ['sense'] },
+  { on: 'feature', label: 'Feature', needs: ['text'], noValue: true },
 ]
+export const SENSES = ['Darkvision', 'Blindsight', 'Tremorsense', 'Truesight']
+const MODE: Record<string, string> = { adv: 'Advantage', dis: 'Disadvantage' }
 const ABILITY_SHORT: Record<string, string> = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' }
 const signed = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`)
 
@@ -45,6 +54,11 @@ export function describeEffect(f: GearEffect): string {
     case 'initiative': return `${signed(v)} initiative`
     case 'maxHp': return `${signed(v)} max HP`
     case 'resistance': return `Resistance: ${(f.type ?? '').toLowerCase()}`
+    case 'skillAdv': return `${MODE[f.mode ?? 'adv']} on ${f.skill ?? 'a skill'}`
+    case 'saveAdv': return `${MODE[f.mode ?? 'adv']} on ${ABILITY_SHORT[f.ability ?? ''] ?? '?'} saves${f.note ? ' ' + f.note : ''}`
+    case 'extraDamage': return `+${f.dice || '?'} ${(f.type ?? '').toLowerCase()} damage${f.proficient ? ' (if proficient)' : ''}`.replace('  ', ' ')
+    case 'sense': return `${f.sense ?? 'Darkvision'} ${v} ft`
+    case 'immunity': return `Immune: ${(f.condition ?? '').toLowerCase()}`
     case 'feature': return f.text ?? ''
   }
 }
@@ -124,6 +138,7 @@ export function restItems(s: CharacterSheet, kind: 'short' | 'long') {
   }
 }
 
+export interface Extra { dice: string; type?: string; proficient?: boolean; from: string }
 export interface GearTotals {
   /** An ability score raised to a value (the highest, if several), forced to one (the lowest), and what's added. */
   setAbility: Partial<Record<Ability, Part>>
@@ -145,6 +160,14 @@ export interface GearTotals {
   damageOf: Record<Id, Part[]>
   resistances: { type: string; from: string }[]
   features: { text: string; from: string }[]
+  /** Advantage or disadvantage on a skill or a save (with when, for a save). */
+  skillAdv: Record<string, { mode: 'adv' | 'dis'; from: string }[]>
+  saveAdv: Partial<Record<Ability, { mode: 'adv' | 'dis'; note?: string; from: string }[]>>
+  /** Typed extra damage, for one weapon's attacks or every attack. */
+  extraOf: Record<Id, Extra[]>
+  extraAll: Extra[]
+  senses: { sense: string; range: number; from: string }[]
+  immunities: { condition: string; from: string }[]
 }
 
 /** Everything the active gear adds up to. A weapon's attack and damage bonuses count for that weapon only. */
@@ -152,6 +175,7 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
   const t: GearTotals = {
     setAbility: {}, forceAbility: {}, addAbility: {}, save: {}, saves: [], skill: {}, ac: [], speed: [], initiative: [], maxHp: [], spellAttack: [], spellDC: [],
     attackAll: [], damageAll: [], attackOf: {}, damageOf: {}, resistances: [], features: [],
+    skillAdv: {}, saveAdv: {}, extraOf: {}, extraAll: [], senses: [], immunities: [],
   }
   for (const { item, effects } of activeGear(s)) {
     const isWeapon = item.fields.kind === 'Weapon'
@@ -178,10 +202,28 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
         case 'maxHp': t.maxHp.push(p); break
         case 'resistance': if (f.type) t.resistances.push({ type: f.type, from: item.name }); break
         case 'feature': if (f.text?.trim()) t.features.push({ text: f.text.trim(), from: item.name }); break
+        case 'skillAdv': if (f.skill) (t.skillAdv[f.skill] ??= []).push({ mode: f.mode ?? 'adv', from: item.name }); break
+        case 'saveAdv': if (f.ability) (t.saveAdv[f.ability] ??= []).push({ mode: f.mode ?? 'adv', note: f.note, from: item.name }); break
+        case 'extraDamage': {
+          if (!f.dice?.trim()) break
+          const x = { dice: f.dice.trim(), type: f.type, proficient: f.proficient, from: item.name }
+          if (isWeapon) (t.extraOf[item.id] ??= []).push(x); else t.extraAll.push(x)
+          break
+        }
+        case 'sense': t.senses.push({ sense: f.sense ?? 'Darkvision', range: n, from: item.name }); break
+        case 'immunity': if (f.condition) t.immunities.push({ condition: f.condition, from: item.name }); break
       }
     }
   }
   return t
+}
+
+/** Advantage and disadvantage cancel out: 'adv', 'dis' or nothing, with where each comes from. */
+export function advOf(l: { mode: 'adv' | 'dis'; note?: string; from: string }[] | undefined): { mode?: 'adv' | 'dis'; tip?: string } {
+  if (!l?.length) return {}
+  const adv = l.some(x => x.mode === 'adv'), dis = l.some(x => x.mode === 'dis')
+  const tip = l.map(x => `${MODE[x.mode]}${x.note ? ' ' + x.note : ''} · ${x.from}`).join('\n')
+  return { mode: adv && dis ? undefined : adv ? 'adv' : 'dis', tip: adv && dis ? tip + '\n(they cancel out)' : tip }
 }
 
 export const sum = (parts: Part[] | undefined) => (parts ?? []).reduce((n, p) => n + p.n, 0)

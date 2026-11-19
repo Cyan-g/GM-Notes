@@ -255,9 +255,13 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
     const dmg = m + sum(t.damageOf[e.id]) + sum(t.damageAll)
     const damage = dice ? dice.split('/').map(d => `${d.trim()}${dmg ? ' ' + signed(dmg).replace('−', '− ').replace('+', '+ ') : ''}`).join(' / ') : '—'
     const untrained = proficientWith(s, e) === false
+    const untrainedFor = proficientWith(s, e) !== true
+    // Typed extra damage: "+ 2 necrotic", "+ 1d6 radiant" (the proficient-only kind needs the proficiency).
+    const extras = [...(t.extraOf[e.id] ?? []), ...t.extraAll].filter(x => !x.proficient || !untrainedFor)
+    const extraText = extras.map(x => ` + ${x.dice}${x.type ? ' ' + x.type.toLowerCase() : ''}`).join('')
     const hitParts = [...(t.attackOf[e.id] ?? []), ...t.attackAll], dmgParts = [...(t.damageOf[e.id] ?? []), ...t.damageAll]
     const gear = [breakdown('To hit', hitParts), breakdown('Damage', dmgParts)].filter(Boolean).join('\n') || undefined
-    return { id: e.id, name: e.name, toHit: m + (untrained ? 0 : prof) + magic, damage, type: (e.fields.damageType)?.join('/'), note: e.fields.range, untrained, gear }
+    return { id: e.id, name: e.name, toHit: m + (untrained ? 0 : prof) + magic, damage: damage + extraText, type: (e.fields.damageType)?.join('/'), note: e.fields.range, untrained, gear }
   })
 }
 

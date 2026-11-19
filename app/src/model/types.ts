@@ -66,11 +66,14 @@ export interface RankLine { title: string; renown?: number; station?: string }
 /**
  * One thing an item does to whoever wears, wields or attunes it (see gear.ts). `value` is added, or with `set` an
  * ability score is raised to it (Gauntlets of Ogre Power: STR 19), or with `force` it becomes that score even when
- * lower (a cursed ring: INT 6). `ability`, `skill`, `type` (a damage type, for
- * resistance) and `text` (a feature) say what it applies to.
+ * lower (a cursed ring: INT 6). `ability`, `skill`, `type` (a damage type, for resistance or extra damage) and
+ * `text` (a feature) say what it applies to. `mode`: advantage or disadvantage (on a skill or a save, with an optional
+ * `note` on when); `dice`: extra weapon damage ("2", "1d6"), only `proficient` if set; `sense` with `value` feet;
+ * `condition`: a condition it makes the wearer immune to.
  */
 export interface GearEffect {
   on: 'ac' | 'ability' | 'saves' | 'save' | 'attack' | 'damage' | 'spellAttack' | 'spellDC' | 'skill' | 'speed' | 'initiative' | 'maxHp' | 'resistance' | 'feature'
+    | 'skillAdv' | 'saveAdv' | 'extraDamage' | 'sense' | 'immunity'
   value?: number
   set?: boolean
   force?: boolean
@@ -78,6 +81,12 @@ export interface GearEffect {
   skill?: string
   type?: string
   text?: string
+  mode?: 'adv' | 'dis'
+  note?: string
+  dice?: string
+  proficient?: boolean
+  sense?: string
+  condition?: string
 }
 /**
  * A spell an item lets its user cast while it's worn, wielded or attuned (gear.ts): for `cost` of the item's charges,

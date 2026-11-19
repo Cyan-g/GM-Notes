@@ -69,7 +69,9 @@ A player character's page is its character sheet for play: HP, hit dice, inspira
   - the spell save DC and attack bonus, from the casting ability of the highest level spellcasting class unless you pick another
 - **Gear effects:** an item's *Effects* (on its ✎ Edit page) say what it does to whoever uses it: AC, an ability score
   (added, raised to a value like Gauntlets of Ogre Power's STR 19, or forced to one even when lower, like a cursed ring's INT 6), all saves or one, attack and damage rolls, spell
-  attack and save DC, a skill, speed, initiative, max HP, a resistance, or a feature line. They count while the item is
+  attack and save DC, a skill, advantage or disadvantage on a skill or a save, typed extra weapon damage ("+ 2
+  necrotic", optionally only when proficient), speed, initiative, max HP, a resistance, a condition immunity, a sense
+  (Darkvision 120 ft), or a feature line. They count while the item is
   worn or wielded, or, for an item that requires attunement, while attuned. A weapon's attack and damage effects count
   for that weapon only. Numbers changed by gear get a ✦; hovering shows where they come from ("16 Chain mail · +1 Ring
   of Protection"), and *Equipped* lists the active gear with what each item adds. Gear resistances and features show

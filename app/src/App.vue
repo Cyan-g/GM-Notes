@@ -28,6 +28,7 @@ import NewEntryDialog from './components/NewEntryDialog.vue'
 import ImportDialog from './components/ImportDialog.vue'
 import ExportDialog from './components/ExportDialog.vue'
 import LinkPreview from './components/LinkPreview.vue'
+import TipLayer from './components/TipLayer.vue'
 import WorldList from './components/WorldList.vue'
 import PublishDialog from './components/PublishDialog.vue'
 import { checkShared, isShared, startFollowing, syncStatus } from './sync'
@@ -170,6 +171,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
     <ExportDialog v-model="ui.worldExport" />
     <PublishDialog v-model="ui.publishOpen" />
     <LinkPreview />
+    <TipLayer />
   </div>
 
   <div v-else class="start">

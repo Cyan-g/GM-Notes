@@ -20,7 +20,7 @@ DnDesk is a desktop app for Windows and macOS. It's installed once and keeps the
 - Changes save by themselves about a second after you stop typing. The top bar shows the save status, and **Ctrl+S** saves right away.
 - In the text, type `[[` to link to another entry. Paste or drop a picture to store it in `data/images`. 🔒 Secret wraps text that only the DM should see.
 - Relations (memberships, family, home, ...) are edited on either entry and show up on both.
-- **Dropdowns** (an item's kind, a spell's school, …) pick from lists kept in the world. **Archive → Lists** (DM mode) shows them all: rename, reorder, add and remove options. Weapon properties and ingredient properties are lists too, and their options can have a description (a property's rule): it shows when you hover a property and in the item's card.
+- **Dropdowns** (an item's kind, a spell's school, …) pick from lists kept in the world. **Archive → Lists** (DM mode) shows them all: rename, reorder, add and remove options. Weapon properties and ingredient properties are lists too, and their options can have a description (a property's rule): it pops up when you hover the property. A weapon's or ingredient's properties are picked from a dropdown.
   - Entries point at an option rather than copying its name, so renaming it renames it everywhere.
   - An option that's in use can't be removed; the page shows which entries use it.
   - Options marked 🔒 are the ones the app relies on (an item being a Weapon, a spell needing a Saving throw, …). They can be renamed but not removed.

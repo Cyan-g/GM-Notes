@@ -41,10 +41,7 @@ const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magic
       <div class="ic-text">
         <p v-if="f.summary" class="ic-summary" v-html="renderInline(f.summary)" />
         <p v-if="f.effect" class="ic-effect"><b>Effect.</b> <span v-html="renderInline(f.effect)" /></p>
-        <div v-if="propList.length" class="chips"><span v-for="p in propList" :key="p.id" class="chip" :title="p.note">{{ p.label }}</span></div>
-        <dl v-if="propList.some(p => p.note)" class="ic-props">
-          <template v-for="p in propList.filter(x => x.note)" :key="p.id"><dt>{{ p.label }}</dt><dd>{{ p.note }}</dd></template>
-        </dl>
+        <div v-if="propList.length" class="chips"><span v-for="p in propList" :key="p.id" class="chip" :class="{ tip: 'note' in p && p.note }" :data-tip="'note' in p ? p.note : undefined">{{ p.label }}</span></div>
       </div>
       <dl v-if="rows.length" class="ic-stats">
         <template v-for="[k, v] in rows" :key="k"><dt>{{ k }}</dt><dd>{{ v }}</dd></template>

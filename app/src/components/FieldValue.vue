@@ -44,7 +44,7 @@ const stock = computed(() => {
   <template v-else-if="def.kind === 'date'">{{ formatDate(value as WorldDate) }}</template>
   <template v-else-if="def.kind === 'select'">{{ fieldLabel(def, value) }}</template>
   <template v-else-if="def.kind === 'list' && listed">
-    <span class="chips"><span v-for="(v, i) in (value as string[])" :key="i" class="chip" :title="noteIn(state.db?.meta, listKeyOf(def), v)">{{ fieldLabel(def, v) }}</span></span>
+    <span class="chips"><span v-for="(v, i) in (value as string[])" :key="i" class="chip" :class="{ tip: noteIn(state.db?.meta, listKeyOf(def), v) }" :data-tip="noteIn(state.db?.meta, listKeyOf(def), v)">{{ fieldLabel(def, v) }}</span></span>
   </template>
   <template v-else-if="def.kind === 'list'">
     <span class="chips"><span v-for="(v, i) in (value as string[])" :key="i" class="chip" v-html="renderInline(String(v))" /></span>

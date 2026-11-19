@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Edits one schema field of an entry in place.
+import ChoiceListInput from './ChoiceListInput.vue'
 import { computed } from 'vue'
 import { byKey, type FieldDef } from '../../model/schema'
 import { listKeyOf } from '../../model/lists'
@@ -44,6 +45,8 @@ const only = computed(() => {
 })
 const refs = computed(() => (value.value as string[] | undefined) ?? [])
 function addRef(id: string) { if (!refs.value.includes(id)) value.value = [...refs.value, id] }
+/** Lists picked from with a dropdown (long lists with descriptions) instead of toggle buttons. */
+const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
 </script>
 
 <template>
@@ -56,6 +59,7 @@ function addRef(id: string) { if (!refs.value.includes(id)) value.value = [...re
     <option value="">—</option>
     <option v-for="o in selectOptions" :key="o.id" :value="o.id">{{ o.label }}</option>
   </select>
+  <ChoiceListInput v-else-if="def.kind === 'list' && hasList && DROPDOWN_LISTS.includes(listKeyOf(def) ?? '')" :values="value ?? []" :options="options" :placeholder="`Add a ${def.label.toLowerCase().replace(/ies$/, 'y').replace(/s$/, '')}…`" @change="value = $event" />
   <ProfChips v-else-if="def.kind === 'list' && hasList" :values="value ?? []" :toggles="options" @change="value = $event" />
   <ListInput v-else-if="def.kind === 'list'" v-model="value" />
   <MoneyInput v-else-if="def.kind === 'money'" v-model="value" />

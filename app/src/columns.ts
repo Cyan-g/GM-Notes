@@ -32,6 +32,15 @@ export const recipeCost = (e: Entry) => {
 const usedIn = (e: Entry) => entries.value.filter(n => ((n.fields.recipe) ?? []).some(l => l.item === e.id)).length
 const crNum = (cr?: string) => { if (!cr) return 999; const [a, b] = cr.split('/').map(Number); return b ? a / b : a }
 const nameOf = (id?: string) => get(id)?.name ?? '~'
+const ORD = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
+const spellLevel = (e: Entry) => (e.fields.level === 'Cantrip' ? 0 : Number(e.fields.level) || -1)
+/** "DEX save", "Attack", or the spell's type ("Utility", "Healing"). */
+export function attackOrSave(e: Entry): string {
+  const t = String(e.fields.spellType ?? '')
+  if (t === 'Saving throw') return e.fields.savingThrow ? `${String(e.fields.savingThrow).slice(0, 3).toUpperCase()} save` : 'Save'
+  return t
+}
+const concRitual = (e: Entry) => [e.fields.concentration && 'C', e.fields.ritual && 'R'].filter(Boolean).join(' ')
 
 const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   '@type': { label: 'Type', value: e => TYPES[e.type].label, sort: e => TYPES[e.type].label, kind: 'text' },
@@ -54,6 +63,13 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
     sort: e => craftingMinutes(e.fields.value) ?? 1e9,
   },
   '@usedIn': { label: 'Used in', value: e => usedIn(e) || '', sort: e => -usedIn(e), kind: 'text' },
+  '@spellLevel': {
+    label: 'Level', kind: 'text',
+    value: e => { const l = spellLevel(e); return l < 0 ? '' : l ? ORD[l - 1] : 'Cantrip' },
+    sort: e => (spellLevel(e) < 0 ? 99 : spellLevel(e)),
+  },
+  '@attackSave': { label: 'Attack / save', value: attackOrSave, sort: e => attackOrSave(e).toLowerCase() || '~', kind: 'text' },
+  '@concRitual': { label: 'C/R', value: concRitual, sort: e => concRitual(e) || '~', kind: 'text' },
   '@updated': { label: 'Last edited', value: e => new Date(e.updated).toLocaleString(), sort: e => -Date.parse(e.updated), kind: 'text' },
 }
 
@@ -99,13 +115,15 @@ export function facet(key: string, type?: EntryType): Facet {
       match: (e, v) => current(e, kind, true).some(id => nameOf(id) === v),
     }
   }
+  if (key === '@attackSave') return { key, label: 'Attack / save', values: rows => [...new Set(rows.map(attackOrSave).filter(Boolean))].sort(), match: (e, v) => attackOrSave(e) === v }
   if (key === '@type') return { key, label: 'Type', values: rows => [...new Set(rows.map(e => TYPES[e.type].label))].sort(), match: (e, v) => TYPES[e.type].label === v }
   const field = (type && TYPES[type].fields.find(f => f.key === key)) || FIELD_BY_KEY.get(key)
   const label = field?.label ?? key
   const vals = (e: Entry): string[] => {
     const v = byKey(e.fields)[key]
-    if (v == null || v === '') return []
+    // a box never ticked counts as No
     if (field?.kind === 'bool') return [v ? 'Yes' : 'No']
+    if (v == null || v === '') return []
     if (field?.kind === 'ref') return [nameOf(v as string)]
     // Choices filter by their label (see model/lists.ts).
     if (listKeyOf(field)) return (Array.isArray(v) ? v : [v]).map(x => fieldLabel(field, x))

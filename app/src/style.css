@@ -1446,3 +1446,4 @@ h1 .icon svg.gi { color: var(--accent); }
 .slot-row.pact .slot-lvl, .slot-row.arcanum .slot-lvl { font-size: 12px; white-space: nowrap; }
 .slot-own { font-size: 11px; color: var(--accent); }
 .slot-src { margin: .5rem 0 0; }
+.book-col { width: 1%; white-space: nowrap; text-align: right; }

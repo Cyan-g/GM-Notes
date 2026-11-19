@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // A sortable, filterable table of entries.
-import { currentPc } from '../sheet'
+import { activeSpellbook, currentPc } from '../sheet'
+import { state as store, touch } from '../store'
+import SpellModal from './SpellModal.vue'
 import { computed, ref, watch } from 'vue'
 import type { Entry, EntryType } from '../model/types'
 import { column, facet } from '../columns'
@@ -58,6 +60,21 @@ function sortBy(k: string) {
 }
 const arrow = (k: string) => (sortKey.value === k ? (sortDir.value > 0 ? ' ▲' : ' ▼') : '')
 const empty = (v: unknown) => v == null || v === '' || (Array.isArray(v) && !v.length)
+
+// ---- spells: a click opens the spell over the table; "+ Book" adds it to the current character's (or the world's) book ----
+const spells = computed(() => !store.readOnly && props.rows.some(e => e.type === 'spell'))
+const quick = ref<string | null>(null)
+function open(ev: MouseEvent, e: Entry) {
+  if (e.type !== 'spell' || ev.ctrlKey || ev.metaKey || ev.shiftKey) return
+  ev.preventDefault()
+  quick.value = e.id
+}
+const bookName = computed(() => (currentPc.value ? `${currentPc.value.name}'s spellbook` : "the world's spellbook"))
+const inBook = (id: string) => activeSpellbook().known.includes(id)
+function addToBook(id: string) {
+  const b = activeSpellbook()
+  if (!b.known.includes(id)) { b.known.push(id); touch() }
+}
 defineExpose({ count: computed(() => shown.value.length) })
 </script>
 
@@ -79,12 +96,13 @@ defineExpose({ count: computed(() => shown.value.length) })
         <thead>
           <tr>
             <th class="sortable" title="Sort by name" @click="sortBy('name')">Name{{ arrow('name') }}</th>
-            <th v-for="c in columns" :key="c.key" class="sortable" :class="{ num: c.kind === 'money' || c.field?.kind === 'money' }" :title="`Sort by ${c.label.toLowerCase()}`" @click="sortBy(c.key)">{{ c.label }}{{ arrow(c.key) }}</th>
+            <th v-for="c in columns" :key="c.key" class="sortable" :class="{ num: c.kind === 'money' || c.field?.kind === 'money' }" :title="c.key === '@concRitual' ? 'Concentration · Ritual' : `Sort by ${c.label.toLowerCase()}`" @click="sortBy(c.key)">{{ c.label }}{{ arrow(c.key) }}</th>
+            <th v-if="spells" class="book-col" />
           </tr>
         </thead>
         <tbody>
           <tr v-for="e in shown" :key="e.id">
-            <td class="name"><EntryLink :id="e.id" :icon="e.type === 'pc'" /><span v-if="e.id === currentPc?.id" class="current-mark" title="The current character">★ current</span></td>
+            <td class="name" @click.capture="open($event, e)"><EntryLink :id="e.id" :icon="e.type === 'pc'" /><span v-if="e.id === currentPc?.id" class="current-mark" title="The current character">★ current</span></td>
             <td v-for="c in columns" :key="c.key" :class="{ num: c.kind === 'money' || c.field?.kind === 'money', clip: c.field?.kind === 'longtext' }">
               <template v-if="empty(c.value(e))" />
               <FieldValue v-else-if="c.field" :def="c.field" :value="c.value(e)" :entry="e" />
@@ -92,11 +110,23 @@ defineExpose({ count: computed(() => shown.value.length) })
               <template v-else-if="c.kind === 'money'">{{ formatMoney(c.value(e)) }}</template>
               <template v-else>{{ c.value(e) }}</template>
             </td>
+            <td v-if="spells" class="book-col">
+              <template v-if="e.type === 'spell'">
+                <span v-if="inBook(e.id)" class="muted small" :title="`In ${bookName}`">in book</span>
+                <button v-else class="chip-btn" :title="`Add to ${bookName}`" @click="addToBook(e.id)">＋ Book</button>
+              </template>
+            </td>
           </tr>
         </tbody>
       </table>
       <p v-if="!base.length" class="muted pad">No {{ (TYPES[creates ?? type ?? 'note']?.plural ?? 'entries').toLowerCase() }} yet<template v-if="creates ?? type"> — <button class="link-btn" @click="newEntry((creates ?? type)!)">＋ New {{ typeWord((creates ?? type)!) }}</button></template>.</p>
       <p v-else-if="!shown.length" class="muted pad">Nothing matches.</p>
     </div>
+    <SpellModal v-if="quick" :id="quick" @close="quick = null">
+      <template v-if="spells" #actions>
+        <span v-if="inBook(quick)" class="muted small">in {{ bookName }}</span>
+        <button v-else class="chip-btn" :title="`Add to ${bookName}`" @click="addToBook(quick!)">＋ Book</button>
+      </template>
+    </SpellModal>
   </div>
 </template>

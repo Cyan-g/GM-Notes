@@ -24,9 +24,9 @@ const CRAFTED = ['Potion', 'Poison', 'Scroll', 'Other']
 export const DASHBOARDS: Dashboard[] = [
   {
     id: 'spells', title: 'Spells', icon: '🔮', typeIcon: 'spell', views: [
-      { name: 'All spells', filter: is('spell'), cols: ['level', 'school', 'castingTime', 'spellType', 'savingThrow', 'range', 'duration', 'concentration', 'classes'], facets: ['level', 'school', 'spellType', 'classes', 'concentration'], sort: { key: 'level', dir: 1 }, creates: 'spell' },
-      { name: 'Cantrips', filter: e => e.type === 'spell' && e.fields.level === 'Cantrip', cols: ['school', 'spellType', 'savingThrow', 'range', 'classes'], facets: ['school', 'classes'], creates: 'spell' },
-      { name: 'Leveled spells', filter: e => e.type === 'spell' && e.fields.level !== 'Cantrip', cols: ['level', 'school', 'castingTime', 'spellType', 'savingThrow', 'concentration', 'classes'], facets: ['level', 'school', 'classes'], sort: { key: 'level', dir: 1 }, creates: 'spell' },
+      { name: 'All spells', filter: is('spell'), cols: ['@spellLevel', 'school', 'castingTime', '@attackSave', 'range', 'duration', '@concRitual', 'classes'], facets: ['level', 'school', '@attackSave', 'classes', 'concentration', 'ritual'], sort: { key: '@spellLevel', dir: 1 }, creates: 'spell' },
+      { name: 'Cantrips', filter: e => e.type === 'spell' && e.fields.level === 'Cantrip', cols: ['school', 'castingTime', '@attackSave', 'range', 'duration', '@concRitual', 'classes'], facets: ['school', '@attackSave', 'classes'], creates: 'spell' },
+      { name: 'Leveled spells', filter: e => e.type === 'spell' && e.fields.level !== 'Cantrip', cols: ['@spellLevel', 'school', 'castingTime', '@attackSave', 'range', 'duration', '@concRitual', 'classes'], facets: ['level', 'school', '@attackSave', 'classes', 'concentration', 'ritual'], sort: { key: '@spellLevel', dir: 1 }, creates: 'spell' },
     ],
   },
   {

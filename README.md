@@ -16,6 +16,7 @@ DnDesk is a desktop app for Windows and macOS. It's installed once and keeps the
 ### Editing
 
 - **E** or the ✎ Edit button edits the open entry. **Esc** or **Done** goes back. **＋** in the top bar, "New …" in a menu or on a list creates an entry.
+- **Menus:** clicking a type opens its table: the dashboard where there is one (NPCs, characters and organizations in People's tables, spells, items in the Armory), else its list. Hovering shows *New …* and its entries. Each thing has one menu: characters in Campaign, crafting items in Crafting (Archive › Items has the rest), places once in World.
 - Changes save by themselves about a second after you stop typing. The top bar shows the save status, and **Ctrl+S** saves right away.
 - In the text, type `[[` to link to another entry. Paste or drop a picture to store it in `data/images`. 🔒 Secret wraps text that only the DM should see.
 - Relations (memberships, family, home, ...) are edited on either entry and show up on both.

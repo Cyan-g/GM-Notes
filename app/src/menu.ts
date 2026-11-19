@@ -8,7 +8,6 @@ import { currentPc } from './sheet'
 import type { CharacterSheet } from './model/types'
 import { hrefDashboard, hrefEntry, hrefList, type Route } from './router'
 import { newEntry } from './ui'
-import { DASHBOARDS } from './dashboards'
 
 export interface MenuNode {
   label: string
@@ -58,8 +57,8 @@ function grouped(list: Entry[], key: (e: Entry) => string, order?: string[], sor
 const refName = (e: Entry, key: string) => get(byKey(e.fields)[key] as string)?.name ?? ''
 const bySession = (a: Entry, b: Entry) => (Number(a.fields.number) || 0) - (Number(b.fields.number) || 0) || byName(a, b)
 
-function entriesOf(t: EntryType): MenuNode[] {
-  const list = [...(byType.value.get(t) ?? [])]
+function entriesOf(t: EntryType, only?: (e: Entry) => boolean): MenuNode[] {
+  const list = [...(byType.value.get(t) ?? [])].filter(e => !only || only(e))
   switch (t) {
     case 'place':
     case 'organization':
@@ -83,15 +82,22 @@ function entriesOf(t: EntryType): MenuNode[] {
   }
 }
 
-function typeNode(t: EntryType): MenuNode {
+/** The table a type opens: its dashboard view where it has one (richer columns, views as tabs), else its list page. */
+const TYPE_TABLE: Partial<Record<EntryType, [string, string?]>> = {
+  npc: ['people', 'All NPCs'], pc: ['people', 'Player characters'], organization: ['people', 'Organizations'],
+  spell: ['spells'], item: ['armory'],
+}
+export const hrefTable = (t: EntryType) => { const d = TYPE_TABLE[t]; return d ? hrefDashboard(d[0], d[1]) : hrefList(t) }
+
+/** A type: click it for its table; its submenu has "New …" and the entries (`only` narrows them). */
+function typeNode(t: EntryType, only?: (e: Entry) => boolean): MenuNode {
   const s = info(t)
   const n = byType.value.get(t)?.length ?? 0
   return {
-    label: s.plural, typeIcon: t, href: hrefList(t), hint: String(n),
+    label: s.plural, typeIcon: t, href: hrefTable(t), hint: String(n),
     children: () => [
-      { label: `All ${s.plural.toLowerCase()}`, href: hrefList(t), hint: String(n) },
       { label: `New ${s.label.toLowerCase()}…`, action: () => newEntry(t) },
-      ...(n ? [SEP, ...entriesOf(t)] : []),
+      ...(n ? [SEP, ...entriesOf(t, only)] : []),
     ],
   }
 }
@@ -101,8 +107,7 @@ function typeNode(t: EntryType): MenuNode {
 /** `player`: shown in player mode too; `playerOnly`: shown only there. */
 export interface TopMenu { title: string; items: () => MenuNode[]; owns: (r: Route) => boolean; home?: string; player?: boolean; playerOnly?: boolean }
 
-/** Dashboards that have a top menu of their own, and the item kinds that belong to crafting. */
-const OWN_MENU = ['spells', 'crafting', 'people', 'armory']
+/** The item kinds that belong to crafting (their own menu; Archive › Items leaves them out). */
 const CRAFT_KINDS = ['Ingredient', 'Potion', 'Poison', 'Scroll']
 
 /** The spellbook and recipes in use (the current character's or the world's), for the menu hints; never creates them. */
@@ -111,10 +116,6 @@ const bookNow = () => (currentPc.value ? charSheet()?.spellbook : state.db?.spel
 const benchKnown = () => (currentPc.value ? charSheet()?.crafting?.known.length : state.db?.crafting?.known.length)
 const typeOf = (r: Route) => (r.name === 'list' ? r.type : r.name === 'entry' ? get(r.id)?.type : undefined)
 const dashOf = (r: Route) => (r.name === 'dashboard' ? r.id : undefined)
-const dashViews = (id: string, icon = '📋') => {
-  const d = DASHBOARDS.find(x => x.id === id)!
-  return d.views.map(v => ({ label: v.name, icon, href: hrefDashboard(d.id, v.name) }))
-}
 const itemsOfKind = (k: string) => (byType.value.get('item') ?? []).filter(e => e.fields.kind === k).sort(byName)
 const kindNode = (k: string, plural: string): MenuNode => {
   const list = itemsOfKind(k)
@@ -162,33 +163,31 @@ export const MENUS: TopMenu[] = [
     home: '#/atlas',
     player: true,
     owns: r => r.name === 'atlas' || r.name === 'calendar' || ['place', 'event'].includes(typeOf(r) ?? ''),
-    // The world's places first, cascading by "Located in" (Eldoria › Ardenvale › Desolation), then the lists.
-    items: () => [{ label: 'Atlas', icon: '🗺', href: '#/atlas' }, { label: 'Timeline', icon: '⏳', href: '#/atlas/timeline' }, { label: 'Calendar', icon: '📅', href: '#/calendar' }, SEP, ...entriesOf('place'), SEP, ...(['place', 'event'] as EntryType[]).map(typeNode)],
+    // The world's places, cascading by "Located in" (Eldoria › Ardenvale › Desolation), then the table of places and the events.
+    items: () => [{ label: 'Atlas', icon: '🗺', href: '#/atlas' }, { label: 'Timeline', icon: '⏳', href: '#/atlas/timeline' }, { label: 'Calendar', icon: '📅', href: '#/calendar' }, SEP,
+      ...entriesOf('place'),
+      { label: 'New place…', icon: '＋', action: () => newEntry('place') }, SEP,
+      { label: 'All places', typeIcon: 'place', href: hrefList('place'), hint: String(byType.value.get('place')?.length ?? 0) },
+      typeNode('event')],
   },
   {
     title: 'People',
     home: '#/organizations',
     owns: r => r.name === 'orgs' || dashOf(r) === 'people' || ['npc', 'organization'].includes(typeOf(r) ?? ''),
-    // The people tables, then NPCs, organizations (cascading by "Part of") and the peoples of the world.
-    // (A table named like one of the lists below is left out: the list has its own "All …" link.)
-    items: () => {
-      const types = ['npc', 'organization'] as EntryType[]
-      const plurals: string[] = types.map(t => info(t).plural)
-      return [{ label: 'Overview', typeIcon: 'organization', href: '#/organizations', hint: String(state.db ? (byType.value.get('organization')?.length ?? 0) : '') }, SEP,
-        ...dashViews('people', '👥').filter(v => !plurals.includes(v.label)), SEP, ...types.map(typeNode)]
-    },
+    // The overview, then NPCs and organizations (cascading by "Part of"); each opens its table. Characters are in
+    // the Campaign menu.
+    items: () => [{ label: 'Overview', icon: '👥', href: '#/organizations' }, SEP, typeNode('npc'), typeNode('organization')],
   },
   {
     title: 'Spells',
     home: '#/spellbook',
     owns: r => typeOf(r) === 'spell' || dashOf(r) === 'spells' || r.name === 'spellbook',
-    // The spell tables first, then every spell by level.
+    // The spellbook and the spell tables (one link: Cantrips and Leveled are its tabs), then every spell by level.
     items: () => [
       { label: 'Spellbook', icon: '📖', href: '#/spellbook', hint: bookNow() ? `${bookNow()!.prepared.length} prepared` : undefined },
+      { label: 'All spells', typeIcon: 'spell', href: hrefTable('spell'), hint: String(byType.value.get('spell')?.length ?? 0) },
       SEP,
-      ...dashViews('spells'),
-      SEP,
-      { label: 'New spell…', action: () => newEntry('spell') },
+      { label: 'New spell…', icon: '＋', action: () => newEntry('spell') },
       ...entriesOf('spell'),
     ],
   },
@@ -198,8 +197,7 @@ export const MENUS: TopMenu[] = [
     owns: r => dashOf(r) === 'crafting' || r.name === 'crafting' || (r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
     items: () => [
       { label: 'Workbench', icon: '⚗️', href: '#/crafting', hint: benchKnown() != null ? `${benchKnown()} recipes` : undefined },
-      SEP,
-      ...dashViews('crafting'),
+      { label: 'Recipes & ingredients', icon: '📋', href: hrefDashboard('crafting') },
       SEP,
       kindNode('Ingredient', 'Ingredients'),
       kindNode('Potion', 'Potions'),
@@ -210,9 +208,10 @@ export const MENUS: TopMenu[] = [
   {
     title: 'Archive',
     owns: r => dashOf(r) === 'armory' || r.name === 'lists' || (['item', 'creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? '')))),
-    // The armory tables (weapons, armor, other items), every kind of entry kept for reference, and the dropdown lists.
-    items: () => [{ label: 'Armory', icon: '⚔️', href: hrefDashboard('armory'), children: () => dashViews('armory') }, SEP,
-      ...(['item', 'creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'] as EntryType[]).map(typeNode), SEP,
+    // Items (opening the armory tables; crafting kinds are in the Crafting menu), every kind of entry kept for reference,
+    // and the dropdown lists.
+    items: () => [typeNode('item', e => !CRAFT_KINDS.includes(String(e.fields.kind ?? ''))),
+      ...(['creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'] as EntryType[]).map(t => typeNode(t)), SEP,
       { label: 'Lists', icon: '☰', href: '#/lists', hint: 'dropdown options' }],
   },
   {
@@ -226,7 +225,7 @@ export const MENUS: TopMenu[] = [
     // Hovering offers only a new character and the list of them all, not every character.
     items: () => [
       { label: 'New character…', icon: '＋', action: () => newEntry('pc') },
-      { label: 'All characters', typeIcon: 'pc', href: hrefList('pc'), hint: String((byType.value.get('pc') ?? []).length) },
+      { label: 'All characters', typeIcon: 'pc', href: hrefTable('pc'), hint: String((byType.value.get('pc') ?? []).length) },
     ],
   },
 ]

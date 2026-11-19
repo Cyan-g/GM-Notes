@@ -217,6 +217,8 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
         <EntryPicker add :types="['spell']" :exclude="book.known" placeholder="Add a spell to the book…" @pick="learn" />
       </section>
 
+      <!-- the right-hand column: prepared spells, then the spells the character's items grant -->
+      <div class="sbk-col">
       <section class="card sbk-list drop-zone" :class="{ over: over === 'prepared' }"
                @dragover="dragOver($event, 'prepared')" @dragleave.self="over = null" @drop.prevent="drop('prepared')">
         <h3>Prepared spells <span class="muted small" :class="{ over: full }">{{ book.prepared.length }}<template v-if="book.preparedMax != null"> / {{ book.preparedMax }}</template><template v-if="book.always.length"> + {{ book.always.length }} always</template></span></h3>
@@ -244,34 +246,34 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
         </table>
         <p v-else class="muted small drop-hint">Drag spells here from Known spells to prepare them.</p>
       </section>
+      <section v-if="granted.length" class="card sbk-list sbk-items">
+        <h3>From items <span class="muted small">{{ granted.length }}</span>
+          <button v-if="hasShort" class="link-btn" title="Give back the once-per-short-rest spells" @click="shortRest">Short rest</button>
+        </h3>
+        <table class="grid">
+          <thead><tr><th>Spell</th><th>Level</th><th>Item</th><th>How</th><th>Casting time</th><th>Range</th><th>Attack / save</th><th></th></tr></thead>
+          <tbody>
+            <tr v-for="g in granted" :key="g.i + '-' + g.k" :class="{ dim: !g.ready }">
+              <td><a :href="hrefEntry(g.spell.spell)" class="spell-link" @click="openSpell($event, g.spell.spell)">{{ get(g.spell.spell)!.name }}</a></td>
+              <td>{{ levelLabel(get(g.spell.spell)!) }}</td>
+              <td><EntryLink :id="g.item.id" /></td>
+              <td>{{ g.status }}</td>
+              <td>{{ get(g.spell.spell)!.fields.castingTime ?? '' }}</td>
+              <td>{{ get(g.spell.spell)!.fields.range ?? '' }}</td>
+              <td class="sbk-check">{{ check(get(g.spell.spell)!) }}</td>
+              <td class="sbk-actions">
+                <template v-if="g.spell.how === 'prepared'"><span class="muted small" title="Cast with your own spell slots, from Prepared spells' Cast or the slots above">own slots</span></template>
+                <template v-else-if="g.spell.how === 'atWill'"><span class="muted small">at will</span></template>
+                <button v-else-if="g.ready" class="chip-btn" :title="g.spell.how === 'charges' ? 'Spend the charges' : 'Mark it used until the rest'" @click="castItem(g)">Cast</button>
+                <button v-else-if="g.spell.how !== 'charges'" class="link-btn small" title="Give this use back" @click="giveBack(g)">↺</button>
+                <span v-else class="muted small">no charges</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      </div>
     </div>
-
-    <section v-if="granted.length" class="card sbk-list sbk-items">
-      <h3>From items <span class="muted small">{{ granted.length }}</span>
-        <button v-if="hasShort" class="link-btn" title="Give back the once-per-short-rest spells" @click="shortRest">Short rest</button>
-      </h3>
-      <table class="grid">
-        <thead><tr><th>Spell</th><th>Level</th><th>Item</th><th>How</th><th>Casting time</th><th>Range</th><th>Attack / save</th><th></th></tr></thead>
-        <tbody>
-          <tr v-for="g in granted" :key="g.i + '-' + g.k" :class="{ dim: !g.ready }">
-            <td><a :href="hrefEntry(g.spell.spell)" class="spell-link" @click="openSpell($event, g.spell.spell)">{{ get(g.spell.spell)!.name }}</a></td>
-            <td>{{ levelLabel(get(g.spell.spell)!) }}</td>
-            <td><EntryLink :id="g.item.id" /></td>
-            <td>{{ g.status }}</td>
-            <td>{{ get(g.spell.spell)!.fields.castingTime ?? '' }}</td>
-            <td>{{ get(g.spell.spell)!.fields.range ?? '' }}</td>
-            <td class="sbk-check">{{ check(get(g.spell.spell)!) }}</td>
-            <td class="sbk-actions">
-              <template v-if="g.spell.how === 'prepared'"><span class="muted small" title="Cast with your own spell slots, from Prepared spells' Cast or the slots above">own slots</span></template>
-              <template v-else-if="g.spell.how === 'atWill'"><span class="muted small">at will</span></template>
-              <button v-else-if="g.ready" class="chip-btn" :title="g.spell.how === 'charges' ? 'Spend the charges' : 'Mark it used until the rest'" @click="castItem(g)">Cast</button>
-              <button v-else-if="g.spell.how !== 'charges'" class="link-btn small" title="Give this use back" @click="giveBack(g)">↺</button>
-              <span v-else class="muted small">no charges</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
 
     <SpellModal v-if="shown" :id="shown" @close="shown = null">
       <template #actions>

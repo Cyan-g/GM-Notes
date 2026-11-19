@@ -618,7 +618,10 @@ input.init { width: 4em; }
 }
 
 /* ---------- spellbook ---------- */
-.sbk-top { display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: 1rem; margin-bottom: 1rem; align-items: start; }
+/* The top cards sit on the same columns as the lists below, and are as tall as each other. */
+.sbk-top { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 2.4fr); gap: 1rem; margin-bottom: 1rem; align-items: stretch; }
+.sbk-top > .card { margin: 0; }
+@media (max-width: 1000px) { .sbk-top { grid-template-columns: 1fr; } }
 @media (max-width: 800px) { .sbk-top { grid-template-columns: 1fr; } }
 .sbk-stats label { display: flex; align-items: center; gap: .5rem; margin: .35rem 0; }
 .sbk-stats label span { flex: 1; color: var(--ink-2); }
@@ -1302,7 +1305,8 @@ h1 .icon svg.gi { color: var(--accent); }
 .active-gear li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .4rem; }
 .eq-charges { margin-left: auto; white-space: nowrap; font-size: 13px; }
 .eq-charges .link-btn { padding: 0 .25rem; }
-.sbk-items { margin-top: 1rem; }
+.sbk-col { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.sbk-col > .sbk-list { margin: 0; }
 .sbk-items tr.dim td { opacity: .55; }
 
 /* The item Edit form (ItemForm.vue): sections with a heading, optional features added from the bar at the bottom. */

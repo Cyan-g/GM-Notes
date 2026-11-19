@@ -103,7 +103,6 @@ function remove() {
           <span>Known to players</span><span v-if="e.visibility !== 'known'" class="badge dm-only">DM only</span>
         </label>
         <label class="grow"><span>Also known as</span><ListInput :model-value="e.aliases" placeholder="Add alias…" @update:model-value="v => setList('aliases', v)" /></label>
-        <label class="grow"><span>Tags</span><ListInput :model-value="e.tags" placeholder="Add tag…" @update:model-value="v => setList('tags', v)" /></label>
       </div>
     </header>
 

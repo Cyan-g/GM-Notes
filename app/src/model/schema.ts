@@ -219,6 +219,7 @@ export const SCHEMA = [
       { key: 'players', label: 'Characters present', kind: 'refs', to: ['pc'] },
       { key: 'featured', label: 'Featured', kind: 'refs' },
       { key: 'loot', label: 'Loot', kind: 'refs', to: ['item'] },
+      { key: 'onTimeline', label: 'Show on the timeline', kind: 'bool' },
     ],
   },
   {

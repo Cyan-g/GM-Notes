@@ -90,7 +90,7 @@ With no current character, the Spellbook and Workbench use the world's own; the 
 - **Moons:** each with its cycle in days and today's phase.
 - **Eras:** dates show the era's short name (its initials unless you give one), e.g. "892 AC". The first era also covers every year before it; years below 0 count backwards.
 - **Holidays:** they repeat every year.
-- **Timeline colours:** for each event category (the categories themselves are in Archive → Lists) and for sessions.
+- **Timeline colours:** for each event category (the categories themselves are in Archive → Lists) and for sessions. A session appears on the timeline when its *Show on the timeline* box is ticked.
 - **Today stays put:** it keeps the weekday and moon phases picked on the page, whatever else changes.
 - **Dates follow their month:** when months are moved, or one before them is removed, dates move with them. Saving warns first about dates that no longer fit:
   - a date in a removed last month keeps its number, so adding a month back brings it back;

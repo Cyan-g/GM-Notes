@@ -280,7 +280,6 @@ const siblings = computed(() => {
                   @click="setCurrent(currentPc?.id === e.id ? undefined : e.id)">{{ currentPc?.id === e.id ? '★ Current character' : '☆ Make current' }}</button>
           <span v-if="e.visibility === 'secret'" class="badge dm-only" title="Players don't know this entry yet">DM only</span>
           <span v-if="e.aliases.length" class="aliases">also: {{ e.aliases.join(' · ') }}</span>
-          <span v-for="t in e.tags" :key="t" class="tag">#{{ t }}</span>
         </div>
       </div>
       <p v-if="lead" class="lead">{{ lead }}</p>

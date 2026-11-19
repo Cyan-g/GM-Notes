@@ -34,7 +34,8 @@ const eventLike = (e: Entry): TItem | null => {
   const f = e.fields
   const date = f.date as WorldDate | undefined
   if (!date) return null
-  if (e.type === 'session' && !e.tags.includes('timeline')) return null
+  // A session is on the timeline when ticked (older worlds marked it with the tag "timeline").
+  if (e.type === 'session' && !f.onTimeline && !e.tags.includes('timeline')) return null
   const involved = (relationsOf.value.get(e.id) ?? []).filter(r => r.kind === 'involved').map(r => (r.a === e.id ? r.b : r.a))
   const places = [...((f.places as Id[]) ?? [])]
   if (e.type === 'writing' && f.author) involved.push(f.author as Id)

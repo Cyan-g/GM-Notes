@@ -40,9 +40,9 @@ GM Notes is a desktop app for Windows and macOS. It's installed once and keeps t
 
 - **DM mode** (the DM's own world) shows everything.
 - **Player mode** is for a player's own copy.
-  - The menus are Character, Campaign (the campaigns, with their session notes) and World (Atlas, Timeline, Calendar, places and events). The spellbook and workbench are tabs on the character's page instead of the Spells and Crafting menus. People, the Archive, Combat and encounters are hidden. New entries can also be notes.
+  - The menus are Character, Campaign (the campaigns, with their session notes), World (Atlas, Timeline, Calendar, places and events) and People (the NPCs and organizations the DM shares, and the player's own). The spellbook and workbench are tabs on the character's page instead of the Spells and Crafting menus. The Archive, Combat and encounters are hidden.
   - The home page shows the characters, the campaign, the tools, favourites, the regions and links, but not the deities and races.
-  - New entries can be characters, campaigns, sessions, places, events, spells and items.
+  - New entries can be characters, NPCs, organizations, campaigns, sessions, notes, places, events, spells and items. A player's own NPCs and organizations stay theirs: an update from the DM never removes them, and one the DM shares later arrives as its own entry.
   - DM-only text is never shown.
 
 To set up a player:

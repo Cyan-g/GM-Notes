@@ -108,6 +108,8 @@ export const MENUS: TopMenu[] = [
   {
     title: 'People',
     home: '#/organizations',
+    // players keep track of the NPCs and organizations they meet, shared by the DM or their own
+    player: true,
     owns: r => r.name === 'orgs' || dashOf(r) === 'people' || ['npc', 'organization'].includes(typeOf(r) ?? ''),
     // Characters are in the Campaign menu.
     items: () => [{ label: 'Overview', uiIcon: 'overview', href: '#/organizations' }, SEP, typeLink('npc'), typeLink('organization')],

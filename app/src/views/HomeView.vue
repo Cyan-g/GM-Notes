@@ -45,7 +45,7 @@ const TOOLS = [
 // Player mode: the player's tools and the world, without the DM's (the fight, the armory, the lore cards).
 const PLAYER_TOOLS = ['#/spellbook', '#/crafting', '#/atlas', '#/atlas/timeline', '#/calendar']
 const tools = computed(() => (playerMode.value ? TOOLS.filter(t => PLAYER_TOOLS.includes(t.href)) : TOOLS))
-const desks = computed(() => DASHBOARDS.filter(x => x.id !== 'recent' && (!playerMode.value || ['spells', 'crafting'].includes(x.id))))
+const desks = computed(() => DASHBOARDS.filter(x => x.id !== 'recent' && (!playerMode.value || ['spells', 'crafting', 'people'].includes(x.id))))
 const characters = computed(() => list('pc').sort(byName).map(p => {
   const s = sheetOf(p)
   // AC and HP once the sheet is filled in (a max HP, something worn or a typed AC); the level only when it adds something.

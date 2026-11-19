@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The DM desk: the campaign at hand, the tools, favourites, the regions of the world
 // with their factions, the gods, peoples and subclasses, and a few links. Everything comes from the entries.
+import AppIcon from '../components/AppIcon.vue'
 import { classText, classesOf, totalLevel } from '../model/classes'
 import { computed, ref } from 'vue'
 import { optionLabel } from '../store'
@@ -32,12 +33,12 @@ const notes = computed(() => list('note').sort(byName))
 /** What the dashboard tiles hold (the Crafting tables aren't the Workbench). */
 const DESK_HINT: Record<string, string> = { spells: 'Tables of every spell', crafting: 'Tables of recipes, ingredients and crafting kits', armory: 'Tables of weapons, armor and other items' }
 const TOOLS = [
-  { icon: '📖', label: 'Spellbook', href: '#/spellbook', hint: "The current character's spells and slots" },
-  { icon: '🛠', label: 'Workbench', href: '#/crafting', hint: "Craft from the current character's recipes and ingredients" },
-  { icon: '⚔', label: 'Combat', href: '#/tracker', hint: 'Initiative, HP and conditions in a fight' },
-  { icon: '🗺', label: 'Atlas', href: '#/atlas' },
-  { icon: '⏳', label: 'Timeline', href: '#/atlas/timeline' },
-  { icon: '📅', label: 'Calendar', href: '#/calendar' },
+  { icon: '📖', ui: 'spellbook' as const, label: 'Spellbook', href: '#/spellbook', hint: "The current character's spells and slots" },
+  { icon: '🛠', ui: 'workbench' as const, label: 'Workbench', href: '#/crafting', hint: "Craft from the current character's recipes and ingredients" },
+  { icon: '⚔', ui: 'combat' as const, label: 'Combat', href: '#/tracker', hint: 'Initiative, HP and conditions in a fight' },
+  { icon: '🗺', ui: 'atlas' as const, label: 'Atlas', href: '#/atlas' },
+  { icon: '⏳', ui: 'timeline' as const, label: 'Timeline', href: '#/atlas/timeline' },
+  { icon: '📅', ui: 'calendar' as const, label: 'Calendar', href: '#/calendar' },
 ]
 
 // Player mode: the player's tools and the world, without the DM's (the fight, the armory, the lore cards).
@@ -147,8 +148,8 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
       <section class="card home-tools">
         <h3>🧰 Desk</h3>
         <div class="tool-grid">
-          <a v-for="d in desks" :key="d.id" class="tool" :href="hrefDashboard(d.id)" :title="DESK_HINT[d.id]"><span>{{ d.icon }}</span>{{ d.title }}</a>
-          <a v-for="t in tools" :key="t.href" class="tool" :href="t.href" :title="'hint' in t ? t.hint : undefined"><span>{{ t.icon }}</span>{{ t.label }}</a>
+          <a v-for="d in desks" :key="d.id" class="tool" :href="hrefDashboard(d.id)" :title="DESK_HINT[d.id]"><span><AppIcon :ui="d.uiIcon" :type="d.typeIcon" :text="d.icon" /></span>{{ d.title }}</a>
+          <a v-for="t in tools" :key="t.href" class="tool" :href="t.href" :title="'hint' in t ? t.hint : undefined"><span><AppIcon :ui="t.ui" /></span>{{ t.label }}</a>
         </div>
         <template v-if="kits.length">
           <h4>Crafting kits</h4>

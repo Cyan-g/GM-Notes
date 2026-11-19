@@ -159,6 +159,6 @@ const open = (url: string) => (desktop ? desktop.open(url) : window.open(url, '_
       <p v-else class="muted small">None yet. They appear once you've edited something.</p>
     </section>
 
-    <p class="muted small credits">Class and entry type icons from <a href="https://game-icons.net" @click.prevent="open('https://game-icons.net')">game-icons.net</a> by Lorc, Delapouite and the other game-icons.net artists, under <a href="https://creativecommons.org/licenses/by/3.0/" @click.prevent="open('https://creativecommons.org/licenses/by/3.0/')">CC BY 3.0</a>.</p>
+    <p class="muted small credits">Icons from <a href="https://game-icons.net" @click.prevent="open('https://game-icons.net')">game-icons.net</a> by Lorc, Delapouite and the other game-icons.net artists, under <a href="https://creativecommons.org/licenses/by/3.0/" @click.prevent="open('https://creativecommons.org/licenses/by/3.0/')">CC BY 3.0</a>.</p>
   </div>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // A month of the world calendar: holidays, events, sessions and moon phases, plus moving "today".
+import AppIcon from '../components/AppIcon.vue'
 import { computed, ref, watch } from 'vue'
 import type { Entry, WorldDate } from '../model/types'
 import { db, entries, formatDate, touch } from '../store'
@@ -76,7 +77,7 @@ const yearInput = (v: string) => { const y = Number(v); if (v.trim() && !Number.
 <template>
   <div class="calendar-view">
     <header class="list-head">
-      <h1><span class="icon">📅</span>{{ cal.months[month - 1]?.name }} <input class="year-input" type="number" :value="year" @change="yearInput(($event.target as HTMLInputElement).value)" /> <span class="muted era">{{ era }}</span></h1>
+      <h1><span class="icon"><AppIcon ui="calendar" /></span>{{ cal.months[month - 1]?.name }} <input class="year-input" type="number" :value="year" @change="yearInput(($event.target as HTMLInputElement).value)" /> <span class="muted era">{{ era }}</span></h1>
       <div class="cal-nav">
         <button title="Previous month" @click="shift(-1)">‹</button>
         <button @click="go(href(today.year, today.month ?? 1))">Today</button>

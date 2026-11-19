@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import { get, placePath } from '../store'
 import { hrefMap } from '../router'
@@ -16,7 +17,7 @@ const upMaps = computed(() => path.value.filter(p => p.fields.map).reverse())
 <template>
   <div v-if="place" class="map-page">
     <header class="list-head">
-      <h1><span class="icon">🗺</span>{{ place.name }}</h1>
+      <h1><span class="icon"><AppIcon ui="atlas" /></span>{{ place.name }}</h1>
       <div class="cal-nav">
         <a v-for="p in upMaps" :key="p.id" class="button" :href="hrefMap(p.id)" :title="'Map of ' + p.name">↑ {{ p.name }}</a>
         <a class="button" :href="'#/e/' + place.id">Page</a>

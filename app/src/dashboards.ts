@@ -11,7 +11,11 @@ export interface DashView {
   /** Type the "New" button creates in this view. */
   creates?: EntryType
 }
-export interface Dashboard { id: string; title: string; icon: string; views: DashView[] }
+export interface Dashboard {
+  id: string; title: string; icon: string; views: DashView[]
+  /** Shown in place of the emoji: an app icon or an entry type's icon (game-icons.net). */
+  uiIcon?: import('./icons/ui').UiIcon; typeIcon?: EntryType
+}
 
 const is = (type: EntryType) => (e: Entry) => e.type === type
 const kind = (...k: string[]) => (e: Entry) => e.type === 'item' && k.includes(String(e.fields.kind ?? ''))
@@ -19,14 +23,14 @@ const CRAFTED = ['Potion', 'Poison', 'Scroll', 'Other']
 
 export const DASHBOARDS: Dashboard[] = [
   {
-    id: 'spells', title: 'Spells', icon: '🔮', views: [
+    id: 'spells', title: 'Spells', icon: '🔮', typeIcon: 'spell', views: [
       { name: 'All spells', filter: is('spell'), cols: ['level', 'school', 'castingTime', 'spellType', 'savingThrow', 'range', 'duration', 'concentration', 'classes'], facets: ['level', 'school', 'spellType', 'classes', 'concentration'], sort: { key: 'level', dir: 1 }, creates: 'spell' },
       { name: 'Cantrips', filter: e => e.type === 'spell' && e.fields.level === 'Cantrip', cols: ['school', 'spellType', 'savingThrow', 'range', 'classes'], facets: ['school', 'classes'], creates: 'spell' },
       { name: 'Leveled spells', filter: e => e.type === 'spell' && e.fields.level !== 'Cantrip', cols: ['level', 'school', 'castingTime', 'spellType', 'savingThrow', 'concentration', 'classes'], facets: ['level', 'school', 'classes'], sort: { key: 'level', dir: 1 }, creates: 'spell' },
     ],
   },
   {
-    id: 'armory', title: 'Armory', icon: '⚔️', views: [
+    id: 'armory', title: 'Armory', icon: '⚔️', uiIcon: 'weapons', views: [
       { name: 'Weapons', filter: kind('Weapon'), cols: ['weaponCategory', 'subtype', 'damage', 'damageType', 'properties', 'magical', 'value'], facets: ['weaponCategory', 'damageType', 'magical'], sort: { key: 'subtype', dir: 1 }, creates: 'item' },
       { name: 'Armor', filter: kind('Armor'), cols: ['armorType', 'slot', 'subtype', 'armorClass', 'magical', 'value', 'summary'], facets: ['armorType', 'slot', 'magical'], sort: { key: 'slot', dir: 1 }, creates: 'item' },
       { name: 'Tools', filter: kind('Tool'), cols: ['tool', 'value', 'weight', 'summary'], facets: ['tool'], sort: { key: 'tool', dir: 1 }, creates: 'item' },
@@ -35,14 +39,15 @@ export const DASHBOARDS: Dashboard[] = [
     ],
   },
   {
-    id: 'crafting', title: 'Crafting', icon: '⚗️', views: [
+    id: 'crafting', title: 'Crafting', icon: '⚗️', uiIcon: 'recipes', views: [
       { name: 'Recipes', filter: e => kind(...CRAFTED)(e) && !!(e.fields.recipe)?.length, cols: ['kind', 'craftingType', '@recipeCost', 'value', '@margin', '@craftTime', 'effect'], facets: ['kind', 'craftingType'], sort: { key: 'craftingType', dir: 1 }, creates: 'item' },
       { name: 'Ingredients', filter: kind('Ingredient'), cols: ['category', 'value', '@usedIn', 'properties', 'summary'], facets: ['category', 'properties'], sort: { key: 'category', dir: 1 }, creates: 'item' },
       { name: 'Potions & poisons', filter: kind('Potion', 'Poison'), cols: ['kind', 'craftingType', 'value', 'effect'], facets: ['kind', 'craftingType'], creates: 'item' },
+      { name: 'Scrolls', filter: kind('Scroll'), cols: ['spell', 'rarity', 'value', 'summary'], facets: ['rarity'], creates: 'item' },
     ],
   },
   {
-    id: 'people', title: 'People', icon: '👥', views: [
+    id: 'people', title: 'People', icon: '👥', uiIcon: 'overview', views: [
       { name: 'All NPCs', filter: is('npc'), cols: ['race', '@lives-in', '@member', '@aliases'], facets: ['race', '@lives-in', '@member'], creates: 'npc' },
       { name: 'Player characters', filter: is('pc'), cols: ['player', 'race', '@classes', '@level', 'campaigns'], creates: 'pc' },
       { name: 'Organizations', filter: is('organization'), cols: ['orgType', 'parent', 'seat', '@members'], facets: ['orgType'], creates: 'organization' },

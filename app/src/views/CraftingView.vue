@@ -3,6 +3,7 @@
 // pouch, and the tools when there's no current character. Crafting takes the ingredients out of the pouch and
 // puts the item in the inventory.
 // With a current character it's theirs: recipes and tools on their sheet, ingredients and crafted things in their inventory.
+import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Entry, Id, RecipeLine } from '../model/types'
 import { byType, formatMoney, get } from '../store'
@@ -67,7 +68,7 @@ const ingredientIds = computed(() => (byType.value.get('item') ?? []).filter(e =
 <template>
   <div class="workbench">
     <header class="list-head">
-      <h1 v-if="!pc"><span class="icon">⚗️</span>Workbench<span v-if="owner" class="head-of">of <EntryLink :id="owner.id" /></span></h1>
+      <h1 v-if="!pc"><span class="icon"><AppIcon ui="workbench" /></span>Workbench<span v-if="owner" class="head-of">of <EntryLink :id="owner.id" /></span></h1>
       <span v-if="message" class="ok small">{{ message }}</span>
     </header>
 

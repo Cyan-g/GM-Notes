@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '../components/AppIcon.vue'
 import { computed } from 'vue'
 import { DASHBOARDS } from '../dashboards'
 import { entries } from '../store'
@@ -15,7 +16,7 @@ const rows = computed(() => (view.value ? entries.value.filter(view.value.filter
 <template>
   <div v-if="dash && view" class="dashboard">
     <header class="list-head">
-      <h1><span class="icon">{{ dash.icon }}</span>{{ dash.title }}</h1>
+      <h1><span class="icon"><AppIcon :ui="dash.uiIcon" :type="dash.typeIcon" :text="dash.icon" /></span>{{ dash.title }}</h1>
       <button v-if="view.creates" class="primary" @click="newEntry(view.creates)">＋ New</button>
     </header>
     <nav v-if="dash.views.length > 1" class="tabs">

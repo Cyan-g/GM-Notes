@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '../components/AppIcon.vue'
 import TypeIcon from '../components/TypeIcon.vue'
 import { entryIcon } from '../model/classes'
 import EntryIcon from '../components/EntryIcon.vue'
@@ -297,8 +298,8 @@ const siblings = computed(() => {
       <a :href="hrefEntry(e.id)" :class="{ on: onOverview }">Overview</a>
       <a :href="hrefFamily(e.id)" :class="{ on: onFamily }">🌳 Family tree <span v-if="familySize(e.id)" class="muted small">{{ familySize(e.id) }}</span></a>
       <template v-if="e.type === 'pc'">
-        <a :href="hrefTab(e.id, 'spellbook')" :class="{ on: onBook }">📖 Spellbook <span v-if="e.fields.sheet?.spellbook?.prepared?.length" class="muted small">{{ e.fields.sheet.spellbook.prepared.length }}</span></a>
-        <a :href="hrefTab(e.id, 'crafting')" :class="{ on: onBench }">⚗️ Workbench <span v-if="e.fields.sheet?.crafting?.known?.length" class="muted small">{{ e.fields.sheet.crafting.known.length }}</span></a>
+        <a :href="hrefTab(e.id, 'spellbook')" :class="{ on: onBook }"><AppIcon ui="spellbook" /> Spellbook <span v-if="e.fields.sheet?.spellbook?.prepared?.length" class="muted small">{{ e.fields.sheet.spellbook.prepared.length }}</span></a>
+        <a :href="hrefTab(e.id, 'crafting')" :class="{ on: onBench }"><AppIcon ui="workbench" /> Workbench <span v-if="e.fields.sheet?.crafting?.known?.length" class="muted small">{{ e.fields.sheet.crafting.known.length }}</span></a>
       </template>
     </nav>
     <FamilyTree v-if="onFamily" :id="e.id" />

@@ -2,6 +2,7 @@
 // Archive → Lists: every dropdown's options (model/lists.ts). Entries store an option's id, so renaming an
 // option here renames it everywhere at once. An option in use can't be removed, and the ones the app relies on
 // (🔒) can be renamed but never removed.
+import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Entry } from '../model/types'
 import { byKey } from '../model/schema'
@@ -81,7 +82,7 @@ const usedBy = (l: ListDef) => [...l.fields.map(f => `${f.def.label} of ${f.type
 <template>
   <div class="lists-page">
     <header class="list-head">
-      <h1><span class="icon">☰</span>Lists</h1>
+      <h1><span class="icon"><AppIcon ui="lists" /></span>Lists</h1>
       <span class="muted small">The options of every dropdown. Renaming one renames it everywhere; one in use can't be removed.</span>
     </header>
 

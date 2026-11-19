@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The People menu's front page: every organization as a card, grouped by the region its seat is in,
 // with its leader, members and ranks at a glance; and the people tables beside it.
+import AppIcon from '../components/AppIcon.vue'
 import TypeIcon from '../components/TypeIcon.vue'
 import { computed, ref } from 'vue'
 import { optionLabel, listOptions } from '../store'
@@ -70,7 +71,7 @@ const people = computed(() => [
 <template>
   <div class="orgs-page">
     <header class="list-head">
-      <h1><span class="icon">⚑</span>Organizations</h1>
+      <h1><span class="icon"><AppIcon ui="overview" /></span>Organizations</h1>
       <span class="muted">{{ orgs.length }} organizations · {{ inOrg.size }} of {{ npcs.length }} NPCs belong to one</span>
       <span class="spacer" />
       <button @click="newEntry('npc')">＋ NPC</button>

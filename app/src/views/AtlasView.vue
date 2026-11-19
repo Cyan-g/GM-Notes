@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The World menu's dashboard: the whole world as rings, every map, what's coming up in the calendar,
 // and the factions at a glance.
+import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Entry, Pin, WorldDate } from '../model/types'
 import { byType, db, formatDate, isCurrent, placePath, relationsOf } from '../store'
@@ -56,13 +57,13 @@ const seat = (o: Entry) => o.fields.seat
 <template>
   <div class="atlas">
     <header class="list-head">
-      <h1><span class="icon">🗺</span>Atlas</h1>
+      <h1><span class="icon"><AppIcon ui="atlas" /></span>Atlas</h1>
       <span class="muted">{{ places.length }} places · {{ maps.length }} maps</span>
     </header>
     <nav class="tabs">
-      <a href="#/atlas" :class="{ on: tab !== 'timeline' }">🗺 Atlas</a>
-      <a href="#/atlas/timeline" :class="{ on: tab === 'timeline' }">⏳ Timeline</a>
-      <a href="#/calendar">📅 Calendar</a>
+      <a href="#/atlas" :class="{ on: tab !== 'timeline' }"><AppIcon ui="atlas" /> Atlas</a>
+      <a href="#/atlas/timeline" :class="{ on: tab === 'timeline' }"><AppIcon ui="timeline" /> Timeline</a>
+      <a href="#/calendar"><AppIcon ui="calendar" /> Calendar</a>
     </nav>
 
     <TimelineView v-if="tab === 'timeline'" embedded />

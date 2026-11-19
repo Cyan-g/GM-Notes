@@ -4,6 +4,7 @@
 // changes. Dates follow their month when months are moved or one before them is removed. Dates in a removed last
 // month keep its number (adding a month back brings them back), dates in another removed month keep only their
 // year, and days past a shortened month's end stay as they are; saving lists those first.
+import AppIcon from '../components/AppIcon.vue'
 import { computed, reactive, ref } from 'vue'
 import type { Calendar, Database, WorldDate } from '../model/types'
 import { SCHEMA, byKey } from '../model/schema'
@@ -173,7 +174,7 @@ function save() {
 <template>
   <div class="cal-edit">
     <header class="list-head">
-      <h1><span class="icon">📅</span>Edit the calendar</h1>
+      <h1><span class="icon"><AppIcon ui="calendar" /></span>Edit the calendar</h1>
       <span class="muted small">Today ({{ formatDate(today) }}) keeps the weekday and moon phases picked here.</span>
     </header>
 

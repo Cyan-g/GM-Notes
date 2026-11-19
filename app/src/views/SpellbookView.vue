@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The caster's spellbook: attack bonus and save DC, spell slots to tick off, and the prepared spells
 // with their attack or save worked out.
+import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import { optionLabel } from '../store'
 import type { Entry, Id, Spellbook } from '../model/types'
@@ -137,7 +138,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
 <template>
   <div class="spellbook">
     <header class="list-head">
-      <h1 v-if="!pc"><span class="icon">📖</span>Spellbook<span v-if="owner" class="head-of">of <EntryLink :id="owner.id" /></span></h1>
+      <h1 v-if="!pc"><span class="icon"><AppIcon ui="spellbook" /></span>Spellbook<span v-if="owner" class="head-of">of <EntryLink :id="owner.id" /></span></h1>
       <div class="row-btns">
         <button :title="owner ? 'Full HP, every spell slot and half the hit dice back' : 'Every spell slot back'" @click="rest">🌙 {{ owner ? 'Long rest' : 'Restore spell slots' }}</button>
         <button @click="newEntry('spell')">＋ New spell</button>

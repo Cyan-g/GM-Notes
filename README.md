@@ -16,7 +16,7 @@ DnDesk is a desktop app for Windows and macOS. It's installed once and keeps the
 ### Editing
 
 - **E** or the ✎ Edit button edits the open entry. **Esc** or **Done** goes back. **＋** in the top bar, "New …" in a menu or on a list creates an entry.
-- **Menus:** clicking a type opens its table: the dashboard where there is one (NPCs, characters and organizations in People's tables, spells, items in the Armory), else its list. Hovering shows *New …* and its entries. Each thing has one menu: characters in Campaign, crafting items in Crafting (Archive › Items has the rest), places once in World.
+- **Menus:** the top menus link pages and tables only, never single entries (those are reached from their tables, search and links; the one shortcut is Campaign › *Latest session*). Types open their dashboard table where there is one (NPCs, characters, organizations, spells, items), else their list. Each table is in one menu: Spells has All spells, Cantrips and Leveled spells; Crafting has Recipes, Ingredients, Potions & poisons and Scrolls; Archive has Weapons, Armor, Tools and Other items.
 - Changes save by themselves about a second after you stop typing. The top bar shows the save status, and **Ctrl+S** saves right away.
 - In the text, type `[[` to link to another entry. Paste or drop a picture to store it in `data/images`. 🔒 Secret wraps text that only the DM should see.
 - Relations (memberships, family, home, ...) are edited on either entry and show up on both.
@@ -206,6 +206,7 @@ Every new world starts from `app/src/seed/world.json`, which ships inside the ap
 
 ### Credits
 
+- **Menu and page icons:** also [game-icons.net](https://game-icons.net), same artists and licence: world, sands-of-time, calendar, sword-clash, family-tree, enlightenment, magic-palm, level-three, cauldron, scroll-quill, herbs-bundle, round-bottom-flask, tied-scroll, broadsword, breastplate, toolbox, backpack, checklist. They're in `app/src/icons/ui.ts`.
 - **Entry type icons:** also [game-icons.net](https://game-icons.net), same artists and licence: person, character, vertical-banner, position-marker, elf-ear, angel-wings, spiked-dragon-head, swap-bag, sparkles, laurels, scroll-unfurled, hourglass, rolling-dices, campfire, crossed-sabres, quill-ink, notebook. They're in `app/src/icons/types.ts`.
 - **Class icons:** [game-icons.net](https://game-icons.net) by Lorc, Delapouite and the other game-icons.net artists, under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). The chosen icons (tinker, battle-axe, lyre, holy-symbol, oak-leaf, crossed-swords, fist, templar-shield, bow-arrow, cloak-dagger, magic-swirl, warlock-eye, spell-book) are in `app/src/icons/classes.ts`, taken from the `@iconify-json/game-icons` package. The same credit is on the Data page.
 

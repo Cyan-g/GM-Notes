@@ -1248,3 +1248,5 @@ h1 .icon svg.gi { color: var(--accent); }
 .new-type { display: flex; align-items: center; gap: .5rem; }
 .new-type svg.gi { width: 1.6em; height: 1.6em; color: var(--accent); }
 .menu-panel .icon svg.gi, .crumb-root svg.gi { color: var(--accent); }
+.tool > span svg.gi { width: 1.4em; height: 1.4em; color: var(--accent); }
+.tabs svg.gi { color: var(--accent); }

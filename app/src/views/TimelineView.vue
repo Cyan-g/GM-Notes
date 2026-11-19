@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '../components/AppIcon.vue'
 import { computed, reactive, watch } from 'vue'
 import { optionLabel } from '../store'
 import { allItems, filterItems, type TimelineFilter } from '../timeline'
@@ -27,7 +28,7 @@ const num = (v: string) => (v.trim() === '' ? null : Number(v))
 <template>
   <div class="timeline-view">
     <header v-if="!embedded" class="list-head">
-      <h1><span class="icon">⏳</span>Timeline <span class="count">{{ items.length }}</span></h1>
+      <h1><span class="icon"><AppIcon ui="timeline" /></span>Timeline <span class="count">{{ items.length }}</span></h1>
       <span class="muted">Today: <b>{{ formatDate(db().meta.today) }}</b></span>
     </header>
     <p v-else class="muted small tl-count">{{ items.length }} on the timeline · today is <b>{{ formatDate(db().meta.today) }}</b></p>

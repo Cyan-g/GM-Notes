@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Combat: initiative order, HP, conditions, and the statblock of whoever is acting.
+import AppIcon from '../components/AppIcon.vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Combatant, Id, Statblock } from '../model/types'
 import { byType, get, touch } from '../store'
@@ -108,7 +109,7 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
 <template>
   <div class="tracker-view">
     <header class="list-head">
-      <h1><span class="icon">⚔</span>Combat <span v-if="t.round" class="count">round {{ t.round }}</span></h1>
+      <h1><span class="icon"><AppIcon ui="combat" /></span>Combat <span v-if="t.round" class="count">round {{ t.round }}</span></h1>
       <span v-if="encounter" class="muted"><EntryLink :id="encounter.id" icon /></span>
       <span class="spacer" />
       <button v-if="t.combatants.length" title="Roll d20 + Dex for every monster without an initiative" @click="rollInitiative()">🎲 Roll for monsters</button>

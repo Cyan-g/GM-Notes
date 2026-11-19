@@ -63,5 +63,8 @@ export function arrival(hours: number, mode: TravelMode): WorldDate | undefined 
   const days = Math.max(0, Math.ceil(hours / (mode.allDay ? 24 : 8) - 1e-9) - 1)
   return addDays(db.meta.calendar, db.meta.today, days)
 }
+/** Miles covered in a travel time at a pace or in a vehicle (a day is 8 hours on the road, or 24 all day). */
+export const milesIn = (amount: number, unit: 'hours' | 'days', mode: TravelMode) => amount * (unit === 'days' ? (mode.allDay ? 24 : 8) : 1) * mode.mph
+
 export const formatDistance = (n: number, unit: MapScale['unit']) =>
   unit === 'ft' ? `${Math.round(n).toLocaleString()} ft` : `${n < 10 ? Math.round(n * 10) / 10 : Math.round(n).toLocaleString()} mi`

@@ -7,7 +7,7 @@ import { entryIcon } from '../model/classes'
 import EntryIcon from './EntryIcon.vue'
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import type { Entry, MapRoute, MapScale, Pin } from '../model/types'
-import { arrival, formatDistance, formatTravel, legs, modeOf, setOwnModes, travelHours, travelModes, DEFAULT_MODES, type TravelMode } from '../travel'
+import { arrival, formatDistance, formatTravel, legs, milesIn, modeOf, setOwnModes, travelHours, travelModes, DEFAULT_MODES, type TravelMode } from '../travel'
 import { isShared } from '../sync'
 import { TYPES } from '../model/schema'
 import { childrenOf, formatDate, get, state } from '../store'
@@ -160,7 +160,7 @@ const canSave = computed(() => !state.readOnly && !isShared(props.place))
 const tool = ref<null | 'measure' | 'scale'>(null)
 const draft = reactive<{ points: Pt[]; difficult: number[]; mode: string; id?: string; name: string }>({ points: [], difficult: [], mode: 'normal', name: '' })
 const scalePts = ref<Pt[]>([])
-const scaleIn = reactive({ distance: '', unit: 'mi' as 'mi' | 'ft' })
+const scaleIn = reactive({ distance: '', unit: 'mi' as 'mi' | 'ft' | 'hours' | 'days', mode: 'normal' })
 const shownRoutes = ref(new Set<string>())
 const modes = computed(() => travelModes())
 function addPoint(p: Pt) {
@@ -218,16 +218,31 @@ const visibleRoutes = computed(() => routes.value.filter(r => shownRoutes.value.
 function startScale() {
   if (tool.value === 'scale') { tool.value = null; return }
   tool.value = 'scale'; placing.value = false; scalePts.value = []
-  scaleIn.distance = scale.value ? String(scale.value.distance) : ''; scaleIn.unit = scale.value?.unit ?? 'mi'
+  const g = scale.value?.given
+  scaleIn.distance = g ? String(g.amount) : scale.value ? String(scale.value.distance) : ''
+  scaleIn.unit = g?.unit ?? scale.value?.unit ?? 'mi'
+  scaleIn.mode = g?.mode ?? 'normal'
 }
+/** A travel time typed as the scale ("3 days at a normal pace") is turned into miles. */
+const byTime = computed(() => scaleIn.unit === 'hours' || scaleIn.unit === 'days')
+const scaleMiles = computed(() => (byTime.value ? milesIn(Number(scaleIn.distance) || 0, scaleIn.unit as 'hours' | 'days', modeOf(scaleIn.mode)) : 0))
 function saveScale() {
   const d = Number(scaleIn.distance)
   if (scalePts.value.length !== 2 || !(d > 0)) return
-  props.place.fields.mapScale = { a: scalePts.value[0], b: scalePts.value[1], distance: d, unit: scaleIn.unit, w: natural.w, h: natural.h }
+  const [a, b] = scalePts.value
+  props.place.fields.mapScale = byTime.value
+    ? { a, b, distance: scaleMiles.value, unit: 'mi', w: natural.w, h: natural.h, given: { amount: d, unit: scaleIn.unit as 'hours' | 'days', mode: scaleIn.mode } }
+    : { a, b, distance: d, unit: scaleIn.unit as 'mi' | 'ft', w: natural.w, h: natural.h }
   changed(props.place)
   tool.value = null
 }
-const scaleText = computed(() => (scale.value ? `${formatDistance(scale.value.distance, scale.value.unit)} between two points` : ''))
+const scaleText = computed(() => {
+  const s = scale.value
+  if (!s) return ''
+  const g = s.given
+  const how = g ? `${g.amount} ${g.amount === 1 ? g.unit.replace(/s$/, '') : g.unit} at ${modeOf(g.mode).label.toLowerCase()} (= ${formatDistance(s.distance, s.unit)})` : formatDistance(s.distance, s.unit)
+  return `${how} between two points`
+})
 // Own paces and vehicles (the 5e ones are built in).
 const ownModes = computed(() => state.db?.meta.travelModes ?? [])
 const putModes = (l: TravelMode[]) => setOwnModes(l.filter(m => m.label.trim()))
@@ -285,12 +300,21 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 
     <div v-if="tool === 'scale'" class="card map-travel">
       <h4>Set the scale</h4>
-      <p class="muted small">Click two points a known distance apart: the ends of the map's scale bar, or two places you know the distance between.<template v-if="scale"> Now: {{ scaleText }}.</template></p>
+      <p class="muted small">Click two points a known distance or travel time apart: the ends of the map's scale bar, or two places you know the distance or the journey between.<template v-if="scale"> Now: {{ scaleText }}.</template></p>
       <div class="row">
         <span class="muted small">{{ scalePts.length }} / 2 points</span>
         <template v-if="scalePts.length === 2">
-          <input v-model="scaleIn.distance" type="number" min="0" step="any" class="travel-num" placeholder="Distance" aria-label="Distance between the two points" />
-          <select v-model="scaleIn.unit" aria-label="Unit"><option value="mi">miles</option><option value="ft">feet</option></select>
+          <input v-model="scaleIn.distance" type="number" min="0" step="any" class="travel-num" :placeholder="byTime ? 'How long' : 'Distance'" aria-label="Distance or travel time between the two points" />
+          <select v-model="scaleIn.unit" aria-label="Unit">
+            <option value="mi">miles</option><option value="ft">feet</option>
+            <option value="hours">hours of travel</option><option value="days">days of travel</option>
+          </select>
+          <template v-if="byTime">
+            <select v-model="scaleIn.mode" aria-label="Pace or vehicle">
+              <option v-for="m in modes" :key="m.id" :value="m.id">{{ m.label }} · {{ m.mph }} mph{{ m.allDay ? ', all day' : '' }}</option>
+            </select>
+            <span v-if="scaleMiles" class="muted small">= {{ formatDistance(scaleMiles, 'mi') }}</span>
+          </template>
           <button class="primary" :disabled="!(Number(scaleIn.distance) > 0)" @click="saveScale">Save scale</button>
         </template>
         <button @click="tool = null">Cancel</button>

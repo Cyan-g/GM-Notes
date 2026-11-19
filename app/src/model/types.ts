@@ -121,9 +121,13 @@ export interface EncounterLine { creature?: Id; name?: string; count: number; hp
 export interface Pin { id: string; x: number; y: number; entry?: Id; label?: string; note?: string }
 /**
  * A map's scale (travel.ts): two points (fractions of the map's width and height) `distance` miles or feet apart,
- * with the picture's size in pixels when it was set.
+ * with the picture's size in pixels when it was set. `given`: the scale was set as a travel time ("3 days at a
+ * normal pace"), turned into miles; kept to show it the way it was entered.
  */
-export interface MapScale { a: { x: number; y: number }; b: { x: number; y: number }; distance: number; unit: 'mi' | 'ft'; w: number; h: number }
+export interface MapScale {
+  a: { x: number; y: number }; b: { x: number; y: number }; distance: number; unit: 'mi' | 'ft'; w: number; h: number
+  given?: { amount: number; unit: 'hours' | 'days'; mode: string }
+}
 /** A saved route on a map: its points, which legs (by number, from 0) are difficult terrain, and how it's travelled. */
 export interface MapRoute { id: string; name: string; points: { x: number; y: number }[]; difficult?: number[]; mode?: string }
 

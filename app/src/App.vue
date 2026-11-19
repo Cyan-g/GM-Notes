@@ -5,7 +5,7 @@ import { ui } from './ui'
 import { DesktopStorage, desktop, folderName, type UpdateInfo } from './storage/desktop'
 import { HttpStorage } from './storage/storage'
 import { DesktopBackend, DevBackend } from './storage/backend'
-import { route } from './router'
+import { goBack, goForward, route } from './router'
 import TopBar from './components/TopBar.vue'
 import QuickSwitcher from './components/QuickSwitcher.vue'
 import HomeView from './views/HomeView.vue'
@@ -107,6 +107,11 @@ function onKey(ev: KeyboardEvent) {
   const mod = ev.ctrlKey || ev.metaKey
   if (mod && ev.key.toLowerCase() === 'k') { ev.preventDefault(); ui.switcher = !ui.switcher }
   else if (mod && ev.key.toLowerCase() === 's') { ev.preventDefault(); save() }
+  // back and forward as in a browser, but not while typing (Alt+arrows move by word there)
+  else if (ev.altKey && !mod && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') && !typing(ev.target)) {
+    ev.preventDefault()
+    if (ev.key === 'ArrowLeft') goBack(); else goForward()
+  }
   else if (!mod && !ev.altKey && !typing(ev.target) && route.current.name === 'entry' && !ui.switcher && !ui.newOpen) {
     if (ev.key === 'e' && !route.current.edit && !isShared(get(route.current.id))) { ev.preventDefault(); go(hrefEntry(route.current.id, true)) }
     else if (ev.key === 'f' && !route.current.edit) { ev.preventDefault(); toggleFavourite(route.current.id) }
@@ -116,8 +121,13 @@ function onKey(ev: KeyboardEvent) {
 // Warn before closing the tab while a save is still pending.
 const reload = () => location.reload()
 function beforeUnload(ev: BeforeUnloadEvent) { if (state.dirty || state.saving) { save(); ev.preventDefault() } }
-onMounted(() => { window.addEventListener('keydown', onKey); window.addEventListener('beforeunload', beforeUnload) })
-onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeEventListener('beforeunload', beforeUnload) })
+/** The mouse's side buttons: back (button 3) and forward (button 4). */
+function onMouseUp(ev: MouseEvent) {
+  if (ev.button === 3) { ev.preventDefault(); goBack() }
+  else if (ev.button === 4) { ev.preventDefault(); goForward() }
+}
+onMounted(() => { window.addEventListener('keydown', onKey); window.addEventListener('mouseup', onMouseUp); window.addEventListener('beforeunload', beforeUnload) })
+onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeEventListener('mouseup', onMouseUp); window.removeEventListener('beforeunload', beforeUnload) })
 </script>
 
 <template>

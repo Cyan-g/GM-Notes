@@ -1498,3 +1498,8 @@ h1 > .count { font-size: 16px; }
 .start-choice.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--panel)); }
 .start-choice:has(input:focus-visible) { outline: 2px solid var(--accent); }
 .start-mode { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1.1rem; margin-bottom: .8rem; font-size: 14px; }
+
+/* going back: the first thing in the top bar */
+.nav-back { flex: none; width: 32px; height: 32px; padding: 0; margin-right: -.6rem; border-radius: 8px; font-size: 18px; line-height: 1; background: transparent; border-color: transparent; color: var(--ink-2); }
+.nav-back:hover:not(:disabled) { background: var(--chip); color: var(--ink); border-color: var(--line); }
+.nav-back:disabled { opacity: .3; cursor: default; }

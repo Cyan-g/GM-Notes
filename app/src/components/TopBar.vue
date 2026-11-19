@@ -4,7 +4,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { visibleMenus } from '../menu'
 import { db, playerMode, save, state } from '../store'
 import { newEntry } from '../ui'
-import { route } from '../router'
+import { goBack, nav, route } from '../router'
 import MenuPanel from './MenuPanel.vue'
 import SettingsMenu from './SettingsMenu.vue'
 import WorldList from './WorldList.vue'
@@ -68,6 +68,7 @@ const current = computed(() => visibleMenus.value.findIndex(m => m.owns(route.cu
 
 <template>
   <header class="topbar">
+    <button class="nav-back" :disabled="!nav.canBack" title="Go back (Alt+←)" aria-label="Go back" @click="goBack">←</button>
     <div ref="brandBox" class="brand-box">
       <button v-if="desktop" class="brand" :aria-expanded="worldsOpen" aria-haspopup="dialog" title="Home and your worlds" @click="worldsOpen = !worldsOpen">{{ db().meta.title }} <span class="brand-caret">▾</span></button>
       <a v-else class="brand" href="#/">{{ db().meta.title }}</a>

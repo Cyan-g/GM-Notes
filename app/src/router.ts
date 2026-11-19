@@ -41,7 +41,22 @@ function parse(): Route {
 }
 
 export const route = reactive({ current: parse() as Route })
+
+// ---- going back: each page visited in this window is numbered in its history entry, so the app knows whether
+// there is a page to go back to (the browser doesn't say) ----
+const stepOf = () => (history.state as { step?: number } | null)?.step
+if (stepOf() == null) history.replaceState({ ...(history.state ?? {}), step: 0 }, '')
+let lastStep = stepOf() ?? 0
+/** Whether there's an earlier page to go back to in this window. */
+export const nav = reactive({ canBack: lastStep > 0 })
+export const goBack = () => { if (nav.canBack) history.back() }
+export const goForward = () => history.forward()
+
 window.addEventListener('hashchange', () => {
+  // a page reached by a link or by typing has no number yet: it comes one after the page it was opened from
+  if (stepOf() == null) history.replaceState({ ...(history.state ?? {}), step: lastStep + 1 }, '')
+  lastStep = stepOf() ?? 0
+  nav.canBack = lastStep > 0
   const prev = route.current
   route.current = parse()
   const same = prev.name === 'entry' && route.current.name === 'entry' && prev.id === route.current.id

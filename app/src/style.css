@@ -1292,3 +1292,8 @@ h1 .icon svg.gi { color: var(--accent); }
 .cs-gear-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
 .cs-gear-row > * { margin: 0; min-width: 0; }
 @media (max-width: 900px) { .cs-gear-row { grid-template-columns: minmax(0, 1fr); } }
+
+/* Equipped: the Unequip / Unattune button at the end of each line. */
+.equipped-card .rel li { display: flex; align-items: baseline; gap: .4rem; }
+.eq-off { margin-left: auto; font-size: 12px; opacity: .75; }
+.eq-off:hover { opacity: 1; }

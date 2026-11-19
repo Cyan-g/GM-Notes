@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // A character's side card: what they wear and wield, and their three attunement slots.
-// An item opens in a pop-up, where it can be taken off or un-attuned.
+// Each item has a button to take it off (or end the attunement); it also opens in a pop-up.
 import { computed, ref } from 'vue'
 import type { Entry, InventoryLine } from '../model/types'
 import { get, state } from '../store'
@@ -49,6 +49,9 @@ function onDrop(ev: DragEvent, zone: 'equipped' | 'attuned') {
   endDrag()
 }
 
+/** Take an item off, or end its attunement: it stays in the inventory. */
+const off = (i: number, key: 'equipped' | 'attuned') => { if (!ro.value) editSheet(props.pc, x => { delete x.inventory[i][key] }) }
+
 const shown = ref<number | null>(null)
 const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null ? sheetOf(props.pc)?.inventory[shown.value] : undefined))
 function toggle(key: 'equipped' | 'attuned') {
@@ -68,6 +71,7 @@ function toggle(key: 'equipped' | 'attuned') {
         <button class="link-btn cs-item" @click="shown = x.i">{{ x.e!.name }}</button>
         <span v-if="untrained(x)" class="cs-untrained" :title="x.e!.fields.kind === 'Weapon' ? 'Not proficient: no proficiency bonus to hit' : 'Not proficient: disadvantage on STR and DEX rolls, no spellcasting'">⚠</span>
         <span class="role">{{ label(x) }}</span>
+        <button v-if="!ro" class="link-btn eq-off" :title="`Take off ${x.e!.name} (it stays in the inventory)`" @click="off(x.i, 'equipped')">Unequip</button>
       </li>
     </ul>
     <p v-else class="muted small">Nothing worn or wielded. Drag weapons, armor and other gear here from the inventory.</p>
@@ -78,6 +82,7 @@ function toggle(key: 'equipped' | 'attuned') {
       <li v-for="(x, n) in slots" :key="n" :class="{ empty: !x, over: n >= ATTUNE_SLOTS }">
         <button v-if="x" class="link-btn cs-item" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'attuned')" @dragend="endDrag" @click="shown = x.i">{{ x.e!.name }}</button>
         <span v-else class="muted small">empty</span>
+        <button v-if="x && !ro" class="link-btn eq-off" :title="`End the attunement to ${x.e!.name} (it stays in the inventory)`" @click="off(x.i, 'attuned')">Unattune</button>
       </li>
     </ol>
 

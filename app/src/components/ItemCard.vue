@@ -7,7 +7,8 @@ import { TYPES, byKey } from '../model/schema'
 import { fieldLabel, formatMoney, get, state } from '../store'
 import { optionsIn } from '../model/lists'
 import { renderInline } from '../markdown'
-import { describeEffect, effectsOf } from '../gear'
+import { describeEffect, effectsOf, howCast, spellsOf } from '../gear'
+import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ e: Entry }>()
 const f = computed(() => props.e.fields)
@@ -20,6 +21,7 @@ const rows = computed(() => ([
   ['Armor type', L('armorType')],
   ['Armor class', f.value.armorClass],
   ['Slot', L('slot')],
+  ['Charges', f.value.charges ? [f.value.charges, f.value.recharge && `regains ${f.value.recharge}`].filter(Boolean).join(', ') : ''],
   ['Crafted with', get(f.value.craftingType)?.name],
   ['Ingredient type', L('category')],
   ['Weight', f.value.weight != null ? `${f.value.weight} lb` : ''],
@@ -34,6 +36,7 @@ const propList = computed(() => {
 /** What it does to the one who wears it, as "+1 AC", "Resistance: fire". */
 const effects = computed(() => effectsOf(props.e).map(describeEffect).filter(Boolean))
 const effectsWhen = computed(() => (f.value.attunement ? 'While attuned' : f.value.kind === 'Weapon' ? 'While wielded' : 'While worn'))
+const spells = computed(() => spellsOf(props.e).filter(x => get(x.spell)))
 const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magical' : 'mundane')).toLowerCase().replace(' ', '-'))
 </script>
 
@@ -45,6 +48,9 @@ const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magic
         <p v-if="f.summary" class="ic-summary" v-html="renderInline(f.summary)" />
         <p v-if="f.effect" class="ic-effect"><b>Effect.</b> <span v-html="renderInline(f.effect)" /></p>
         <p v-if="effects.length" class="ic-gear"><b>{{ effectsWhen }}:</b> {{ effects.join(' · ') }}</p>
+        <p v-if="spells.length" class="ic-gear"><b>{{ effectsWhen }}, cast:</b>
+          <template v-for="(x, i) in spells" :key="i"><template v-if="i"> · </template><EntryLink :id="x.spell" /> <span class="muted">({{ howCast(x) }})</span></template>
+        </p>
         <div v-if="propList.length" class="chips"><span v-for="p in propList" :key="p.id" class="chip" :class="{ tip: 'note' in p && p.note }" :data-tip="'note' in p ? p.note : undefined">{{ p.label }}</span></div>
       </div>
       <dl v-if="rows.length" class="ic-stats">

@@ -1,12 +1,12 @@
 // Describes every entry type: its label, fields and dropdown options.
 // Forms and pages are generated from this, so adding a field here is enough.
 import type {
-  Abilities, CharacterSheet, ClassLine, Copper, GearEffect, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
+  Abilities, CharacterSheet, ClassLine, Copper, GearEffect, ItemSpell, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
 } from './types'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
-  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects'
+  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells'
 
 export interface FieldDef {
   key: string
@@ -55,6 +55,8 @@ export const WEAPON_PROPERTIES = ['Ammunition', 'Finesse', 'Heavy', 'Light', 'Lo
 export const MARTIAL_WEAPONS = ['Battleaxe', 'Flail', 'Glaive', 'Greataxe', 'Greatsword', 'Halberd', 'Lance', 'Longsword', 'Maul', 'Morningstar', 'Pike', 'Rapier', 'Scimitar', 'Shortsword', 'Trident', 'War Pick', 'Warhammer', 'Whip', 'Blowgun', 'Hand Crossbow', 'Heavy Crossbow', 'Longbow', 'Net']
 
 const W = { field: 'kind', is: ['Weapon'] }
+/** Kinds of item worn, wielded or carried for what they do (not consumables and ingredients). */
+const GEAR = { field: 'kind', is: ['Weapon', 'Armor', 'Tool', 'Tome', 'Ring', 'Accessory', 'Instrument', 'Adventuring Gear', 'Flask', 'Other'] }
 const A = { field: 'kind', is: ['Armor'] }
 const ING = { field: 'kind', is: ['Ingredient'] }
 const CRAFT = { field: 'kind', is: ['Potion', 'Poison', 'Scroll', 'Other'] }
@@ -159,7 +161,11 @@ export const SCHEMA = [
       { key: 'armorClass', label: 'Armor class', kind: 'text', when: A, group: 'Armor' },
       { key: 'slot', label: 'Slot', kind: 'select', options: ['Head', 'Chest', 'Cloak', 'Gloves', 'Boots', 'Shield'], when: A, group: 'Armor' },
       // What it does to whoever wears, wields or attunes it (gear.ts); not for consumables and ingredients.
-      { key: 'effects', label: 'Effects', kind: 'effects', when: { field: 'kind', is: ['Weapon', 'Armor', 'Tool', 'Tome', 'Ring', 'Accessory', 'Instrument', 'Adventuring Gear', 'Flask', 'Other'] } },
+      { key: 'effects', label: 'Effects', kind: 'effects', when: GEAR },
+      // Spells it lets its user cast, and the charges they cost (gear.ts).
+      { key: 'charges', label: 'Charges', kind: 'number', when: GEAR },
+      { key: 'recharge', label: 'Regains', kind: 'text', when: GEAR },
+      { key: 'spells', label: 'Spells', kind: 'itemSpells', to: ['spell'], when: GEAR },
       { key: 'category', label: 'Ingredient type', kind: 'select', options: ['Plant', 'Mineral', 'Body Part', 'Fluid', 'Other'], when: ING, group: 'Ingredient' },
       // The Tool item a recipe is crafted with (proficiency in it is what the Workbench checks).
       { key: 'craftingType', label: 'Crafted with', kind: 'ref', to: ['item'], pick: { field: 'kind', is: ['Tool'] }, when: CRAFT, group: 'Crafting' },
@@ -258,7 +264,7 @@ export interface KindValue {
   text: string; longtext: string; number: number; bool: boolean; select: string; list: string[]
   money: Copper; weight: number; ref: Id; refs: Id[]; date: WorldDate
   recipe: RecipeLine[]; stock: StockLine[]; statblock: Statblock; abilities: Abilities
-  combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]; effects: GearEffect[]
+  combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]; effects: GearEffect[]; itemSpells: ItemSpell[]
 }
 type Defs = (typeof SCHEMA)[number]['fields'][number]
 /** A field key used by any type. */

@@ -5,7 +5,7 @@ import { classesOf, hitDicePools, totalLevel } from './model/classes'
 import type { Abilities, CharacterSheet, Crafting, Entry, Id, InventoryLine, Proficiencies, Spellbook } from './model/types'
 import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from './model/schema'
 import { db, get, state, touch } from './store'
-import { breakdown, gearTotals, scoreWith, sum } from './gear'
+import { breakdown, gearTotals, restItems, scoreWith, spellsOf, sum } from './gear'
 
 export type Ability = keyof Abilities
 export const ABILITIES: { key: Ability; label: string; short: string }[] = [
@@ -273,8 +273,11 @@ export function trackerStats(pc: Entry) {
 
 // ---------- inventory: what can be done with a line, and dragging lines around ----------
 
-/** Weapons and armor can be equipped, and anything else worn for its effects (a ring, a cloak, boots). */
-export const canEquip = (l: InventoryLine) => { const e = get(l.item); return ['Weapon', 'Armor'].includes(String(e?.fields.kind ?? '')) || (!!e?.fields.effects?.length && !e.fields.attunement) }
+/** Weapons and armor can be equipped, and anything else used for its effects, spells or charges (a ring, boots, a horn). */
+export const canEquip = (l: InventoryLine) => {
+  const e = get(l.item)
+  return ['Weapon', 'Armor'].includes(String(e?.fields.kind ?? '')) || (!e?.fields.attunement && !!(e?.fields.effects?.length || spellsOf(e).length || e?.fields.charges))
+}
 /** Attunement: only items marked "Requires attunement" (and anything already attuned, so it can be taken off). */
 export const canAttune = (l: InventoryLine) => !!l.attuned || !!get(l.item)?.fields.attunement
 
@@ -306,6 +309,7 @@ export function longRest(pc: Entry) {
   s.hp = maxHpOf(s)
   delete s.tempHp
   for (const slot of s.spellbook?.slots ?? []) slot.used = 0
+  restItems(s, 'long')
   let back = Math.max(1, Math.floor(totalLevel(pc) / 2))
   const m = { ...(s.hitDiceSpent ?? {}) }
   for (const p of hitDicePools(pc, s)) {

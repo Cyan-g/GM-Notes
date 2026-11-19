@@ -74,6 +74,12 @@ A player character's page is its character sheet for play: HP, hit dice, inspira
   for that weapon only. Numbers changed by gear get a ✦; hovering shows where they come from ("16 Chain mail · +1 Ring
   of Protection"), and *Equipped* lists the active gear with what each item adds. Gear resistances and features show
   under *Features & traits*. (Data version 25 turned the old free-text Bonus field into effects.)
+- **Spells and charges from items:** an item's *Spells* (on its ✎ Edit page) are spells its user can cast while it's
+  in use: for some of its *Charges*, once per short or long rest or per day, at will, or *prepared* (cast with the
+  character's own slots), optionally at a set level. *Regains* notes how charges come back (e.g. "1d4 at dawn"; that's
+  done by hand). The Spellbook's *From items* card lists them with their item, attack or save and a *Cast* button that
+  spends the charges or marks the use; *Short rest* there and *Long rest* give uses back. *Equipped* shows each item's
+  charges with − and ＋.
 - **In a fight:** Combat (the initiative tracker) takes the PC's AC, HP and initiative from the sheet.
 
 **How items match proficiencies.** Each item says what it needs:

@@ -79,6 +79,17 @@ export interface GearEffect {
   type?: string
   text?: string
 }
+/**
+ * A spell an item lets its user cast while it's worn, wielded or attuned (gear.ts): for `cost` of the item's charges,
+ * once per short or long rest or per day, at will, or `prepared` (added to the prepared spells, cast with the
+ * character's own slots). `level`: cast at that level.
+ */
+export interface ItemSpell {
+  spell: Id
+  how: 'charges' | 'short' | 'long' | 'day' | 'atWill' | 'prepared'
+  cost?: number
+  level?: number
+}
 /** One of a character's classes: an option of the "class" list, its level, a subclass entry, a hit die for a class without a standard one. */
 export interface ClassLine { class: string; level: number; subclass?: Id; die?: string }
 
@@ -140,7 +151,13 @@ export interface Proficiencies {
   other?: string
 }
 /** An item carried: an item entry (so weapons and armor count) or just a name. */
-export interface InventoryLine { item?: Id; name?: string; qty: number; equipped?: boolean; attuned?: boolean }
+export interface InventoryLine {
+  item?: Id; name?: string; qty: number; equipped?: boolean; attuned?: boolean
+  /** The item's charges left (its full Charges while unset). */
+  charges?: number
+  /** The item's spells (by their place in its list) already used since the last rest. */
+  used?: number[]
+}
 
 export interface Statblock {
   /** Name of an SRD monster to take the stats from, when the block isn't written out. */

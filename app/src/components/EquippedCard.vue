@@ -7,7 +7,7 @@ import { get, state } from '../store'
 import { changed } from '../edit'
 import { canAttune, canEquip, draggedLine, dragged, editSheet, endDrag, proficientWith, sheetOf, sheetToEdit, startDrag } from '../sheet'
 import ItemModal from './ItemModal.vue'
-import { activeGear, describeEffect } from '../gear'
+import { chargesLeft, describeEffect, effectsOf, itemsInUse, setCharges, spellsOf } from '../gear'
 
 const props = defineProps<{ pc: Entry }>()
 const ATTUNE_SLOTS = 3
@@ -18,8 +18,14 @@ const worn = computed(() => lines.value.filter(x => x.l.equipped && x.e!.fields.
 const wielded = computed(() => lines.value.filter(x => x.l.equipped && x.e!.fields.kind === 'Weapon'))
 /** Other things worn for their effects: a cloak, boots, a ring that needs no attunement. */
 const other = computed(() => lines.value.filter(x => x.l.equipped && !['Armor', 'Weapon'].includes(String(x.e!.fields.kind))))
-/** What each item in use does right now (gear.ts). */
-const active = computed(() => activeGear(sheetOf(props.pc)).map(g => ({ id: g.item.id, name: g.item.name, says: g.effects.map(describeEffect).filter(Boolean).join(' · ') })))
+/** What each item in use does right now (gear.ts), with its charges. */
+const active = computed(() => itemsInUse(sheetOf(props.pc))
+  .map(({ l, i, item }) => ({
+    i, id: item.id, name: item.name, max: Number(item.fields.charges) || 0, left: chargesLeft(l, item), recharge: item.fields.recharge as string | undefined,
+    says: [...effectsOf(item).map(describeEffect), spellsOf(item).length ? `${spellsOf(item).length} spell${spellsOf(item).length > 1 ? 's' : ''}` : ''].filter(Boolean).join(' · '),
+  }))
+  .filter(g => g.says || g.max))
+const charge = (i: number, n: number) => { if (!ro.value) editSheet(props.pc, x => setCharges(x, i, n)) }
 const attuned = computed(() => lines.value.filter(x => x.l.attuned))
 /** Worn or wielded without the proficiency for it. */
 const untrained = (x: { e?: Entry }) => proficientWith(sheetOf(props.pc), x.e!) === false
@@ -89,7 +95,13 @@ function toggle(key: 'equipped' | 'attuned') {
     <template v-if="active.length">
       <h4>Active gear</h4>
       <ul class="active-gear">
-        <li v-for="g in active" :key="g.id"><b>{{ g.name }}</b> <span class="muted">{{ g.says }}</span></li>
+        <li v-for="g in active" :key="g.i"><b>{{ g.name }}</b> <span class="muted">{{ g.says }}</span>
+          <span v-if="g.max" class="eq-charges tip" :data-tip="`Charges left${g.recharge ? '; regains ' + g.recharge : ''}`">
+            <button class="link-btn" :disabled="ro || !g.left" title="Spend a charge" @click="charge(g.i, (g.left ?? 0) - 1)">−</button>
+            ⚡ {{ g.left }} / {{ g.max }}
+            <button class="link-btn" :disabled="ro || g.left === g.max" title="Get a charge back" @click="charge(g.i, (g.left ?? 0) + 1)">＋</button>
+          </span>
+        </li>
       </ul>
     </template>
 

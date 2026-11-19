@@ -8,6 +8,7 @@ import { byType, formatDate, get, playerMode, state } from '../store'
 import { weekday } from '../calendar'
 import { newEntry } from '../ui'
 import EntryLink from './EntryLink.vue'
+import { sessionsOf } from '../sessions'
 
 const props = defineProps<{ e: Entry }>()
 
@@ -23,8 +24,7 @@ const players = computed(() => ((props.e.fields.players ?? []) as string[]).filt
 const pager = computed(() => {
   const c = props.e.fields.campaign
   if (!c) return null
-  const list = (byType.value.get('session') ?? []).filter(s => s.fields.campaign === c)
-    .sort((a, b) => (Number(a.fields.number) || 0) - (Number(b.fields.number) || 0) || a.name.localeCompare(b.name))
+  const list = sessionsOf(c)
   const i = list.findIndex(s => s.id === props.e.id)
   return { prev: list[i - 1], next: list[i + 1] }
 })
@@ -50,6 +50,7 @@ const linked = computed(() => {
 
 // ---- encounters: set to this session, or linked from its text ----
 const encounters = computed(() => {
+  if (playerMode.value) return []
   const own = (byType.value.get('encounter') ?? []).filter(x => x.fields.session === props.e.id)
   const inText = [...props.e.body.matchAll(/\[\[([^\]|#]+)/g)].map(([, raw]) => get(raw.replace(/\\$/, '').trim()))
     .filter((x): x is Entry => x?.type === 'encounter' && !own.includes(x))
@@ -73,7 +74,8 @@ const newEncounter = () => newEntry('encounter', { session: props.e.id, ...(prop
     </div>
   </div>
 
-  <div v-if="encounters.length || !state.readOnly" class="card">
+  <!-- encounters are the DM's: not in player mode -->
+  <div v-if="!playerMode && (encounters.length || !state.readOnly)" class="card">
     <h3>Encounters <span v-if="encounters.length" class="muted small">{{ encounters.length }}</span>
       <button v-if="!state.readOnly" class="link-btn small push-right" title="A new encounter for this session" @click="newEncounter">＋ Encounter</button></h3>
     <ul v-if="encounters.length" class="plain"><li v-for="x in encounters" :key="x.id"><EntryLink :id="x.id" icon /></li></ul>

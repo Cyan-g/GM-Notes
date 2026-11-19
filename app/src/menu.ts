@@ -1,5 +1,6 @@
 // What the top menu bar shows: links to pages and tables only, never single entries (those are reached from their
 // tables, search and links). The one exception is the Campaign menu's "Latest session" shortcut.
+import { nextSessionNo, sessionsOf } from './sessions'
 import { SCHEMA } from './model/schema'
 import type { Entry, EntryType } from './model/types'
 import { computed } from 'vue'
@@ -62,8 +63,8 @@ function playing() {
   const camps = (byType.value.get('campaign') ?? []).map(c => ({ c, s: sessions.filter(x => x.fields.campaign === c.id) })).sort((a, b) => b.s.length - a.s.length)
   const top = camps[0]
   if (!top?.s.length) return undefined
-  const latest = [...top.s].sort((a, b) => (Number(b.fields.number) || 0) - (Number(a.fields.number) || 0))[0]
-  return { campaign: top.c, latest, next: (Number(latest.fields.number) || 0) + 1 }
+  const latest = sessionsOf(top.c.id).at(-1)!
+  return { campaign: top.c, latest, next: nextSessionNo(top.c.id) }
 }
 /** The latest session and a new one, at the top of the Campaign menu. */
 function sessionNodes(): MenuNode[] {

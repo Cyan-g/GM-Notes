@@ -5,8 +5,9 @@ import { nextTick, ref, watch } from 'vue'
 import type { EntryType } from '../model/types'
 import { SCHEMA } from '../model/schema'
 import { createEntry } from '../edit'
-import { byType, get, playerMode } from '../store'
+import { get, playerMode } from '../store'
 import { carryOver } from '../checklist'
+import { sessionNo, sessionsOf } from '../sessions'
 import { computed } from 'vue'
 import { go, hrefEntry } from '../router'
 
@@ -31,9 +32,7 @@ function create() {
   const e = createEntry(type.value, name.value, fields)
   // a campaign's next session starts with the last one's headings and open checklist items
   if (e.type === 'session' && fields.campaign) {
-    const before = (byType.value.get('session') ?? [])
-      .filter(s => s.id !== e.id && s.fields.campaign === fields.campaign && (fields.number == null || (Number(s.fields.number) || 0) < fields.number))
-      .sort((a, b) => (Number(b.fields.number) || 0) - (Number(a.fields.number) || 0) || b.created.localeCompare(a.created))[0]
+    const before = sessionsOf(fields.campaign).filter(s => s.id !== e.id && (fields.number == null || sessionNo(s) < fields.number)).at(-1)
     if (before?.body.trim()) get(e.id)!.body = carryOver(before.body)
   }
   open.value = false

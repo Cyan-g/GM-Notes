@@ -11,7 +11,7 @@ const props = defineProps<{ type: EntryType }>()
 const def = computed(() => TYPES[props.type])
 
 // Which columns and filters each type's list shows.
-const COLS: Partial<Record<EntryType, { cols: string[]; facets?: string[] }>> = {
+const COLS: Partial<Record<EntryType, { cols: string[]; facets?: string[]; sort?: { key: string; dir: 1 | -1 } }>> = {
   npc: { cols: ['race', '@lives-in', '@member'], facets: ['race', '@lives-in', '@member'] },
   pc: { cols: ['player', 'race', '@classes', '@level', 'campaigns'] },
   organization: { cols: ['orgType', 'parent', 'seat', '@members'], facets: ['orgType'] },
@@ -24,7 +24,7 @@ const COLS: Partial<Record<EntryType, { cols: string[]; facets?: string[] }>> = 
   spell: { cols: ['level', 'school', 'castingTime', 'spellType', 'classes'], facets: ['level', 'school', 'classes'] },
   event: { cols: ['date', 'category', 'places'], facets: ['category'] },
   campaign: { cols: ['status'] },
-  session: { cols: ['campaign', 'number', 'date'], facets: ['campaign'] },
+  session: { cols: ['campaign', '@sessionNo', 'date'], facets: ['campaign'], sort: { key: '@sessionNo', dir: 1 } },
   encounter: { cols: ['campaign', 'session', 'location'], facets: ['campaign'] },
   writing: { cols: ['writingType', 'category', 'author'], facets: ['writingType'] },
   note: { cols: ['category', 'campaign'] },
@@ -40,6 +40,6 @@ const rows = computed(() => byType.value.get(props.type) ?? [])
       <h1><span class="icon"><TypeIcon :type="type" /></span>{{ def.plural }} <span class="count">{{ rows.length }}</span></h1>
       <button class="primary" @click="newEntry(type)">＋ New {{ typeWord(type) }}</button>
     </header>
-    <DataTable :key="type" :rows="rows" :cols="cfg.cols" :facets="cfg.facets" :type="type" />
+    <DataTable :key="type" :rows="rows" :cols="cfg.cols" :facets="cfg.facets" :sort="cfg.sort" :type="type" />
   </div>
 </template>

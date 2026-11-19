@@ -14,18 +14,19 @@ import { toggleFavourite } from '../edit'
 import { describe } from '../describe'
 import { armorClass, sheetOf, maxHpOf } from '../sheet'
 import EntryLink from '../components/EntryLink.vue'
+import { nextSessionNo, sessionsOf } from '../sessions'
 
 const byName = (a: Entry, b: Entry) => a.name.localeCompare(b.name)
 const list = (t: Entry['type']) => byType.value.get(t) ?? []
 
 // ---- campaigns: the one with the latest session first ----
 const campaigns = computed(() => list('campaign').map(c => {
-  const s = list('session').filter(x => x.fields.campaign === c.id).sort((a, b) => ((b.fields.number) ?? 0) - ((a.fields.number) ?? 0))
+  const s = sessionsOf(c.id).reverse()
   return { c, sessions: s }
 }).sort((a, b) => b.sessions.length - a.sessions.length || byName(a.c, b.c)))
 const current = computed(() => campaigns.value[0]?.sessions.length ? campaigns.value[0] : undefined)
 const others = computed(() => campaigns.value.filter(x => x !== current.value))
-const nextNumber = computed(() => ((current.value?.sessions[0]?.fields.number) ?? 0) + 1)
+const nextNumber = computed(() => (current.value ? nextSessionNo(current.value.c.id) : 1))
 const newSession = () => current.value && newEntry('session', { campaign: current.value.c.id, number: nextNumber.value, date: { ...db().meta.today } })
 const notes = computed(() => list('note').sort(byName))
 

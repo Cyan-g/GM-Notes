@@ -30,6 +30,7 @@ import FieldValue from '../components/FieldValue.vue'
 import StatblockView from '../components/Statblock.vue'
 import MembersCard from '../components/MembersCard.vue'
 import SessionSide from '../components/SessionSide.vue'
+import { nextSessionNo, sessionsOf } from '../sessions'
 import DataImage from '../components/DataImage.vue'
 import ItemCard from '../components/ItemCard.vue'
 import SpellCard from '../components/SpellCard.vue'
@@ -242,14 +243,12 @@ const soldAt = computed(() => e.value?.type === 'item'
   ? entries.value.filter(n => ((n.fields.stock as { item: string }[]) ?? []).some(l => l.item === e.value!.id)) : [])
 /** A new session of this campaign, numbered after the last one. */
 function newSession() {
-  const next = Math.max(0, ...sessions.value.map(s => Number(s.fields.number) || 0)) + 1
-  newEntry('session', { campaign: e.value!.id, number: next })
+  newEntry('session', { campaign: e.value!.id, number: nextSessionNo(e.value!.id) })
 }
 const exporting = ref(false)
 const showHistory = ref(false)
 const sessions = computed(() => e.value?.type === 'campaign'
-  ? (byType.value.get('session') ?? []).filter(s => s.fields.campaign === e.value!.id).sort((a, b) => (a.fields.number ?? 0) - (b.fields.number ?? 0) || a.name.localeCompare(b.name))
-  : [])
+  ? sessionsOf(e.value.id) : [])
 const campaignNotes = computed(() => e.value?.type === 'campaign'
   ? entries.value.filter(n => (n.type === 'note' && n.fields.campaign === e.value!.id) || (n.type === 'pc' && ((n.fields.campaigns) ?? []).includes(e.value!.id))) : [])
 </script>

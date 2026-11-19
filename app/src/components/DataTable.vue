@@ -41,7 +41,7 @@ const sorted = (list: Entry[], key: string, dir: number) => {
   const col = key === 'name' ? column('name') : columns.value.find(c => c.key === key) ?? column(key)
   return [...list].sort((a, b) => {
     const x = col.sort(a), y = col.sort(b)
-    return (x < y ? -1 : x > y ? 1 : a.name.localeCompare(b.name)) * dir
+    return (x < y ? -1 : x > y ? 1 : a.name.localeCompare(b.name, undefined, { numeric: true })) * dir
   })
 }
 /** A view with a limit ("Last 50 changes") picks its rows by its own sort first; re-sorting only reorders them. */

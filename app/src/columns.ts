@@ -6,6 +6,7 @@ import { SCHEMA, TYPES, byKey, type FieldDef } from './model/schema'
 import { dateKey, entries, fieldLabel, fieldOptions, get, isCurrent, relationsOf, state } from './store'
 import { classText, totalLevel } from './model/classes'
 import { listKeyOf } from './model/lists'
+import { sessionNo } from './sessions'
 
 export interface Col {
   key: string
@@ -70,11 +71,13 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   },
   '@attackSave': { label: 'Attack / save', value: attackOrSave, sort: e => attackOrSave(e).toLowerCase() || '~', kind: 'text' },
   '@concRitual': { label: 'C/R', value: concRitual, sort: e => concRitual(e) || '~', kind: 'text' },
+  '@sessionNo': { label: 'Number', value: e => (Number.isFinite(sessionNo(e)) ? sessionNo(e) : ''), sort: e => sessionNo(e), kind: 'text' },
   '@updated': { label: 'Last edited', value: e => new Date(e.updated).toLocaleString(), sort: e => -Date.parse(e.updated), kind: 'text' },
 }
 
 export function column(key: string, type?: EntryType): Col {
-  if (key === 'name') return { key, label: 'Name', value: e => e.name, sort: e => e.name.toLowerCase() }
+  // numbers in names in numeric order: "Session 2" before "Session 10"
+  if (key === 'name') return { key, label: 'Name', value: e => e.name, sort: e => e.name.toLowerCase().replace(/\d+/g, d => d.padStart(10, '0')) }
   const c = COMPUTED[key]
   if (c) return { key, ...c }
   const field = (type && TYPES[type].fields.find(f => f.key === key)) || FIELD_BY_KEY.get(key)

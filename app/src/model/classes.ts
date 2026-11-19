@@ -4,6 +4,7 @@
 import type { CharacterSheet, ClassLine, Database, Entry } from './types'
 import { labelIn, optionsIn, type ListOption } from './lists'
 import { TYPES } from './schema'
+import { CLASS_SVG } from '../icons/classes'
 
 /** The hit die each standard class brings. Another class picks its own (d8 until it does). */
 export const CLASS_DIE: Record<string, string> = {
@@ -63,7 +64,15 @@ export function classText(pc: Entry, meta: Database['meta'] | undefined, subclas
   }).join(' / ')
 }
 
-/** An entry's icon: a character's by their main class, anything else by its type. */
+/** A character's class icon (game-icons.net SVG), by their main class; none for other entries or other classes. */
+export function classIcon(e: Entry): { body: string; label: string } | undefined {
+  if (e.type !== 'pc') return undefined
+  const m = mainClass(e)
+  const svg = m && CLASS_SVG[m.class]
+  return svg ? { body: svg.body, label: m!.class } : undefined
+}
+
+/** An entry's icon as text: a character's by their main class, anything else by its type. */
 export function entryIcon(e: Entry): string {
   if (e.type === 'pc') { const m = mainClass(e); if (m && CLASS_ICON[m.class]) return CLASS_ICON[m.class] }
   return TYPES[e.type]?.icon ?? ''

@@ -86,6 +86,8 @@ const pretty = (n: string) => {
   const kind = n.startsWith('before-restore') ? ' (before a restore)' : ''
   return m ? `${m[3]}.${m[2]}.${m[1]} ${m[4]}:${m[5]}${kind}` : n
 }
+/** Links open in the browser (desktop app) or a new tab. */
+const open = (url: string) => (desktop ? desktop.open(url) : window.open(url, '_blank'))
 </script>
 
 <template>
@@ -156,5 +158,7 @@ const pretty = (n: string) => {
       </ul>
       <p v-else class="muted small">None yet. They appear once you've edited something.</p>
     </section>
+
+    <p class="muted small credits">Class icons from <a href="https://game-icons.net" @click.prevent="open('https://game-icons.net')">game-icons.net</a> by Lorc, Delapouite and the other game-icons.net artists, under <a href="https://creativecommons.org/licenses/by/3.0/" @click.prevent="open('https://creativecommons.org/licenses/by/3.0/')">CC BY 3.0</a>.</p>
   </div>
 </template>

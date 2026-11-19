@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { entryIcon } from '../model/classes'
+import EntryIcon from '../components/EntryIcon.vue'
 import { NOTE_TYPES, isShared } from '../sync'
 import PlayerNotes from '../components/PlayerNotes.vue'
 import { currentPc, setCurrent } from '../sheet'
@@ -268,7 +269,7 @@ const siblings = computed(() => {
       <DataImage v-if="e.image && e.type !== 'pc'" :path="e.image" :alt="e.name" class="portrait head-portrait" />
       <div class="head-text">
       <div class="title-line">
-        <h1><span class="icon">{{ entryIcon(e) }}</span>{{ e.name }}</h1>
+        <h1><span class="icon"><EntryIcon :e="e" /></span>{{ e.name }}</h1>
         <div class="sub">
           <span class="badge">{{ (e.type === 'place' && e.fields.placeType) || (e.type === 'item' && e.fields.kind) || def.label }}</span>
           <!-- A character: whether the Spellbook, Workbench and Character menu use them. -->

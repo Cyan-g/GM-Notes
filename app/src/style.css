@@ -1241,3 +1241,7 @@ button.brand { background: none; border: none; padding: 0; cursor: pointer; }
 .world-join li { display: flex; justify-content: space-between; align-items: center; gap: .6rem; }
 .player-notes { padding: .7rem .9rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; margin-top: 1rem; }
 .player-notes h4 { display: flex; align-items: baseline; gap: .6rem; margin: 0 0 .5rem; font: 600 1rem var(--serif); font-variant: small-caps; letter-spacing: .04em; color: var(--accent); }
+/* class icons (game-icons.net): the size of the text around them, in its colour */
+svg.gi { width: 1.1em; height: 1.1em; vertical-align: -0.18em; flex: none; }
+.pc-portrait-icon svg.gi { width: 1em; height: 1em; color: var(--accent); }
+h1 .icon svg.gi { color: var(--accent); }

@@ -45,7 +45,7 @@ To set up a player:
 
 A player character's page is its character sheet for play: HP, hit dice, inspiration and the inventory change there. The character is built on its **✎ Edit** page, which shows the whole sheet with everything else editable (the text editor isn't there: the character's notes are written in the *Notes* box at the bottom of its page, with ✎ Write).
 
-- **Classes (multiclassing):** on the Edit page, *＋ Class* adds a class from the Classes list, each with its own level and, if there are Subclass entries for it, a subclass. The character's level is the sum; a character without a class has a plain level instead. The icon follows the highest level class (🪓 Barbarian, 🎵 Bard, ☀️ Cleric, 🌿 Druid, ⚔️ Fighter, 👊 Monk, 🛡️ Paladin, 🏹 Ranger, 🗡️ Rogue, 🔥 Sorcerer, 👁️ Warlock, 📘 Wizard, ⚙️ Artificer).
+- **Classes (multiclassing):** on the Edit page, *＋ Class* adds a class from the Classes list, each with its own level and, if there are Subclass entries for it, a subclass. The character's level is the sum; a character without a class has a plain level instead. The icon follows the highest level class: a game-icons.net picture in the text colour (battle-axe for Barbarian, lyre for Bard, holy symbol for Cleric, oak leaf for Druid, crossed swords for Fighter, fist for Monk, templar shield for Paladin, bow for Ranger, cloak and dagger for Rogue, magic swirl for Sorcerer, eye for Warlock, spell book for Wizard, tinker for Artificer; see Credits). Without a class, or with a homebrew one, it stays 🛡️.
 - **What you fill in:** the classes and ability scores. Each ability has a card with its saving throw and the skills that use it; click a save to mark proficiency, and click a skill to cycle it: proficient, then expertise, then none.
 - **Hit points:** current, max and temporary HP. Type `-7` or `+5` in *Damage / heal* to apply it; temporary HP soak up damage first.
 - **Hit dice:** each class brings its die (d12 Barbarian; d10 Fighter, Paladin, Ranger; d6 Sorcerer, Wizard; d8 the others, and a homebrew class picks one). The sheet has a row per die size, each spent on its own. **Long rest** restores HP and gives back half the level in hit dice, biggest dice first.
@@ -202,6 +202,10 @@ Every new world starts from `app/src/seed/world.json`, which ships inside the ap
 - the races, subclasses, spells, feats and Tool items, without DM-only text or pictures. Links to anything else become plain words.
 
 `npm run seed` rebuilds it from your world (`../data`, or a folder given after the command); commit it and the next build ships it. The seed records its data version, so after an upgrade step a new world from an older seed is brought up to date like any older data. Rebuilding it now and then keeps it current.
+
+### Credits
+
+- **Class icons:** [game-icons.net](https://game-icons.net) by Lorc, Delapouite and the other game-icons.net artists, under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). The chosen icons (tinker, battle-axe, lyre, holy-symbol, oak-leaf, crossed-swords, fist, templar-shield, bow-arrow, cloak-dagger, magic-swirl, warlock-eye, spell-book) are in `app/src/icons/classes.ts`, taken from the `@iconify-json/game-icons` package. The same credit is on the Data page.
 
 ### The desktop app
 

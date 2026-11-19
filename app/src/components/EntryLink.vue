@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { entryIcon } from '../model/classes'
+import EntryIcon from './EntryIcon.vue'
 import { computed } from 'vue'
 import { get } from '../store'
 import { hrefEntry } from '../router'
@@ -10,6 +11,6 @@ const e = computed(() => get(props.id))
 </script>
 
 <template>
-  <a v-if="e" class="wl" :href="hrefEntry(e.id)" :title="TYPES[e.type]?.label"><span v-if="icon" class="icon">{{ entryIcon(e) }}</span>{{ label || e.name }}</a>
+  <a v-if="e" class="wl" :href="hrefEntry(e.id)" :title="TYPES[e.type]?.label"><span v-if="icon" class="icon"><EntryIcon :e="e" /></span>{{ label || e.name }}</a>
   <span v-else-if="id" class="wl missing">{{ label || id }}</span>
 </template>

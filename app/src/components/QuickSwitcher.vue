@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Ctrl+K: jump to any entry by name or alias.
 import { entryIcon } from '../model/classes'
+import EntryIcon from './EntryIcon.vue'
 import { computed, nextTick, ref, watch } from 'vue'
 import { search } from '../search'
 import { TYPES } from '../model/schema'
@@ -35,7 +36,7 @@ function key(ev: KeyboardEvent) {
       <input ref="input" v-model="q" placeholder="Go to… (name or alias)" @keydown="key" />
       <ul v-if="results.length">
         <li v-for="(e, i) in results" :key="e.id" :class="{ sel: i === sel }" @mousemove="sel = i" @click="pick(i)">
-          <span class="icon">{{ entryIcon(e) }}</span>
+          <span class="icon"><EntryIcon :e="e" /></span>
           <span class="qs-name">{{ e.name }}</span>
           <span class="qs-alias">{{ describe(e) || e.aliases.slice(0, 2).join(', ') }}</span>
           <span class="qs-type">{{ TYPES[e.type].label }}</span>

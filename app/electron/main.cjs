@@ -81,6 +81,40 @@ ipcMain.handle('fs:remove', (_e, root, rel) => {
 
 // ---------- the world's database (data/dndesk.sqlite) ----------
 
+/**
+ * Copy the database (a backup) in a worker thread with its own read-only connection, so a slow drive (a USB stick)
+ * never freezes the window while the copy is written. SQLite's VACUUM INTO makes a complete, consistent copy.
+ */
+const { Worker } = require('node:worker_threads')
+const COPY_WORKER = `
+  const { DatabaseSync } = require('node:sqlite')
+  const { workerData: w, parentPort } = require('node:worker_threads')
+  try { const db = new DatabaseSync(w.src, { readOnly: true }); db.prepare('VACUUM INTO ?').run(w.dest); db.close(); parentPort.postMessage({ ok: true }) }
+  catch (e) { parentPort.postMessage({ ok: false, error: e.message }) }`
+function copyInWorker(dest) {
+  const src = path.join(rootDir('data'), 'dndesk.sqlite')
+  fs.mkdirSync(path.dirname(dest), { recursive: true })
+  if (fs.existsSync(dest)) fs.unlinkSync(dest)
+  return new Promise((ok, fail) => {
+    const w = new Worker(COPY_WORKER, { eval: true, workerData: { src, dest } })
+    w.once('message', m => (m.ok ? ok() : fail(new Error(m.error))))
+    w.once('error', fail)
+  })
+}
+
+/** Slow database work is written to slow.log in the app's settings folder, to find what made the window hang. */
+function timed(name, fn) {
+  return async (...args) => {
+    const t = Date.now()
+    try { return await fn(...args) } finally {
+      const ms = Date.now() - t
+      if (ms > 250) { try { fs.appendFileSync(path.join(app.getPath('userData'), 'slow.log'), `${new Date().toISOString()} ${name} ${ms} ms
+`) } catch {} }
+    }
+  }
+}
+const handleTimed = (channel, fn) => ipcMain.handle(channel, timed(channel, fn))
+
 let world = null
 function openWorld() {
   if (!world) world = new WorldDb(rootDir('data'))
@@ -93,7 +127,7 @@ const stamp = () => { const d = new Date(), p = n => String(n).padStart(2, '0');
  * Load the world. A data folder from before the database (eldoria.json) is converted first; the JSON files stay.
  * An empty folder answers { empty: true }, so the app can offer to start a new world there.
  */
-ipcMain.handle('db:load', (_e, types, kinds) => {
+handleTimed('db:load', (_e, types, kinds) => {
   const dir = rootDir('data')
   let converted
   if (!WorldDb.exists(dir)) {
@@ -105,8 +139,8 @@ ipcMain.handle('db:load', (_e, types, kinds) => {
   const loaded = w.load()
   return { ...loaded, converted, ...identify(w, loaded.data?.meta?.title) }
 })
-ipcMain.handle('db:create', (_e, d, types, kinds) => openWorld().create(d, types, kinds))
-ipcMain.handle('db:save', (_e, changes) => {
+handleTimed('db:create', (_e, d, types, kinds) => openWorld().create(d, types, kinds))
+handleTimed('db:save', (_e, changes) => {
   const rev = openWorld().save(changes)
   // A renamed world is renamed in the list of worlds too.
   if (changes?.meta?.title) {
@@ -251,12 +285,12 @@ ipcMain.handle('worlds:moved', (_e, title) => {
   remember(worldId, title, rootDir('data'))
   return true
 })
-ipcMain.handle('db:history', (_e, id) => openWorld().history(id))
-ipcMain.handle('db:deleted', () => openWorld().deleted())
+handleTimed('db:history', (_e, id) => openWorld().history(id))
+handleTimed('db:deleted', () => openWorld().deleted())
 /** A copy of the database: an automatic backup in data/backups, or into the backup folder. */
-ipcMain.handle('db:copy-to', (_e, root, rel) => { openWorld().copyTo(inside(root, rel)); return true })
+handleTimed('db:copy-to', async (_e, root, rel) => { await copyInWorker(inside(root, rel)); return true })
 /** Go back to a backup: the current database is kept as a backup first, then replaced. */
-ipcMain.handle('db:restore', (_e, name) => {
+handleTimed('db:restore', (_e, name) => {
   const dir = rootDir('data')
   const src = inside('data', `backups/${name}`)
   if (!fs.existsSync(src)) throw new Error(`No backup called ${name}`)

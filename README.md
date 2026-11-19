@@ -1,6 +1,6 @@
 # DnDesk
 
-A local campaign wiki and toolkit for D&D: the world, its people, the campaign, characters, spells and crafting. Here it holds the world of Eldoria.
+A local campaign wiki and toolkit for D&D: the world, its people, the campaign, characters, spells and crafting.
 
 ## Using it
 
@@ -8,7 +8,7 @@ DnDesk is a desktop app for Windows and macOS. It's installed once and keeps the
 
 - **First start:** choose the data folder in a normal folder dialog, or the folder that holds it. The app remembers it; ⚙ → Data & backups shows where it is and can change it.
   - **A folder with no world yet:** the app offers to start a new one, as a player would.
-  - **A folder from before the database:** one with `eldoria.json` is converted once, by itself and checked, and the old JSON files stay where they are.
+  - **A folder from before the database:** one holding an early version's JSON world file is converted once, by itself and checked, and the old JSON files stay where they are.
 - **Windows:** the installer (`DnDesk-Setup-<version>.exe`) installs for your user only and updates itself. When a new version is downloaded, a bar offers *Restart and update*.
 - **macOS:** the app isn't signed with an Apple Developer ID, so the first time, right-click it and choose *Open*. It can't install updates itself; a bar says when a new version is out, with a download link.
 - **Only one copy runs at a time.** Starting it again brings the open window forward.
@@ -36,7 +36,7 @@ DnDesk is a desktop app for Windows and macOS. It's installed once and keeps the
 
 **⚙ → DM mode** switches what the app shows. The setting is saved with the world. Nothing is deleted when you switch.
 
-- **DM mode** (your Eldoria) shows everything.
+- **DM mode** (the DM's own world) shows everything.
 - **Player mode** is for a player's own copy.
   - The menus are Character, Campaign (the campaigns, with their session notes) and World (Atlas, Timeline, Calendar, places and events). The spellbook and workbench are tabs on the character's page instead of the Spells and Crafting menus. People, the Archive, Combat and encounters are hidden. New entries can also be notes.
   - The home page shows the characters, the campaign, the tools, favourites, the regions and links, but not the deities and races.
@@ -209,7 +209,7 @@ Imported files are checked too. A damaged file is refused, and fields the app do
 
 ### Safety while saving
 
-- **Only what changed is written, as one transaction.** A save either lands completely or not at all, so a crash, a full disk or a pulled stick never leaves half a world.
+- **Only what changed is written, as one transaction.** A save either lands completely or not at all, so a crash, a full disk or a pulled USB stick never leaves half a world.
 - **The database enforces the basics itself:**
   - every entry has a known type, an id and a name
   - its fields are a JSON object
@@ -225,7 +225,7 @@ Imported files are checked too. A damaged file is refused, and fields the app do
 
 The source is in `app/` (Vue 3 + TypeScript + Vite). Node is only needed for development, not for using the app.
 
-The folder is a git repository for the app's code. `data/` is ignored: the campaign data is protected by the backups above, not by git. The stick is FAT32, which doesn't record file owners, so on another PC (or under another drive letter) git refuses with "dubious ownership" until you run `git config --global --add safe.directory <path>`, for example `D:/Worlds/DnDesk`.
+The folder is a git repository for the app's code. `data/` is ignored: the campaign data is protected by the backups above, not by git. On a FAT32 or exFAT drive (a USB stick, say), which doesn't record file owners, git on another PC (or under another drive letter) refuses with "dubious ownership" until you run `git config --global --add safe.directory <path to the folder>`.
 
 ```bash
 cd app
@@ -250,10 +250,10 @@ Every new world starts from `app/src/seed/world.json`, which ships inside the ap
 
 ### Credits
 
+- **Class icons:** [game-icons.net](https://game-icons.net) by Lorc, Delapouite and the other game-icons.net artists, under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). The chosen icons (tinker, battle-axe, lyre, holy-symbol, oak-leaf, crossed-swords, fist, templar-shield, bow-arrow, cloak-dagger, magic-swirl, warlock-eye, spell-book) are in `app/src/icons/classes.ts`, taken from the `@iconify-json/game-icons` package. The same credit is on the Data page.
 - **Menu and page icons:** also [game-icons.net](https://game-icons.net), same artists and licence: world, sands-of-time, calendar, sword-clash, family-tree, enlightenment, magic-palm, level-three, cauldron, scroll-quill, herbs-bundle, round-bottom-flask, tied-scroll, broadsword, breastplate, toolbox, backpack, checklist. They're in `app/src/icons/ui.ts`.
 - **Entry type icons:** also [game-icons.net](https://game-icons.net), same artists and licence: person, character, vertical-banner, position-marker, elf-ear, angel-wings, spiked-dragon-head, swap-bag, sparkles, laurels, scroll-unfurled, hourglass, rolling-dices, campfire, crossed-sabres, quill-ink, notebook. They're in `app/src/icons/types.ts`.
 - **Condition icons:** also [game-icons.net](https://game-icons.net), same artists and licence: blindfold, charm, hearing-disabled, tired-eye, terror, grab, knockout, invisible, frozen-body, stone-bust, poison-bottle, half-body-crawling, manacles, knocked-out-stars, sleepy, concentration-orb. They're in `app/src/icons/conditions.ts`, and show on combat cards, the initiative strip, statblock condition immunities and item immunities.
-- **Class icons:** [game-icons.net](https://game-icons.net) by Lorc, Delapouite and the other game-icons.net artists, under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). The chosen icons (tinker, battle-axe, lyre, holy-symbol, oak-leaf, crossed-swords, fist, templar-shield, bow-arrow, cloak-dagger, magic-swirl, warlock-eye, spell-book) are in `app/src/icons/classes.ts`, taken from the `@iconify-json/game-icons` package. The same credit is on the Data page.
 
 ### The desktop app
 
@@ -269,7 +269,7 @@ npm run desktop    # build the pages and open them in the desktop app
 npm run dist       # Windows installer, into %LOCALAPPDATA%\DnDesk-build
 ```
 
-Building onto the USB stick fails: it's FAT32, which stores file times in 2-second steps, and the packager's lock file needs finer ones. So `npm run dist` builds on the local disk.
+Building onto a FAT32 drive fails: it stores file times in 2-second steps, and the packager's lock file needs finer ones. So `npm run dist` builds on the local disk.
 
 **Releasing a version:**
 1. Raise `version` in `app/package.json`.

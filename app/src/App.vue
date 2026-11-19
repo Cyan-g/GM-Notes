@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { createWorld, get, open, overwrite, save, state, type WorldStart } from './store'
+import { FORMAT as EXPORT_FORMAT, applyImport, readImport } from './transfer'
 import { ui } from './ui'
 import { DesktopStorage, desktop, folderName, type UpdateInfo } from './storage/desktop'
 import { HttpStorage } from './storage/storage'
@@ -45,9 +46,33 @@ const startError = ref('')
 const emptyName = ref('')
 const worldName = ref('')
 /** The new world's starting content and mode: 5e starts as a player's copy, an empty world as the DM's, unless picked. */
-const worldStart = ref<WorldStart>('srd')
+const worldStart = ref<WorldStart | 'file'>('srd')
 const modePicked = ref<'dm' | 'player' | null>(null)
-const worldMode = computed(() => modePicked.value ?? (worldStart.value === 'srd' ? 'player' : 'dm'))
+const worldMode = computed(() => modePicked.value
+  ?? (worldStart.value === 'srd' ? 'player' : worldStart.value === 'file' ? (worldFile.value?.dmText === false ? 'player' : 'dm') : 'dm'))
+
+// ---- a new world from a world's file (⚙ → Export the world): only what's in the file ----
+const worldFile = ref<{ file: File; from: string; exported: string; entries: number; dmText?: boolean } | null>(null)
+const fileInput = ref<HTMLInputElement>()
+function pickWorldFile() { worldStart.value = 'file'; fileInput.value?.click() }
+async function readWorldFile(ev: Event) {
+  const input = ev.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  startError.value = ''
+  try {
+    const b = JSON.parse(await file.text())
+    if (b?.format !== EXPORT_FORMAT || !Array.isArray(b.entries)) throw new Error(`${file.name} isn't a world's file. Use one made with ⚙ → Export the world.`)
+    if (b.main) throw new Error(`${file.name} holds one entry and what it links to, not a world. Start a world, then import it with ⚙ → Import from a file.`)
+    worldFile.value = { file, from: String(b.from ?? ''), exported: String(b.exported ?? ''), entries: b.entries.length, dmText: b.dmText }
+    worldStart.value = 'file'
+    if (!worldName.value.trim() && b.from) worldName.value = String(b.from)
+  } catch (e) {
+    worldFile.value = null
+    startError.value = e instanceof SyntaxError ? `${file.name} isn't a file this app can read.` : (e as Error).message
+  }
+}
 
 /** A new version of the desktop app: downloaded and ready to install (Windows), or out to download (Mac). */
 const update = ref<UpdateInfo | null>(null)
@@ -90,7 +115,16 @@ onMounted(async () => {
 async function startWorld() {
   startError.value = ''
   try {
-    await createWorld(state.backend!, state.storage!, worldName.value, worldStart.value, worldMode.value)
+    if (worldStart.value === 'file') {
+      const f = worldFile.value
+      if (!f) { pickWorldFile(); return }
+      // an empty world, then everything in the file, with its calendar and today's date
+      await createWorld(state.backend!, state.storage!, worldName.value, 'empty', worldMode.value)
+      const plan = await readImport(f.file)
+      if (plan.world) plan.world.take = true
+      await applyImport(plan)
+      await save()
+    } else await createWorld(state.backend!, state.storage!, worldName.value, worldStart.value, worldMode.value)
     phase.value = 'ready'
     // A joined world gets its shared world right away.
     await startFollowing()
@@ -208,6 +242,12 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
             <b>Empty world</b>
             <span class="muted small">No entries, a plain calendar, and in the dropdown lists only the options the app relies on. For your own system or setting.</span>
           </label>
+          <button type="button" class="start-choice" :class="{ on: worldStart === 'file' }" role="radio" :aria-checked="worldStart === 'file'" @click="pickWorldFile">
+            <b>From a file…</b>
+            <span v-if="worldFile" class="muted small"><b>{{ worldFile.file.name }}</b>: {{ worldFile.from || 'a world' }}, {{ worldFile.entries }} entries{{ worldFile.exported ? `, exported ${new Date(worldFile.exported).toLocaleDateString()}` : '' }}{{ worldFile.dmText === false ? ', without DM-only text' : '' }}. Click to pick another.</span>
+            <span v-else class="muted small">A world's file, made with ⚙ → Export the world: its entries, lists, calendar and pictures, nothing else.</span>
+          </button>
+          <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="readWorldFile" />
         </div>
         <div class="start-mode" role="radiogroup" aria-label="Who are you">
           <label><input type="radio" :checked="worldMode === 'dm'" @change="modePicked = 'dm'" /> I'm the DM</label>

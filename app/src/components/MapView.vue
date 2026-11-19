@@ -293,7 +293,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
       <button title="Zoom out" @click="zoomButton(1 / 1.4)">－</button>
       <button title="Fit" @click="fit">⤢</button>
       <label class="toggle"><input v-model="showLabels" type="checkbox" /> Labels</label>
-      <button v-if="!banner && url" :class="{ primary: tool === 'measure' }" title="Measure a route: distance, travel time and arrival" @click="startMeasure">📏 Measure</button>
+      <button v-if="url && (!banner || scale)" :class="{ primary: tool === 'measure' }" title="Measure a route: distance, travel time and arrival" @click="startMeasure">📏 Measure</button>
       <button v-if="editable && url" :class="{ primary: tool === 'scale' }" :title="scale ? 'Scale: ' + scaleText + '. Click to set it again' : 'Set the map\'s scale from two points a known distance apart'" @click="startScale">{{ scale ? '⚖ Scale' : '⚖ Set scale' }}</button>
       <a v-if="!tall" :href="hrefMap(place.id)" class="small">Open large map</a>
     </div>
@@ -321,7 +321,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
       </div>
     </div>
 
-    <div v-if="!banner && (tool === 'measure' || routes.length)" class="card map-travel">
+    <!-- On the place's page (banner) the panel opens with Measure; on the map page it also lists the saved routes. -->
+    <div v-if="tool === 'measure' || (!banner && routes.length)" class="card map-travel">
       <template v-if="tool === 'measure'">
         <h4>Measure <span class="muted small">click the map or pins to add points</span></h4>
         <p v-if="!scale" class="muted small">This map has no scale yet: <template v-if="editable">set one with ⚖ Set scale.</template><template v-else>set one with ✎ Edit pins → ⚖ Set scale.</template></p>

@@ -110,7 +110,7 @@ A place with a map picture shows it with pins for the places in it (✎ Edit pin
 - **Scale:** in ✎ Edit pins, *⚖ Set scale*: click two points a known distance apart (the ends of the map's scale
   bar, or two towns) and type the distance in miles or feet, or the travel time between them ("2 days" at a
   pace or in a vehicle; it is turned into miles). Each map has its own.
-- **Measure:** *📏 Measure* on a map, then click points or pins to lay a route of several legs. It shows each leg's
+- **Measure:** *📏 Measure* on a map (also on the place's own page once its map has a scale), then click points or pins to lay a route of several legs. It shows each leg's
   length, the total, the travel time and the arrival date in the world calendar (setting out today). Pick a pace or
   vehicle: the 5e slow, normal and fast paces (18 / 24 / 30 miles in an 8-hour travel day) or a ship, galley,
   airship and the like, which travel around the clock. A leg can be marked difficult terrain (half speed).

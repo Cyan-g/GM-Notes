@@ -455,8 +455,8 @@ const siblings = computed(() => {
           <ul class="plain"><li v-for="p in carriedBy" :key="p.id"><EntryLink :id="p.id" icon /> <span class="muted small">× {{ p.fields.sheet!.inventory.filter(l => l.item === e!.id).reduce((n, l) => n + l.qty, 0) }}</span></li></ul>
         </div>
         <div v-if="mentions.length && !(e.type === 'pc' && playerMode)" class="card">
-          <h3>Mentioned in</h3>
-          <ul class="rel"><li v-for="m in mentions" :key="m.id"><EntryLink :id="m.id" icon /></li></ul>
+          <h3>Mentioned in <span class="muted small">{{ mentions.length }}</span></h3>
+          <ul class="rel mentions-list"><li v-for="m in mentions" :key="m.id"><EntryLink :id="m.id" icon /></li></ul>
         </div>
       </aside>
     </div>

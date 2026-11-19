@@ -33,7 +33,7 @@ export function describeEffect(f: GearEffect): string {
   const v = Number(f.value) || 0
   switch (f.on) {
     case 'ac': return `${signed(v)} AC`
-    case 'ability': return f.set ? `${ABILITY_SHORT[f.ability ?? ''] ?? '?'} ${v}` : `${signed(v)} ${ABILITY_SHORT[f.ability ?? ''] ?? '?'}`
+    case 'ability': return f.force ? `${ABILITY_SHORT[f.ability ?? ''] ?? '?'} becomes ${v}` : f.set ? `${ABILITY_SHORT[f.ability ?? ''] ?? '?'} ${v}` : `${signed(v)} ${ABILITY_SHORT[f.ability ?? ''] ?? '?'}`
     case 'saves': return `${signed(v)} to saving throws`
     case 'save': return `${signed(v)} to ${ABILITY_SHORT[f.ability ?? ''] ?? '?'} saves`
     case 'attack': return `${signed(v)} to hit`
@@ -65,8 +65,9 @@ export function activeGear(s: CharacterSheet | undefined): { item: Entry; effect
 }
 
 export interface GearTotals {
-  /** An ability score set to a value (the highest, if several), and what's added. */
+  /** An ability score raised to a value (the highest, if several), forced to one (the lowest), and what's added. */
   setAbility: Partial<Record<Ability, Part>>
+  forceAbility: Partial<Record<Ability, Part>>
   addAbility: Partial<Record<Ability, Part[]>>
   save: Partial<Record<Ability, Part[]>>
   saves: Part[]
@@ -89,7 +90,7 @@ export interface GearTotals {
 /** Everything the active gear adds up to. A weapon's attack and damage bonuses count for that weapon only. */
 export function gearTotals(s: CharacterSheet | undefined): GearTotals {
   const t: GearTotals = {
-    setAbility: {}, addAbility: {}, save: {}, saves: [], skill: {}, ac: [], speed: [], initiative: [], maxHp: [], spellAttack: [], spellDC: [],
+    setAbility: {}, forceAbility: {}, addAbility: {}, save: {}, saves: [], skill: {}, ac: [], speed: [], initiative: [], maxHp: [], spellAttack: [], spellDC: [],
     attackAll: [], damageAll: [], attackOf: {}, damageOf: {}, resistances: [], features: [],
   }
   for (const { item, effects } of activeGear(s)) {
@@ -101,7 +102,8 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
         case 'ac': t.ac.push(p); break
         case 'ability':
           if (!f.ability) break
-          if (f.set) { if (!t.setAbility[f.ability] || n > t.setAbility[f.ability]!.n) t.setAbility[f.ability] = p }
+          if (f.force) { if (!t.forceAbility[f.ability] || n < t.forceAbility[f.ability]!.n) t.forceAbility[f.ability] = p }
+          else if (f.set) { if (!t.setAbility[f.ability] || n > t.setAbility[f.ability]!.n) t.setAbility[f.ability] = p }
           else (t.addAbility[f.ability] ??= []).push(p)
           break
         case 'saves': t.saves.push(p); break
@@ -127,17 +129,18 @@ export const sum = (parts: Part[] | undefined) => (parts ?? []).reduce((n, p) =>
 export const breakdown = (base: string, parts: Part[] | undefined) =>
   parts?.length ? [base, ...parts.map(p => `${signed(p.n)} ${p.label}`)].join(' · ') : undefined
 
-/** An ability score with gear: set to a value if that's higher, then anything added. */
+/** An ability score with gear: forced to a value (a curse), or else raised to one if that's higher; then anything added. */
 export function scoreWith(s: CharacterSheet, a: Ability, t: GearTotals): number {
   const base = s.abilities[a] ?? 10
-  const set = t.setAbility[a]
-  return Math.max(base, set?.n ?? 0) + sum(t.addAbility[a])
+  const force = t.forceAbility[a], set = t.setAbility[a]
+  return (force ? force.n : Math.max(base, set?.n ?? 0)) + sum(t.addAbility[a])
 }
 /** Where a changed ability score comes from, for its tooltip. */
 export function scoreBreakdown(s: CharacterSheet, a: Ability, t: GearTotals): string | undefined {
-  const set = t.setAbility[a], add = t.addAbility[a]
-  if (!set && !add?.length) return undefined
+  const set = t.setAbility[a], force = t.forceAbility[a], add = t.addAbility[a]
+  if (!set && !force && !add?.length) return undefined
   const base = s.abilities[a] ?? 10
-  const start = set && set.n > base ? `${set.n} from ${set.label} (own score ${base})` : `${base} own score`
+  const start = force ? `${force.n} from ${force.label} (own score ${base})`
+    : set && set.n > base ? `${set.n} from ${set.label} (own score ${base})` : `${base} own score`
   return breakdown(start, add) ?? start
 }

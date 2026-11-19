@@ -65,13 +65,15 @@ export interface RecipeLine { item: Id; amount: number }
 export interface RankLine { title: string; renown?: number; station?: string }
 /**
  * One thing an item does to whoever wears, wields or attunes it (see gear.ts). `value` is added, or with `set` an
- * ability score is set to it (Gauntlets of Ogre Power: STR 19). `ability`, `skill`, `type` (a damage type, for
+ * ability score is raised to it (Gauntlets of Ogre Power: STR 19), or with `force` it becomes that score even when
+ * lower (a cursed ring: INT 6). `ability`, `skill`, `type` (a damage type, for
  * resistance) and `text` (a feature) say what it applies to.
  */
 export interface GearEffect {
   on: 'ac' | 'ability' | 'saves' | 'save' | 'attack' | 'damage' | 'spellAttack' | 'spellDC' | 'skill' | 'speed' | 'initiative' | 'maxHp' | 'resistance' | 'feature'
   value?: number
   set?: boolean
+  force?: boolean
   ability?: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
   skill?: string
   type?: string

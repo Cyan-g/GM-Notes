@@ -22,12 +22,15 @@ function put(i: number, patch: Partial<GearEffect>) {
   if (k?.needs !== 'skill') delete f.skill
   if (k?.needs !== 'type') delete f.type
   if (k?.needs !== 'text') delete f.text
-  if (!k?.canSet) delete f.set
+  if (!k?.canSet) { delete f.set; delete f.force }
   if (k?.noValue) delete f.value
   else if (f.value == null) f.value = f.set ? 19 : 1
   if (k?.needs === 'ability' && !f.ability) f.ability = 'str'
   if (k?.needs === 'skill' && !f.skill) f.skill = SKILLS[0].name
   model.value = l
+}
+function setMode(i: number, m: string) {
+  put(i, { set: m === 'set' || undefined, force: m === 'force' || undefined, value: m === 'add' ? 1 : m === 'set' ? 19 : 8 })
 }
 const add = () => (model.value = [...list.value, { on: 'ac', value: 1 }])
 const remove = (i: number) => { const l = [...list.value]; l.splice(i, 1); model.value = l.length ? l : undefined }
@@ -49,9 +52,10 @@ const remove = (i: number) => { const l = [...list.value]; l.splice(i, 1); model
         <option value="">—</option>
         <option v-for="o in damageTypes" :key="o.id" :value="o.id">{{ o.label }}</option>
       </select>
-      <select v-if="kindOf(f)?.canSet" :value="f.set ? 'set' : 'add'" aria-label="Add or set" @change="put(i, { set: ($event.target as HTMLSelectElement).value === 'set' || undefined, value: ($event.target as HTMLSelectElement).value === 'set' ? 19 : 1 })">
+      <select v-if="kindOf(f)?.canSet" :value="f.force ? 'force' : f.set ? 'set' : 'add'" aria-label="Add, raise to, or becomes" title="set to: raises a lower score (Gauntlets of Ogre Power); becomes: even when that's lower (a curse)" @change="setMode(i, ($event.target as HTMLSelectElement).value)">
         <option value="add">add</option>
         <option value="set">set to</option>
+        <option value="force">becomes</option>
       </select>
       <input v-if="!kindOf(f)?.noValue" type="number" class="effect-value" :value="f.value ?? ''" aria-label="Value" @change="put(i, { value: Number(($event.target as HTMLInputElement).value) || 0 })" />
       <input v-if="kindOf(f)?.needs === 'text'" class="effect-text" :value="f.text ?? ''" placeholder="e.g. Darkvision 60 ft" aria-label="Feature" @input="put(i, { text: ($event.target as HTMLInputElement).value })" />

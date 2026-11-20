@@ -34,10 +34,10 @@ const back = (a: ActiveTrait) => (a.trait.uses!.recharge === 'short' ? 'short re
           <button class="chip-btn" :disabled="ro || !left(a)" title="Use one" @click="use(a, 1)">−</button>
           <button class="chip-btn" :disabled="ro || left(a) >= max(a)" title="Get one back" @click="use(a, -1)">＋</button>
         </template>
-        <span v-flash="left(a)" class="muted small">{{ left(a) }}/{{ max(a) }} · {{ a.trait.uses!.recharge === 'short' ? 'S' : 'L' }}</span>
+        <span v-flash="left(a)" class="muted small">{{ left(a) }}/{{ max(a) }} · {{ a.trait.uses!.recharge === 'short' ? 'short rest' : 'long rest' }}</span>
       </span>
     </div>
-    <div v-for="c in charged" :key="'c' + c.i" class="cs-use" :class="{ wide: c.max > 4 }" :title="`${c.name}: charges${c.recharge ? `, regains ${c.recharge}` : ''}`">
+    <div v-for="c in charged" :key="'c' + c.i" class="cs-use" :title="`${c.name}: charges${c.recharge ? `, regains ${c.recharge}` : ''}`">
       <span class="cs-use-name">{{ c.name }}</span>
       <span class="sp-uses">
         <template v-if="c.max <= 10">

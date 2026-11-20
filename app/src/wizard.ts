@@ -11,7 +11,7 @@ import { CLASS_RULES, EPIC_BOON_LEVEL, SUBCLASS_LEVEL, rulesOf, type Kit, type K
 import { CLASS_DIE } from './model/classes'
 import { ruleSlots } from './slots'
 import { blankSheet, mod } from './sheet'
-import { choiceOpen, own, speciesTraits } from './species'
+import { choiceOpen, isClassOrigin, own, speciesTraits } from './species'
 import { entries, get } from './store'
 import { changed, createEntry } from './edit'
 
@@ -187,7 +187,7 @@ export function steps(d: Draft): Step[] {
   const s: Step[] = []
   s.push({ id: 'class', label: 'Class', open: [!d.cls && 'a class', !!d.cls && d.level >= SUBCLASS_LEVEL && !d.subclass && subclassesOf(d.cls).length ? 'a subclass' : ''].filter(Boolean) as string[] })
   s.push({ id: 'origin', label: 'Species & background', open: [!d.race && 'a species', d.race && subracesOf(d.race).length ? 'a subrace' : '', !d.background && backgrounds().length ? 'a background' : '',
-    ...speciesTraits(pc).filter(a => a.active && choiceOpen(a)).map(a => `${a.trait.name} (${a.race.name})`)].filter(Boolean) as string[] })
+    ...speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && choiceOpen(a)).map(a => `${a.trait.name} (${a.race.name})`)].filter(Boolean) as string[] })
   const unset = ABILITY_KEYS.filter(a => d.base[a] == null).length
   s.push({ id: 'scores', label: 'Ability scores', open: [
     unset ? `${unset} score${unset === 1 ? '' : 's'}` : '',
@@ -200,6 +200,8 @@ export function steps(d: Draft): Step[] {
     r?.toolChoice && d.tools.length < r.toolChoice.count ? `${r.toolChoice.count - d.tools.length} ${r.toolChoice.what}` : '',
     !r && d.cls && d.ownSaves.length < 2 ? 'two saving throws' : '',
   ].filter(Boolean) as string[] })
+  const classFeatures = speciesTraits(pc).filter(a => isClassOrigin(a.race) && a.active)
+  if (classFeatures.length) s.push({ id: 'features', label: 'Class features', open: classFeatures.filter(choiceOpen).map(a => a.trait.name) })
   if (featLevels(d).length) s.push({ id: 'feats', label: 'Feats', open: featLevels(d).flatMap(({ level }) => {
     const f = d.feats.find(x => x.level === level)
     if (!f?.feat) return [`a feat at level ${level}`]

@@ -54,8 +54,16 @@ A player character's page is its sheet for play; ✎ Edit builds it.
   rolls), starting equipment (an option of the class and the background's items or gold), spells (cantrips, prepared
   spells and a wizard's spellbook, counted by the rules), and name, looks and story. Steps can be taken in any order
   and say what's still open; the summary makes the character with sheet, inventory and spellbook filled in. The
-  twelve SRD classes bring their rules (`app/src/classRules.ts`); another class is filled in by hand. Class features
-  aren't added; write them on the sheet. *Make a blank one instead* skips the wizard.
+  twelve SRD classes bring their rules (`app/src/classRules.ts`); another class is filled in by hand. A *Class
+  features* step shows what the class and subclass give at that level and takes their choices. *Make a blank one
+  instead* skips the wizard.
+- **Class features:** a Class entry (Archive → Classes, one per class of the Classes list) and each subclass have
+  *Features*, edited like species traits, each from a level in that class. The sheet's **Class features** card shows
+  the ones the character has, folded to a line (the text a click away), with use pips (or − / ＋ for a pool such as Lay
+  on Hands), scaling values (Rage Damage, Sneak Attack, Martial Arts die), and choices: Fighting Style feats,
+  Expertise (which then counts double), weapons to master, options such as Metamagic or Eldritch Invocations, skills
+  and languages, with counts that grow by level. Effects (Fast Movement, Danger Sense, Primal Champion…) and
+  always-prepared spells (Life Domain, Fiend…) count like the species'. Later features are listed underneath.
 
 - **Built from:** classes (multiclassing, with subclasses), ability scores, proficiencies picked from the same lists
   items use, species, background, money, speed and features.
@@ -139,7 +147,8 @@ npm run seed       # rebuild the starting world from ../data (or a folder given 
   pages get).
 - **The starting world** (`app/src/seed/world.json`) holds the dropdown lists, a Gregorian calendar, and only what may
   be published: the SRD 5.2.1 spells and feats (`app/scripts/srd-5.2.1.json` where your world lacks them), species
-  (`srd-species.json`), backgrounds and their tools (`srd-backgrounds.json`), and Tool items with facts but no text.
+  (`srd-species.json`), backgrounds and their tools (`srd-backgrounds.json`), the twelve classes and their SRD subclasses with their
+  features (`srd-classes.json`, from the SRD PDF's text), and Tool items with facts but no text.
   Homebrew stays in your world.
 - **FAT32 / exFAT drives:** git may need `git config --global --add safe.directory <folder>`, and `npm run dist`
   builds on the local disk because the packager needs finer file times.
@@ -151,7 +160,7 @@ publishes it, which is where the apps look for updates. A tag uses the workflow 
 ## Credits
 
 - **Fonts:** Cinzel, EB Garamond, Cormorant Garamond, IM Fell English, Uncial Antiqua, MedievalSharp, Almendra, Alegreya, Crimson Pro, Lora and Atkinson Hyperlegible, each under the [SIL Open Font License 1.1](https://openfontlicense.org), from Google Fonts. They're in `app/src/fonts/`, each with its licence (OFL.txt), latin characters only.
-- **Spells, feats, species, backgrounds and class rules from the SRD:** this work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode. Those entries end with a *Source* line; the same credit is on the Data page.
+- **Spells, feats, species, backgrounds, classes and subclasses from the SRD:** this work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode. Those entries end with a *Source* line; the same credit is on the Data page.
 - **Class icons:** [game-icons.net](https://game-icons.net) by Lorc, Delapouite and the other game-icons.net artists, under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). The chosen icons (tinker, battle-axe, lyre, holy-symbol, oak-leaf, crossed-swords, fist, templar-shield, bow-arrow, cloak-dagger, magic-swirl, warlock-eye, spell-book) are in `app/src/icons/classes.ts`, taken from the `@iconify-json/game-icons` package. The same credit is on the Data page.
 - **Menu and page icons:** also [game-icons.net](https://game-icons.net), same artists and licence: world, sands-of-time, calendar, sword-clash, family-tree, enlightenment, magic-palm, level-three, cauldron, scroll-quill, herbs-bundle, round-bottom-flask, tied-scroll, broadsword, breastplate, toolbox, backpack, checklist; and for buttons and headings backward-time, rolling-dices, desk, round-star, checked-shield, skull-crossed-bones, plain-dagger, treasure-map, save, palette, measure-tape, scales, pin, coffee-cup, night-sleep, hazard-sign, cog, save-arrow, paper-arrow, share, cloud-download, upgrade, padlock, party-popper, crown, family-tree, linked-rings, mona-lisa, lightning-arc, house, world, moon. They're in `app/src/icons/ui.ts`. The calendar's moon phases are drawn by the app (`MoonPhase.vue`).
 - **Entry type icons:** also [game-icons.net](https://game-icons.net), same artists and licence: person, character, vertical-banner, position-marker, elf-ear, backpack, angel-wings, spiked-dragon-head, swap-bag, sparkles, laurels, scroll-unfurled, hourglass, rolling-dices, campfire, crossed-sabres, quill-ink, notebook. They're in `app/src/icons/types.ts`.

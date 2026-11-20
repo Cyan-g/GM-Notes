@@ -227,7 +227,21 @@ export const SCHEMA = [
       { key: 'summary', label: 'Description', kind: 'longtext' },
     ],
   },
-  { type: 'subclass', label: 'Subclass', plural: 'Subclasses', icon: '📜', fields: [{ key: 'class', label: 'Class', kind: 'select', options: CLASSES, list: 'class' }] },
+  {
+    // A class's features (species.ts applies them by the character's level in that class). `class` is the class it
+    // describes, from the Classes list; one entry per class.
+    type: 'class', label: 'Class', plural: 'Classes', icon: '⚔️', fields: [
+      { key: 'class', label: 'Class', kind: 'select', options: CLASSES, list: 'class' },
+      { key: 'speciesTraits', label: 'Features', kind: 'speciesTraits' },
+    ],
+  },
+  {
+    type: 'subclass', label: 'Subclass', plural: 'Subclasses', icon: '📜', fields: [
+      { key: 'class', label: 'Class', kind: 'select', options: CLASSES, list: 'class' },
+      // Its features, by the character's level in the class.
+      { key: 'speciesTraits', label: 'Features', kind: 'speciesTraits' },
+    ],
+  },
   {
     type: 'event', label: 'Event', plural: 'Events', icon: '⏳', fields: [
       { key: 'date', label: 'Date', kind: 'date' },

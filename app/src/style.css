@@ -1748,3 +1748,25 @@ button.live-tag { cursor: pointer; }
 .subrace-card { display: grid; gap: .3rem; padding: .5rem 0; border-top: 1px solid var(--line); }
 .subrace-card:first-of-type { border-top: 0; }
 .sr-head { display: flex; flex-wrap: wrap; gap: .2rem .6rem; align-items: baseline; }
+
+/* Class features on the sheet (SpeciesCard kind="class") and in the wizard */
+.sp-origin { margin: .8rem 0 .2rem; font-size: .95rem; }
+.sp-origin:first-of-type { margin-top: .2rem; }
+.sp-fold > summary { cursor: pointer; list-style: none; }
+.sp-fold > summary::-webkit-details-marker { display: none; }
+.sp-fold > summary::before { content: '▸'; color: var(--muted); font-size: 11px; margin-right: .35rem; }
+.sp-fold[open] > summary::before { content: '▾'; }
+.sp-fold .sp-text { margin: .3rem 0 .2rem 1rem; }
+.sp-scale { font-size: 12px; }
+.sp-later { margin: .4rem 0 0; }
+.sp-later > summary { cursor: pointer; }
+.sp-option { flex-basis: 100%; }
+.sp-option > summary { cursor: pointer; }
+.sp-option > .md-view, .sp-option > div { margin-left: 1rem; }
+.steps-input { width: 9rem !important; }
+.steps-label { width: 10rem !important; }
+.trait-md { margin: .2rem 0; }
+.trait-options-wrap > summary { cursor: pointer; }
+.wz-feature { padding: .4rem .6rem; border: 1px solid var(--line); border-radius: 8px; margin: .35rem 0; }
+.wz-feature.open { box-shadow: inset 3px 0 0 var(--accent); }
+.wz-feature summary { cursor: pointer; }

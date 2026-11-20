@@ -30,7 +30,8 @@ const COLS: Partial<Record<EntryType, { cols: string[]; facets?: string[]; sort?
   encounter: { cols: ['campaign', 'session', 'location'], facets: ['campaign'] },
   writing: { cols: ['writingType', 'category', 'author'], facets: ['writingType'] },
   note: { cols: ['category', 'campaign'] },
-  subclass: { cols: ['class'] },
+  class: { cols: ['class'] },
+  subclass: { cols: ['class'], facets: ['class'] },
 }
 const cfg = computed(() => COLS[props.type] ?? { cols: [] })
 const rows = computed(() => byType.value.get(props.type) ?? [])

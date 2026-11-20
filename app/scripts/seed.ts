@@ -5,7 +5,8 @@
 // year 1; worlds make their own in the calendar editor), the session colour of the timeline, and only what may be
 // published (the repository is public): spells and feats from the SRD (their text ends with the SRD source line), the
 // nine SRD species with their traits (scripts/srd-species.json), the four SRD backgrounds and the tools they name
-// (scripts/srd-backgrounds.json), and the Tool items without text (crafting needs them). Your
+// (scripts/srd-backgrounds.json), the twelve SRD classes and their SRD subclasses with their features
+// (scripts/srd-classes.json), and the Tool items without text (crafting needs them). Your
 // own homebrew and rules text from outside the SRD stay in your world only. DM-only text, pictures and attached files
 // are left out, and references to anything else become plain words.
 import { createRequire } from 'node:module'
@@ -23,7 +24,7 @@ const { WorldDb } = createRequire(import.meta.url)('../electron/db.cjs')
 const dataDir = resolve(process.argv[2] ?? resolve(here, '../../data'))
 const out = resolve(here, '../src/seed/world.json')
 
-const TYPES: EntryType[] = ['race', 'background', 'spell', 'feat']
+const TYPES: EntryType[] = ['race', 'background', 'class', 'subclass', 'spell', 'feat']
 const fromSrd = (e: Entry) => /System Reference Document/.test(`${e.body}\n${String(e.fields.summary ?? '')}`)
 const takes = (e: Entry) =>
   ((e.type === 'spell' || e.type === 'feat') && fromSrd(e))
@@ -100,7 +101,26 @@ const backgrounds: Entry[] = BG.backgrounds.map(b => ({
   },
   created: stamp, updated: stamp,
 } as Entry))
-const picked = [...chosen, ...species, ...tools, ...backgrounds].sort((a, b) => a.type.localeCompare(b.type) || a.id.localeCompare(b.id))
+
+// The twelve SRD classes and their SRD subclasses with their features (scripts/srd-classes.json); spells by name there.
+type ClassFile = { classes: { name: string; features: Trait[] }[]; subclasses: { name: string; class: string; body: string; features: Trait[] }[] }
+const CLS = JSON.parse(readFileSync(resolve(here, 'srd-classes.json'), 'utf8')) as ClassFile
+const featuresWithIds = (ts: Trait[]) => ts.map(t => {
+  const c = withIds(t)
+  return c.choice?.options ? { ...c, choice: { ...c.choice, options: c.choice.options.map(withIds) } } : c
+})
+const SOURCE = '*Source: System Reference Document 5.2.1 (CC BY 4.0).*'
+const classes: Entry[] = [
+  ...CLS.classes.map(c => ({
+    id: slug(c.name), type: 'class', name: c.name, aliases: [], tags: [], visibility: 'known', body: SOURCE,
+    fields: { class: c.name, speciesTraits: featuresWithIds(c.features) }, created: stamp, updated: stamp,
+  } as Entry)),
+  ...CLS.subclasses.map(c => ({
+    id: slug(c.name), type: 'subclass', name: c.name, aliases: [], tags: [], visibility: 'known', body: [c.body, SOURCE].join('\n\n'),
+    fields: { class: c.class, speciesTraits: featuresWithIds(c.features) }, created: stamp, updated: stamp,
+  } as Entry)),
+]
+const picked = [...chosen, ...species, ...tools, ...backgrounds, ...classes].sort((a, b) => a.type.localeCompare(b.type) || a.id.localeCompare(b.id))
 const ids = new Set(picked.map(e => e.id))
 
 const entries = picked.map(e => {

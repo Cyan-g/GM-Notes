@@ -8,7 +8,7 @@ import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from './model/schema'
 import { db, get, state, touch } from './store'
 import { breakdown, gearTotals, restItems, scoreWith, spellsOf, sum } from './gear'
 import { unmet } from './requirements'
-import { own, ownerOf, restSpecies, speciesGrants, speciesSkills, speciesSpeed } from './species'
+import { own, ownerOf, restSpecies, speciesExpertise, speciesGrants, speciesSkills, speciesSpeed } from './species'
 
 export type Ability = keyof Abilities
 export const ABILITIES: { key: Ability; label: string; short: string }[] = [
@@ -62,9 +62,9 @@ export function profsOf(s?: CharacterSheet, typedOnly = false): Proficiencies {
   }
   return p
 }
-/** Proficiency in a skill: 0, 1 (proficient: typed, or from the species) or 2 (expertise). */
+/** Proficiency in a skill: 0, 1 (proficient: typed, or from the species or a feature) or 2 (expertise: typed, or picked in a feature). */
 export const skillLevel = (s: CharacterSheet, name: string): number =>
-  Math.max(s.skills[name] ?? 0, speciesSkills(ownerOf(s), s).has(name) ? 1 : 0)
+  speciesExpertise(ownerOf(s), s).has(name) ? 2 : Math.max(s.skills[name] ?? 0, speciesSkills(ownerOf(s), s).has(name) ? 1 : 0)
 /** A sheet's stored proficiencies for changing. */
 export function profsToEdit(s: CharacterSheet): Proficiencies {
   const p = (s.proficiencies ??= blankProfs())

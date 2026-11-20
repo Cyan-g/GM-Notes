@@ -269,7 +269,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
         <p v-else class="muted small drop-hint">Drag spells here from Known spells to prepare them.</p>
       </section>
       <section v-if="granted.length || innate.length" class="card sbk-list sbk-items">
-        <h3>{{ !innate.length ? 'From items' : !granted.length ? 'From the species' : 'From items and the species' }} <span class="muted small">{{ granted.length + innate.length }}</span>
+        <h3>{{ !innate.length ? 'From items' : !granted.length ? 'From species and features' : 'From items, species and features' }} <span class="muted small">{{ granted.length + innate.length }}</span>
 
         </h3>
         <table class="grid">

@@ -13,7 +13,7 @@ import { SUBCLASS_LEVEL } from '../classRules'
 import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, abilityBonusText } from '../abilityBonus'
 import { DICE } from '../model/classes'
 import { SKILLS, mod, signed, currentPc, setCurrent } from '../sheet'
-import { choiceOpen, grantOptions, speciesGrants, speciesTraits, GRANT_KINDS, type ActiveTrait } from '../species'
+import { choiceOpen, grantOptions, isClassOrigin, scaleAt, setPicks as setTraitPicks, speciesGrants, speciesTraits, GRANT_KINDS, type ActiveTrait } from '../species'
 import { entries, formatMoney, get, listOptions, playerMode } from '../store'
 import { go, hrefEntry } from '../router'
 import { newBlankEntry } from '../ui'
@@ -23,6 +23,8 @@ import EntryLink from '../components/EntryLink.vue'
 import BonusPicker from '../components/BonusPicker.vue'
 import ProfChips from '../components/ProfChips.vue'
 import TraitChips from '../components/TraitChips.vue'
+import TraitChoicePicker from '../components/TraitChoicePicker.vue'
+import MarkdownView from '../components/MarkdownView.vue'
 
 const d = computed(() => wizard.d)
 const all = computed(() => steps(d.value))
@@ -49,7 +51,11 @@ const main = computed(() => mainRace(d.value.race))
 const subs = computed(() => subracesOf(main.value?.id))
 const bgList = computed(() => backgrounds())
 const pc = computed(() => draftPc(d.value))
-const choices = computed(() => speciesTraits(pc.value).filter(a => a.active && a.trait.choice))
+const choices = computed(() => speciesTraits(pc.value).filter(a => !isClassOrigin(a.race) && a.active && a.trait.choice))
+/** The class's and subclass's features at the chosen level, by where they come from. */
+const classFeatures = computed(() => speciesTraits(pc.value).filter(a => isClassOrigin(a.race) && a.active))
+const featureGroups = computed(() => [...new Map(classFeatures.value.map(a => [a.race.id, a.race])).values()].map(r => ({ r, list: classFeatures.value.filter(a => a.race.id === r.id) })))
+const pickFeature = (a: ActiveTrait, picks: string[]) => { const holder = { species: { ...wizard.d.species } } as Parameters<typeof setTraitPicks>[0]; setTraitPicks(holder, a.key, picks); wizard.d.species = holder.species! }
 function candidates(a: ActiveTrait) {
   const c = a.trait.choice!, opts = grantOptions(c.kind as TraitGrant['kind'])
   return c.among?.length ? c.among.map(id => opts.find(o => o.id === id) ?? { id, label: id }) : opts
@@ -326,6 +332,22 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
           </template>
           <h3>Languages</h3>
           <ProfChips :values="d.languages" :suggest="languages" :create="(x: string) => x" placeholder="Add a language…" @change="v => wizard.d.languages = v" />
+        </template>
+
+        <!-- class features -->
+        <template v-else-if="step.id === 'features'">
+          <p class="muted small">What the class{{ d.subclass ? ' and subclass give' : ' gives' }} at level {{ d.level }}; the sheet keeps them up to date as the character levels up. Make the choices here or later on the sheet.</p>
+          <template v-for="g in featureGroups" :key="g.r.id">
+            <h3><EntryLink :id="g.r.id" /></h3>
+            <div v-for="a in g.list" :key="a.key" class="wz-feature" :class="{ open: choiceOpen(a) }">
+              <details>
+                <summary><b>{{ a.trait.name }}</b> <span class="muted small">level {{ a.trait.level ?? 1 }}</span>
+                  <span v-if="scaleAt(a)" class="chip">{{ a.trait.scale!.label }} {{ scaleAt(a) }}</span></summary>
+                <MarkdownView v-if="a.trait.text" class="small" :source="a.trait.text" />
+              </details>
+              <TraitChoicePicker v-if="a.trait.choice" :a="a" @pick="p => pickFeature(a, p)" />
+            </div>
+          </template>
         </template>
 
         <!-- feats -->

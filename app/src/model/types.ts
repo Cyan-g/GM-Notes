@@ -12,7 +12,7 @@ export interface WorldDate {
 export type Visibility = 'secret' | 'known'
 
 export type EntryType =
-  | 'npc' | 'pc' | 'organization' | 'place' | 'race' | 'background' | 'deity' | 'creature'
+  | 'npc' | 'pc' | 'organization' | 'place' | 'race' | 'background' | 'class' | 'deity' | 'creature'
   | 'item' | 'spell' | 'feat' | 'subclass' | 'event' | 'campaign' | 'session' | 'encounter' | 'writing' | 'note'
 
 export interface Entry {
@@ -227,13 +227,29 @@ export interface TraitOption {
  * A choice the player makes on the sheet: `count` skills, languages or tools (only from `among`, if given), or one
  * of several `options` (a lineage, an ancestry), each with its own effects, grants and spells.
  */
-export interface TraitChoice { kind: 'skill' | 'language' | 'tool' | 'option'; count?: number; among?: string[]; options?: TraitOption[] }
+export interface TraitChoice {
+  kind: 'skill' | 'language' | 'tool' | 'option' | 'expertise' | 'feat' | 'mastery'
+  count?: number
+  /** The count from a character level on, replacing `count` ([[2, 2], [9, 4]]: two from level 2, four from 9). */
+  steps?: [number, number][]
+  among?: string[]
+  options?: TraitOption[]
+  /** For a feat choice: only feats of this kind ("Fighting Style"). */
+  category?: string
+}
+/** A value that grows with the level, shown with the trait ("Rage Damage +2", "Sneak Attack 3d6"). */
+export interface TraitScale { label: string; steps: [number, string][] }
 /** A species trait. `id` stays the same when traits are reordered, so a character's choices and uses stay with it. */
 export interface Trait extends TraitOption {
   /** From this character level on (default 1). */
   level?: number
-  /** Uses that come back on a rest: a number, or the proficiency bonus. */
-  uses?: { count: number | 'pb'; recharge: 'short' | 'long' }
+  /**
+   * Uses that come back on a rest: a number, the proficiency bonus, the level (of the class it comes from), or an
+   * ability modifier (at least 1); `times` multiplies it (Lay on Hands: 5 × level), `steps` gives the count by level.
+   * A long-rest use can give `shortBack` back on a short rest (Rage: one).
+   */
+  uses?: { count: number | 'pb' | 'level' | 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'; recharge: 'short' | 'long'; times?: number; steps?: [number, number][]; shortBack?: number }
+  scale?: TraitScale
   choice?: TraitChoice
 }
 /**

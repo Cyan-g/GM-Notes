@@ -62,7 +62,7 @@ const groups = computed(() => {
   const x = e.value
   if (!x || !def.value) return []
   if (x.type === 'item' || x.type === 'spell' || x.type === 'feat') return []
-  const big = ['statblock', 'recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes']
+  const big = ['statblock', 'recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes', 'speciesTraits']
   const out = new Map<string, { def: FieldDef; value: unknown }[]>()
   for (const f of def.value.fields) {
     if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'creature' && f.key === 'creatureType') || (x.type === 'session' && ['campaign', 'number', 'date', 'playedOn', 'players'].includes(f.key)) || f.key === 'parent' || f.key === 'map' || f.key === 'pins' || f.kind === 'mapData' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
@@ -75,7 +75,7 @@ const groups = computed(() => {
 const bigFields = computed(() => {
   const x = e.value
   if (!x || !def.value) return []
-  return def.value.fields.filter(f => ['recipe', 'stock', 'combatants', 'ranks'].includes(f.kind) && shown(f, x) && !empty(byKey(x.fields)[f.key]))
+  return def.value.fields.filter(f => ['recipe', 'stock', 'combatants', 'ranks', 'speciesTraits'].includes(f.kind) && shown(f, x) && !empty(byKey(x.fields)[f.key]))
 })
 /** The feats an entry grants (an organization's fighting styles and the like). */
 const grantedFeats = computed(() => (e.value ? (byType.value.get('feat') ?? []).filter(f => f.fields.source === e.value!.id).sort((a, b) => a.name.localeCompare(b.name)) : []))
@@ -180,7 +180,7 @@ const onMaps = computed(() => {
 const lead = computed(() => (e.value && !['place', 'item', 'spell', 'feat'].includes(e.value.type) ? describe(e.value, { parent: false }) : ''))
 
 /** The few facts that belong right under the name: affiliations, home, rulers, leaders. */
-const LEADER = /(leader|head|chief|duke|duchess|king|queen|abbess|abbot|master|captain|high priest|archbishop|matriarch|patriarch|lord|lady|commander|general|elder)/i
+const LEADER = /\b(leader|head|chief|duke|duchess|king|queen|abbess|abbot|master|captain|high priest|archbishop|matriarch|patriarch|lord|lady|commander|general|elder)\b/i
 const facts = computed(() => {
   const x = e.value
   if (!x) return []

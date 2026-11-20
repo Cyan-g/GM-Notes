@@ -8,6 +8,7 @@ import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from './model/schema'
 import { db, get, state, touch } from './store'
 import { breakdown, gearTotals, restItems, scoreWith, spellsOf, sum } from './gear'
 import { unmet } from './requirements'
+import { own, ownerOf, restSpecies, speciesGrants, speciesSkills, speciesSpeed } from './species'
 
 export type Ability = keyof Abilities
 export const ABILITIES: { key: Ability; label: string; short: string }[] = [
@@ -34,20 +35,36 @@ export const blankSheet = (): CharacterSheet => ({
 })
 /** A PC's sheet for reading, with anything never filled in at its default. */
 export const sheetOf = (pc: Entry): CharacterSheet | undefined =>
-  pc.fields.sheet ? { ...blankSheet(), ...(pc.fields.sheet) } : undefined
+  pc.fields.sheet ? own({ ...blankSheet(), ...(pc.fields.sheet) }, pc) : undefined
 /** A PC's stored sheet for changing: created, or completed, as needed. */
 export function sheetToEdit(pc: Entry): CharacterSheet {
   const s = (pc.fields.sheet ??= {} as CharacterSheet) as Partial<CharacterSheet>
   const blank = blankSheet() as unknown as Record<string, unknown>
   for (const k of ['abilities', 'saves', 'skills', 'inventory', 'features']) if ((s as Record<string, unknown>)[k] == null) (s as Record<string, unknown>)[k] = blank[k]
-  return s as CharacterSheet
+  return own(s as CharacterSheet, pc)
 }
 
 // ---------- proficiencies ----------
 
 export const blankProfs = (): Proficiencies => ({ armor: [], weapons: [], tools: [], languages: [] })
-/** A sheet's proficiencies for reading, with empty lists for anything never filled in. */
-export const profsOf = (s?: CharacterSheet): Proficiencies => ({ ...blankProfs(), ...s?.proficiencies })
+/**
+ * A sheet's proficiencies for reading, with empty lists for anything never filled in, plus what the character's
+ * species grants (not with `typedOnly`, for editing the typed ones).
+ */
+export function profsOf(s?: CharacterSheet, typedOnly = false): Proficiencies {
+  const p: Proficiencies = { ...blankProfs(), ...s?.proficiencies }
+  if (typedOnly) return p
+  const LIST = { armor: 'armor', weapon: 'weapons', tool: 'tools', language: 'languages' } as const
+  for (const g of speciesGrants(ownerOf(s), s)) {
+    if (g.kind === 'skill') continue
+    const k = LIST[g.kind]
+    if (!p[k].includes(g.id)) p[k] = [...p[k], g.id]
+  }
+  return p
+}
+/** Proficiency in a skill: 0, 1 (proficient: typed, or from the species) or 2 (expertise). */
+export const skillLevel = (s: CharacterSheet, name: string): number =>
+  Math.max(s.skills[name] ?? 0, speciesSkills(ownerOf(s), s).has(name) ? 1 : 0)
 /** A sheet's stored proficiencies for changing. */
 export function profsToEdit(s: CharacterSheet): Proficiencies {
   const p = (s.proficiencies ??= blankProfs())
@@ -170,18 +187,24 @@ export const saveBonus = (s: CharacterSheet, a: Ability, prof: number) => {
 export const skillBonus = (s: CharacterSheet, name: string, prof: number) => {
   const sk = SKILLS.find(x => x.name === name)!
   const t = gearTotals(s)
-  return mod(scoreWith(s, sk.ability, t)) + (s.skills[name] ?? 0) * prof + sum(t.skill[name])
+  return mod(scoreWith(s, sk.ability, t)) + skillLevel(s, name) * prof + sum(t.skill[name])
 }
 /** Initiative: DEX (with gear), the sheet's own bonus and any gear. */
 export const initiative = (s: CharacterSheet) => { const t = gearTotals(s); return mod(scoreWith(s, 'dex', t)) + (s.initBonus ?? 0) + sum(t.initiative) }
 /** Maximum HP with gear (a Belt of Dwarvenkind-style +n); undefined while none is set. */
 export const maxHpOf = (s: CharacterSheet) => (s.maxHp == null ? undefined : s.maxHp + sum(gearTotals(s).maxHp))
-/** Speed with gear: the number in the sheet's speed ("30 ft") plus any bonus; the text as typed when there's none. */
+/** The speed before gear: typed on the sheet, else the species' ("25 ft"), else nothing (30 ft is assumed). */
+export function baseSpeed(s: CharacterSheet): string | undefined {
+  if (s.speed) return s.speed
+  const n = speciesSpeed(ownerOf(s))
+  return n ? `${n} ft` : undefined
+}
+/** Speed with gear: the number in the base speed ("30 ft") plus any bonus; the text as typed when there's none. */
 export function speedOf(s: CharacterSheet): string | undefined {
-  const add = sum(gearTotals(s).speed)
-  if (!add) return s.speed
-  const m = String(s.speed ?? '30 ft').match(/(\d+)/)
-  return m ? String(s.speed ?? '30 ft').replace(m[1], String(Number(m[1]) + add)) : s.speed
+  const add = sum(gearTotals(s).speed), base = baseSpeed(s)
+  if (!add) return base
+  const m = String(base ?? '30 ft').match(/(\d+)/)
+  return m ? String(base ?? '30 ft').replace(m[1], String(Number(m[1]) + add)) : base
 }
 export const passivePerception = (s: CharacterSheet, prof: number) => 10 + skillBonus(s, 'Perception', prof)
 
@@ -328,6 +351,7 @@ export function longRest(pc: Entry) {
   delete s.tempHp
   restSlots(s.spellbook, 'long')
   restItems(s, 'long')
+  restSpecies(s, pc, 'long')
   let back = Math.max(1, Math.floor(totalLevel(pc) / 2))
   const m = { ...(s.hitDiceSpent ?? {}) }
   for (const p of hitDicePools(pc, s)) {

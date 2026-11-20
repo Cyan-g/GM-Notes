@@ -1,6 +1,6 @@
 // The loaded world plus lookups the pages need, and saving it (only what changed) with backups.
 import { reactive, computed, shallowRef } from 'vue'
-import type { ClassLine, Database, Entry, EntryType, GearEffect, Id, Relation, WorldDate } from './model/types'
+import type { ClassLine, Database, Entry, EntryType, GearEffect, Id, Relation, Trait, WorldDate } from './model/types'
 import type { Storage } from './storage/storage'
 import type { Backend, Changes } from './storage/backend'
 import { SCHEMA, RELATION_KINDS, MARTIAL_WEAPONS, SIMPLE_WEAPONS, byKey, type FieldDef } from './model/schema'
@@ -14,7 +14,7 @@ const PLAY_KEYS = ['tracker', 'spellbook', 'crafting', 'follow', 'playerNotes'] 
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
 /** The newest data version this build understands (the last step in upgrade()). Newer data opens read-only. */
-export const DATA_VERSION = 25
+export const DATA_VERSION = 26
 /** The oldest data version this build can still open; older data is refused instead of guessed at. */
 export const OLDEST_VERSION = 20
 /** What the database must allow: every entry type and relation kind the app knows. */
@@ -103,7 +103,39 @@ function upgrade(d: Database): boolean {
   if ((d.version ?? 1) < 23) { upgradeTo23(d); d.version = 23; changed = true }
   if ((d.version ?? 1) < 24) { upgradeTo24(d); d.version = 24; changed = true }
   if ((d.version ?? 1) < 25) { upgradeTo25(d); d.version = 25; changed = true }
+  if ((d.version ?? 1) < 26) { upgradeTo26(d); d.version = 26; changed = true }
   return changed
+}
+
+/**
+ * 26: a race's trait lines (plain text) became species traits (species.ts) with what they do. Each line becomes a
+ * trait, "Name: text" split at the colon; a sense with its range ("Darkvision 60 ft") and resistance to a damage
+ * type get their effect filled in. Everything else stays text for the DM to add effects to.
+ */
+function upgradeTo26(d: Database) {
+  const DAMAGE = ['Acid', 'Bludgeoning', 'Cold', 'Fire', 'Force', 'Lightning', 'Necrotic', 'Piercing', 'Poison', 'Psychic', 'Radiant', 'Slashing', 'Thunder']
+  const cap = (w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+  for (const e of Object.values(d.entries)) {
+    if (e.type !== 'race') continue
+    const f = e.fields as Record<string, unknown>
+    const lines = Array.isArray(f.traits) ? (f.traits as unknown[]).map(x => String(x).trim()).filter(Boolean) : []
+    delete f.traits
+    if (!lines.length || Array.isArray(f.speciesTraits)) continue
+    f.speciesTraits = lines.map((line, i): Trait => {
+      const m = line.match(/^([^:]{1,60}):\s*([\s\S]+)$/)
+      const t: Trait = { id: `t${i + 1}`, name: (m ? m[1] : line).trim() }
+      if (m) t.text = m[2].trim()
+      const effects: GearEffect[] = []
+      const sense = line.match(/\b(darkvision|blindsight|tremorsense|truesight)\b\D{0,15}(\d+)\s*(?:ft|feet|')/i)
+      if (sense) effects.push({ on: 'sense', sense: cap(sense[1]), value: Number(sense[2]) })
+      for (const r of line.matchAll(/resistan(?:ce|t)\s+(?:to\s+)?(\w+)(?:\s+damage)?/gi)) {
+        const type = DAMAGE.find(x => x.toLowerCase() === r[1].toLowerCase())
+        if (type && !effects.some(x => x.on === 'resistance' && x.type === type)) effects.push({ on: 'resistance', type })
+      }
+      if (effects.length) t.effects = effects
+      return t
+    })
+  }
 }
 
 /**

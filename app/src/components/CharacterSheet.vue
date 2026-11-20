@@ -16,7 +16,7 @@ import { changed } from '../edit'
 import { hrefTab } from '../router'
 import {
   ABILITIES, SKILLS, armorClass, attacks, blankSheet, canAttune, canEquip, castingAbility, initiative, levelOf, maxHpOf, mod,
-  passivePerception, profBonus, profsOf, profsToEdit, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, speedOf, longRest, type Ability,
+  passivePerception, profBonus, profsOf, profsToEdit, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, skillLevel, speedOf, baseSpeed, longRest, type Ability,
 } from '../sheet'
 import { advOf, breakdown, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../gear'
 import InventoryCard from './InventoryCard.vue'
@@ -25,6 +25,8 @@ import ProfChips from './ProfChips.vue'
 import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
 import PcPortrait from './PcPortrait.vue'
+import SpeciesCard from './SpeciesCard.vue'
+import { speciesEffects } from '../species'
 
 const props = defineProps<{ pc: Entry; build?: boolean }>()
 const ro = computed(() => !!state.readOnly)
@@ -40,6 +42,11 @@ const atks = computed(() => attacks(s.value, prof.value))
 const cast = computed(() => castingAbility(props.pc, s.value))
 // ---- what the active gear changes (gear.ts): the numbers below include it, a ✦ marks them, hovering says why ----
 const gt = computed(() => gearTotals(s.value))
+/** Senses, resistances, immunities and feature lines from gear; the species' are on the Species card. */
+const fromGear = computed(() => {
+  const sp = new Set(speciesEffects(props.pc, s.value).map(x => x.name)), mine = (x: { from: string }) => !sp.has(x.from)
+  return { senses: gt.value.senses.filter(mine), resistances: gt.value.resistances.filter(mine), immunities: gt.value.immunities.filter(mine), features: gt.value.features.filter(mine) }
+})
 const scoreOf = (a: Ability) => scoreWith(s.value, a, gt.value)
 const scoreTip = (a: Ability) => scoreBreakdown(s.value, a, gt.value)
 /** A total's tooltip: what it is without gear, then each item's part. */
@@ -110,7 +117,7 @@ const cycleSkill = (name: string) => build.value && edit(x => {
   if (!v) x.skills[name] = 1; else if (v === 1) x.skills[name] = 2; else delete x.skills[name]
 })
 const skillsOf = (a: Ability) => SKILLS.filter(sk => sk.ability === a)
-const skillMark = (name: string) => ({ 1: '●', 2: '◉' } as Record<number, string>)[s.value.skills[name] ?? 0] ?? '○'
+const skillMark = (name: string) => ({ 1: '●', 2: '◉' } as Record<number, string>)[(build.value ? s.value.skills[name] : skillLevel(s.value, name)) ?? 0] ?? '○'
 
 /** Damage or healing typed into the HP box: "-7" or "+5"; temp HP soaks damage first. */
 function hit(ev: Event) {
@@ -137,7 +144,8 @@ const shownLine = computed(() => (shown.value != null ? s.value.inventory[shown.
 const showItem = (id: string) => { const i = s.value.inventory.findIndex(l => l.item === id); if (i >= 0) shown.value = i }
 
 // ---- proficiencies: picked from the lists items use, so attacks, armor and the Workbench can check them ----
-const profs = computed(() => profsOf(s.value))
+// editing shows only the typed ones; the species' are added on the sheet itself
+const profs = computed(() => profsOf(s.value, build.value))
 // Clothing needs no proficiency, so it isn't offered.
 const armorTypes = computed(() => listOptions('item.armorType').filter(o => o.id !== 'Clothing'))
 const tools = computed(() => (byType.value.get('item') ?? []).filter(e => e.fields.kind === 'Tool').map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label)))
@@ -188,7 +196,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <div class="cs-stat"><span>Proficiency</span><b v-flash="prof">{{ signed(prof) }}</b></div>
       <div class="cs-stat cs-ac tip" :class="{ warn: ac.untrained.length }" :data-tip="ac.from + (ac.untrained.length ? ` — not proficient with ${ac.untrained.join(', ')}: disadvantage on STR and DEX rolls, no spellcasting` : '')"><span>Armor class<template v-if="ac.untrained.length"> <AppIcon ui="warning" /></template></span><b v-flash="ac.ac" :class="{ 'gear-mod': gt.ac.length }">{{ ac.ac }}</b>
         <input v-if="build" class="cs-mini" type="number" :value="s.acOverride ?? ''" placeholder="auto" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></div>
-      <label class="cs-stat" :class="{ tip: gt.speed.length }" :data-tip="breakdown(`${s.speed ?? '30 ft'} without gear`, gt.speed)"><span :class="{ 'gear-mod': gt.speed.length }">Speed</span><input v-flash="locked ? speedOf(s) : s.speed" :value="(locked ? speedOf(s) : s.speed) ?? ''" placeholder="30 ft" :disabled="locked" @change="edit(x => x.speed = text($event))" /></label>
+      <label class="cs-stat" :class="{ tip: gt.speed.length }" :data-tip="breakdown(`${baseSpeed(s) ?? '30 ft'} without gear`, gt.speed)"><span :class="{ 'gear-mod': gt.speed.length }">Speed</span><input v-flash="locked ? speedOf(s) : s.speed" :value="(locked ? speedOf(s) : s.speed) ?? ''" :placeholder="baseSpeed(s) ?? '30 ft'" :disabled="locked" @change="edit(x => x.speed = text($event))" /></label>
       <button v-if="!build" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" title="Inspiration" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>Inspiration</span><b><AppIcon ui="star" :class="{ off: !(s.inspiration) }" /></b></button>
     </div>
 
@@ -303,6 +311,9 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
     </div>
     <InventoryCard v-else :pc="pc" />
 
+    <!-- what the species gives: traits, uses, choices (species.ts) -->
+    <SpeciesCard v-if="!build" :pc="pc" />
+
     <!-- features and traits -->
     <section class="cs-features">
       <h4>Features &amp; traits <button v-if="build" class="link-btn" @click="addFeature">＋ Add</button></h4>
@@ -316,11 +327,11 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <dl v-else-if="s.features.length" class="cs-feature-list">
         <template v-for="(f, i) in s.features" :key="i"><dt>{{ f.name }}</dt><dd>{{ f.text }}</dd></template>
       </dl>
-      <dl v-if="!build && (gt.resistances.length || gt.features.length || gt.senses.length || gt.immunities.length)" class="cs-feature-list cs-gear-features">
-        <template v-for="(r, i) in gt.senses" :key="'s' + i"><dt>{{ r.sense }} {{ r.range }} ft</dt><dd class="muted">from {{ r.from }}</dd></template>
-        <template v-for="(r, i) in gt.resistances" :key="'r' + i"><dt>Resistance: {{ r.type.toLowerCase() }}</dt><dd class="muted">from {{ r.from }}</dd></template>
-        <template v-for="(r, i) in gt.immunities" :key="'i' + i"><dt><ConditionIcon :name="r.condition" /> Immune: {{ r.condition.toLowerCase() }}</dt><dd class="muted">from {{ r.from }}</dd></template>
-        <template v-for="(f, i) in gt.features" :key="'f' + i"><dt>{{ f.text }}</dt><dd class="muted">from {{ f.from }}</dd></template>
+      <dl v-if="!build && (fromGear.resistances.length || fromGear.features.length || fromGear.senses.length || fromGear.immunities.length)" class="cs-feature-list cs-gear-features">
+        <template v-for="(r, i) in fromGear.senses" :key="'s' + i"><dt>{{ r.sense }} {{ r.range }} ft</dt><dd class="muted">from {{ r.from }}</dd></template>
+        <template v-for="(r, i) in fromGear.resistances" :key="'r' + i"><dt>Resistance: {{ r.type.toLowerCase() }}</dt><dd class="muted">from {{ r.from }}</dd></template>
+        <template v-for="(r, i) in fromGear.immunities" :key="'i' + i"><dt><ConditionIcon :name="r.condition" /> Immune: {{ r.condition.toLowerCase() }}</dt><dd class="muted">from {{ r.from }}</dd></template>
+        <template v-for="(f, i) in fromGear.features" :key="'f' + i"><dt>{{ f.text }}</dt><dd class="muted">from {{ f.from }}</dd></template>
       </dl>
       <p v-if="!s.features.length" class="muted small">Class features, racial traits, feats<template v-if="!build && !ro">: add them with ✎ Edit</template>.</p>
     </section>

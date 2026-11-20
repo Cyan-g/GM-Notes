@@ -4,6 +4,8 @@
 import type { Abilities, CharacterSheet, Entry, GearEffect, Id, InventoryLine, ItemSpell } from './model/types'
 import { get } from './store'
 import { isHeavyStrength, requirementsOf } from './requirements'
+import { ownerOf, speciesEffects } from './species'
+import { totalLevel } from './model/classes'
 
 type Ability = keyof Abilities
 /** One contribution to a number: what it comes from and how much. */
@@ -28,6 +30,7 @@ export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: Effect
   { on: 'speed', label: 'Speed (ft)' },
   { on: 'initiative', label: 'Initiative' },
   { on: 'maxHp', label: 'Maximum HP' },
+  { on: 'maxHpLevel', label: 'Max HP per level' },
   { on: 'resistance', label: 'Resistance', needs: ['type'], noValue: true },
   { on: 'immunity', label: 'Condition immunity', needs: ['condition'], noValue: true },
   { on: 'sense', label: 'Sense (ft)', needs: ['sense'] },
@@ -54,6 +57,7 @@ export function describeEffect(f: GearEffect): string {
     case 'speed': return `${signed(v)} ft speed`
     case 'initiative': return `${signed(v)} initiative`
     case 'maxHp': return `${signed(v)} max HP`
+    case 'maxHpLevel': return `${signed(v)} max HP per level`
     case 'resistance': return `Resistance: ${(f.type ?? '').toLowerCase()}`
     case 'skillAdv': return `${MODE[f.mode ?? 'adv']} on ${f.skill ?? 'a skill'}`
     case 'saveAdv': return `${MODE[f.mode ?? 'adv']} on ${ABILITY_SHORT[f.ability ?? ''] ?? '?'} saves${f.note ? ' ' + f.note : ''}`
@@ -171,18 +175,26 @@ export interface GearTotals {
   immunities: { condition: string; from: string }[]
 }
 
-/** Everything the active gear adds up to. A weapon's attack and damage bonuses count for that weapon only. */
+/**
+ * Everything the active gear and the character's species traits (species.ts) add up to. A weapon's attack and damage
+ * bonuses count for that weapon only.
+ */
 export function gearTotals(s: CharacterSheet | undefined): GearTotals {
   const t: GearTotals = {
     setAbility: {}, forceAbility: {}, addAbility: {}, save: {}, saves: [], skill: {}, ac: [], speed: [], initiative: [], maxHp: [], spellAttack: [], spellDC: [],
     attackAll: [], damageAll: [], attackOf: {}, damageOf: {}, resistances: [], features: [],
     skillAdv: {}, saveAdv: {}, extraOf: {}, extraAll: [], senses: [], immunities: [],
   }
-  for (const { item, effects } of activeGear(s)) {
-    const isWeapon = item.fields.kind === 'Weapon'
+  const pc = ownerOf(s)
+  const level = pc ? totalLevel(pc) : 1
+  const sources = [
+    ...activeGear(s).map(({ item, effects }) => ({ item, name: item.name, isWeapon: item.fields.kind === 'Weapon', effects })),
+    ...speciesEffects(pc, s).map(x => ({ item: { id: '' } as Entry, name: x.name, isWeapon: false, effects: x.effects })),
+  ]
+  for (const { item, name, isWeapon, effects } of sources) {
     for (const f of effects) {
       const n = Number(f.value) || 0
-      const p = { label: item.name, n }
+      const p = { label: name, n }
       switch (f.on) {
         case 'ac': t.ac.push(p); break
         case 'ability':
@@ -201,18 +213,25 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
         case 'speed': t.speed.push(p); break
         case 'initiative': t.initiative.push(p); break
         case 'maxHp': t.maxHp.push(p); break
-        case 'resistance': if (f.type) t.resistances.push({ type: f.type, from: item.name }); break
-        case 'feature': if (f.text?.trim()) t.features.push({ text: f.text.trim(), from: item.name }); break
-        case 'skillAdv': if (f.skill) (t.skillAdv[f.skill] ??= []).push({ mode: f.mode ?? 'adv', from: item.name }); break
-        case 'saveAdv': if (f.ability) (t.saveAdv[f.ability] ??= []).push({ mode: f.mode ?? 'adv', note: f.note, from: item.name }); break
+        case 'maxHpLevel': t.maxHp.push({ label: `${name} (${n} × level ${level})`, n: n * level }); break
+        case 'resistance': if (f.type) t.resistances.push({ type: f.type, from: name }); break
+        case 'feature': if (f.text?.trim()) t.features.push({ text: f.text.trim(), from: name }); break
+        case 'skillAdv': if (f.skill) (t.skillAdv[f.skill] ??= []).push({ mode: f.mode ?? 'adv', from: name }); break
+        case 'saveAdv': if (f.ability) (t.saveAdv[f.ability] ??= []).push({ mode: f.mode ?? 'adv', note: f.note, from: name }); break
         case 'extraDamage': {
           if (!f.dice?.trim()) break
-          const x = { dice: f.dice.trim(), type: f.type, proficient: f.proficient, from: item.name }
+          const x = { dice: f.dice.trim(), type: f.type, proficient: f.proficient, from: name }
           if (isWeapon) (t.extraOf[item.id] ??= []).push(x); else t.extraAll.push(x)
           break
         }
-        case 'sense': t.senses.push({ sense: f.sense ?? 'Darkvision', range: n, from: item.name }); break
-        case 'immunity': if (f.condition) t.immunities.push({ condition: f.condition, from: item.name }); break
+        case 'sense': {
+          // the same sense twice (Darkvision 60 ft, then 120 ft from a lineage): the longer range counts
+          const sense = f.sense ?? 'Darkvision', had = t.senses.find(x => x.sense === sense)
+          if (!had) t.senses.push({ sense, range: n, from: name })
+          else if (n > had.range) Object.assign(had, { range: n, from: name })
+          break
+        }
+        case 'immunity': if (f.condition) t.immunities.push({ condition: f.condition, from: name }); break
       }
     }
   }

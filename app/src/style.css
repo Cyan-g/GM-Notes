@@ -1631,3 +1631,34 @@ button.live-tag { cursor: pointer; }
   100% { box-shadow: 0 0 0 2px transparent, 0 0 14px 3px transparent; text-shadow: 0 0 8px transparent; }
 }
 @media (prefers-reduced-motion: reduce) { .flash, .flash-up, .flash-down { animation-duration: .8s; } }
+
+/* species traits (species.ts): the Species card on the sheet, the list on a race's page, the editor */
+.species-card .sp-trait { padding: .5rem 0; border-top: 1px solid var(--line); }
+.species-card .sp-trait:first-of-type { border-top: 0; }
+.species-card .sp-trait.dim { opacity: .55; }
+.species-card .sp-trait.sp-pending { box-shadow: inset 3px 0 0 var(--accent); padding-left: .7rem; }
+.sp-head { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+.sp-uses { margin-left: auto; display: inline-flex; align-items: center; gap: .25rem; }
+.sp-trait > p.md { margin: .2rem 0; }
+.sp-choice { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .35rem; }
+.sp-choice select { width: auto; }
+.sp-open { margin-left: .5rem; color: var(--accent); font: 600 12px var(--sans); text-transform: none; letter-spacing: 0; }
+.trait-chips { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .25rem; }
+.trait-list dt { font-weight: 600; margin-top: .55rem; }
+.trait-list dd { margin: .1rem 0 .2rem; }
+.trait-list .trait-choice { display: block; margin-top: .2rem; }
+.trait-options { margin: .2rem 0; padding-left: 1.1rem; }
+.traits-input { display: flex; flex-direction: column; gap: .5rem; align-items: flex-start; }
+.trait-card { align-self: stretch; border: 1px solid var(--line); border-radius: 8px; padding: .45rem .75rem; background: var(--panel-2); }
+.trait-card > summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.trait-card > summary .trait-chips { margin-top: 0; }
+.trait-fields { display: grid; gap: .45rem; margin: .55rem 0; }
+.trait-fields > label { display: flex; flex-direction: column; gap: .15rem; }
+.trait-fields > label > span, .trait-label { font-size: 12px; color: var(--muted); }
+.trait-part { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: .5rem; align-items: start; }
+.trait-row { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: .35rem 0; }
+.trait-row select { width: auto; }
+.trait-actions { justify-content: flex-end; border-top: 1px solid var(--line); padding-top: .35rem; }
+.trait-options-edit { margin: .3rem 0 .3rem .5rem; }
+.trait-option-card { border-left: 3px solid var(--line); padding-left: .7rem; margin: .45rem 0; }
+.trait-among .seg { margin-top: .3rem; }

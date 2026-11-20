@@ -1,7 +1,8 @@
 // Every place an entry points at another entry, in one walk: ref and refs fields, recipe and stock lines, map pins,
-// encounter lines, a character sheet's inventory, spellbook, recipes and tools, and [[links]] in the text.
+// encounter lines, a character sheet's inventory, spellbook, recipes and tools, an item's spells, a species trait's
+// spells and tools, and [[links]] in the text.
 // Sharing uses it both to follow what an entry needs and to rewrite the ids when it lands in another world.
-import type { CharacterSheet, Entry, Id } from './types'
+import type { CharacterSheet, Entry, Id, ItemSpell, Trait, TraitOption } from './types'
 import { TYPES } from './schema'
 
 /** The id to use instead, or null to drop the reference. */
@@ -67,6 +68,31 @@ export function mapRefs(e: Entry, to: RefMap, word: (id: Id) => string = id => i
         break
       }
       case 'sheet': mapSheet(v as CharacterSheet, to, word); break
+      case 'itemSpells': {
+        if (!Array.isArray(v)) break
+        const l = (v as ItemSpell[]).flatMap(x => { const n = to(x.spell); return n == null ? [] : [{ ...x, spell: n }] })
+        if (l.length < v.length) cut.add(def.key)
+        f[def.key] = l
+        break
+      }
+      case 'speciesTraits': {
+        if (!Array.isArray(v)) break
+        let lost = false
+        const part = <T extends TraitOption>(t: T): T => {
+          const spells = t.spells?.flatMap(x => { const n = to(x.spell); return n == null ? [] : [{ ...x, spell: n }] })
+          const grants = t.grants?.flatMap(g => { if (g.kind !== 'tool') return [g]; const n = to(g.id); return n == null ? [] : [{ ...g, id: n }] })
+          if ((spells?.length ?? 0) < (t.spells?.length ?? 0) || (grants?.length ?? 0) < (t.grants?.length ?? 0)) lost = true
+          return { ...t, ...(t.spells ? { spells } : {}), ...(t.grants ? { grants } : {}) }
+        }
+        f[def.key] = (v as Trait[]).map(t => {
+          const x = part(t)
+          if (x.choice?.options) x.choice = { ...x.choice, options: x.choice.options.map(part) }
+          if (x.choice?.kind === 'tool' && x.choice.among) x.choice = { ...x.choice, among: x.choice.among.flatMap(id => { const n = to(id); return n == null ? [] : [n] }) }
+          return x
+        })
+        if (lost) cut.add(def.key)
+        break
+      }
       case 'classes': {
         if (!Array.isArray(v)) break
         f[def.key] = (v as { subclass?: Id }[]).map(l => {

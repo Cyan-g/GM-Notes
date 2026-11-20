@@ -88,6 +88,18 @@ A player character's page is its character sheet for play: HP, hit dice, inspira
   for that weapon only. Numbers changed by gear get a ✦; hovering shows where they come from ("16 Chain mail · +1 Ring
   of Protection"), and *Equipped* lists the active gear with what each item adds. Gear resistances and features show
   under *Features & traits*. (Data version 25 turned the old free-text Bonus field into effects.)
+- **Species traits:** a race's *Traits* (set up on its ✎ Edit page) carry what the species gives a character: text,
+  the same effects as gear (darkvision, resistances, advantage on saves, speed, *Max HP per level* for Dwarven
+  Toughness…), proficiencies and languages it grants, spells (at will, once per short or long rest, or always
+  prepared, each from a character level on), uses that come back on a rest (a number or the proficiency bonus), a
+  starting level, and a choice for the player: pick skills, languages or tools (any, or only from a list), or one of
+  several options such as an elven lineage or a draconic ancestry, each with its own effects, grants and spells. A
+  subrace has its main race's traits too, and the race's own *Languages* count as known. On the character's sheet the
+  *Species* card lists the traits, their open choices (picked there and kept with the character) and use pips;
+  effects, skills, proficiencies, languages and the species' speed (when none is typed) go into the sheet's numbers
+  with the trait named on hover; the spells are in the Spellbook beside those from items; a long rest gives back
+  every use, a short rest the short-rest ones. Racial ability score increases are not added: the scores stay as typed.
+  (Data version 26 turned the old one-line traits into traits, "Name: text", with the sense or resistance they name.)
 - **Requirements:** an item's *Requirements* (on its Edit page) name minimum ability scores, classes (or any
   spellcaster), races (a subrace counts) and skill proficiencies, plus a note that isn't checked. A character who
   doesn't meet them can't equip the item, or attune to it if it needs attunement: the button is greyed out and says
@@ -251,7 +263,7 @@ npm run build      # type-checks and builds the pages into dist/ (what the deskt
 A new world that starts with D&D 5e gets a copy of `app/src/seed/world.json`, which ships inside the app (an empty world doesn't use it). It holds:
 - every dropdown list;
 - the standard calendar: Gregorian months and leap day, the real moon, BC and AD, today 1 January of year 1, and the sessions' timeline colour. It's not taken from your world: a world makes its own on the Calendar page (*⚙ Edit calendar*), and a player gets yours by importing your world;
-- the 339 spells and 17 feats of the SRD 5.2.1 (CC BY 4.0), the SRD species (name, size, speed and traits, no text) and the Tool items (no text), without DM-only text or pictures. Links to anything else become plain words. Only what may be published goes in: homebrew and rules text from outside the SRD stay in your world.
+- the 339 spells and 17 feats of the SRD 5.2.1 (CC BY 4.0), the nine SRD species with their traits (`app/scripts/srd-species.json`: effects, choices such as the elven lineages and draconic ancestries, spells and uses) and the Tool items (no text), without DM-only text or pictures. Links to anything else become plain words. Only what may be published goes in: homebrew and rules text from outside the SRD stay in your world.
 
 `npm run seed` rebuilds it from your world (`../data`, or a folder given after the command), taking each SRD spell and feat from your world when it carries the SRD source line (so your fixes, e.g. a spell's type, come along) and from `app/scripts/srd-5.2.1.json` otherwise; commit it and the next build ships it. The seed records its data version, so after an upgrade step a new world from an older seed is brought up to date like any older data. Rebuilding it now and then keeps it current.
 

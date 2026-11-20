@@ -1,12 +1,12 @@
 // Describes every entry type: its label, fields and dropdown options.
 // Forms and pages are generated from this, so adding a field here is enough.
 import type {
-  Abilities, CharacterSheet, ClassLine, Copper, GearEffect, ItemSpell, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
+  Abilities, CharacterSheet, ClassLine, Copper, GearEffect, ItemSpell, Trait, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
 } from './types'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
-  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData'
+  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData' | 'speciesTraits'
 
 export interface FieldDef {
   key: string
@@ -125,7 +125,8 @@ export const SCHEMA = [
       { key: 'speed', label: 'Speed', kind: 'text' },
       { key: 'abilityIncrease', label: 'Ability scores', kind: 'text' },
       { key: 'languages', label: 'Languages', kind: 'list' },
-      { key: 'traits', label: 'Traits', kind: 'list' },
+      // What the species gives a character (species.ts): effects, proficiencies, spells, uses, choices.
+      { key: 'speciesTraits', label: 'Traits', kind: 'speciesTraits' },
     ],
   },
   {
@@ -270,6 +271,7 @@ export interface KindValue {
   money: Copper; weight: number; ref: Id; refs: Id[]; date: WorldDate
   recipe: RecipeLine[]; stock: StockLine[]; statblock: Statblock; abilities: Abilities
   combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]; effects: GearEffect[]; itemSpells: ItemSpell[]; requires: Requirements; mapData: MapScale | MapRoute[]
+  speciesTraits: Trait[]
 }
 type Defs = (typeof SCHEMA)[number]['fields'][number]
 /** A field key used by any type. */

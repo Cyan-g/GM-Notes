@@ -72,7 +72,7 @@ export interface RankLine { title: string; renown?: number; station?: string }
  * `condition`: a condition it makes the wearer immune to.
  */
 export interface GearEffect {
-  on: 'ac' | 'ability' | 'saves' | 'save' | 'attack' | 'damage' | 'spellAttack' | 'spellDC' | 'skill' | 'speed' | 'initiative' | 'maxHp' | 'resistance' | 'feature'
+  on: 'ac' | 'ability' | 'saves' | 'save' | 'attack' | 'damage' | 'spellAttack' | 'spellDC' | 'skill' | 'speed' | 'initiative' | 'maxHp' | 'maxHpLevel' | 'resistance' | 'feature'
     | 'skillAdv' | 'saveAdv' | 'extraDamage' | 'sense' | 'immunity'
   value?: number
   set?: boolean
@@ -169,6 +169,46 @@ export interface CharacterSheet {
   spellbook?: Spellbook
   /** Known recipes for the Workbench; the tools are in the proficiencies, the ingredients in the inventory. */
   crafting?: { known: Id[] }
+  /** What the player chose in their species' traits and the uses spent (species.ts), by trait key. */
+  species?: SpeciesState
+}
+/** A character's species choices and spent uses. Keys are "<race id>.<trait id>" (spells: plus ".s<n>"). */
+export interface SpeciesState {
+  /** The picks of a trait's choice: skills, language or tool ids, or the id of the chosen option. */
+  picks?: Record<string, string[]>
+  /** Uses spent since the last rest. */
+  used?: Record<string, number>
+  /** Once-per-rest spells cast since the last rest. */
+  spellsUsed?: string[]
+}
+
+// ---------- species traits (race entries' speciesTraits; species.ts) ----------
+
+/** A proficiency or language a trait grants: a skill name, or an option id / Tool item id as in Proficiencies. */
+export interface TraitGrant { kind: 'skill' | 'armor' | 'weapon' | 'tool' | 'language'; id: string }
+/** A spell a trait gives: from character level `from` (default 1), at will, once per short or long rest, or always prepared. */
+export interface TraitSpell { spell: Id; how: 'atWill' | 'short' | 'long' | 'prepared'; from?: number }
+/** What a trait (or one of a choice's options) does. */
+export interface TraitOption {
+  id: string
+  name: string
+  text?: string
+  effects?: GearEffect[]
+  grants?: TraitGrant[]
+  spells?: TraitSpell[]
+}
+/**
+ * A choice the player makes on the sheet: `count` skills, languages or tools (only from `among`, if given), or one
+ * of several `options` (a lineage, an ancestry), each with its own effects, grants and spells.
+ */
+export interface TraitChoice { kind: 'skill' | 'language' | 'tool' | 'option'; count?: number; among?: string[]; options?: TraitOption[] }
+/** A species trait. `id` stays the same when traits are reordered, so a character's choices and uses stay with it. */
+export interface Trait extends TraitOption {
+  /** From this character level on (default 1). */
+  level?: number
+  /** Uses that come back on a rest: a number, or the proficiency bonus. */
+  uses?: { count: number | 'pb'; recharge: 'short' | 'long' }
+  choice?: TraitChoice
 }
 /**
  * What a character is proficient with, by reference: option ids from the lists items use (armor types, weapon

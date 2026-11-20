@@ -1742,7 +1742,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a strip of white cloth",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Bard",
      "Cleric",
@@ -1755,7 +1755,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "alter-self",
@@ -1772,7 +1772,7 @@
     "concentration": true,
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Sorcerer",
      "Wizard"
@@ -1782,7 +1782,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "animal-friendship",
@@ -1857,7 +1857,7 @@
     "duration": "24 hours",
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Druid"
     ],
@@ -1866,7 +1866,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "animate-dead",
@@ -1916,12 +1916,12 @@
      "Sorcerer",
      "Wizard"
     ],
-    "summary": "Objects animate at your command. Choose a number of nonmagical objects within range that aren’t being worn or carried, aren’t fixed to a surface, and aren’t Gargantuan. The maximum number of objects is equal to your spellcasting ability modifier; for this number, a Medium or smaller target counts as one object, a Large target counts as two, and a Huge target counts as three.\n\nEach target animates, sprouts legs, and becomes a Construct that uses the Animated Object stat block; this creature is under your control until the spell ends or until it is reduced to 0 Hit Points. Each creature you make with this spell is an ally to you and your allies. In combat, it shares your Initiative count and takes its turn immediately after yours.\n\nUntil the spell ends, you can take a Bonus Action to mentally command any creature you made with this spell if the creature is within 500 feet of you (if you control multiple creatures, you can command any of them at the same time, issuing the same command to each one). If you issue no commands, the creature takes the Dodge action and moves only to avoid harm. When the creature drops to 0 Hit Points, it reverts to its object form, and any remaining damage carries over to that form.\n\n**Using a Higher-Level Spell Slot.** The creature’s Slam damage increases by 1d4 (Medium or smaller), 1d6 (Large), or 1d12 (Huge) for each spell slot level above 5.\n\n*The Animated Object stat block is in the SRD (\"Animate Objects\").*\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "Objects animate at your command. Choose a number of nonmagical objects within range that aren’t being worn or carried, aren’t fixed to a surface, and aren’t Gargantuan. The maximum number of objects is equal to your spellcasting ability modifier; for this number, a Medium or smaller target counts as one object, a Large target counts as two, and a Huge target counts as three.\n\nEach target animates, sprouts legs, and becomes a Construct that uses the Animated Object stat block; this creature is under your control until the spell ends or until it is reduced to 0 Hit Points. Each creature you make with this spell is an ally to you and your allies. In combat, it shares your Initiative count and takes its turn immediately after yours.\n\nUntil the spell ends, you can take a Bonus Action to mentally command any creature you made with this spell if the creature is within 500 feet of you (if you control multiple creatures, you can command any of them at the same time, issuing the same command to each one). If you issue no commands, the creature takes the Dodge action and moves only to avoid harm. When the creature drops to 0 Hit Points, it reverts to its object form, and any remaining damage carries over to that form.\n\n**Using a Higher-Level Spell Slot.** The creature’s Slam damage increases by 1d4 (Medium or smaller), 1d6 (Large), or 1d12 (Huge) for each spell slot level above 5.\n\n**Animated Object**  \n*Huge or Smaller Construct, Unaligned*\n\n**AC** 15 · **HP** 10 (Medium or smaller), 20 (Large), 40 (Huge) · **Speed** 30 ft.\n\n| Str | Dex | Con | Int | Wis | Cha |\n|---|---|---|---|---|---|\n| 16 (+3) | 10 (+0) | 10 (+0) | 3 (−4) | 3 (−4) | 1 (−5) |\n\n**Immunities** Poison, Psychic; Charmed, Exhaustion, Frightened, Paralyzed, Poisoned  \n**Senses** Blindsight 30 ft.; Passive Perception 6  \n**Languages** Understands the languages you know  \n**CR** None (XP 0; PB equals your Proficiency Bonus)  \n\n***Actions***\n\n***Slam.*** Melee Attack Roll: Bonus equals your spell attack modifier, reach 5 ft. Hit: Force damage equal to 1d4 + 3 (Medium or smaller), 2d6 + 3 + your spellcasting ability modifier (Large), or 2d12 + 3 + your spellcasting ability modifier (Huge).\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.252Z"
   },
   {
    "id": "antilife-shell",
@@ -1938,7 +1938,7 @@
     "concentration": true,
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Control",
     "classes": [
      "Druid"
     ],
@@ -1947,7 +1947,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "antimagic-field",
@@ -1965,7 +1965,7 @@
     "verbal": true,
     "somatic": true,
     "material": "iron filings",
-    "spellType": "Utility",
+    "spellType": "Control",
     "classes": [
      "Cleric",
      "Wizard"
@@ -1975,7 +1975,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "antipathy-sympathy",
@@ -2212,7 +2212,7 @@
     "duration": "up to 10 minutes",
     "concentration": true,
     "verbal": true,
-    "spellType": "Utility",
+    "spellType": "Healing",
     "classes": [
      "Cleric",
      "Paladin"
@@ -2222,7 +2222,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "awaken",
@@ -2328,7 +2328,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a handful of bark",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Druid",
      "Ranger"
@@ -2338,7 +2338,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "beacon-of-hope",
@@ -2355,8 +2355,7 @@
     "concentration": true,
     "verbal": true,
     "somatic": true,
-    "spellType": "Saving throw",
-    "savingThrow": "Wisdom",
+    "spellType": "Buff",
     "classes": [
      "Cleric"
     ],
@@ -2365,7 +2364,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "befuddlement",
@@ -2523,7 +2522,7 @@
     "duration": "1 minute",
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Sorcerer",
      "Wizard"
@@ -2533,7 +2532,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "blur",
@@ -2549,7 +2548,7 @@
     "duration": "up to 1 minute",
     "concentration": true,
     "verbal": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Sorcerer",
      "Wizard"
@@ -2559,7 +2558,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "burning-hands",
@@ -3222,7 +3221,7 @@
     "concentration": true,
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Druid",
      "Wizard"
@@ -3232,7 +3231,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "conjure-woodland-beings",
@@ -3276,8 +3275,7 @@
     "duration": "1 minute",
     "ritual": true,
     "verbal": true,
-    "spellType": "Saving throw",
-    "savingThrow": "Intelligence",
+    "spellType": "Utility",
     "classes": [
      "Warlock",
      "Wizard"
@@ -3287,7 +3285,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "contagion",
@@ -3551,7 +3549,7 @@
     "concentration": true,
     "verbal": true,
     "material": "bat fur and a piece of coal",
-    "spellType": "Utility",
+    "spellType": "Control",
     "classes": [
      "Sorcerer",
      "Warlock",
@@ -3562,7 +3560,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "darkvision",
@@ -3579,7 +3577,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a dried carrot",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Druid",
      "Ranger",
@@ -3591,7 +3589,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "daylight",
@@ -3636,7 +3634,7 @@
     "duration": "8 hours",
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Cleric",
      "Paladin"
@@ -3646,7 +3644,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "delayed-blast-fireball",
@@ -4009,7 +4007,7 @@
     "duration": "1 minute",
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Paladin"
     ],
@@ -4018,7 +4016,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "divine-smite",
@@ -4033,7 +4031,7 @@
     "range": "Self",
     "duration": "Instantaneous",
     "verbal": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Paladin"
     ],
@@ -4042,7 +4040,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "divine-word",
@@ -4258,7 +4256,7 @@
     "verbal": true,
     "somatic": true,
     "material": "fur or a feather",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Bard",
      "Cleric",
@@ -4272,7 +4270,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "enlarge-reduce",
@@ -4431,7 +4429,7 @@
     "concentration": true,
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Sorcerer",
      "Warlock",
@@ -4442,7 +4440,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "eyebite",
@@ -4568,7 +4566,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a drop of alcohol",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Sorcerer",
      "Wizard"
@@ -4578,7 +4576,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "feather-fall",
@@ -4594,7 +4592,7 @@
     "duration": "1 minute",
     "verbal": true,
     "material": "a small feather or piece of down",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Bard",
      "Sorcerer",
@@ -4605,7 +4603,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "find-familiar",
@@ -4623,7 +4621,7 @@
     "verbal": true,
     "somatic": true,
     "material": "burning incense worth 10+ GP, which the spell consumes",
-    "spellType": "Utility",
+    "spellType": "Summoning",
     "classes": [
      "Wizard"
     ],
@@ -4632,7 +4630,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "find-steed",
@@ -4652,12 +4650,12 @@
     "classes": [
      "Paladin"
     ],
-    "summary": "You summon an otherworldly being that appears as a loyal steed in an unoccupied space of your choice within range. This creature uses the Otherworldly Steed stat block. If you already have a steed from this spell, the steed is replaced by the new one.\n\nThe steed resembles a Large, rideable animal of your choice, such as a horse, a camel, a dire wolf, or an elk. Whenever you cast the spell, choose the steed’s creature type—Celestial, Fey, or Fiend— which determines certain traits in the stat block.\n\n**Combat.** The steed is an ally to you and your allies. In combat, it shares your Initiative count, and it functions as a controlled mount while you ride it (as defined in the rules on mounted combat). If you have the Incapacitated condition, the steed takes its turn immediately after yours and acts independently, focusing on protecting you.\n\n**Disappearance of the Steed.** The steed disappears if it drops to 0 Hit Points or if you die. When it disappears, it leaves behind anything it was wearing or carrying. If you cast this spell again, you decide whether you summon the steed that disappeared or a different one.\n\n**Using a Higher-Level Spell Slot.** Use the spell slot’s level for the spell’s level in the stat block.\n\n*The Otherworldly Steed stat block is in the SRD (\"Find Steed\").*\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You summon an otherworldly being that appears as a loyal steed in an unoccupied space of your choice within range. This creature uses the Otherworldly Steed stat block. If you already have a steed from this spell, the steed is replaced by the new one.\n\nThe steed resembles a Large, rideable animal of your choice, such as a horse, a camel, a dire wolf, or an elk. Whenever you cast the spell, choose the steed’s creature type—Celestial, Fey, or Fiend— which determines certain traits in the stat block.\n\n**Combat.** The steed is an ally to you and your allies. In combat, it shares your Initiative count, and it functions as a controlled mount while you ride it (as defined in the rules on mounted combat). If you have the Incapacitated condition, the steed takes its turn immediately after yours and acts independently, focusing on protecting you.\n\n**Disappearance of the Steed.** The steed disappears if it drops to 0 Hit Points or if you die. When it disappears, it leaves behind anything it was wearing or carrying. If you cast this spell again, you decide whether you summon the steed that disappeared or a different one.\n\n**Using a Higher-Level Spell Slot.** Use the spell slot’s level for the spell’s level in the stat block.\n\n**Otherworldly Steed**  \n*Large Celestial, Fey, or Fiend (Your Choice), Neutral*\n\n**AC** 10 + 1 per spell level · **HP** 5 + 10 per spell level (the steed has a number of Hit Dice [d10s] equal to the spell’s level) · **Speed** 60 ft., Fly 60 ft. (requires level 4+ spell)\n\n| Str | Dex | Con | Int | Wis | Cha |\n|---|---|---|---|---|---|\n| 18 (+4) | 12 (+1) | 14 (+2) | 6 (−2) | 12 (+1) | 8 (−1) |\n\n**Senses** Passive Perception 11  \n**Languages** Telepathy 1 mile (works only with you)  \n**CR** None (XP 0; PB equals your Proficiency Bonus)  \n\n***Traits***\n\n***Life Bond.*** When you regain Hit Points from a level 1+ spell, the steed regains the same number of Hit Points if you’re within 5 feet of it.\n\n\n***Actions***\n\n***Otherworldly Slam.*** Melee Attack Roll: Bonus equals your spell attack modifier, reach 5 ft. Hit: 1d8 plus the spell’s level of Radiant (Celestial), Psychic (Fey), or Necrotic (Fiend) damage.\n\n\n***Bonus Actions***\n\n***Fell Glare (Fiend Only; Recharges after a Long Rest).*** Wisdom Saving Throw: DC equals your spell save DC, one creature within 60 feet the steed can see. Failure: The target has the Frightened condition until the end of your next turn.\n\n***Fey Step (Fey Only; Recharges after a Long Rest).*** The steed teleports, along with its rider, to an unoccupied space of your choice up to 60 feet away from itself.\n\n***Healing Touch (Celestial Only; Recharges after a Long Rest).*** One creature within 5 feet of the steed regains a number of Hit Points equal to 2d8 plus the spell’s level.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.252Z"
   },
   {
    "id": "find-the-path",
@@ -4758,7 +4756,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a bit of phosphorus or a firefly",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Druid",
      "Sorcerer",
@@ -4769,7 +4767,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "fire-storm",
@@ -4955,7 +4953,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a feather",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Sorcerer",
      "Warlock",
@@ -4966,7 +4964,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "fog-cloud",
@@ -4983,7 +4981,7 @@
     "concentration": true,
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Control",
     "classes": [
      "Druid",
      "Ranger",
@@ -4995,7 +4993,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "forbiddance",
@@ -5069,7 +5067,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a hummingbird feather",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Bard",
      "Druid",
@@ -5081,7 +5079,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "freedom-of-movement",
@@ -5098,7 +5096,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a leather strap",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Bard",
      "Cleric",
@@ -5110,7 +5108,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "freezing-sphere",
@@ -5156,8 +5154,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a bit of gauze",
-    "spellType": "Saving throw",
-    "savingThrow": "Constitution",
+    "spellType": "Buff",
     "classes": [
      "Sorcerer",
      "Warlock",
@@ -5168,7 +5165,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "gate",
@@ -5186,7 +5183,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a diamond worth 5,000+ GP",
-    "spellType": "Utility",
+    "spellType": "Summoning",
     "classes": [
      "Cleric",
      "Sorcerer",
@@ -5198,7 +5195,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "geas",
@@ -5277,12 +5274,12 @@
     "classes": [
      "Druid"
     ],
-    "summary": "You summon a giant centipede, spider, or wasp (chosen when you cast the spell). It manifests in an unoccupied space you can see within range and uses the Giant Insect stat block. The form you choose determines certain details in its stat block. The creature disappears when it drops to 0 Hit Points or when the spell ends.\n\nThe creature is an ally to you and your allies. In combat, the creature shares your Initiative count, but it takes its turn immediately after yours. It obeys your verbal commands (no action required by you). If you don’t issue any, it takes the Dodge action and uses its movement to avoid danger.\n\n**Using a Higher-Level Spell Slot.** Use the spell slot’s level for the spell’s level in the stat block.\n\n*The Giant Insect stat block is in the SRD (\"Giant Insect\").*\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You summon a giant centipede, spider, or wasp (chosen when you cast the spell). It manifests in an unoccupied space you can see within range and uses the Giant Insect stat block. The form you choose determines certain details in its stat block. The creature disappears when it drops to 0 Hit Points or when the spell ends.\n\nThe creature is an ally to you and your allies. In combat, the creature shares your Initiative count, but it takes its turn immediately after yours. It obeys your verbal commands (no action required by you). If you don’t issue any, it takes the Dodge action and uses its movement to avoid danger.\n\n**Using a Higher-Level Spell Slot.** Use the spell slot’s level for the spell’s level in the stat block.\n\n**Giant Insect**  \n*Large Beast, Unaligned*\n\n**AC** 11 + the spell’s level · **HP** 30 + 10 for each spell level above 4 · **Speed** 40 ft., Climb 40 ft., Fly 40 ft. (Wasp only)\n\n| Str | Dex | Con | Int | Wis | Cha |\n|---|---|---|---|---|---|\n| 17 (+3) | 13 (+1) | 15 (+2) | 4 (−3) | 14 (+2) | 3 (−4) |\n\n**Senses** Darkvision 60 ft.; Passive Perception 12  \n**Languages** Understands the languages you know  \n**CR** None (XP 0; PB equals your Proficiency Bonus)  \n\n***Traits***\n\n***Spider Climb.*** The insect can climb difficult surfaces, including along ceilings, without needing to make an ability check.\n\n\n***Actions***\n\n***Multiattack.*** The insect makes a number of attacks equal to half this spell’s level (round down).\n\n***Poison Jab.*** Melee Attack Roll: Bonus equals your spell attack modifier, reach 10 ft. Hit: 1d6 + 3 plus the spell’s level Piercing damage plus 1d4 Poison damage.\n\n***Web Bolt (Spider Only).*** Ranged Attack Roll: Bonus equals your spell attack modifier, range 60 ft. Hit: 1d10 + 3 plus the spell’s level Bludgeoning damage, and the target’s Speed is reduced to 0 until the start of the insect’s next turn.\n\n\n***Bonus Actions***\n\n***Venomous Spew (Centipede Only).*** Constitution Saving Throw: Your spell save DC, one creature the insect can see within 10 feet. Failure: The target has the Poisoned condition until the start of the insect’s next turn.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.252Z"
   },
   {
    "id": "glibness",
@@ -5325,7 +5322,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a glass bead",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Sorcerer",
      "Wizard"
@@ -5335,7 +5332,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "glyph-of-warding",
@@ -5381,7 +5378,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a sprig of mistletoe",
-    "spellType": "Utility",
+    "spellType": "Healing",
     "classes": [
      "Druid",
      "Ranger"
@@ -5391,7 +5388,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "grease",
@@ -5436,7 +5433,7 @@
     "concentration": true,
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Bard",
      "Sorcerer",
@@ -5447,7 +5444,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "greater-restoration",
@@ -5464,7 +5461,7 @@
     "verbal": true,
     "somatic": true,
     "material": "diamond dust worth 100+ GP, which the spell consumes",
-    "spellType": "Utility",
+    "spellType": "Healing",
     "classes": [
      "Bard",
      "Cleric",
@@ -5477,7 +5474,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "guardian-of-faith",
@@ -5659,8 +5656,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a shaving of licorice root",
-    "spellType": "Saving throw",
-    "savingThrow": "Dexterity",
+    "spellType": "Buff",
     "classes": [
      "Sorcerer",
      "Wizard"
@@ -5670,7 +5666,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "heal",
@@ -5686,7 +5682,7 @@
     "duration": "Instantaneous",
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Healing",
     "classes": [
      "Cleric",
      "Druid"
@@ -5696,7 +5692,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "heat-metal",
@@ -5768,7 +5764,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a gem-encrusted bowl worth 1,000+ GP, which the spell consumes",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Bard",
      "Cleric",
@@ -5779,7 +5775,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "heroism",
@@ -5796,7 +5792,7 @@
     "concentration": true,
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Bard",
      "Paladin"
@@ -5806,7 +5802,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "hex",
@@ -5824,7 +5820,7 @@
     "verbal": true,
     "somatic": true,
     "material": "the petrified eye of a newt",
-    "spellType": "Utility",
+    "spellType": "Debuff",
     "classes": [
      "Warlock"
     ],
@@ -5833,7 +5829,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "hideous-laughter",
@@ -5971,7 +5967,7 @@
     "duration": "up to 1 hour",
     "concentration": true,
     "verbal": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Ranger"
     ],
@@ -5980,7 +5976,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "hypnotic-pattern",
@@ -6280,7 +6276,7 @@
     "verbal": true,
     "somatic": true,
     "material": "an eyelash in gum arabic",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Bard",
      "Sorcerer",
@@ -6292,7 +6288,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "irresistible-dance",
@@ -6336,7 +6332,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a grasshopper’s hind leg",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Druid",
      "Ranger",
@@ -6348,7 +6344,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "lesser-restoration",
@@ -6364,7 +6360,7 @@
     "duration": "Instantaneous",
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Healing",
     "classes": [
      "Bard",
      "Cleric",
@@ -6377,7 +6373,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "levitate",
@@ -6544,7 +6540,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a pinch of dirt",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Bard",
      "Druid",
@@ -6556,7 +6552,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "mage-armor",
@@ -6573,7 +6569,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a piece of cured leather",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Sorcerer",
      "Wizard"
@@ -6583,7 +6579,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "magic-circle",
@@ -6710,7 +6706,7 @@
     "duration": "1 hour",
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Paladin",
      "Ranger",
@@ -6722,7 +6718,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "magnificent-mansion",
@@ -6822,7 +6818,7 @@
     "duration": "Instantaneous",
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Healing",
     "classes": [
      "Cleric"
     ],
@@ -6831,7 +6827,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "mass-healing-word",
@@ -6901,7 +6897,7 @@
     "concentration": true,
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Control",
     "classes": [
      "Wizard"
     ],
@@ -6910,7 +6906,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "meld-into-stone",
@@ -6981,7 +6977,7 @@
     "duration": "24 hours",
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Bard",
      "Wizard"
@@ -6991,7 +6987,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "mind-spike",
@@ -7062,7 +7058,7 @@
     "duration": "1 minute",
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Bard",
      "Sorcerer",
@@ -7074,7 +7070,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "mislead",
@@ -7230,7 +7226,7 @@
     "verbal": true,
     "somatic": true,
     "material": "ashes from burned mistletoe",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Druid",
      "Ranger"
@@ -7240,7 +7236,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "passwall",
@@ -7366,7 +7362,7 @@
     "duration": "Instantaneous",
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Summoning",
     "classes": [
      "Cleric"
     ],
@@ -7375,7 +7371,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "planar-binding",
@@ -7452,7 +7448,7 @@
     "duration": "Instantaneous",
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Control",
     "classes": [
      "Bard",
      "Druid",
@@ -7463,7 +7459,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "polymorph",
@@ -7509,7 +7505,7 @@
     "range": "60 feet",
     "duration": "Instantaneous",
     "verbal": true,
-    "spellType": "Utility",
+    "spellType": "Healing",
     "classes": [
      "Bard",
      "Cleric"
@@ -7519,7 +7515,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "power-word-kill",
@@ -7534,7 +7530,7 @@
     "range": "60 feet",
     "duration": "Instantaneous",
     "verbal": true,
-    "spellType": "Utility",
+    "spellType": "Debuff",
     "classes": [
      "Bard",
      "Sorcerer",
@@ -7546,7 +7542,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "power-word-stun",
@@ -7752,7 +7748,7 @@
     "concentration": true,
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Cleric",
      "Druid",
@@ -7765,7 +7761,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "protection-from-evil-and-good",
@@ -7783,7 +7779,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a flask of Holy Water worth 25+ GP, which the spell consumes",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Cleric",
      "Druid",
@@ -7796,7 +7792,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "protection-from-poison",
@@ -7812,7 +7808,7 @@
     "duration": "1 hour",
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Cleric",
      "Druid",
@@ -7824,7 +7820,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "purify-food-and-drink",
@@ -7869,7 +7865,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a diamond worth 500+ GP, which the spell consumes",
-    "spellType": "Utility",
+    "spellType": "Healing",
     "classes": [
      "Bard",
      "Cleric",
@@ -7880,7 +7876,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "ray-of-enfeeblement",
@@ -7979,7 +7975,7 @@
     "verbal": true,
     "somatic": true,
     "material": "rare oils worth 1,000+ GP, which the spell consumes",
-    "spellType": "Utility",
+    "spellType": "Healing",
     "classes": [
      "Druid"
     ],
@@ -7988,7 +7984,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "remove-curse",
@@ -8061,7 +8057,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a diamond worth 1,000+ GP, which the spell consumes",
-    "spellType": "Utility",
+    "spellType": "Healing",
     "classes": [
      "Bard",
      "Cleric"
@@ -8071,7 +8067,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "reverse-gravity",
@@ -8118,7 +8114,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a diamond worth 300+ GP, which the spell consumes",
-    "spellType": "Utility",
+    "spellType": "Healing",
     "classes": [
      "Cleric",
      "Druid",
@@ -8130,7 +8126,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "rope-trick",
@@ -8309,7 +8305,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a pinch of talc",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Bard",
      "Sorcerer",
@@ -8320,7 +8316,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "seeming",
@@ -8475,7 +8471,7 @@
     "duration": "1 round",
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Sorcerer",
      "Wizard"
@@ -8485,7 +8481,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "shield-of-faith",
@@ -8503,7 +8499,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a prayer scroll",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Cleric",
      "Paladin"
@@ -8513,7 +8509,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "shining-smite",
@@ -8529,7 +8525,7 @@
     "duration": "up to 1 minute",
     "concentration": true,
     "verbal": true,
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Paladin"
     ],
@@ -8538,7 +8534,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "silence",
@@ -8556,7 +8552,7 @@
     "ritual": true,
     "verbal": true,
     "somatic": true,
-    "spellType": "Utility",
+    "spellType": "Control",
     "classes": [
      "Bard",
      "Cleric",
@@ -8567,7 +8563,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "silent-image",
@@ -8613,7 +8609,7 @@
     "verbal": true,
     "somatic": true,
     "material": "powdered ruby worth 1,500+ GP, which the spell consumes",
-    "spellType": "Utility",
+    "spellType": "Summoning",
     "classes": [
      "Wizard"
     ],
@@ -8622,7 +8618,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "sleep",
@@ -8839,7 +8835,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a drop of bitumen and a spider",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Sorcerer",
      "Warlock",
@@ -8850,7 +8846,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "spirit-guardians",
@@ -9006,7 +9002,7 @@
     "verbal": true,
     "somatic": true,
     "material": "diamond dust worth 100+ GP, which the spell consumes",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Druid",
      "Ranger",
@@ -9018,7 +9014,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "storm-of-vengeance",
@@ -9097,12 +9093,12 @@
     "classes": [
      "Wizard"
     ],
-    "summary": "You call forth a Dragon spirit. It manifests in an unoccupied space that you can see within range and uses the Draconic Spirit stat block. The creature disappears when it drops to 0 Hit Points or when the spell ends.\n\nThe creature is an ally to you and your allies. In combat, the creature shares your Initiative count, but it takes its turn immediately after yours. It obeys your verbal commands (no action required by you). If you don’t issue any, it takes the Dodge action and uses its movement to avoid danger.\n\n**Using a Higher-Level Spell Slot.** Use the spell slot’s level for the spell’s level in the stat block.\n\n*The Draconic Spirit stat block is in the SRD (\"Summon Dragon\").*\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You call forth a Dragon spirit. It manifests in an unoccupied space that you can see within range and uses the Draconic Spirit stat block. The creature disappears when it drops to 0 Hit Points or when the spell ends.\n\nThe creature is an ally to you and your allies. In combat, the creature shares your Initiative count, but it takes its turn immediately after yours. It obeys your verbal commands (no action required by you). If you don’t issue any, it takes the Dodge action and uses its movement to avoid danger.\n\n**Using a Higher-Level Spell Slot.** Use the spell slot’s level for the spell’s level in the stat block.\n\n**Draconic Spirit**  \n*Large Dragon, Neutral*\n\n**AC** 14 + the spell’s level · **HP** 50 + 10 for each spell level above 5 · **Speed** 30 ft., Fly 60 ft., Swim 30 ft.\n\n| Str | Dex | Con | Int | Wis | Cha |\n|---|---|---|---|---|---|\n| 19 (+4) | 14 (+2) | 17 (+3) | 10 (+0) | 14 (+2) | 14 (+2) |\n\n**Resistances** Acid, Cold, Fire, Lightning, Poison  \n**Immunities** Charmed, Frightened, Poisoned  \n**Senses** Blindsight 30 ft., Darkvision 60 ft.; Passive Perception 12  \n**Languages** Draconic, understands the languages you know  \n**CR** None (XP 0; PB equals your Proficiency Bonus)  \n\n***Traits***\n\n***Shared Resistances.*** When you summon the spirit, choose one of its Resistances. You have Resistance to the chosen damage type until the spell ends.\n\n\n***Actions***\n\n***Multiattack.*** The spirit makes a number of Rend attacks equal to half the spell’s level (round down), and it uses Breath Weapon.\n\n***Rend.*** Melee Attack Roll: Bonus equals your spell attack modifier, reach 10 feet. Hit: 1d6 + 4 + the spell’s level Piercing damage.\n\n***Breath Weapon.*** Dexterity Saving Throw: DC equals your spell save DC, each creature in a 30-foot Cone. Failure: 2d6 damage of a type this spirit has Resistance to (your choice when you cast the spell). Success: Half damage.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.252Z"
   },
   {
    "id": "sunburst",
@@ -9401,7 +9397,7 @@
     "verbal": true,
     "somatic": true,
     "material": "diamonds worth 25,000+ GP, which the spell consumes",
-    "spellType": "Utility",
+    "spellType": "Healing",
     "classes": [
      "Cleric",
      "Druid"
@@ -9411,7 +9407,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "true-seeing",
@@ -9428,7 +9424,7 @@
     "verbal": true,
     "somatic": true,
     "material": "mushroom powder worth 25+ GP, which the spell consumes",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Bard",
      "Cleric",
@@ -9441,7 +9437,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "tsunami",
@@ -9486,7 +9482,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a bit of string and of wood",
-    "spellType": "Utility",
+    "spellType": "Summoning",
     "classes": [
      "Bard",
      "Warlock",
@@ -9497,7 +9493,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "vampiric-touch",
@@ -9601,7 +9597,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a shard of glass",
-    "spellType": "Utility",
+    "spellType": "Control",
     "classes": [
      "Wizard"
     ],
@@ -9610,7 +9606,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "wall-of-ice",
@@ -9713,7 +9709,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a pair of platinum rings worth 50+ GP each, which you and the target must wear for the duration",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Cleric",
      "Paladin"
@@ -9723,7 +9719,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "water-breathing",
@@ -9741,7 +9737,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a short reed",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Druid",
      "Ranger",
@@ -9753,7 +9749,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "water-walk",
@@ -9771,7 +9767,7 @@
     "verbal": true,
     "somatic": true,
     "material": "a piece of cork",
-    "spellType": "Utility",
+    "spellType": "Buff",
     "classes": [
      "Cleric",
      "Druid",
@@ -9783,7 +9779,7 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "web",

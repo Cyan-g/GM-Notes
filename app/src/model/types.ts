@@ -180,8 +180,10 @@ export interface SpeciesState {
   used?: Record<string, number>
   /** Once-per-rest spells cast since the last rest. */
   spellsUsed?: string[]
-  /** Granted proficiencies the player swapped for another of the same kind: grant key → the id taken instead. */
+  /** Granted proficiencies and spells the player swapped for another of the same kind: their key → the id taken instead. */
   swaps?: Record<string, string>
+  /** The casting ability picked for a trait's spells (its castWith): trait key → ability. */
+  abilities?: Record<string, 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'>
 }
 
 // ---------- ability score bonuses (races' and feats' abilityIncrease; abilityBonus.ts) ----------
@@ -213,7 +215,15 @@ export interface Equipment { items?: EquipmentLine[]; money?: Copper; instead?: 
 /** A proficiency or language a trait grants: a skill name, or an option id / Tool item id as in Proficiencies. */
 export interface TraitGrant { kind: 'skill' | 'armor' | 'weapon' | 'tool' | 'language'; id: string }
 /** A spell a trait gives: from character level `from` (default 1), at will, once per short or long rest, or always prepared. */
-export interface TraitSpell { spell: Id; how: 'atWill' | 'short' | 'long' | 'prepared'; from?: number; /** The ability it's cast with, if the trait says (attack and DC are shown with it). */ ability?: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha' }
+export interface TraitSpell {
+  spell: Id
+  how: 'atWill' | 'short' | 'long' | 'prepared'
+  from?: number
+  /** The ability it's cast with, if the trait says (attack and DC are shown with it); else the trait's `castWith`. */
+  ability?: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
+  /** The player may swap it for another spell of these classes' lists (any) and this level (the spell's own). */
+  swap?: { classes?: string[]; level?: string }
+}
 /** What a trait (or one of a choice's options) does. */
 export interface TraitOption {
   id: string
@@ -266,6 +276,11 @@ export interface Trait extends TraitOption {
   choice?: TraitChoice
   /** More classes' spell lists the class it comes from can take its spells from (Magical Secrets: Cleric, Druid, Wizard). */
   spellLists?: string[]
+  /**
+   * The ability its spells (and its picked option's) are cast with, where a spell doesn't name one: the player's pick
+   * `among` these, or the one picked for another trait of the same entry (`sameAs`, that trait's id).
+   */
+  castWith?: { among?: ('str' | 'dex' | 'con' | 'int' | 'wis' | 'cha')[]; sameAs?: string }
 }
 /**
  * What a character is proficient with, by reference: option ids from the lists items use (armor types, weapon

@@ -6,7 +6,8 @@ import { computed } from 'vue'
 import type { CharacterSheet, Entry, TraitGrant } from '../model/types'
 import { editSheet } from '../sheet'
 import { state } from '../store'
-import { choiceOpen, grantOptions, hasChoices, isClassOrigin, setPicks, setSwap, speciesTraits, traitGrants, GRANT_KINDS, type ActiveTrait } from '../species'
+import { choiceOpen, grantOptions, hasChoices, isClassOrigin, setCastAbility, setPicks, setSwap, speciesTraits, swappableSpells, traitGrants, GRANT_KINDS, type ActiveTrait } from '../species'
+import { ABILITY_NAME } from '../abilityBonus'
 import TraitChoicePicker from './TraitChoicePicker.vue'
 
 const props = defineProps<{ pc: Entry; s: CharacterSheet }>()
@@ -22,6 +23,8 @@ function swapOptions(g: TraitGrant & { was?: string }) {
 }
 const swap = (key: string, id: string, original: string) => editSheet(props.pc, x => setSwap(x, key, id, original))
 const pick = (a: ActiveTrait, picks: string[]) => editSheet(props.pc, x => setPicks(x, a.key, picks))
+const cast = (a: ActiveTrait, ability: string) => editSheet(props.pc, x => setCastAbility(x, a.key, ability as Parameters<typeof setCastAbility>[2]))
+const val = (ev: Event) => (ev.target as HTMLSelectElement).value
 const kindName = (k: string) => GRANT_KINDS.find(x => x.id === k)?.label ?? k
 const nameOf = (g: TraitGrant) => grantOptions(g.kind).find(o => o.id === g.id)?.label ?? g.id
 const tag = (a: ActiveTrait) => (a.race.type === 'class' ? `${a.race.name} ${a.trait.level ?? 1}` : a.race.name)
@@ -37,6 +40,21 @@ const tag = (a: ActiveTrait) => (a.race.type === 'class' ? `${a.race.name} ${a.t
           <span class="muted">{{ gr.kind === 'language' ? 'Speaks' : kindName(gr.kind) }}</span>
           <select :value="gr.id" :disabled="ro" @change="swap(gr.key, ($event.target as HTMLSelectElement).value, gr.was ?? gr.id)">
             <option v-for="o in swapOptions(gr)" :key="o.id" :value="o.id">{{ o.label }}{{ o.id === (gr.was ?? gr.id) && gr.was ? ' (given)' : '' }}</option>
+          </select>
+        </label>
+      </div>
+      <div v-if="a.trait.castWith?.among?.length || swappableSpells(a, s).length" class="sp-grants">
+        <label v-if="a.trait.castWith?.among?.length" class="sp-grant small" title="The ability this trait's spells are cast with (their attack and save DC)">
+          <span class="muted">Casts with</span>
+          <select :value="a.cast ?? ''" :disabled="ro" @change="cast(a, val($event))">
+            <option value="">Choose…</option>
+            <option v-for="ab in a.trait.castWith.among" :key="ab" :value="ab">{{ ABILITY_NAME[ab] }}</option>
+          </select>
+        </label>
+        <label v-for="x in swappableSpells(a, s)" :key="x.key" class="sp-grant small" :class="{ swapped: x.id !== x.given }" :title="`From ${x.from}; pick another to swap it`">
+          <span class="muted">Spell</span>
+          <select :value="x.id" :disabled="ro" @change="swap(x.key, val($event), x.given)">
+            <option v-for="e in x.candidates" :key="e.id" :value="e.id">{{ e.name }}{{ e.id === x.given && x.id !== x.given ? ' (given)' : '' }}</option>
           </select>
         </label>
       </div>

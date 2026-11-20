@@ -5,6 +5,7 @@ import { computed } from 'vue'
 import type { Trait, TraitChoice, TraitOption } from '../../model/types'
 import { choiceWords, newTraitId } from '../../species'
 import { listOptions } from '../../store'
+import { ABILITY_KEYS, ABILITY_NAME } from '../../abilityBonus'
 import TraitOptionFields from './TraitOptionFields.vue'
 import ChoiceFields from './ChoiceFields.vue'
 import TraitChips from '../TraitChips.vue'
@@ -16,7 +17,7 @@ function put(i: number, t: Trait) { const l = [...list.value]; l[i] = t; save(l)
 const patch = (i: number, p: Partial<Trait>) => {
   const t: Trait = { ...list.value[i], ...p }
   if (!t.level || t.level <= 1) delete t.level
-  for (const k of ['uses', 'choice', 'scale', 'onSheet', 'spellLists'] as const) if (t[k] == null) delete t[k]
+  for (const k of ['uses', 'choice', 'scale', 'onSheet', 'spellLists', 'castWith'] as const) if (t[k] == null) delete t[k]
   put(i, t)
 }
 const add = () => save([...list.value, { id: newTraitId(), name: 'New trait' }])
@@ -74,6 +75,19 @@ function setChoiceKind(i: number, kind: string) {
   const k = kind as TraitChoice['kind']
   patch(i, { choice: k === 'option' ? { kind: k, options: [{ id: newTraitId(), name: 'Option 1' }, { id: newTraitId(), name: 'Option 2' }] } : newChoice(k) })
 }
+// ---- the ability its spells are cast with ----
+type Cast = NonNullable<Trait['castWith']>
+type Ab = NonNullable<Cast['among']>[number]
+const castMode = (t: Trait) => (t.castWith?.sameAs != null ? 'same' : t.castWith ? 'pick' : '')
+function setCastMode(i: number, mode: string) {
+  const others = list.value.filter((_, k) => k !== i)
+  patch(i, { castWith: mode === 'pick' ? { among: ['int', 'wis', 'cha'] } : mode === 'same' ? { sameAs: others[0]?.id ?? '' } : undefined })
+}
+function toggleCast(i: number, ab: Ab) {
+  const s = new Set(list.value[i].castWith?.among ?? [])
+  if (s.has(ab)) s.delete(ab); else s.add(ab)
+  patch(i, { castWith: { among: ABILITY_KEYS.filter(a => s.has(a)) } })
+}
 function toggleList(i: number, id: string) {
   const l = new Set(list.value[i].spellLists ?? [])
   if (l.has(id)) l.delete(id); else l.add(id)
@@ -119,6 +133,18 @@ const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
         <label class="small" title="A value that grows with the level, shown with the trait (Rage Damage, Sneak Attack)">Scaling value
           <input class="steps-label" :value="t.scale?.label ?? ''" placeholder="e.g. Sneak Attack" @change="setScale(i, val($event), stepsText(t.scale?.steps))" /></label>
         <label v-if="t.scale" class="small">by level <input class="steps-input" :value="stepsText(t.scale.steps)" placeholder="1:1d6, 3:2d6" @change="setScale(i, t.scale.label, val($event))" /></label>
+      </div>
+      <div class="trait-row">
+        <label class="small" title="The ability its spells (and its picked option's) are cast with, where a spell doesn't name one">Spells cast with
+          <select :value="castMode(t)" @change="setCastMode(i, val($event))">
+            <option value="">what each spell says</option><option value="pick">the player's pick</option><option value="same">the same as another trait</option>
+          </select></label>
+        <div v-if="castMode(t) === 'pick'" class="seg wrap">
+          <button v-for="ab in ABILITY_KEYS" :key="ab" type="button" :class="{ on: t.castWith?.among?.includes(ab) }" @click="toggleCast(i, ab)">{{ ABILITY_NAME[ab] }}</button>
+        </div>
+        <select v-else-if="castMode(t) === 'same'" :value="t.castWith?.sameAs" aria-label="As which trait" @change="patch(i, { castWith: { sameAs: val($event) } })">
+          <option v-for="o in list.filter(x => x.id !== t.id)" :key="o.id" :value="o.id">{{ o.name }}</option>
+        </select>
       </div>
       <div class="trait-row">
         <details class="trait-among">

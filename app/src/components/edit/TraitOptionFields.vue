@@ -5,6 +5,7 @@ import { computed } from 'vue'
 import type { TraitGrant, TraitOption, TraitSpell } from '../../model/types'
 import { GRANT_KINDS, HOW_SPECIES, grantOptions } from '../../species'
 import { ABILITY_NAME } from '../../abilityBonus'
+import { listOptions } from '../../store'
 import EffectsInput from './EffectsInput.vue'
 import EntryPicker from './EntryPicker.vue'
 
@@ -32,6 +33,7 @@ function setSpell(i: number, patch: Partial<TraitSpell>) {
   l[i] = { ...l[i], ...patch }
   if (!l[i].from || l[i].from! <= 1) delete l[i].from
   if (!l[i].ability) delete l[i].ability
+  if (!l[i].swap) delete l[i].swap
   put({ spells: l })
 }
 const addSpell = (spell: string) => put({ spells: [...spells.value, { spell, how: 'long' }] })
@@ -73,6 +75,11 @@ const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement | 
             <option v-for="(label, id) in ABILITY_NAME" :key="id" :value="id">with {{ label }}</option>
           </select>
           <label class="small" title="From this character level">from level <input type="number" min="1" max="20" class="effect-value" :value="x.from ?? 1" @change="setSpell(i, { from: Number(val($event)) || 1 })" /></label>
+          <label class="small" title="The player may swap it for another spell of its level from a class's list (High Elf: a Wizard cantrip)"><input type="checkbox" :checked="!!x.swap" @change="setSpell(i, { swap: ($event.target as HTMLInputElement).checked ? {} : undefined })" /> swappable</label>
+          <select v-if="x.swap" :value="x.swap.classes?.[0] ?? ''" aria-label="For a spell of which list" @change="setSpell(i, { swap: val($event) ? { classes: [val($event)] } : {} })">
+            <option value="">any list</option>
+            <option v-for="o in listOptions('class')" :key="o.id" :value="o.id">{{ o.label }} list</option>
+          </select>
           <button type="button" class="link-btn" title="Remove" @click="removeSpell(i)">×</button>
         </div>
         <EntryPicker add :types="['spell']" :exclude="spells.map(x => x.spell)" placeholder="Add a spell…" @pick="addSpell" />

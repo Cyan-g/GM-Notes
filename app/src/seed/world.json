@@ -4541,7 +4541,12 @@
          "spells": [
           {
            "spell": "prestidigitation",
-           "how": "atWill"
+           "how": "atWill",
+           "swap": {
+            "classes": [
+             "Wizard"
+            ]
+           }
           },
           {
            "spell": "detect-magic",
@@ -4582,6 +4587,13 @@
           }
          ]
         }
+       ]
+      },
+      "castWith": {
+       "among": [
+        "int",
+        "wis",
+        "cha"
        ]
       }
      },
@@ -4703,6 +4715,13 @@
           }
          ]
         }
+       ]
+      },
+      "castWith": {
+       "among": [
+        "int",
+        "wis",
+        "cha"
        ]
       }
      }
@@ -5026,6 +5045,13 @@
          ]
         }
        ]
+      },
+      "castWith": {
+       "among": [
+        "int",
+        "wis",
+        "cha"
+       ]
       }
      },
      {
@@ -5037,7 +5063,10 @@
         "spell": "thaumaturgy",
         "how": "atWill"
        }
-      ]
+      ],
+      "castWith": {
+       "sameAs": "fiendish-legacy"
+      }
      }
     ]
    },

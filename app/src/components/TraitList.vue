@@ -8,7 +8,14 @@ import { ABILITY_NAME } from '../abilityBonus'
 import TraitChips from './TraitChips.vue'
 import MarkdownView from './MarkdownView.vue'
 
-defineProps<{ traits: Trait[] }>()
+const props = defineProps<{ traits: Trait[] }>()
+/** Which ability the trait's spells are cast with: the player's pick, or another trait's. */
+const castText = (t: Trait) => {
+  const c = t.castWith!
+  if (c.sameAs != null) return `Its spells are cast with the same ability as ${props.traits.find(x => x.id === c.sameAs)?.name ?? 'another trait'}.`
+  const names = (c.among ?? []).map(a => ABILITY_NAME[a])
+  return `Its spells are cast with ${names.length > 1 ? names.slice(0, -1).join(', ') + ' or ' + names.at(-1) : names[0] ?? 'an ability'} (the player's pick).`
+}
 const count = (c: TraitChoice) => (c.steps?.length ? c.steps.map(x => `${x[1]} at level ${x[0]}`).join(', ') : String(c.count ?? 1))
 const words = (c: TraitChoice) => choiceWords(c, (c.count ?? 1) === 1 && !c.steps?.length ? 1 : 2)
 /** Text with paragraphs or lists (class features) is rendered as Markdown blocks. */
@@ -27,6 +34,7 @@ const scale = (t: Trait) => t.scale ? `${t.scale.label}: ${t.scale.steps.map(([l
         <span v-else-if="t.text" class="md" v-html="renderInline(t.text)" />
         <TraitChips :t="t" />
         <span v-if="t.scale" class="muted small trait-choice">{{ scale(t) }}</span>
+        <span v-if="t.castWith" class="muted small trait-choice">{{ castText(t) }}</span>
         <span v-if="t.spellLists?.length" class="muted small trait-choice">Spells can also come from the {{ t.spellLists.join(', ') }} spell lists.</span>
         <template v-if="t.choice">
           <span v-if="t.choice.kind !== 'option'" class="muted small trait-choice">Choose {{ count(t.choice) }} {{ words(t.choice) }}<template v-if="t.choice.among?.length"> from {{ choiceCandidates(t.choice).map(o => o.label).join(', ') }}</template><template v-if="t.choice.category"> ({{ t.choice.category }})</template><template v-if="t.choice.spell"> ({{ spellHow(t.choice) }})</template>.</span>

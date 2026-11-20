@@ -13,6 +13,8 @@ import { classesOf, totalLevel } from './model/classes'
 import { entries, get, listOptions, state } from './store'
 import { SKILLS, mod, score, sheetOf } from './sheet'
 
+type Ability = keyof Abilities
+
 // ---- whose sheet is this? (the totals only get a sheet; sheet.ts registers each sheet it hands out) ----
 const OWNER = new WeakMap<object, Entry>()
 /** Remember which character a sheet object belongs to. */
@@ -85,6 +87,8 @@ export interface ActiveTrait {
   options: TraitOption[]
   /** The picks of a choice. */
   picks: string[]
+  /** The ability picked for its spells (its castWith), if any yet. */
+  cast?: Ability
 }
 /** Every trait of the character's species and background, in order (main race first, background last), with what's chosen and whether it counts yet. */
 export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): ActiveTrait[] {
@@ -95,7 +99,8 @@ export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): Active
     const picks = st.picks?.[key] ?? []
     const options = trait.choice?.kind === 'option'
       ? picks.map(id => trait.choice!.options?.find(o => o.id === id)).filter((o): o is TraitOption => !!o) : []
-    const a: ActiveTrait = { key, trait, race, level, active: (trait.level ?? 1) <= level, option: options[0], options, picks }
+    const cw = trait.castWith, cast = cw ? st.abilities?.[cw.sameAs ? `${race.id}.${cw.sameAs}` : key] : undefined
+    const a: ActiveTrait = { key, trait, race, level, active: (trait.level ?? 1) <= level, option: options[0], options, picks, ...(cast ? { cast } : {}) }
     // the choices a picked option brings, each as a trait of its own (picked and listed like any other)
     const sub = options.flatMap(o => (o.choices ?? []).filter(c => c.kind !== 'option').map((choice, n): ActiveTrait => {
       const k = `${key}.${o.id}.c${n}`
@@ -231,7 +236,8 @@ export function shownInPlay(a: ActiveTrait): boolean {
   return !data
 }
 /** Whether a trait asks the player for anything: a choice, or proficiencies they may swap. */
-export const hasChoices = (a: ActiveTrait) => !!a.trait.choice || !!(a.trait.grants?.length || a.options.some(o => o.grants?.length))
+export const hasChoices = (a: ActiveTrait) => !!a.trait.choice || !!a.trait.castWith?.among?.length || swappableSpells(a).length > 0
+  || !!(a.trait.grants?.length || a.options.some(o => o.grants?.length))
 
 // ---- choices ----
 /** Set the picks of a trait's choice (an empty list clears it). */
@@ -243,8 +249,15 @@ export function setPicks(s: CharacterSheet, key: string, picks: string[]) {
 /** How many a choice takes at the trait's level. */
 export const choiceCount = (a: ActiveTrait) => (a.trait.choice ? byLevel(a.trait.choice.steps, a.level, a.trait.choice.count ?? 1) : 0)
 /** Whether a trait's choice still waits for the player. */
-export const choiceOpen = (a: ActiveTrait) =>
-  !!a.trait.choice && (a.trait.choice.kind === 'option' ? a.options.length : a.picks.length) < choiceCount(a)
+export const choiceOpen = (a: ActiveTrait) => (!!a.trait.castWith?.among?.length && !a.cast)
+  || (!!a.trait.choice && (a.trait.choice.kind === 'option' ? a.options.length : a.picks.length) < choiceCount(a))
+/** Pick the ability a trait's spells are cast with ('' takes the pick back). */
+export function setCastAbility(s: CharacterSheet, key: string, ability: Ability | '') {
+  const st = edit(s), all = { ...(st.abilities ?? {}) }
+  if (ability) all[key] = ability; else delete all[key]
+  st.abilities = all
+  if (!Object.keys(all).length) delete st.abilities
+}
 
 // ---- spells ----
 const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
@@ -258,12 +271,15 @@ export function speciesSpells(pc: Entry | undefined, s?: CharacterSheet): Specie
   for (const a of active(pc, s)) {
     const lists: [string, TraitSpell[] | undefined, string][] = [[a.key, a.trait.spells, a.trait.name]]
     for (const o of a.options) lists.push([`${a.key}.${o.id}`, o.spells, o.name])
-    const c = a.trait.choice
+    const c = a.trait.choice, swaps = stateOf(s ?? (pc.fields.sheet as CharacterSheet | undefined)).swaps ?? {}
     if (c?.kind === 'spell' && c.spell) lists.push([`${a.key}.p`, a.picks.map(spell => ({ spell, how: c.spell!.how, ability: c.spell!.ability })), a.trait.name])
     for (const [base, list, from] of lists) {
       (list ?? []).forEach((x, k) => {
-        if (!get(x.spell) || (x.from ?? 1) > a.level) return
         const key = `${base}.s${k}`
+        // a swapped spell (the High Elf's cantrip), and the trait's casting ability where the spell names none
+        if (x.swap && swaps[key] && get(swaps[key])) x = { ...x, spell: swaps[key] }
+        if (!x.ability && a.cast) x = { ...x, ability: a.cast }
+        if (!get(x.spell) || (x.from ?? 1) > a.level) return
         const perRest = x.how === 'short' || x.how === 'long'
         const ready = !perRest || !used.includes(key)
         out.push({ key, spell: x, from, ready, status: HOW_SPECIES[x.how] + (ready ? '' : ' · used'), level: x.from ?? 1 })
@@ -271,6 +287,20 @@ export function speciesSpells(pc: Entry | undefined, s?: CharacterSheet): Specie
     }
   }
   return out
+}
+/**
+ * The spells of a trait (and its picked options) the player may swap for another (the High Elf's Prestidigitation):
+ * each with its key, the spell given, the one taken instead (if swapped) and what it may be swapped for.
+ */
+export function swappableSpells(a: ActiveTrait, s?: CharacterSheet): { key: string; given: Id; id: Id; from: string; candidates: Entry[] }[] {
+  const swaps = stateOf(s).swaps ?? {}
+  const lists: [string, TraitSpell[] | undefined, string][] = [[a.key, a.trait.spells, a.trait.name], ...a.options.map(o => [`${a.key}.${o.id}`, o.spells, o.name] as [string, TraitSpell[] | undefined, string])]
+  return lists.flatMap(([base, list, from]) => (list ?? []).flatMap((x, k) => {
+    if (!x.swap || (x.from ?? 1) > a.level) return []
+    const key = `${base}.s${k}`, level = x.swap.level ?? get(x.spell)?.fields.level
+    const candidates = spellsMatching({ classes: x.swap.classes, level: level as string | undefined, how: x.how })
+    return [{ key, given: x.spell, id: swaps[key] ?? x.spell, from, candidates }]
+  }))
 }
 /** Cast a once-per-rest species spell, or give it back. */
 export function useSpeciesSpell(s: CharacterSheet, key: string, back = false) {

@@ -3,7 +3,7 @@
 // spellbook and inventory. Steps can be visited in any order; each says what it still needs, and the summary makes the
 // character. Uses what the world has: its classes, species, backgrounds, feats, spells and items.
 import { computed, ref, watch } from 'vue'
-import type { Entry, Id, TraitGrant } from '../model/types'
+import type { Entry, Id } from '../model/types'
 import {
   POINTS, POINT_COST, STANDARD_ARRAY, backgroundGold, backgroundKit, backgrounds, bonusAdds, bonusOf, casts, dieOfDraft,
   draftPc, featLevels, finalScores, hpOf, itemNamed, kitsOf, makeCharacter, pointsSpent, resetWizard, rules, species, subracesOf, mainRace,
@@ -13,7 +13,7 @@ import { SUBCLASS_LEVEL } from '../classRules'
 import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, abilityBonusText } from '../abilityBonus'
 import { DICE } from '../model/classes'
 import { SKILLS, mod, signed, currentPc, setCurrent } from '../sheet'
-import { choiceOpen, grantOptions, isClassOrigin, scaleAt, setPicks as setTraitPicks, speciesGrants, speciesTraits, GRANT_KINDS, type ActiveTrait } from '../species'
+import { choiceOpen, grantOptions, isClassOrigin, scaleAt, setCastAbility, setPicks as setTraitPicks, speciesGrants, speciesTraits, type ActiveTrait } from '../species'
 import { entries, formatMoney, get, listOptions, playerMode } from '../store'
 import { go, hrefEntry } from '../router'
 import { newBlankEntry } from '../ui'
@@ -51,22 +51,18 @@ const main = computed(() => mainRace(d.value.race))
 const subs = computed(() => subracesOf(main.value?.id))
 const bgList = computed(() => backgrounds())
 const pc = computed(() => draftPc(d.value))
-const choices = computed(() => speciesTraits(pc.value).filter(a => !isClassOrigin(a.race) && a.active && a.trait.choice))
+const choices = computed(() => speciesTraits(pc.value).filter(a => !isClassOrigin(a.race) && a.active && (a.trait.choice || a.trait.castWith?.among?.length)))
 /** The class's and subclass's features at the chosen level, by where they come from. */
 const classFeatures = computed(() => speciesTraits(pc.value).filter(a => isClassOrigin(a.race) && a.active))
 const featureGroups = computed(() => [...new Map(classFeatures.value.map(a => [a.race.id, a.race])).values()].map(r => ({ r, list: classFeatures.value.filter(a => a.race.id === r.id) })))
 const pickFeature = (a: ActiveTrait, picks: string[]) => { const holder = { species: { ...wizard.d.species } } as Parameters<typeof setTraitPicks>[0]; setTraitPicks(holder, a.key, picks); wizard.d.species = holder.species! }
-function candidates(a: ActiveTrait) {
-  const c = a.trait.choice!, opts = grantOptions(c.kind as TraitGrant['kind'])
-  return c.among?.length ? c.among.map(id => opts.find(o => o.id === id) ?? { id, label: id }) : opts
-}
 function setPicks(a: ActiveTrait, picks: string[]) {
   const all = { ...(wizard.d.species.picks ?? {}) }
   if (picks.filter(Boolean).length) all[a.key] = picks.filter(Boolean); else delete all[a.key]
   wizard.d.species = { ...wizard.d.species, picks: all }
 }
-const pickAt = (a: ActiveTrait, i: number, id: string) => { const p = [...a.picks]; p[i] = id; setPicks(a, p) }
-const kindLabel = (k: string, n: number) => { const g = GRANT_KINDS.find(x => x.id === k); return n === 1 ? g?.label.toLowerCase() : g?.plural }
+/** Pick the ability a trait's spells are cast with (Elven Lineage: Int, Wis or Cha). */
+const setCast = (a: ActiveTrait, ab: string) => { const holder = { species: { ...wizard.d.species } } as Parameters<typeof setCastAbility>[0]; setCastAbility(holder, a.key, ab as Parameters<typeof setCastAbility>[2]); wizard.d.species = holder.species! }
 
 // ---- ability scores ----
 const bonus = computed(() => bonusOf(d.value))
@@ -239,20 +235,20 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
           <div v-for="a in choices" :key="a.key" class="wz-choice" :class="{ open: choiceOpen(a) }">
             <b>{{ a.trait.name }}</b> <span class="muted small">{{ a.race.name }}</span>
             <p v-if="a.trait.text" class="small md" v-html="renderInline(a.trait.text)" />
-            <template v-if="a.trait.choice!.kind === 'option'">
+            <template v-if="a.trait.choice?.kind === 'option'">
               <select :value="a.option?.id ?? ''" @change="setPicks(a, [val($event)])">
                 <option value="">Choose…</option>
                 <option v-for="o in a.trait.choice!.options ?? []" :key="o.id" :value="o.id">{{ o.name }}</option>
               </select>
               <TraitChips v-if="a.option" :t="a.option" />
             </template>
-            <template v-else>
-              <span class="small muted">Choose {{ a.trait.choice!.count ?? 1 }} {{ kindLabel(a.trait.choice!.kind, a.trait.choice!.count ?? 1) }}:</span>
-              <select v-for="n in a.trait.choice!.count ?? 1" :key="n" :value="a.picks[n - 1] ?? ''" @change="pickAt(a, n - 1, val($event))">
-                <option value="">—</option>
-                <option v-for="o in candidates(a)" :key="o.id" :value="o.id" :disabled="a.picks.includes(o.id) && a.picks[n - 1] !== o.id">{{ o.label }}</option>
+            <TraitChoicePicker v-else-if="a.trait.choice" :a="a" @pick="p => setPicks(a, p)" />
+            <label v-if="a.trait.castWith?.among?.length" class="small wz-cast">Casts its spells with
+              <select :value="a.cast ?? ''" @change="setCast(a, val($event))">
+                <option value="">Choose…</option>
+                <option v-for="ab in a.trait.castWith.among" :key="ab" :value="ab">{{ ABILITY_NAME[ab] }}</option>
               </select>
-            </template>
+            </label>
           </div>
         </template>
 

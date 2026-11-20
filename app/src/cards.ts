@@ -2,15 +2,57 @@
 // fitting of long texts and the PDF are in PrintCards.vue. DM-only text never goes on a card: cards go to the table.
 import type { Entry, Id } from './model/types'
 import { TYPES, byKey } from './model/schema'
-import { fieldLabel, get, optionLabel } from './store'
+import { db, fieldLabel, get, optionLabel, state, touch } from './store'
 import { describe } from './describe'
 import { attackOrSave } from './columns'
 import { describeEffect, effectsOf, howCast, spellsOf } from './gear'
 import { describeRequirements } from './requirements'
 
+// ---- how the cards look, kept with the world ----
+export interface CardStyle {
+  /** Title and rule colour: the theme's accent, one picked colour, or by spell school / item rarity. */
+  color: 'theme' | 'custom' | 'kind'
+  custom?: string
+  /** Font ids (theme.ts FONTS / TEXT_FONTS), or 'theme' for the theme's own. */
+  headFont: string
+  textFont: string
+  /** The text's starting size in pt (it shrinks to 6.5 pt to fit). */
+  size: number
+  paper: 'white' | 'parchment'
+  corners: 'square' | 'rounded'
+  /** A thin frame in the card's colour inside the cut line. */
+  frame: boolean
+  show: { facts: boolean; foot: boolean; credit: boolean; cutLines: boolean }
+}
+export const DEFAULT_STYLE: CardStyle = {
+  color: 'theme', headFont: 'theme', textFont: 'theme', size: 8.5, paper: 'white', corners: 'square', frame: false,
+  show: { facts: true, foot: true, credit: true, cutLines: true },
+}
+export const cardStyle = (): CardStyle => {
+  const s = state.db?.meta.cardStyle
+  return { ...DEFAULT_STYLE, ...(s ?? {}), show: { ...DEFAULT_STYLE.show, ...(s?.show ?? {}) } }
+}
+export function setCardStyle(patch: Partial<CardStyle>) {
+  db().meta.cardStyle = { ...cardStyle(), ...patch }
+  touch()
+}
+/** Colours by spell school and item rarity, for "by kind". */
+const SCHOOL: Record<string, string> = {
+  Abjuration: '#2f6fb0', Conjuration: '#c27c0e', Divination: '#6b7f8f', Enchantment: '#b0407a',
+  Evocation: '#c0392b', Illusion: '#7a4fb0', Necromancy: '#3c4a3e', Transmutation: '#2e8b57',
+}
+const RARITY: Record<string, string> = {
+  Common: '#6b6b6b', Uncommon: '#2e8b3a', Rare: '#2f6fb0', 'Very rare': '#7a3fb0', Legendary: '#d2691e', Artifact: '#b8860b',
+}
+/** A card's colour by its kind (school or rarity); the item colour for mundane items. */
+export const kindColor = (c: Card) => (c.kind === 'spell' ? SCHOOL[c.school ?? ''] : RARITY[c.rarity ?? '']) ?? '#6b5a45'
+
 export interface Card {
   id: Id
   kind: 'spell' | 'item'
+  /** Spell school / item rarity (option ids), for colouring by kind. */
+  school?: string
+  rarity?: string
   title: string
   /** "3rd-level evocation", "Magical Melee (Quarterstaff) · rare". */
   sub: string
@@ -54,7 +96,7 @@ function spellCard(e: Entry): Card {
   const components = [f.verbal && 'V', f.somatic && 'S', f.material && (material ? 'M*' : 'M')].filter(Boolean).join(', ')
   const check = attackOrSave(e)
   return {
-    id: e.id, kind: 'spell', title: e.name, sub: cap(describe(e, { parent: false })),
+    id: e.id, kind: 'spell', school: f.school ? String(f.school) : undefined, title: e.name, sub: cap(describe(e, { parent: false })),
     marks: [f.concentration && 'C', f.ritual && 'R'].filter(Boolean) as string[],
     facts: ([
       ['Casting time', String(f.castingTime ?? '')],
@@ -77,7 +119,7 @@ function itemCard(e: Entry): Card {
   const when = f.attunement ? 'While attuned' : f.kind === 'Weapon' ? 'While wielded' : 'While worn'
   const rarity = f.rarity ? L('rarity').toLowerCase() : ''
   return {
-    id: e.id, kind: 'item', title: e.name,
+    id: e.id, kind: 'item', rarity: f.rarity ? String(f.rarity) : undefined, title: e.name,
     sub: cap([describe(e, { parent: false }) || L('kind'), rarity].filter(Boolean).join(' · ')),
     marks: [],
     facts: ([

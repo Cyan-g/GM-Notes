@@ -334,6 +334,8 @@ export interface Database {
     travelModes?: import('../travel').TravelMode[]
     /** Colour theme and heading font (see theme.ts). */
     theme?: import('../theme').ThemeSettings
+    /** How printed cards look (see cards.ts); not part of a publish, so players keep their own. */
+    cardStyle?: import('../cards').CardStyle
   }
   entries: Record<Id, Entry>
   relations: Relation[]

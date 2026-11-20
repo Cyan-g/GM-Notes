@@ -114,3 +114,22 @@ export function parseAbilityBonus(text: string): AbilityBonus | undefined {
   if (r !== 'fixed') b.pick = [r]
   return b
 }
+
+// ---- choosing: what the player picks for a bonus's picks (the character creation wizard) ----
+
+/** The player's picks for a bonus: which set (the picks, or the alternative ones) and the scores chosen for each pick. */
+export interface BonusChoice { alt?: boolean; picks: Ability[][] }
+/** The picks a choice works through. */
+export const picksIn = (b: AbilityBonus | undefined, c?: BonusChoice): AbilityPick[] => ((c?.alt && b?.orPick?.length ? b.orPick : b?.pick) ?? [])
+/** The scores a pick can take: its `among` list, else any; never one already raised by the bonus's fixed part. */
+export const pickable = (b: AbilityBonus, p: AbilityPick): Ability[] => (p.among?.length ? p.among : ABILITY_KEYS).filter(a => !b.fixed?.[a])
+/** How many scores are still to be chosen. */
+export function bonusOpen(b: AbilityBonus | undefined, c?: BonusChoice): number {
+  return picksIn(b, c).reduce((n, p, i) => n + Math.max(0, (p.count ?? 1) - (c?.picks[i]?.length ?? 0)), 0)
+}
+/** What the bonus adds with these picks: the fixed part and every chosen score. */
+export function bonusApplied(b: AbilityBonus | undefined, c?: BonusChoice): Partial<Abilities> {
+  const out: Partial<Abilities> = { ...(b?.fixed ?? {}) }
+  picksIn(b, c).forEach((p, i) => { for (const a of (c?.picks[i] ?? []).slice(0, p.count ?? 1)) out[a] = (out[a] ?? 0) + p.amount })
+  return out
+}

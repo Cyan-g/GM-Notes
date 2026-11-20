@@ -27,6 +27,12 @@ export function printCards(name: string, sets: { label: string; ids: Id[] }[]) {
 }
 
 export function newEntry(type?: EntryType, fields: Record<string, unknown> = {}) {
+  // A new character is made with the creation wizard; newBlankEntry skips it.
+  if (type === 'pc' && !Object.keys(fields).length) { location.hash = '/new-character'; return }
+  newBlankEntry(type, fields)
+}
+/** The New entry dialog, for any type (a character without the wizard). */
+export function newBlankEntry(type?: EntryType, fields: Record<string, unknown> = {}) {
   ui.newType = type
   ui.newFields = fields
   ui.newOpen = true

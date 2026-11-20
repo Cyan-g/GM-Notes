@@ -48,6 +48,15 @@ characters and NPCs; the Archive, combat, encounters and GM-only text are hidden
 
 A player character's page is its sheet for play; ✎ Edit builds it.
 
+- **Creation wizard:** *New character…* walks through class and level (any level, with subclass), species and
+  background with their choices, ability scores (standard array, point buy or typed, plus the species', the
+  background's or a custom bonus), proficiencies and languages, feats at their levels, hit points (average or typed
+  rolls), starting equipment (an option of the class and the background's items or gold), spells (cantrips, prepared
+  spells and a wizard's spellbook, counted by the rules), and name, looks and story. Steps can be taken in any order
+  and say what's still open; the summary makes the character with sheet, inventory and spellbook filled in. The
+  twelve SRD classes bring their rules (`app/src/classRules.ts`); another class is filled in by hand. Class features
+  aren't added; write them on the sheet. *Make a blank one instead* skips the wizard.
+
 - **Built from:** classes (multiclassing, with subclasses), ability scores, proficiencies picked from the same lists
   items use, species, background, money, speed and features.
 - **Worked out:** modifiers, proficiency bonus, saves, skills, passive Perception, AC from the armor worn, an attack
@@ -63,8 +72,8 @@ A player character's page is its sheet for play; ✎ Edit builds it.
 - **Species and backgrounds:** set up by the GM, picked on the character. Their traits carry effects, proficiencies
   and languages, spells, uses per rest and choices the player makes on the sheet (a lineage, skills, a tool); a
   subrace adds its main race's traits. Every granted proficiency can be swapped by the player. Ability score bonuses
-  (fixed, picks, alternatives, a cap) and a background's starting equipment are stored as data but never added by
-  themselves; the coming character creation wizard will hand them out.
+  (fixed, picks, alternatives, a cap) and a background's starting equipment are stored as data and only handed out by
+  the creation wizard.
 - **The current character** (☆ on a sheet) is the one the Spellbook (spells, slots, prepared spells, spells from items
   and species) and the Workbench (recipes, tools, the ingredient pouch; crafting takes and gives items) are about.
 - **Combat:** the initiative tracker takes AC, initiative and HP from the sheets, tracks conditions with rounds left,

@@ -17,6 +17,7 @@ export type Route =
   | { name: 'orgs' }
   | { name: 'data' }
   | { name: 'lists' }
+  | { name: 'wizard' }
   | { name: 'map'; id: Id; pin?: string }
   | { name: 'dashboard'; id: string; view?: string }
 
@@ -33,6 +34,7 @@ function parse(): Route {
   if (kind === 'organizations') return { name: 'orgs' }
   if (kind === 'data') return { name: 'data' }
   if (kind === 'lists') return { name: 'lists' }
+  if (kind === 'new-character') return { name: 'wizard' }
   if (kind === 'map' && arg) return { name: 'map', id: arg, pin: extra }
   if (kind === 'd' && arg) return { name: 'dashboard', id: arg, view: extra }
   if (kind === 't' && arg) return { name: 'list', type: arg as EntryType }
@@ -69,6 +71,8 @@ export const hrefFamily = (id: Id) => `#/e/${encodeURIComponent(id)}/family`
 /** A character's Spellbook or Workbench tab. */
 export const hrefTab = (id: Id, tab: EntryTab) => `#/e/${encodeURIComponent(id)}/${tab}`
 export const hrefList = (type: EntryType) => `#/t/${type}`
+/** The character creation wizard. */
+export const hrefWizard = '#/new-character'
 export const go = (href: string) => { location.hash = href.replace(/^#/, '') }
 export const hrefDashboard = (id: string, view?: string) => `#/d/${id}${view ? '/' + encodeURIComponent(view) : ''}`
 export const hrefMap = (id: Id, pin?: string) => `#/map/${encodeURIComponent(id)}${pin ? '/' + pin : ''}`

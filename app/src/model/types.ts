@@ -235,7 +235,8 @@ export interface TraitGrant { kind: 'skill' | 'armor' | 'weapon' | 'tool' | 'lan
 /** A spell a trait gives: from character level `from` (default 1), at will, once per short or long rest, or always prepared. */
 export interface TraitSpell {
   spell: Id
-  how: 'atWill' | 'short' | 'long' | 'prepared'
+  /** `list`: on the spell list of the class it comes from (learnable, Dusk Prince); `book`: in the spellbook for free, prepared as usual (Hemomancer). */
+  how: 'atWill' | 'short' | 'long' | 'prepared' | 'list' | 'book'
   from?: number
   /** The ability it's cast with, if the trait says (attack and DC are shown with it); else the trait's `castWith`. */
   ability?: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'

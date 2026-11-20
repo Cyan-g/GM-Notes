@@ -9,7 +9,7 @@ import { db, get, touch } from '../store'
 import { activeSpellbook, currentPc, editSheet, levelOf as charLevel, longRest, mod, score, sheetOf, spellStats, type Ability } from '../sheet'
 import { activeEffectsOf, isActive, rollsLine, toggleActive } from '../spells'
 import { castFromItem, grantedSpells, restItems, unuse, type GrantedSpell } from '../gear'
-import { restSpecies, speciesSpells, useSpeciesSpell, type SpeciesSpell } from '../species'
+import { classSpellsFrom, restSpecies, speciesSpells, useSpeciesSpell, type SpeciesSpell } from '../species'
 import { classesOf } from '../model/classes'
 import { restSlots, setSlotCount, slotFor, slotRows, useSlot, type SlotRow } from '../slots'
 import type { Entry as PcEntry } from '../model/types'
@@ -77,7 +77,10 @@ const canCast = (e: Entry) => {
 // ---- spells from the items the character uses (gear.ts): cast for charges, once per rest, at will, or prepared ----
 const granted = computed(() => (owner.value ? grantedSpells(sheetOf(owner.value)) : []))
 /** Spells from the character's species (species.ts): at will, once per rest, or always prepared. */
-const innate = computed(() => (owner.value ? speciesSpells(owner.value, sheetOf(owner.value)) : []))
+// spells on the class list or in the book for free aren't cast from the feature: they're learned or prepared as usual
+const innate = computed(() => (owner.value ? speciesSpells(owner.value, sheetOf(owner.value)).filter(x => x.spell.how !== 'list' && x.spell.how !== 'book') : []))
+/** Spells a feature puts in the spellbook for free (the Hemomancer's): known, with where they come from. */
+const freeKnown = computed(() => new Map((owner.value ? classSpellsFrom(owner.value, 'book', '', sheetOf(owner.value)) : []).map(x => [x.spell, x.from])))
 /**
  * The species' and features' spells as table rows: a feature's always-prepared spells, when it has more than three
  * (a subclass's list), fold into one row that opens on a click.
@@ -125,7 +128,7 @@ function toggleAlways(id: Id) {
 const levelOf = (e: Entry) => (e.fields.level === 'Cantrip' ? 0 : Number(e.fields.level) || 0)
 const spells = (ids: Id[]) => ids.map(id => get(id)).filter((e): e is Entry => !!e)
   .sort((a, b) => levelOf(a) - levelOf(b) || a.name.localeCompare(b.name))
-const knownList = computed(() => spells(book.value.known))
+const knownList = computed(() => spells([...book.value.known, ...[...freeKnown.value.keys()].filter(id => !book.value.known.includes(id))]))
 const preparedList = computed(() => spells([...book.value.always, ...book.value.prepared]))
 /** What the spell rolls, at the caster's level and with their spellcasting modifier (a trait's spell: its own ability). */
 function rolls(e: Entry | undefined, ability?: Ability) {
@@ -263,9 +266,10 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
               <td><a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a></td>
               <td>{{ levelLabel(e) }}</td>
               <td class="sbk-actions">
+                <span v-if="freeKnown.has(e.id)" class="muted small" :title="`In the spellbook for free, from ${freeKnown.get(e.id)}`">{{ freeKnown.get(e.id) }}</span>
                 <span v-if="isPrepared(e.id)" class="muted small">prepared</span>
                 <span v-else class="drag-handle" aria-hidden="true">⠿</span>
-                <button class="link-btn x" title="Remove from the spellbook" @click="forget(e.id)">✕</button>
+                <button v-if="!freeKnown.has(e.id)" class="link-btn x" title="Remove from the spellbook" @click="forget(e.id)">✕</button>
               </td>
             </tr>
           </tbody>

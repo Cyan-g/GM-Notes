@@ -319,7 +319,7 @@ export function setCastAbility(s: CharacterSheet, key: string, ability: Ability 
 
 // ---- spells ----
 const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
-export const HOW_SPECIES: Record<TraitSpell['how'], string> = { atWill: 'at will', short: '1/short rest', long: '1/long rest', prepared: 'always prepared' }
+export const HOW_SPECIES: Record<TraitSpell['how'], string> = { atWill: 'at will', short: '1/short rest', long: '1/long rest', prepared: 'always prepared', list: 'on the spell list', book: 'in the spellbook' }
 export interface SpeciesSpell { key: string; spell: TraitSpell; from: string; ready: boolean; status: string; level: number }
 /** The spells the species gives at the character's level, with whether a once-per-rest one can be cast now. */
 export function speciesSpells(pc: Entry | undefined, s?: CharacterSheet): SpeciesSpell[] {
@@ -359,6 +359,14 @@ export function swappableSpells(a: ActiveTrait, s?: CharacterSheet): { key: stri
     const candidates = spellsMatching({ classes: x.swap.classes, level: level as string | undefined, how: x.how })
     return [{ key, given: x.spell, id: swaps[key] ?? x.spell, from, candidates }]
   }))
+}
+/**
+ * The spells features put on the spell list of a class (`list`: learnable, the Dusk Prince's expanded spells) or into
+ * the spellbook for free (`book`: the Hemomancer's), at the level reached in that class; a class of '' takes any.
+ */
+export function classSpellsFrom(pc: Entry | undefined, how: 'list' | 'book', cls = '', s?: CharacterSheet): { spell: Id; from: string }[] {
+  return speciesTraits(pc, s).filter(a => a.active && (!cls || !isClassOrigin(a.race) || a.race.fields.class === cls))
+    .flatMap(a => (a.trait.spells ?? []).filter(x => x.how === how && (x.from ?? 1) <= a.level && get(x.spell)).map(x => ({ spell: x.spell, from: a.trait.name })))
 }
 /** Cast a once-per-rest species spell, or give it back. */
 export function useSpeciesSpell(s: CharacterSheet, key: string, back = false) {

@@ -11,7 +11,7 @@ import { CLASS_RULES, EPIC_BOON_LEVEL, SUBCLASS_LEVEL, rulesOf, type Kit, type K
 import { CLASS_DIE } from './model/classes'
 import { ruleSlots } from './slots'
 import { blankSheet, mod } from './sheet'
-import { choiceOpen, isClassOrigin, own, speciesTraits } from './species'
+import { choiceOpen, classSpellsFrom, isClassOrigin, own, speciesTraits } from './species'
 import { entries, get } from './store'
 import { changed, createEntry } from './edit'
 
@@ -142,7 +142,9 @@ export function spellChoices(d: Draft): { cantrips: Entry[]; spells: Entry[]; ma
   // the class's list, and any more its features open up (Magical Secrets)
   const pc = draftPc(d)
   const lists = new Set([d.cls, ...speciesTraits(pc).filter(a => a.active && isClassOrigin(a.race) && a.race.fields.class === d.cls).flatMap(a => a.trait.spellLists ?? [])])
-  const ofClass = entries.value.filter(e => e.type === 'spell' && (e.fields.classes ?? []).some(c => lists.has(c)))
+  // and the spells its subclass puts on its list (the Dusk Prince's expanded spells) or into its spellbook (the Hemomancer's)
+  const extra = new Set([...classSpellsFrom(pc, 'list', d.cls), ...classSpellsFrom(pc, 'book', d.cls)].map(x => x.spell))
+  const ofClass = entries.value.filter(e => e.type === 'spell' && ((e.fields.classes ?? []).some(c => lists.has(c)) || extra.has(e.id)))
     .sort((a, b) => a.name.localeCompare(b.name))
   const lvl = (e: Entry) => (e.fields.level === 'Cantrip' ? 0 : Number(e.fields.level) || 0)
   return { cantrips: ofClass.filter(e => lvl(e) === 0), spells: ofClass.filter(e => lvl(e) >= 1 && lvl(e) <= maxLevel), maxLevel }

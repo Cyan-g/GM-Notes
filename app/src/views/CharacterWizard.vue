@@ -13,7 +13,7 @@ import { SUBCLASS_LEVEL } from '../classRules'
 import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, abilityBonusText } from '../abilityBonus'
 import { DICE } from '../model/classes'
 import { SKILLS, mod, signed, currentPc, setCurrent } from '../sheet'
-import { choiceOpen, grantOptions, isClassOrigin, scaleAt, setCastAbility, setPicks as setTraitPicks, speciesGrants, speciesTraits, type ActiveTrait } from '../species'
+import { choiceOpen, grantOptions, isClassOrigin, scaleAt, setCastAbility, setPicks as setTraitPicks, speciesGrants, speciesTraits, traitsOf, type ActiveTrait } from '../species'
 import { entries, formatMoney, get, listOptions, playerMode } from '../store'
 import { go, hrefEntry } from '../router'
 import { newBlankEntry } from '../ui'
@@ -39,6 +39,13 @@ const num = (ev: Event) => Number(val(ev)) || 0
 const classes = computed(() => listOptions('class'))
 const r = computed(() => rules(d.value))
 const subclasses = computed(() => (d.value.cls ? subclassesOf(d.value.cls) : []))
+/** A subclass's tagline: its description's first paragraph when it's set in italics (the SRD's). */
+const tagline = (s: Entry) => String(s.body ?? '').split(/\n\s*\n/)[0].trim().match(/^\*([^*]+)\*$/)?.[1]
+/** A subclass's features: up to the chosen level, and later ones. */
+const subFeatures = (s: Entry) => {
+  const all = traitsOf(s)
+  return { now: all.filter(t => (t.level ?? 1) <= d.value.level), later: all.filter(t => (t.level ?? 1) > d.value.level) }
+}
 function setClass(cls: string) {
   Object.assign(wizard.d, { cls, subclass: undefined, skills: [], tools: [], cantrips: [], spells: [], book: [], classKit: 0 })
 }
@@ -196,14 +203,22 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
               <select :value="dieOfDraft(d)" @change="wizard.d.die = val($event)"><option v-for="x in DICE" :key="x" :value="x">{{ x }}</option></select>
             </label>
           </div>
-          <div v-if="d.cls && d.level >= SUBCLASS_LEVEL" class="wz-row">
-            <label>Subclass
-              <select :value="d.subclass ?? ''" @change="wizard.d.subclass = val($event) || undefined">
-                <option value="">{{ subclasses.length ? 'Choose…' : 'none in this world' }}</option>
-                <option v-for="s in subclasses" :key="s.id" :value="s.id">{{ s.name }}</option>
-              </select>
-            </label>
-          </div>
+          <template v-if="d.cls && d.level >= SUBCLASS_LEVEL">
+            <h3 class="wz-sub">Subclass</h3>
+            <p v-if="!subclasses.length" class="muted small">The world has no subclasses of this class yet.</p>
+            <div class="wz-tiles wz-subclasses">
+              <button v-for="s in subclasses" :key="s.id" type="button" class="wz-tile" :class="{ on: d.subclass === s.id }" :aria-pressed="d.subclass === s.id"
+                      @click="wizard.d.subclass = d.subclass === s.id ? undefined : s.id">
+                <b>{{ s.name }}</b>
+                <small v-if="tagline(s)" class="muted"><i>{{ tagline(s) }}</i></small>
+                <span v-if="subFeatures(s).now.length" class="chips">
+                  <span v-for="t in subFeatures(s).now" :key="t.id" class="chip" :title="(t.text ?? '').slice(0, 300)">{{ t.name }} <small class="muted">{{ t.level ?? SUBCLASS_LEVEL }}</small></span>
+                </span>
+                <small v-else class="muted">No features in this world yet.</small>
+                <small v-if="subFeatures(s).later.length" class="muted">Later: {{ subFeatures(s).later.map(t => `${t.name} (${t.level})`).join(', ') }}</small>
+              </button>
+            </div>
+          </template>
         </template>
 
         <!-- species and background -->

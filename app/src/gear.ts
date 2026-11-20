@@ -4,7 +4,9 @@
 import type { Abilities, CharacterSheet, Entry, GearEffect, Id, InventoryLine, ItemSpell } from './model/types'
 import { get } from './store'
 import { isHeavyStrength, requirementsOf } from './requirements'
-import { ownerOf, speciesEffects } from './species'
+import { ownerOf, speciesEffects, speciesSize } from './species'
+import { rule } from './rules'
+import { SKILLS } from './sheet'
 import { activeEffectsOf, activeSpells } from './spells'
 import { totalLevel } from './model/classes'
 
@@ -63,6 +65,24 @@ export function describeEffects(list: GearEffect[]): string[] {
     out.push(describeEffect(f))
   }
   return out
+}
+/** Total weight carried, in lb. */
+export const weightOf = (s: CharacterSheet) => s.inventory.reduce((n, l) => n + (Number(get(l.item)?.fields.weight) || 0) * (l.qty || 0), 0)
+/**
+ * What the character carries against what they can (the Carrying capacity rule, rules.ts): Strength × 15 lb (× 2 for
+ * Large, × ½ for Tiny), or, as the encumbrance variant, over × 5 encumbered and over × 10 heavily encumbered.
+ * Undefined while the rule is off.
+ */
+export function loadOf(s: CharacterSheet, t?: GearTotals): { carried: number; capacity: number; state: 'ok' | 'over' | 'encumbered' | 'heavy'; light?: number; heavy?: number } | undefined {
+  const mode = rule('carryingCapacity')
+  if (mode === 'off') return undefined
+  const str = t ? scoreWith(s, 'str', t) : s.abilities.str
+  const size = String(speciesSize(ownerOf(s)) ?? 'Medium')
+  const k = /large/i.test(size) ? 2 : /tiny/i.test(size) ? 0.5 : 1
+  const carried = weightOf(s), capacity = str * 15 * k
+  if (mode === 'capacity') return { carried, capacity, state: carried > capacity ? 'over' : 'ok' }
+  const light = str * 5 * k, heavy = str * 10 * k
+  return { carried, capacity, light, heavy, state: carried > heavy ? 'heavy' : carried > light ? 'encumbered' : 'ok' }
 }
 /** An effect in a few words: "+1 AC", "STR 19", "Resistance: fire", "+2 Stealth". */
 export function describeEffect(f: GearEffect): string {
@@ -270,6 +290,14 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
     }
   }
   for (const { part, ability } of plusMod) part.n += Math.max(1, Math.floor((scoreWith(s!, ability, t) - 10) / 2))
+  // the active ruleset: variant encumbrance slows the character and, heavily encumbered, gives disadvantage
+  const load = s ? loadOf(s, t) : undefined
+  if (load?.state === 'encumbered') t.speed.push({ label: 'Encumbered', n: -10 })
+  if (load?.state === 'heavy') {
+    t.speed.push({ label: 'Heavily encumbered', n: -20 })
+    for (const sk of SKILLS) (t.skillAdv[sk.name] ??= []).push({ mode: 'dis', from: 'Heavily encumbered' })
+    for (const a of ['str', 'dex', 'con'] as Ability[]) (t.saveAdv[a] ??= []).push({ mode: 'dis', from: 'Heavily encumbered' })
+  }
   // Heavy armor worn without its Strength: −10 ft speed (5e).
   for (const { item } of itemsInUse(s)) {
     for (const x of requirementsOf(item)?.scores ?? []) {

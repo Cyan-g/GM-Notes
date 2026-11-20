@@ -28,6 +28,7 @@ function pageName(r: Route): string {
     case 'orgs': return 'Organizations'
     case 'data': return 'Data'
     case 'lists': return 'Lists'
+    case 'rules': return 'Ruleset'
     case 'wizard': return 'New character'
     case 'dashboard': {
       const d = DASHBOARDS.find(x => x.id === r.id)

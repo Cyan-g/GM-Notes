@@ -1384,6 +1384,25 @@ h1 .icon svg.gi { color: var(--accent); }
 .active-gear .muted { font-size: 12px; }
 
 /* A character's Equipped card beside the inventory, half and half; stacked when narrow. */
+/* the Ruleset page */
+.ruleset-page { max-width: 980px; }
+.rs-presets { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-bottom: .8rem; }
+.rs-presets label { display: inline-flex; align-items: center; gap: .4rem; }
+.rs-presets select { width: auto; }
+.rs-actions { display: inline-flex; gap: .6rem; align-items: center; margin-left: auto; }
+.rs-search { width: 100%; margin-bottom: .6rem; }
+.warn-note { color: var(--warn); margin: .2rem 0 .4rem; }
+.cs-xp input { width: 5.5rem; }
+.rs-group h2 { margin: 1rem 0 .4rem; }
+.rs-rule { margin-bottom: .6rem; }
+.rs-rule.changed { border-left: 3px solid var(--accent); }
+.rs-head { display: flex; align-items: baseline; gap: .6rem; }
+.rs-mark { color: var(--accent); }
+.rs-rule p { margin: .2rem 0 .5rem; }
+.rs-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .4rem; }
+.rs-option { display: flex; gap: .45rem; align-items: flex-start; padding: .4rem .55rem; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.rs-option.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.rs-option input { width: auto; margin-top: .25rem; }
 .inventory-tab { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 1rem; align-items: start; }
 .inventory-tab > * { margin: 0; min-width: 0; }
 @media (max-width: 900px) { .inventory-tab { grid-template-columns: minmax(0, 1fr); } }

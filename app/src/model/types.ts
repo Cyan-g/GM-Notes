@@ -183,6 +183,8 @@ export interface CharacterSheet {
   proficiencies?: Proficiencies
   /** The character's own spellbook (the Spellbook page shows it while they're the current character). */
   spellbook?: Spellbook
+  /** Experience points (when the ruleset uses them; rules.ts). */
+  xp?: number
   /** Spells switched on, whose "while active" effects count on the sheet (Bless, Shield of Faith); a long rest ends them. */
   activeSpells?: Id[]
   /** Known recipes for the Workbench; the tools are in the proficiencies, the ingredients in the inventory. */
@@ -467,6 +469,8 @@ export interface Database {
     theme?: import('../theme').ThemeSettings
     /** How printed cards look (see cards.ts); not part of a publish, so players keep their own. */
     cardStyle?: import('../cards').CardStyle
+    /** The ruleset: presets of how rules work, one active (rules.ts; the Ruleset page). */
+    rules?: import('../rules').RulesMeta
   }
   entries: Record<Id, Entry>
   relations: Relation[]

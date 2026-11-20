@@ -30,6 +30,7 @@ import OrgsView from './views/OrgsView.vue'
 import MapPage from './views/MapPage.vue'
 import DataView from './views/DataView.vue'
 import ListsView from './views/ListsView.vue'
+import RulesetView from './views/RulesetView.vue'
 import CharacterWizard from './views/CharacterWizard.vue'
 import NewEntryDialog from './components/NewEntryDialog.vue'
 import ImportDialog from './components/ImportDialog.vue'
@@ -218,6 +219,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <OrgsView v-else-if="route.current.name === 'orgs'" />
       <DataView v-else-if="route.current.name === 'data'" />
       <ListsView v-else-if="route.current.name === 'lists'" />
+      <RulesetView v-else-if="route.current.name === 'rules'" />
       <CharacterWizard v-else-if="route.current.name === 'wizard'" />
       <MapPage v-else-if="route.current.name === 'map'" :id="route.current.id" :pin="route.current.pin" :key="'map-' + route.current.id" />
       <DashboardView v-else-if="route.current.name === 'dashboard'" :id="route.current.id" :view="route.current.view" />

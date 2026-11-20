@@ -8,6 +8,7 @@ import type { CharacterSheet, Entry } from '../model/types'
 import { formatMoney, get, state } from '../store'
 import { canAttune, canEquip, carried, draggedLine, dragged, editSheet, endDrag, sheetOrBlank, startDrag } from '../sheet'
 import EntryPicker from './edit/EntryPicker.vue'
+import { gearTotals, loadOf } from '../gear'
 import MoneyInput from './edit/MoneyInput.vue'
 import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
@@ -20,6 +21,10 @@ const num = (ev: Event) => { const v = (ev.target as HTMLInputElement).value.tri
 const text = (ev: Event) => (ev.target as HTMLInputElement).value.trim() || undefined
 
 const weight = computed(() => carried(s.value))
+/** The Carrying capacity rule's view (rules.ts): carried against capacity, while the rule is on. */
+const load = computed(() => loadOf(s.value, gearTotals(s.value)))
+const round = (n: number) => Math.round(n * 10) / 10
+const loadTip = computed(() => (load.value?.light != null ? `Encumbered over ${round(load.value.light)} lb, heavily over ${round(load.value.heavy!)} lb (Strength × 5 and × 10)` : 'Carrying capacity: Strength × 15 lb'))
 const itemOf = (i: number) => get(s.value.inventory[i]?.item)
 // Ingredients are the crafting pouch: listed apart, under the gear.
 const lines = computed(() => s.value.inventory.map((l, i) => ({ l, i, e: get(l.item) })))
@@ -53,7 +58,8 @@ function onDrop(ev: DragEvent) {
 <template>
   <section class="cs-inventory card" :class="{ 'cs-inv-side': side, 'drop-over': over }"
            @dragover="onDragOver" @dragleave="over = false" @drop="onDrop">
-    <component :is="'h3'">Inventory <span v-flash.neutral="weight" class="muted small">{{ weight ? `${Math.round(weight * 10) / 10} lb, with what's equipped` : '' }}</span></component>
+    <component :is="'h3'">Inventory <span v-flash.neutral="weight" class="muted small" :title="load ? loadTip : undefined">{{ load ? `${round(load.carried)} / ${round(load.capacity)} lb` : weight ? `${round(weight)} lb, with what's equipped` : '' }}</span></component>
+    <p v-if="load && load.state !== 'ok'" class="warn-note small">{{ load.state === 'over' ? `Over the carrying capacity (${round(load.capacity)} lb): the DM decides what that means.` : load.state === 'encumbered' ? `Encumbered (over ${round(load.light!)} lb): −10 ft speed.` : `Heavily encumbered (over ${round(load.heavy!)} lb): −20 ft speed, disadvantage on ability checks, attack rolls and STR, DEX and CON saves.` }}</p>
     <table class="cs-inv">
       <tr v-for="{ l, i, e } in gear" :key="i" :draggable="!ro && !!e"
           @dragstart="startDrag($event, pc, i, 'inventory')" @dragend="endDrag">

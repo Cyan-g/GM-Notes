@@ -3,12 +3,13 @@
 import { computed, reactive } from 'vue'
 import { restSlots } from './slots'
 import { classesOf, hitDicePools, totalLevel } from './model/classes'
-import type { Abilities, CharacterSheet, Crafting, Entry, Id, InventoryLine, Proficiencies, Spellbook } from './model/types'
-import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from './model/schema'
+import type { Abilities, CharacterSheet, Crafting, Entry, GearEffect, Id, InventoryLine, Proficiencies, Spellbook } from './model/types'
+import { MARTIAL_WEAPONS, MASTERY_OF, SIMPLE_WEAPONS } from './model/schema'
+import { optionsIn } from './model/lists'
 import { db, get, state, touch } from './store'
 import { breakdown, gearTotals, restItems, scoreWith, spellsOf, sum } from './gear'
 import { unmet } from './requirements'
-import { own, ownerOf, restSpecies, speciesExpertise, speciesGrants, speciesSkills, speciesSpeed } from './species'
+import { own, ownerOf, restSpecies, speciesExpertise, speciesGrants, speciesSkills, speciesSpeed, speciesTraits } from './species'
 
 export type Ability = keyof Abilities
 export const ABILITIES: { key: Ability; label: string; short: string }[] = [
@@ -259,8 +260,9 @@ export function armorClass(s: CharacterSheet): { ac: number; from: string; untra
   const untrained = equipped(s).filter(e => e.fields.kind === 'Armor' && proficientWith(s, e) === false).map(e => e.name)
   if (s.acOverride != null) return { ac: s.acOverride, from: 'typed on the sheet', untrained }
   const t = gearTotals(s)
-  const dex = mod(scoreWith(s, 'dex', t))
-  let base = 10 + dex, from = 'unarmored', extra = 0
+  const m = (a: Ability) => mod(scoreWith(s, a, t))
+  const dex = m('dex')
+  let base = 10 + dex, from = 'unarmored', extra = 0, armored = false, shield = false
   const parts: string[] = []
   for (const e of equipped(s)) {
     const text = String(e.fields.armorClass ?? '').toLowerCase()
@@ -269,17 +271,38 @@ export function armorClass(s: CharacterSheet): { ac: number; from: string; untra
     if (e.fields.kind === 'Armor' && body) {
       base = Number(body[1]) + (body[2] ? (body[3] ? Math.min(dex, Number(body[3])) : dex) : 0)
       from = `${base} ${e.name}`
-    } else if (e.fields.kind === 'Armor' && plus) { extra += Number(plus[1]); parts.push(`+${plus[1]} ${e.name}`) }
+      armored = true
+    } else if (e.fields.kind === 'Armor' && plus) { extra += Number(plus[1]); parts.push(`+${plus[1]} ${e.name}`); shield = true }
+  }
+  // Without armor, the best AC formula a feature or spell gives (Unarmored Defense, Mage Armor, natural armor).
+  if (!armored) {
+    for (const f of t.acBase) {
+      if (f.noShield && shield) continue
+      const v = f.n + f.abilities.reduce((n, a) => n + m(a), 0)
+      if (v > base) { base = v; from = `${v} ${f.label} (${[f.n, ...f.abilities.map(a => a.toUpperCase())].join(' + ')})` }
+    }
   }
   if (from === 'unarmored') from = `${base} unarmored (10 + DEX)`
-  for (const p of t.ac) { extra += p.n; parts.push(`${p.n >= 0 ? '+' : '−'}${Math.abs(p.n)} ${p.label}`) }
+  for (const p of t.ac) {
+    if (p.when === 'armored' && !armored) continue
+    extra += p.n; parts.push(`${p.n >= 0 ? '+' : '−'}${Math.abs(p.n)} ${p.label}`)
+  }
   if (s.acBonus) parts.push(`${s.acBonus >= 0 ? '+' : '−'}${Math.abs(s.acBonus)} typed bonus`)
-  return { ac: base + extra + (s.acBonus ?? 0), from: [from, ...parts].join(' · '), untrained }
+  let ac = base + extra + (s.acBonus ?? 0)
+  // A lowest AC (Barkskin) when the rest comes to less.
+  for (const p of t.acMin) if (p.n > ac) { ac = p.n; parts.push(`at least ${p.n} from ${p.label}`) }
+  return { ac, from: [from, ...parts].join(' · '), untrained }
 }
 
 export interface Attack { id: Id; name: string; toHit: number; damage: string; type?: string; note?: string; untrained?: boolean
   /** What gear adds to hit and to damage, for the tooltip. */
-  gear?: string }
+  gear?: string
+  /** The weapon's mastery, when the character masters it, with its rule. */
+  mastery?: { name: string; rule?: string }
+  /** How it's made: an off-hand attack, the unarmed strike's feature. */
+  tag?: string
+  /** No item to open (the unarmed strike). */
+  noItem?: boolean }
 
 /**
  * One attack per equipped weapon: finesse weapons use the better of STR and DEX, ranged ones DEX.
@@ -287,24 +310,57 @@ export interface Attack { id: Id; name: string; toHit: number; damage: string; t
  */
 export function attacks(s: CharacterSheet, prof: number): Attack[] {
   const t = gearTotals(s)
-  return equipped(s).filter(e => e.fields.kind === 'Weapon').map(e => {
-    const props = ((e.fields.properties) ?? []).map(p => p.toLowerCase())
-    const ranged = props.includes('ammunition') || /bow|crossbow|sling|blowgun|dart/i.test(`${e.name} ${e.fields.subtype ?? ''}`)
-    const str = mod(scoreWith(s, 'str', t)), dex = mod(scoreWith(s, 'dex', t))
-    const m = props.includes('finesse') ? Math.max(str, dex) : ranged ? dex : str
-    const magic = sum(t.attackOf[e.id]) + sum(t.attackAll)
+  const pc = ownerOf(s)
+  const str = mod(scoreWith(s, 'str', t)), dex = mod(scoreWith(s, 'dex', t))
+  // the base weapons the character masters (Weapon Mastery picks)
+  const mastered = new Set(speciesTraits(pc, s).filter(a => a.active && a.trait.choice?.kind === 'mastery').flatMap(a => a.picks))
+  const masteryOf = (e: Entry) => String(e.fields.mastery ?? MASTERY_OF[String(e.fields.baseWeapon ?? '')] ?? '')
+  const ruleOf = (m: string) => optionsIn(state.db?.meta, 'weaponMastery').find(o => o.id === m)?.note
+  const propsOf = (e: Entry) => ((e.fields.properties) ?? []).map(p => p.toLowerCase())
+  const isRanged = (e: Entry) => propsOf(e).includes('ammunition') || /bow|crossbow|sling|blowgun|dart/i.test(`${e.name} ${e.fields.subtype ?? ''}`)
+  /** Whether a bonus limited to melee, ranged, or finesse-or-ranged attacks counts for this one. */
+  const fits = (when: GearEffect['when'], ranged: boolean, finesse: boolean) => !when || (when === 'melee' && !ranged) || (when === 'ranged' && ranged) || (when === 'finesseOrRanged' && (finesse || ranged))
+  const plus = (n: number) => (n ? ' ' + signed(n).replace('−', '− ').replace('+', '+ ') : '')
+  const weapons = equipped(s).filter(e => e.fields.kind === 'Weapon')
+  const nick = weapons.some(x => mastered.has(String(x.fields.baseWeapon)) && masteryOf(x) === 'Nick')
+  function line(e: Entry, offhand = false): Attack {
+    const props = propsOf(e), ranged = isRanged(e), finesse = props.includes('finesse')
+    const m = finesse ? Math.max(str, dex) : ranged ? dex : str
+    const hitParts = [...(t.attackOf[e.id] ?? []), ...t.attackAll].filter(p => fits(p.when, ranged, finesse))
+    const dmgParts = [...(t.damageOf[e.id] ?? []), ...t.damageAll].filter(p => fits(p.when, ranged, finesse))
     const dice = String(e.fields.damage ?? '').trim()
-    const dmg = m + sum(t.damageOf[e.id]) + sum(t.damageAll)
-    const damage = dice ? dice.split('/').map(d => `${d.trim()}${dmg ? ' ' + signed(dmg).replace('−', '− ').replace('+', '+ ') : ''}`).join(' / ') : '—'
+    // The off-hand attack adds no ability modifier (unless it's negative), unless a feature says so (Two-Weapon Fighting).
+    const ability = offhand && !t.offhandMod ? Math.min(m, 0) : m
+    const dmg = ability + sum(dmgParts)
+    const hands = props.includes('versatile') ? [' one-handed', ' two-handed'] : []
+    const damage = dice ? dice.split('/').map((d, i) => `${d.trim()}${plus(dmg)}${hands[i] ?? ''}`).join(' / ') : '—'
     const untrained = proficientWith(s, e) === false
     const untrainedFor = proficientWith(s, e) !== true
-    // Typed extra damage: "+ 2 necrotic", "+ 1d6 radiant" (the proficient-only kind needs the proficiency).
-    const extras = [...(t.extraOf[e.id] ?? []), ...t.extraAll].filter(x => !x.proficient || !untrainedFor)
-    const extraText = extras.map(x => ` + ${x.dice}${x.type ? ' ' + x.type.toLowerCase() : ''}`).join('')
-    const hitParts = [...(t.attackOf[e.id] ?? []), ...t.attackAll], dmgParts = [...(t.damageOf[e.id] ?? []), ...t.damageAll]
+    // Typed extra damage: "+ 2 necrotic", "+ 1d6 radiant", "+ 3d6 (once per turn)"; the proficient-only kind needs the proficiency.
+    const extras = [...(t.extraOf[e.id] ?? []), ...t.extraAll].filter(x => (!x.proficient || !untrainedFor) && fits(x.when, ranged, finesse))
+    const extraText = extras.map(x => ` + ${x.dice}${x.type ? ' ' + x.type.toLowerCase() : ''}${x.note ? ` (${x.note})` : ''}`).join('')
     const gear = [breakdown('To hit', hitParts), breakdown('Damage', dmgParts)].filter(Boolean).join('\n') || undefined
-    return { id: e.id, name: e.name, toHit: m + (untrained ? 0 : prof) + magic, damage: damage + extraText, type: (e.fields.damageType)?.join('/'), note: e.fields.range, untrained, gear }
+    const ms = masteryOf(e)
+    const mastery = ms && mastered.has(String(e.fields.baseWeapon ?? '')) ? { name: ms, rule: ruleOf(ms) } : undefined
+    return {
+      id: e.id, name: e.name, toHit: m + (untrained ? 0 : prof) + sum(hitParts), damage: damage + extraText, type: (e.fields.damageType)?.join('/'), note: e.fields.range,
+      untrained, gear, ...(mastery ? { mastery } : {}), ...(offhand ? { tag: nick ? 'off-hand (Nick)' : 'off-hand, bonus action' } : {}),
+    }
+  }
+  const out = weapons.map(e => line(e))
+  // two Light melee weapons: the second one's extra attack, off-hand
+  const light = weapons.filter(e => propsOf(e).includes('light') && !isRanged(e))
+  if (light.length >= 2) out.push(line(light[1], true))
+  // the unarmed strike: 1 + STR bludgeoning, or a feature's die with STR or DEX (Martial Arts)
+  const u = t.unarmed, um = u?.dex ? Math.max(str, dex) : str
+  const uHit = t.attackAll.filter(p => fits(p.when, false, !!u?.dex)), uDmg = t.damageAll.filter(p => fits(p.when, false, !!u?.dex))
+  const uDice = u?.dice && /d/.test(u.dice) ? u.dice : undefined
+  const uFlat = (uDice ? 0 : Number(u?.dice) || 1) + um + sum(uDmg)
+  out.push({
+    id: '__unarmed', name: 'Unarmed strike', toHit: um + prof + sum(uHit), damage: uDice ? `${uDice}${plus(um + sum(uDmg))}` : String(Math.max(1, uFlat)), type: 'Bludgeoning',
+    noItem: true, ...(u ? { tag: u.from } : {}), gear: [breakdown('To hit', uHit), breakdown('Damage', uDmg)].filter(Boolean).join('\n') || undefined,
   })
+  return out
 }
 
 /** Total weight carried, in lb. */

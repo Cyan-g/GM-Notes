@@ -284,7 +284,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         <template v-if="build">
         <h4>Attacks</h4>
         <table v-if="atks.length" class="cs-attacks">
-          <tr v-for="a in atks" :key="a.id"><td><button class="link-btn cs-item" @click="showItem(a.id)">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> <AppIcon ui="warning" /></span></td><td><b v-flash="a.toHit" :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td><td><span v-flash="a.damage">{{ a.damage }}</span> <span class="muted small">{{ a.type }}</span></td></tr>
+          <tr v-for="a in atks" :key="a.id"><td><span v-if="a.noItem" class="cs-item-plain">{{ a.name }}</span><button v-else class="link-btn cs-item" @click="showItem(a.id)">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> <AppIcon ui="warning" /></span></td><td><b v-flash="a.toHit" :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td><td><span v-flash="a.damage">{{ a.damage }}</span> <span class="muted small">{{ a.type }}</span></td></tr>
         </table>
         <p v-else class="muted small">Equip a weapon in the inventory to see its attack here.</p>
         </template>

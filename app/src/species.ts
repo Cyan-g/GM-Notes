@@ -166,14 +166,31 @@ export function sourceTag(a: ActiveTrait): string {
   if (a.race.type === 'feat' && a.trait.name === a.race.name) return 'feat'
   return a.race.name
 }
+/** An effect that takes its number or dice from the feature's scaling value, with that value filled in. */
+export function withScale(f: GearEffect, a: ActiveTrait): GearEffect {
+  if (!f.fromScale) return f
+  const v = scaleAt(a)
+  if (v == null) return { ...f, value: 0, dice: undefined }
+  return /d\d/.test(v) ? { ...f, dice: v.replace(/^\+/, '') } : { ...f, value: Number(v.replace(/[^\d-]/g, '')) || 0 }
+}
+/** Whether a switchable feature (Rage) is on. */
+export const isOn = (a: ActiveTrait, s?: CharacterSheet) => !!stateOf(s).on?.includes(a.key)
+/** Switch a feature on or off. */
+export function toggleOn(s: CharacterSheet, key: string) {
+  const st = edit(s), l = new Set(st.on ?? [])
+  if (l.has(key)) l.delete(key); else l.add(key)
+  st.on = [...l]
+  if (!st.on.length) delete st.on
+}
 /** Whether a trait is one a picked option brought (it isn't in the entry's own traits). */
 export const isSubChoice = (a: ActiveTrait) => !!(a.trait as Trait & { sub?: boolean }).sub
 const active = (pc: Entry | undefined, s?: CharacterSheet) => speciesTraits(pc, s).filter(a => a.active)
 
 /** The effects that count, each with what it comes from (the trait, or the chosen option). */
 export function speciesEffects(pc: Entry | undefined, s?: CharacterSheet): { name: string; effects: GearEffect[] }[] {
-  return active(pc, s).flatMap(a => [
-    { name: a.trait.name, effects: a.trait.effects ?? [] },
+  const on = new Set(stateOf(s ?? (pc?.fields.sheet as CharacterSheet | undefined)).on ?? [])
+  return active(pc, s).filter(a => !a.trait.toggle || on.has(a.key)).flatMap(a => [
+    { name: a.trait.name, effects: (a.trait.effects ?? []).map(f => withScale(f, a)) },
     ...a.options.map(o => ({ name: o.name, effects: o.effects ?? [] })),
   ]).filter(x => x.effects.length)
 }
@@ -382,7 +399,7 @@ export const speciesPrepared = (pc: Entry | undefined) => speciesSpells(pc).filt
 export function restSpecies(s: CharacterSheet, pc: Entry, kind: 'short' | 'long') {
   const st = s.species
   if (!st) return
-  if (kind === 'long') { delete st.used; delete st.spellsUsed; return }
+  if (kind === 'long') { delete st.used; delete st.spellsUsed; delete st.on; return }
   const traits = speciesTraits(pc, s)
   if (st.used) for (const key of Object.keys(st.used)) {
     const u = traits.find(a => a.key === key)?.trait.uses

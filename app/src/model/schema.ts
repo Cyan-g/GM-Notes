@@ -51,6 +51,16 @@ const ARMOR_TYPES = ['Light', 'Medium', 'Heavy', 'Shield', 'Clothing']
 /** The standard weapons and their category, so a weapon's category can be told from its base weapon. */
 export const SIMPLE_WEAPONS = ['Club', 'Dagger', 'Greatclub', 'Handaxe', 'Javelin', 'Light Hammer', 'Mace', 'Quarterstaff', 'Sickle', 'Spear', 'Dart', 'Light Crossbow', 'Shortbow', 'Sling']
 /** The standard weapon properties (the Weapon properties list starts with them; more can be added there). */
+/** The weapon masteries (2024): what a character who masters a weapon can do with it (notes on the Lists page). */
+export const MASTERIES = ['Cleave', 'Graze', 'Nick', 'Push', 'Sap', 'Slow', 'Topple', 'Vex']
+/** Each base weapon's mastery, as in the SRD; a weapon item can name another. */
+export const MASTERY_OF: Record<string, string> = {
+  Club: 'Slow', Dagger: 'Nick', Greatclub: 'Push', Handaxe: 'Vex', Javelin: 'Slow', 'Light Hammer': 'Nick', Mace: 'Sap', Quarterstaff: 'Topple',
+  Sickle: 'Nick', Spear: 'Sap', Dart: 'Vex', 'Light Crossbow': 'Slow', Shortbow: 'Vex', Sling: 'Slow',
+  Battleaxe: 'Topple', Flail: 'Sap', Glaive: 'Graze', Greataxe: 'Cleave', Greatsword: 'Graze', Halberd: 'Cleave', Lance: 'Topple', Longsword: 'Sap',
+  Maul: 'Topple', Morningstar: 'Sap', Pike: 'Push', Rapier: 'Vex', Scimitar: 'Nick', Shortsword: 'Vex', Trident: 'Topple', 'War Pick': 'Sap',
+  Warhammer: 'Push', Whip: 'Slow', Blowgun: 'Vex', 'Hand Crossbow': 'Vex', 'Heavy Crossbow': 'Push', Longbow: 'Slow',
+}
 export const WEAPON_PROPERTIES = ['Ammunition', 'Finesse', 'Heavy', 'Light', 'Loading', 'Reach', 'Special', 'Thrown', 'Two-Handed', 'Versatile']
 export const MARTIAL_WEAPONS = ['Battleaxe', 'Flail', 'Glaive', 'Greataxe', 'Greatsword', 'Halberd', 'Lance', 'Longsword', 'Maul', 'Morningstar', 'Pike', 'Rapier', 'Scimitar', 'Shortsword', 'Trident', 'War Pick', 'Warhammer', 'Whip', 'Blowgun', 'Hand Crossbow', 'Heavy Crossbow', 'Longbow', 'Net']
 
@@ -179,6 +189,8 @@ export const SCHEMA = [
       { key: 'damageType', label: 'Damage type', kind: 'list', options: DAMAGE, when: W, group: 'Weapon' },
       { key: 'range', label: 'Range', kind: 'text', when: W, group: 'Weapon' },
       { key: 'properties', label: 'Properties', kind: 'list', options: WEAPON_PROPERTIES, list: 'weaponProperty', when: W, group: 'Weapon' },
+      // Its mastery, if not its base weapon's (MASTERY_OF); used by a character who masters it.
+      { key: 'mastery', label: 'Mastery', kind: 'select', options: MASTERIES, list: 'weaponMastery', when: W, group: 'Weapon' },
       { key: 'traits', label: 'Properties', kind: 'list', options: [], list: 'ingredientProperty', when: ING, group: 'Ingredient' },
       { key: 'armorType', label: 'Armor type', kind: 'select', options: ARMOR_TYPES, fixed: ARMOR_TYPES, when: A, group: 'Armor' },
       { key: 'armorClass', label: 'Armor class', kind: 'text', when: A, group: 'Armor' },

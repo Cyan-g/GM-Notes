@@ -10,9 +10,11 @@ import type { CharacterSheet, Entry, Feature, TraitOption } from '../model/types
 import { editSheet } from '../sheet'
 import { get, state } from '../store'
 import { hrefEntry } from '../router'
+import { MASTERY_OF } from '../model/schema'
+import { optionsIn } from '../model/lists'
 import { ui } from '../ui'
 import {
-  backgroundOf, choiceCandidates, choiceOpen, featOfFeature, picksLeft, sourceTag, isClassOrigin, scaleAt, shownInPlay, speciesTraits, spendUse, traitsOf, usesLeft, usesMax,
+  backgroundOf, choiceCandidates, choiceOpen, featOfFeature, isOn, picksLeft, sourceTag, toggleOn, isClassOrigin, scaleAt, shownInPlay, speciesTraits, spendUse, traitsOf, usesLeft, usesMax,
   type ActiveTrait,
 } from '../species'
 import EntryLink from './EntryLink.vue'
@@ -50,6 +52,7 @@ const originFeat = computed(() => {
 })
 /** The sheet's feature lines, but for feats whose features are listed. */
 const ownFeatures = computed(() => props.s.features.filter(f => f.name.trim() && !live(featOfFeature(f))))
+const flip = (a: ActiveTrait) => { if (!ro.value) editSheet(props.pc, x => toggleOn(x, a.key)) }
 const use = (a: ActiveTrait, n: number) => { if (!ro.value) editSheet(props.pc, x => spendUse(x, props.pc, a, n)) }
 const max = (a: ActiveTrait) => usesMax(props.pc, a, props.s)
 const left = (a: ActiveTrait) => usesLeft(props.pc, props.s, a)
@@ -57,7 +60,11 @@ const left = (a: ActiveTrait) => usesLeft(props.pc, props.s, a)
 const tag = sourceTag
 /** Weapons to master and other plain picks, by name. */
 const pickNames = (a: ActiveTrait) => (a.trait.choice && a.trait.choice.kind === 'mastery'
-  ? a.picks.map(id => choiceCandidates(a.trait.choice!).find(o => o.id === id)?.label ?? id) : [])
+  ? a.picks.map(id => `${choiceCandidates(a.trait.choice!).find(o => o.id === id)?.label ?? id}${MASTERY_OF[id] ? ` (${MASTERY_OF[id]})` : ''}`) : [])
+/** The masteries of the weapons picked to master, with their rules (the Lists page's notes). */
+const masteries = (a: ActiveTrait) => (a.trait.choice?.kind === 'mastery'
+  ? [...new Set(a.picks.map(id => MASTERY_OF[id]).filter(Boolean))].map(m => ({ name: m, rule: optionsIn(state.db?.meta, 'weaponMastery').find(o => o.id === m)?.note }))
+  : [])
 const own = (f: Feature) => f.text?.trim()
 /** A text without the SRD's source line (it's for the entry's page, not the sheet). */
 const clean = (t: unknown) => String(t ?? '').replace(/\s*\*?Source: System Reference Document[^*]*\*?\s*$/i, '').trim()
@@ -75,6 +82,7 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
             <b>{{ l.a.trait.name }}</b>
             <span class="feat-tag" :class="'tag-' + l.a.race.type" :title="`From ${l.a.race.name}`">{{ tag(l.a) }}</span>
             <span v-if="scaleAt(l.a)" class="chip sp-scale">{{ l.a.trait.scale!.label }} {{ scaleAt(l.a) }}</span>
+            <button v-if="l.a.trait.toggle" class="chip-btn sbk-on" :class="{ on: isOn(l.a, s) }" :aria-pressed="isOn(l.a, s)" :disabled="ro" :title="isOn(l.a, s) ? 'On: its effects count on the sheet. Click to end it' : 'Switch it on: its effects count on the sheet until you end it or take a long rest'" @click.stop.prevent="flip(l.a)">{{ isOn(l.a, s) ? 'On' : 'Off' }}</button>
             <span v-if="pickNames(l.a).length" class="muted small">{{ pickNames(l.a).join(', ') }}</span>
             <a v-if="choiceOpen(l.a) && !ro" class="sp-open small" :href="hrefEntry(pc.id, true)" title="Pick on the Edit page" @click.stop="ui.scrollTo = 'choices'">{{ picksLeft(l.a) }} to pick ✎</a>
             <span v-if="max(l.a)" class="sp-uses" :title="`Uses; back on a ${l.a.trait.uses!.recharge} rest${l.a.trait.uses!.shortBack ? `, ${l.a.trait.uses!.shortBack} on a short rest` : ''}`" @click.stop.prevent>
@@ -91,6 +99,7 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
           </summary>
           <MarkdownView v-if="l.a.trait.text" class="small sp-text" :source="l.a.trait.text" />
           <TraitChips :t="l.a.trait" no-uses :reached="l.a.level" />
+          <ul v-if="masteries(l.a).length" class="small sp-masteries"><li v-for="m in masteries(l.a)" :key="m.name"><b>{{ m.name }}.</b> {{ m.rule }}</li></ul>
         </details>
       </div>
       <!-- a picked option (an invocation, a Metamagic option, a lineage…) -->

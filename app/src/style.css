@@ -1391,6 +1391,10 @@ h1 .icon svg.gi { color: var(--accent); }
 .rs-presets select { width: auto; }
 .rs-actions { display: inline-flex; gap: .6rem; align-items: center; margin-left: auto; }
 .rs-search { width: 100%; margin-bottom: .6rem; }
+.atk-mastery { font-size: 11px; margin-left: .3rem; }
+.tag-ritual { font-size: 10px; padding: 0 .35rem; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.atk-sub td, .atk-cantrip td { font-size: 13px; }
+.cs-item-plain { font-weight: 600; }
 .warn-note { color: var(--warn); margin: .2rem 0 .4rem; }
 .cs-xp input { width: 5.5rem; }
 .rs-group h2 { margin: 1rem 0 .4rem; }

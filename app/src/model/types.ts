@@ -73,7 +73,7 @@ export interface RankLine { title: string; renown?: number; station?: string }
  */
 export interface GearEffect {
   on: 'ac' | 'ability' | 'saves' | 'save' | 'attack' | 'damage' | 'spellAttack' | 'spellDC' | 'skill' | 'speed' | 'initiative' | 'maxHp' | 'maxHpLevel' | 'resistance' | 'damageImmunity' | 'hitDice' | 'feature'
-    | 'skillAdv' | 'saveAdv' | 'extraDamage' | 'sense' | 'immunity'
+    | 'skillAdv' | 'saveAdv' | 'extraDamage' | 'sense' | 'immunity' | 'acBase' | 'acMin' | 'unarmed' | 'offhandMod'
   value?: number
   set?: boolean
   force?: boolean
@@ -89,6 +89,14 @@ export interface GearEffect {
   pb?: boolean
   sense?: string
   condition?: string
+  /** AC formula (`acBase`): the ability modifiers added to `value` (Unarmored Defense: DEX and CON). */
+  abilities?: ('str' | 'dex' | 'con' | 'int' | 'wis' | 'cha')[]
+  /** AC formula: not with a shield (a monk's Unarmored Defense). */
+  noShield?: boolean
+  /** Attack, damage, extra damage or AC: only for melee or ranged attacks, finesse-or-ranged ones, or while wearing armor. */
+  when?: 'melee' | 'ranged' | 'finesseOrRanged' | 'armored'
+  /** A feature's effect whose number or dice is the feature's scaling value (Rage Damage, Sneak Attack, Martial Arts). */
+  fromScale?: boolean
 }
 /**
  * What an item asks of whoever uses it (requirements.ts): minimum ability scores, one of some classes (or any
@@ -196,6 +204,8 @@ export interface CharacterSheet {
 export interface SpeciesState {
   /** The picks of a trait's choice: skills, language or tool ids, or the id of the chosen option. */
   picks?: Record<string, string[]>
+  /** Switchable features that are on (their keys; Rage while raging); a long rest switches them off. */
+  on?: string[]
   /** Uses spent since the last rest. */
   used?: Record<string, number>
   /** Once-per-rest spells cast since the last rest. */
@@ -294,6 +304,8 @@ export interface Trait extends TraitOption {
    * counts (proficiencies, spells, numbers) is left out. 'show' or 'hide' decides it instead.
    */
   onSheet?: 'show' | 'hide'
+  /** Switched on and off in play (Rage): its effects only count while it's on. */
+  toggle?: boolean
   choice?: TraitChoice
   /** More classes' spell lists the class it comes from can take its spells from (Magical Secrets: Cleric, Druid, Wizard). */
   spellLists?: string[]

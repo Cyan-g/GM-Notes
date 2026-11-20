@@ -15,7 +15,7 @@ const props = defineProps<{ /** The entry's type: more spell lists are offered o
 const forClass = computed(() => props.entryType === 'class' || props.entryType === 'subclass')
 /** The folded settings a trait has set, in a word each, for the fold's label. */
 const moreSet = (t: Trait) => [
-  t.onSheet && (t.onSheet === 'show' ? 'always on the sheet' : 'not in play'), t.uses && 'limited uses', t.scale && 'scaling value',
+  t.onSheet && (t.onSheet === 'show' ? 'always on the sheet' : 'not in play'), t.toggle && 'switched on in play', t.uses && 'limited uses', t.scale && 'scaling value',
   t.castWith && 'spells cast with', t.spellLists?.length && 'more spell lists',
 ].filter(Boolean) as string[]
 const list = computed(() => model.value ?? [])
@@ -24,7 +24,7 @@ function put(i: number, t: Trait) { const l = [...list.value]; l[i] = t; save(l)
 const patch = (i: number, p: Partial<Trait>) => {
   const t: Trait = { ...list.value[i], ...p }
   if (!t.level || t.level <= 1) delete t.level
-  for (const k of ['uses', 'choice', 'scale', 'onSheet', 'spellLists', 'castWith'] as const) if (t[k] == null) delete t[k]
+  for (const k of ['uses', 'choice', 'scale', 'onSheet', 'spellLists', 'castWith', 'toggle'] as const) if (t[k] == null) delete t[k]
   put(i, t)
 }
 const add = () => save([...list.value, { id: newTraitId(), name: 'New trait' }])
@@ -126,6 +126,7 @@ const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
           <select :value="t.onSheet ?? ''" @change="patch(i, { onSheet: (val($event) || undefined) as Trait['onSheet'] })">
             <option value="">when useful</option><option value="show">always</option><option value="hide">not in play</option>
           </select></label>
+        <label class="small" title="Switched on and off in play (Rage): its effects only count while it's on"><input type="checkbox" :checked="!!t.toggle" @change="patch(i, { toggle: ($event.target as HTMLInputElement).checked || undefined })" /> Switched on in play</label>
         <label class="small"><input type="checkbox" :checked="!!t.uses" @change="setUses(i, ($event.target as HTMLInputElement).checked)" /> Limited uses</label>
         <template v-if="t.uses">
           <select :value="countKind(t.uses)" aria-label="How many" @change="setUse(i, { count: val($event) === 'n' ? 1 : val($event) as Uses['count'] })">

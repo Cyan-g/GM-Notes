@@ -4,8 +4,11 @@
 import AppIcon from './AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Entry, Id } from '../model/types'
-import { byType, listOptions } from '../store'
-import { attacks, castingAbility, levelOf, mod, profBonus, profsOf, sheetOrBlank, signed } from '../sheet'
+import { byType, get, listOptions } from '../store'
+import { attacks, castingAbility, levelOf, mod, profBonus, profsOf, sheetOrBlank, signed, spellStats, type Ability } from '../sheet'
+import { speciesSpells } from '../species'
+import { rollsLine, rollsOf } from '../spells'
+import { hrefEntry } from '../router'
 import { breakdown, gearTotals, scoreWith, sum } from '../gear'
 import { hrefTab } from '../router'
 import ProfChips from './ProfChips.vue'
@@ -22,6 +25,24 @@ const castMod = computed(() => (cast.value ? mod(scoreWith(s.value, cast.value, 
 const dc = computed(() => 8 + prof.value + castMod.value + sum(gt.value.spellDC))
 const spellAtk = computed(() => prof.value + castMod.value + sum(gt.value.spellAttack))
 const profs = computed(() => profsOf(s.value))
+/** The character's damaging cantrips (in the spellbook or from features), with their attack or save DC and damage. */
+const cantrips = computed(() => {
+  const book = s.value.spellbook, ids = new Set([...(book?.known ?? []), ...(book?.prepared ?? []), ...(book?.always ?? [])])
+  const own = [...ids].map(id => ({ id, ability: undefined as Ability | undefined }))
+  const innate = speciesSpells(props.pc, s.value).filter(x => x.spell.how === 'atWill').map(x => ({ id: x.spell.spell, ability: x.spell.ability as Ability | undefined }))
+  const seen = new Set<string>()
+  return [...own, ...innate].flatMap(({ id, ability }) => {
+    const e = get(id)
+    if (!e || e.type !== 'spell' || e.fields.level !== 'Cantrip' || seen.has(id) || !rollsOf(e).some(r => r.kind === 'damage')) return []
+    if (!['Attack', 'Saving throw'].includes(String(e.fields.spellType ?? ''))) return []
+    seen.add(id)
+    const st = ability ? spellStats(props.pc, ability) : undefined
+    const atk = st?.attack ?? spellAtk.value, save = st?.dc ?? dc.value, m = ability ? mod(scoreWith(s.value, ability, gt.value)) : castMod.value
+    const check = e.fields.spellType === 'Attack' ? signed(atk) : `DC ${save}`
+    const tip = e.fields.spellType === 'Attack' ? `Spell attack${ability ? `, cast with ${ability.toUpperCase()}` : ''}` : `${String(e.fields.savingThrow ?? '').toUpperCase()} save${ability ? `, cast with ${ability.toUpperCase()}` : ''}`
+    return [{ id, name: e.name, check, tip, rolls: rollsLine(e, { level: levelOf(props.pc), mod: m }) }]
+  })
+})
 const armorTypes = computed(() => listOptions('item.armorType').filter(o => o.id !== 'Clothing'))
 const tools = computed(() => (byType.value.get('item') ?? []).filter(e => e.fields.kind === 'Tool').map(e => ({ id: e.id, label: e.name })))
 const shown = ref<Id | null>(null)
@@ -34,13 +55,25 @@ const none = (k: 'armor' | 'weapons' | 'tools' | 'languages') => !profs.value[k]
       <div>
         <h3>Attacks</h3>
         <table v-if="atks.length" class="cs-attacks">
-          <tr v-for="a in atks" :key="a.id">
-            <td><button class="link-btn cs-item" @click="shown = a.id">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> <AppIcon ui="warning" /></span></td>
+          <tr v-for="(a, i) in atks" :key="a.id + i" :class="{ 'atk-sub': a.noItem || a.tag?.startsWith('off-hand') }">
+            <td>
+              <span v-if="a.noItem" class="cs-item-plain">{{ a.name }}</span>
+              <button v-else class="link-btn cs-item" @click="shown = a.id">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> <AppIcon ui="warning" /></span>
+              <span v-if="a.mastery" class="chip atk-mastery tip" :data-tip="a.mastery.rule ? `${a.mastery.name}: ${a.mastery.rule}` : a.mastery.name">{{ a.mastery.name }}</span>
+              <span v-if="a.tag" class="muted small"> · {{ a.tag }}</span>
+            </td>
             <td><b v-flash="a.toHit" :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td>
             <td><span v-flash="a.damage">{{ a.damage }}</span> <span class="muted small">{{ a.type }}</span></td>
           </tr>
+          <!-- cantrips that attack or force a save, at the character's level -->
+          <tr v-for="c in cantrips" :key="'c' + c.id" class="atk-cantrip">
+            <td><a :href="hrefEntry(c.id)" class="cs-item">{{ c.name }}</a> <span class="muted small">cantrip</span></td>
+            <td><b class="tip" :data-tip="c.tip">{{ c.check }}</b></td>
+            <td><span v-flash="c.rolls">{{ c.rolls }}</span></td>
+          </tr>
         </table>
         <p v-else class="muted small">Equip a weapon to see its attack here.</p>
+        <p v-if="atks.length <= 1" class="muted small">Weapons appear here once equipped (Inventory tab).</p>
       </div>
       <div class="atk-spell">
         <h3>Spells</h3>

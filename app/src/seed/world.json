@@ -1103,6 +1103,48 @@
      "label": "Summoning"
     }
    ],
+   "weaponMastery": [
+    {
+     "id": "Cleave",
+     "label": "Cleave",
+     "note": "On a melee hit, make another attack roll against a second creature within 5 feet of the first and within reach (once per turn); its damage adds no ability modifier unless negative."
+    },
+    {
+     "id": "Graze",
+     "label": "Graze",
+     "note": "On a miss, the target still takes damage equal to the ability modifier used for the attack, of the weapon’s type."
+    },
+    {
+     "id": "Nick",
+     "label": "Nick",
+     "note": "The extra attack of the Light property can be part of the Attack action instead of a bonus action (once per turn)."
+    },
+    {
+     "id": "Push",
+     "label": "Push",
+     "note": "On a hit, push the creature (Large or smaller) up to 10 feet straight away from you."
+    },
+    {
+     "id": "Sap",
+     "label": "Sap",
+     "note": "On a hit, the creature has disadvantage on its next attack roll before the start of your next turn."
+    },
+    {
+     "id": "Slow",
+     "label": "Slow",
+     "note": "On a hit that deals damage, the creature’s speed drops by 10 feet until the start of your next turn (not cumulative)."
+    },
+    {
+     "id": "Topple",
+     "label": "Topple",
+     "note": "On a hit, the creature makes a Constitution save (DC 8 + your ability modifier and proficiency bonus) or has the Prone condition."
+    },
+    {
+     "id": "Vex",
+     "label": "Vex",
+     "note": "On a hit that deals damage, you have advantage on your next attack roll against that creature before the end of your next turn."
+    }
+   ],
    "weaponProperty": [
     {
      "id": "Ammunition",
@@ -1613,12 +1655,52 @@
          "+4"
         ]
        ]
-      }
+      },
+      "toggle": true,
+      "effects": [
+       {
+        "on": "damage",
+        "fromScale": true,
+        "when": "melee"
+       },
+       {
+        "on": "resistance",
+        "type": "Bludgeoning"
+       },
+       {
+        "on": "resistance",
+        "type": "Piercing"
+       },
+       {
+        "on": "resistance",
+        "type": "Slashing"
+       },
+       {
+        "on": "saveAdv",
+        "ability": "str",
+        "mode": "adv"
+       },
+       {
+        "on": "skillAdv",
+        "skill": "Athletics",
+        "mode": "adv"
+       }
+      ]
      },
      {
       "id": "unarmored-defense",
       "name": "Unarmored Defense",
-      "text": "While you aren't wearing any armor, your base Armor Class equals 10 plus your Dexterity and Constitution modifiers. You can use a Shield and still gain this benefit."
+      "text": "While you aren't wearing any armor, your base Armor Class equals 10 plus your Dexterity and Constitution modifiers. You can use a Shield and still gain this benefit.",
+      "effects": [
+       {
+        "on": "acBase",
+        "value": 10,
+        "abilities": [
+         "dex",
+         "con"
+        ]
+       }
+      ]
      },
      {
       "id": "weapon-mastery",
@@ -2467,12 +2549,30 @@
          "1d12"
         ]
        ]
-      }
+      },
+      "effects": [
+       {
+        "on": "unarmed",
+        "fromScale": true,
+        "proficient": true
+       }
+      ]
      },
      {
       "id": "unarmored-defense",
       "name": "Unarmored Defense",
-      "text": "While you aren't wearing armor or wielding a Shield, your base Armor Class equals 10 plus your Dexterity and Wisdom modifiers."
+      "text": "While you aren't wearing armor or wielding a Shield, your base Armor Class equals 10 plus your Dexterity and Wisdom modifiers.",
+      "effects": [
+       {
+        "on": "acBase",
+        "value": 10,
+        "abilities": [
+         "dex",
+         "wis"
+        ],
+        "noShield": true
+       }
+      ]
      },
      {
       "id": "monks-focus",
@@ -3077,7 +3177,15 @@
          "10d6"
         ]
        ]
-      }
+      },
+      "effects": [
+       {
+        "on": "extraDamage",
+        "fromScale": true,
+        "when": "finesseOrRanged",
+        "note": "Sneak Attack, once per turn"
+       }
+      ]
      },
      {
       "id": "thieves-cant",
@@ -3821,14 +3929,21 @@
      {
       "id": "archery",
       "name": "Archery",
-      "text": "You gain a +2 bonus to attack rolls you make with Ranged weapons."
+      "text": "You gain a +2 bonus to attack rolls you make with Ranged weapons.",
+      "effects": [
+       {
+        "on": "attack",
+        "value": 2,
+        "when": "ranged"
+       }
+      ]
      }
     ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-20T16:51:36.000Z"
+   "updated": "2026-11-20T22:20:04.000Z"
   },
   {
    "id": "boon-of-combat-prowess",
@@ -4092,14 +4207,21 @@
      {
       "id": "defense",
       "name": "Defense",
-      "text": "While you're wearing Light, Medium, or Heavy armor, you gain a +1 bonus to Armor Class."
+      "text": "While you're wearing Light, Medium, or Heavy armor, you gain a +1 bonus to Armor Class.",
+      "effects": [
+       {
+        "on": "ac",
+        "value": 1,
+        "when": "armored"
+       }
+      ]
      }
     ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-20T16:51:36.000Z"
+   "updated": "2026-11-20T22:20:04.000Z"
   },
   {
    "id": "grappler",
@@ -4360,14 +4482,19 @@
      {
       "id": "two-weapon-fighting",
       "name": "Two-Weapon Fighting",
-      "text": "When you make an extra attack as a result of using a weapon that has the Light property, you can add your ability modifier to the damage of that attack if you aren't already adding it to the damage."
+      "text": "When you make an extra attack as a result of using a weapon that has the Light property, you can add your ability modifier to the damage of that attack if you aren't already adding it to the damage.",
+      "effects": [
+       {
+        "on": "offhandMod"
+       }
+      ]
      }
     ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-20T16:51:36.000Z"
+   "updated": "2026-11-20T22:20:04.000Z"
   },
   {
    "id": "alchemy-kit",
@@ -6141,15 +6268,15 @@
     "summary": "You touch a willing creature. Until the spell ends, the target’s skin assumes a bark-like appearance, and the target has an Armor Class of 17 if its AC is lower than that.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
     "active": [
      {
-      "on": "feature",
-      "text": "AC is at least 17"
+      "on": "acMin",
+      "value": 17
      }
     ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-20T20:09:51.000Z"
+   "updated": "2026-11-20T22:20:04.000Z"
   },
   {
    "id": "beacon-of-hope",
@@ -11531,15 +11658,18 @@
     "summary": "You touch a willing creature who isn’t wearing armor. Until the spell ends, the target’s base AC becomes 13 plus its Dexterity modifier. The spell ends early if the target dons armor.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
     "active": [
      {
-      "on": "feature",
-      "text": "Base AC 13 + Dex modifier without armor"
+      "on": "acBase",
+      "value": 13,
+      "abilities": [
+       "dex"
+      ]
      }
     ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-20T20:09:51.000Z"
+   "updated": "2026-11-20T22:20:04.000Z"
   },
   {
    "id": "mage-hand",
@@ -16377,6 +16507,14 @@
        {
         "on": "maxHpLevel",
         "value": 1
+       },
+       {
+        "on": "acBase",
+        "value": 10,
+        "abilities": [
+         "dex",
+         "cha"
+        ]
        }
       ]
      },

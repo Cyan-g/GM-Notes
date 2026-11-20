@@ -45,7 +45,7 @@ const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement | 
   <div class="trait-fields">
     <label class="trait-name"><span>Name</span><input :value="model.name" placeholder="e.g. Dwarven Resilience" @input="put({ name: val($event) })" /></label>
     <label class="trait-text"><span>Text</span><textarea rows="2" :value="model.text ?? ''" placeholder="What it says (shown on the sheet)" @input="put({ text: val($event) })" /></label>
-    <div class="trait-part"><span class="trait-label">Effects</span><EffectsInput :model-value="model.effects" @update:model-value="v => put({ effects: v })" /></div>
+    <div class="trait-part"><span class="trait-label">Effects</span><EffectsInput traits :model-value="model.effects" @update:model-value="v => put({ effects: v })" /></div>
     <div class="trait-part">
       <span class="trait-label">Grants</span>
       <div class="effects-input">

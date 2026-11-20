@@ -9,6 +9,8 @@ import { fieldOptions } from '../../store'
 import { CONDITIONS } from '../../encounter'
 
 const model = defineModel<GearEffect[] | undefined>()
+/** On a feature (not gear): an effect can take its number or dice from the feature's scaling value. */
+defineProps<{ traits?: boolean }>()
 const list = computed(() => model.value ?? [])
 const kindOf = (f: GearEffect) => EFFECT_KINDS.find(k => k.on === f.on)
 const needs = (f: GearEffect, n: EffectNeed) => !!kindOf(f)?.needs?.includes(n)
@@ -17,7 +19,7 @@ const conditions = CONDITIONS.filter(c => c !== 'Concentrating')
 
 /** What each kind of input fills in when it first shows. */
 const FIELD_OF: Record<EffectNeed, keyof GearEffect> = {
-  ability: 'ability', skill: 'skill', type: 'type', text: 'text', mode: 'mode', note: 'note', dice: 'dice', proficient: 'proficient', sense: 'sense', condition: 'condition', pb: 'pb', plusAbility: 'ability',
+  ability: 'ability', skill: 'skill', type: 'type', text: 'text', mode: 'mode', note: 'note', dice: 'dice', proficient: 'proficient', sense: 'sense', condition: 'condition', pb: 'pb', plusAbility: 'ability', abilities: 'abilities', noShield: 'noShield', when: 'when',
 }
 function put(i: number, patch: Partial<GearEffect>) {
   const l = list.value.map(x => ({ ...x }))
@@ -41,6 +43,12 @@ function setMode(i: number, m: string) {
 }
 const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement).value
 const add = () => (model.value = [...list.value, { on: 'ac', value: 1 }])
+type Ab = NonNullable<GearEffect['abilities']>[number]
+function toggleAbility(i: number, a: Ab) {
+  const s = new Set(list.value[i].abilities ?? [])
+  if (s.has(a)) s.delete(a); else s.add(a)
+  put(i, { abilities: s.size ? (['str', 'dex', 'con', 'int', 'wis', 'cha'] as Ab[]).filter(x => s.has(x)) : undefined })
+}
 const remove = (i: number) => { const l = [...list.value]; l.splice(i, 1); model.value = l.length ? l : undefined }
 </script>
 
@@ -82,7 +90,19 @@ const remove = (i: number) => { const l = [...list.value]; l.splice(i, 1); model
         <option value="force">becomes</option>
       </select>
       <input v-if="!kindOf(f)?.noValue" type="number" class="effect-value" :value="f.value ?? ''" aria-label="Value" @change="put(i, { value: Number(val($event)) || 0 })" />
-      <label v-if="needs(f, 'proficient')" class="small effect-check" title="Only counts while the wielder is proficient with the weapon"><input type="checkbox" :checked="!!f.proficient" @change="put(i, { proficient: ($event.target as HTMLInputElement).checked || undefined })" /> if proficient</label>
+      <span v-if="needs(f, 'abilities')" class="seg" role="group" aria-label="Plus these modifiers">
+        <button v-for="a in ABILITIES" :key="a.key" type="button" :class="{ on: f.abilities?.includes(a.key as Ab) }" @click="toggleAbility(i, a.key as Ab)">{{ a.short }}</button>
+      </span>
+      <label v-if="needs(f, 'noShield')" class="small effect-check" title="Only without a shield (a monk's Unarmored Defense)"><input type="checkbox" :checked="!!f.noShield" @change="put(i, { noShield: ($event.target as HTMLInputElement).checked || undefined })" /> no shield</label>
+      <select v-if="needs(f, 'when')" :value="f.when ?? ''" aria-label="Only for" @change="put(i, { when: (val($event) || undefined) as GearEffect['when'] })">
+        <option value="">always</option>
+        <option v-if="f.on !== 'ac'" value="melee">melee attacks</option>
+        <option v-if="f.on !== 'ac'" value="ranged">ranged attacks</option>
+        <option v-if="f.on !== 'ac'" value="finesseOrRanged">finesse or ranged</option>
+        <option v-if="f.on === 'ac'" value="armored">while in armor</option>
+      </select>
+      <label v-if="needs(f, 'proficient')" class="small effect-check" :title="f.on === 'unarmed' ? 'May use Dexterity instead of Strength (Martial Arts)' : 'Only counts while the wielder is proficient with the weapon'"><input type="checkbox" :checked="!!f.proficient" @change="put(i, { proficient: ($event.target as HTMLInputElement).checked || undefined })" /> {{ f.on === 'unarmed' ? 'STR or DEX' : 'if proficient' }}</label>
+      <label v-if="traits && ['damage', 'extraDamage', 'unarmed', 'attack'].includes(f.on)" class="small effect-check" title="The number or dice is the feature's scaling value (Rage Damage, Sneak Attack, Martial Arts)"><input type="checkbox" :checked="!!f.fromScale" @change="put(i, { fromScale: ($event.target as HTMLInputElement).checked || undefined })" /> = scaling value</label>
       <label v-if="needs(f, 'pb')" class="small effect-check" title="Adds the proficiency bonus too (Alert)"><input type="checkbox" :checked="!!f.pb" @change="put(i, { pb: ($event.target as HTMLInputElement).checked || undefined })" /> + proficiency bonus</label>
       <input v-if="needs(f, 'note')" class="effect-text" :value="f.note ?? ''" placeholder="when, e.g. against being knocked prone" aria-label="When" @input="put(i, { note: val($event) || undefined })" />
       <input v-if="needs(f, 'text')" class="effect-text" :value="f.text ?? ''" placeholder="e.g. Darkvision 60 ft" aria-label="Feature" @input="put(i, { text: val($event) })" />

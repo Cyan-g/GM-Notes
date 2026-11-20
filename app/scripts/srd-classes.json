@@ -51,12 +51,52 @@
         "+4"
        ]
       ]
-     }
+     },
+     "toggle": true,
+     "effects": [
+      {
+       "on": "damage",
+       "fromScale": true,
+       "when": "melee"
+      },
+      {
+       "on": "resistance",
+       "type": "Bludgeoning"
+      },
+      {
+       "on": "resistance",
+       "type": "Piercing"
+      },
+      {
+       "on": "resistance",
+       "type": "Slashing"
+      },
+      {
+       "on": "saveAdv",
+       "ability": "str",
+       "mode": "adv"
+      },
+      {
+       "on": "skillAdv",
+       "skill": "Athletics",
+       "mode": "adv"
+      }
+     ]
     },
     {
      "id": "unarmored-defense",
      "name": "Unarmored Defense",
-     "text": "While you aren't wearing any armor, your base Armor Class equals 10 plus your Dexterity and Constitution modifiers. You can use a Shield and still gain this benefit."
+     "text": "While you aren't wearing any armor, your base Armor Class equals 10 plus your Dexterity and Constitution modifiers. You can use a Shield and still gain this benefit.",
+     "effects": [
+      {
+       "on": "acBase",
+       "value": 10,
+       "abilities": [
+        "dex",
+        "con"
+       ]
+      }
+     ]
     },
     {
      "id": "weapon-mastery",
@@ -850,12 +890,30 @@
         "1d12"
        ]
       ]
-     }
+     },
+     "effects": [
+      {
+       "on": "unarmed",
+       "fromScale": true,
+       "proficient": true
+      }
+     ]
     },
     {
      "id": "unarmored-defense",
      "name": "Unarmored Defense",
-     "text": "While you aren't wearing armor or wielding a Shield, your base Armor Class equals 10 plus your Dexterity and Wisdom modifiers."
+     "text": "While you aren't wearing armor or wielding a Shield, your base Armor Class equals 10 plus your Dexterity and Wisdom modifiers.",
+     "effects": [
+      {
+       "on": "acBase",
+       "value": 10,
+       "abilities": [
+        "dex",
+        "wis"
+       ],
+       "noShield": true
+      }
+     ]
     },
     {
      "id": "monks-focus",
@@ -1427,7 +1485,15 @@
         "10d6"
        ]
       ]
-     }
+     },
+     "effects": [
+      {
+       "on": "extraDamage",
+       "fromScale": true,
+       "when": "finesseOrRanged",
+       "note": "Sneak Attack, once per turn"
+      }
+     ]
     },
     {
      "id": "thieves-cant",
@@ -2712,6 +2778,14 @@
       {
        "on": "maxHpLevel",
        "value": 1
+      },
+      {
+       "on": "acBase",
+       "value": 10,
+       "abilities": [
+        "dex",
+        "cha"
+       ]
       }
      ]
     },

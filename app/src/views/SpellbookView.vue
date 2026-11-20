@@ -263,7 +263,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
             <tr v-for="e in knownShown" :key="e.id" :class="{ dim: isPrepared(e.id), dragging: dragging?.id === e.id }"
                 :draggable="!isPrepared(e.id)" :title="isPrepared(e.id) ? '' : 'Drag to Prepared spells'"
                 @dragstart="dragStart($event, e.id, 'known')" @dragend="dragEnd">
-              <td><a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a></td>
+              <td><a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a> <span v-if="e.fields.ritual" class="tag-ritual" title="A ritual: it can be cast in 10 more minutes without a spell slot">ritual</span></td>
               <td>{{ levelLabel(e) }}</td>
               <td class="sbk-actions">
                 <span v-if="freeKnown.has(e.id)" class="muted small" :title="`In the spellbook for free, from ${freeKnown.get(e.id)}`">{{ freeKnown.get(e.id) }}</span>
@@ -292,7 +292,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
                 title="Drag back to Known spells to unprepare" @dragstart="dragStart($event, e.id, 'prepared')" @dragend="dragEnd">
               <td>
                 <button class="link-btn always" :class="{ on: book.always.includes(e.id) }" :title="alwaysTitle(e.id)" @click="toggleAlways(e.id)"><AppIcon ui="star" /></button>
-                <a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a>
+                <a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a> <span v-if="e.fields.ritual" class="tag-ritual" title="A ritual: it can be cast in 10 more minutes without a spell slot">ritual</span>
               </td>
               <td>{{ levelLabel(e) }}</td>
               <td>{{ optionLabel('spell.school', e.fields.school) }}</td>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import TraitsInput from './TraitsInput.vue'
+import AbilityBonusInput from './AbilityBonusInput.vue'
 // Edits one schema field of an entry in place.
 import ChoiceListInput from './ChoiceListInput.vue'
 import { computed } from 'vue'
@@ -77,6 +78,7 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
   <EffectsInput v-else-if="def.kind === 'effects'" v-model="value" />
   <ItemSpellsInput v-else-if="def.kind === 'itemSpells'" v-model="value" />
   <TraitsInput v-else-if="def.kind === 'speciesTraits'" v-model="value" />
+  <AbilityBonusInput v-else-if="def.kind === 'abilityBonus'" v-model="value" />
   <RequirementsInput v-else-if="def.kind === 'requires'" v-model="value" />
   <RecipeInput v-else-if="def.kind === 'recipe'" v-model="value" :item-value="entry.fields.value" />
   <StockInput v-else-if="def.kind === 'stock'" v-model="value" :markup="(entry.fields.markup) ?? 1" />

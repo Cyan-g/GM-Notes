@@ -2,6 +2,7 @@
 // A feat as it reads in a rulebook: kind, prerequisites, the ability score increase, then what it does.
 import { computed } from 'vue'
 import { optionLabel } from '../store'
+import { abilityBonusText } from '../abilityBonus'
 import type { Entry, Id } from '../model/types'
 import { get } from '../store'
 import { hrefEntry } from '../router'
@@ -26,7 +27,7 @@ const hasPrereq = computed(() => f.value.level || requires.value.length || f.val
       <template v-for="(id, i) in requires" :key="id"><template v-if="i">, </template> <EntryLink :id="id" /></template><template v-if="requires.length && f.prerequisite">,</template>
       <template v-if="f.prerequisite"> {{ f.prerequisite }}</template>
     </p>
-    <p v-if="f.abilityIncrease" class="feat-line"><b>Ability score increase:</b> {{ f.abilityIncrease }}</p>
+    <p v-if="f.abilityIncrease" class="feat-line"><b>Ability score increase:</b> {{ abilityBonusText(f.abilityIncrease) }}</p>
     <MarkdownView v-if="f.summary" class="feat-text" :source="String(f.summary)" />
   </div>
 </template>

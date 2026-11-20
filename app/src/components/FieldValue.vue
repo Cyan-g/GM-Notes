@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import TraitList from './TraitList.vue'
+import { abilityBonusText } from '../abilityBonus'
 // Shows one schema field of an entry, read-only.
 import AppIcon from './AppIcon.vue'
 import { computed } from 'vue'
 import type { FieldDef } from '../model/schema'
-import type { Entry, RecipeLine, StockLine, WorldDate, Trait } from '../model/types'
+import type { AbilityBonus, Entry, RecipeLine, StockLine, WorldDate, Trait } from '../model/types'
 import { fieldLabel, formatDate, formatMoney, get, state } from '../store'
 import { listKeyOf, noteIn } from '../model/lists'
 import EntryLink from './EntryLink.vue'
@@ -57,6 +58,7 @@ const stock = computed(() => {
   <template v-else-if="def.kind === 'effects'">
     <span class="chips"><span v-for="(x, i) in (value as GearEffect[])" :key="i" class="chip">{{ describeEffect(x) }}</span></span>
   </template>
+  <template v-else-if="def.kind === 'abilityBonus'">{{ abilityBonusText(value as AbilityBonus) }}</template>
   <TraitList v-else-if="def.kind === 'speciesTraits'" :traits="(value as Trait[])" />
   <template v-else-if="def.kind === 'itemSpells'">
     <span class="chips"><span v-for="(x, i) in (value as ItemSpell[])" :key="i" class="chip"><EntryLink :id="x.spell" /> <span class="muted small">{{ howCast(x) }}</span></span></span>

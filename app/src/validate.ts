@@ -70,6 +70,7 @@ export function checkField(f: FieldDef, v: unknown, exists?: (id: string) => Ent
     case 'requires': return isObj(v) ? undefined : 'should be a set of requirements'
     case 'itemSpells': return Array.isArray(v) && v.every(x => isObj(x) && isStr(x.spell) && isStr(x.how)) ? undefined : 'should be a list of spells'
     case 'effects': return Array.isArray(v) && v.every(x => isObj(x) && isStr(x.on)) ? undefined : 'should be a list of effects'
+    case 'abilityBonus': return isObj(v) ? undefined : 'should be an ability score bonus'
     case 'speciesTraits': return Array.isArray(v) && v.every(x => isObj(x) && isStr(x.id) && isStr(x.name)) ? undefined : 'should be a list of traits'
     case 'classes':
       if (!Array.isArray(v) || !v.every(l => isObj(l) && isStr(l.class) && isNum(l.level))) return 'should be a list of classes with levels'

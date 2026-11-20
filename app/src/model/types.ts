@@ -182,6 +182,23 @@ export interface SpeciesState {
   spellsUsed?: string[]
 }
 
+// ---------- ability score bonuses (races' and feats' abilityIncrease; abilityBonus.ts) ----------
+
+/** +`amount` to `count` different scores (default 1), from `among` (default any); never one a fixed bonus or another pick already raised. */
+export interface AbilityPick { amount: number; count?: number; among?: (keyof Abilities)[] }
+/**
+ * What a race or feat may add to ability scores. Kept as data, never added to a sheet on its own (the character
+ * creation wizard offers it). `orPick` is an alternative to `pick` ("+2 to one score or +1 to two"); `max` caps the
+ * raised score; `note` keeps text that didn't fit.
+ */
+export interface AbilityBonus {
+  fixed?: Partial<Abilities>
+  pick?: AbilityPick[]
+  orPick?: AbilityPick[]
+  max?: number
+  note?: string
+}
+
 // ---------- species traits (race entries' speciesTraits; species.ts) ----------
 
 /** A proficiency or language a trait grants: a skill name, or an option id / Tool item id as in Proficiencies. */

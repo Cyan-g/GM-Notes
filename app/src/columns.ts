@@ -1,12 +1,13 @@
 // Table columns and filters by key, shared by type lists and dashboards.
 // A key is a schema field ("level", "value") or a computed value starting with "@".
-import type { Entry, EntryType, RecipeLine, Statblock, WorldDate } from './model/types'
+import type { AbilityBonus, Entry, EntryType, RecipeLine, Statblock, WorldDate } from './model/types'
 import { craftingMinutes, craftingTime } from './crafting'
 import { SCHEMA, TYPES, byKey, type FieldDef } from './model/schema'
 import { dateKey, entries, fieldLabel, fieldOptions, get, isCurrent, relationsOf, state } from './store'
 import { classText, totalLevel } from './model/classes'
 import { listKeyOf } from './model/lists'
 import { sessionNo } from './sessions'
+import { abilityBonusText } from './abilityBonus'
 
 export interface Col {
   key: string
@@ -91,6 +92,7 @@ export function column(key: string, type?: EntryType): Col {
       if (field.kind === 'ref') return nameOf(v as string)
       if (field.kind === 'date') return dateKey(v as WorldDate)
       if (field.kind === 'bool') return v ? 0 : 1
+      if (field.kind === 'abilityBonus') return abilityBonusText(v as AbilityBonus).toLowerCase()
       if (key === 'level') return v === 'Cantrip' ? 0 : Number(v)
       if (typeof v === 'number') return v
       // Choices sort by their label (see model/lists.ts).

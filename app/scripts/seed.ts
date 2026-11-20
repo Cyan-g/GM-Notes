@@ -15,6 +15,7 @@ import type { Database, Entry, EntryType, Trait, TraitOption } from '../src/mode
 import { LISTS, optionsIn } from '../src/model/lists'
 import { mapRefs } from '../src/model/refs'
 import { defaultCalendar } from '../src/calendar'
+import { cleanBonus, parseAbilityBonus } from '../src/abilityBonus'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const { WorldDb } = createRequire(import.meta.url)('../electron/db.cjs')
@@ -82,6 +83,9 @@ const entries = picked.map(e => {
     .replace(/\[([^\]]*)\]\(<?(?:images|files)\/[^)>]*>?\)/g, '$1')
     .replace(/\n{3,}/g, '\n\n').trim()
   if (textless(c)) c.body = ''
+  // An ability score increase still written as text (a world before data version 27, the SRD file) becomes data.
+  const inc: unknown = c.fields.abilityIncrease
+  if (typeof inc === 'string') { const b = cleanBonus(parseAbilityBonus(inc) ?? {}); if (b) c.fields.abilityIncrease = b; else delete c.fields.abilityIncrease }
   delete c.image
   delete c.files
   mapRefs(c, id => (ids.has(id) ? id : null), id => d.entries[id]?.name ?? id)

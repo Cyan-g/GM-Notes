@@ -1,12 +1,12 @@
 // Describes every entry type: its label, fields and dropdown options.
 // Forms and pages are generated from this, so adding a field here is enough.
 import type {
-  Abilities, CharacterSheet, ClassLine, Copper, GearEffect, ItemSpell, Trait, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
+  Abilities, AbilityBonus, CharacterSheet, ClassLine, Copper, GearEffect, ItemSpell, Trait, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
 } from './types'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
-  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData' | 'speciesTraits'
+  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData' | 'speciesTraits' | 'abilityBonus'
 
 export interface FieldDef {
   key: string
@@ -123,7 +123,8 @@ export const SCHEMA = [
       { key: 'parent', label: 'Subrace of', kind: 'ref', to: ['race'] },
       { key: 'size', label: 'Size', kind: 'select', options: SIZES, list: 'size' },
       { key: 'speed', label: 'Speed', kind: 'text' },
-      { key: 'abilityIncrease', label: 'Ability scores', kind: 'text' },
+      // What the race may add to ability scores; not added on its own (abilityBonus.ts).
+      { key: 'abilityIncrease', label: 'Ability scores', kind: 'abilityBonus' },
       { key: 'languages', label: 'Languages', kind: 'list' },
       // What the species gives a character (species.ts): effects, proficiencies, spells, uses, choices.
       { key: 'speciesTraits', label: 'Traits', kind: 'speciesTraits' },
@@ -203,7 +204,7 @@ export const SCHEMA = [
       { key: 'level', label: 'Level needed', kind: 'number' },
       { key: 'requires', label: 'Needs feats', kind: 'refs', to: ['feat'] },
       { key: 'prerequisite', label: 'Other prerequisite', kind: 'text' },
-      { key: 'abilityIncrease', label: 'Ability score increase', kind: 'text' },
+      { key: 'abilityIncrease', label: 'Ability score increase', kind: 'abilityBonus' },
       { key: 'source', label: 'Granted by', kind: 'ref', to: ['organization', 'race', 'subclass', 'deity', 'place', 'item'] },
       { key: 'summary', label: 'Description', kind: 'longtext' },
     ],
@@ -271,7 +272,7 @@ export interface KindValue {
   money: Copper; weight: number; ref: Id; refs: Id[]; date: WorldDate
   recipe: RecipeLine[]; stock: StockLine[]; statblock: Statblock; abilities: Abilities
   combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]; effects: GearEffect[]; itemSpells: ItemSpell[]; requires: Requirements; mapData: MapScale | MapRoute[]
-  speciesTraits: Trait[]
+  speciesTraits: Trait[]; abilityBonus: AbilityBonus
 }
 type Defs = (typeof SCHEMA)[number]['fields'][number]
 /** A field key used by any type. */

@@ -100,6 +100,11 @@ A player character's page is its character sheet for play: HP, hit dice, inspira
   with the trait named on hover; the spells are in the Spellbook beside those from items; a long rest gives back
   every use, a short rest the short-rest ones. Racial ability score increases are not added: the scores stay as typed.
   (Data version 26 turned the old one-line traits into traits, "Name: text", with the sense or resistance they name.)
+- **Ability score bonuses:** a race's *Ability scores* and a feat's *Ability score increase* are data, set on the Edit
+  page: fixed bonuses per score (+2 Con), picks the player makes (+1 to one score, or only from Str or Dex), an
+  alternative set of picks ("+2 to one score or +1 to two"), a maximum score and a note. They are shown on the race and
+  feat and in the lists, but never added to a sheet on their own; the character creation wizard will offer them. (Data
+  version 27 read the old text, "+2 Str, +1 Cha", into this; what it can't read is kept as the note.)
 - **Requirements:** an item's *Requirements* (on its Edit page) name minimum ability scores, classes (or any
   spellcaster), races (a subrace counts) and skill proficiencies, plus a note that isn't checked. A character who
   doesn't meet them can't equip the item, or attune to it if it needs attunement: the button is greyed out and says

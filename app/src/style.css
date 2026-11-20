@@ -1658,6 +1658,17 @@ button.live-tag { cursor: pointer; }
 .trait-part { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: .5rem; align-items: start; }
 .trait-row { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: .35rem 0; }
 .trait-row select { width: auto; }
+/* A race's or feat's ability score bonus (AbilityBonusInput) */
+.ability-bonus-input { display: grid; gap: .45rem; }
+.ab-fixed { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .3rem; }
+.ab-score { display: flex; flex-direction: column; align-items: center; gap: .1rem; font-size: 11px; color: var(--muted); }
+.ab-score input { width: 100%; text-align: center; padding-left: 2px; padding-right: 2px; }
+.ab-picks { display: grid; gap: .3rem; }
+.ab-picks > .chip-btn { justify-self: start; }
+.ab-pick { flex-wrap: wrap; }
+.ab-pick .seg button { padding: 2px 6px; font-size: 12px; }
+.ab-note { flex: 1; min-width: 8rem; }
+.ab-preview { margin: 0; }
 .trait-actions { justify-content: flex-end; border-top: 1px solid var(--line); padding-top: .35rem; }
 .trait-options-edit { margin: .3rem 0 .3rem .5rem; }
 .trait-option-card { border-left: 3px solid var(--line); padding-left: .7rem; margin: .45rem 0; }

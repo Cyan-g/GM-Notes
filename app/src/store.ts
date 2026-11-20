@@ -7,6 +7,7 @@ import { SCHEMA, RELATION_KINDS, MARTIAL_WEAPONS, SIMPLE_WEAPONS, byKey, type Fi
 import { LIST_BY_KEY, LISTS, labelIn, listKeyOf, optionsIn, type ListOption } from './model/lists'
 import { checkDatabase, type Problem } from './validate'
 import { defaultCalendar, formatYear } from './calendar'
+import { cleanBonus, parseAbilityBonus } from './abilityBonus'
 import { classFinder, dieOf, parseClassText } from './model/classes'
 
 /** The play state (the fight, the world's own spellbook and workbench): saved like the rest, but not a "world edit". */
@@ -14,7 +15,7 @@ const PLAY_KEYS = ['tracker', 'spellbook', 'crafting', 'follow', 'playerNotes'] 
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
 /** The newest data version this build understands (the last step in upgrade()). Newer data opens read-only. */
-export const DATA_VERSION = 26
+export const DATA_VERSION = 27
 /** The oldest data version this build can still open; older data is refused instead of guessed at. */
 export const OLDEST_VERSION = 20
 /** What the database must allow: every entry type and relation kind the app knows. */
@@ -104,7 +105,22 @@ function upgrade(d: Database): boolean {
   if ((d.version ?? 1) < 24) { upgradeTo24(d); d.version = 24; changed = true }
   if ((d.version ?? 1) < 25) { upgradeTo25(d); d.version = 25; changed = true }
   if ((d.version ?? 1) < 26) { upgradeTo26(d); d.version = 26; changed = true }
+  if ((d.version ?? 1) < 27) { upgradeTo27(d); d.version = 27; changed = true }
   return changed
+}
+
+/**
+ * 27: a race's and a feat's ability score increase (text, "+2 Str, +1 Cha") became data (abilityBonus.ts): fixed
+ * bonuses, picks, a cap. What can't be read is kept as its note.
+ */
+function upgradeTo27(d: Database) {
+  for (const e of Object.values(d.entries)) {
+    const f = e.fields as Record<string, unknown>
+    if ((e.type !== 'race' && e.type !== 'feat') || typeof f.abilityIncrease !== 'string') continue
+    const b = parseAbilityBonus(f.abilityIncrease)
+    const c = b && cleanBonus(b)
+    if (c) f.abilityIncrease = c; else delete f.abilityIncrease
+  }
 }
 
 /**

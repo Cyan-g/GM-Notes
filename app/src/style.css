@@ -1094,6 +1094,14 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 @media (max-width: 640px) { .cs-top.with-portrait { grid-template-columns: 1fr; } }
 .cs-top-right { display: grid; gap: .5rem; }
 .pc-portrait-img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 12px; box-shadow: var(--shadow); }
+/* beside the cards, the picture is exactly as tall as they are (cropped to fit, kept to the top where faces are) */
+.cs-top.with-portrait:not(.no-portrait) { align-items: stretch; }
+.cs-top.with-portrait:not(.no-portrait) .pc-portrait { position: relative; min-height: 200px; }
+.cs-top.with-portrait:not(.no-portrait) .pc-portrait-img { position: absolute; inset: 0; height: 100%; aspect-ratio: auto; object-position: 50% 20%; }
+@media (max-width: 640px) {
+  .cs-top.with-portrait:not(.no-portrait) .pc-portrait { min-height: 0; }
+  .cs-top.with-portrait:not(.no-portrait) .pc-portrait-img { position: static; aspect-ratio: 3 / 4; }
+}
 .pc-portrait-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; width: 100%; aspect-ratio: 3 / 4; padding: 1rem; border: 2px dashed var(--line); border-radius: 12px; background: var(--panel); color: var(--muted); text-align: center; cursor: pointer; }
 .pc-portrait-empty:hover:not(:disabled), .pc-portrait-empty:focus-visible { border-color: var(--accent); color: var(--ink-2); }
 .pc-portrait-icon { font-size: 3rem; line-height: 1; }

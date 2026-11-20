@@ -17,14 +17,14 @@ const conditions = CONDITIONS.filter(c => c !== 'Concentrating')
 
 /** What each kind of input fills in when it first shows. */
 const FIELD_OF: Record<EffectNeed, keyof GearEffect> = {
-  ability: 'ability', skill: 'skill', type: 'type', text: 'text', mode: 'mode', note: 'note', dice: 'dice', proficient: 'proficient', sense: 'sense', condition: 'condition', pb: 'pb',
+  ability: 'ability', skill: 'skill', type: 'type', text: 'text', mode: 'mode', note: 'note', dice: 'dice', proficient: 'proficient', sense: 'sense', condition: 'condition', pb: 'pb', plusAbility: 'ability',
 }
 function put(i: number, patch: Partial<GearEffect>) {
   const l = list.value.map(x => ({ ...x }))
   const f: GearEffect = { ...l[i], ...patch }
   // Drop what the new kind doesn't use, and fill in what it needs.
   const k = kindOf(f)
-  for (const [n, key] of Object.entries(FIELD_OF) as [EffectNeed, keyof GearEffect][]) if (!k?.needs?.includes(n)) delete f[key]
+  for (const [n, key] of Object.entries(FIELD_OF) as [EffectNeed, keyof GearEffect][]) if (!k?.needs?.some(x => FIELD_OF[x] === key)) delete f[key]
   if (!k?.canSet) { delete f.set; delete f.force }
   if (k?.noValue) delete f.value
   else if (f.value == null) f.value = f.on === 'sense' ? 60 : f.set ? 19 : 1
@@ -56,6 +56,10 @@ const remove = (i: number) => { const l = [...list.value]; l.splice(i, 1); model
       </select>
       <select v-if="needs(f, 'ability')" :value="f.ability" aria-label="Ability" @change="put(i, { ability: val($event) as GearEffect['ability'] })">
         <option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.label }}</option>
+      </select>
+      <select v-if="needs(f, 'plusAbility')" :value="f.ability ?? ''" aria-label="Plus an ability's modifier" @change="put(i, { ability: (val($event) || undefined) as GearEffect['ability'] })">
+        <option value="">no ability</option>
+        <option v-for="a in ABILITIES" :key="a.key" :value="a.key">+ {{ a.label }} modifier</option>
       </select>
       <select v-if="needs(f, 'skill')" :value="f.skill" aria-label="Skill" @change="put(i, { skill: val($event) })">
         <option v-for="s in SKILLS" :key="s.name" :value="s.name">{{ s.name }}</option>

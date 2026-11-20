@@ -29,6 +29,20 @@ const CASTING: Record<string, Ability> = {
   artificer: 'int', wizard: 'int', bard: 'cha', paladin: 'cha', sorcerer: 'cha', warlock: 'cha', cleric: 'wis', druid: 'wis', ranger: 'wis',
 }
 
+/**
+ * A character's Hit Dice by die: their classes' (hitDicePools), plus what their features and gear add (Hemomancy:
+ * the Constitution modifier), counted to the biggest die.
+ */
+export function hitDiceOf(pc: Entry, s: CharacterSheet): { die: string; total: number; spent: number }[] {
+  const pools = hitDicePools(pc, s)
+  const extra = gearTotals(s).hitDice.reduce((t, x) => t + x.n + (x.ability ? Math.max(1, mod(score(s, x.ability))) : 0), 0)
+  if (extra > 0 && pools.length) {
+    const p = pools[0]
+    p.total += extra
+    p.spent = Math.min(p.total, s.hitDiceSpent?.[p.die] ?? 0)
+  }
+  return pools
+}
 export const blankSheet = (): CharacterSheet => ({
   abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
   saves: [], skills: {}, inventory: [], features: [],
@@ -357,7 +371,7 @@ export function longRest(pc: Entry) {
   restSpecies(s, pc, 'long')
   let back = Math.max(1, Math.floor(totalLevel(pc) / 2))
   const m = { ...(s.hitDiceSpent ?? {}) }
-  for (const p of hitDicePools(pc, s)) {
+  for (const p of hitDiceOf(pc, s)) {
     const n = Math.min(back, p.spent)
     if (n) { m[p.die] = p.spent - n; back -= n }
     if (!m[p.die]) delete m[p.die]

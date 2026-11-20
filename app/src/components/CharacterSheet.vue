@@ -11,11 +11,11 @@ import ConditionIcon from './ConditionIcon.vue'
 import { computed, ref } from 'vue'
 import type { CharacterSheet, ClassLine, Entry, Proficiencies } from '../model/types'
 import { byType, get, listOptions, setList, state } from '../store'
-import { CLASS_DIE, DICE, classText, classesOf, dieOf, hitDicePools } from '../model/classes'
+import { CLASS_DIE, DICE, classText, classesOf, dieOf } from '../model/classes'
 import { changed } from '../edit'
 import { hrefEntry, hrefTab } from '../router'
 import {
-  ABILITIES, SKILLS, armorClass, attacks, canAttune, canEquip, castingAbility, initiative, levelOf, maxHpOf, mod,
+  ABILITIES, SKILLS, armorClass, attacks, canAttune, canEquip, castingAbility, hitDiceOf, initiative, levelOf, maxHpOf, mod,
   passivePerception, profBonus, profsOf, profsToEdit, saveBonus, sheetOrBlank, sheetToEdit, signed, skillBonus, skillLevel, speedOf, baseSpeed, longRest, type Ability,
 } from '../sheet'
 import { advOf, breakdown, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../gear'
@@ -103,7 +103,7 @@ const setDie = (i: number, die: string) => setClasses(l => { if (die && die !== 
 const levelOver = computed(() => classes.value.reduce((n, l) => n + (Number(l.level) || 0), 0) > 20)
 
 // ---- hit dice: one pool per die size ----
-const pools = computed(() => hitDicePools(props.pc, s.value))
+const pools = computed(() => hitDiceOf(props.pc, s.value))
 function setLeft(die: string, total: number, v: number | undefined) {
   edit(x => {
     const spent = Math.min(total, Math.max(0, total - (v ?? total)))

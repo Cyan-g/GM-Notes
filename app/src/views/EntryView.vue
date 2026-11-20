@@ -9,7 +9,7 @@ import { currentPc, setCurrent } from '../sheet'
 import { computed, ref } from 'vue'
 import type { Entry, Relation, Statblock, WorldDate } from '../model/types'
 import { TYPES, RELATION_KINDS, byKey, type FieldDef } from '../model/schema'
-import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, hiddenFromPlayers, placePath, playerMode, relationsOf, entries, state } from '../store'
+import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, hiddenFromPlayers, placePath, relationsOf, entries, state } from '../store'
 import { go, hrefEntry, hrefFamily, hrefList, hrefMap, hrefTab, type EntryTab } from '../router'
 import SpellbookView from './SpellbookView.vue'
 import InventoryTab from './InventoryTab.vue'
@@ -344,7 +344,6 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
           <div v-else-if="p.insert === 'feats'" class="feat-list"><FeatCard v-for="f in grantedFeats" :key="f.id" :e="f" title /></div>
         </template>
         <p v-if="!e.body && !['item', 'spell', 'feat', 'creature', 'encounter', 'pc'].includes(e.type)" class="muted">No text yet<template v-if="!state.readOnly"> — <a :href="hrefEntry(e.id) + '/edit'">✎ Edit</a> to write some</template>.</p>
-        <PcNotes v-if="e.type === 'pc'" :pc="e" />
         <PlayerNotes v-if="shared && NOTE_TYPES.includes(e.type)" :entry="e" />
 
         <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => !(bodyParts.placed.has('ranks') && f.kind === 'ranks'))" :key="f.key">
@@ -470,7 +469,9 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
           <h3>Carried by</h3>
           <ul class="plain"><li v-for="p in carriedBy" :key="p.id"><EntryLink :id="p.id" icon /> <span class="muted small">× {{ p.fields.sheet!.inventory.filter(l => l.item === e!.id).reduce((n, l) => n + l.qty, 0) }}</span></li></ul>
         </div>
-        <div v-if="mentions.length && !(e.type === 'pc' && playerMode)" class="card">
+        <!-- a player character's notes beside the sheet, where other pages list what mentions them -->
+        <PcNotes v-if="e.type === 'pc'" :pc="e" />
+        <div v-else-if="mentions.length" class="card">
           <h3>Mentioned in <span class="muted small">{{ mentions.length }}</span></h3>
           <ul class="rel mentions-list"><li v-for="m in mentions" :key="m.id"><EntryLink :id="m.id" icon /></li></ul>
         </div>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// A character's notes (the entry's text) under the sheet: read in play, and written right here with ✎, since the
-// character's Edit page is for building the sheet.
+// A character's notes (the entry's text) beside the sheet, in the right column: read in play, and written right here
+// with ✎, since the character's Edit page is for building the sheet.
 import { ref } from 'vue'
 import type { Entry } from '../model/types'
 import { state } from '../store'

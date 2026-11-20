@@ -38,6 +38,8 @@ import CharacterSheet from '../components/CharacterSheet.vue'
 import PcNotes from '../components/PcNotes.vue'
 import AttacksCard from '../components/AttacksCard.vue'
 import FeatCard from '../components/FeatCard.vue'
+import TraitList from '../components/TraitList.vue'
+import { traitsOf } from '../species'
 import { describe } from '../describe'
 import TimelineChart from '../components/TimelineChart.vue'
 import TimelineList from '../components/TimelineList.vue'
@@ -77,6 +79,13 @@ const bigFields = computed(() => {
   const x = e.value
   if (!x || !def.value) return []
   return def.value.fields.filter(f => ['recipe', 'stock', 'combatants', 'ranks', 'speciesTraits'].includes(f.kind) && shown(f, x) && !empty(byKey(x.fields)[f.key]))
+})
+/** On a subrace's page: the traits of the races it's a subrace of, which its characters have too (nearest first). */
+const inherited = computed(() => {
+  const out: Entry[] = []
+  let r = e.value?.type === 'race' ? get(e.value.fields.parent as string | undefined) : undefined
+  while (r && r.type === 'race' && !out.includes(r) && r.id !== e.value!.id) { out.push(r); r = get(r.fields.parent as string | undefined) }
+  return out.filter(x => traitsOf(x).length)
 })
 /** The feats an entry grants (an organization's fighting styles and the like). */
 const grantedFeats = computed(() => (e.value ? (byType.value.get('feat') ?? []).filter(f => f.fields.source === e.value!.id).sort((a, b) => a.name.localeCompare(b.name)) : []))
@@ -335,6 +344,11 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => !(bodyParts.placed.has('ranks') && f.kind === 'ranks'))" :key="f.key">
           <h2>{{ f.label }}</h2>
           <FieldValue :def="f" :value="byKey(e.fields)[f.key]" :entry="e" />
+        </section>
+
+        <section v-for="r in inherited" :key="'from-' + r.id">
+          <h2>From <EntryLink :id="r.id" /></h2>
+          <TraitList :traits="traitsOf(r)" :lineage="e.name" :parent="r.name" />
         </section>
 
         <section v-if="grantedFeats.length && !bodyParts.placed.has('feats')">

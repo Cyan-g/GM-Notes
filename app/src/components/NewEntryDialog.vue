@@ -16,7 +16,7 @@ const open = defineModel<boolean>({ required: true })
 const props = defineProps<{ type?: EntryType; fields?: Record<string, unknown> }>()
 
 /** The most used types first. Player mode creates only what it shows. */
-const ORDER: EntryType[] = ['npc', 'place', 'item', 'session', 'organization', 'event', 'note', 'spell', 'creature', 'encounter', 'pc', 'campaign', 'deity', 'race', 'feat', 'writing', 'subclass']
+const ORDER: EntryType[] = ['npc', 'place', 'item', 'session', 'organization', 'event', 'note', 'spell', 'creature', 'encounter', 'pc', 'campaign', 'deity', 'race', 'background', 'feat', 'writing', 'subclass']
 const PLAYER: EntryType[] = ['pc', 'npc', 'organization', 'campaign', 'session', 'note', 'place', 'event', 'spell', 'item']
 const types = computed(() => ORDER.filter(t => TYPES[t] && (!playerMode.value || PLAYER.includes(t))))
 

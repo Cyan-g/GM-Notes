@@ -17,6 +17,7 @@ const COLS: Partial<Record<EntryType, { cols: string[]; facets?: string[]; sort?
   organization: { cols: ['orgType', 'parent', 'seat', '@members'], facets: ['orgType'] },
   place: { cols: ['placeType', 'parent'], facets: ['placeType', 'parent'] },
   feat: { cols: ['category', 'level', 'source', 'abilityIncrease'], facets: ['category', 'source'] },
+  background: { cols: ['originFeat', 'skillProfs', 'toolProfs', 'abilityIncrease'] },
   race: { cols: ['parent', 'size', 'speed', 'abilityIncrease'], facets: ['parent'] },
   deity: { cols: ['rank', 'alignment'], facets: ['rank'] },
   creature: { cols: ['creatureType', '@cr'], facets: ['creatureType'] },

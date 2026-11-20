@@ -105,6 +105,14 @@ A player character's page is its character sheet for play: HP, hit dice, inspira
   alternative set of picks ("+2 to one score or +1 to two"), a maximum score and a note. They are shown on the race and
   feat and in the lists, but never added to a sheet on their own; the character creation wizard will offer them. (Data
   version 27 read the old text, "+2 Str, +1 Cha", into this; what it can't read is kept as the note.)
+- **Backgrounds:** an entry type of their own (Archive → Backgrounds), set up as in the 2024 rules: ability scores (the
+  bonus editor above, e.g. "Str, Dex or Con: +2 to one, +1 to another or +1 to all three"), an Origin feat (and which
+  version of it, "Cleric"), skills, a tool (several tools: the player picks one) and starting equipment (items from the
+  world or just names, coins, or coins instead), plus *Features* like a species' traits for anything more. A character
+  picks one in *Background* on its Edit page; its skills, tool and features count on the sheet like the species', on a
+  **Background** card under the Species card. Ability scores and equipment are not handed out; the character creation
+  wizard will. Every proficiency a background or species grants is a dropdown on its card: the player can swap it for
+  another of the same kind at any time (an overlap with a class skill, a DM's ruling); the swapped one is outlined.
 - **Requirements:** an item's *Requirements* (on its Edit page) name minimum ability scores, classes (or any
   spellcaster), races (a subrace counts) and skill proficiencies, plus a note that isn't checked. A character who
   doesn't meet them can't equip the item, or attune to it if it needs attunement: the button is greyed out and says
@@ -268,7 +276,7 @@ npm run build      # type-checks and builds the pages into dist/ (what the deskt
 A new world that starts with D&D 5e gets a copy of `app/src/seed/world.json`, which ships inside the app (an empty world doesn't use it). It holds:
 - every dropdown list;
 - the standard calendar: Gregorian months and leap day, the real moon, BC and AD, today 1 January of year 1, and the sessions' timeline colour. It's not taken from your world: a world makes its own on the Calendar page (*⚙ Edit calendar*), and a player gets yours by importing your world;
-- the 339 spells and 17 feats of the SRD 5.2.1 (CC BY 4.0), the nine SRD species with their traits (`app/scripts/srd-species.json`: effects, choices such as the elven lineages and draconic ancestries, spells and uses) and the Tool items (no text), without DM-only text or pictures. Links to anything else become plain words. Only what may be published goes in: homebrew and rules text from outside the SRD stay in your world.
+- the 339 spells and 17 feats of the SRD 5.2.1 (CC BY 4.0), the nine SRD species with their traits (`app/scripts/srd-species.json`: effects, choices such as the elven lineages and draconic ancestries, spells and uses), the four SRD backgrounds and the tools they name (`app/scripts/srd-backgrounds.json`) and the Tool items (facts only, no text), without DM-only text or pictures. Links to anything else become plain words. Only what may be published goes in: homebrew and rules text from outside the SRD stay in your world.
 
 `npm run seed` rebuilds it from your world (`../data`, or a folder given after the command), taking each SRD spell and feat from your world when it carries the SRD source line (so your fixes, e.g. a spell's type, come along) and from `app/scripts/srd-5.2.1.json` otherwise; commit it and the next build ships it. The seed records its data version, so after an upgrade step a new world from an older seed is brought up to date like any older data. Rebuilding it now and then keeps it current.
 

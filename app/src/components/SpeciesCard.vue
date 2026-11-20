@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The character's species on their sheet: race (and subrace), size and speed, then every trait with its text and what
-// it does. Traits with uses get pips to spend and give back; choices the species asks for are picked here and kept with
+// it does. With kind="background" the same for their background: its Origin feat, its skills and tool, its features.
+// Every granted proficiency is a dropdown the player can swap for another of its kind. Traits with uses get pips to spend and give back; choices the species asks for are picked here and kept with
 // the character. Traits of a higher level show dimmed until the character gets there.
 import { computed } from 'vue'
 import type { Entry, TraitGrant } from '../model/types'
@@ -8,20 +9,29 @@ import { blankSheet, editSheet, sheetOf } from '../sheet'
 import { state } from '../store'
 import { renderInline } from '../markdown'
 import {
-  choiceOpen, grantOptions, lineage, setPicks, speciesSize, speciesSpeed, speciesTraits, spendUse, usesLeft, usesMax,
+  backgroundOf, choiceOpen, grantOptions, lineage, setPicks, setSwap, traitGrants, speciesSize, speciesSpeed, speciesTraits, spendUse, usesLeft, usesMax,
   GRANT_KINDS, type ActiveTrait,
 } from '../species'
 import EntryLink from './EntryLink.vue'
 import TraitChips from './TraitChips.vue'
 
-const props = defineProps<{ pc: Entry }>()
+const props = withDefaults(defineProps<{ pc: Entry; kind?: 'species' | 'background' }>(), { kind: 'species' })
+const bg = computed(() => props.kind === 'background')
 const ro = computed(() => !!state.readOnly)
 const s = computed(() => sheetOf(props.pc) ?? blankSheet())
-const races = computed(() => lineage(props.pc))
-const traits = computed(() => speciesTraits(props.pc, s.value))
+const races = computed(() => (bg.value ? (backgroundOf(props.pc) ? [backgroundOf(props.pc)!] : []) : lineage(props.pc)))
+const traits = computed(() => speciesTraits(props.pc, s.value).filter(a => (a.race.type === 'background') === bg.value))
+const feat = computed(() => (bg.value ? races.value[0]?.fields.originFeat : undefined))
+const featNote = computed(() => (bg.value ? races.value[0]?.fields.originFeatNote : undefined))
 const open = computed(() => traits.value.filter(a => a.active && choiceOpen(a)).length)
-const size = computed(() => speciesSize(props.pc))
-const speed = computed(() => speciesSpeed(props.pc))
+const size = computed(() => (bg.value ? undefined : speciesSize(props.pc)))
+const speed = computed(() => (bg.value ? undefined : speciesSpeed(props.pc)))
+/** A granted proficiency's dropdown: everything of its kind, plus the granted one if the lists don't have it. */
+function swapOptions(g: TraitGrant & { was?: string }) {
+  const all = grantOptions(g.kind)
+  return [g.was ?? g.id, g.id].filter((id, i, l) => l.indexOf(id) === i && !all.some(o => o.id === id)).map(id => ({ id, label: id })).concat(all)
+}
+const swap = (key: string, id: string, original: string) => editSheet(props.pc, x => setSwap(x, key, id, original))
 
 /** What a pick-N choice can take: its `among` list, else everything of that kind. */
 function candidates(a: ActiveTrait) {
@@ -38,15 +48,18 @@ const chooseOption = (a: ActiveTrait, id: string) => editSheet(props.pc, x => se
 const use = (a: ActiveTrait, n: number) => { if (!ro.value) editSheet(props.pc, x => spendUse(x, props.pc, a, n)) }
 const kindLabel = (k: string, n: number) => { const g = GRANT_KINDS.find(x => x.id === k); return n === 1 ? g?.label.toLowerCase() : g?.plural }
 const val = (ev: Event) => (ev.target as HTMLSelectElement).value
+const kindName = (k: string) => GRANT_KINDS.find(x => x.id === k)?.label ?? k
+const nameOf = (g: TraitGrant) => grantOptions(g.kind).find(o => o.id === g.id)?.label ?? g.id
 </script>
 
 <template>
   <section v-if="races.length" class="card species-card">
-    <h3>Species
+    <h3>{{ bg ? 'Background' : 'Species' }}
       <span class="muted small"><template v-for="(r, i) in races" :key="r.id"><template v-if="i"> › </template><EntryLink :id="r.id" /></template><template v-if="size"> · {{ size }}</template><template v-if="speed"> · {{ speed }} ft</template></span>
       <span v-if="open" class="sp-open small" :title="`${open} choice${open === 1 ? '' : 's'} still to make`">{{ open }} to choose</span>
     </h3>
-    <p v-if="!traits.length" class="muted small">No traits yet: the DM adds them on the race's Edit page.</p>
+    <p v-if="feat" class="sp-feat small">Origin feat: <EntryLink :id="String(feat)" /><span v-if="featNote" class="muted"> ({{ featNote }})</span></p>
+    <p v-if="!traits.length" class="muted small">{{ bg ? 'Nothing more yet: the DM sets it up on the background’s Edit page.' : 'No traits yet: the DM adds them on the race’s Edit page.' }}</p>
     <div v-for="a in traits" :key="a.key" class="sp-trait" :class="{ dim: !a.active, 'sp-pending': a.active && choiceOpen(a) }">
       <div class="sp-head">
         <b>{{ a.trait.name }}</b>
@@ -59,7 +72,16 @@ const val = (ev: Event) => (ev.target as HTMLSelectElement).value
         </span>
       </div>
       <p v-if="a.trait.text" class="md small" v-html="renderInline(a.trait.text)" />
-      <TraitChips :t="a.trait" />
+      <TraitChips :t="a.trait" :no-grants="a.active" />
+      <!-- what it grants, each swappable for another of its kind -->
+      <div v-if="a.active && traitGrants(a, s).length" class="sp-grants">
+        <label v-for="g in traitGrants(a, s)" :key="g.key" class="sp-grant small" :class="{ swapped: g.was }" :title="g.was ? `Swapped; the ${a.race.type === 'background' ? 'background' : 'trait'} gives ${nameOf({ kind: g.kind, id: g.was })}` : `${kindName(g.kind)}; pick another to swap it`">
+          <span class="muted">{{ g.kind === 'language' ? 'Speaks' : kindName(g.kind) }}</span>
+          <select :value="g.id" :disabled="ro" @change="swap(g.key, val($event), g.was ?? g.id)">
+            <option v-for="o in swapOptions(g)" :key="o.id" :value="o.id">{{ o.label }}{{ o.id === (g.was ?? g.id) && g.was ? ' (given)' : '' }}</option>
+          </select>
+        </label>
+      </div>
       <!-- the choice: one of several options, or N skills / languages / tools -->
       <div v-if="a.trait.choice && a.active" class="sp-choice">
         <template v-if="a.trait.choice.kind === 'option'">
@@ -69,7 +91,7 @@ const val = (ev: Event) => (ev.target as HTMLSelectElement).value
           </select>
           <template v-if="a.option">
             <span v-if="a.option.text" class="md small" v-html="renderInline(a.option.text)" />
-            <TraitChips :t="a.option" />
+            <TraitChips :t="a.option" no-grants />
           </template>
         </template>
         <template v-else>

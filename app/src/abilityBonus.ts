@@ -27,8 +27,20 @@ export function abilityBonusText(b: AbilityBonus | undefined): string {
   const fixed = ABILITY_KEYS.filter(a => b.fixed?.[a]).sort((x, y) => b.fixed![y]! - b.fixed![x]!)
   const all = fixed.length === 6 && fixed.every(a => b.fixed![a] === b.fixed!.str)
   const parts = [all ? `${sign(b.fixed!.str!)} to all scores` : fixed.map(a => `${sign(b.fixed![a]!)} ${ABILITY_SHORT[a]}`).join(', ')]
-  const pick = picksText(b.pick ?? [], fixed.length > 0), or = picksText(b.orPick ?? [], fixed.length > 0)
-  if (pick) parts.push(or ? `${pick} or ${or}` : pick)
+  // Every pick from the same few scores (a 2024 background): "Str, Dex or Con: +2 to one, +1 to another or +1 to all three".
+  const picks = [...(b.pick ?? []), ...(b.orPick ?? [])], among = picks[0]?.among
+  const same = !fixed.length && picks.length > 1 && among && among.length > 1 && picks.every(p => p.among?.join() === among.join())
+  if (same) {
+    const plain = (ps: AbilityPick[]) => ps.map((p, i) => {
+      const n = p.count ?? 1
+      return `${sign(p.amount)} ${n === among.length ? `to all ${WORDS[n] ?? n}` : n > 1 ? `to ${WORDS[n] ?? n}` : i ? 'to another' : 'to one'}`
+    }).join(', ')
+    const one = plain(b.pick ?? []), two = plain(b.orPick ?? [])
+    parts.push(`${orList(among.map(a => ABILITY_SHORT[a]))}: ${two ? `${one} or ${two}` : one}`)
+  } else {
+    const pick = picksText(b.pick ?? [], fixed.length > 0), or = picksText(b.orPick ?? [], fixed.length > 0)
+    if (pick) parts.push(or ? `${pick} or ${or}` : pick)
+  }
   let text = parts.filter(Boolean).join(', ')
   if (b.max) text += ` (max ${b.max})`
   return [text, b.note].filter(Boolean).join('. ')

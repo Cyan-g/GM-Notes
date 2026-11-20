@@ -7,15 +7,15 @@ import { describeEffect } from '../gear'
 import { grantLabel, spellLabel, usesLabel, GRANT_KINDS } from '../species'
 import EntryLink from './EntryLink.vue'
 
-const props = defineProps<{ t: Trait | TraitOption }>()
+const props = defineProps<{ t: Trait | TraitOption; noGrants?: boolean }>()
 const trait = computed(() => props.t as Trait)
 const kindLabel = (k: string) => GRANT_KINDS.find(g => g.id === k)?.label ?? k
 </script>
 
 <template>
-  <span v-if="(t.effects?.length || t.grants?.length || t.spells?.length || trait.uses)" class="chips trait-chips">
+  <span v-if="(t.effects?.length || (!noGrants && t.grants?.length) || t.spells?.length || trait.uses)" class="chips trait-chips">
     <span v-for="(f, i) in t.effects ?? []" :key="'e' + i" class="chip">{{ describeEffect(f) }}</span>
-    <span v-for="(g, i) in t.grants ?? []" :key="'g' + i" class="chip" :title="kindLabel(g.kind)">{{ g.kind === 'language' ? 'Speaks' : 'Proficient:' }} {{ grantLabel(g) }}</span>
+    <span v-for="(g, i) in noGrants ? [] : t.grants ?? []" :key="'g' + i" class="chip" :title="kindLabel(g.kind)">{{ g.kind === 'language' ? 'Speaks' : 'Proficient:' }} {{ grantLabel(g) }}</span>
     <span v-for="(x, i) in t.spells ?? []" :key="'s' + i" class="chip"><EntryLink :id="x.spell" /> <span class="muted small">{{ spellLabel(x).replace(/^[^(]*\(/, '(') }}</span></span>
     <span v-if="trait.uses" class="chip">{{ usesLabel(trait) }}</span>
   </span>

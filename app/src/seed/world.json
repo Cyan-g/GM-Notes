@@ -1,6 +1,6 @@
 {
  "about": "What every new world starts with. Made by `npm run seed` from the DM's world; don't edit by hand.",
- "dataVersion": 26,
+ "dataVersion": 27,
  "meta": {
   "calendar": {
    "name": "Calendar",
@@ -1186,6 +1186,314 @@
  },
  "entries": [
   {
+   "id": "acolyte",
+   "type": "background",
+   "name": "Acolyte",
+   "aliases": [],
+   "tags": [],
+   "visibility": "known",
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "fields": {
+    "abilityIncrease": {
+     "pick": [
+      {
+       "amount": 2,
+       "among": [
+        "int",
+        "wis",
+        "cha"
+       ]
+      },
+      {
+       "amount": 1,
+       "among": [
+        "int",
+        "wis",
+        "cha"
+       ]
+      }
+     ],
+     "orPick": [
+      {
+       "amount": 1,
+       "count": 3,
+       "among": [
+        "int",
+        "wis",
+        "cha"
+       ]
+      }
+     ]
+    },
+    "originFeat": "magic-initiate",
+    "originFeatNote": "Cleric",
+    "skillProfs": [
+     "Insight",
+     "Religion"
+    ],
+    "toolProfs": [
+     "calligraphers-supplies"
+    ],
+    "equipment": {
+     "items": [
+      {
+       "item": "calligraphers-supplies"
+      },
+      {
+       "name": "Book (prayers)"
+      },
+      {
+       "name": "Holy Symbol"
+      },
+      {
+       "name": "Parchment",
+       "amount": 10
+      },
+      {
+       "name": "Robe"
+      }
+     ],
+     "money": 800,
+     "instead": 5000
+    }
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "criminal",
+   "type": "background",
+   "name": "Criminal",
+   "aliases": [],
+   "tags": [],
+   "visibility": "known",
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "fields": {
+    "abilityIncrease": {
+     "pick": [
+      {
+       "amount": 2,
+       "among": [
+        "dex",
+        "con",
+        "int"
+       ]
+      },
+      {
+       "amount": 1,
+       "among": [
+        "dex",
+        "con",
+        "int"
+       ]
+      }
+     ],
+     "orPick": [
+      {
+       "amount": 1,
+       "count": 3,
+       "among": [
+        "dex",
+        "con",
+        "int"
+       ]
+      }
+     ]
+    },
+    "originFeat": "alert",
+    "skillProfs": [
+     "Sleight of Hand",
+     "Stealth"
+    ],
+    "toolProfs": [
+     "thieves-tools"
+    ],
+    "equipment": {
+     "items": [
+      {
+       "name": "Dagger",
+       "amount": 2
+      },
+      {
+       "item": "thieves-tools"
+      },
+      {
+       "name": "Crowbar"
+      },
+      {
+       "name": "Pouch",
+       "amount": 2
+      },
+      {
+       "name": "Traveler's Clothes"
+      }
+     ],
+     "money": 1600,
+     "instead": 5000
+    }
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "sage",
+   "type": "background",
+   "name": "Sage",
+   "aliases": [],
+   "tags": [],
+   "visibility": "known",
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "fields": {
+    "abilityIncrease": {
+     "pick": [
+      {
+       "amount": 2,
+       "among": [
+        "con",
+        "int",
+        "wis"
+       ]
+      },
+      {
+       "amount": 1,
+       "among": [
+        "con",
+        "int",
+        "wis"
+       ]
+      }
+     ],
+     "orPick": [
+      {
+       "amount": 1,
+       "count": 3,
+       "among": [
+        "con",
+        "int",
+        "wis"
+       ]
+      }
+     ]
+    },
+    "originFeat": "magic-initiate",
+    "originFeatNote": "Wizard",
+    "skillProfs": [
+     "Arcana",
+     "History"
+    ],
+    "toolProfs": [
+     "calligraphers-supplies"
+    ],
+    "equipment": {
+     "items": [
+      {
+       "name": "Quarterstaff"
+      },
+      {
+       "item": "calligraphers-supplies"
+      },
+      {
+       "name": "Book (history)"
+      },
+      {
+       "name": "Parchment",
+       "amount": 8
+      },
+      {
+       "name": "Robe"
+      }
+     ],
+     "money": 800,
+     "instead": 5000
+    }
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "soldier",
+   "type": "background",
+   "name": "Soldier",
+   "aliases": [],
+   "tags": [],
+   "visibility": "known",
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "fields": {
+    "abilityIncrease": {
+     "pick": [
+      {
+       "amount": 2,
+       "among": [
+        "str",
+        "dex",
+        "con"
+       ]
+      },
+      {
+       "amount": 1,
+       "among": [
+        "str",
+        "dex",
+        "con"
+       ]
+      }
+     ],
+     "orPick": [
+      {
+       "amount": 1,
+       "count": 3,
+       "among": [
+        "str",
+        "dex",
+        "con"
+       ]
+      }
+     ]
+    },
+    "originFeat": "savage-attacker",
+    "skillProfs": [
+     "Athletics",
+     "Intimidation"
+    ],
+    "toolProfs": [
+     "dice-set",
+     "dragonchess-set",
+     "playing-card-set",
+     "three-dragon-ante-set"
+    ],
+    "equipment": {
+     "items": [
+      {
+       "name": "Spear"
+      },
+      {
+       "name": "Shortbow"
+      },
+      {
+       "name": "Arrows",
+       "amount": 20
+      },
+      {
+       "name": "Gaming Set (the one chosen above)"
+      },
+      {
+       "name": "Healer's Kit"
+      },
+      {
+       "name": "Quiver"
+      },
+      {
+       "name": "Traveler's Clothes"
+      }
+     ],
+     "money": 1400,
+     "instead": 5000
+    }
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
    "id": "ability-score-improvement",
    "type": "feat",
    "name": "Ability Score Improvement",
@@ -1554,13 +1862,58 @@
    "tags": [],
    "fields": {
     "kind": "Tool",
-    "value": 2500,
-    "summary": "Required to brew magical potions, brewing takes 1 hour per 50g worth of the potion and does not count as resting.\n\nPotions may be consumed or applied to another creature as a bonus action."
+    "value": 2500
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
+   "id": "calligraphers-supplies",
+   "type": "item",
+   "name": "Calligrapher's Supplies",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "kind": "Tool",
+    "value": 1000,
+    "weight": 5
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "dice-set",
+   "type": "item",
+   "name": "Dice Set",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "kind": "Tool",
+    "value": 10
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "dragonchess-set",
+   "type": "item",
+   "name": "Dragonchess Set",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "kind": "Tool",
+    "value": 100
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
   },
   {
    "id": "herbalism-kit",
@@ -1570,8 +1923,7 @@
    "tags": [],
    "fields": {
     "kind": "Tool",
-    "value": 2500,
-    "summary": "Required to brew healing potions, brewing takes 1 hour per 50g worth of the potion and does not count as resting.\n\nPotions may be consumed or applied to another creature as a bonus action."
+    "value": 2500
    },
    "body": "",
    "visibility": "known",
@@ -1586,13 +1938,27 @@
    "tags": [],
    "fields": {
     "kind": "Tool",
-    "value": 2500,
-    "summary": "Jeweler's tools consist of a small saw and hammer, files, pliers, and tweezers."
+    "value": 2500
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
+   "id": "playing-card-set",
+   "type": "item",
+   "name": "Playing Card Set",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "kind": "Tool",
+    "value": 50
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
   },
   {
    "id": "poisoners-kit",
@@ -1607,6 +1973,37 @@
    "visibility": "known",
    "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
+   "id": "thieves-tools",
+   "type": "item",
+   "name": "Thieves' Tools",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "kind": "Tool",
+    "value": 2500,
+    "weight": 1
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "three-dragon-ante-set",
+   "type": "item",
+   "name": "Three-Dragon Ante Set",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "kind": "Tool",
+    "value": 100
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
   },
   {
    "id": "dragonborn",

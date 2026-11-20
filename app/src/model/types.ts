@@ -12,7 +12,7 @@ export interface WorldDate {
 export type Visibility = 'secret' | 'known'
 
 export type EntryType =
-  | 'npc' | 'pc' | 'organization' | 'place' | 'race' | 'deity' | 'creature'
+  | 'npc' | 'pc' | 'organization' | 'place' | 'race' | 'background' | 'deity' | 'creature'
   | 'item' | 'spell' | 'feat' | 'subclass' | 'event' | 'campaign' | 'session' | 'encounter' | 'writing' | 'note'
 
 export interface Entry {
@@ -180,6 +180,8 @@ export interface SpeciesState {
   used?: Record<string, number>
   /** Once-per-rest spells cast since the last rest. */
   spellsUsed?: string[]
+  /** Granted proficiencies the player swapped for another of the same kind: grant key → the id taken instead. */
+  swaps?: Record<string, string>
 }
 
 // ---------- ability score bonuses (races' and feats' abilityIncrease; abilityBonus.ts) ----------
@@ -198,6 +200,13 @@ export interface AbilityBonus {
   max?: number
   note?: string
 }
+
+// ---------- backgrounds (background entries; species.ts applies their proficiencies and features) ----------
+
+/** One thing a background's starting equipment has: an item from the world, or just its name; `amount` defaults to 1. */
+export interface EquipmentLine { item?: Id; name?: string; amount?: number }
+/** A background's starting equipment: the items and coins, or `instead` coins in their place. Kept for the creation wizard. */
+export interface Equipment { items?: EquipmentLine[]; money?: Copper; instead?: Copper }
 
 // ---------- species traits (race entries' speciesTraits; species.ts) ----------
 

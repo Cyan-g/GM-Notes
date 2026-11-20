@@ -1,12 +1,12 @@
 // Describes every entry type: its label, fields and dropdown options.
 // Forms and pages are generated from this, so adding a field here is enough.
 import type {
-  Abilities, AbilityBonus, CharacterSheet, ClassLine, Copper, GearEffect, ItemSpell, Trait, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
+  Abilities, AbilityBonus, CharacterSheet, Equipment, ClassLine, Copper, GearEffect, ItemSpell, Trait, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
 } from './types'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
-  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData' | 'speciesTraits' | 'abilityBonus'
+  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData' | 'speciesTraits' | 'abilityBonus' | 'skills' | 'equipment'
 
 export interface FieldDef {
   key: string
@@ -82,6 +82,8 @@ export const SCHEMA = [
       { key: 'classLevels', label: 'Classes', kind: 'classes' },
       { key: 'level', label: 'Level', kind: 'number' },
       { key: 'campaigns', label: 'Campaigns', kind: 'refs', to: ['campaign'] },
+      // Its skills, tool and features count on the sheet (species.ts); the player can swap any of them.
+      { key: 'background', label: 'Background', kind: 'ref', to: ['background'] },
       // The same appearance as an NPC's.
       { key: 'race', label: 'Race', kind: 'ref', to: ['race'], group: 'Appearance' },
       { key: 'gender', label: 'Gender', kind: 'text', group: 'Appearance' },
@@ -128,6 +130,22 @@ export const SCHEMA = [
       { key: 'languages', label: 'Languages', kind: 'list' },
       // What the species gives a character (species.ts): effects, proficiencies, spells, uses, choices.
       { key: 'speciesTraits', label: 'Traits', kind: 'speciesTraits' },
+    ],
+  },
+  {
+    // A character's background (2024 rules): what it may add to ability scores and its starting equipment are kept
+    // for the character creation wizard; its skills, tool and features count on the sheet (species.ts).
+    type: 'background', label: 'Background', plural: 'Backgrounds', icon: '🎒', fields: [
+      { key: 'abilityIncrease', label: 'Ability scores', kind: 'abilityBonus' },
+      { key: 'originFeat', label: 'Origin feat', kind: 'ref', to: ['feat'] },
+      // Which version of the feat, if it has several ("Cleric" for Magic Initiate).
+      { key: 'originFeatNote', label: 'Feat option', kind: 'text' },
+      { key: 'skillProfs', label: 'Skills', kind: 'skills' },
+      // One Tool item is granted; with several, the player picks one of them (one kind of gaming set).
+      { key: 'toolProfs', label: 'Tool', kind: 'refs', to: ['item'], pick: { field: 'kind', is: ['Tool'] } },
+      { key: 'equipment', label: 'Equipment', kind: 'equipment' },
+      // Anything else it gives, as species traits: features, effects, more proficiencies, spells, uses, choices.
+      { key: 'speciesTraits', label: 'Features', kind: 'speciesTraits' },
     ],
   },
   {
@@ -205,7 +223,7 @@ export const SCHEMA = [
       { key: 'requires', label: 'Needs feats', kind: 'refs', to: ['feat'] },
       { key: 'prerequisite', label: 'Other prerequisite', kind: 'text' },
       { key: 'abilityIncrease', label: 'Ability score increase', kind: 'abilityBonus' },
-      { key: 'source', label: 'Granted by', kind: 'ref', to: ['organization', 'race', 'subclass', 'deity', 'place', 'item'] },
+      { key: 'source', label: 'Granted by', kind: 'ref', to: ['organization', 'race', 'background', 'subclass', 'deity', 'place', 'item'] },
       { key: 'summary', label: 'Description', kind: 'longtext' },
     ],
   },
@@ -272,7 +290,7 @@ export interface KindValue {
   money: Copper; weight: number; ref: Id; refs: Id[]; date: WorldDate
   recipe: RecipeLine[]; stock: StockLine[]; statblock: Statblock; abilities: Abilities
   combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]; effects: GearEffect[]; itemSpells: ItemSpell[]; requires: Requirements; mapData: MapScale | MapRoute[]
-  speciesTraits: Trait[]; abilityBonus: AbilityBonus
+  speciesTraits: Trait[]; abilityBonus: AbilityBonus; skills: string[]; equipment: Equipment
 }
 type Defs = (typeof SCHEMA)[number]['fields'][number]
 /** A field key used by any type. */

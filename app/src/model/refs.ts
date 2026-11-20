@@ -43,6 +43,18 @@ export function mapRefs(e: Entry, to: RefMap, word: (id: Id) => string = id => i
         f[def.key] = kept
         break
       }
+      case 'equipment': {
+        const eq = v as { items?: { item?: Id; name?: string }[] }
+        if (!Array.isArray(eq.items)) break
+        eq.items = eq.items.map(l => {
+          if (!l.item) return l
+          const n = to(l.item)
+          if (n != null) return { ...l, item: n }
+          const { item, ...rest } = l
+          return { ...rest, name: rest.name ?? word(item) }
+        })
+        break
+      }
       case 'combatants': {
         if (!Array.isArray(v)) break
         f[def.key] = (v as { creature?: Id; name?: string }[]).map(l => {

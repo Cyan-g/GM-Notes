@@ -3,6 +3,9 @@
 // saves, max HP per level…), grant proficiencies and languages, give spells, have uses that come back on a rest,
 // and ask the player to choose (skills, a language, or one of several options such as an elven lineage). Traits count
 // from their level on. The sheet's totals (gear.ts) add the effects; the picks and spent uses live on the sheet.
+// A character's background counts the same way: its skills and tool are a "Proficiencies" trait (several tools: the
+// player picks one), then its own features. Any granted skill, tool, language, weapon or armor can be swapped by the
+// player for another of the same kind (an overlap with the class's skills, a DM's ruling).
 import type { CharacterSheet, Entry, GearEffect, Id, SpeciesState, Trait, TraitGrant, TraitOption, TraitSpell } from './model/types'
 import { totalLevel } from './model/classes'
 import { get, listOptions, state } from './store'
@@ -17,8 +20,20 @@ export const ownerOf = (s: object | undefined) => (s ? OWNER.get(s) : undefined)
 
 /** A trait's key on a character: the race it comes from and its id. */
 export const traitKey = (race: Entry, t: Trait) => `${race.id}.${t.id}`
-export const traitsOf = (race: Entry | undefined): Trait[] =>
-  Array.isArray(race?.fields.speciesTraits) ? race!.fields.speciesTraits!.filter(t => t && typeof t === 'object') : []
+const ownTraits = (e: Entry | undefined): Trait[] =>
+  Array.isArray(e?.fields.speciesTraits) ? e!.fields.speciesTraits!.filter(t => t && typeof t === 'object') : []
+/** The id of a background's proficiencies trait (its skills and tool). */
+export const PROFS_TRAIT = 'proficiencies'
+/** A race's traits; a background's, after one made from its skills and tool. */
+export function traitsOf(e: Entry | undefined): Trait[] {
+  if (e?.type !== 'background') return ownTraits(e)
+  const skills = (e.fields.skillProfs ?? []).filter(Boolean), tools = (e.fields.toolProfs ?? []).filter(Boolean)
+  const t: Trait = { id: PROFS_TRAIT, name: 'Proficiencies' }
+  const grants: TraitGrant[] = [...skills.map(id => ({ kind: 'skill' as const, id })), ...(tools.length === 1 ? [{ kind: 'tool' as const, id: tools[0] }] : [])]
+  if (grants.length) t.grants = grants
+  if (tools.length > 1) t.choice = { kind: 'tool', count: 1, among: tools }
+  return grants.length || t.choice ? [t, ...ownTraits(e)] : ownTraits(e)
+}
 
 /** The character's race and the races it's a subrace of, the main race first. */
 export function lineage(pc: Entry | undefined): Entry[] {
@@ -28,12 +43,18 @@ export function lineage(pc: Entry | undefined): Entry[] {
   return out
 }
 
+/** The character's background, if it has one. */
+export const backgroundOf = (pc: Entry | undefined) => { const b = get(pc?.fields.background as Id | undefined); return b?.type === 'background' ? b : undefined }
+/** Where a character's traits come from: the races of its lineage, then its background. */
+export const origins = (pc: Entry | undefined): Entry[] => [...lineage(pc), ...(backgroundOf(pc) ? [backgroundOf(pc)!] : [])]
+
 const pb = (level: number) => 2 + Math.floor((Math.max(1, level) - 1) / 4)
 export const stateOf = (s: CharacterSheet | undefined): SpeciesState => s?.species ?? {}
 
 export interface ActiveTrait {
   key: string
   trait: Trait
+  /** The race or background it comes from. */
   race: Entry
   /** Whether the character has reached the trait's level. */
   active: boolean
@@ -42,12 +63,12 @@ export interface ActiveTrait {
   /** The picks of a choice. */
   picks: string[]
 }
-/** Every trait of the character's species, in order (main race first), with what's chosen and whether it counts yet. */
+/** Every trait of the character's species and background, in order (main race first, background last), with what's chosen and whether it counts yet. */
 export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): ActiveTrait[] {
   if (!pc) return []
   const level = totalLevel(pc)
   const st = stateOf(s ?? (pc.fields.sheet as CharacterSheet | undefined))
-  return lineage(pc).flatMap(race => traitsOf(race).map(trait => {
+  return origins(pc).flatMap(race => traitsOf(race).map(trait => {
     const key = traitKey(race, trait)
     const picks = st.picks?.[key] ?? []
     const option = trait.choice?.kind === 'option' ? trait.choice.options?.find(o => o.id === picks[0]) : undefined
@@ -70,6 +91,28 @@ function languageId(name: string): string {
   return listOptions('language').find(o => o.id.toLowerCase() === n || o.label.toLowerCase() === n)?.id ?? name.trim()
 }
 
+/** A granted proficiency's key on a character, for swapping it: the trait's key, the option's id if from one, its place. */
+export const grantKey = (a: ActiveTrait, i: number, option?: TraitOption) => `${a.key}${option ? '.' + option.id : ''}.g${i}`
+/**
+ * The grants of a trait (and its chosen option) as the character has them: each with its key and, when the player
+ * swapped it, the id taken instead.
+ */
+export function traitGrants(a: ActiveTrait, s?: CharacterSheet): (TraitGrant & { key: string; was?: string; option?: string })[] {
+  const swaps = stateOf(s).swaps ?? {}
+  const of = (list: TraitGrant[] | undefined, option?: TraitOption) => (list ?? []).map((g, i) => {
+    const key = grantKey(a, i, option), id = swaps[key], o = option ? { option: option.name } : {}
+    return id && id !== g.id ? { ...g, id, key, was: g.id, ...o } : { ...g, key, ...o }
+  })
+  return [...of(a.trait.grants), ...(a.option ? of(a.option.grants, a.option) : [])]
+}
+/** Swap a granted proficiency for another of its kind (its own id, or '', takes the swap back). */
+export function setSwap(s: CharacterSheet, key: string, id: string, original: string) {
+  const st = edit(s), all = { ...(st.swaps ?? {}) }
+  if (id && id !== original) all[key] = id; else delete all[key]
+  st.swaps = all
+  if (!Object.keys(all).length) delete st.swaps
+}
+
 /** Everything granted: proficiencies, languages (the race's own list too) and the player's picks, with where from. */
 export function speciesGrants(pc: Entry | undefined, s?: CharacterSheet): (TraitGrant & { from: string })[] {
   if (!pc) return []
@@ -78,10 +121,10 @@ export function speciesGrants(pc: Entry | undefined, s?: CharacterSheet): (Trait
     for (const l of (race.fields.languages as string[] | undefined) ?? []) if (l.trim()) out.push({ kind: 'language', id: languageId(l), from: race.name })
   }
   for (const a of active(pc, s)) {
-    for (const g of a.trait.grants ?? []) out.push({ ...g, from: a.trait.name })
-    for (const g of a.option?.grants ?? []) out.push({ ...g, from: a.option!.name })
+    const from = a.race.type === 'background' ? a.race.name : a.trait.name
+    for (const g of traitGrants(a, s)) out.push({ kind: g.kind, id: g.id, from: g.option ?? from })
     const k = a.trait.choice?.kind
-    if (k && k !== 'option') for (const id of a.picks) out.push({ kind: k, id, from: a.trait.name })
+    if (k && k !== 'option') for (const id of a.picks) out.push({ kind: k, id, from })
   }
   return out
 }

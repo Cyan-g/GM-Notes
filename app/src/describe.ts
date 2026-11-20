@@ -27,6 +27,7 @@ export function describe(e: Entry, { parent = true } = {}): string {
     }
     case 'deity': return join(L(e, 'rank'), (f.domains as string[] | undefined)?.join(', '), f.alignment)
     case 'feat': return join(L(e, 'category'), f.level && `level ${f.level}+`, name(f.source) && `from ${name(f.source)}`)
+    case 'background': return join(f.originFeat && name(f.originFeat), (f.skillProfs as string[] | undefined)?.join(', '))
     case 'race': return join(f.parent ? `subrace of ${name(f.parent)}` : '', L(e, 'size'), f.speed && `speed ${f.speed}`, abilityBonusText(f.abilityIncrease))
     case 'event': return join(formatDate(f.date as WorldDate), L(e, 'category'))
     case 'session': return join(name(f.campaign), f.number != null && `session ${f.number}`, formatDate(f.date as WorldDate))

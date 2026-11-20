@@ -313,6 +313,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
 
     <!-- what the species gives: traits, uses, choices (species.ts) -->
     <SpeciesCard v-if="!build" :pc="pc" />
+    <SpeciesCard v-if="!build" :pc="pc" kind="background" />
 
     <!-- features and traits -->
     <section class="cs-features">

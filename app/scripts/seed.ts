@@ -4,14 +4,15 @@
 // The seed holds every dropdown list, the standard calendar (Gregorian, real moon, BC/AD; today is 1 January of
 // year 1; worlds make their own in the calendar editor), the session colour of the timeline, and only what may be
 // published (the repository is public): spells and feats from the SRD (their text ends with the SRD source line), the
-// nine SRD species with their traits (scripts/srd-species.json), and the Tool items without text (crafting needs them). Your
+// nine SRD species with their traits (scripts/srd-species.json), the four SRD backgrounds and the tools they name
+// (scripts/srd-backgrounds.json), and the Tool items without text (crafting needs them). Your
 // own homebrew and rules text from outside the SRD stay in your world only. DM-only text, pictures and attached files
 // are left out, and references to anything else become plain words.
 import { createRequire } from 'node:module'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { Database, Entry, EntryType, Trait, TraitOption } from '../src/model/types'
+import type { Abilities, Database, Entry, EntryType, Equipment, Trait, TraitOption } from '../src/model/types'
 import { LISTS, optionsIn } from '../src/model/lists'
 import { mapRefs } from '../src/model/refs'
 import { defaultCalendar } from '../src/calendar'
@@ -22,7 +23,7 @@ const { WorldDb } = createRequire(import.meta.url)('../electron/db.cjs')
 const dataDir = resolve(process.argv[2] ?? resolve(here, '../../data'))
 const out = resolve(here, '../src/seed/world.json')
 
-const TYPES: EntryType[] = ['race', 'spell', 'feat']
+const TYPES: EntryType[] = ['race', 'background', 'spell', 'feat']
 const fromSrd = (e: Entry) => /System Reference Document/.test(`${e.body}\n${String(e.fields.summary ?? '')}`)
 const takes = (e: Entry) =>
   ((e.type === 'spell' || e.type === 'feat') && fromSrd(e))
@@ -72,7 +73,34 @@ const species: Entry[] = SPECIES.map(x => {
     created: own?.created ?? '2026-11-20T00:00:00.000Z', updated: own?.updated ?? '2026-11-20T00:00:00.000Z',
   } as Entry
 })
-const picked = [...chosen, ...species].sort((a, b) => a.type.localeCompare(b.type) || a.id.localeCompare(b.id))
+
+// The four SRD backgrounds (scripts/srd-backgrounds.json) and the tools they name, which a world may not have yet.
+type BgFile = {
+  tools: { name: string; value: number; weight?: number }[]
+  backgrounds: { name: string; abilities: (keyof Abilities)[]; feat: string; featNote?: string; skills: string[]; tools: string[]; equipment: Equipment & { items: { name: string; amount?: number }[] } }[]
+}
+const BG = JSON.parse(readFileSync(resolve(here, 'srd-backgrounds.json'), 'utf8')) as BgFile
+const stamp = '2026-11-20T00:00:00.000Z'
+const toolIds = new Map(chosen.filter(e => e.type === 'item').map(e => [norm(e.name), e.id]))
+const tools: Entry[] = BG.tools.filter(t => !toolIds.has(norm(t.name))).map(t => ({
+  id: slug(t.name), type: 'item', name: t.name, aliases: [], tags: [], body: '', visibility: 'known',
+  fields: { kind: 'Tool', value: t.value, ...(t.weight ? { weight: t.weight } : {}) }, created: stamp, updated: stamp,
+} as Entry))
+for (const t of tools) toolIds.set(norm(t.name), t.id)
+const featId = new Map(chosen.filter(e => e.type === 'feat').map(e => [norm(e.name), e.id]))
+const need = (m: Map<string, string>, name: string, what: string) => { const id = m.get(norm(name)); if (!id) throw new Error(`srd-backgrounds.json names a ${what} the seed doesn't have: ${name}`); return id }
+const backgrounds: Entry[] = BG.backgrounds.map(b => ({
+  id: slug(b.name), type: 'background', name: b.name, aliases: [], tags: [], visibility: 'known',
+  body: '*Source: System Reference Document 5.2.1 (CC BY 4.0).*',
+  fields: {
+    abilityIncrease: { pick: [{ amount: 2, among: b.abilities }, { amount: 1, among: b.abilities }], orPick: [{ amount: 1, count: 3, among: b.abilities }] },
+    originFeat: need(featId, b.feat, 'feat'), ...(b.featNote ? { originFeatNote: b.featNote } : {}),
+    skillProfs: b.skills, toolProfs: b.tools.map(t => need(toolIds, t, 'tool')),
+    equipment: { ...b.equipment, items: b.equipment.items.map(l => { const id = toolIds.get(norm(l.name)); return id ? { item: id, ...(l.amount ? { amount: l.amount } : {}) } : l }) },
+  },
+  created: stamp, updated: stamp,
+} as Entry))
+const picked = [...chosen, ...species, ...tools, ...backgrounds].sort((a, b) => a.type.localeCompare(b.type) || a.id.localeCompare(b.id))
 const ids = new Set(picked.map(e => e.id))
 
 const entries = picked.map(e => {
@@ -82,7 +110,7 @@ const entries = picked.map(e => {
     .replace(/!\[[^\]]*\]\(<?(?:images|files)\/[^)>]*>?\)/g, '')
     .replace(/\[([^\]]*)\]\(<?(?:images|files)\/[^)>]*>?\)/g, '$1')
     .replace(/\n{3,}/g, '\n\n').trim()
-  if (textless(c)) c.body = ''
+  if (textless(c)) { c.body = ''; delete c.fields.summary }
   // An ability score increase still written as text (a world before data version 27, the SRD file) becomes data.
   const inc: unknown = c.fields.abilityIncrease
   if (typeof inc === 'string') { const b = cleanBonus(parseAbilityBonus(inc) ?? {}); if (b) c.fields.abilityIncrease = b; else delete c.fields.abilityIncrease }

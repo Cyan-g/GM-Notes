@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import TraitsInput from './TraitsInput.vue'
 import AbilityBonusInput from './AbilityBonusInput.vue'
+import EquipmentInput from './EquipmentInput.vue'
+import { SKILLS } from '../../sheet'
 // Edits one schema field of an entry in place.
 import ChoiceListInput from './ChoiceListInput.vue'
 import { computed } from 'vue'
@@ -22,6 +24,7 @@ import RanksInput from './RanksInput.vue'
 import EffectsInput from './EffectsInput.vue'
 import ItemSpellsInput from './ItemSpellsInput.vue'
 import RequirementsInput from './RequirementsInput.vue'
+const SKILL_OPTIONS = SKILLS.map(x => ({ id: x.name, label: x.name }))
 
 const props = defineProps<{ def: FieldDef; entry: Entry }>()
 
@@ -71,14 +74,16 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
   <DateInput v-else-if="def.kind === 'date'" v-model="value" />
   <EntryPicker v-else-if="def.kind === 'ref'" v-model="value" :types="def.to" :exclude="[entry.id]" :only="only" />
   <div v-else-if="def.kind === 'refs'" class="refs-input">
-    <span v-for="(id, i) in refs" :key="id" class="chip"><EntryPicker :model-value="id" :types="def.to" @update:model-value="v => { const l = [...refs]; if (v) l[i] = v; else l.splice(i, 1); value = l }" /></span>
-    <EntryPicker add :types="def.to" :exclude="[entry.id, ...refs]" placeholder="Add…" @pick="addRef" />
+    <span v-for="(id, i) in refs" :key="id" class="chip"><EntryPicker :model-value="id" :types="def.to" :only="only" @update:model-value="v => { const l = [...refs]; if (v) l[i] = v; else l.splice(i, 1); value = l }" /></span>
+    <EntryPicker add :types="def.to" :exclude="[entry.id, ...refs]" :only="only" placeholder="Add…" @pick="addRef" />
   </div>
   <RanksInput v-else-if="def.kind === 'ranks'" v-model="value" />
   <EffectsInput v-else-if="def.kind === 'effects'" v-model="value" />
   <ItemSpellsInput v-else-if="def.kind === 'itemSpells'" v-model="value" />
   <TraitsInput v-else-if="def.kind === 'speciesTraits'" v-model="value" />
   <AbilityBonusInput v-else-if="def.kind === 'abilityBonus'" v-model="value" />
+  <ProfChips v-else-if="def.kind === 'skills'" :values="value ?? []" :toggles="SKILL_OPTIONS" @change="value = $event.length ? $event : undefined" />
+  <EquipmentInput v-else-if="def.kind === 'equipment'" v-model="value" />
   <RequirementsInput v-else-if="def.kind === 'requires'" v-model="value" />
   <RecipeInput v-else-if="def.kind === 'recipe'" v-model="value" :item-value="entry.fields.value" />
   <StockInput v-else-if="def.kind === 'stock'" v-model="value" :markup="(entry.fields.markup) ?? 1" />

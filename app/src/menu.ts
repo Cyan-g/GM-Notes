@@ -138,7 +138,7 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'Archive',
-    owns: r => dashOf(r) === 'armory' || r.name === 'lists' || (['item', 'creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? '')))),
+    owns: r => dashOf(r) === 'armory' || r.name === 'lists' || (['item', 'creature', 'deity', 'race', 'background', 'feat', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? '')))),
     // The item tables (crafting kinds are in the Crafting menu), every kind of entry kept for reference, the dropdown lists.
     items: () => [
       viewLink('armory', 'Weapons', 'weapons', kindCount('Weapon')),
@@ -146,7 +146,7 @@ export const MENUS: TopMenu[] = [
       viewLink('armory', 'Tools', 'tools', kindCount('Tool')),
       viewLink('armory', 'Other items', 'otherItems'),
       SEP,
-      ...(['creature', 'deity', 'race', 'feat', 'subclass', 'writing', 'note'] as EntryType[]).map(typeLink),
+      ...(['creature', 'deity', 'race', 'background', 'feat', 'subclass', 'writing', 'note'] as EntryType[]).map(typeLink),
       SEP,
       { label: 'Lists', uiIcon: 'lists', href: '#/lists', hint: 'dropdown options' },
     ],

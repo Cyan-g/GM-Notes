@@ -15,7 +15,7 @@ const PLAY_KEYS = ['tracker', 'spellbook', 'crafting', 'follow', 'playerNotes'] 
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
 /** The newest data version this build understands (the last step in upgrade()). Newer data opens read-only. */
-export const DATA_VERSION = 27
+export const DATA_VERSION = 28
 /** The oldest data version this build can still open; older data is refused instead of guessed at. */
 export const OLDEST_VERSION = 20
 /** What the database must allow: every entry type and relation kind the app knows. */
@@ -106,6 +106,8 @@ function upgrade(d: Database): boolean {
   if ((d.version ?? 1) < 25) { upgradeTo25(d); d.version = 25; changed = true }
   if ((d.version ?? 1) < 26) { upgradeTo26(d); d.version = 26; changed = true }
   if ((d.version ?? 1) < 27) { upgradeTo27(d); d.version = 27; changed = true }
+  // 28: backgrounds, a new entry type; nothing to convert, but an older app mustn't edit a world that has them.
+  if ((d.version ?? 1) < 28) { d.version = 28; changed = true }
   return changed
 }
 

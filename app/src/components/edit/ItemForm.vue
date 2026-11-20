@@ -18,6 +18,7 @@ const FEATURES = [
   { id: 'requirements', label: 'Requirements', keys: ['requirements'], hint: 'Who can equip it, or attune to it if it needs attunement' },
   { id: 'effects', label: 'Effects', keys: ['effects'], hint: 'What it does to whoever wears, wields or attunes it' },
   { id: 'spells', label: 'Spells & charges', keys: ['charges', 'recharge', 'spells'], hint: 'Spells its user can cast, and its charges' },
+  { id: 'features', label: 'Features', keys: ['speciesTraits'], hint: 'Its rules, each with its text, uses per rest, choices and spells; listed on the sheet while it is in use' },
 ]
 const FEATURE_KEYS = FEATURES.flatMap(x => x.keys)
 const featureFields = (id: string) => fields.value.filter(d => FEATURES.find(x => x.id === id)!.keys.includes(d.key))
@@ -44,7 +45,7 @@ const groups = computed(() => {
   for (const d of fields.value) if (d.group && !FEATURE_KEYS.includes(d.key)) out.set(d.group, [...(out.get(d.group) ?? []), d])
   return [...out]
 })
-const WIDE = ['list', 'longtext', 'effects', 'itemSpells', 'requires']
+const WIDE = ['list', 'longtext', 'effects', 'itemSpells', 'requires', 'speciesTraits']
 const short = (l: FieldDef[]) => l.filter(d => !WIDE.includes(d.kind) && d.kind !== 'bool')
 const wide = (l: FieldDef[]) => l.filter(d => WIDE.includes(d.kind))
 const bools = computed(() => basics.value.filter(d => d.kind === 'bool'))

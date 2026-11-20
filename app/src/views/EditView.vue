@@ -168,7 +168,7 @@ function remove() {
       </aside>
       <aside v-else-if="!noSide" class="entry-side">
         <!-- A craftable item's recipe sits first on the right, beside its stats. -->
-        <div v-for="f in e.type === 'item' ? bigFields : []" :key="f.key" class="card side-big">
+        <div v-for="f in e.type === 'item' ? bigFields.filter(x => x.kind !== 'speciesTraits') : []" :key="f.key" class="card side-big">
           <h3>{{ f.label }}</h3>
           <FieldInput :def="f" :entry="e" />
         </div>

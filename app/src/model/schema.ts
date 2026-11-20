@@ -191,6 +191,9 @@ export const SCHEMA = [
       { key: 'charges', label: 'Charges', kind: 'number', when: GEAR },
       { key: 'recharge', label: 'Regains', kind: 'text', when: GEAR },
       { key: 'spells', label: 'Spells', kind: 'itemSpells', to: ['spell'], when: GEAR },
+      // Its rules as features, like a feat's (species.ts): counted while it's in use, or while carried if it can't be
+      // equipped or attuned (a flask, a pearl); listed on the sheet in play with uses, choices and spells.
+      { key: 'speciesTraits', label: 'Features', kind: 'speciesTraits', when: GEAR },
       { key: 'category', label: 'Ingredient type', kind: 'select', options: ['Plant', 'Mineral', 'Body Part', 'Fluid', 'Other'], when: ING, group: 'Ingredient' },
       // The Tool item a recipe is crafted with (proficiency in it is what the Workbench checks).
       { key: 'craftingType', label: 'Crafted with', kind: 'ref', to: ['item'], pick: { field: 'kind', is: ['Tool'] }, when: CRAFT, group: 'Crafting' },

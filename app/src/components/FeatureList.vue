@@ -32,7 +32,7 @@ type Line = { kind: 'trait'; a: ActiveTrait } | { kind: 'option'; a: ActiveTrait
 const lines = computed<Line[]>(() => {
   const now = all.value.filter(a => a.active && (shownInPlay(a) || choiceOpen(a)))
   const cls = now.filter(a => isClassOrigin(a.race)).sort((x, y) => (x.trait.level ?? 1) - (y.trait.level ?? 1))
-  return [...cls, ...now.filter(a => a.race.type === 'race'), ...now.filter(a => a.race.type === 'background'), ...now.filter(a => a.race.type === 'feat')].flatMap(a => [
+  return [...cls, ...now.filter(a => a.race.type === 'race'), ...now.filter(a => a.race.type === 'background'), ...now.filter(a => a.race.type === 'feat'), ...now.filter(a => a.race.type === 'item')].flatMap(a => [
     ...(replacedByPicks(a) && !choiceOpen(a) ? [] : [{ kind: 'trait' as const, a }]),
     ...a.options.map(o => ({ kind: 'option' as const, a, o })),
     // a picked feat with features of its own is listed by them instead

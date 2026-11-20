@@ -9,6 +9,8 @@ import { optionsIn } from '../model/lists'
 import { renderInline } from '../markdown'
 import { describeEffect, effectsOf, howCast, spellsOf } from '../gear'
 import EntryLink from './EntryLink.vue'
+import TraitList from './TraitList.vue'
+import { traitsOf, wearable } from '../species'
 import { describeRequirements } from '../requirements'
 
 const props = defineProps<{ e: Entry }>()
@@ -42,6 +44,7 @@ const chipEffects = computed(() => effectsOf(props.e).filter(x => x.on !== 'feat
 const lineEffects = computed(() => effectsOf(props.e).filter(x => x.on === 'feature').map(describeEffect).filter(Boolean))
 const effectsWhen = computed(() => (f.value.attunement ? 'While attuned' : f.value.kind === 'Weapon' ? 'While wielded' : 'While worn'))
 const spells = computed(() => spellsOf(props.e).filter(x => get(x.spell)))
+const features = computed(() => traitsOf(props.e))
 /** The kind line, starting with a capital: "Magical Melee (Quarterstaff) · requires attunement". */
 const kindLine = computed(() => { const t = describe(props.e) || L('kind'); return t.charAt(0).toUpperCase() + t.slice(1) })
 const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magical' : 'mundane')).toLowerCase().replace(' ', '-'))
@@ -64,6 +67,11 @@ const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magic
             <div class="ic-gear-sub">Spells</div>
             <ul class="ic-gear-spells"><li v-for="(x, i) in spells" :key="i"><EntryLink :id="x.spell" /><span class="muted">{{ howCast(x) }}</span></li></ul>
           </template>
+        </div>
+        <!-- its rules as features (with uses, choices and spells), when it has them -->
+        <div v-if="features.length" class="ic-gear ic-features">
+          <div class="ic-gear-head">{{ effects.length || spells.length ? 'Features' : wearable(e) ? effectsWhen : 'While carried' }}</div>
+          <TraitList :traits="features" :known="String(e.body ?? '')" />
         </div>
       </div>
       <dl v-if="rows.length" class="ic-stats">

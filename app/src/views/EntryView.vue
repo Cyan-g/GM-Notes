@@ -391,7 +391,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
 
       <aside class="entry-side">
         <SessionSide v-if="e.type === 'session'" :e="e" />
-        <div v-for="f in e.type === 'item' ? bigFields : []" :key="f.key" class="card side-big">
+        <div v-for="f in e.type === 'item' ? bigFields.filter(x => x.kind !== 'speciesTraits') : []" :key="f.key" class="card side-big">
           <h3>{{ f.label }}</h3>
           <FieldValue :def="f" :value="byKey(e.fields)[f.key]" :entry="e" />
         </div>

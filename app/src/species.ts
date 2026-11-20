@@ -12,6 +12,7 @@ import type { Abilities, CharacterSheet, Entry, GearEffect, Id, SpeciesState, Tr
 import { classesOf, totalLevel, withoutClass } from './model/classes'
 import { entries, get, listOptions, state } from './store'
 import { SKILLS, mod, score, sheetOf } from './sheet'
+import { effectsOf, inUse, spellsOf } from './gear'
 
 type Ability = keyof Abilities
 
@@ -117,7 +118,19 @@ export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): Active
   const base = origins(pc).flatMap(build)
   // the feats the character has: the background's Origin feat, those on the sheet, and those picked (a Fighting Style)
   const total = totalLevel(pc)
-  return [...base, ...featsOf(pc, sheet, base).flatMap(f => build({ from: f, level: total }))]
+  return [...base, ...featsOf(pc, sheet, base).flatMap(f => build({ from: f, level: total })), ...itemsWithFeatures(sheet).flatMap(i => build({ from: i, level: total }))]
+}
+/** Whether an item can be equipped or attuned at all (a flask or a pearl can't: its features count while carried). */
+export const wearable = (item: Entry) => ['Weapon', 'Armor'].includes(String(item.fields.kind ?? '')) || !!item.fields.attunement
+  || !!(effectsOf(item).length || spellsOf(item).length || item.fields.charges)
+/** The items whose features count, each once: those in use, and those carried that can't be equipped or attuned. */
+function itemsWithFeatures(s: CharacterSheet | undefined): Entry[] {
+  const out = new Map<string, Entry>()
+  for (const l of s?.inventory ?? []) {
+    const item = get(l.item)
+    if (item?.type === 'item' && traitsOf(item).length && (inUse(l, item) || !wearable(item))) out.set(item.id, item)
+  }
+  return [...out.values()]
 }
 /** The feat entry a feature line on the sheet is ("Magic Initiate (Cleric)" is Magic Initiate), if any. */
 export function featOfFeature(f: { name: string }): Entry | undefined {

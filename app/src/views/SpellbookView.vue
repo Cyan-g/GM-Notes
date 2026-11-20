@@ -36,7 +36,6 @@ const rows = computed(() => slotRows(book.value, owner.value))
 const classesKnown = computed(() => !!owner.value && classesOf(owner.value).length > 0)
 const shownSlots = computed(() => rows.value.filter(r => r.kind !== 'arcanum' && (editSlots.value || r.max > 0)))
 const arcana = computed(() => rows.value.filter(r => r.kind === 'arcanum'))
-const rowLabel = (r: SlotRow) => (r.kind === 'pact' ? `Pact · ${ORD[r.level - 1]}` : ORD[r.level - 1])
 
 // ---- changes ----
 function setNum(key: 'attackBonus' | 'saveDC' | 'preparedMax', v: string) {
@@ -184,7 +183,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
         <h3>Spell slots <button class="link-btn" @click="editSlots = !editSlots">{{ editSlots ? 'Done' : 'Edit' }}</button></h3>
         <div class="slot-cols">
         <div v-for="s in shownSlots" :key="s.key" class="slot-row" :class="{ pact: s.kind === 'pact' }">
-          <span class="slot-lvl" :title="s.kind === 'pact' ? 'Warlock pact slots: all of this level, back on a short rest' : undefined">{{ rowLabel(s) }}</span>
+          <span class="slot-lvl" :title="s.kind === 'pact' ? 'Warlock pact slots: all of this level, back on a short rest' : undefined"><small v-if="s.kind === 'pact'" class="slot-kind">Pact</small>{{ ORD[s.level - 1] }}</span>
           <span class="pips">
             <button v-for="p in s.max" :key="p" class="pip" :class="{ on: p - 1 < s.max - s.used }"
                     :title="p - 1 < s.max - s.used ? 'Spend this slot' : 'Get this slot back'" @click="pip(s, p - 1)" />
@@ -197,7 +196,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
           <span v-else-if="s.rule != null" class="slot-own" :title="`Typed in; the class levels give ${s.rule}`">✎</span>
         </div>
         <div v-for="a in arcana" :key="a.key" class="slot-row arcanum">
-          <span class="slot-lvl" title="Mystic Arcanum: one casting of a spell of this level per long rest">Arcanum · {{ ORD[a.level - 1] }}</span>
+          <span class="slot-lvl" title="Mystic Arcanum: one casting of a spell of this level per long rest"><small class="slot-kind">Arcanum</small>{{ ORD[a.level - 1] }}</span>
           <span class="pips"><button class="pip" :class="{ on: !a.used }" :title="a.used ? 'Get it back' : 'Use it'" @click="pip(a, 0)" /></span>
           <span class="slot-left">{{ 1 - a.used }} / 1</span>
         </div>

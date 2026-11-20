@@ -1462,7 +1462,9 @@ h1 .icon svg.gi { color: var(--accent); }
 /* pact slots and Mystic Arcanum stand apart from the levelled slots; ✎ marks a typed count */
 .slot-row.pact { background: color-mix(in srgb, #8b5cf6 14%, var(--panel-2)); }
 .slot-row.arcanum { background: color-mix(in srgb, #8b5cf6 8%, var(--panel-2)); }
-.slot-row.pact .slot-lvl, .slot-row.arcanum .slot-lvl { font-size: 12px; white-space: nowrap; }
+/* "Pact" / "Arcanum" on a small line of its own over the level, so it fits the narrow box */
+.slot-kind { display: block; text-align: center; font: 600 10px var(--sans); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.slot-lvl { text-align: center; }
 .slot-own { font-size: 11px; color: var(--accent); }
 .slot-src { margin: .5rem 0 0; }
 .book-col { width: 1%; white-space: nowrap; text-align: right; }

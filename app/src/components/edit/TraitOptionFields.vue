@@ -4,6 +4,7 @@
 import { computed } from 'vue'
 import type { TraitGrant, TraitOption, TraitSpell } from '../../model/types'
 import { GRANT_KINDS, HOW_SPECIES, grantOptions } from '../../species'
+import { ABILITY_NAME } from '../../abilityBonus'
 import EffectsInput from './EffectsInput.vue'
 import EntryPicker from './EntryPicker.vue'
 
@@ -30,6 +31,7 @@ function setSpell(i: number, patch: Partial<TraitSpell>) {
   const l = spells.value.map(x => ({ ...x }))
   l[i] = { ...l[i], ...patch }
   if (!l[i].from || l[i].from! <= 1) delete l[i].from
+  if (!l[i].ability) delete l[i].ability
   put({ spells: l })
 }
 const addSpell = (spell: string) => put({ spells: [...spells.value, { spell, how: 'long' }] })
@@ -65,6 +67,10 @@ const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement | 
           <EntryPicker :model-value="x.spell" :types="['spell']" @update:model-value="v => v ? setSpell(i, { spell: v }) : removeSpell(i)" />
           <select :value="x.how" aria-label="How it's cast" @change="setSpell(i, { how: val($event) as TraitSpell['how'] })">
             <option v-for="(label, id) in HOW_SPECIES" :key="id" :value="id">{{ label }}</option>
+          </select>
+          <select :value="x.ability ?? ''" aria-label="Cast with" title="The ability it's cast with (its attack and save DC are shown with it)" @change="setSpell(i, { ability: (val($event) || undefined) as TraitSpell['ability'] })">
+            <option value="">no ability</option>
+            <option v-for="(label, id) in ABILITY_NAME" :key="id" :value="id">with {{ label }}</option>
           </select>
           <label class="small" title="From this character level">from level <input type="number" min="1" max="20" class="effect-value" :value="x.from ?? 1" @change="setSpell(i, { from: Number(val($event)) || 1 })" /></label>
           <button type="button" class="link-btn" title="Remove" @click="removeSpell(i)">×</button>

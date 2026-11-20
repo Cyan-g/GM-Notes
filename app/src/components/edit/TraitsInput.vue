@@ -3,8 +3,10 @@
 // uses per rest, and a choice for the player (pick skills, languages or tools, or one of several options).
 import { computed } from 'vue'
 import type { Trait, TraitChoice, TraitOption } from '../../model/types'
-import { CHOICE_WORDS, choiceCandidates, newTraitId } from '../../species'
+import { choiceWords, newTraitId } from '../../species'
+import { listOptions } from '../../store'
 import TraitOptionFields from './TraitOptionFields.vue'
+import ChoiceFields from './ChoiceFields.vue'
 import TraitChips from '../TraitChips.vue'
 
 const model = defineModel<Trait[] | undefined>()
@@ -14,7 +16,7 @@ function put(i: number, t: Trait) { const l = [...list.value]; l[i] = t; save(l)
 const patch = (i: number, p: Partial<Trait>) => {
   const t: Trait = { ...list.value[i], ...p }
   if (!t.level || t.level <= 1) delete t.level
-  for (const k of ['uses', 'choice', 'scale', 'onSheet'] as const) if (t[k] == null) delete t[k]
+  for (const k of ['uses', 'choice', 'scale', 'onSheet', 'spellLists'] as const) if (t[k] == null) delete t[k]
   put(i, t)
 }
 const add = () => save([...list.value, { id: newTraitId(), name: 'New trait' }])
@@ -55,31 +57,41 @@ const setScale = (i: number, label: string, steps: string) => {
 const CHOICE_KINDS: { id: TraitChoice['kind'] | ''; label: string }[] = [
   { id: '', label: 'No choice' }, { id: 'skill', label: 'Pick skills' }, { id: 'language', label: 'Pick languages' },
   { id: 'tool', label: 'Pick tools' }, { id: 'expertise', label: 'Pick skills for Expertise' }, { id: 'feat', label: 'Pick feats' },
-  { id: 'mastery', label: 'Pick weapons to master' }, { id: 'option', label: 'Pick options' },
+  { id: 'mastery', label: 'Pick weapons to master' }, { id: 'spell', label: 'Pick spells' }, { id: 'option', label: 'Pick options' },
 ]
+/** A new choice of a kind, with its defaults (a spell choice: one cantrip, at will). */
+const newChoice = (k: TraitChoice['kind']): TraitChoice => (k === 'spell' ? { kind: k, count: 1, spell: { level: 'Cantrip', how: 'atWill' } } : { kind: k, count: 1 })
+/** Set, add (at the end) or remove (undefined) a choice an option brings. */
+function setSubChoice(i: number, k: number, n: number, c: TraitChoice | undefined) {
+  const o = list.value[i].choice!.options![k], l = [...(o.choices ?? [])]
+  if (c) l[n] = c; else l.splice(n, 1)
+  const next: TraitOption = { ...o, choices: l }
+  if (!l.length) delete next.choices
+  setOption(i, k, next)
+}
 function setChoiceKind(i: number, kind: string) {
   if (!kind) return patch(i, { choice: undefined })
   const k = kind as TraitChoice['kind']
-  patch(i, { choice: k === 'option' ? { kind: k, options: [{ id: newTraitId(), name: 'Option 1' }, { id: newTraitId(), name: 'Option 2' }] } : { kind: k, count: 1 } })
+  patch(i, { choice: k === 'option' ? { kind: k, options: [{ id: newTraitId(), name: 'Option 1' }, { id: newTraitId(), name: 'Option 2' }] } : newChoice(k) })
+}
+function toggleList(i: number, id: string) {
+  const l = new Set(list.value[i].spellLists ?? [])
+  if (l.has(id)) l.delete(id); else l.add(id)
+  patch(i, { spellLists: l.size ? [...l] : undefined })
 }
 const setChoice = (i: number, p: Partial<TraitChoice>) => patch(i, { choice: { ...list.value[i].choice!, ...p } })
-function toggleAmong(i: number, id: string) {
-  const c = list.value[i].choice!, among = new Set(c.among ?? [])
-  if (among.has(id)) among.delete(id); else among.add(id)
-  setChoice(i, { among: among.size ? [...among] : undefined })
-}
 const setOption = (i: number, k: number, o: TraitOption) => { const opts = [...(list.value[i].choice?.options ?? [])]; opts[k] = o; setChoice(i, { options: opts }) }
 const addOption = (i: number) => setChoice(i, { options: [...(list.value[i].choice?.options ?? []), { id: newTraitId(), name: `Option ${(list.value[i].choice?.options?.length ?? 0) + 1}` }] })
 const removeOption = (i: number, k: number) => setChoice(i, { options: (list.value[i].choice?.options ?? []).filter((_, n) => n !== k) })
 const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement).value
-const kindLabel = (k: TraitChoice['kind'], n = 2) => CHOICE_WORDS[k][n === 1 ? 0 : 1]
+const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
 </script>
 
 <template>
   <div class="traits-input">
     <details v-for="(t, i) in list" :key="t.id" class="trait-card">
       <summary><b>{{ t.name || 'Unnamed trait' }}</b> <span v-if="(t.level ?? 1) > 1" class="muted small">level {{ t.level }}</span> <TraitChips :t="t" />
-        <span v-if="t.choice" class="chip">choice: {{ t.choice.kind === 'option' ? `${t.choice.count ?? 1} of ${t.choice.options?.length ?? 0} options` : `${t.choice.count ?? 1} ${kindLabel(t.choice.kind, t.choice.count ?? 1)}` }}</span>
+        <span v-if="t.choice" class="chip">choice: {{ t.choice.kind === 'option' ? `${t.choice.count ?? 1} of ${t.choice.options?.length ?? 0} options` : `${t.choice.count ?? 1} ${kindLabel(t.choice)}` }}</span>
       </summary>
       <TraitOptionFields :model-value="t" @update:model-value="v => put(i, v as Trait)" />
       <div class="trait-row">
@@ -109,24 +121,31 @@ const kindLabel = (k: TraitChoice['kind'], n = 2) => CHOICE_WORDS[k][n === 1 ? 0
         <label v-if="t.scale" class="small">by level <input class="steps-input" :value="stepsText(t.scale.steps)" placeholder="1:1d6, 3:2d6" @change="setScale(i, t.scale.label, val($event))" /></label>
       </div>
       <div class="trait-row">
+        <details class="trait-among">
+          <summary class="small" title="Its class can also take spells from these lists (Magical Secrets)">More spell lists: {{ t.spellLists?.join(', ') || 'none' }}</summary>
+          <div class="seg wrap">
+            <button v-for="o in listOptions('class')" :key="o.id" type="button" :class="{ on: t.spellLists?.includes(o.id) }" @click="toggleList(i, o.id)">{{ o.label }}</button>
+          </div>
+        </details>
+      </div>
+      <div class="trait-row">
         <select :value="t.choice?.kind ?? ''" aria-label="Choice for the player" @change="setChoiceKind(i, val($event))">
           <option v-for="c in CHOICE_KINDS" :key="c.id" :value="c.id">{{ c.label }}</option>
         </select>
-        <template v-if="t.choice">
-          <label class="small">how many <input type="number" min="1" max="30" class="effect-value" :value="t.choice.count ?? 1" @change="setChoice(i, { count: Number(val($event)) || 1 })" /></label>
-          <label class="small" title="The count from a level on, e.g. 2:2, 9:4">by level <input class="steps-input" :value="stepsText(t.choice.steps)" placeholder="2:2, 9:4" @change="setChoice(i, { steps: parseSteps<number>(val($event), true) })" /></label>
-          <label v-if="t.choice.kind === 'feat'" class="small">kind <input class="steps-label" :value="t.choice.category ?? ''" placeholder="e.g. Fighting Style" @change="setChoice(i, { category: val($event).trim() || undefined })" /></label>
-          <details v-if="t.choice.kind !== 'option'" class="trait-among">
-            <summary class="small">{{ t.choice.among?.length ? `only from ${t.choice.among.length}` : 'from any' }}</summary>
-            <div class="seg wrap">
-              <button v-for="o in choiceCandidates({ ...t.choice, among: undefined })" :key="o.id" type="button" :class="{ on: t.choice.among?.includes(o.id) }" @click="toggleAmong(i, o.id)">{{ o.label }}</button>
-            </div>
-          </details>
-        </template>
+        <ChoiceFields v-if="t.choice" :model-value="t.choice" @update:model-value="v => patch(i, { choice: v })" />
       </div>
       <div v-if="t.choice?.kind === 'option'" class="trait-options-edit">
         <div v-for="(o, k) in t.choice.options ?? []" :key="o.id" class="trait-option-card">
           <TraitOptionFields :model-value="o" @update:model-value="v => setOption(i, k, v)" />
+          <div v-for="(c, n) in o.choices ?? []" :key="n" class="trait-row">
+            <span class="small muted">Comes with a choice:</span>
+            <select :value="c.kind" aria-label="What's picked" @change="setSubChoice(i, k, n, newChoice(val($event) as TraitChoice['kind']))">
+              <option v-for="ck in CHOICE_KINDS.filter(x => x.id && x.id !== 'option')" :key="ck.id" :value="ck.id">{{ ck.label }}</option>
+            </select>
+            <ChoiceFields with-label :model-value="c" @update:model-value="v => setSubChoice(i, k, n, v)" />
+            <button type="button" class="link-btn" title="Remove this choice" @click="setSubChoice(i, k, n, undefined)">×</button>
+          </div>
+          <button type="button" class="link-btn small" title="A choice the player makes once this option is picked (Pact of the Tome: cantrips)" @click="setSubChoice(i, k, (o.choices ?? []).length, newChoice('spell'))">+ Choice with this option</button>
           <button type="button" class="link-btn small" @click="removeOption(i, k)">Remove this option</button>
         </div>
         <button type="button" class="chip-btn" @click="addOption(i)">+ Option</button>

@@ -220,11 +220,12 @@ export function castingAbility(pc: Entry, s: CharacterSheet): Ability | undefine
 }
 
 /** A character's spell attack bonus and save DC, from their sheet; undefined without a casting ability. */
-export function spellStats(pc: Entry): { attack: number; dc: number; ability: Ability } | undefined {
+/** A caster's spell attack and save DC: with their class's casting ability, or `ability` (a trait's spell). */
+export function spellStats(pc: Entry, ability?: Ability): { attack: number; dc: number; ability: Ability } | undefined {
   // Only once the scores are filled in; until then the spellbook's typed numbers count.
   if (!(pc.fields.sheet)?.abilities) return undefined
   const s = sheetOf(pc)!
-  const a = castingAbility(pc, s)
+  const a = ability ?? castingAbility(pc, s)
   if (!a) return undefined
   const t = gearTotals(s)
   const p = profBonus(levelOf(pc)), m = mod(scoreWith(s, a, t))

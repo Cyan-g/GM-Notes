@@ -139,7 +139,10 @@ export function hpOf(d: Draft): number {
 export function spellChoices(d: Draft): { cantrips: Entry[]; spells: Entry[]; maxLevel: number } {
   const slots = d.cls ? ruleSlots(draftPc(d)) : undefined
   const maxLevel = Math.max(slots?.slots.reduce((m, n, i) => (n ? i + 1 : m), 0) ?? 0, slots?.pact?.level ?? 0)
-  const ofClass = entries.value.filter(e => e.type === 'spell' && (e.fields.classes ?? []).includes(d.cls))
+  // the class's list, and any more its features open up (Magical Secrets)
+  const pc = draftPc(d)
+  const lists = new Set([d.cls, ...speciesTraits(pc).filter(a => a.active && isClassOrigin(a.race) && a.race.fields.class === d.cls).flatMap(a => a.trait.spellLists ?? [])])
+  const ofClass = entries.value.filter(e => e.type === 'spell' && (e.fields.classes ?? []).some(c => lists.has(c)))
     .sort((a, b) => a.name.localeCompare(b.name))
   const lvl = (e: Entry) => (e.fields.level === 'Cantrip' ? 0 : Number(e.fields.level) || 0)
   return { cantrips: ofClass.filter(e => lvl(e) === 0), spells: ofClass.filter(e => lvl(e) >= 1 && lvl(e) <= maxLevel), maxLevel }

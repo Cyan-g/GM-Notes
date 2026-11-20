@@ -6,7 +6,7 @@ import { computed, ref } from 'vue'
 import { optionLabel } from '../store'
 import type { Entry, Id, Spellbook } from '../model/types'
 import { db, get, touch } from '../store'
-import { activeSpellbook, currentPc, editSheet, longRest, sheetOf, spellStats } from '../sheet'
+import { activeSpellbook, currentPc, editSheet, longRest, sheetOf, spellStats, type Ability } from '../sheet'
 import { castFromItem, grantedSpells, restItems, unuse, type GrantedSpell } from '../gear'
 import { restSpecies, speciesSpells, useSpeciesSpell, type SpeciesSpell } from '../species'
 import { classesOf } from '../model/classes'
@@ -108,8 +108,14 @@ const spells = (ids: Id[]) => ids.map(id => get(id)).filter((e): e is Entry => !
 const knownList = computed(() => spells(book.value.known))
 const preparedList = computed(() => spells([...book.value.always, ...book.value.prepared]))
 /** What the spell asks for, with this caster's numbers filled in. */
-function check(e: Entry) {
+function check(e: Entry, ability?: Ability) {
   const f = e.fields
+  if (ability && caster.value) {
+    // a trait's spell cast with its own ability (a High Elf's cantrip: Intelligence)
+    const st = spellStats(caster.value, ability), short = ability.toUpperCase()
+    if (st && f.spellType === 'Saving throw') return `${f.savingThrow ? optionLabel('ability', f.savingThrow).slice(0, 3).toUpperCase() + ' ' : ''}save DC ${st.dc} (${short})`
+    if (st && f.spellType === 'Attack') return `Spell attack ${st.attack >= 0 ? '+' : ''}${st.attack} (${short})`
+  }
   if (f.spellType === 'Saving throw') return `${f.savingThrow ? optionLabel('ability', f.savingThrow).slice(0, 3).toUpperCase() + ' ' : ''}save DC ${dc.value ?? '?'}`
   if (f.spellType === 'Attack') return `Spell attack ${attack.value != null ? (attack.value >= 0 ? '+' : '') + attack.value : '?'}`
   return optionLabel('spell.spellType', f.spellType)
@@ -298,7 +304,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
               <td><span v-flash.neutral="x.ready">{{ x.status }}</span></td>
               <td>{{ get(x.spell.spell)!.fields.castingTime ?? '' }}</td>
               <td>{{ get(x.spell.spell)!.fields.range ?? '' }}</td>
-              <td class="sbk-check">{{ check(get(x.spell.spell)!) }}</td>
+              <td class="sbk-check">{{ check(get(x.spell.spell)!, x.spell.ability) }}</td>
               <td class="sbk-actions">
                 <template v-if="x.spell.how === 'prepared'"><span class="muted small" title="Always prepared; cast with your own spell slots">own slots</span></template>
                 <template v-else-if="x.spell.how === 'atWill'"><span class="muted small">at will</span></template>

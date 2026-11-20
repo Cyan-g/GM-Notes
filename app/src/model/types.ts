@@ -213,7 +213,7 @@ export interface Equipment { items?: EquipmentLine[]; money?: Copper; instead?: 
 /** A proficiency or language a trait grants: a skill name, or an option id / Tool item id as in Proficiencies. */
 export interface TraitGrant { kind: 'skill' | 'armor' | 'weapon' | 'tool' | 'language'; id: string }
 /** A spell a trait gives: from character level `from` (default 1), at will, once per short or long rest, or always prepared. */
-export interface TraitSpell { spell: Id; how: 'atWill' | 'short' | 'long' | 'prepared'; from?: number }
+export interface TraitSpell { spell: Id; how: 'atWill' | 'short' | 'long' | 'prepared'; from?: number; /** The ability it's cast with, if the trait says (attack and DC are shown with it). */ ability?: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha' }
 /** What a trait (or one of a choice's options) does. */
 export interface TraitOption {
   id: string
@@ -222,13 +222,20 @@ export interface TraitOption {
   effects?: GearEffect[]
   grants?: TraitGrant[]
   spells?: TraitSpell[]
+  /** Choices that come with this option once it's picked (Pact of the Tome: three cantrips, two rituals). Not options themselves. */
+  choices?: TraitChoice[]
 }
 /**
  * A choice the player makes on the sheet: `count` skills, languages or tools (only from `among`, if given), or one
- * of several `options` (a lineage, an ancestry), each with its own effects, grants and spells.
+ * of several `options` (a lineage, an ancestry), each with its own effects, grants and spells; or spells, from the
+ * world's spells that match `spell`.
  */
 export interface TraitChoice {
-  kind: 'skill' | 'language' | 'tool' | 'option' | 'expertise' | 'feat' | 'mastery'
+  kind: 'skill' | 'language' | 'tool' | 'option' | 'expertise' | 'feat' | 'mastery' | 'spell'
+  /** What it's called when it comes with an option ("Cantrips"); the option's name goes before it. */
+  label?: string
+  /** For a spell choice: which spells (any class's list, if `classes` is empty), and how the picked ones are cast. */
+  spell?: { classes?: string[]; level?: string; ritual?: boolean; how: TraitSpell['how']; ability?: TraitSpell['ability'] }
   count?: number
   /** The count from a character level on, replacing `count` ([[2, 2], [9, 4]]: two from level 2, four from 9). */
   steps?: [number, number][]
@@ -257,6 +264,8 @@ export interface Trait extends TraitOption {
    */
   onSheet?: 'show' | 'hide'
   choice?: TraitChoice
+  /** More classes' spell lists the class it comes from can take its spells from (Magical Secrets: Cleric, Druid, Wizard). */
+  spellLists?: string[]
 }
 /**
  * What a character is proficient with, by reference: option ids from the lists items use (armor types, weapon

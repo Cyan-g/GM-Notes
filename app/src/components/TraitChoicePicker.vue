@@ -3,7 +3,7 @@
 // (skills, languages, tools, one or more options such as Metamagic, a Fighting Style feat, weapons to master). The
 // chosen options show their text. Used on the sheet's cards and in the creation wizard.
 import { computed } from 'vue'
-import { choiceCandidates, choiceCount, CHOICE_WORDS, type ActiveTrait } from '../species'
+import { choiceCandidates, choiceCount, choiceWords, type ActiveTrait } from '../species'
 import MarkdownView from './MarkdownView.vue'
 import EntryLink from './EntryLink.vue'
 import TraitChips from './TraitChips.vue'
@@ -18,7 +18,7 @@ function set(slot: number, id: string) {
   picks[slot] = id
   emit('pick', picks.filter(Boolean))
 }
-const words = computed(() => CHOICE_WORDS[c.value.kind][n.value === 1 ? 0 : 1])
+const words = computed(() => choiceWords(c.value, n.value))
 </script>
 
 <template>
@@ -28,7 +28,7 @@ const words = computed(() => CHOICE_WORDS[c.value.kind][n.value === 1 ? 0 : 1])
       <option value="">—</option>
       <option v-for="o in options" :key="o.id" :value="o.id" :disabled="a.picks.includes(o.id) && a.picks[k - 1] !== o.id">{{ o.label }}</option>
     </select>
-    <template v-if="c.kind === 'feat'"><EntryLink v-for="id in a.picks" :key="id" :id="id" /></template>
+    <template v-if="c.kind === 'feat' || c.kind === 'spell'"><EntryLink v-for="id in a.picks" :key="id" :id="id" /></template>
     <details v-for="o in a.options" :key="o.id" class="sp-option">
       <summary class="small"><b>{{ o.name }}</b> <TraitChips :t="o" no-grants /></summary>
       <MarkdownView v-if="o.text" class="small" :source="o.text" />

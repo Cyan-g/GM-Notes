@@ -1728,6 +1728,33 @@
    "updated": "2026-11-19T18:55:33.578Z"
   },
   {
+   "id": "acid-splash",
+   "type": "spell",
+   "name": "Acid Splash",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Evocation",
+    "castingTime": "action",
+    "range": "60 feet",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Saving throw",
+    "savingThrow": "Dexterity",
+    "classes": [
+     "Sorcerer",
+     "Wizard"
+    ],
+    "summary": "You create an acidic bubble at a point within range, where it explodes in a 5-foot-radius Sphere. Each creature in that Sphere must succeed on a Dexterity saving throw or take 1d6 Acid damage.\n\n**Cantrip Upgrade.** The damage increases by 1d6 when you reach levels 5 (2d6), 11 (3d6), and 17 (4d6).\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-19T16:17:56.766Z"
+  },
+  {
    "id": "aid",
    "type": "spell",
    "name": "Aid",
@@ -1756,6 +1783,34 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-20T05:34:02.025Z"
+  },
+  {
+   "id": "alarm",
+   "type": "spell",
+   "name": "Alarm",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "1",
+    "school": "Abjuration",
+    "castingTime": "1 minute",
+    "range": "30 feet",
+    "duration": "8 hours",
+    "ritual": true,
+    "verbal": true,
+    "somatic": true,
+    "material": "a bell and silver wire",
+    "spellType": "Utility",
+    "classes": [
+     "Ranger",
+     "Wizard"
+    ],
+    "summary": "You set an alarm against intrusion. Choose a door, a window, or an area within range that is no larger than a 20-foot Cube. Until the spell ends, an alarm alerts you whenever a creature touches or enters the warded area. When you cast the spell, you can designate creatures that won’t set off the alarm. You also choose whether the alarm is audible or mental:\n\n**Audible Alarm.** The alarm produces the sound of a handbell for 10 seconds within 60 feet of the warded area.\n\n**Mental Alarm.** You are alerted by a mental ping if you are within 1 mile of the warded area. This ping awakens you if you’re asleep.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-19T17:11:01.833Z"
   },
   {
    "id": "alter-self",
@@ -2481,6 +2536,63 @@
    "updated": "2026-11-19T18:55:33.578Z"
   },
   {
+   "id": "bless",
+   "type": "spell",
+   "name": "Bless",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "1",
+    "school": "Enchantment",
+    "castingTime": "action",
+    "range": "30 feet",
+    "duration": "up to 1 minute",
+    "concentration": true,
+    "verbal": true,
+    "somatic": true,
+    "material": "a Holy Symbol worth 5+ GP",
+    "spellType": "Buff",
+    "classes": [
+     "Cleric",
+     "Paladin"
+    ],
+    "summary": "You bless up to three creatures within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target adds 1d4 to the attack roll or save.\n\n**Using a Higher-Level Spell Slot.** You can target one additional creature for each spell slot level above 1.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-20T05:34:02.025Z"
+  },
+  {
+   "id": "blight",
+   "type": "spell",
+   "name": "Blight",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "4",
+    "school": "Necromancy",
+    "castingTime": "action",
+    "range": "30 feet",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Saving throw",
+    "savingThrow": "Constitution",
+    "classes": [
+     "Druid",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "summary": "A creature that you can see within range makes a Constitution saving throw, taking 8d8 Necrotic damage on a failed save or half as much damage on a successful one. A Plant creature automatically fails the save.\n\nAlternatively, target a nonmagical plant that isn’t a creature, such as a tree or shrub. It doesn’t make a save; it simply withers and dies.\n\n**Using a Higher-Level Spell Slot.** The damage increases by 1d8 for each spell slot level above 4.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-16T08:26:38.041Z",
+   "updated": "2026-11-19T16:17:56.766Z"
+  },
+  {
    "id": "blindness-deafness",
    "type": "spell",
    "name": "Blindness/Deafness",
@@ -2729,6 +2841,33 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-19T18:55:33.578Z"
+  },
+  {
+   "id": "chill-touch",
+   "type": "spell",
+   "name": "Chill Touch",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Necromancy",
+    "castingTime": "action",
+    "range": "touch",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Attack",
+    "classes": [
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "summary": "Channeling the chill of the grave, make a melee spell attack against a target within reach. On a hit, the target takes 1d10 Necrotic damage, and it can’t regain Hit Points until the end of your next turn.\n\n**Cantrip Upgrade.** The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10).\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-19T17:11:01.833Z"
   },
   {
    "id": "chromatic-orb",
@@ -3369,6 +3508,36 @@
    "updated": "2026-11-19T18:55:33.578Z"
   },
   {
+   "id": "control-water",
+   "type": "spell",
+   "name": "Control Water",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "4",
+    "school": "Transmutation",
+    "castingTime": "action",
+    "range": "300 feet",
+    "duration": "up to 10 minutes",
+    "concentration": true,
+    "verbal": true,
+    "somatic": true,
+    "material": "a mixture of water and dust",
+    "spellType": "Saving throw",
+    "savingThrow": "Strength",
+    "classes": [
+     "Cleric",
+     "Druid",
+     "Wizard"
+    ],
+    "summary": "Until the spell ends, you control any water inside an area you choose that is a Cube up to 100 feet on a side, using one of the following effects. As a Magic action on your later turns, you can repeat the same effect or choose a different one.\n\n**Flood.** You cause the water level of all standing water in the area to rise by as much as 20 feet. If you choose an area in a large body of water, you instead create a 20-foot tall wave that travels from one side of the area to the other and then crashes. Any Huge or smaller vehicles in the wave’s path are carried with it to the other side. Any Huge or smaller vehicles struck by the wave have a 25 percent chance of capsizing.\n\nThe water level remains elevated until the spell ends or you choose a different effect. If this effect produced a wave, the wave repeats on the start of your next turn while the flood effect lasts.\n\n**Part Water.** You part water in the area and create a trench. The trench extends across the spell’s area, and the separated water forms a wall to either side. The trench remains until the spell ends or you choose a different effect. The water then slowly fills in the trench over the course of the next round until the normal water level is restored.\n\n**Redirect Flow.** You cause flowing water in the area to move in a direction you choose, even if the water has to flow over obstacles, up walls, or in other unlikely directions. The water in the area moves as you direct it, but once it moves beyond the spell’s area, it resumes its flow based on the terrain. The water continues to move in the direction you chose until the spell ends or you choose a different effect.\n\n**Whirlpool.** You cause a whirlpool to form in the center of the area, which must be at least 50 feet square and 25 feet deep. The whirlpool lasts until you choose a different effect or the spell ends. The whirlpool is 5 feet wide at the base, up to 50 feet wide at the top, and 25 feet tall. Any creature in the water and within 25 feet of the whirlpool is pulled 10 feet toward it. When a creature enters the whirlpool for the first time on a turn or ends its turn there, it makes a Strength saving throw. On a failed save, the creature takes 2d8 Bludgeoning damage. On a successful save, the creature takes half as much damage. A creature can swim away from the whirlpool only if it first takes an action to pull away and succeeds on a Strength (Athletics) check against your spell save DC.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-19T17:11:01.833Z"
+  },
+  {
    "id": "control-weather",
    "type": "spell",
    "name": "Control Weather",
@@ -3396,6 +3565,33 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-19T18:55:33.578Z"
+  },
+  {
+   "id": "counterspell",
+   "type": "spell",
+   "name": "Counterspell",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "3",
+    "school": "Abjuration",
+    "castingTime": "reaction, which you take when you see a creature within 60 feet of yourself casting a spell with Verbal, Somatic, or Material components",
+    "range": "60 feet",
+    "duration": "Instantaneous",
+    "somatic": true,
+    "spellType": "Utility",
+    "savingThrow": "Constitution",
+    "classes": [
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "summary": "You attempt to interrupt a creature in the process of casting a spell. The creature makes a Constitution saving throw. On a failed save, the spell dissipates with no effect, and the action, Bonus Action, or Reaction used to cast it is wasted. If that spell was cast with a spell slot, the slot isn’t expended.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-19T12:05:38.165Z",
+   "updated": "2026-11-19T12:05:38.165Z"
   },
   {
    "id": "create-food-and-water",
@@ -3533,6 +3729,35 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-19T18:55:33.578Z"
+  },
+  {
+   "id": "dancing-lights",
+   "type": "spell",
+   "name": "Dancing Lights",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Illusion",
+    "castingTime": "action",
+    "range": "120 feet",
+    "duration": "up to 1 minute",
+    "concentration": true,
+    "verbal": true,
+    "somatic": true,
+    "material": "a bit of phosphorus",
+    "spellType": "Utility",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "summary": "You create up to four torch-size lights within range, making them appear as torches, lanterns, or glowing orbs that hover for the duration. Alternatively, you combine the four lights into one glowing Medium form that is vaguely humanlike. Whichever form you choose, each light sheds Dim Light in a 10foot radius.\n\nAs a Bonus Action, you can move the lights up to 60 feet to a space within range. A light must be within 20 feet of another light created by this spell, and a light vanishes if it exceeds the spell’s range.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
   },
   {
    "id": "darkness",
@@ -3824,6 +4049,33 @@
    "updated": "2026-11-19T18:55:33.578Z"
   },
   {
+   "id": "dimension-door",
+   "type": "spell",
+   "name": "Dimension Door",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "4",
+    "school": "Conjuration",
+    "castingTime": "action",
+    "range": "500 feet",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "spellType": "Utility",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "summary": "You teleport to a location within range. You arrive at exactly the spot desired. It can be a place you can see, one you can visualize, or one you can describe by stating distance and direction, such as “200 feet straight downward” or “300 feet upward to the northwest at a 45-degree angle.”\n\nYou can also teleport one willing creature. The creature must be within 5 feet of you when you teleport, and it teleports to a space within 5 feet of your destination space.\n\nIf you, the other creature, or both would arrive in a space occupied by a creature or completely filled by one or more objects, you and any creature traveling with you each take 4d6 Force damage, and the teleportation fails.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-19T12:05:38.165Z",
+   "updated": "2026-11-19T12:05:38.165Z"
+  },
+  {
    "id": "disguise-self",
    "type": "spell",
    "name": "Disguise Self",
@@ -4097,6 +4349,36 @@
    "updated": "2026-11-19T18:55:33.578Z"
   },
   {
+   "id": "dominate-monster",
+   "type": "spell",
+   "name": "Dominate Monster",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "8",
+    "school": "Enchantment",
+    "castingTime": "action",
+    "range": "60 feet",
+    "duration": "up to 1 hour",
+    "concentration": true,
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Saving throw",
+    "savingThrow": "Wisdom",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "summary": "One creature you can see within range must succeed on a Wisdom saving throw or have the Charmed condition for the duration. The target has Advantage on the save if you or your allies are fighting it. Whenever the target takes damage, it repeats the save, ending the spell on itself on a success.\n\nYou have a telepathic link with the Charmed target while the two of you are on the same plane of existence. On your turn, you can use this link to issue commands to the target (no action required), such as “Attack that creature,” “Move over there,” or “Fetch that object.” The target does its best to obey on its turn. If it completes an order and doesn’t receive further direction from you, it acts and moves as it likes, focusing on protecting itself.\n\nYou can command the target to take a Reaction but must take your own Reaction to do so.\n\n**Using a Higher-Level Spell Slot.** Your Concentration can last longer with a level 9 spell slot (up to 8 hours).\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-19T12:05:38.165Z",
+   "updated": "2026-11-19T12:05:38.165Z"
+  },
+  {
    "id": "dominate-person",
    "type": "spell",
    "name": "Dominate Person",
@@ -4184,6 +4466,31 @@
    "updated": "2026-11-19T18:55:33.578Z"
   },
   {
+   "id": "druidcraft",
+   "type": "spell",
+   "name": "Druidcraft",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Transmutation",
+    "castingTime": "action",
+    "range": "30 feet",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Utility",
+    "classes": [
+     "Druid"
+    ],
+    "summary": "Whispering to the spirits of nature, you create one of the following effects within range.\n\n**Weather Sensor.** You create a Tiny, harmless sensory effect that predicts what the weather will be at your location for the next 24 hours. The effect might manifest as a golden orb for clear skies, a cloud for rain, falling snowflakes for snow, and so on. This effect persists for 1 round.\n\n**Bloom.** You instantly make a flower blossom, a seed pod open, or a leaf bud bloom.\n\n**Sensory Effect.** You create a harmless sensory effect, such as falling leaves, spectral dancing fairies, a gentle breeze, the sound of an animal, or the faint odor of skunk. The effect must fit in a 5-foot Cube.\n\n**Fire Play.** You light or snuff out a candle, a torch, or a campfire.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
    "id": "earthquake",
    "type": "spell",
    "name": "Earthquake",
@@ -4212,6 +4519,31 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-19T18:55:33.578Z"
+  },
+  {
+   "id": "eldritch-blast",
+   "type": "spell",
+   "name": "Eldritch Blast",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Evocation",
+    "castingTime": "action",
+    "range": "120 feet",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Attack",
+    "classes": [
+     "Warlock"
+    ],
+    "summary": "You hurl a beam of crackling energy. Make a ranged spell attack against one creature or object in range. On a hit, the target takes 1d10 Force damage.\n\n**Cantrip Upgrade.** The spell creates two beams at level 5, three beams at level 11, and four beams at level 17. You can direct the beams at the same target or at different ones. Make a separate attack roll for each beam.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-19T17:11:01.833Z"
   },
   {
    "id": "elementalism",
@@ -4579,6 +4911,37 @@
    "updated": "2026-11-20T05:34:02.025Z"
   },
   {
+   "id": "fear",
+   "type": "spell",
+   "name": "Fear",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "3",
+    "school": "Illusion",
+    "castingTime": "action",
+    "range": "Self",
+    "duration": "up to 1 minute",
+    "concentration": true,
+    "verbal": true,
+    "somatic": true,
+    "material": "a white feather",
+    "spellType": "Saving throw",
+    "savingThrow": "Wisdom",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "summary": "Each creature in a 30-foot Cone must succeed on a Wisdom saving throw or drop whatever it is holding and have the Frightened condition for the duration.\n\nA Frightened creature takes the Dash action and moves away from you by the safest route on each of its turns unless there is nowhere to move. If the creature ends its turn in a space where it doesn’t have line of sight to you, the creature makes a Wisdom saving throw. On a successful save, the spell ends on that creature.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-16T08:26:38.041Z",
+   "updated": "2026-11-19T16:17:56.766Z"
+  },
+  {
    "id": "feather-fall",
    "type": "spell",
    "name": "Feather Fall",
@@ -4740,6 +5103,32 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-19T18:55:33.578Z"
+  },
+  {
+   "id": "fire-bolt",
+   "type": "spell",
+   "name": "Fire Bolt",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Evocation",
+    "castingTime": "action",
+    "range": "120 feet",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Attack",
+    "classes": [
+     "Sorcerer",
+     "Wizard"
+    ],
+    "summary": "You hurl a mote of fire at a creature or an object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 Fire damage. A flammable object hit by this spell starts burning if it isn’t being worn or carried.\n\n**Cantrip Upgrade.** The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10).\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
   },
   {
    "id": "fire-shield",
@@ -4909,6 +5298,36 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-19T18:55:33.578Z"
+  },
+  {
+   "id": "flesh-to-stone",
+   "type": "spell",
+   "name": "Flesh to Stone",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "6",
+    "school": "Transmutation",
+    "castingTime": "action",
+    "range": "60 feet",
+    "duration": "up to 1 minute",
+    "concentration": true,
+    "verbal": true,
+    "somatic": true,
+    "material": "a cockatrice feather",
+    "spellType": "Saving throw",
+    "savingThrow": "Constitution",
+    "classes": [
+     "Druid",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "summary": "You attempt to turn one creature that you can see within range into stone. The target makes a Constitution saving throw. On a failed save, it has the Restrained condition for the duration. On a successful save, its Speed is 0 until the start of your next turn. Constructs automatically succeed on the save.\n\nA Restrained target makes another Constitution saving throw at the end of each of its turns. If it successfully saves against this spell three times, the spell ends. If it fails its saves three times, it is turned to stone and has the Petrified condition for the duration. The successes and failures needn’t be consecutive; keep track of both until the target collects three of a kind.\n\nIf you maintain your Concentration on this spell for the entire possible duration, the target is Petrified until the condition is ended by Greater Restoration or similar magic.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-19T12:05:38.165Z",
+   "updated": "2026-11-19T12:05:38.165Z"
   },
   {
    "id": "floating-disk",
@@ -5529,6 +5948,58 @@
    "updated": "2026-11-19T18:55:33.578Z"
   },
   {
+   "id": "guidance",
+   "type": "spell",
+   "name": "Guidance",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Divination",
+    "castingTime": "action",
+    "range": "touch",
+    "duration": "up to 1 minute",
+    "concentration": true,
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Buff",
+    "classes": [
+     "Cleric",
+     "Druid"
+    ],
+    "summary": "You touch a willing creature and choose a skill. Until the spell ends, the creature adds 1d4 to any ability check using the chosen skill.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-20T05:34:02.025Z"
+  },
+  {
+   "id": "guiding-bolt",
+   "type": "spell",
+   "name": "Guiding Bolt",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "1",
+    "school": "Evocation",
+    "castingTime": "action",
+    "range": "120 feet",
+    "duration": "1 round",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Attack",
+    "classes": [
+     "Cleric"
+    ],
+    "summary": "You hurl a bolt of light toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 4d6 Radiant damage, and the next attack roll made against it before the end of your next turn has Advantage.\n\n**Using a Higher-Level Spell Slot.** The damage increases by 1d6 for each spell slot level above 1.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-19T12:05:38.165Z",
+   "updated": "2026-11-19T12:05:38.165Z"
+  },
+  {
    "id": "gust-of-wind",
    "type": "spell",
    "name": "Gust of Wind",
@@ -5693,6 +6164,32 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-20T05:34:02.025Z"
+  },
+  {
+   "id": "healing-word",
+   "type": "spell",
+   "name": "Healing Word",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "1",
+    "school": "Abjuration",
+    "castingTime": "bonus Action",
+    "range": "60 feet",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "spellType": "Healing",
+    "classes": [
+     "Bard",
+     "Cleric",
+     "Druid"
+    ],
+    "summary": "A creature of your choice that you can see within range regains Hit Points equal to 2d4 plus your spellcasting ability modifier.\n\n**Using a Higher-Level Spell Slot.** The healing increases by 2d4 for each spell slot level above 1.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-19T12:05:38.165Z",
+   "updated": "2026-11-19T12:05:38.165Z"
   },
   {
    "id": "heat-metal",
@@ -6347,6 +6844,60 @@
    "updated": "2026-11-20T05:34:02.025Z"
   },
   {
+   "id": "knock",
+   "type": "spell",
+   "name": "Knock",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "2",
+    "school": "Transmutation",
+    "castingTime": "action",
+    "range": "60 feet",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "spellType": "Utility",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "summary": "Choose an object that you can see within range. The object can be a door, a box, a chest, a set of manacles, a padlock, or another object that contains a mundane or magical means that prevents access.\n\nA target that is held shut by a mundane lock or that is stuck or barred becomes unlocked, unstuck, or unbarred. If the object has multiple locks, only one of them is unlocked.\n\nIf the target is held shut by Arcane Lock, that spell is suppressed for 10 minutes, during which time the target can be opened and closed.\n\nWhen you cast the spell, a loud knock, audible up to 300 feet away, emanates from the target.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-19T12:05:38.165Z",
+   "updated": "2026-11-19T12:05:38.165Z"
+  },
+  {
+   "id": "legend-lore",
+   "type": "spell",
+   "name": "Legend Lore",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "5",
+    "school": "Divination",
+    "castingTime": "10 minutes",
+    "range": "Self",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "somatic": true,
+    "material": "incense worth 250+ GP, which the spell consumes, and four ivory strips worth 50+ GP each",
+    "spellType": "Utility",
+    "classes": [
+     "Bard",
+     "Cleric",
+     "Wizard"
+    ],
+    "summary": "Name or describe a famous person, place, or object. The spell brings to your mind a brief summary of the significant lore about that famous thing, as described by the GM.\n\nThe lore might consist of important details, amusing revelations, or even secret lore that has never been widely known. The more information you already know about the thing, the more precise and detailed the information you receive is. That information is accurate but might be couched in figurative language or poetry, as determined by the GM.\n\nIf the famous thing you chose isn’t actually famous, you hear sad musical notes played on a trombone, and the spell fails.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
    "id": "lesser-restoration",
    "type": "spell",
    "name": "Lesser Restoration",
@@ -6403,6 +6954,34 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-19T18:55:33.578Z"
+  },
+  {
+   "id": "light",
+   "type": "spell",
+   "name": "Light",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Evocation",
+    "castingTime": "action",
+    "range": "touch",
+    "duration": "1 hour",
+    "verbal": true,
+    "material": "a firefly or phosphorescent moss",
+    "spellType": "Utility",
+    "classes": [
+     "Bard",
+     "Cleric",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "summary": "You touch one Large or smaller object that isn’t being worn or carried by someone else. Until the spell ends, the object sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. The light can be colored as you like.\n\nCovering the object with something opaque blocks the light. The spell ends if you cast it again.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
   },
   {
    "id": "lightning-bolt",
@@ -6579,6 +7158,34 @@
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
+   "updated": "2026-11-20T05:34:02.025Z"
+  },
+  {
+   "id": "mage-hand",
+   "type": "spell",
+   "name": "Mage Hand",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Conjuration",
+    "castingTime": "action",
+    "range": "30 feet",
+    "duration": "1 minute",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Utility",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "summary": "A spectral, floating hand appears at a point you choose within range. The hand lasts for the duration. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again.\n\nWhen you cast the spell, you can use the hand to manipulate an object, open an unlocked door or container, stow or retrieve an item from an open container, or pour the contents out of a vial.\n\nAs a Magic action on your later turns, you can control the hand thus again. As part of that action, you can move the hand up to 30 feet.\n\nThe hand can’t attack, activate magic items, or carry more than 10 pounds.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-20T05:34:02.025Z"
   },
   {
@@ -6937,6 +7544,64 @@
    "updated": "2026-11-19T18:55:33.578Z"
   },
   {
+   "id": "mending",
+   "type": "spell",
+   "name": "Mending",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Transmutation",
+    "castingTime": "1 minute",
+    "range": "touch",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "somatic": true,
+    "material": "two lodestones",
+    "spellType": "Utility",
+    "classes": [
+     "Bard",
+     "Cleric",
+     "Druid",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "summary": "This spell repairs a single break or tear in an object you touch, such as a broken chain link, two halves of a broken key, a torn cloak, or a leaking wineskin. As long as the break or tear is no larger than 1 foot in any dimension, you mend it, leaving no trace of the former damage.\n\nThis spell can physically repair a magic item, but it can’t restore magic to such an object.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-19T16:17:56.766Z"
+  },
+  {
+   "id": "message",
+   "type": "spell",
+   "name": "Message",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Transmutation",
+    "castingTime": "action",
+    "range": "120 feet",
+    "duration": "1 round",
+    "somatic": true,
+    "material": "a copper wire",
+    "spellType": "Utility",
+    "classes": [
+     "Bard",
+     "Druid",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "summary": "You point toward a creature within range and whisper a message. The target (and only the target) hears the message and can reply in a whisper that only you can hear.\n\nYou can cast this spell through solid objects if you are familiar with the target and know it is beyond the barrier. Magical silence; 1 foot of stone, metal, or wood; or a thin sheet of lead blocks the spell.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
    "id": "meteor-swarm",
    "type": "spell",
    "name": "Meteor Swarm",
@@ -7016,6 +7681,34 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-19T18:55:33.578Z"
+  },
+  {
+   "id": "minor-illusion",
+   "type": "spell",
+   "name": "Minor Illusion",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Illusion",
+    "castingTime": "action",
+    "range": "30 feet",
+    "duration": "1 minute",
+    "somatic": true,
+    "material": "a bit of fleece",
+    "spellType": "Utility",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "summary": "You create a sound or an image of an object within range that lasts for the duration. See the descriptions below for the effects of each. The illusion ends if you cast this spell again.\n\nIf a creature takes a Study action to examine the sound or image, the creature can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save DC. If a creature discerns the illusion for what it is, the illusion becomes faint to the creature.\n\n**Sound.** If you create a sound, its volume can range from a whisper to a scream. It can be your voice, someone else’s voice, a lion’s roar, a beating of drums, or any other sound you choose. The sound continues unabated throughout the duration, or you can make discrete sounds at different times before the spell ends.\n\n**Image.** If you create an image of an object—such as a chair, muddy footprints, or a small chest—it must be no larger than a 5-foot Cube. The image can’t create sound, light, smell, or any other sensory effect. Physical interaction with the image reveals it to be an illusion, since things can pass through it.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-20T05:34:02.025Z"
   },
   {
    "id": "mirage-arcane",
@@ -7209,6 +7902,34 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-19T18:55:33.578Z"
+  },
+  {
+   "id": "nondetection",
+   "type": "spell",
+   "name": "Nondetection",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "3",
+    "school": "Abjuration",
+    "castingTime": "action",
+    "range": "touch",
+    "duration": "8 hours",
+    "verbal": true,
+    "somatic": true,
+    "material": "a pinch of diamond dust worth 25+ GP, which the spell consumes",
+    "spellType": "Utility",
+    "classes": [
+     "Bard",
+     "Ranger",
+     "Wizard"
+    ],
+    "summary": "For the duration, you hide a target that you touch from Divination spells. The target can be a willing creature, or it can be a place or an object no larger than 10 feet in any dimension. The target can’t be targeted by any Divination spell or perceived through magical scrying sensors.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-16T08:26:38.042Z",
+   "updated": "2026-11-19T16:17:56.766Z"
   },
   {
    "id": "pass-without-trace",
@@ -7462,6 +8183,34 @@
    "updated": "2026-11-20T05:34:02.025Z"
   },
   {
+   "id": "poison-spray",
+   "type": "spell",
+   "name": "Poison Spray",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Necromancy",
+    "castingTime": "action",
+    "range": "30 feet",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Saving throw",
+    "classes": [
+     "Druid",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "summary": "You spray toxic mist at a creature within range. Make a ranged spell attack against the target. On a hit, the target takes 1d12 Poison damage.\n\n**Cantrip Upgrade.** The damage increases by 1d12 when you reach levels 5 (2d12), 11 (3d12), and 17 (4d12).\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-19T17:11:01.833Z"
+  },
+  {
    "id": "polymorph",
    "type": "spell",
    "name": "Polymorph",
@@ -7598,6 +8347,34 @@
    "updated": "2026-11-19T18:55:33.578Z"
   },
   {
+   "id": "prestidigitation",
+   "type": "spell",
+   "name": "Prestidigitation",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Transmutation",
+    "castingTime": "action",
+    "range": "10 feet",
+    "duration": "Up to 1 hour",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Utility",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "summary": "You create a magical effect within range. Choose the effect from the options below. If you cast this spell multiple times, you can have up to three of its non-instantaneous effects active at a time.\n\n**Sensory Effect.** You create an instantaneous, harmless sensory effect, such as a shower of sparks, a puff of wind, faint musical notes, or an odd odor.\n\n**Fire Play.** You instantaneously light or snuff out a candle, a torch, or a small campfire.\n\n**Clean or Soil.** You instantaneously clean or soil an object no larger than 1 cubic foot.\n\n**Minor Sensation.** You chill, warm, or flavor up to 1 cubic foot of nonliving material for 1 hour.\n\n**Magic Mark.** You make a color, a small mark, or a symbol appear on an object or a surface for 1 hour.\n\n**Minor Creation.** You create a nonmagical trinket or an illusory image that can fit in your hand. It lasts until the end of your next turn. A trinket can deal no damage and has no monetary worth.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
    "id": "prismatic-spray",
    "type": "spell",
    "name": "Prismatic Spray",
@@ -7677,6 +8454,31 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-19T18:55:33.578Z"
+  },
+  {
+   "id": "produce-flame",
+   "type": "spell",
+   "name": "Produce Flame",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Conjuration",
+    "castingTime": "bonus Action",
+    "range": "Self",
+    "duration": "10 minutes",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Attack",
+    "classes": [
+     "Druid"
+    ],
+    "summary": "A flickering flame appears in your hand and remains there for the duration. While there, the flame emits no heat and ignites nothing, and it sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. The spell ends if you cast it again.\n\nUntil the spell ends, you can take a Magic action to hurl fire at a creature or an object within 60 feet of you. Make a ranged spell attack. On a hit, the target takes 1d8 Fire damage.\n\n**Cantrip Upgrade.** The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
   },
   {
    "id": "programmed-illusion",
@@ -7907,6 +8709,32 @@
    "updated": "2026-11-19T18:55:33.578Z"
   },
   {
+   "id": "ray-of-frost",
+   "type": "spell",
+   "name": "Ray of Frost",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Evocation",
+    "castingTime": "action",
+    "range": "60 feet",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Attack",
+    "classes": [
+     "Sorcerer",
+     "Wizard"
+    ],
+    "summary": "A frigid beam of blue-white light streaks toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 1d8 Cold damage, and its Speed is reduced by 10 feet until the start of your next turn.\n\n**Cantrip Upgrade.** The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
    "id": "ray-of-sickness",
    "type": "spell",
    "name": "Ray of Sickness",
@@ -8043,6 +8871,33 @@
    "updated": "2026-11-19T18:55:33.578Z"
   },
   {
+   "id": "resistance",
+   "type": "spell",
+   "name": "Resistance",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Abjuration",
+    "castingTime": "action",
+    "range": "touch",
+    "duration": "up to 1 minute",
+    "concentration": true,
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Buff",
+    "classes": [
+     "Cleric",
+     "Druid"
+    ],
+    "summary": "You touch a willing creature and choose a damage type: Acid, Bludgeoning, Cold, Fire, Lightning, Necrotic, Piercing, Poison, Radiant, Slashing, or Thunder. When the creature takes damage of the chosen type before the spell ends, the creature reduces the total damage taken by 1d4. A creature can benefit from this spell only once per turn.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-20T05:34:02.025Z"
+  },
+  {
    "id": "resurrection",
    "type": "spell",
    "name": "Resurrection",
@@ -8153,6 +9008,32 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-19T18:55:33.578Z"
+  },
+  {
+   "id": "sacred-flame",
+   "type": "spell",
+   "name": "Sacred Flame",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Evocation",
+    "castingTime": "action",
+    "range": "60 feet",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Saving throw",
+    "savingThrow": "Dexterity",
+    "classes": [
+     "Cleric"
+    ],
+    "summary": "Flame-like radiance descends on a creature that you can see within range. The target must succeed on a Dexterity saving throw or take 1d8 Radiant damage. The target gains no benefit from Half Cover or Three-Quarters Cover for this save.\n\n**Cantrip Upgrade.** The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-19T16:17:56.766Z"
   },
   {
    "id": "sanctuary",
@@ -8512,6 +9393,32 @@
    "updated": "2026-11-20T05:34:02.025Z"
   },
   {
+   "id": "shillelagh",
+   "type": "spell",
+   "name": "Shillelagh",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Transmutation",
+    "castingTime": "bonus Action",
+    "range": "Self",
+    "duration": "1 minute",
+    "verbal": true,
+    "somatic": true,
+    "material": "mistletoe",
+    "spellType": "Attack",
+    "classes": [
+     "Druid"
+    ],
+    "summary": "A Club or Quarterstaff you are holding is imbued with nature’s power. For the duration, you can use your spellcasting ability instead of Strength for the attack and damage rolls of melee attacks using that weapon, and the weapon’s damage die becomes a d8. If the attack deals damage, it can be Force damage or the weapon’s normal damage type (your choice).\n\nThe spell ends early if you cast it again or if you let go of the weapon.\n\n**Cantrip Upgrade.** The damage die changes when you reach levels 5 (d10), 11 (d12), and 17 (2d6).\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
    "id": "shining-smite",
    "type": "spell",
    "name": "Shining Smite",
@@ -8535,6 +9442,32 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-20T05:34:02.025Z"
+  },
+  {
+   "id": "shocking-grasp",
+   "type": "spell",
+   "name": "Shocking Grasp",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Evocation",
+    "castingTime": "action",
+    "range": "touch",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Attack",
+    "classes": [
+     "Sorcerer",
+     "Wizard"
+    ],
+    "summary": "Lightning springs from you to a creature that you try to touch. Make a melee spell attack against the target. On a hit, the target takes 1d8 Lightning damage, and it can’t make Opportunity Attacks until the start of its next turn.\n\n**Cantrip Upgrade.** The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-19T16:17:56.766Z"
   },
   {
    "id": "silence",
@@ -8736,6 +9669,32 @@
    "updated": "2026-11-19T18:55:33.578Z"
   },
   {
+   "id": "spare-the-dying",
+   "type": "spell",
+   "name": "Spare the Dying",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Necromancy",
+    "castingTime": "action",
+    "range": "15 feet",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Healing",
+    "classes": [
+     "Cleric",
+     "Druid"
+    ],
+    "summary": "Choose a creature within range that has 0 Hit Points and isn’t dead. The creature becomes Stable.\n\n**Cantrip Upgrade.** The range doubles when you reach levels 5 (30 feet), 11 (60 feet), and 17 (120 feet).\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-20T05:34:02.025Z"
+  },
+  {
    "id": "speak-with-animals",
    "type": "spell",
    "name": "Speak with Animals",
@@ -8847,6 +9806,34 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-20T05:34:02.025Z"
+  },
+  {
+   "id": "spike-growth",
+   "type": "spell",
+   "name": "Spike Growth",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "2",
+    "school": "Transmutation",
+    "castingTime": "action",
+    "range": "150 feet",
+    "duration": "up to 10 minutes",
+    "concentration": true,
+    "verbal": true,
+    "somatic": true,
+    "material": "seven thorns",
+    "spellType": "Control",
+    "classes": [
+     "Druid",
+     "Ranger"
+    ],
+    "summary": "The ground in a 20-foot-radius Sphere centered on a point within range sprouts hard spikes and thorns. The area becomes Difficult Terrain for the duration. When a creature moves into or within the area, it takes 2d4 Piercing damage for every 5 feet it travels.\n\nThe transformation of the ground is camouflaged to look natural. Any creature that can’t see the area when the spell is cast must take a Search action and succeed on a Wisdom (Perception or Survival) check against your spell save DC to recognize the terrain as hazardous before entering it.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-19T12:05:38.165Z",
+   "updated": "2026-11-19T12:05:38.165Z"
   },
   {
    "id": "spirit-guardians",
@@ -9101,6 +10088,37 @@
    "updated": "2026-11-20T05:34:02.252Z"
   },
   {
+   "id": "sunbeam",
+   "type": "spell",
+   "name": "Sunbeam",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "6",
+    "school": "Evocation",
+    "castingTime": "action",
+    "range": "Self",
+    "duration": "up to 1 minute",
+    "concentration": true,
+    "verbal": true,
+    "somatic": true,
+    "material": "a magnifying glass",
+    "spellType": "Saving throw",
+    "savingThrow": "Constitution",
+    "classes": [
+     "Cleric",
+     "Druid",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "summary": "You launch a sunbeam in a 5-foot-wide, 60-foot-long Line. Each creature in the Line makes a Constitution saving throw. On a failed save, a creature takes 6d8 Radiant damage and has the Blinded condition until the start of your next turn. On a successful save, it takes half as much damage only.\n\nUntil the spell ends, you can take a Magic action to create a new Line of radiance.\n\nFor the duration, a mote of brilliant radiance shines above you. It sheds Bright Light in a 30-foot radius and Dim Light for an additional 30 feet. This light is sunlight.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-19T12:05:38.165Z",
+   "updated": "2026-11-19T12:05:38.165Z"
+  },
+  {
    "id": "sunburst",
    "type": "spell",
    "name": "Sunburst",
@@ -9271,6 +10289,59 @@
    "updated": "2026-11-19T18:55:33.578Z"
   },
   {
+   "id": "thaumaturgy",
+   "type": "spell",
+   "name": "Thaumaturgy",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Transmutation",
+    "castingTime": "action",
+    "range": "30 feet",
+    "duration": "Up to 1 minute",
+    "verbal": true,
+    "spellType": "Utility",
+    "classes": [
+     "Cleric"
+    ],
+    "summary": "You manifest a minor wonder within range. You create one of the effects below within range. If you cast this spell multiple times, you can have up to three of its 1-minute effects active at a time.\n\n**Altered Eyes.** You alter the appearance of your eyes for 1 minute.\n\n**Booming Voice.** Your voice booms up to three times as loud as normal for 1 minute. For the duration, you have Advantage on Charisma (Intimidation) checks.\n\n**Fire Play.** You cause flames to flicker, brighten, dim, or change color for 1 minute.\n\n**Invisible Hand.** You instantaneously cause an unlocked door or window to fly open or slam shut.\n\n**Phantom Sound.** You create an instantaneous sound that originates from a point of your choice within range, such as a rumble of thunder, the cry of a raven, or ominous whispers.\n\n**Tremors.** You cause harmless tremors in the ground for 1 minute.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
+   "id": "thunderwave",
+   "type": "spell",
+   "name": "Thunderwave",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "1",
+    "school": "Evocation",
+    "castingTime": "action",
+    "range": "Self",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Saving throw",
+    "savingThrow": "Constitution",
+    "classes": [
+     "Bard",
+     "Druid",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "summary": "You unleash a wave of thunderous energy. Each creature in a 15-foot Cube originating from you makes a Constitution saving throw. On a failed save, a creature takes 2d8 Thunder damage and is pushed 10 feet away from you. On a successful save, a creature takes half as much damage only.\n\nIn addition, unsecured objects that are entirely within the Cube are pushed 10 feet away from you, and a thunderous boom is audible within 300 feet.\n\n**Using a Higher-Level Spell Slot.** The damage increases by 1d8 for each spell slot level above 1.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-19T12:05:38.165Z",
+   "updated": "2026-11-19T12:05:38.165Z"
+  },
+  {
    "id": "time-stop",
    "type": "spell",
    "name": "Time Stop",
@@ -9351,6 +10422,58 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-19T18:55:33.578Z"
+  },
+  {
+   "id": "transport-via-plants",
+   "type": "spell",
+   "name": "Transport via Plants",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "6",
+    "school": "Conjuration",
+    "castingTime": "action",
+    "range": "10 feet",
+    "duration": "1 minute",
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Utility",
+    "classes": [
+     "Druid"
+    ],
+    "summary": "This spell creates a magical link between a Large or larger inanimate plant within range and another plant, at any distance, on the same plane of existence. You must have seen or touched the destination plant at least once before. For the duration, any creature can step into the target plant and exit from the destination plant by using 5 feet of movement.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-19T12:05:38.165Z",
+   "updated": "2026-11-19T12:05:38.165Z"
+  },
+  {
+   "id": "tree-stride",
+   "type": "spell",
+   "name": "Tree Stride",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "5",
+    "school": "Conjuration",
+    "castingTime": "action",
+    "range": "Self",
+    "duration": "up to 1 minute",
+    "concentration": true,
+    "verbal": true,
+    "somatic": true,
+    "spellType": "Utility",
+    "classes": [
+     "Druid",
+     "Ranger"
+    ],
+    "summary": "You gain the ability to enter a tree and move from inside it to inside another tree of the same kind within 500 feet. Both trees must be living and at least the same size as you. You must use 5 feet of movement to enter a tree. You instantly know the location of all other trees of the same kind within 500 feet and, as part of the move used to enter the tree, can either pass into one of those trees or step out of the tree you’re in. You appear in a spot of your choice within 5 feet of the destination tree, using another 5 feet of movement. If you have no movement left, you appear within 5 feet of the tree you entered.\n\nYou can use this transportation ability only once on each of your turns. You must end each turn outside a tree.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-19T12:05:38.165Z",
+   "updated": "2026-11-19T12:05:38.165Z"
   },
   {
    "id": "true-polymorph",
@@ -9440,6 +10563,34 @@
    "updated": "2026-11-20T05:34:02.025Z"
   },
   {
+   "id": "true-strike",
+   "type": "spell",
+   "name": "True Strike",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Divination",
+    "castingTime": "action",
+    "range": "Self",
+    "duration": "Instantaneous",
+    "somatic": true,
+    "material": "a weapon with which you have profi- ciency and that is worth 1+ CP",
+    "spellType": "Attack",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "summary": "Guided by a flash of magical insight, you make one attack with the weapon used in the spell’s casting. The attack uses your spellcasting ability for the attack and damage rolls instead of using Strength or Dexterity. If the attack deals damage, it can be Radiant damage or the weapon’s normal damage type (your choice).\n\n**Cantrip Upgrade.** Whether you deal Radiant damage or the weapon’s normal damage type, the attack deals extra Radiant damage when you reach levels 5 (1d6), 11 (2d6), and 17 (3d6).\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-20T05:34:02.025Z"
+  },
+  {
    "id": "tsunami",
    "type": "spell",
    "name": "Tsunami",
@@ -9522,6 +10673,31 @@
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
    "updated": "2026-11-19T18:55:33.578Z"
+  },
+  {
+   "id": "vicious-mockery",
+   "type": "spell",
+   "name": "Vicious Mockery",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "fields": {
+    "level": "Cantrip",
+    "school": "Enchantment",
+    "castingTime": "action",
+    "range": "60 feet",
+    "duration": "Instantaneous",
+    "verbal": true,
+    "spellType": "Saving throw",
+    "savingThrow": "Wisdom",
+    "classes": [
+     "Bard"
+    ],
+    "summary": "You unleash a string of insults laced with subtle enchantments at one creature you can see or hear within range. The target must succeed on a Wisdom saving throw or take 1d6 Psychic damage and have Disadvantage on the next attack roll it makes before the end of its next turn.\n\n**Cantrip Upgrade.** The damage increases by 1d6 when you reach levels 5 (2d6), 11 (3d6), and 17 (4d6).\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+   },
+   "created": "2026-11-15T20:32:34.371Z",
+   "updated": "2026-11-19T16:17:56.766Z"
   },
   {
    "id": "vitriolic-sphere",

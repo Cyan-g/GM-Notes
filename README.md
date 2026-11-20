@@ -7,7 +7,7 @@ A local campaign wiki and toolkit for D&D: the world, its people, the campaign, 
 GM Notes is a desktop app for Windows and macOS. It's installed once and keeps the world in a database in a `data` folder you choose.
 
 - **First start:** choose the data folder in a normal folder dialog, or the folder that holds it. The app remembers it; ⚙ → Data & backups shows where it is and can change it.
-  - **A folder with no world yet:** the app offers to start a new one. Give it a name, then choose what it starts with: **D&D 5e** (the SRD 5.2.1 spells and feats, races, subclasses, tools, every dropdown list and a standard calendar) an **Empty world** (no entries, a plain calendar, and in the dropdown lists only the options the app relies on), or **From a file…**: a world's file made with ⚙ → *Export the world*, which becomes the new world exactly (its entries, relations, lists, calendar, today's date and pictures, nothing added). Picking the file shows its world, entry count and date, and fills in the name. Then choose *I'm the DM* or *I'm a player*; it's preset to player for D&D 5e (and for a file without DM-only text) and to DM otherwise, and ⚙ → DM mode switches later.
+  - **A folder with no world yet:** the app offers to start a new one. Give it a name, then choose what it starts with: **D&D 5e** (the SRD 5.2.1 spells and feats, the SRD species, the tool kits, every dropdown list and a standard calendar) an **Empty world** (no entries, a plain calendar, and in the dropdown lists only the options the app relies on), or **From a file…**: a world's file made with ⚙ → *Export the world*, which becomes the new world exactly (its entries, relations, lists, calendar, today's date and pictures, nothing added). Picking the file shows its world, entry count and date, and fills in the name. Then choose *I'm the DM* or *I'm a player*; it's preset to player for D&D 5e (and for a file without DM-only text) and to DM otherwise, and ⚙ → DM mode switches later.
   - **A folder from before the database:** one holding an early version's JSON world file is converted once, by itself and checked, and the old JSON files stay where they are.
 - **Windows:** the installer (`GM-Notes-Setup-<version>.exe`) installs for your user only and updates itself. When a new version is downloaded, a bar offers *Restart and update*.
 - **macOS:** the app isn't signed with an Apple Developer ID, so the first time, right-click it and choose *Open*. It can't install updates itself; a bar says when a new version is out, with a download link.
@@ -50,7 +50,7 @@ GM Notes is a desktop app for Windows and macOS. It's installed once and keeps t
 
 To set up a player:
 1. They install GM Notes and choose an empty folder as the data folder.
-2. The app offers **Start a new world here**, which starts in player mode. The new world already has every dropdown list, the standard calendar, the races, subclasses, spells, feats and Tool items (see *The starting world* below).
+2. The app offers **Start a new world here**, which starts in player mode. The new world already has every dropdown list, the standard calendar, the SRD spells, feats and species and the tool kits (see *The starting world* below).
 3. They import the world (⚙ → Export the world…) or the entries you send them; importing a newer file later updates their copy.
 
 ### Character sheet
@@ -251,9 +251,9 @@ npm run build      # type-checks and builds the pages into dist/ (what the deskt
 A new world that starts with D&D 5e gets a copy of `app/src/seed/world.json`, which ships inside the app (an empty world doesn't use it). It holds:
 - every dropdown list;
 - the standard calendar: Gregorian months and leap day, the real moon, BC and AD, today 1 January of year 1, and the sessions' timeline colour. It's not taken from your world: a world makes its own on the Calendar page (*⚙ Edit calendar*), and a player gets yours by importing your world;
-- the races, subclasses, spells, feats and Tool items, without DM-only text or pictures. Links to anything else become plain words.
+- the 339 spells and 17 feats of the SRD 5.2.1 (CC BY 4.0), the SRD species (name, size, speed and traits, no text) and the Tool items (no text), without DM-only text or pictures. Links to anything else become plain words. Only what may be published goes in: homebrew and rules text from outside the SRD stay in your world.
 
-`npm run seed` rebuilds it from your world (`../data`, or a folder given after the command); commit it and the next build ships it. The seed records its data version, so after an upgrade step a new world from an older seed is brought up to date like any older data. Rebuilding it now and then keeps it current.
+`npm run seed` rebuilds it from your world (`../data`, or a folder given after the command), taking each SRD spell and feat from your world when it carries the SRD source line (so your fixes, e.g. a spell's type, come along) and from `app/scripts/srd-5.2.1.json` otherwise; commit it and the next build ships it. The seed records its data version, so after an upgrade step a new world from an older seed is brought up to date like any older data. Rebuilding it now and then keeps it current.
 
 ### Credits
 

@@ -2,8 +2,9 @@
 // The known worlds, to open one, start a new one or open a world's folder. Shown in ⚙ → Switch world, under the
 // world's name at the top left, and on the start screen.
 import AppIcon from './AppIcon.vue'
+import LiveJoin from './LiveJoin.vue'
 import { onMounted, ref } from 'vue'
-import { forgetWorld, joinWorld, loadWorlds, newWorld, openWorldFolder, switchWorld, worlds } from '../worlds'
+import { forgetWorld, joinLive, joinWorld, loadWorlds, newWorld, openWorldFolder, switchWorld, worlds } from '../worlds'
 import { desktop } from '../storage/desktop'
 
 const emit = defineEmits<{ done: [] }>()
@@ -14,6 +15,8 @@ const when = (iso: string) => { const d = new Date(iso); return isNaN(+d) ? '' :
 /** Join: the worlds found in a shared folder. */
 const found = ref<{ folder: string; worlds: { worldId: string; title: string; published: string }[] } | null>(null)
 async function scan() { found.value = await desktop!.shared.scan() }
+/** Join: a DM's live session on this network. */
+const joiningLive = ref(false)
 async function create() {
   if (!name.value.trim()) return
   await newWorld(name.value)
@@ -39,6 +42,10 @@ async function create() {
       <button type="button" @click="naming = false">Cancel</button>
       <p class="muted small">{{ worlds.worldsDir ? `It gets its own folder in ${worlds.worldsDir}.` : 'First, choose the folder your worlds go in; each new world gets its own folder in it.' }}</p>
     </form>
+    <div v-else-if="joiningLive" class="world-join">
+      <p class="small"><b>Join a live session</b>: your DM hosts it from their GM Notes on this network.</p>
+      <LiveJoin @chosen="(s, code) => joinLive(s, code)" @cancel="joiningLive = false" />
+    </div>
     <div v-else-if="found" class="world-join">
       <p class="small">In {{ found.folder }}:</p>
       <ul v-if="found.worlds.length">
@@ -53,6 +60,7 @@ async function create() {
     <div v-else class="world-actions">
       <button type="button" @click="naming = true">＋ New world…</button>
       <button type="button" title="A world your DM publishes in a shared folder (e.g. Google Drive)" @click="scan"><AppIcon ui="download" /> Join a shared world…</button>
+      <button type="button" title="Your DM's live session on this network (same Wi-Fi)" @click="joiningLive = true"><AppIcon ui="share" /> Join a live session…</button>
       <button type="button" @click="openWorldFolder">Open a world folder…</button>
     </div>
   </div>

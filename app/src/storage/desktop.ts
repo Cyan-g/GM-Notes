@@ -27,8 +27,24 @@ interface Bridge {
   publish: { folder(): Promise<string | null>; pick(): Promise<string | null> }
   shared: {
     scan(): Promise<{ folder: string; worlds: { worldId: string; title: string; published: string; dataVersion: number }[] } | null>
-    follow(folder: string, worldId: string): Promise<boolean>
-    get(): Promise<{ folder: string; worldId: string } | null>
+    /** Follow a DM world through a folder, a live session, or both (null keeps the folder it has). */
+    follow(folder: string | null, worldId: string, live?: LiveTarget & { code: string }): Promise<boolean>
+    get(): Promise<{ folder?: string; worldId: string; live?: LiveTarget & { code: string } } | null>
+  }
+  live: {
+    hostStatus(): Promise<HostStatus>
+    start(title: string): Promise<HostStatus>
+    stop(): Promise<boolean>
+    newCode(): Promise<string>
+    sent(): Promise<boolean>
+    discover(): Promise<FoundSession[]>
+    /** A found session, or an address typed in ("192.168.1.20" or with ":port"). */
+    check(target: LiveTarget | string, code: string): Promise<{ ok: true; worldId: string; title: string; host: string; port: number } | { ok?: false; error: string }>
+    follow(who: string): Promise<PlayerStatus>
+    playerStatus(): Promise<PlayerStatus>
+    onHost(cb: (s: HostStatus) => void): void
+    onPlayer(cb: (s: PlayerStatus) => void): void
+    onPublished(cb: (published: string) => void): void
   }
   worlds: {
     list(): Promise<{ current: string | null; worldsDir: string | null; worlds: import('../worlds').KnownWorld[] }>
@@ -45,7 +61,15 @@ interface Bridge {
 /** The desktop bridge, if this runs in the desktop app. */
 export const desktop: Bridge | undefined = (window as unknown as { dndesk?: Bridge }).dndesk
 
-export type DesktopRoot = 'data' | 'backup' | 'publish' | 'shared'
+export type DesktopRoot = 'data' | 'backup' | 'publish' | 'shared' | 'live'
+
+// ---- live sessions on the local network (electron/live.cjs) ----
+export interface LiveTarget { host: string; port: number }
+export interface FoundSession extends LiveTarget { worldId: string; title: string }
+export type HostStatus =
+  | { hosting: false }
+  | { hosting: true; port: number; code: string; title: string; addresses: string[]; players: string[]; published: string | null }
+export interface PlayerStatus { state: 'off' | 'searching' | 'connected' | 'wrong-code'; host?: string; port?: number }
 
 export class DesktopStorage implements Storage {
   private urls = new Map<string, string>()

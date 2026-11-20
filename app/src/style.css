@@ -1596,3 +1596,17 @@ svg.gi.off { opacity: .35; }
   .print-pages { display: block; padding: 0; overflow: visible; zoom: 1 !important; }
   .print-page { box-shadow: none; break-after: page; }
 }
+
+/* live sessions: the host box in Share with players, the code, the join form, the top bar tag */
+.live-box { border: 1px solid var(--line); border-radius: 8px; padding: .5rem .8rem; margin: .6rem 0; background: var(--panel-2); }
+.live-box.on { border-color: color-mix(in srgb, #2e8b57 55%, var(--line)); }
+.live-box h4 { margin: .2rem 0 .3rem; }
+.live-box .actions { margin-top: .3rem; }
+.live-dot, .live-tag { color: #3aa86b; font: 600 12px var(--sans); }
+.live-code code { font-size: 20px; letter-spacing: .12em; padding: .1rem .5rem; border-radius: 6px; background: var(--panel); user-select: all; }
+.live-join .live-found { list-style: none; margin: .3rem 0; padding: 0; }
+.live-join .live-found li { margin: .2rem 0; }
+.live-address { width: 11em; }
+.live-code-input { width: 8em; text-transform: uppercase; letter-spacing: .08em; }
+.live-tag { border: 1px solid color-mix(in srgb, #3aa86b 50%, var(--line)); border-radius: 999px; padding: .15rem .55rem; background: transparent; white-space: nowrap; }
+button.live-tag { cursor: pointer; }

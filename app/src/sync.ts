@@ -4,12 +4,15 @@
 // - A player's world follows one published world: it checks on start and every few minutes, and an update replaces
 //   the shared entries (read-only on the player's side), removes what's no longer shared, updates the lists, the
 //   calendar and today's date, and leaves everything of the player's own alone (characters, notes, sessions…).
+// - Live sessions (electron/live.cjs) carry the same publish over the local network: the DM hosts, "Send now" writes
+//   the publish for the session (and the shared folder, if the world has one) and tells the connected players, whose
+//   app reads it from the DM instead of the folder while connected.
 import { reactive } from 'vue'
 import type { Entry, Follow, Id, Relation } from './model/types'
 import { LISTS, type ListOption } from './model/lists'
 import { mapRefs } from './model/refs'
 import { DATA_VERSION, backupNow, db, listOptions, save, state, touch } from './store'
-import { desktop } from './storage/desktop'
+import { desktop, type HostStatus, type PlayerStatus } from './storage/desktop'
 import { dataPaths, outgoingEntries, planExport, stable } from './transfer'
 
 export const PUBLISH_FORMAT = 'dndesk-publish'
@@ -55,8 +58,14 @@ export interface PublishPlan {
   previous?: string
 }
 
-/** What a publish would send now: shared entries (no characters), compared with the last publish. */
-export async function planPublish(): Promise<PublishPlan> {
+/** Where a publish goes: the shared folder ('publish') and/or the live session ('live'). */
+export type PublishTarget = 'publish' | 'live'
+
+/**
+ * What a publish would send now: shared entries (no characters), compared with the last publish to `since` (the
+ * shared folder, or the live session's last "Send now" when the world has no folder).
+ */
+export async function planPublish(since: PublishTarget = 'publish'): Promise<PublishPlan> {
   if (!state.worldId) throw new Error('This world has no ID yet; reopen it in the desktop app.')
   const plan = planExport(null, { dmText: false, hidden: false, textLinks: false, skip: ['pc'] })!
   const { entries, names } = outgoingEntries(plan)
@@ -79,7 +88,7 @@ export async function planPublish(): Promise<PublishPlan> {
     names, world: clone({ calendar: m.calendar, eventCategories: m.eventCategories, today: m.today }), files,
   }
   let last: Published | null = null
-  try { last = JSON.parse(decode(await desktop!.read('publish', 'world.json')) ?? 'null') } catch { last = null }
+  try { last = JSON.parse(decode(await desktop!.read(since, 'world.json')) ?? 'null') } catch { last = null }
   const before = new Map((last?.entries ?? []).map(e => [e.id, e]))
   return {
     pub, blobs,
@@ -90,17 +99,24 @@ export async function planPublish(): Promise<PublishPlan> {
   }
 }
 
-/** Write a publish into the shared folder: new files first, then world.json (swapped in whole), then old files out. */
-export async function publish(p: PublishPlan, progress?: (done: number, total: number) => void) {
-  const have = new Set(await desktop!.list('publish', 'files'))
-  const missing = [...p.blobs].filter(([name]) => !have.has(name))
-  let done = 0
-  for (const [name, b] of missing) {
-    await desktop!.write('publish', `files/${name}`, new Uint8Array(await b.arrayBuffer()))
-    progress?.(++done, missing.length)
+/**
+ * Write a publish to each target (the shared folder, the live session): new files first, then world.json (swapped in
+ * whole), then old files out. Players connected live are told right after.
+ */
+export async function publish(p: PublishPlan, progress?: (done: number, total: number) => void, targets: PublishTarget[] = ['publish']) {
+  p.pub.published = new Date().toISOString()
+  for (const root of targets) {
+    const have = new Set(await desktop!.list(root, 'files'))
+    const missing = [...p.blobs].filter(([name]) => !have.has(name))
+    let done = 0
+    for (const [name, b] of missing) {
+      await desktop!.write(root, `files/${name}`, new Uint8Array(await b.arrayBuffer()))
+      progress?.(++done, missing.length)
+    }
+    await desktop!.write(root, 'world.json', new TextEncoder().encode(JSON.stringify(p.pub)))
+    for (const name of have) if (!p.blobs.has(name)) await desktop!.remove(root, `files/${name}`)
   }
-  await desktop!.write('publish', 'world.json', new TextEncoder().encode(JSON.stringify(p.pub)))
-  for (const name of have) if (!p.blobs.has(name)) await desktop!.remove('publish', `files/${name}`)
+  if (targets.includes('live')) await desktop!.live.sent()
   db().meta.lastPublished = p.pub.published
   touch()
   await save()
@@ -220,18 +236,47 @@ export async function checkShared(manual = false) {
     const r = await syncNow()
     syncStatus.error = ''
     syncStatus.checked = new Date().toISOString()
-    if (r) syncStatus.note = `Updated from ${r.title}: ${r.added} new, ${r.changed} changed, ${r.removed} removed.`
+    if (r && (r.added || r.changed || r.removed || manual)) syncStatus.note = `Updated from ${r.title}: ${r.added} new, ${r.changed} changed, ${r.removed} removed.`
     else if (manual) syncStatus.note = 'Already up to date.'
   } catch (e) {
     syncStatus.error = (e as Error).message
   } finally { syncStatus.busy = false }
 }
 
+// ---------- live sessions ----------
+
+/** The DM's hosting and a player's connection, as the main process reports them. */
+export const live = reactive({ host: { hosting: false } as HostStatus, player: { state: 'off' } as PlayerStatus })
+if (desktop?.live) {
+  desktop.live.onHost(s => { live.host = s })
+  desktop.live.onPlayer(s => { live.player = s })
+  // The DM sent a new version: fetch it (nothing happens when it's the one this world already has).
+  desktop.live.onPublished(p => { if (state.db?.follow?.published !== p) checkShared() })
+}
+/** The name the DM sees for this player: their current character, or the world's title. */
+const whoAmI = () => {
+  const id = state.db?.meta.currentCharacter
+  return (id && state.db?.entries[id]?.name) || ''
+}
+
 let timer: number | undefined
-/** In a world that follows a shared one: check now and every 5 minutes. */
+/**
+ * In a world that follows a shared one: keep in touch with the DM's live session (if it has one), and check the
+ * shared folder now and every 5 minutes (if it has one).
+ */
 export async function startFollowing() {
-  if (!desktop || !(state.db?.follow || await desktop.shared.get())) return
+  if (!desktop) return
+  const f = await desktop.shared.get()
+  if (!(state.db?.follow || f)) return
+  if (f?.live) live.player = await desktop.live.follow(whoAmI())
+  if (f?.live && !f.folder) return
   await checkShared()
   clearInterval(timer)
   timer = window.setInterval(() => checkShared(), 5 * 60 * 1000)
+}
+
+/** Follow the world's live session from now on (a world that already follows the same DM world, e.g. via Drive). */
+export async function connectLive(s: { host: string; port: number; worldId: string }, code: string) {
+  await desktop!.shared.follow(null, s.worldId, { host: s.host, port: s.port, code })
+  live.player = await desktop!.live.follow(whoAmI())
 }

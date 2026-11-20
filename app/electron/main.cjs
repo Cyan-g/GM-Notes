@@ -6,6 +6,7 @@ const fs = require('node:fs')
 const crypto = require('node:crypto')
 const path = require('node:path')
 const { WorldDb, convertFromJson } = require('./db.cjs')
+const { createLive } = require('./live.cjs')
 
 const REPO = { owner: 'Cyan-g', repo: 'GM-Notes' }
 const RELEASES = `https://github.com/${REPO.owner}/${REPO.repo}/releases/latest`
@@ -46,8 +47,11 @@ function rootDir(root) {
   if (root === 'shared') {
     const f = followOf(config.dataDir)
     if (!f) throw new Error('This world follows no shared world')
+    if (!f.folder) throw new Error("Your DM's live session isn't on this network right now. The world updates when they host again.")
     return path.join(f.folder, f.worldId)
   }
+  // What a live session serves: the last "Send now" of this world, kept in the app's own folder.
+  if (root === 'live') return path.join(app.getPath('userData'), 'live', openWorld().setting('worldId'))
   const key = ROOTS[root]
   if (!key) throw new Error(`Unknown folder "${root}"`)
   const dir = config[key]
@@ -64,7 +68,9 @@ function inside(root, rel) {
 
 // ---------- file access for the pages ----------
 
-ipcMain.handle('fs:read', (_e, root, rel) => {
+ipcMain.handle('fs:read', async (_e, root, rel) => {
+  // A followed world comes from the DM's live session while it can be reached, else from the shared folder.
+  if (root === 'shared') { const b = await live.read(String(rel)); if (b !== undefined) return b }
   const f = inside(root, rel)
   try { return fs.readFileSync(f) } catch (err) { if (err.code === 'ENOENT') return null; throw err }
 })
@@ -131,7 +137,7 @@ function openWorld() {
   if (!world) world = new WorldDb(rootDir('data'))
   return world
 }
-function closeWorld() { world?.close(); world = null }
+function closeWorld() { live.stopAll(); world?.close(); world = null }
 const stamp = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}` }
 
 /**
@@ -239,11 +245,51 @@ ipcMain.handle('shared:scan', async e => {
   return { folder: r.filePaths[0], worlds: scanShared(r.filePaths[0]) }
 })
 /** The open world follows this published world from now on. */
-ipcMain.handle('shared:follow', (_e, folder, worldId) => {
-  config.follow = { ...(config.follow ?? {}), [config.dataDir]: { folder, worldId } }
+/** The open world follows this published world from now on: through a shared folder, a live session, or both. */
+ipcMain.handle('shared:follow', (_e, folder, worldId, liveCfg) => {
+  const before = followOf(config.dataDir)
+  const keep = before?.worldId === worldId ? before : {}
+  const next = { ...keep, worldId, ...(folder ? { folder } : {}), ...(liveCfg ? { live: { host: liveCfg.host, port: liveCfg.port, code: liveCfg.code } } : {}) }
+  const rest = Object.fromEntries(Object.entries(config.follow ?? {}).filter(([d]) => !same(d, config.dataDir)))
+  config.follow = { ...rest, [config.dataDir]: next }
   writeConfig(config)
   return true
 })
+
+// ---------- live sessions on the local network (live.cjs) ----------
+
+const live = createLive({
+  send: (channel, data) => { for (const w of BrowserWindow.getAllWindows()) w.webContents.send(channel, data) },
+  saveLiveHost: (host, port) => {
+    const f = followOf(config.dataDir)
+    if (f?.live && (f.live.host !== host || f.live.port !== port)) { f.live.host = host; f.live.port = port; writeConfig(config) }
+  },
+})
+/** The open world's code for live sessions: made once, kept until "New code". */
+function liveCode(renew = false) {
+  const id = openWorld().setting('worldId')
+  if (renew || !config.liveCodes?.[id]) { config.liveCodes = { ...(config.liveCodes ?? {}), [id]: live.newCode() }; writeConfig(config) }
+  return config.liveCodes[id]
+}
+ipcMain.handle('live:host-status', () => live.hostStatus())
+ipcMain.handle('live:host-start', (_e, title) => live.startHost({ worldId: openWorld().setting('worldId'), title: String(title ?? ''), dir: rootDir('live'), code: liveCode() }))
+ipcMain.handle('live:host-stop', () => { live.stopHost(); return true })
+ipcMain.handle('live:new-code', () => { const c = liveCode(true); live.changeCode(c); return c })
+ipcMain.handle('live:sent', () => { live.sent(); return true })
+ipcMain.handle('live:discover', () => live.discover())
+/** Check a code with a session: found by discovery ({ host, port }) or typed ("192.168.1.20[:47100]"). */
+ipcMain.handle('live:check', (_e, target, code) => {
+  const t = typeof target === 'string' ? live.parseAddress(target) : target
+  if (!t) return { error: "That doesn't look like an address (e.g. 192.168.1.20)." }
+  return live.check(t, code).then(r => (r.ok ? { ...r, host: t.host, port: t.port } : r))
+})
+/** Keep in touch with the followed world's live session, if it has one (`who`: the name the DM sees). */
+ipcMain.handle('live:follow', (_e, who) => {
+  const f = followOf(config.dataDir)
+  if (f?.live) live.followLive({ worldId: f.worldId, ...f.live, who: String(who ?? '') }); else live.stopPlayer()
+  return live.playerStatus()
+})
+ipcMain.handle('live:player-status', () => live.playerStatus())
 ipcMain.handle('shared:get', () => followOf(config.dataDir) ?? null)
 
 /** The known worlds, last opened first, with whether their folder still holds a world. */

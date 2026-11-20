@@ -71,3 +71,13 @@ export async function joinWorld(folder: string, w: { worldId: string; title: str
   try { sessionStorage.setItem(PENDING_NEW_WORLD, w.title); sessionStorage.setItem(PENDING_JOIN, '1') } catch { /* the start screen asks instead */ }
   location.reload()
 }
+
+/** Make a new world that follows a DM world through its live session on this network. */
+export async function joinLive(s: { host: string; port: number; worldId: string; title: string }, code: string) {
+  await leave()
+  const dir = await desktop!.worlds.create(s.title || 'Shared world')
+  if (!dir) return
+  await desktop!.shared.follow(null, s.worldId, { host: s.host, port: s.port, code })
+  try { sessionStorage.setItem(PENDING_NEW_WORLD, s.title || 'Shared world'); sessionStorage.setItem(PENDING_JOIN, '1') } catch { /* the start screen asks instead */ }
+  location.reload()
+}

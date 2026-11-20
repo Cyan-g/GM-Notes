@@ -94,9 +94,12 @@ export interface ActiveTrait {
 export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): ActiveTrait[] {
   if (!pc) return []
   const sheet = s ?? (pc.fields.sheet as CharacterSheet | undefined), st = stateOf(sheet)
+  const lin = lineage(pc), subrace = lin.length > 1 ? lin.at(-1)! : undefined
   const build = ({ from: race, level }: { from: Entry; level: number }) => traitsOf(race).flatMap(trait => {
     const key = traitKey(race, trait)
-    const picks = st.picks?.[key] ?? []
+    // a lineage the subrace stands for (a High Elf has the High Elf lineage) is picked unless the player picked another
+    const auto = subrace && race !== subrace && lin.includes(race) && trait.choice?.kind === 'option' ? subraceOption(trait.choice, subrace.name, race.name) : undefined
+    const picks = st.picks?.[key]?.length ? st.picks[key] : auto ? [auto.id] : []
     const options = trait.choice?.kind === 'option'
       ? picks.map(id => trait.choice!.options?.find(o => o.id === id)).filter((o): o is TraitOption => !!o) : []
     const cw = trait.castWith, cast = cw ? st.abilities?.[cw.sameAs ? `${race.id}.${cw.sameAs}` : key] : undefined
@@ -129,6 +132,15 @@ function featsOf(pc: Entry, s: CharacterSheet | undefined, traits: ActiveTrait[]
     ...traits.filter(a => a.active && a.trait.choice?.kind === 'feat').flatMap(a => a.picks),
   ]
   return [...new Set(ids)].map(id => get(id)).filter((e): e is Entry => e?.type === 'feat')
+}
+/**
+ * The option of a choice a subrace stands for, if exactly one: "High Elf" is the High Elf lineage, "Black Dragonborn"
+ * (of Dragonborn) the "Black dragon (Acid)" ancestry.
+ */
+export function subraceOption(c: TraitChoice, subrace: string, parent: string): TraitOption | undefined {
+  const full = subrace.toLowerCase(), names = [full, full.replace(parent.toLowerCase(), '').trim()].filter(Boolean)
+  const own = (c.options ?? []).filter(o => names.some(n => o.name.toLowerCase() === n || o.name.toLowerCase().startsWith(n + ' ')))
+  return own.length === 1 ? own[0] : undefined
 }
 /** Whether a trait is one a picked option brought (it isn't in the entry's own traits). */
 export const isSubChoice = (a: ActiveTrait) => !!(a.trait as Trait & { sub?: boolean }).sub

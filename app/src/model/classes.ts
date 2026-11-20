@@ -43,7 +43,7 @@ export function hitDicePools(pc: Entry, s: CharacterSheet): { die: string; total
 }
 
 /** A subclass name without its class in front ("Warlock - The Dusk Prince" → "The Dusk Prince"). */
-function withoutClass(name: string | undefined, cls: string): string | undefined {
+export function withoutClass(name: string | undefined, cls: string): string | undefined {
   if (!name || !name.toLowerCase().startsWith(cls.toLowerCase())) return name
   const rest = name.slice(cls.length).replace(/^\s*[-–:]\s*/, '')
   return rest && rest !== name.slice(cls.length) ? rest : name

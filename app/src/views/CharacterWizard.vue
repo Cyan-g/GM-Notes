@@ -13,7 +13,7 @@ import { SUBCLASS_LEVEL } from '../classRules'
 import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, abilityBonusText } from '../abilityBonus'
 import { DICE } from '../model/classes'
 import { SKILLS, mod, signed, currentPc, setCurrent } from '../sheet'
-import { choiceOpen, grantOptions, isClassOrigin, scaleAt, setCastAbility, setPicks as setTraitPicks, speciesGrants, speciesTraits, traitsOf, type ActiveTrait } from '../species'
+import { choiceOpen, grantOptions, isClassOrigin, scaleAt, setCastAbility, setPicks as setTraitPicks, sourceTag, speciesGrants, speciesTraits, traitsOf, type ActiveTrait } from '../species'
 import { entries, formatMoney, get, listOptions, playerMode } from '../store'
 import { go, hrefEntry } from '../router'
 import { newBlankEntry } from '../ui'
@@ -62,6 +62,8 @@ const choices = computed(() => speciesTraits(pc.value).filter(a => !isClassOrigi
 /** The class's and subclass's features at the chosen level, by where they come from. */
 const classFeatures = computed(() => speciesTraits(pc.value).filter(a => isClassOrigin(a.race) && a.active))
 const featureGroups = computed(() => [...new Map(classFeatures.value.map(a => [a.race.id, a.race])).values()].map(r => ({ r, list: classFeatures.value.filter(a => a.race.id === r.id) })))
+/** A feature that's only levelling bookkeeping (the Spellcasting rules, "Warlock Subclass"): folded into one line. */
+const bookkeeping = (a: ActiveTrait) => a.trait.onSheet === 'hide' && !a.trait.choice
 const pickFeature = (a: ActiveTrait, picks: string[]) => { const holder = { species: { ...wizard.d.species } } as Parameters<typeof setTraitPicks>[0]; setTraitPicks(holder, a.key, picks); wizard.d.species = holder.species! }
 function setPicks(a: ActiveTrait, picks: string[]) {
   const all = { ...(wizard.d.species.picks ?? {}) }
@@ -248,16 +250,10 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
             skills {{ (get(d.background)?.fields.skillProfs ?? []).join(', ') || '—' }}
           </p>
           <div v-for="a in choices" :key="a.key" class="wz-choice" :class="{ open: choiceOpen(a) }">
-            <b>{{ a.trait.name }}</b> <span class="muted small">{{ a.race.name }}</span>
-            <p v-if="a.trait.text" class="small md" v-html="renderInline(a.trait.text)" />
-            <template v-if="a.trait.choice?.kind === 'option'">
-              <select :value="a.option?.id ?? ''" @change="setPicks(a, [val($event)])">
-                <option value="">Choose…</option>
-                <option v-for="o in a.trait.choice!.options ?? []" :key="o.id" :value="o.id">{{ o.name }}</option>
-              </select>
-              <TraitChips v-if="a.option" :t="a.option" />
-            </template>
-            <TraitChoicePicker v-else-if="a.trait.choice" :a="a" @pick="p => setPicks(a, p)" />
+            <b>{{ a.trait.name }}</b> <span class="feat-tag" :class="'tag-' + a.race.type">{{ sourceTag(a) }}</span>
+            <details v-if="(a.trait.text ?? '').length > 220" class="small wz-rules"><summary>Rules</summary><MarkdownView :source="a.trait.text!" /></details>
+            <p v-else-if="a.trait.text" class="small md" v-html="renderInline(a.trait.text)" />
+            <TraitChoicePicker v-if="a.trait.choice" :a="a" @pick="p => setPicks(a, p)" />
             <label v-if="a.trait.castWith?.among?.length" class="small wz-cast">Casts its spells with
               <select :value="a.cast ?? ''" @change="setCast(a, val($event))">
                 <option value="">Choose…</option>
@@ -350,7 +346,7 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
           <p class="muted small">What the class{{ d.subclass ? ' and subclass give' : ' gives' }} at level {{ d.level }}; the sheet keeps them up to date as the character levels up. Make the choices here or later on the sheet.</p>
           <template v-for="g in featureGroups" :key="g.r.id">
             <h3><EntryLink :id="g.r.id" /></h3>
-            <div v-for="a in g.list" :key="a.key" class="wz-feature" :class="{ open: choiceOpen(a) }">
+            <div v-for="a in g.list.filter(x => !bookkeeping(x))" :key="a.key" class="wz-feature" :class="{ open: choiceOpen(a) }">
               <details>
                 <summary><b>{{ a.trait.name }}</b> <span class="muted small">level {{ a.trait.level ?? 1 }}</span>
                   <span v-if="scaleAt(a)" class="chip">{{ a.trait.scale!.label }} {{ scaleAt(a) }}</span></summary>
@@ -358,6 +354,7 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
               </details>
               <TraitChoicePicker v-if="a.trait.choice" :a="a" @pick="p => pickFeature(a, p)" />
             </div>
+            <p v-if="g.list.some(bookkeeping)" class="muted small">Also at this level (worked out by the sheet and the Spellbook): {{ g.list.filter(bookkeeping).map(a => a.trait.name).join(', ') }}.</p>
           </template>
         </template>
 

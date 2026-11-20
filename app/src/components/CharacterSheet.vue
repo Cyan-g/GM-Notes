@@ -27,7 +27,9 @@ import GearToggles from './GearToggles.vue'
 import PcPortrait from './PcPortrait.vue'
 import FeatureList from './FeatureList.vue'
 import FeatureChoices from './FeatureChoices.vue'
-import { choiceOpen, speciesEffects, speciesTraits } from '../species'
+import UsesCard from './UsesCard.vue'
+import { picksLeft, speciesEffects, speciesTraits } from '../species'
+import { ui } from '../ui'
 
 const props = defineProps<{ pc: Entry; build?: boolean }>()
 const ro = computed(() => !!state.readOnly)
@@ -49,7 +51,8 @@ const fromGear = computed(() => {
   return { senses: gt.value.senses.filter(mine), resistances: gt.value.resistances.filter(mine), immunities: gt.value.immunities.filter(mine), damageImmunities: gt.value.damageImmunities.filter(mine), features: gt.value.features.filter(mine) }
 })
 /** Choices the character's classes, species and background still wait for. */
-const openChoices = computed(() => speciesTraits(props.pc, s.value).filter(a => a.active && choiceOpen(a)).length)
+/** Picks still to make on the Edit page (invocations left, a lineage, a casting ability…). */
+const openChoices = computed(() => speciesTraits(props.pc, s.value).filter(a => a.active).reduce((n, a) => n + picksLeft(a), 0))
 const scoreOf = (a: Ability) => scoreWith(s.value, a, gt.value)
 const scoreTip = (a: Ability) => scoreBreakdown(s.value, a, gt.value)
 /** A total's tooltip: what it is without gear, then each item's part. */
@@ -189,6 +192,8 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       </div>
       <p v-if="levelOver" class="error small">The class levels add up to more than 20; the sheet counts 20.</p>
     </section>
+    <!-- building: the choices the classes, species, background and feats ask for, right below the classes -->
+    <FeatureChoices v-if="build" :pc="pc" :s="s" />
     <div class="cs-top" :class="{ 'with-portrait': !build, 'no-portrait': !build && !pc.image }">
     <PcPortrait v-if="!build" :pc="pc" />
     <div class="cs-top-right">
@@ -239,6 +244,8 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       </div>
       <button v-if="!build" class="cs-rest" :disabled="ro" title="Full HP, no temp HP, every spell slot and half your hit dice back" @click="rest">Long rest</button>
     </div>
+    <!-- in play: the limited uses of features, to tick off without scrolling -->
+    <UsesCard v-if="!build" :pc="pc" :s="s" />
     </div>
     <!-- abilities, then attacks, spellcasting and proficiencies, in the same column -->
     <div class="cs-grid">
@@ -307,18 +314,10 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
     </div>
 
 
-    <!-- what's worn and wielded beside the inventory, half and half (the Edit page shows only the inventory) -->
-    <div v-if="!build" class="cs-gear-row">
-      <EquippedCard :pc="pc" />
-      <InventoryCard :pc="pc" />
-    </div>
-    <InventoryCard v-else :pc="pc" />
-
-
-    <!-- features and traits -->
+    <!-- features and traits: in play right below the abilities, the uses on them clicked often -->
     <section class="cs-features">
       <h4>Features &amp; traits <button v-if="build" class="link-btn" @click="addFeature">＋ Add</button>
-        <a v-if="!build && openChoices && !ro" class="sp-open small" :href="hrefEntry(pc.id, true)" :title="`${openChoices} choice${openChoices === 1 ? '' : 's'} still to make, on the Edit page`">{{ openChoices }} to choose ✎</a></h4>
+        <a v-if="!build && openChoices && !ro" class="sp-open small" :href="hrefEntry(pc.id, true)" :title="`${openChoices} pick${openChoices === 1 ? '' : 's'} still to make, on the Edit page`" @click="ui.scrollTo = 'choices'">{{ openChoices }} to pick ✎</a></h4>
       <template v-if="build">
         <div v-for="(f, i) in s.features" :key="i" class="cs-feature">
           <input :value="f.name" placeholder="Name, e.g. Bardic Inspiration (d6)" @change="edit(x => x.features[i].name = ($event.target as HTMLInputElement).value)" />
@@ -328,9 +327,17 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       </template>
       <!-- everything from the classes, species, background, the sheet and the gear, each with its source (species.ts) -->
       <FeatureList v-else :pc="pc" :s="s" :gear="fromGear" />
-      <p v-if="build" class="muted small">Features from the classes, species and background come by themselves; add feats and anything else here.</p>
-      <FeatureChoices v-if="build" :pc="pc" :s="s" />
+      <p v-if="build" class="muted small">Features from the classes, species, background and the feats here come by themselves; add feats (by their name) and anything else here. The choices they ask for are near the top of this page.</p>
     </section>
+
+    <!-- what's worn and wielded beside the inventory, half and half (the Edit page shows only the inventory) -->
+    <div v-if="!build" class="cs-gear-row">
+      <EquippedCard :pc="pc" />
+      <InventoryCard :pc="pc" />
+    </div>
+    <InventoryCard v-else :pc="pc" />
+
+
     <ItemModal v-if="shownLine?.item" :id="shownLine.item" @close="shown = null">
       <template #actions>
         <span class="muted small">× {{ shownLine.qty }}</span>

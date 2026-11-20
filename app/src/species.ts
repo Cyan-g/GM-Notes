@@ -9,7 +9,7 @@
 // A character's classes and subclasses count the same way too: their Features, each from a level in that class, with
 // uses that can grow by level (Rage), scaling values (Sneak Attack), and picks (Fighting Style, Expertise, Metamagic).
 import type { Abilities, CharacterSheet, Entry, GearEffect, Id, SpeciesState, Trait, TraitChoice, TraitGrant, TraitOption, TraitSpell } from './model/types'
-import { classesOf, totalLevel } from './model/classes'
+import { classesOf, totalLevel, withoutClass } from './model/classes'
 import { entries, get, listOptions, state } from './store'
 import { SKILLS, mod, score, sheetOf } from './sheet'
 
@@ -141,6 +141,17 @@ export function subraceOption(c: TraitChoice, subrace: string, parent: string): 
   const full = subrace.toLowerCase(), names = [full, full.replace(parent.toLowerCase(), '').trim()].filter(Boolean)
   const own = (c.options ?? []).filter(o => names.some(n => o.name.toLowerCase() === n || o.name.toLowerCase().startsWith(n + ' ')))
   return own.length === 1 ? own[0] : undefined
+}
+/**
+ * A trait's source, short, as a tag: the class with the level the feature comes at ("Warlock 2"), the subclass the
+ * same without its class's name ("The Dusk Prince 6"), the race or background, or "feat" for a feat's own feature.
+ */
+export function sourceTag(a: ActiveTrait): string {
+  const lv = a.trait.level ?? 1
+  if (a.race.type === 'class') return `${a.race.name} ${lv}`
+  if (a.race.type === 'subclass') return `${withoutClass(a.race.name, String(a.race.fields.class ?? '')) ?? a.race.name} ${lv}`
+  if (a.race.type === 'feat' && a.trait.name === a.race.name) return 'feat'
+  return a.race.name
 }
 /** Whether a trait is one a picked option brought (it isn't in the entry's own traits). */
 export const isSubChoice = (a: ActiveTrait) => !!(a.trait as Trait & { sub?: boolean }).sub
@@ -282,6 +293,9 @@ export const choiceCount = (a: ActiveTrait) => (a.trait.choice ? byLevel(a.trait
 /** Whether a trait's choice still waits for the player. */
 export const choiceOpen = (a: ActiveTrait) => (!!a.trait.castWith?.among?.length && !a.cast)
   || (!!a.trait.choice && (a.trait.choice.kind === 'option' ? a.options.length : a.picks.length) < choiceCount(a))
+/** How many picks a trait still waits for: its choice's open picks, and its casting ability if not picked. */
+export const picksLeft = (a: ActiveTrait) => (a.trait.castWith?.among?.length && !a.cast ? 1 : 0)
+  + (a.trait.choice ? Math.max(0, choiceCount(a) - (a.trait.choice.kind === 'option' ? a.options.length : a.picks.length)) : 0)
 /** Pick the ability a trait's spells are cast with ('' takes the pick back). */
 export function setCastAbility(s: CharacterSheet, key: string, ability: Ability | '') {
   const st = edit(s), all = { ...(st.abilities ?? {}) }

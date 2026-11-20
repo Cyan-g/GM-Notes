@@ -10,8 +10,9 @@ import type { CharacterSheet, Entry, Feature, TraitOption } from '../model/types
 import { editSheet } from '../sheet'
 import { get, state } from '../store'
 import { hrefEntry } from '../router'
+import { ui } from '../ui'
 import {
-  backgroundOf, choiceCandidates, choiceOpen, featOfFeature, isClassOrigin, scaleAt, shownInPlay, speciesTraits, spendUse, traitsOf, usesLeft, usesMax,
+  backgroundOf, choiceCandidates, choiceOpen, featOfFeature, picksLeft, sourceTag, isClassOrigin, scaleAt, shownInPlay, speciesTraits, spendUse, traitsOf, usesLeft, usesMax,
   type ActiveTrait,
 } from '../species'
 import EntryLink from './EntryLink.vue'
@@ -48,12 +49,12 @@ const originFeat = computed(() => {
   return f && !live(f) && !props.s.features.some(x => x.name.toLowerCase().startsWith(f.name.toLowerCase())) ? f : undefined
 })
 /** The sheet's feature lines, but for feats whose features are listed. */
-const ownFeatures = computed(() => props.s.features.filter(f => !live(featOfFeature(f))))
+const ownFeatures = computed(() => props.s.features.filter(f => f.name.trim() && !live(featOfFeature(f))))
 const use = (a: ActiveTrait, n: number) => { if (!ro.value) editSheet(props.pc, x => spendUse(x, props.pc, a, n)) }
 const max = (a: ActiveTrait) => usesMax(props.pc, a, props.s)
 const left = (a: ActiveTrait) => usesLeft(props.pc, props.s, a)
 /** The source tag: the class (with its level) or subclass, the race, the background. */
-const tag = (a: ActiveTrait) => (a.race.type === 'class' ? `${a.race.name} ${a.trait.level ?? 1}` : a.race.type === 'feat' && a.trait.name === a.race.name ? 'feat' : a.race.name)
+const tag = sourceTag
 /** Weapons to master and other plain picks, by name. */
 const pickNames = (a: ActiveTrait) => (a.trait.choice && a.trait.choice.kind === 'mastery'
   ? a.picks.map(id => choiceCandidates(a.trait.choice!).find(o => o.id === id)?.label ?? id) : [])
@@ -75,7 +76,7 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
             <span class="feat-tag" :class="'tag-' + l.a.race.type" :title="`From ${l.a.race.name}`">{{ tag(l.a) }}</span>
             <span v-if="scaleAt(l.a)" class="chip sp-scale">{{ l.a.trait.scale!.label }} {{ scaleAt(l.a) }}</span>
             <span v-if="pickNames(l.a).length" class="muted small">{{ pickNames(l.a).join(', ') }}</span>
-            <a v-if="choiceOpen(l.a) && !ro" class="sp-open small" :href="hrefEntry(pc.id, true)" title="Choose on the Edit page" @click.stop>to choose ✎</a>
+            <a v-if="choiceOpen(l.a) && !ro" class="sp-open small" :href="hrefEntry(pc.id, true)" title="Pick on the Edit page" @click.stop="ui.scrollTo = 'choices'">{{ picksLeft(l.a) }} to pick ✎</a>
             <span v-if="max(l.a)" class="sp-uses" :title="`Uses; back on a ${l.a.trait.uses!.recharge} rest${l.a.trait.uses!.shortBack ? `, ${l.a.trait.uses!.shortBack} on a short rest` : ''}`" @click.stop.prevent>
               <template v-if="max(l.a) <= 10">
                 <button v-for="p in max(l.a)" :key="p" class="pip" :class="{ on: p <= left(l.a) }" :disabled="ro"
@@ -89,7 +90,7 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
             </span>
           </summary>
           <MarkdownView v-if="l.a.trait.text" class="small sp-text" :source="l.a.trait.text" />
-          <TraitChips :t="l.a.trait" no-uses />
+          <TraitChips :t="l.a.trait" no-uses :reached="l.a.level" />
         </details>
       </div>
       <!-- a picked option (an invocation, a Metamagic option, a lineage…) -->
@@ -98,7 +99,7 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
           <summary class="sp-head"><b>{{ l.o.name }}</b>
             <span class="feat-tag" :class="'tag-' + l.a.race.type" :title="`Picked in ${l.a.trait.name}, from ${l.a.race.name}`">{{ l.a.trait.name }}</span></summary>
           <MarkdownView v-if="l.o.text" class="small sp-text" :source="l.o.text" />
-          <TraitChips :t="l.o" />
+          <TraitChips :t="l.o" :reached="l.a.level" />
         </details>
       </div>
       <!-- a picked feat (a Fighting Style) -->
@@ -140,9 +141,9 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
 
     <!-- still to come -->
     <details v-if="later.length" class="sp-later small">
-      <summary class="muted">Later: {{ later.map(a => `${a.trait.name} (${a.race.name} ${a.trait.level})`).join(', ') }}</summary>
+      <summary class="muted">Later: {{ later.map(a => `${a.trait.name} (${tag(a)})`).join(', ') }}</summary>
       <div v-for="a in later" :key="a.key" class="sp-trait dim">
-        <b>{{ a.trait.name }}</b> <span class="feat-tag" :class="'tag-' + a.race.type">{{ a.race.name }} {{ a.trait.level }}</span>
+        <b>{{ a.trait.name }}</b> <span class="feat-tag" :class="'tag-' + a.race.type">{{ tag(a) }}</span>
         <MarkdownView v-if="a.trait.text" class="small" :source="a.trait.text" />
       </div>
     </details>

@@ -77,6 +77,25 @@ const canCast = (e: Entry) => {
 const granted = computed(() => (owner.value ? grantedSpells(sheetOf(owner.value)) : []))
 /** Spells from the character's species (species.ts): at will, once per rest, or always prepared. */
 const innate = computed(() => (owner.value ? speciesSpells(owner.value, sheetOf(owner.value)) : []))
+/**
+ * The species' and features' spells as table rows: a feature's always-prepared spells, when it has more than three
+ * (a subclass's list), fold into one row that opens on a click.
+ */
+const openGroups = ref(new Set<string>())
+const toggleGroup = (k: string) => { const s = new Set(openGroups.value); if (s.has(k)) s.delete(k); else s.add(k); openGroups.value = s }
+const innateRows = computed(() => {
+  const big = new Map<string, SpeciesSpell[]>()
+  for (const x of innate.value) if (x.spell.how === 'prepared') big.set(x.from, [...(big.get(x.from) ?? []), x])
+  for (const [k, l] of big) if (l.length <= 3) big.delete(k)
+  const rows: { key: string; group?: boolean; count?: number; names?: string; x?: SpeciesSpell }[] = []
+  const seen = new Set<string>()
+  for (const x of innate.value) {
+    const g = x.spell.how === 'prepared' ? big.get(x.from) : undefined
+    if (g && !seen.has(x.from)) { seen.add(x.from); rows.push({ key: x.from, group: true, count: g.length, names: g.map(y => get(y.spell.spell)?.name).join(', ') }) }
+    if (!g || openGroups.value.has(x.from)) rows.push({ key: x.key, x })
+  }
+  return rows
+})
 const castInnate = (x: SpeciesSpell, back = false) => { if (owner.value) editSheet(owner.value, s => useSpeciesSpell(s, x.key, back)) }
 const castItem = (g: GrantedSpell) => { if (owner.value) editSheet(owner.value, s => castFromItem(s, g)) }
 const giveBack = (g: GrantedSpell) => { if (owner.value) editSheet(owner.value, s => unuse(s, g)) }
@@ -113,8 +132,8 @@ function check(e: Entry, ability?: Ability) {
   if (ability && caster.value) {
     // a trait's spell cast with its own ability (a High Elf's cantrip: Intelligence)
     const st = spellStats(caster.value, ability), short = ability.toUpperCase()
-    if (st && f.spellType === 'Saving throw') return `${f.savingThrow ? optionLabel('ability', f.savingThrow).slice(0, 3).toUpperCase() + ' ' : ''}save DC ${st.dc} (${short})`
-    if (st && f.spellType === 'Attack') return `Spell attack ${st.attack >= 0 ? '+' : ''}${st.attack} (${short})`
+    if (st && f.spellType === 'Saving throw') return `${f.savingThrow ? optionLabel('ability', f.savingThrow).slice(0, 3).toUpperCase() + ' ' : ''}save DC ${st.dc} · cast with ${short}`
+    if (st && f.spellType === 'Attack') return `Spell attack ${st.attack >= 0 ? '+' : ''}${st.attack} · cast with ${short}`
   }
   if (f.spellType === 'Saving throw') return `${f.savingThrow ? optionLabel('ability', f.savingThrow).slice(0, 3).toUpperCase() + ' ' : ''}save DC ${dc.value ?? '?'}`
   if (f.spellType === 'Attack') return `Spell attack ${attack.value != null ? (attack.value >= 0 ? '+' : '') + attack.value : '?'}`
@@ -279,7 +298,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
 
         </h3>
         <table class="grid">
-          <thead><tr><th>Spell</th><th>Level</th><th>{{ granted.length ? 'Item' : 'Trait' }}</th><th>How</th><th>Casting time</th><th>Range</th><th>Attack / save</th><th></th></tr></thead>
+          <thead><tr><th>Spell</th><th>Level</th><th>From</th><th>How</th><th>Casting time</th><th>Range</th><th>Attack / save</th><th></th></tr></thead>
           <tbody>
             <tr v-for="g in granted" :key="g.i + '-' + g.k" :class="{ dim: !g.ready }">
               <td><a :href="hrefEntry(g.spell.spell)" class="spell-link" @click="openSpell($event, g.spell.spell)">{{ get(g.spell.spell)!.name }}</a></td>
@@ -297,21 +316,27 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
                 <span v-else class="muted small">no charges</span>
               </td>
             </tr>
-            <tr v-for="x in innate" :key="x.key" :class="{ dim: !x.ready }">
-              <td><a :href="hrefEntry(x.spell.spell)" class="spell-link" @click="openSpell($event, x.spell.spell)">{{ get(x.spell.spell)!.name }}</a></td>
-              <td>{{ levelLabel(get(x.spell.spell)!) }}</td>
-              <td>{{ x.from }}</td>
-              <td><span v-flash.neutral="x.ready">{{ x.status }}</span></td>
-              <td>{{ get(x.spell.spell)!.fields.castingTime ?? '' }}</td>
-              <td>{{ get(x.spell.spell)!.fields.range ?? '' }}</td>
-              <td class="sbk-check">{{ check(get(x.spell.spell)!, x.spell.ability) }}</td>
+            <template v-for="row in innateRows" :key="row.key">
+            <tr v-if="row.group" class="sbk-group">
+              <td colspan="8"><button class="link-btn" :aria-expanded="openGroups.has(row.key)" @click="toggleGroup(row.key)">{{ openGroups.has(row.key) ? '▾' : '▸' }} {{ row.key }}</button>
+                <span class="muted small"> {{ row.count }} spells, always prepared: {{ row.names }}</span></td>
+            </tr>
+            <tr v-else-if="row.x" :class="{ dim: !row.x.ready }">
+              <td><a :href="hrefEntry(row.x!.spell.spell)" class="spell-link" @click="openSpell($event, row.x!.spell.spell)">{{ get(row.x!.spell.spell)!.name }}</a></td>
+              <td>{{ levelLabel(get(row.x!.spell.spell)!) }}</td>
+              <td>{{ row.x!.from }}</td>
+              <td><span v-flash.neutral="row.x!.ready">{{ row.x!.status }}</span></td>
+              <td>{{ get(row.x!.spell.spell)!.fields.castingTime ?? '' }}</td>
+              <td>{{ get(row.x!.spell.spell)!.fields.range ?? '' }}</td>
+              <td class="sbk-check">{{ check(get(row.x!.spell.spell)!, row.x!.spell.ability) }}</td>
               <td class="sbk-actions">
-                <template v-if="x.spell.how === 'prepared'"><span class="muted small" title="Always prepared; cast with your own spell slots">own slots</span></template>
-                <template v-else-if="x.spell.how === 'atWill'"><span class="muted small">at will</span></template>
-                <button v-else-if="x.ready" class="chip-btn" title="Mark it used until the rest" @click="castInnate(x)">Cast</button>
-                <button v-else class="link-btn small" title="Give this use back" @click="castInnate(x, true)">↺</button>
+                <template v-if="row.x!.spell.how === 'prepared'"><span class="muted small" title="Always prepared; cast with your own spell slots">own slots</span></template>
+                <template v-else-if="row.x!.spell.how === 'atWill'"><span class="muted small">at will</span></template>
+                <button v-else-if="row.x!.ready" class="chip-btn" title="Mark it used until the rest" @click="castInnate(row.x!)">Cast</button>
+                <button v-else class="link-btn small" title="Give this use back" @click="castInnate(row.x!, true)">↺</button>
               </td>
             </tr>
+            </template>
           </tbody>
         </table>
       </section>

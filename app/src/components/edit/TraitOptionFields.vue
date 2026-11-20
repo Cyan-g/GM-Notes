@@ -80,7 +80,6 @@ const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement | 
             <option value="">any list</option>
             <option v-for="o in listOptions('class')" :key="o.id" :value="o.id">{{ o.label }} list</option>
           </select>
-          <button type="button" class="link-btn" title="Remove" @click="removeSpell(i)">×</button>
         </div>
         <EntryPicker add :types="['spell']" :exclude="spells.map(x => x.spell)" placeholder="Add a spell…" @pick="addSpell" />
       </div>

@@ -66,7 +66,8 @@ const stock = computed(() => {
     <template v-if="eq.instead">{{ eq.items?.length || eq.money ? '; or ' : '' }}{{ formatMoney(eq.instead) }} instead</template>
   </span>
   <template v-else-if="def.kind === 'abilityBonus'">{{ abilityBonusText(value as AbilityBonus) }}</template>
-  <TraitList v-else-if="def.kind === 'speciesTraits'" :traits="(value as Trait[])" />
+  <TraitList v-else-if="def.kind === 'speciesTraits'" :traits="(value as Trait[])" :known="`${entry.fields.summary ?? ''}
+${entry.body ?? ''}`" />
   <template v-else-if="def.kind === 'itemSpells'">
     <span class="chips"><span v-for="(x, i) in (value as ItemSpell[])" :key="i" class="chip"><EntryLink :id="x.spell" /> <span class="muted small">{{ howCast(x) }}</span></span></span>
   </template>

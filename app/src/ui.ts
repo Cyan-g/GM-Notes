@@ -13,6 +13,8 @@ export const ui = reactive({
   treeAsList: false,
   /** An exported file waiting to be imported (the import dialog shows it). */
   importPlan: null as ImportPlan | null,
+  /** Where the next page scrolls to when it opens ('choices': a character's choices card on the Edit page). */
+  scrollTo: '' as string,
   /** The Export the world dialog. */
   worldExport: false,
   /** The Publish for players dialog. */

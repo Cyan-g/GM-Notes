@@ -1124,6 +1124,10 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .cs-hp { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem .8rem; padding: .45rem .7rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
 .cs-hp-main { flex: 1 1 10rem; }
 .cs-dice { justify-content: space-between; }
+.cs-uses { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: .2rem 1rem; align-items: center; }
+.cs-uses > .cs-label { grid-column: 1 / -1; }
+.cs-use { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-width: 0; }
+.cs-use-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .cs-hp-row { display: flex; align-items: center; gap: .4rem; }
 .cs-hp-row input { width: 3.6em; text-align: center; -moz-appearance: textfield; }
 .cs-hp-row input::-webkit-inner-spin-button, .cs-hp-row input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -1647,6 +1651,32 @@ button.live-tag { cursor: pointer; }
 .sp-trait > p.md { margin: .2rem 0; }
 .sp-choice { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .35rem; }
 .sp-choice select { width: auto; }
+/* the choice picker: a count, a filter, and options as a list with their text */
+.sp-choice-list { display: block; }
+.wz-choice > .sp-choice, .wz-choice > .wz-rules, .wz-choice > .wz-cast { flex-basis: 100%; }
+.sp-pick-head { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem; flex-basis: 100%; }
+.sp-count { color: var(--accent); }
+.sp-count.done { color: var(--muted); font-weight: normal; }
+.sp-filter { width: 12rem; padding: .15rem .45rem; }
+.sp-optlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: .35rem; margin-top: .4rem; max-height: 28rem; overflow: auto; padding-right: .2rem; }
+.sp-opt { display: flex; gap: .45rem; align-items: flex-start; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.sp-opt.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.sp-opt.off { opacity: .55; cursor: default; }
+.sp-opt input { width: auto; margin-top: .25rem; flex: none; }
+.sp-opt-body { display: grid; gap: .1rem; min-width: 0; }
+.sp-opt-head { display: flex; flex-wrap: wrap; gap: .3rem; align-items: baseline; }
+.sp-prereq { font-size: 11px; color: var(--muted); font-style: italic; }
+.sp-opt.early .sp-prereq { color: var(--ink); font-style: normal; padding: 0 .35rem; border-radius: 999px; background: color-mix(in srgb, var(--warn) 30%, transparent); }
+.sp-opt-more > summary { cursor: pointer; color: var(--link); }
+.sp-pick-selects { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .3rem; }
+.sp-pick-selects select { width: auto; }
+.char-sheet > .feature-choices { padding: .7rem .9rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.sp-given { margin-top: .3rem; }
+.trait-more { margin: .3rem 0; }
+.trait-more > summary { cursor: pointer; color: var(--link); }
+.sp-given > summary { cursor: pointer; list-style: none; }
+.sp-given > summary::-webkit-details-marker { display: none; }
+.link-like { color: var(--link); }
 .sp-grants { display: flex; flex-wrap: wrap; gap: .35rem .6rem; margin-top: .35rem; }
 .sp-grant { display: inline-flex; align-items: center; gap: .3rem; }
 .sp-grant select { width: auto; padding-top: 1px; padding-bottom: 1px; }

@@ -8,7 +8,10 @@ import { ABILITY_NAME } from '../abilityBonus'
 import TraitChips from './TraitChips.vue'
 import MarkdownView from './MarkdownView.vue'
 
-const props = defineProps<{ traits: Trait[]; /** On a subrace's page: its name; an option choice with an option of that name (a lineage) shows only that one. */ lineage?: string; /** The race it's a subrace of (its name is left out when matching). */ parent?: string }>()
+const props = defineProps<{ traits: Trait[]; /** On a subrace's page: its name; an option choice with an option of that name (a lineage) shows only that one. */ lineage?: string; /** The race it's a subrace of (its name is left out when matching). */ parent?: string; /** The page's own description: a trait text it already says isn't shown again (a feat's). */ known?: string }>()
+/** A text the page's description already holds, ignoring spacing and markup. */
+const flat = (x: string) => x.replace(/[\s*_]+/g, ' ').trim().toLowerCase()
+const said = (t?: string) => !!t && !!props.known && flat(props.known).includes(flat(t))
 /** The options of a choice to show: only the subrace's lineage, if it's one of them. */
 const shownOptions = (c: TraitChoice) => {
   const own = props.lineage ? subraceOption(c, props.lineage, props.parent ?? '') : undefined
@@ -36,8 +39,8 @@ const scale = (t: Trait) => t.scale ? `${t.scale.label}: ${t.scale.steps.map(([l
     <template v-for="t in traits" :key="t.id">
       <dt>{{ t.name }} <span v-if="(t.level ?? 1) > 1" class="muted small">from level {{ t.level }}</span></dt>
       <dd>
-        <MarkdownView v-if="multi(t.text)" class="trait-md" :source="t.text!" />
-        <span v-else-if="t.text" class="md" v-html="renderInline(t.text)" />
+        <MarkdownView v-if="multi(t.text) && !said(t.text)" class="trait-md" :source="t.text!" />
+        <span v-else-if="t.text && !said(t.text)" class="md" v-html="renderInline(t.text)" />
         <TraitChips :t="t" />
         <span v-if="t.scale" class="muted small trait-choice">{{ scale(t) }}</span>
         <span v-if="t.castWith" class="muted small trait-choice">{{ castText(t) }}</span>

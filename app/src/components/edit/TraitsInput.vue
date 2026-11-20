@@ -11,6 +11,13 @@ import ChoiceFields from './ChoiceFields.vue'
 import TraitChips from '../TraitChips.vue'
 
 const model = defineModel<Trait[] | undefined>()
+const props = defineProps<{ /** The entry's type: more spell lists are offered on a class or subclass only. */ entryType?: string }>()
+const forClass = computed(() => props.entryType === 'class' || props.entryType === 'subclass')
+/** The folded settings a trait has set, in a word each, for the fold's label. */
+const moreSet = (t: Trait) => [
+  t.onSheet && (t.onSheet === 'show' ? 'always on the sheet' : 'not in play'), t.uses && 'limited uses', t.scale && 'scaling value',
+  t.castWith && 'spells cast with', t.spellLists?.length && 'more spell lists',
+].filter(Boolean) as string[]
 const list = computed(() => model.value ?? [])
 const save = (l: Trait[]) => { model.value = l.length ? l : undefined }
 function put(i: number, t: Trait) { const l = [...list.value]; l[i] = t; save(l) }
@@ -110,6 +117,11 @@ const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
       <TraitOptionFields :model-value="t" @update:model-value="v => put(i, v as Trait)" />
       <div class="trait-row">
         <label class="small">From level <input type="number" min="1" max="20" class="effect-value" :value="t.level ?? 1" @change="patch(i, { level: Number(val($event)) || 1 })" /></label>
+      </div>
+      <!-- the settings most traits don't need, folded; open when one of them is set -->
+      <details class="trait-more" :open="moreSet(t).length > 0">
+        <summary class="small">More settings<span v-if="moreSet(t).length" class="muted">: {{ moreSet(t).join(', ') }}</span></summary>
+      <div class="trait-row">
         <label class="small" title="Listed on the sheet in play? By default only when there's something to use or read there; one that only gives proficiencies, spells or numbers the sheet shows anyway is left out.">On the sheet
           <select :value="t.onSheet ?? ''" @change="patch(i, { onSheet: (val($event) || undefined) as Trait['onSheet'] })">
             <option value="">when useful</option><option value="show">always</option><option value="hide">not in play</option>
@@ -146,7 +158,7 @@ const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
           <option v-for="o in list.filter(x => x.id !== t.id)" :key="o.id" :value="o.id">{{ o.name }}</option>
         </select>
       </div>
-      <div class="trait-row">
+      <div v-if="forClass || t.spellLists?.length" class="trait-row">
         <details class="trait-among">
           <summary class="small" title="Its class can also take spells from these lists (Magical Secrets)">More spell lists: {{ t.spellLists?.join(', ') || 'none' }}</summary>
           <div class="seg wrap">
@@ -154,6 +166,7 @@ const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
           </div>
         </details>
       </div>
+      </details>
       <div class="trait-row">
         <select :value="t.choice?.kind ?? ''" aria-label="Choice for the player" @change="setChoiceKind(i, val($event))">
           <option v-for="c in CHOICE_KINDS" :key="c.id" :value="c.id">{{ c.label }}</option>

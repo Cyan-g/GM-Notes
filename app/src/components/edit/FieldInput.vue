@@ -80,7 +80,7 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
   <RanksInput v-else-if="def.kind === 'ranks'" v-model="value" />
   <EffectsInput v-else-if="def.kind === 'effects'" v-model="value" />
   <ItemSpellsInput v-else-if="def.kind === 'itemSpells'" v-model="value" />
-  <TraitsInput v-else-if="def.kind === 'speciesTraits'" v-model="value" />
+  <TraitsInput v-else-if="def.kind === 'speciesTraits'" v-model="value" :entry-type="entry.type" />
   <AbilityBonusInput v-else-if="def.kind === 'abilityBonus'" v-model="value" />
   <ProfChips v-else-if="def.kind === 'skills'" :values="value ?? []" :toggles="SKILL_OPTIONS" @change="value = $event.length ? $event : undefined" />
   <EquipmentInput v-else-if="def.kind === 'equipment'" v-model="value" />

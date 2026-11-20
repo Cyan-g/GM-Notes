@@ -25,7 +25,7 @@ const grand = (e: Entry) => entries.value.filter(x => x.type === 'race' && x.fie
         <span v-if="grand(s)" class="muted small">{{ grand(s) }} subraces of its own</span>
       </div>
       <span v-if="traitsOf(s).length" class="chips"><span v-for="t in traitsOf(s)" :key="t.id" class="chip" :title="t.text">{{ t.name }}</span></span>
-      <span v-else class="muted small">No traits of its own yet.</span>
+      <span v-else class="muted small">Only the {{ race.name }}'s traits.</span>
     </div>
   </div>
 </template>

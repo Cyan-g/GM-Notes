@@ -43,6 +43,26 @@ const MODE: Record<string, string> = { adv: 'Advantage', dis: 'Disadvantage' }
 const ABILITY_SHORT: Record<string, string> = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' }
 const signed = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`)
 
+/**
+ * A list of effects in a few words each, with the same advantage on every saving throw said once ("Advantage on
+ * all saves against spells and magical effects" for Magic Resistance's six).
+ */
+export function describeEffects(list: GearEffect[]): string[] {
+  const out: string[] = [], done = new Set<GearEffect>()
+  for (const f of list) {
+    if (done.has(f)) continue
+    if (f.on === 'saveAdv') {
+      const same = list.filter(x => x.on === 'saveAdv' && x.mode === f.mode && (x.note ?? '') === (f.note ?? ''))
+      if (new Set(same.map(x => x.ability)).size === 6) {
+        same.forEach(x => done.add(x))
+        out.push(`${MODE[f.mode ?? 'adv']} on all saves${f.note ? ' ' + f.note : ''}`)
+        continue
+      }
+    }
+    out.push(describeEffect(f))
+  }
+  return out
+}
 /** An effect in a few words: "+1 AC", "STR 19", "Resistance: fire", "+2 Stealth". */
 export function describeEffect(f: GearEffect): string {
   const v = Number(f.value) || 0

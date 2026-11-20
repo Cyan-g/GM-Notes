@@ -71,7 +71,8 @@ A player character's page is its sheet for play; ✎ Edit builds it.
   when equipping.
 - **Species and backgrounds:** set up by the GM, picked on the character. Their traits carry effects, proficiencies
   and languages, spells, uses per rest and choices the player makes on the sheet (a lineage, skills, a tool); a
-  subrace adds its main race's traits. Every granted proficiency can be swapped by the player. Ability score bonuses
+  subrace adds its main race's traits. The Races list shows subraces under their race (▾/▸ folds them), a race's
+  page lists its subraces with their bonuses and traits, and the creation wizard asks for the race, then the subrace. Every granted proficiency can be swapped by the player. Ability score bonuses
   (fixed, picks, alternatives, a cap) and a background's starting equipment are stored as data and only handed out by
   the creation wizard.
 - **The current character** (☆ on a sheet) is the one the Spellbook (spells, slots, prepared spells, spells from items

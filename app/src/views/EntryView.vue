@@ -42,6 +42,7 @@ import { describe } from '../describe'
 import TimelineChart from '../components/TimelineChart.vue'
 import TimelineList from '../components/TimelineList.vue'
 import { allItems, filterItems } from '../timeline'
+import SubraceCards from '../components/SubraceCards.vue'
 
 const props = defineProps<{ id: string; tab?: EntryTab }>()
 const e = computed(() => get(props.id))
@@ -380,8 +381,9 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
           <h3>{{ f.label }}</h3>
           <FieldValue :def="f" :value="byKey(e.fields)[f.key]" :entry="e" />
         </div>
-        <div v-if="children.length" class="card subregions">
-          <h3>{{ e.type === 'place' ? 'Subregions' : e.type === 'race' ? 'Subraces' : 'Part of this' }}
+        <SubraceCards v-if="e.type === 'race'" :race="e" />
+        <div v-if="children.length && e.type !== 'race'" class="card subregions">
+          <h3>{{ e.type === 'place' ? 'Subregions' : 'Part of this' }}
             <span class="seg small-seg"><button type="button" :class="{ on: !ui.treeAsList }" @click="ui.treeAsList = false">◎ Rings</button><button type="button" :class="{ on: ui.treeAsList }" @click="ui.treeAsList = true">☰ List</button></span></h3>
           <SubTree v-if="ui.treeAsList" :id="e.id" />
           <Sunburst v-else :id="e.id" :key="'sb-' + e.id" />

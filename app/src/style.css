@@ -1741,3 +1741,10 @@ button.live-tag { cursor: pointer; }
   .wizard-grid { grid-template-columns: 1fr; }
   .wizard-steps { position: static; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); }
 }
+/* A table shown as a tree (DataTable's tree): ▸/▾ before each row with children. */
+.tree-toggle { width: 1.2rem; padding: 0; margin-right: .25rem; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 12px; }
+.tree-toggle.none { cursor: default; }
+.grid tr.tree-child td.name { font-size: .95em; }
+.subrace-card { display: grid; gap: .3rem; padding: .5rem 0; border-top: 1px solid var(--line); }
+.subrace-card:first-of-type { border-top: 0; }
+.sr-head { display: flex; flex-wrap: wrap; gap: .2rem .6rem; align-items: baseline; }

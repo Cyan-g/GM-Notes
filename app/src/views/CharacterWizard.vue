@@ -6,7 +6,7 @@ import { computed, ref, watch } from 'vue'
 import type { Entry, Id, TraitGrant } from '../model/types'
 import {
   POINTS, POINT_COST, STANDARD_ARRAY, backgroundGold, backgroundKit, backgrounds, bonusAdds, bonusOf, casts, dieOfDraft,
-  draftPc, featLevels, finalScores, hpOf, itemNamed, kitsOf, makeCharacter, pointsSpent, resetWizard, rules, species,
+  draftPc, featLevels, finalScores, hpOf, itemNamed, kitsOf, makeCharacter, pointsSpent, resetWizard, rules, species, subracesOf, mainRace,
   spellChoices, spellCounts, steps, subclassesOf, wizard,
 } from '../wizard'
 import { SUBCLASS_LEVEL } from '../classRules'
@@ -44,6 +44,9 @@ watch(() => d.value.level, () => { if (d.value.level < SUBCLASS_LEVEL) wizard.d.
 
 // ---- species and background ----
 const raceList = computed(() => species())
+/** The main race picked, and its subraces (the character gets the subrace once one is picked). */
+const main = computed(() => mainRace(d.value.race))
+const subs = computed(() => subracesOf(main.value?.id))
 const bgList = computed(() => backgrounds())
 const pc = computed(() => draftPc(d.value))
 const choices = computed(() => speciesTraits(pc.value).filter(a => a.active && a.trait.choice))
@@ -205,9 +208,15 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
         <template v-else-if="step.id === 'origin'">
           <div class="wz-row">
             <label>Species
-              <select :value="d.race ?? ''" @change="wizard.d.race = val($event) || undefined">
+              <select :value="main?.id ?? ''" @change="wizard.d.race = val($event) || undefined">
                 <option value="">Choose…</option>
-                <option v-for="x in raceList" :key="x.id" :value="x.id">{{ x.fields.parent ? `${get(x.fields.parent)?.name ?? '?'} › ${x.name}` : x.name }}</option>
+                <option v-for="x in raceList" :key="x.id" :value="x.id">{{ x.name }}{{ subracesOf(x.id).length ? ` (${subracesOf(x.id).length} subrace${subracesOf(x.id).length === 1 ? '' : 's'})` : '' }}</option>
+              </select>
+            </label>
+            <label v-if="subs.length">Subrace
+              <select :value="d.race !== main?.id ? d.race : ''" @change="wizard.d.race = val($event) || main?.id">
+                <option value="">Choose…</option>
+                <option v-for="x in subs" :key="x.id" :value="x.id">{{ x.name }}</option>
               </select>
             </label>
             <label>Background

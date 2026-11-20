@@ -186,7 +186,7 @@ export function steps(d: Draft): Step[] {
   const r = rules(d), pc = draftPc(d)
   const s: Step[] = []
   s.push({ id: 'class', label: 'Class', open: [!d.cls && 'a class', !!d.cls && d.level >= SUBCLASS_LEVEL && !d.subclass && subclassesOf(d.cls).length ? 'a subclass' : ''].filter(Boolean) as string[] })
-  s.push({ id: 'origin', label: 'Species & background', open: [!d.race && 'a species', !d.background && backgrounds().length ? 'a background' : '',
+  s.push({ id: 'origin', label: 'Species & background', open: [!d.race && 'a species', d.race && subracesOf(d.race).length ? 'a subrace' : '', !d.background && backgrounds().length ? 'a background' : '',
     ...speciesTraits(pc).filter(a => a.active && choiceOpen(a)).map(a => `${a.trait.name} (${a.race.name})`)].filter(Boolean) as string[] })
   const unset = ABILITY_KEYS.filter(a => d.base[a] == null).length
   s.push({ id: 'scores', label: 'Ability scores', open: [
@@ -222,10 +222,15 @@ export function steps(d: Draft): Step[] {
 
 export const subclassesOf = (cls: string) => entries.value.filter(e => e.type === 'subclass' && e.fields.class === cls).sort((a, b) => a.name.localeCompare(b.name))
 export const backgrounds = () => entries.value.filter(e => e.type === 'background').sort((a, b) => a.name.localeCompare(b.name))
-/** Every species, each main race followed by its subraces. */
-export const species = () => {
-  const key = (e: Entry) => { const p = get(e.fields.parent as Id | undefined); return p ? `${p.name}${e.name}` : e.name }
-  return entries.value.filter(e => e.type === 'race').sort((a, b) => key(a).localeCompare(key(b)))
+/** The main races (no "Subrace of"), by name. */
+export const species = () => entries.value.filter(e => e.type === 'race' && !get(e.fields.parent as Id | undefined)).sort((a, b) => a.name.localeCompare(b.name))
+/** A race's subraces, by name. */
+export const subracesOf = (id: Id | undefined) => (id ? entries.value.filter(e => e.type === 'race' && e.fields.parent === id).sort((a, b) => a.name.localeCompare(b.name)) : [])
+/** The main race of a race (itself if it has none). */
+export function mainRace(id: Id | undefined): Entry | undefined {
+  let r = get(id)
+  for (let i = 0; r && get(r.fields.parent as Id | undefined) && i < 10; i++) r = get(r.fields.parent as Id | undefined)
+  return r
 }
 export const isClassKnown = (cls: string) => !!CLASS_RULES[cls]
 

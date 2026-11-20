@@ -9,7 +9,7 @@ import { computed, ref, watch } from 'vue'
 import type { Entry, EntryType } from '../model/types'
 import { column, facet } from '../columns'
 import { formatMoney } from '../store'
-import { TYPES, typeWord } from '../model/schema'
+import { TYPES, byKey, typeWord } from '../model/schema'
 import { newEntry, printCards } from '../ui'
 import EntryLink from './EntryLink.vue'
 import FieldValue from './FieldValue.vue'
@@ -23,6 +23,8 @@ const props = withDefaults(defineProps<{
   type?: EntryType
   /** The type the view's ＋ New makes, for its empty state. */
   creates?: EntryType
+  /** Show the rows as a tree by this field (a ref to the parent: a subrace's main race); children sort under it. */
+  tree?: string
 }>(), { facets: () => [], sort: () => ({ key: 'name', dir: 1 as const }) })
 
 /** The columns, leaving out any with nothing in any row (a Player nobody filled in). */
@@ -55,6 +57,32 @@ const shown = computed(() => {
     facetDefs.value.every(({ f }) => !chosen.value[f.key] || f.match(e, chosen.value[f.key])))
   return sorted(list, sortKey.value, sortDir.value)
 })
+
+// ---- as a tree: each row under its parent (rows that match a filter bring their parents along) ----
+const collapsed = ref(new Set<string>())
+const parentOf = (e: Entry) => (props.tree ? (byKey(e.fields)[props.tree] as string | undefined) : undefined)
+const tableRows = computed(() => {
+  if (!props.tree) return shown.value.map(e => ({ e, depth: 0, kids: 0 }))
+  const byId = new Map(base.value.map(e => [e.id, e]))
+  const keep = new Map(shown.value.map(e => [e.id, e]))
+  for (const e of shown.value) for (let p = byId.get(parentOf(e) ?? ''); p && !keep.has(p.id); p = byId.get(parentOf(p) ?? '')) keep.set(p.id, p)
+  const order = sorted([...keep.values()], sortKey.value, sortDir.value)
+  const kids = new Map<string, Entry[]>()
+  for (const e of order) { const p = parentOf(e); if (p && keep.has(p)) { if (!kids.has(p)) kids.set(p, []); kids.get(p)!.push(e) } }
+  const filtering = !!q.value.trim() || Object.values(chosen.value).some(Boolean)
+  const out: { e: Entry; depth: number; kids: number }[] = []
+  const walk = (e: Entry, depth: number) => {
+    out.push({ e, depth, kids: kids.get(e.id)?.length ?? 0 })
+    if (filtering || !collapsed.value.has(e.id)) for (const k of kids.get(e.id) ?? []) if (depth < 10) walk(k, depth + 1)
+  }
+  for (const e of order) { const p = parentOf(e); if (!p || !keep.has(p)) walk(e, 0) }
+  return out
+})
+function toggleTree(id: string) {
+  const s = new Set(collapsed.value)
+  if (s.has(id)) s.delete(id); else s.add(id)
+  collapsed.value = s
+}
 
 function sortBy(k: string) {
   if (sortKey.value === k) sortDir.value *= -1
@@ -111,8 +139,9 @@ defineExpose({ count: computed(() => shown.value.length) })
           </tr>
         </thead>
         <tbody>
-          <tr v-for="e in shown" :key="e.id">
-            <td class="name" @click.capture="open($event, e)"><EntryLink :id="e.id" :icon="e.type === 'pc'" /><span v-if="e.id === currentPc?.id" class="current-mark" title="The current character"><AppIcon ui="star" /> current</span></td>
+          <tr v-for="{ e, depth, kids } in tableRows" :key="e.id" :class="{ 'tree-child': depth }">
+            <td class="name" :style="tree ? { paddingLeft: `${0.6 + depth * 1.3}rem` } : undefined" @click.capture="open($event, e)"><button v-if="tree" type="button" class="tree-toggle" :class="{ none: !kids }" :disabled="!kids"
+                :title="kids ? (collapsed.has(e.id) ? `Show its ${kids}` : 'Hide them') : ''" @click.stop="toggleTree(e.id)">{{ kids ? (collapsed.has(e.id) ? '▸' : '▾') : '' }}</button><EntryLink :id="e.id" :icon="e.type === 'pc'" /><span v-if="e.id === currentPc?.id" class="current-mark" title="The current character"><AppIcon ui="star" /> current</span></td>
             <td v-for="c in columns" :key="c.key" :class="['col-' + c.key.replace('@', ''), { num: c.kind === 'money' || c.field?.kind === 'money', clip: c.field?.kind === 'longtext' }]">
               <template v-if="empty(c.value(e))" />
               <FieldValue v-else-if="c.field" :def="c.field" :value="c.value(e)" :entry="e" />

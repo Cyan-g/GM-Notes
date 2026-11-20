@@ -25,7 +25,7 @@ export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: Effect
   { on: 'extraDamage', label: 'Extra damage (typed)', needs: ['dice', 'type', 'proficient'], noValue: true },
   { on: 'spellAttack', label: 'Spell attack' },
   { on: 'spellDC', label: 'Spell save DC' },
-  { on: 'skill', label: 'A skill', needs: ['skill'] },
+  { on: 'skill', label: 'A skill', needs: ['skill', 'plusAbility'] },
   { on: 'skillAdv', label: 'Skill: advantage / disadvantage', needs: ['skill', 'mode'], noValue: true },
   { on: 'speed', label: 'Speed (ft)' },
   { on: 'initiative', label: 'Initiative', needs: ['pb'] },
@@ -55,7 +55,7 @@ export function describeEffect(f: GearEffect): string {
     case 'damage': return `${signed(v)} damage`
     case 'spellAttack': return `${signed(v)} spell attack`
     case 'spellDC': return `${signed(v)} spell save DC`
-    case 'skill': return `${signed(v)} ${f.skill ?? 'skill'}`
+    case 'skill': return f.ability ? `${v ? signed(v) + ' and ' : '+'}${ABILITY_SHORT[f.ability]} modifier (at least 1) to ${f.skill ?? 'a skill'}` : `${signed(v)} ${f.skill ?? 'skill'}`
     case 'speed': return `${signed(v)} ft speed`
     case 'initiative': return f.pb ? `${v ? signed(v) + ' and ' : '+'}proficiency bonus to initiative` : `${signed(v)} initiative`
     case 'maxHp': return `${signed(v)} max HP`
@@ -198,6 +198,8 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
     ...activeGear(s).map(({ item, effects }) => ({ item, name: item.name, isWeapon: item.fields.kind === 'Weapon', effects })),
     ...speciesEffects(pc, s).map(x => ({ item: { id: '' } as Entry, name: x.name, isWeapon: false, effects: x.effects })),
   ]
+  /** Parts that add an ability's modifier too (Sanguine expert), worked out once every ability effect is counted. */
+  const plusMod: { part: Part; ability: Ability }[] = []
   for (const { item, name, isWeapon, effects } of sources) {
     for (const f of effects) {
       const n = Number(f.value) || 0
@@ -212,7 +214,7 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
           break
         case 'saves': t.saves.push(p); break
         case 'save': if (f.ability) (t.save[f.ability] ??= []).push(p); break
-        case 'skill': if (f.skill) (t.skill[f.skill] ??= []).push(p); break
+        case 'skill': if (f.skill) { (t.skill[f.skill] ??= []).push(p); if (f.ability) plusMod.push({ part: p, ability: f.ability }) } break
         case 'attack': if (isWeapon) (t.attackOf[item.id] ??= []).push(p); else t.attackAll.push(p); break
         case 'damage': if (isWeapon) (t.damageOf[item.id] ??= []).push(p); else t.damageAll.push(p); break
         case 'spellAttack': t.spellAttack.push(p); break
@@ -244,6 +246,7 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
       }
     }
   }
+  for (const { part, ability } of plusMod) part.n += Math.max(1, Math.floor((scoreWith(s!, ability, t) - 10) / 2))
   // Heavy armor worn without its Strength: −10 ft speed (5e).
   for (const { item } of itemsInUse(s)) {
     for (const x of requirementsOf(item)?.scores ?? []) {

@@ -12,7 +12,7 @@ type Ability = keyof Abilities
 export interface Part { label: string; n: number }
 
 /** What an effect needs besides a number, in the editor. */
-export type EffectNeed = 'ability' | 'skill' | 'type' | 'text' | 'mode' | 'note' | 'dice' | 'proficient' | 'sense' | 'condition'
+export type EffectNeed = 'ability' | 'skill' | 'type' | 'text' | 'mode' | 'note' | 'dice' | 'proficient' | 'sense' | 'condition' | 'pb'
 /** What an effect can change, for the editor and the item card. */
 export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: EffectNeed[]; canSet?: boolean; noValue?: boolean }[] = [
   { on: 'ac', label: 'Armor class' },
@@ -28,7 +28,7 @@ export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: Effect
   { on: 'skill', label: 'A skill', needs: ['skill'] },
   { on: 'skillAdv', label: 'Skill: advantage / disadvantage', needs: ['skill', 'mode'], noValue: true },
   { on: 'speed', label: 'Speed (ft)' },
-  { on: 'initiative', label: 'Initiative' },
+  { on: 'initiative', label: 'Initiative', needs: ['pb'] },
   { on: 'maxHp', label: 'Maximum HP' },
   { on: 'maxHpLevel', label: 'Max HP per level' },
   { on: 'resistance', label: 'Resistance', needs: ['type'], noValue: true },
@@ -56,7 +56,7 @@ export function describeEffect(f: GearEffect): string {
     case 'spellDC': return `${signed(v)} spell save DC`
     case 'skill': return `${signed(v)} ${f.skill ?? 'skill'}`
     case 'speed': return `${signed(v)} ft speed`
-    case 'initiative': return `${signed(v)} initiative`
+    case 'initiative': return f.pb ? `${v ? signed(v) + ' and ' : '+'}proficiency bonus to initiative` : `${signed(v)} initiative`
     case 'maxHp': return `${signed(v)} max HP`
     case 'maxHpLevel': return `${signed(v)} max HP per level`
     case 'resistance': return `Resistance: ${(f.type ?? '').toLowerCase()}`
@@ -214,7 +214,7 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
         case 'spellAttack': t.spellAttack.push(p); break
         case 'spellDC': t.spellDC.push(p); break
         case 'speed': t.speed.push(p); break
-        case 'initiative': t.initiative.push(p); break
+        case 'initiative': t.initiative.push(f.pb ? { label: name, n: n + 2 + Math.floor((Math.max(1, level) - 1) / 4) } : p); break
         case 'maxHp': t.maxHp.push(p); break
         case 'maxHpLevel': t.maxHp.push({ label: `${name} (${n} × level ${level})`, n: n * level }); break
         case 'resistance': if (f.type) t.resistances.push({ type: f.type, from: name }); break

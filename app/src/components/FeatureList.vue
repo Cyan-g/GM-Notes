@@ -11,7 +11,7 @@ import { editSheet } from '../sheet'
 import { get, state } from '../store'
 import { hrefEntry } from '../router'
 import {
-  backgroundOf, choiceCandidates, choiceOpen, isClassOrigin, scaleAt, shownInPlay, speciesTraits, spendUse, usesLeft, usesMax,
+  backgroundOf, choiceCandidates, choiceOpen, featOfFeature, isClassOrigin, scaleAt, shownInPlay, speciesTraits, spendUse, traitsOf, usesLeft, usesMax,
   type ActiveTrait,
 } from '../species'
 import EntryLink from './EntryLink.vue'
@@ -31,31 +31,36 @@ type Line = { kind: 'trait'; a: ActiveTrait } | { kind: 'option'; a: ActiveTrait
 const lines = computed<Line[]>(() => {
   const now = all.value.filter(a => a.active && (shownInPlay(a) || choiceOpen(a)))
   const cls = now.filter(a => isClassOrigin(a.race)).sort((x, y) => (x.trait.level ?? 1) - (y.trait.level ?? 1))
-  return [...cls, ...now.filter(a => a.race.type === 'race'), ...now.filter(a => a.race.type === 'background')].flatMap(a => [
+  return [...cls, ...now.filter(a => a.race.type === 'race'), ...now.filter(a => a.race.type === 'background'), ...now.filter(a => a.race.type === 'feat')].flatMap(a => [
     ...(replacedByPicks(a) && !choiceOpen(a) ? [] : [{ kind: 'trait' as const, a }]),
     ...a.options.map(o => ({ kind: 'option' as const, a, o })),
-    ...(a.trait.choice?.kind === 'feat' ? a.picks.filter(id => get(id)).map(id => ({ kind: 'feat' as const, a, id })) : []),
+    // a picked feat with features of its own is listed by them instead
+    ...(a.trait.choice?.kind === 'feat' ? a.picks.filter(id => get(id) && !live(get(id))).map(id => ({ kind: 'feat' as const, a, id })) : []),
   ])
 })
 const later = computed(() => all.value.filter(a => !a.active && isClassOrigin(a.race) && shownInPlay(a)).sort((x, y) => (x.trait.level ?? 1) - (y.trait.level ?? 1)))
 const bg = computed(() => backgroundOf(props.pc))
-/** The background's Origin feat, unless the sheet lists it already (the creation wizard writes it there). */
+/** Whether a feat has features of its own (they're listed as lines, like a class's). */
+const live = (f: Entry | undefined) => traitsOf(f).length > 0
+/** The background's Origin feat, unless the sheet lists it already (the creation wizard writes it there) or its features are listed. */
 const originFeat = computed(() => {
   const f = get(bg.value?.fields.originFeat)
-  return f && !props.s.features.some(x => x.name.toLowerCase().startsWith(f.name.toLowerCase())) ? f : undefined
+  return f && !live(f) && !props.s.features.some(x => x.name.toLowerCase().startsWith(f.name.toLowerCase())) ? f : undefined
 })
+/** The sheet's feature lines, but for feats whose features are listed. */
+const ownFeatures = computed(() => props.s.features.filter(f => !live(featOfFeature(f))))
 const use = (a: ActiveTrait, n: number) => { if (!ro.value) editSheet(props.pc, x => spendUse(x, props.pc, a, n)) }
 const max = (a: ActiveTrait) => usesMax(props.pc, a, props.s)
 const left = (a: ActiveTrait) => usesLeft(props.pc, props.s, a)
 /** The source tag: the class (with its level) or subclass, the race, the background. */
-const tag = (a: ActiveTrait) => (a.race.type === 'class' ? `${a.race.name} ${a.trait.level ?? 1}` : a.race.name)
+const tag = (a: ActiveTrait) => (a.race.type === 'class' ? `${a.race.name} ${a.trait.level ?? 1}` : a.race.type === 'feat' && a.trait.name === a.race.name ? 'feat' : a.race.name)
 /** Weapons to master and other plain picks, by name. */
 const pickNames = (a: ActiveTrait) => (a.trait.choice && a.trait.choice.kind === 'mastery'
   ? a.picks.map(id => choiceCandidates(a.trait.choice!).find(o => o.id === id)?.label ?? id) : [])
 const own = (f: Feature) => f.text?.trim()
 /** A text without the SRD's source line (it's for the entry's page, not the sheet). */
 const clean = (t: unknown) => String(t ?? '').replace(/\s*\*?Source: System Reference Document[^*]*\*?\s*$/i, '').trim()
-const empty = computed(() => !lines.value.length && !originFeat.value && !props.s.features.length && !props.gear.senses.length
+const empty = computed(() => !lines.value.length && !originFeat.value && !ownFeatures.value.length && !props.gear.senses.length
   && !props.gear.resistances.length && !props.gear.immunities.length && !props.gear.damageImmunities.length && !props.gear.features.length)
 </script>
 
@@ -116,7 +121,7 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !props.
     </div>
 
     <!-- typed on the sheet (feats, homebrew) -->
-    <div v-for="(f, i) in s.features" :key="'own' + i" class="sp-trait">
+    <div v-for="(f, i) in ownFeatures" :key="'own' + i" class="sp-trait">
       <details v-if="own(f)" class="sp-fold">
         <summary class="sp-head"><b>{{ f.name }}</b> <span class="feat-tag tag-own">sheet</span></summary>
         <MarkdownView class="small sp-text" :source="clean(f.text)" />

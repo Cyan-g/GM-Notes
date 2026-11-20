@@ -3719,12 +3719,31 @@
    "tags": [],
    "fields": {
     "category": "Origin Feat",
-    "summary": "You gain the following benefits.\n\n**Initiative Proficiency.** When you roll Initiative, you can add your Proficiency Bonus to the roll.\n\n**Initiative Swap.** Immediately after you roll Initiative, you can swap your Initiative with the Initiative of one willing ally in the same combat. You can't make this swap if you or the ally has the Incapacitated condition.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You gain the following benefits.\n\n**Initiative Proficiency.** When you roll Initiative, you can add your Proficiency Bonus to the roll.\n\n**Initiative Swap.** Immediately after you roll Initiative, you can swap your Initiative with the Initiative of one willing ally in the same combat. You can't make this swap if you or the ally has the Incapacitated condition.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "initiative-proficiency",
+      "name": "Initiative Proficiency",
+      "text": "When you roll Initiative, you can add your Proficiency Bonus to the roll.",
+      "effects": [
+       {
+        "on": "initiative",
+        "value": 0,
+        "pb": true
+       }
+      ]
+     },
+     {
+      "id": "initiative-swap",
+      "name": "Initiative Swap",
+      "text": "Immediately after you roll Initiative, you can swap your Initiative with the Initiative of one willing ally in the same combat. You can't make this swap if you or the ally has the Incapacitated condition."
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "archery",
@@ -3735,12 +3754,19 @@
    "fields": {
     "category": "Fighting Style",
     "prerequisite": "Fighting Style feature",
-    "summary": "You gain a +2 bonus to attack rolls you make with Ranged weapons.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You gain a +2 bonus to attack rolls you make with Ranged weapons.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "archery",
+      "name": "Archery",
+      "text": "You gain a +2 bonus to attack rolls you make with Ranged weapons."
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "boon-of-combat-prowess",
@@ -3759,12 +3785,19 @@
      ],
      "max": 30
     },
-    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Peerless Aim.** When you miss with an attack roll, you can hit instead. Once you use this benefit, you can't use it again until the start of your next turn.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Peerless Aim.** When you miss with an attack roll, you can hit instead. Once you use this benefit, you can't use it again until the start of your next turn.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "peerless-aim",
+      "name": "Peerless Aim",
+      "text": "When you miss with an attack roll, you can hit instead. Once you use this benefit, you can't use it again until the start of your next turn."
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "boon-of-dimensional-travel",
@@ -3783,12 +3816,19 @@
      ],
      "max": 30
     },
-    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Blink Steps.** Immediately after you take the Attack action or the Magic action, you can teleport up to 30 feet to an unoccupied space you can see.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Blink Steps.** Immediately after you take the Attack action or the Magic action, you can teleport up to 30 feet to an unoccupied space you can see.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "blink-steps",
+      "name": "Blink Steps",
+      "text": "Immediately after you take the Attack action or the Magic action, you can teleport up to 30 feet to an unoccupied space you can see."
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "boon-of-fate",
@@ -3807,12 +3847,23 @@
      ],
      "max": 30
     },
-    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Improve Fate.** When you or another creature within 60 feet of you succeeds on or fails a D20 Test, you can roll 2d4 and apply the total rolled as a bonus or penalty to the d20 roll. Once you use this benefit, you can't use it again until you roll Initiative or finish a Short or Long Rest.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Improve Fate.** When you or another creature within 60 feet of you succeeds on or fails a D20 Test, you can roll 2d4 and apply the total rolled as a bonus or penalty to the d20 roll. Once you use this benefit, you can't use it again until you roll Initiative or finish a Short or Long Rest.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "improve-fate",
+      "name": "Improve Fate",
+      "text": "When you or another creature within 60 feet of you succeeds on or fails a D20 Test, you can roll 2d4 and apply the total rolled as a bonus or penalty to the d20 roll. Once you use this benefit, you can't use it again until you roll Initiative or finish a Short or Long Rest.",
+      "uses": {
+       "count": 1,
+       "recharge": "short"
+      }
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "boon-of-irresistible-offense",
@@ -3835,12 +3886,24 @@
      ],
      "max": 30
     },
-    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase your Strength or Dexterity score by 1, to a maximum of 30.\n\n**Overcome Defenses.** The Bludgeoning, Piercing, and Slashing damage you deal always ignores Resistance.\n\n**Overwhelming Strike.** When you roll a 20 on the d20 for an attack roll, you can deal extra damage to the target equal to the ability score increased by this feat. The extra damage's type is the same as the attack's type.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase your Strength or Dexterity score by 1, to a maximum of 30.\n\n**Overcome Defenses.** The Bludgeoning, Piercing, and Slashing damage you deal always ignores Resistance.\n\n**Overwhelming Strike.** When you roll a 20 on the d20 for an attack roll, you can deal extra damage to the target equal to the ability score increased by this feat. The extra damage's type is the same as the attack's type.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "overcome-defenses",
+      "name": "Overcome Defenses",
+      "text": "The Bludgeoning, Piercing, and Slashing damage you deal always ignores Resistance."
+     },
+     {
+      "id": "overwhelming-strike",
+      "name": "Overwhelming Strike",
+      "text": "When you roll a 20 on the d20 for an attack roll, you can deal extra damage to the target equal to the ability score increased by this feat. The extra damage's type is the same as the attack's type."
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "boon-of-spell-recall",
@@ -3865,12 +3928,19 @@
      ],
      "max": 30
     },
-    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase your Intelligence, Wisdom, or Charisma score by 1, to a maximum of 30.\n\n**Free Casting.** Whenever you cast a spell with a level 1–4 spell slot, roll 1d4. If the number you roll is the same as the slot's level, the slot isn't expended.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase your Intelligence, Wisdom, or Charisma score by 1, to a maximum of 30.\n\n**Free Casting.** Whenever you cast a spell with a level 1–4 spell slot, roll 1d4. If the number you roll is the same as the slot's level, the slot isn't expended.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "free-casting",
+      "name": "Free Casting",
+      "text": "Whenever you cast a spell with a level 1–4 spell slot, roll 1d4. If the number you roll is the same as the slot's level, the slot isn't expended."
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "boon-of-the-night-spirit",
@@ -3889,12 +3959,24 @@
      ],
      "max": 30
     },
-    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Merge with Shadows.** While within Dim Light or Darkness, you can give yourself the Invisible condition as a Bonus Action. The condition ends on you immediately after you take an action, a Bonus Action, or a Reaction.\n\n**Shadowy Form.** While within Dim Light or Darkness, you have Resistance to all damage except Psychic and Radiant.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Merge with Shadows.** While within Dim Light or Darkness, you can give yourself the Invisible condition as a Bonus Action. The condition ends on you immediately after you take an action, a Bonus Action, or a Reaction.\n\n**Shadowy Form.** While within Dim Light or Darkness, you have Resistance to all damage except Psychic and Radiant.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "merge-with-shadows",
+      "name": "Merge with Shadows",
+      "text": "While within Dim Light or Darkness, you can give yourself the Invisible condition as a Bonus Action. The condition ends on you immediately after you take an action, a Bonus Action, or a Reaction."
+     },
+     {
+      "id": "shadowy-form",
+      "name": "Shadowy Form",
+      "text": "While within Dim Light or Darkness, you have Resistance to all damage except Psychic and Radiant."
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "boon-of-truesight",
@@ -3913,12 +3995,26 @@
      ],
      "max": 30
     },
-    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Truesight.** You have Truesight with a range of 60 feet.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Truesight.** You have Truesight with a range of 60 feet.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "truesight",
+      "name": "Truesight",
+      "text": "You have Truesight with a range of 60 feet.",
+      "effects": [
+       {
+        "on": "sense",
+        "sense": "Truesight",
+        "value": 60
+       }
+      ]
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "defense",
@@ -3929,12 +4025,19 @@
    "fields": {
     "category": "Fighting Style",
     "prerequisite": "Fighting Style feature",
-    "summary": "While you're wearing Light, Medium, or Heavy armor, you gain a +1 bonus to Armor Class.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "While you're wearing Light, Medium, or Heavy armor, you gain a +1 bonus to Armor Class.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "defense",
+      "name": "Defense",
+      "text": "While you're wearing Light, Medium, or Heavy armor, you gain a +1 bonus to Armor Class."
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "grappler",
@@ -3958,12 +4061,29 @@
      ],
      "max": 20
     },
-    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase your Strength or Dexterity score by 1, to a maximum of 20.\n\n**Punch and Grab.** When you hit a creature with an Unarmed Strike as part of the Attack action on your turn, you can use both the Damage and the Grapple option. You can use this benefit only once per turn.\n\n**Attack Advantage.** You have Advantage on attack rolls against a creature Grappled by you.\n\n**Fast Wrestler.** You don't have to spend extra movement to move a creature Grappled by you if the creature is your size or smaller.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You gain the following benefits.\n\n**Ability Score Increase.** Increase your Strength or Dexterity score by 1, to a maximum of 20.\n\n**Punch and Grab.** When you hit a creature with an Unarmed Strike as part of the Attack action on your turn, you can use both the Damage and the Grapple option. You can use this benefit only once per turn.\n\n**Attack Advantage.** You have Advantage on attack rolls against a creature Grappled by you.\n\n**Fast Wrestler.** You don't have to spend extra movement to move a creature Grappled by you if the creature is your size or smaller.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "punch-and-grab",
+      "name": "Punch and Grab",
+      "text": "When you hit a creature with an Unarmed Strike as part of the Attack action on your turn, you can use both the Damage and the Grapple option. You can use this benefit only once per turn."
+     },
+     {
+      "id": "attack-advantage",
+      "name": "Attack Advantage",
+      "text": "You have Advantage on attack rolls against a creature Grappled by you."
+     },
+     {
+      "id": "fast-wrestler",
+      "name": "Fast Wrestler",
+      "text": "You don't have to spend extra movement to move a creature Grappled by you if the creature is your size or smaller."
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "great-weapon-fighting",
@@ -3974,12 +4094,19 @@
    "fields": {
     "category": "Fighting Style",
     "prerequisite": "Fighting Style feature",
-    "summary": "When you roll damage for an attack you make with a Melee weapon that you are holding with two hands, you can treat any 1 or 2 on a damage die as a 3. The weapon must have the Two-Handed or Versatile property to gain this benefit.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "When you roll damage for an attack you make with a Melee weapon that you are holding with two hands, you can treat any 1 or 2 on a damage die as a 3. The weapon must have the Two-Handed or Versatile property to gain this benefit.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "great-weapon-fighting",
+      "name": "Great Weapon Fighting",
+      "text": "When you roll damage for an attack you make with a Melee weapon that you are holding with two hands, you can treat any 1 or 2 on a damage die as a 3. The weapon must have the Two-Handed or Versatile property to gain this benefit."
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "magic-initiate",
@@ -3989,12 +4116,125 @@
    "tags": [],
    "fields": {
     "category": "Origin Feat",
-    "summary": "You gain the following benefits.\n\n**Two Cantrips.** You learn two cantrips of your choice from the Cleric, Druid, or Wizard spell list. Intelligence, Wisdom, or Charisma is your spellcasting ability for this feat's spells (choose when you select this feat).\n\n**Level 1 Spell.** Choose a level 1 spell from the same list you selected for this feat's cantrips. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have.\n\n**Spell Change.** Whenever you gain a new level, you can replace one of the spells you chose for this feat with a different spell of the same level from the chosen spell list.\n\n**Repeatable.** You can take this feat more than once, but you must choose a different spell list each time.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You gain the following benefits.\n\n**Two Cantrips.** You learn two cantrips of your choice from the Cleric, Druid, or Wizard spell list. Intelligence, Wisdom, or Charisma is your spellcasting ability for this feat's spells (choose when you select this feat).\n\n**Level 1 Spell.** Choose a level 1 spell from the same list you selected for this feat's cantrips. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have.\n\n**Spell Change.** Whenever you gain a new level, you can replace one of the spells you chose for this feat with a different spell of the same level from the chosen spell list.\n\n**Repeatable.** You can take this feat more than once, but you must choose a different spell list each time.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "magic-initiate",
+      "name": "Magic Initiate",
+      "text": "**Two Cantrips.** You learn two cantrips of your choice from the Cleric, Druid, or Wizard spell list. Intelligence, Wisdom, or Charisma is your spellcasting ability for this feat's spells (choose when you select this feat).\n\n**Level 1 Spell.** Choose a level 1 spell from the same list you selected for this feat's cantrips. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have.\n\n**Spell Change.** Whenever you gain a new level, you can replace one of the spells you chose for this feat with a different spell of the same level from the chosen spell list.",
+      "castWith": {
+       "among": [
+        "int",
+        "wis",
+        "cha"
+       ]
+      },
+      "choice": {
+       "kind": "option",
+       "count": 1,
+       "options": [
+        {
+         "id": "cleric",
+         "name": "Cleric",
+         "text": "Two cantrips and a level 1 spell from the Cleric spell list.",
+         "choices": [
+          {
+           "kind": "spell",
+           "label": "Cantrips",
+           "count": 2,
+           "spell": {
+            "classes": [
+             "Cleric"
+            ],
+            "level": "Cantrip",
+            "how": "atWill"
+           }
+          },
+          {
+           "kind": "spell",
+           "label": "Level 1 spell",
+           "count": 1,
+           "spell": {
+            "classes": [
+             "Cleric"
+            ],
+            "level": "1",
+            "how": "long"
+           }
+          }
+         ]
+        },
+        {
+         "id": "druid",
+         "name": "Druid",
+         "text": "Two cantrips and a level 1 spell from the Druid spell list.",
+         "choices": [
+          {
+           "kind": "spell",
+           "label": "Cantrips",
+           "count": 2,
+           "spell": {
+            "classes": [
+             "Druid"
+            ],
+            "level": "Cantrip",
+            "how": "atWill"
+           }
+          },
+          {
+           "kind": "spell",
+           "label": "Level 1 spell",
+           "count": 1,
+           "spell": {
+            "classes": [
+             "Druid"
+            ],
+            "level": "1",
+            "how": "long"
+           }
+          }
+         ]
+        },
+        {
+         "id": "wizard",
+         "name": "Wizard",
+         "text": "Two cantrips and a level 1 spell from the Wizard spell list.",
+         "choices": [
+          {
+           "kind": "spell",
+           "label": "Cantrips",
+           "count": 2,
+           "spell": {
+            "classes": [
+             "Wizard"
+            ],
+            "level": "Cantrip",
+            "how": "atWill"
+           }
+          },
+          {
+           "kind": "spell",
+           "label": "Level 1 spell",
+           "count": 1,
+           "spell": {
+            "classes": [
+             "Wizard"
+            ],
+            "level": "1",
+            "how": "long"
+           }
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "savage-attacker",
@@ -4004,12 +4244,19 @@
    "tags": [],
    "fields": {
     "category": "Origin Feat",
-    "summary": "You've trained to deal particularly damaging strikes. Once per turn when you hit a target with a weapon, you can roll the weapon's damage dice twice and use either roll against the target.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You've trained to deal particularly damaging strikes. Once per turn when you hit a target with a weapon, you can roll the weapon's damage dice twice and use either roll against the target.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "savage-attacker",
+      "name": "Savage Attacker",
+      "text": "You've trained to deal particularly damaging strikes. Once per turn when you hit a target with a weapon, you can roll the weapon's damage dice twice and use either roll against the target."
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "skilled",
@@ -4019,12 +4266,23 @@
    "tags": [],
    "fields": {
     "category": "Origin Feat",
-    "summary": "You gain proficiency in any combination of three skills or tools of your choice.\n\n**Repeatable.** You can take this feat more than once.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "You gain proficiency in any combination of three skills or tools of your choice.\n\n**Repeatable.** You can take this feat more than once.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "skilled",
+      "name": "Skilled",
+      "text": "You gain proficiency in any combination of three skills or tools of your choice.",
+      "choice": {
+       "kind": "skillTool",
+       "count": 3
+      }
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "two-weapon-fighting",
@@ -4035,12 +4293,19 @@
    "fields": {
     "category": "Fighting Style",
     "prerequisite": "Fighting Style feature",
-    "summary": "When you make an extra attack as a result of using a weapon that has the Light property, you can add your ability modifier to the damage of that attack if you aren't already adding it to the damage.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "When you make an extra attack as a result of using a weapon that has the Light property, you can add your ability modifier to the damage of that attack if you aren't already adding it to the damage.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "speciesTraits": [
+     {
+      "id": "two-weapon-fighting",
+      "name": "Two-Weapon Fighting",
+      "text": "When you make an extra attack as a result of using a weapon that has the Light property, you can add your ability modifier to the damage of that attack if you aren't already adding it to the damage."
+     }
+    ]
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-20T16:51:36.000Z"
   },
   {
    "id": "alchemy-kit",
@@ -4409,7 +4674,7 @@
     ]
    },
    "created": "2026-11-15T20:32:34.371Z",
-   "updated": "2026-11-15T20:32:34.371Z"
+   "updated": "2026-11-20T16:44:00.000Z"
   },
   {
    "id": "dwarf",
@@ -4473,7 +4738,7 @@
     ]
    },
    "created": "2026-11-15T20:32:34.371Z",
-   "updated": "2026-11-20T15:06:38.000Z"
+   "updated": "2026-11-20T16:44:00.000Z"
   },
   {
    "id": "elf",
@@ -4630,7 +4895,7 @@
     ]
    },
    "created": "2026-11-15T20:32:34.371Z",
-   "updated": "2026-11-20T15:06:38.000Z"
+   "updated": "2026-11-20T16:44:00.000Z"
   },
   {
    "id": "gnome",
@@ -4728,7 +4993,7 @@
     ]
    },
    "created": "2026-11-15T20:32:34.371Z",
-   "updated": "2026-11-15T20:32:34.371Z"
+   "updated": "2026-11-20T16:44:00.000Z"
   },
   {
    "id": "goliath",
@@ -4803,8 +5068,8 @@
      }
     ]
    },
-   "created": "2026-11-20T00:00:00.000Z",
-   "updated": "2026-11-20T00:00:00.000Z"
+   "created": "2026-11-20T16:44:00.000Z",
+   "updated": "2026-11-20T16:44:00.000Z"
   },
   {
    "id": "halfling",
@@ -4847,7 +5112,7 @@
     ]
    },
    "created": "2026-11-15T20:32:34.371Z",
-   "updated": "2026-11-15T20:32:34.371Z"
+   "updated": "2026-11-20T16:44:00.000Z"
   },
   {
    "id": "human",
@@ -4883,7 +5148,7 @@
     ]
    },
    "created": "2026-11-15T20:32:34.371Z",
-   "updated": "2026-11-20T15:06:38.000Z"
+   "updated": "2026-11-20T16:44:00.000Z"
   },
   {
    "id": "orc",
@@ -4929,8 +5194,8 @@
      }
     ]
    },
-   "created": "2026-11-20T00:00:00.000Z",
-   "updated": "2026-11-20T00:00:00.000Z"
+   "created": "2026-11-20T16:44:00.000Z",
+   "updated": "2026-11-20T16:44:00.000Z"
   },
   {
    "id": "tiefling",
@@ -5071,7 +5336,7 @@
     ]
    },
    "created": "2026-11-15T20:32:34.371Z",
-   "updated": "2026-11-15T20:32:34.371Z"
+   "updated": "2026-11-20T16:44:00.000Z"
   },
   {
    "id": "acid-arrow",

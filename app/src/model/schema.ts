@@ -225,6 +225,8 @@ export const SCHEMA = [
       { key: 'abilityIncrease', label: 'Ability score increase', kind: 'abilityBonus' },
       { key: 'source', label: 'Granted by', kind: 'ref', to: ['organization', 'race', 'background', 'subclass', 'deity', 'place', 'item'] },
       { key: 'summary', label: 'Description', kind: 'longtext' },
+      // What it does on a sheet that has it (species.ts), like a race's traits: effects, uses, choices, spells.
+      { key: 'speciesTraits', label: 'Features', kind: 'speciesTraits' },
     ],
   },
   {

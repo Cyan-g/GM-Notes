@@ -17,7 +17,7 @@ const conditions = CONDITIONS.filter(c => c !== 'Concentrating')
 
 /** What each kind of input fills in when it first shows. */
 const FIELD_OF: Record<EffectNeed, keyof GearEffect> = {
-  ability: 'ability', skill: 'skill', type: 'type', text: 'text', mode: 'mode', note: 'note', dice: 'dice', proficient: 'proficient', sense: 'sense', condition: 'condition',
+  ability: 'ability', skill: 'skill', type: 'type', text: 'text', mode: 'mode', note: 'note', dice: 'dice', proficient: 'proficient', sense: 'sense', condition: 'condition', pb: 'pb',
 }
 function put(i: number, patch: Partial<GearEffect>) {
   const l = list.value.map(x => ({ ...x }))
@@ -79,6 +79,7 @@ const remove = (i: number) => { const l = [...list.value]; l.splice(i, 1); model
       </select>
       <input v-if="!kindOf(f)?.noValue" type="number" class="effect-value" :value="f.value ?? ''" aria-label="Value" @change="put(i, { value: Number(val($event)) || 0 })" />
       <label v-if="needs(f, 'proficient')" class="small effect-check" title="Only counts while the wielder is proficient with the weapon"><input type="checkbox" :checked="!!f.proficient" @change="put(i, { proficient: ($event.target as HTMLInputElement).checked || undefined })" /> if proficient</label>
+      <label v-if="needs(f, 'pb')" class="small effect-check" title="Adds the proficiency bonus too (Alert)"><input type="checkbox" :checked="!!f.pb" @change="put(i, { pb: ($event.target as HTMLInputElement).checked || undefined })" /> + proficiency bonus</label>
       <input v-if="needs(f, 'note')" class="effect-text" :value="f.note ?? ''" placeholder="when, e.g. against being knocked prone" aria-label="When" @input="put(i, { note: val($event) || undefined })" />
       <input v-if="needs(f, 'text')" class="effect-text" :value="f.text ?? ''" placeholder="e.g. Darkvision 60 ft" aria-label="Feature" @input="put(i, { text: val($event) })" />
       <span v-if="!needs(f, 'text') && !needs(f, 'note')" class="muted effect-say">{{ describeEffect(f) }}</span>

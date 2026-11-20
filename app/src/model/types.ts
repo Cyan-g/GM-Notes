@@ -85,6 +85,8 @@ export interface GearEffect {
   note?: string
   dice?: string
   proficient?: boolean
+  /** Initiative: plus the proficiency bonus (Alert). */
+  pb?: boolean
   sense?: string
   condition?: string
 }
@@ -241,7 +243,7 @@ export interface TraitOption {
  * world's spells that match `spell`.
  */
 export interface TraitChoice {
-  kind: 'skill' | 'language' | 'tool' | 'option' | 'expertise' | 'feat' | 'mastery' | 'spell'
+  kind: 'skill' | 'language' | 'tool' | 'skillTool' | 'option' | 'expertise' | 'feat' | 'mastery' | 'spell'
   /** What it's called when it comes with an option ("Cantrips"); the option's name goes before it. */
   label?: string
   /** For a spell choice: which spells (any class's list, if `classes` is empty), and how the picked ones are cast. */

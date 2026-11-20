@@ -57,7 +57,7 @@ const setScale = (i: number, label: string, steps: string) => {
 // ---- the choice ----
 const CHOICE_KINDS: { id: TraitChoice['kind'] | ''; label: string }[] = [
   { id: '', label: 'No choice' }, { id: 'skill', label: 'Pick skills' }, { id: 'language', label: 'Pick languages' },
-  { id: 'tool', label: 'Pick tools' }, { id: 'expertise', label: 'Pick skills for Expertise' }, { id: 'feat', label: 'Pick feats' },
+  { id: 'tool', label: 'Pick tools' }, { id: 'skillTool', label: 'Pick skills or tools' }, { id: 'expertise', label: 'Pick skills for Expertise' }, { id: 'feat', label: 'Pick feats' },
   { id: 'mastery', label: 'Pick weapons to master' }, { id: 'spell', label: 'Pick spells' }, { id: 'option', label: 'Pick options' },
 ]
 /** A new choice of a kind, with its defaults (a spell choice: one cantrip, at will). */

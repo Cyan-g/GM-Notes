@@ -193,6 +193,12 @@ export interface CharacterSheet {
   spellbook?: Spellbook
   /** Experience points (when the ruleset uses them; rules.ts). */
   xp?: number
+  /** Conditions the character has (conditions.ts), the same list as their combatants' in the combat tracker. */
+  conditions?: string[]
+  /** Their exhaustion level (1–6) while they have Exhaustion. */
+  exhaustion?: number
+  /** Creatures linked to the character (a familiar, a steed, a summon), each with its own name and hit points. */
+  companions?: Companion[]
   /** Spells switched on, whose "while active" effects count on the sheet (Bless, Shield of Faith); a long rest ends them. */
   activeSpells?: Id[]
   /** Known recipes for the Workbench; the tools are in the proficiencies, the ingredients in the inventory. */
@@ -506,4 +512,16 @@ export interface Follow {
   relations: string[]
   /** Pictures and files: data path → the file's name in the shared folder (by its content). */
   files: Record<string, string>
+}
+
+/** A creature linked to a character (CharacterSheet.companions): its statblock from the creature entry. */
+export interface Companion {
+  /** Tells copies of the same creature apart. */
+  key: string
+  creature: Id
+  /** Its own name (Whiskers); the creature's name when empty. */
+  name?: string
+  /** Hit points now; the statblock's when empty. */
+  hp?: number
+  tempHp?: number
 }

@@ -69,7 +69,7 @@ export function loadEncounter(id: Id, replace = true) {
   const monsters = combatantsFrom((e.fields.creatures) ?? [])
   if (replace) {
     // The encounter's own party if it has one (keeping the HP of those already in the tracker), else whoever is there.
-    const fresh = (c: Combatant): Combatant => ({ ...c, init: null, conditions: [], rounds: undefined, concChecks: undefined })
+    const fresh = (c: Combatant): Combatant => ({ ...c, init: null, conditions: c.conditions.filter(x => x === 'Exhaustion'), rounds: undefined, concChecks: undefined })
     const party = (e.fields.party) ?? []
     const players = party.length
       ? party.map(id => get(id)).filter((p): p is Entry => !!p).map(p => { const had = t.combatants.find(c => c.entry === p.id); return had ? fresh(had) : playerCombatant(p) })
@@ -196,7 +196,8 @@ export function clearTracker(keepPlayers = true) {
   t.combatants = keepPlayers
     ? t.combatants.filter(c => c.isPlayer).map(c => {
       const own = !fighterStats(c).hpFromSheet
-      return { ...c, init: null, conditions: [], rounds: undefined, concChecks: undefined, deathSaves: undefined, ...(own ? { hp: c.maxHp, tempHp: undefined } : {}) }
+      // exhaustion outlasts the fight (a long rest takes it away)
+      return { ...c, init: null, conditions: c.conditions.filter(x => x === 'Exhaustion'), rounds: undefined, concChecks: undefined, deathSaves: undefined, ...(own ? { hp: c.maxHp, tempHp: undefined } : {}) }
     })
     : []
   t.round = 0

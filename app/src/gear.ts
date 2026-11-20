@@ -6,6 +6,7 @@ import { get } from './store'
 import { isHeavyStrength, requirementsOf } from './requirements'
 import { ownerOf, speciesEffects, speciesSize } from './species'
 import { rule } from './rules'
+import { applyConditions } from './conditions'
 import { SKILLS } from './sheet'
 import { activeEffectsOf, activeSpells } from './spells'
 import { totalLevel } from './model/classes'
@@ -214,6 +215,12 @@ export interface GearTotals {
   /** The unarmed strike's damage dice and whether it may use DEX (Martial Arts); the off-hand attack adding its modifier. */
   unarmed?: { dice: string; dex: boolean; from: string }
   offhandMod?: string
+  /** What the character's conditions do beyond the parts above (conditions.ts): speed 0 or halved, hit point maximum
+   * halved, and advantage or disadvantage on attack rolls (shown with the attacks). */
+  speedZero?: string
+  speedHalf?: string
+  maxHpHalf?: string
+  attackMode?: { mode: 'adv' | 'dis'; from: string }[]
   speed: Part[]
   initiative: Part[]
   /** More Hit Dice: a number, plus an ability's modifier (at least 1) where it says. */
@@ -310,6 +317,8 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
     }
   }
   for (const { part, ability } of plusMod) part.n += Math.max(1, Math.floor((scoreWith(s!, ability, t) - 10) / 2))
+  // the character's conditions (and exhaustion, as the ruleset says)
+  if (s) applyConditions(s, t)
   // the active ruleset: variant encumbrance slows the character and, heavily encumbered, gives disadvantage
   const load = s ? loadOf(s, t) : undefined
   if (load?.state === 'encumbered') t.speed.push({ label: 'Encumbered', n: -10 })

@@ -13,6 +13,7 @@ import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, hiddenFrom
 import { go, hrefEntry, hrefFamily, hrefList, hrefMap, hrefTab, type EntryTab } from '../router'
 import SpellbookView from './SpellbookView.vue'
 import InventoryTab from './InventoryTab.vue'
+import CompanionsTab from './CompanionsTab.vue'
 import CraftingView from './CraftingView.vue'
 import FamilyTree from '../components/FamilyTree.vue'
 import { familySize } from '../family'
@@ -55,7 +56,8 @@ const onFamily = computed(() => hasFamily.value && props.tab === 'family')
 const onInv = computed(() => e.value?.type === 'pc' && props.tab === 'inventory')
 const onBook = computed(() => e.value?.type === 'pc' && props.tab === 'spellbook')
 const onBench = computed(() => e.value?.type === 'pc' && props.tab === 'crafting')
-const onOverview = computed(() => !onFamily.value && !onBook.value && !onBench.value)
+const onPals = computed(() => e.value?.type === 'pc' && props.tab === 'companions')
+const onOverview = computed(() => !onFamily.value && !onInv.value && !onBook.value && !onBench.value && !onPals.value)
 const def = computed(() => e.value ? TYPES[e.value.type] : undefined)
 const today = computed(() => db().meta.today)
 
@@ -315,6 +317,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         <a :href="hrefTab(e.id, 'inventory')" :class="{ on: onInv }"><AppIcon ui="otherItems" /> Inventory <span v-if="e.fields.sheet?.inventory?.length" class="muted small">{{ e.fields.sheet.inventory.length }}</span></a>
         <a :href="hrefTab(e.id, 'spellbook')" :class="{ on: onBook }"><AppIcon ui="spellbook" /> Spellbook <span v-if="e.fields.sheet?.spellbook?.prepared?.length" class="muted small">{{ e.fields.sheet.spellbook.prepared.length }}</span></a>
         <a :href="hrefTab(e.id, 'crafting')" :class="{ on: onBench }"><AppIcon ui="workbench" /> Workbench <span v-if="e.fields.sheet?.crafting?.known?.length" class="muted small">{{ e.fields.sheet.crafting.known.length }}</span></a>
+        <a :href="hrefTab(e.id, 'companions')" :class="{ on: onPals }"><AppIcon ui="link" /> Companions <span v-if="e.fields.sheet?.companions?.length" class="muted small">{{ e.fields.sheet.companions.length }}</span></a>
         <a :href="hrefFamily(e.id)" :class="{ on: onFamily }"><AppIcon ui="family" /> Family tree <span v-if="familySize(e.id)" class="muted small">{{ familySize(e.id) }}</span></a>
       </template>
     </nav>
@@ -322,6 +325,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
     <InventoryTab v-else-if="onInv" :pc="e" />
     <SpellbookView v-else-if="onBook" :pc="e" />
     <CraftingView v-else-if="onBench" :pc="e" />
+    <CompanionsTab v-else-if="onPals" :pc="e" />
     <div v-else class="entry-grid">
       <div class="entry-main">
 

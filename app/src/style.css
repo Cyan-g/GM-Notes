@@ -1847,3 +1847,25 @@ button.live-tag { cursor: pointer; }
 .feat-tag.tag-gear { font-style: italic; }
 .feature-list .sp-trait.dim { opacity: .55; }
 .feature-list .sp-trait.sp-pending { box-shadow: inset 3px 0 0 var(--accent); padding-left: .7rem; }
+/* a PC's conditions at the top of the play sheet */
+.cs-conds { display: grid; gap: .3rem; margin-bottom: .5rem; }
+.cs-conds.empty { margin-bottom: .25rem; }
+.cs-exh { display: inline-flex; align-items: center; gap: 0; }
+.cs-exh .cond-x { padding: 0 .2rem; }
+.cs-cond-lines { margin: 0; padding-left: 1rem; display: grid; gap: .1rem; }
+.cs-roll-mode { margin: 0 0 .3rem; }
+.cs-roll-mode.dis { color: var(--flash-down); }
+.cs-roll-mode.adv { color: var(--flash-up); }
+/* a PC's Companions tab */
+.companions-tab { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 1rem; align-items: start; }
+.companions-tab > * { margin: 0; min-width: 0; }
+.companions-tab > p.muted { align-self: center; }
+.comp-add { display: flex; gap: .5rem; flex-wrap: wrap; }
+.comp-add input { flex: 1 1 10rem; }
+.comp-add select { flex: 1 1 12rem; }
+.comp-head { display: flex; gap: .5rem; align-items: baseline; }
+.comp-name { flex: 1; font-weight: 600; font-size: 1.05rem; }
+.comp-hp { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin: .5rem 0; }
+.comp-hp input { width: 4.2rem; }
+.comp-hp.down input:first-child { color: var(--flash-down); }
+.comp-change { display: inline-flex; gap: .3rem; align-items: center; }

@@ -28,6 +28,7 @@ import FeatureChoices from './FeatureChoices.vue'
 import UsesCard from './UsesCard.vue'
 import { rule } from '../rules'
 import ActiveSpellsCard from './ActiveSpellsCard.vue'
+import ConditionsBar from './ConditionsBar.vue'
 import { picksLeft, speciesEffects, speciesTraits } from '../species'
 import { ui } from '../ui'
 
@@ -200,6 +201,8 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
     <div class="cs-top" :class="{ 'with-portrait': !build, 'no-portrait': !build && !pc.image }">
     <PcPortrait v-if="!build" :pc="pc" />
     <div class="cs-top-right">
+    <!-- the character's conditions (shared with the combat tracker), with what they do -->
+    <ConditionsBar v-if="!build" :pc="pc" :s="s" />
     <!-- the strip at the top: the numbers looked at most -->
     <div class="cs-strip">
       <label v-if="!classes.length" class="cs-stat"><span>Level</span><input type="number" min="1" max="20" :value="pc.fields.level ?? ''" placeholder="1" :disabled="locked" @change="setLevel" /></label>

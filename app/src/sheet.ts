@@ -9,6 +9,7 @@ import { optionsIn } from './model/lists'
 import { db, get, state, touch } from './store'
 import { breakdown, gearTotals, restItems, scoreWith, spellsOf, sum } from './gear'
 import { unmet } from './requirements'
+import { setConditions } from './conditions'
 import { own, ownerOf, restSpecies, speciesExpertise, speciesGrants, speciesSkills, speciesSpeed, speciesTraits } from './species'
 
 export type Ability = keyof Abilities
@@ -209,7 +210,11 @@ export const skillBonus = (s: CharacterSheet, name: string, prof: number) => {
 /** Initiative: DEX (with gear), the sheet's own bonus and any gear. */
 export const initiative = (s: CharacterSheet) => { const t = gearTotals(s); return mod(scoreWith(s, 'dex', t)) + (s.initBonus ?? 0) + sum(t.initiative) }
 /** Maximum HP with gear (a Belt of Dwarvenkind-style +n); undefined while none is set. */
-export const maxHpOf = (s: CharacterSheet) => (s.maxHp == null ? undefined : s.maxHp + sum(gearTotals(s).maxHp))
+export const maxHpOf = (s: CharacterSheet) => {
+  if (s.maxHp == null) return undefined
+  const t = gearTotals(s), n = s.maxHp + sum(t.maxHp)
+  return t.maxHpHalf ? Math.floor(n / 2) : n // 2014 exhaustion, level 4
+}
 /** The speed before gear: typed on the sheet, else the species' ("25 ft"), else nothing (30 ft is assumed). */
 export function baseSpeed(s: CharacterSheet): string | undefined {
   if (s.speed) return s.speed
@@ -218,10 +223,13 @@ export function baseSpeed(s: CharacterSheet): string | undefined {
 }
 /** Speed with gear: the number in the base speed ("30 ft") plus any bonus; the text as typed when there's none. */
 export function speedOf(s: CharacterSheet): string | undefined {
-  const add = sum(gearTotals(s).speed), base = baseSpeed(s)
-  if (!add) return base
+  const t = gearTotals(s), add = sum(t.speed), base = baseSpeed(s)
+  // a condition (Grappled, Restrained…) or exhaustion stops the character, or halves their speed
+  if (t.speedZero) return '0 ft'
   const m = String(base ?? '30 ft').match(/(\d+)/)
-  return m ? String(base ?? '30 ft').replace(m[1], String(Number(m[1]) + add)) : base
+  if (!add && !t.speedHalf) return base
+  const n = Math.max(0, Number(m?.[1] ?? 30) + add)
+  return m ? String(base ?? '30 ft').replace(m[1], String(t.speedHalf ? Math.floor(n / 2) : n)) : base
 }
 export const passivePerception = (s: CharacterSheet, prof: number) => 10 + skillBonus(s, 'Perception', prof)
 
@@ -426,6 +434,11 @@ export function longRest(pc: Entry) {
   restItems(s, 'long')
   restSpecies(s, pc, 'long')
   delete s.activeSpells
+  // a long rest takes one level of exhaustion away
+  if (s.conditions?.includes('Exhaustion')) {
+    const lv = (s.exhaustion ?? 1) - 1
+    setConditions(pc, s, lv > 0 ? s.conditions : s.conditions.filter(x => x !== 'Exhaustion'), lv > 0 ? lv : 0)
+  }
   let back = Math.max(1, Math.floor(totalLevel(pc) / 2))
   const m = { ...(s.hitDiceSpent ?? {}) }
   for (const p of hitDiceOf(pc, s)) {

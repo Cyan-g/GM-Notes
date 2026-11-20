@@ -1,7 +1,7 @@
 // Encounter maths: XP by challenge rating, and turning encounter lines into tracker combatants.
 import type { Combatant, EncounterLine, Entry, Statblock } from './model/types'
 import { get } from './store'
-import { trackerStats } from './sheet'
+import { sheetOf, trackerStats } from './sheet'
 
 const XP: Record<string, number> = {
   '0': 10, '1/8': 25, '1/4': 50, '1/2': 100, '1': 200, '2': 450, '3': 700, '4': 1100, '5': 1800, '6': 2300, '7': 2900,
@@ -48,7 +48,7 @@ export function combatantsFrom(lines: EncounterLine[]): Combatant[] {
 export function playerCombatant(pc: Entry): Combatant {
   // From the character sheet (a character without one starts with nothing filled in).
   const t = trackerStats(pc)
-  return { id: newCombatantId(), name: pc.name, entry: pc.id, isPlayer: true, init: null, initMod: t?.initMod ?? 0, hp: t?.hp, maxHp: t?.maxHp, ac: t?.ac, conditions: [] }
+  return { id: newCombatantId(), name: pc.name, entry: pc.id, isPlayer: true, init: null, initMod: t?.initMod ?? 0, hp: t?.hp, maxHp: t?.maxHp, ac: t?.ac, conditions: [...(sheetOf(pc)?.conditions ?? [])] }
 }
 
 export const CONDITIONS = ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious', 'Concentrating']

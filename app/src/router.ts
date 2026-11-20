@@ -3,8 +3,8 @@ import { reactive } from 'vue'
 import type { EntryType, Id } from './model/types'
 
 /** A person's second tabs: the family tree, and a character's spellbook and workbench. */
-export type EntryTab = 'family' | 'inventory' | 'spellbook' | 'crafting'
-const TABS: EntryTab[] = ['family', 'inventory', 'spellbook', 'crafting']
+export type EntryTab = 'family' | 'inventory' | 'spellbook' | 'crafting' | 'companions'
+const TABS: EntryTab[] = ['family', 'inventory', 'spellbook', 'crafting', 'companions']
 export type Route =
   | { name: 'home' }
   | { name: 'list'; type: EntryType }

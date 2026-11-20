@@ -25,6 +25,11 @@ const castMod = computed(() => (cast.value ? mod(scoreWith(s.value, cast.value, 
 const dc = computed(() => 8 + prof.value + castMod.value + sum(gt.value.spellDC))
 const spellAtk = computed(() => prof.value + castMod.value + sum(gt.value.spellAttack))
 const profs = computed(() => profsOf(s.value))
+/** Advantage or disadvantage on attack rolls from conditions (Poisoned, Invisible…), grouped by which. */
+const rollMode = computed(() => (['adv', 'dis'] as const).flatMap(mode => {
+  const from = (gt.value.attackMode ?? []).filter(x => x.mode === mode).map(x => x.from)
+  return from.length ? [{ mode, from: from.join(', ') }] : []
+}))
 /** The character's damaging cantrips (in the spellbook or from features), with their attack or save DC and damage. */
 const cantrips = computed(() => {
   const book = s.value.spellbook, ids = new Set([...(book?.known ?? []), ...(book?.prepared ?? []), ...(book?.always ?? [])])
@@ -54,6 +59,7 @@ const none = (k: 'armor' | 'weapons' | 'tools' | 'languages') => !profs.value[k]
     <div class="atk-cols">
       <div>
         <h3>Attacks</h3>
+        <p v-for="m in rollMode" :key="m.mode" class="small cs-roll-mode" :class="m.mode">{{ m.mode === 'adv' ? 'Advantage' : 'Disadvantage' }} on attack rolls ({{ m.from }})</p>
         <table v-if="atks.length" class="cs-attacks">
           <tr v-for="(a, i) in atks" :key="a.id + i" :class="{ 'atk-sub': a.noItem || a.tag?.startsWith('off-hand') }">
             <td>

@@ -1,7 +1,7 @@
 // Small bits of UI state shared between components.
 import { withProgress } from './progress'
 import { markRaw, reactive } from 'vue'
-import type { EntryType } from './model/types'
+import type { EntryType, Id } from './model/types'
 import { readImport, type ImportPlan } from './transfer'
 
 export const ui = reactive({
@@ -17,7 +17,14 @@ export const ui = reactive({
   worldExport: false,
   /** The Publish for players dialog. */
   publishOpen: false,
+  /** Cards to print (PrintCards.vue): a title for the file, and one or more sets to choose from. */
+  printCards: null as null | { name: string; sets: { label: string; ids: Id[] }[] },
 })
+
+/** Opens the card printing for some entries (spells, items); several sets offer a choice (e.g. prepared or known). */
+export function printCards(name: string, sets: { label: string; ids: Id[] }[]) {
+  ui.printCards = { name, sets: sets.filter(x => x.ids.length) }
+}
 
 export function newEntry(type?: EntryType, fields: Record<string, unknown> = {}) {
   ui.newType = type

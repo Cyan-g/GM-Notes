@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('dndesk', {
   showFolder: root => ipcRenderer.invoke('app:show-folder', root),
   info: () => ipcRenderer.invoke('app:info'),
   open: url => ipcRenderer.invoke('app:open', url),
+  cardsPdf: (pageSize, name) => ipcRenderer.invoke('cards:pdf', pageSize, name),
   db: {
     load: (types, kinds) => ipcRenderer.invoke('db:load', types, kinds),
     create: (d, types, kinds) => ipcRenderer.invoke('db:create', d, types, kinds),

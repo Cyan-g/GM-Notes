@@ -12,7 +12,7 @@ import { classesOf } from '../model/classes'
 import { restSlots, setSlotCount, slotFor, slotRows, useSlot, type SlotRow } from '../slots'
 import type { Entry as PcEntry } from '../model/types'
 import EntryLink from '../components/EntryLink.vue'
-import { newEntry } from '../ui'
+import { newEntry, printCards } from '../ui'
 import { hrefEntry } from '../router'
 import SpellModal from '../components/SpellModal.vue'
 import EntryPicker from '../components/edit/EntryPicker.vue'
@@ -157,6 +157,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
       <div class="row-btns">
         <button v-if="hasShort" title="Pact slots and once-per-short-rest item spells back" @click="shortRest"><AppIcon ui="shortRest" /> Short rest</button>
         <button :title="owner ? 'Full HP, every spell slot and half the hit dice back' : 'Every spell slot back'" @click="rest"><AppIcon ui="longRest" /> {{ owner ? 'Long rest' : 'Restore spell slots' }}</button>
+        <button title="Print these spells as cards (PDF, poker size)" :disabled="!knownList.length" @click="printCards(`${owner?.name ?? 'Spellbook'} spells`, [{ label: 'Prepared', ids: preparedList.map(e => e.id) }, { label: 'Known', ids: knownList.map(e => e.id) }])"><AppIcon ui="cards" /> Cards</button>
         <button @click="newEntry('spell')">＋ New spell</button>
       </div>
     </header>

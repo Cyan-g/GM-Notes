@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PrintCards from './components/PrintCards.vue'
 import AppIcon from './components/AppIcon.vue'
 import { stage, withProgress } from './progress'
 import ProgressBar from './components/ProgressBar.vue'
@@ -221,6 +222,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <EntryView v-else-if="route.current.name === 'entry'" :id="route.current.id" :tab="route.current.tab" :key="route.current.id" />
     </main>
     <QuickSwitcher v-model="ui.switcher" />
+    <PrintCards v-if="ui.printCards" />
     <NewEntryDialog v-model="ui.newOpen" :type="ui.newType" :fields="ui.newFields" />
     <ImportDialog v-model="ui.importPlan" />
     <ExportDialog v-model="ui.worldExport" />

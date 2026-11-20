@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // A sortable, filterable table of entries.
+import { printable } from '../cards'
 import AppIcon from './AppIcon.vue'
 import { activeSpellbook, currentPc } from '../sheet'
 import { state as store, touch } from '../store'
@@ -9,7 +10,7 @@ import type { Entry, EntryType } from '../model/types'
 import { column, facet } from '../columns'
 import { formatMoney } from '../store'
 import { TYPES, typeWord } from '../model/schema'
-import { newEntry } from '../ui'
+import { newEntry, printCards } from '../ui'
 import EntryLink from './EntryLink.vue'
 import FieldValue from './FieldValue.vue'
 
@@ -62,6 +63,13 @@ function sortBy(k: string) {
 const arrow = (k: string) => (sortKey.value === k ? (sortDir.value > 0 ? ' ▲' : ' ▼') : '')
 const empty = (v: unknown) => v == null || v === '' || (Array.isArray(v) && !v.length)
 
+// ---- every shown spell or item as a printed card, in the order shown (the filters pick) ----
+const cardRows = computed(() => shown.value.filter(printable))
+function printShown() {
+  const kinds = new Set(cardRows.value.map(e => e.type))
+  printCards(kinds.size === 1 ? (kinds.has('spell') ? 'Spells' : 'Items') : 'Cards', [{ label: 'Shown', ids: cardRows.value.map(e => e.id) }])
+}
+
 // ---- spells: a click opens the spell over the table; "+ Book" adds it to the current character's (or the world's) book ----
 const spells = computed(() => !store.readOnly && props.rows.some(e => e.type === 'spell'))
 const quick = ref<string | null>(null)
@@ -91,6 +99,7 @@ defineExpose({ count: computed(() => shown.value.length) })
         </select>
       </label>
       <span class="muted small">{{ shown.length === base.length ? `${shown.length} shown` : `${shown.length} of ${base.length} shown` }}</span>
+      <button v-if="cardRows.length" type="button" class="link-btn small" :title="`Print the ${cardRows.length} shown as cards (PDF, poker size, nine a page)`" @click="printShown"><AppIcon ui="cards" /> Print as cards</button>
     </div>
     <div class="table-wrap">
       <table class="grid">

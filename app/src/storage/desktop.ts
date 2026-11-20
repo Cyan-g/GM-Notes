@@ -13,6 +13,8 @@ interface Bridge {
   showFolder(root: string): Promise<boolean>
   info(): Promise<{ version: string; platform: string; packaged: boolean }>
   open(url: string): Promise<boolean>
+  /** The page's print layout (the cards) as a PDF, saved where the user picks and opened; null if cancelled. */
+  cardsPdf(pageSize: 'A4' | 'Letter', name: string): Promise<string | null>
   db: {
     load(types: string[], kinds: string[]): Promise<import('./backend').Loaded>
     create(d: unknown, types: string[], kinds: string[]): Promise<number>

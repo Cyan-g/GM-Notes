@@ -1533,3 +1533,40 @@ svg.gi.off { opacity: .35; }
 
 /* narrow windows: the Spells table leaves out casting time and duration (quick view and the page still show them) */
 @media (max-width: 800px) { .grid .col-castingTime, .grid .col-duration { display: none; } }
+
+/* ---------- printing cards (PrintCards.vue): poker size, nine a page, cut lines ---------- */
+.print-root { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; background: color-mix(in srgb, var(--bg) 92%, black); }
+.print-chrome { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .8rem; padding: .7rem 1.2rem; background: var(--panel); border-bottom: 1px solid var(--line); }
+.print-chrome h2 { margin: 0; font-size: 1.15rem; display: flex; align-items: baseline; gap: .4rem; }
+.print-chrome .error { margin: 0; }
+.print-pages { flex: 1; overflow: auto; padding: 1.2rem; display: flex; flex-direction: column; align-items: center; gap: 1.2rem; zoom: .62; }
+.print-page { flex: none; box-sizing: border-box; background: #fff; box-shadow: 0 2px 14px rgb(0 0 0 / .35); display: grid; grid-template-columns: repeat(3, 63mm); grid-auto-rows: 88mm; justify-content: center; align-content: start; }
+.paper-a4 .print-page { width: 210mm; height: 297mm; padding-top: 16.5mm; }
+.paper-letter .print-page { width: 215.9mm; height: 279.4mm; padding-top: 7.7mm; }
+.pcard { box-sizing: border-box; width: 63mm; height: 88mm; padding: 3.2mm 3.4mm 2.6mm; display: flex; flex-direction: column; overflow: hidden;
+  border: .2mm solid #c9c9c9; color: #1d1b19; background: #fff; font-family: var(--sans); font-size: 8pt; line-height: 1.28; }
+.pcard header { border-bottom: .35mm solid var(--accent); padding-bottom: .8mm; margin-bottom: 1.2mm; }
+.pc-title { margin: 0; font: 700 11pt/1.1 var(--serif); color: var(--accent); }
+.pc-cont { font-weight: 400; font-size: 8pt; color: #777; }
+.pc-sub { font-size: 7pt; font-style: italic; color: #555; display: flex; flex-wrap: wrap; gap: .3mm 1.2mm; align-items: baseline; margin-top: .4mm; }
+.pc-mark { font-style: normal; font-weight: 700; font-size: 6.5pt; color: var(--accent); border: .2mm solid var(--accent); border-radius: 1mm; padding: 0 .8mm; }
+.pc-facts { display: grid; grid-template-columns: 1fr 1fr; gap: .6mm 2mm; margin: 0 0 1.4mm; font-size: 6.8pt; }
+.pc-facts dt { font-size: 5.6pt; text-transform: uppercase; letter-spacing: .04em; color: #777; }
+.pc-facts dd { margin: 0; font-weight: 600; color: #1d1b19; }
+.pc-body { flex: 1; overflow: hidden; }
+.pc-body .md p, .pc-body .md ul, .pc-body .md table { margin: 0 0 1.1mm; }
+.pc-body .md ul { padding-left: 3.5mm; }
+.pc-body .md table { width: 100%; border-collapse: collapse; font-size: .92em; }
+.pc-body .md th, .pc-body .md td { padding: .3mm .8mm; border-bottom: .15mm solid #ddd; text-align: left; }
+.pc-body .md a { color: inherit; text-decoration: none; }
+.pc-foot { display: flex; justify-content: space-between; gap: 1mm; margin-top: 1mm; padding-top: .7mm; border-top: .2mm solid #ddd; font-size: 5.8pt; color: #666; }
+.pc-credit { white-space: nowrap; }
+@media print {
+  @page { margin: 0; }
+  html, body { background: #fff !important; }
+  body > :not(.print-root) { display: none !important; }
+  .print-root { position: static; display: block; background: none; }
+  .print-chrome { display: none; }
+  .print-pages { display: block; padding: 0; overflow: visible; zoom: 1; }
+  .print-page { box-shadow: none; break-after: page; }
+}

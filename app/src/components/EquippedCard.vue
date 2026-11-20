@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // A character's side card: what they wear and wield, and their three attunement slots.
 // Each item has a button to take it off (or end the attunement); it also opens in a pop-up.
+import { printCards } from '../ui'
 import AppIcon from './AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Entry, InventoryLine } from '../model/types'
@@ -28,6 +29,11 @@ const active = computed(() => itemsInUse(sheetOf(props.pc))
   .filter(g => g.says || g.max))
 const charge = (i: number, n: number) => { if (!ro.value) editSheet(props.pc, x => setCharges(x, i, n)) }
 const attuned = computed(() => lines.value.filter(x => x.l.attuned))
+/** The items as cards: those in use (equipped or attuned), or everything carried. */
+function printItems() {
+  const ids = (l: typeof lines.value) => [...new Set(l.map(x => x.e!.id))]
+  printCards(`${props.pc.name} items`, [{ label: 'Equipped & attuned', ids: ids(lines.value.filter(x => x.l.equipped || x.l.attuned)) }, { label: 'Everything carried', ids: ids(lines.value) }])
+}
 /** Worn or wielded without the proficiency for it. */
 const untrained = (x: { e?: Entry }) => proficientWith(sheetOf(props.pc), x.e!) === false
 /** An item in use whose requirements the character doesn't meet (e.g. a score dropped since). */
@@ -78,7 +84,7 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
 
 <template>
   <div class="card equipped-card">
-    <h3>Equipped</h3>
+    <h3>Equipped <button v-if="lines.length" type="button" class="link-btn small push-right" title="Print these items as cards (PDF, poker size)" @click="printItems"><AppIcon ui="cards" /> Cards</button></h3>
     <div class="drop-zone" :class="{ 'drop-over': over === 'equipped' }" @dragover="onDragOver($event, 'equipped')" @dragleave="over = ''" @drop="onDrop($event, 'equipped')">
     <ul v-if="worn.length || wielded.length || other.length" class="rel">
       <li v-for="x in [...worn, ...wielded, ...other]" :key="x.i" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'equipped')" @dragend="endDrag">

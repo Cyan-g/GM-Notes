@@ -99,7 +99,7 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
     </div>
 
     <p v-if="refused" class="error small">Can't: {{ refused }}.</p>
-    <h4>Attunement <span class="muted small">{{ attuned.length }} / {{ ATTUNE_SLOTS }}</span></h4>
+    <h4>Attunement <span v-flash.neutral="attuned.length" class="muted small">{{ attuned.length }} / {{ ATTUNE_SLOTS }}</span></h4>
     <ol class="attune-slots drop-zone" :class="{ 'drop-over': over === 'attuned' }" @dragover="onDragOver($event, 'attuned')" @dragleave="over = ''" @drop="onDrop($event, 'attuned')">
       <li v-for="(x, n) in slots" :key="n" :class="{ empty: !x, over: n >= ATTUNE_SLOTS }">
         <button v-if="x" class="link-btn cs-item" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'attuned')" @dragend="endDrag" @click="shown = x.i">{{ x.e!.name }}</button>
@@ -115,7 +115,7 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
         <li v-for="g in active" :key="g.i"><b>{{ g.name }}</b> <span class="muted">{{ g.says }}</span>
           <span v-if="g.max" class="eq-charges tip" :data-tip="`Charges left${g.recharge ? '; regains ' + g.recharge : ''}`">
             <button class="link-btn" :disabled="ro || !g.left" title="Spend a charge" @click="charge(g.i, (g.left ?? 0) - 1)">−</button>
-            <AppIcon ui="charges" /> {{ g.left }} / {{ g.max }}
+            <span v-flash="g.left"><AppIcon ui="charges" /> {{ g.left }} / {{ g.max }}</span>
             <button class="link-btn" :disabled="ro || g.left === g.max" title="Get a charge back" @click="charge(g.i, (g.left ?? 0) + 1)">＋</button>
           </span>
         </li>

@@ -1618,3 +1618,16 @@ svg.gi.off { opacity: .35; }
 .live-code-input { width: 8em; text-transform: uppercase; letter-spacing: .08em; }
 .live-tag { border: 1px solid color-mix(in srgb, #3aa86b 50%, var(--line)); border-radius: 999px; padding: .15rem .55rem; background: transparent; white-space: nowrap; }
 button.live-tag { cursor: pointer; }
+
+/* a number that just changed (flash.ts): a soft glow that fades, green when it went up, red when down */
+:root { --flash-up: #3fb873; --flash-down: #e0533f; }
+.flash, .flash-up, .flash-down { --flash-c: var(--accent); animation: flash-glow 1.2s ease-out; }
+.flash-up { --flash-c: var(--flash-up); }
+.flash-down { --flash-c: var(--flash-down); }
+:where(b, span, strong, em).flash, :where(b, span, strong, em).flash-up, :where(b, span, strong, em).flash-down { border-radius: 5px; }
+@keyframes flash-glow {
+  0%, 15% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--flash-c) 70%, transparent), 0 0 14px 3px color-mix(in srgb, var(--flash-c) 45%, transparent);
+            background-color: color-mix(in srgb, var(--flash-c) 22%, transparent); text-shadow: 0 0 8px color-mix(in srgb, var(--flash-c) 70%, transparent); }
+  100% { box-shadow: 0 0 0 2px transparent, 0 0 14px 3px transparent; text-shadow: 0 0 8px transparent; }
+}
+@media (prefers-reduced-motion: reduce) { .flash, .flash-up, .flash-down { animation-duration: .8s; } }

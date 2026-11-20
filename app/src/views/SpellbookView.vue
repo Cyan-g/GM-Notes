@@ -169,14 +169,14 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
           <span v-else class="muted small" title="No current character: make one current on their sheet to use their spellbook and numbers">world's book</span>
         </h3>
         <template v-if="fromSheet">
-          <label><span>Spell attack</span><b>{{ fromSheet.attack >= 0 ? '+' : '' }}{{ fromSheet.attack }}</b></label>
-          <label><span>Save DC</span><b>{{ fromSheet.dc }}</b></label>
+          <label><span>Spell attack</span><b v-flash="fromSheet.attack">{{ fromSheet.attack >= 0 ? '+' : '' }}{{ fromSheet.attack }}</b></label>
+          <label><span>Save DC</span><b v-flash="fromSheet.dc">{{ fromSheet.dc }}</b></label>
         </template>
         <template v-else>
           <label><span>Spell attack</span><input type="number" :value="book.attackBonus" @change="setNum('attackBonus', ($event.target as HTMLInputElement).value)" /></label>
           <label><span>Save DC</span><input type="number" :value="book.saveDC" @change="setNum('saveDC', ($event.target as HTMLInputElement).value)" /></label>
         </template>
-        <label><span>Prepared</span><b :class="{ over: full }">{{ book.prepared.length }}</b> / <input type="number" min="0" :value="book.preparedMax" @change="setNum('preparedMax', ($event.target as HTMLInputElement).value)" /></label>
+        <label><span>Prepared</span><b v-flash.neutral="book.prepared.length" :class="{ over: full }">{{ book.prepared.length }}</b> / <input type="number" min="0" :value="book.preparedMax" @change="setNum('preparedMax', ($event.target as HTMLInputElement).value)" /></label>
       </section>
 
       <section class="card sbk-slots">
@@ -188,7 +188,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
             <button v-for="p in s.max" :key="p" class="pip" :class="{ on: p - 1 < s.max - s.used }"
                     :title="p - 1 < s.max - s.used ? 'Spend this slot' : 'Get this slot back'" @click="pip(s, p - 1)" />
           </span>
-          <span class="slot-left">{{ s.max - s.used }} / {{ s.max }}</span>
+          <span v-flash="s.max - s.used" class="slot-left">{{ s.max - s.used }} / {{ s.max }}</span>
           <template v-if="editSlots">
             <input class="slot-max" type="number" min="0" max="9" :value="s.max" :title="classesKnown ? 'Slots of this level: typing a number replaces the one from the class levels' : 'Slots of this level'" @change="setMax(s, ($event.target as HTMLInputElement).value)" />
             <button v-if="s.rule != null" class="link-btn small" :title="`Back to the class levels' ${s.rule}`" @click="resetMax(s)">↺ {{ s.rule }}</button>
@@ -198,7 +198,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
         <div v-for="a in arcana" :key="a.key" class="slot-row arcanum">
           <span class="slot-lvl" title="Mystic Arcanum: one casting of a spell of this level per long rest"><small class="slot-kind">Arcanum</small>{{ ORD[a.level - 1] }}</span>
           <span class="pips"><button class="pip" :class="{ on: !a.used }" :title="a.used ? 'Get it back' : 'Use it'" @click="pip(a, 0)" /></span>
-          <span class="slot-left">{{ 1 - a.used }} / 1</span>
+          <span v-flash="1 - a.used" class="slot-left">{{ 1 - a.used }} / 1</span>
         </div>
         </div>
         <p v-if="!shownSlots.length && !arcana.length" class="muted small">{{ classesKnown ? 'Their classes give no spell slots.' : 'No slots yet: click Edit to set them.' }}</p>
@@ -275,7 +275,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
               <td><a :href="hrefEntry(g.spell.spell)" class="spell-link" @click="openSpell($event, g.spell.spell)">{{ get(g.spell.spell)!.name }}</a></td>
               <td>{{ levelLabel(get(g.spell.spell)!) }}</td>
               <td><EntryLink :id="g.item.id" /></td>
-              <td>{{ g.status }}</td>
+              <td><span v-flash="g.status.match(/(\d+) left/)?.[1] ?? g.status">{{ g.status }}</span></td>
               <td>{{ get(g.spell.spell)!.fields.castingTime ?? '' }}</td>
               <td>{{ get(g.spell.spell)!.fields.range ?? '' }}</td>
               <td class="sbk-check">{{ check(get(g.spell.spell)!) }}</td>

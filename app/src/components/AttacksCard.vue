@@ -36,8 +36,8 @@ const none = (k: 'armor' | 'weapons' | 'tools' | 'languages') => !profs.value[k]
         <table v-if="atks.length" class="cs-attacks">
           <tr v-for="a in atks" :key="a.id">
             <td><button class="link-btn cs-item" @click="shown = a.id">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> <AppIcon ui="warning" /></span></td>
-            <td><b :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td>
-            <td>{{ a.damage }} <span class="muted small">{{ a.type }}</span></td>
+            <td><b v-flash="a.toHit" :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td>
+            <td><span v-flash="a.damage">{{ a.damage }}</span> <span class="muted small">{{ a.type }}</span></td>
           </tr>
         </table>
         <p v-else class="muted small">Equip a weapon to see its attack here.</p>
@@ -45,9 +45,9 @@ const none = (k: 'armor' | 'weapons' | 'tools' | 'languages') => !profs.value[k]
       <div class="atk-spell">
         <h3>Spells</h3>
         <template v-if="cast">
-          <div class="atk-spell-row"><span>{{ cast.toUpperCase() }}</span><b>{{ signed(castMod) }}</b></div>
-          <div class="atk-spell-row"><span>Save DC</span><b :class="{ 'gear-mod tip': gt.spellDC.length }" :data-tip="breakdown(`${dc - sum(gt.spellDC)} without gear`, gt.spellDC)">{{ dc }}</b></div>
-          <div class="atk-spell-row"><span>Attack</span><b :class="{ 'gear-mod tip': gt.spellAttack.length }" :data-tip="breakdown(`${signed(spellAtk - sum(gt.spellAttack))} without gear`, gt.spellAttack)">{{ signed(spellAtk) }}</b></div>
+          <div class="atk-spell-row"><span>{{ cast.toUpperCase() }}</span><b v-flash="castMod">{{ signed(castMod) }}</b></div>
+          <div class="atk-spell-row"><span>Save DC</span><b v-flash="dc" :class="{ 'gear-mod tip': gt.spellDC.length }" :data-tip="breakdown(`${dc - sum(gt.spellDC)} without gear`, gt.spellDC)">{{ dc }}</b></div>
+          <div class="atk-spell-row"><span>Attack</span><b v-flash="spellAtk" :class="{ 'gear-mod tip': gt.spellAttack.length }" :data-tip="breakdown(`${signed(spellAtk - sum(gt.spellAttack))} without gear`, gt.spellAttack)">{{ signed(spellAtk) }}</b></div>
         </template>
         <p v-else class="muted small">No casting ability.</p>
         <a :href="hrefTab(pc.id, 'spellbook')" class="small">Spellbook →</a>

@@ -53,11 +53,11 @@ function onDrop(ev: DragEvent) {
 <template>
   <section class="cs-inventory" :class="{ card: side, 'cs-inv-side': side, 'drop-over': over }"
            @dragover="onDragOver" @dragleave="over = false" @drop="onDrop">
-    <component :is="side ? 'h3' : 'h4'">Inventory <span class="muted small">{{ weight ? `${Math.round(weight * 10) / 10} lb, with what's equipped` : '' }}</span></component>
+    <component :is="side ? 'h3' : 'h4'">Inventory <span v-flash.neutral="weight" class="muted small">{{ weight ? `${Math.round(weight * 10) / 10} lb, with what's equipped` : '' }}</span></component>
     <table class="cs-inv">
       <tr v-for="{ l, i, e } in gear" :key="i" :draggable="!ro && !!e"
           @dragstart="startDrag($event, pc, i, 'inventory')" @dragend="endDrag">
-        <td class="cs-qty"><input type="number" min="0" :value="l.qty" :disabled="ro" @change="edit(x => x.inventory[i].qty = num($event) ?? 0)" /></td>
+        <td class="cs-qty"><input v-flash="l.qty" type="number" min="0" :value="l.qty" :disabled="ro" @change="edit(x => x.inventory[i].qty = num($event) ?? 0)" /></td>
         <td class="cs-iname">
           <button v-if="e" class="link-btn cs-item" @click="shown = i">{{ e.name }}</button>
           <input v-else :value="l.name ?? ''" placeholder="Name" :disabled="ro" @change="edit(x => x.inventory[i].name = text($event))" />
@@ -73,7 +73,7 @@ function onDrop(ev: DragEvent) {
       <h5 class="cs-sub">Ingredient pouch</h5>
       <table class="cs-inv">
         <tr v-for="{ l, i } in pouch" :key="i">
-          <td class="cs-qty"><input type="number" min="0" :value="l.qty" :disabled="ro" @change="edit(x => x.inventory[i].qty = num($event) ?? 0)" /></td>
+          <td class="cs-qty"><input v-flash="l.qty" type="number" min="0" :value="l.qty" :disabled="ro" @change="edit(x => x.inventory[i].qty = num($event) ?? 0)" /></td>
           <td class="cs-iname"><button class="link-btn cs-item" @click="shown = i">{{ itemOf(i)!.name }}</button></td>
           <td><button class="link-btn" title="Remove" :disabled="ro" @click="edit(x => x.inventory.splice(i, 1))">✕</button></td>
         </tr>

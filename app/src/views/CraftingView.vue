@@ -84,7 +84,7 @@ const ingredientIds = computed(() => (byType.value.get('item') ?? []).filter(e =
                 <td :class="{ missing: !proficient(e) }" :title="proficient(e) ? '' : 'You are not proficient with this tool'"><EntryLink v-if="e.fields.craftingType" :id="e.fields.craftingType" /><template v-else>—</template></td>
                 <td>
                   <span v-for="l in lines(e)" :key="l.item" class="wb-need" :class="{ short: have(l.item) < (l.amount || 1) }">
-                    <EntryLink :id="l.item" /> <span class="muted">{{ have(l.item) }}/{{ l.amount || 1 }}</span>
+                    <EntryLink :id="l.item" /> <span v-flash="have(l.item)" class="muted">{{ have(l.item) }}/{{ l.amount || 1 }}</span>
                   </span>
                 </td>
                 <td class="num">{{ formatMoney(recipeCost(e)) }}</td>
@@ -117,14 +117,14 @@ const ingredientIds = computed(() => (byType.value.get('item') ?? []).filter(e =
         </section>
 
         <section class="card">
-          <h3>Ingredient pouch <span class="muted small">{{ formatMoney(pouchValue) }}</span></h3>
+          <h3>Ingredient pouch <span v-flash.neutral="pouchValue" class="muted small">{{ formatMoney(pouchValue) }}</span></h3>
           <p v-if="owner" class="muted small">The ingredients in {{ owner.name }}'s inventory.</p>
           <ul v-if="pouchRows.length" class="wb-list">
             <li v-for="r in pouchRows" :key="r.item">
               <EntryLink :id="r.item" />
               <span class="wb-qty">
                 <button class="link-btn" title="Take one out" @click="addTo('pouch', r.item, -1)">−</button>
-                <input type="number" min="0" :value="r.qty" @change="setQty('pouch', r.item, ($event.target as HTMLInputElement).value)" />
+                <input v-flash="r.qty" type="number" min="0" :value="r.qty" @change="setQty('pouch', r.item, ($event.target as HTMLInputElement).value)" />
                 <button class="link-btn" title="Add one" @click="addTo('pouch', r.item, 1)">＋</button>
               </span>
             </li>

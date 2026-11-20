@@ -184,11 +184,11 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
     <!-- the strip at the top: the numbers looked at most -->
     <div class="cs-strip">
       <label v-if="!classes.length" class="cs-stat"><span>Level</span><input type="number" min="1" max="20" :value="pc.fields.level ?? ''" placeholder="1" :disabled="locked" @change="setLevel" /></label>
-      <div v-else class="cs-stat" :title="classLabel"><span>Level</span><b>{{ level }}</b></div>
-      <div class="cs-stat"><span>Proficiency</span><b>{{ signed(prof) }}</b></div>
-      <div class="cs-stat cs-ac tip" :class="{ warn: ac.untrained.length }" :data-tip="ac.from + (ac.untrained.length ? ` — not proficient with ${ac.untrained.join(', ')}: disadvantage on STR and DEX rolls, no spellcasting` : '')"><span>Armor class<template v-if="ac.untrained.length"> <AppIcon ui="warning" /></template></span><b :class="{ 'gear-mod': gt.ac.length }">{{ ac.ac }}</b>
+      <div v-else class="cs-stat" :title="classLabel"><span>Level</span><b v-flash.neutral="level">{{ level }}</b></div>
+      <div class="cs-stat"><span>Proficiency</span><b v-flash="prof">{{ signed(prof) }}</b></div>
+      <div class="cs-stat cs-ac tip" :class="{ warn: ac.untrained.length }" :data-tip="ac.from + (ac.untrained.length ? ` — not proficient with ${ac.untrained.join(', ')}: disadvantage on STR and DEX rolls, no spellcasting` : '')"><span>Armor class<template v-if="ac.untrained.length"> <AppIcon ui="warning" /></template></span><b v-flash="ac.ac" :class="{ 'gear-mod': gt.ac.length }">{{ ac.ac }}</b>
         <input v-if="build" class="cs-mini" type="number" :value="s.acOverride ?? ''" placeholder="auto" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></div>
-      <label class="cs-stat" :class="{ tip: gt.speed.length }" :data-tip="breakdown(`${s.speed ?? '30 ft'} without gear`, gt.speed)"><span :class="{ 'gear-mod': gt.speed.length }">Speed</span><input :value="(locked ? speedOf(s) : s.speed) ?? ''" placeholder="30 ft" :disabled="locked" @change="edit(x => x.speed = text($event))" /></label>
+      <label class="cs-stat" :class="{ tip: gt.speed.length }" :data-tip="breakdown(`${s.speed ?? '30 ft'} without gear`, gt.speed)"><span :class="{ 'gear-mod': gt.speed.length }">Speed</span><input v-flash="locked ? speedOf(s) : s.speed" :value="(locked ? speedOf(s) : s.speed) ?? ''" placeholder="30 ft" :disabled="locked" @change="edit(x => x.speed = text($event))" /></label>
       <button v-if="!build" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" title="Inspiration" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>Inspiration</span><b><AppIcon ui="star" :class="{ off: !(s.inspiration) }" /></b></button>
     </div>
 
@@ -198,13 +198,13 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         <span class="cs-label">{{ build ? 'Maximum hit points' : 'Hit points' }}</span>
         <div class="cs-hp-row">
           <template v-if="!build">
-            <input class="cs-hp-now" type="number" :value="s.hp ?? maxHp ?? ''" placeholder="now" :disabled="ro" title="Current HP" @change="edit(x => x.hp = num($event))" />
+            <input v-flash="s.hp ?? maxHp" class="cs-hp-now" type="number" :value="s.hp ?? maxHp ?? ''" placeholder="now" :disabled="ro" title="Current HP" @change="edit(x => x.hp = num($event))" />
             <span class="muted">/</span>
           </template>
-          <span :class="{ tip: gt.maxHp.length && !build, 'gear-mod': gt.maxHp.length && !build }" :data-tip="build ? undefined : breakdown(`${s.maxHp ?? 0} without gear`, gt.maxHp)"><input type="number" :value="(build ? s.maxHp : maxHp) ?? ''" :placeholder="'max'" :disabled="locked" title="Maximum HP" @change="edit(x => x.maxHp = num($event))" /></span>
+          <span :class="{ tip: gt.maxHp.length && !build, 'gear-mod': gt.maxHp.length && !build }" :data-tip="build ? undefined : breakdown(`${s.maxHp ?? 0} without gear`, gt.maxHp)"><input v-flash="build ? s.maxHp : maxHp" type="number" :value="(build ? s.maxHp : maxHp) ?? ''" :placeholder="'max'" :disabled="locked" title="Maximum HP" @change="edit(x => x.maxHp = num($event))" /></span>
           <template v-if="!build">
             <span class="muted small">temp</span>
-            <input type="number" :value="s.tempHp ?? ''" placeholder="0" :disabled="ro" title="Temporary HP" @change="edit(x => x.tempHp = num($event) || undefined)" />
+            <input v-flash="s.tempHp ?? 0" type="number" :value="s.tempHp ?? ''" placeholder="0" :disabled="ro" title="Temporary HP" @change="edit(x => x.tempHp = num($event) || undefined)" />
           </template>
         </div>
         <div v-if="maxHp && !build" class="cs-hp-bar"><i :style="{ width: Math.min(100, Math.round(100 * (s.hp ?? maxHp) / maxHp)) + '%' }" /></div>
@@ -216,7 +216,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         <span class="cs-label">Hit dice</span>
         <div v-for="p in pools" :key="p.die" class="cs-hp-row">
           <template v-if="!build">
-            <input type="number" min="0" :max="p.total" :value="p.total - p.spent" :disabled="ro" :title="`${p.die} left`" @change="setLeft(p.die, p.total, num($event))" />
+            <input v-flash="p.total - p.spent" type="number" min="0" :max="p.total" :value="p.total - p.spent" :disabled="ro" :title="`${p.die} left`" @change="setLeft(p.die, p.total, num($event))" />
             <span class="muted">/ {{ p.total }}</span>
           </template>
           <span v-else>{{ p.total }} ×</span>
@@ -237,22 +237,22 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
           <!-- name, modifier and the score in its box -->
           <div class="cs-ab-head">
             <span class="cs-short" :title="a.label">{{ a.short }}</span>
-            <b class="cs-mod" :class="{ 'gear-mod': scoreTip(a.key), tip: scoreTip(a.key) }" :data-tip="scoreTip(a.key)">{{ signed(mod(scoreOf(a.key))) }}</b>
-            <input class="cs-score" type="number" min="1" max="30" :value="locked ? scoreOf(a.key) : s.abilities[a.key]" :disabled="locked" :title="scoreTip(a.key) ? undefined : `${a.label} score`" @change="edit(x => x.abilities[a.key] = num($event) ?? 10)" />
+            <b v-flash="mod(scoreOf(a.key))" class="cs-mod" :class="{ 'gear-mod': scoreTip(a.key), tip: scoreTip(a.key) }" :data-tip="scoreTip(a.key)">{{ signed(mod(scoreOf(a.key))) }}</b>
+            <input v-flash="scoreOf(a.key)" class="cs-score" type="number" min="1" max="30" :value="locked ? scoreOf(a.key) : s.abilities[a.key]" :disabled="locked" :title="scoreTip(a.key) ? undefined : `${a.label} score`" @change="edit(x => x.abilities[a.key] = num($event) ?? 10)" />
           </div>
           <!-- the saving throw, on its own band apart from the skills -->
           <button class="cs-skill cs-save" :class="{ on: s.saves.includes(a.key) }" :disabled="locked" :title="build ? `${a.label} saving throw: click for proficiency` : `${a.label} saving throw`" @click="toggleSave(a.key)">
-            <span class="cs-dot">{{ s.saves.includes(a.key) ? '●' : '○' }}</span><b :class="{ 'gear-mod': saveParts(a.key).length, tip: saveParts(a.key).length }" :data-tip="tipOf(saveBonus(s, a.key, prof), saveParts(a.key))">{{ signed(saveBonus(s, a.key, prof)) }}</b><span>Saving throw</span><i v-if="saveAdv(a.key).tip" class="cs-adv tip" :class="saveAdv(a.key).mode" :data-tip="saveAdv(a.key).tip">{{ saveAdv(a.key).mode ?? '±' }}</i>
+            <span class="cs-dot">{{ s.saves.includes(a.key) ? '●' : '○' }}</span><b v-flash="saveBonus(s, a.key, prof)" :class="{ 'gear-mod': saveParts(a.key).length, tip: saveParts(a.key).length }" :data-tip="tipOf(saveBonus(s, a.key, prof), saveParts(a.key))">{{ signed(saveBonus(s, a.key, prof)) }}</b><span>Saving throw</span><i v-if="saveAdv(a.key).tip" class="cs-adv tip" :class="saveAdv(a.key).mode" :data-tip="saveAdv(a.key).tip">{{ saveAdv(a.key).mode ?? '±' }}</i>
           </button>
           <div class="cs-skills">
             <button v-for="sk in skillsOf(a.key)" :key="sk.name" class="cs-skill" :class="{ on: s.skills[sk.name] }" :disabled="locked" :title="build ? 'Click: proficient, expertise, none' : SKILL_LEVEL[s.skills[sk.name] ?? 0] ?? ''" @click="cycleSkill(sk.name)">
-              <span class="cs-dot">{{ skillMark(sk.name) }}</span><b :class="{ 'gear-mod': gt.skill[sk.name]?.length, tip: gt.skill[sk.name]?.length }" :data-tip="tipOf(skillBonus(s, sk.name, prof), gt.skill[sk.name] ?? [])">{{ signed(skillBonus(s, sk.name, prof)) }}</b><span>{{ sk.name }}</span><i v-if="skillAdv(sk.name).tip" class="cs-adv tip" :class="skillAdv(sk.name).mode" :data-tip="skillAdv(sk.name).tip">{{ skillAdv(sk.name).mode ?? '±' }}</i>
+              <span class="cs-dot">{{ skillMark(sk.name) }}</span><b v-flash="skillBonus(s, sk.name, prof)" :class="{ 'gear-mod': gt.skill[sk.name]?.length, tip: gt.skill[sk.name]?.length }" :data-tip="tipOf(skillBonus(s, sk.name, prof), gt.skill[sk.name] ?? [])">{{ signed(skillBonus(s, sk.name, prof)) }}</b><span>{{ sk.name }}</span><i v-if="skillAdv(sk.name).tip" class="cs-adv tip" :class="skillAdv(sk.name).mode" :data-tip="skillAdv(sk.name).tip">{{ skillAdv(sk.name).mode ?? '±' }}</i>
             </button>
             <p v-if="!skillsOf(a.key).length" class="cs-noskill">no skills</p>
           </div>
           <!-- what else scales with it, at the bottom: initiative (DEX), passive perception (WIS) -->
-          <div v-if="a.key === 'dex'" class="cs-foot tip" :data-tip="tipOf(initTotal, gt.initiative) ?? 'Initiative: DEX modifier plus any bonus'"><span>Initiative</span><b :class="{ 'gear-mod': gt.initiative.length }">{{ signed(initTotal) }}</b></div>
-          <div v-else-if="a.key === 'wis'" class="cs-foot" title="Passive perception: 10 + Perception"><span>Passive perception</span><b>{{ passivePerception(s, prof) }}</b></div>
+          <div v-if="a.key === 'dex'" class="cs-foot tip" :data-tip="tipOf(initTotal, gt.initiative) ?? 'Initiative: DEX modifier plus any bonus'"><span>Initiative</span><b v-flash="initTotal" :class="{ 'gear-mod': gt.initiative.length }">{{ signed(initTotal) }}</b></div>
+          <div v-else-if="a.key === 'wis'" class="cs-foot" title="Passive perception: 10 + Perception"><span>Passive perception</span><b v-flash="passivePerception(s, prof)">{{ passivePerception(s, prof) }}</b></div>
         </div>
       </section>
 
@@ -261,7 +261,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         <template v-if="build">
         <h4>Attacks</h4>
         <table v-if="atks.length" class="cs-attacks">
-          <tr v-for="a in atks" :key="a.id"><td><button class="link-btn cs-item" @click="showItem(a.id)">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> <AppIcon ui="warning" /></span></td><td><b :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td><td>{{ a.damage }} <span class="muted small">{{ a.type }}</span></td></tr>
+          <tr v-for="a in atks" :key="a.id"><td><button class="link-btn cs-item" @click="showItem(a.id)">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> <AppIcon ui="warning" /></span></td><td><b v-flash="a.toHit" :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td><td><span v-flash="a.damage">{{ a.damage }}</span> <span class="muted small">{{ a.type }}</span></td></tr>
         </table>
         <p v-else class="muted small">Equip a weapon in the inventory to see its attack here.</p>
         </template>
@@ -274,7 +274,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
             <option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.short }}</option>
           </select>
           <span v-else>{{ castLabel }}</span>
-          <template v-if="cast"><span>Save DC <b :class="{ 'gear-mod tip': gt.spellDC.length }" :data-tip="tipOf(spellDC, gt.spellDC, String)">{{ spellDC }}</b></span><span>Attack <b :class="{ 'gear-mod tip': gt.spellAttack.length }" :data-tip="tipOf(spellAtk, gt.spellAttack)">{{ signed(spellAtk) }}</b></span></template>
+          <template v-if="cast"><span>Save DC <b v-flash="spellDC" :class="{ 'gear-mod tip': gt.spellDC.length }" :data-tip="tipOf(spellDC, gt.spellDC, String)">{{ spellDC }}</b></span><span>Attack <b v-flash="spellAtk" :class="{ 'gear-mod tip': gt.spellAttack.length }" :data-tip="tipOf(spellAtk, gt.spellAttack)">{{ signed(spellAtk) }}</b></span></template>
           <a :href="hrefTab(pc.id, 'spellbook')" class="small">Spellbook →</a>
         </div>
         </template>

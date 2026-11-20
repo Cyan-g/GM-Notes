@@ -11,6 +11,7 @@ import { DesktopStorage, desktop, folderName, type UpdateInfo } from './storage/
 import { HttpStorage } from './storage/storage'
 import { DesktopBackend, DevBackend } from './storage/backend'
 import { goBack, goForward, route } from './router'
+import { startFlash } from './flash'
 import TopBar from './components/TopBar.vue'
 import QuickSwitcher from './components/QuickSwitcher.vue'
 import HomeView from './views/HomeView.vue'
@@ -43,6 +44,7 @@ import { toggleFavourite } from './edit'
 import { syncTitle } from './title'
 
 syncTitle()
+startFlash()
 
 const phase = ref<'starting' | 'need-folder' | 'new-world' | 'ready'>('starting')
 const startError = ref('')

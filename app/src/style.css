@@ -1770,3 +1770,13 @@ button.live-tag { cursor: pointer; }
 .wz-feature { padding: .4rem .6rem; border: 1px solid var(--line); border-radius: 8px; margin: .35rem 0; }
 .wz-feature.open { box-shadow: inset 3px 0 0 var(--accent); }
 .wz-feature summary { cursor: pointer; }
+/* The sheet's one Features & traits list (FeatureList): each line's source as a small tag */
+.feature-list .sp-trait { padding: .35rem 0; border-top: 1px solid var(--line); }
+.feature-list .sp-trait:first-child { border-top: 0; }
+.feature-list .sp-head { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .5rem; }
+.feature-list .sp-uses { margin-left: auto; }
+.feat-tag { font-size: 11px; padding: 0 .45rem; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.feat-tag.tag-class, .feat-tag.tag-subclass { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); color: var(--accent); }
+.feat-tag.tag-gear { font-style: italic; }
+.feature-list .sp-trait.dim { opacity: .55; }
+.feature-list .sp-trait.sp-pending { box-shadow: inset 3px 0 0 var(--accent); padding-left: .7rem; }

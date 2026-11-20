@@ -25,8 +25,8 @@ import ProfChips from './ProfChips.vue'
 import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
 import PcPortrait from './PcPortrait.vue'
-import SpeciesCard from './SpeciesCard.vue'
-import { speciesEffects } from '../species'
+import FeatureList from './FeatureList.vue'
+import { choiceOpen, speciesEffects, speciesTraits } from '../species'
 
 const props = defineProps<{ pc: Entry; build?: boolean }>()
 const ro = computed(() => !!state.readOnly)
@@ -42,11 +42,13 @@ const atks = computed(() => attacks(s.value, prof.value))
 const cast = computed(() => castingAbility(props.pc, s.value))
 // ---- what the active gear changes (gear.ts): the numbers below include it, a ✦ marks them, hovering says why ----
 const gt = computed(() => gearTotals(s.value))
-/** Senses, resistances, immunities and feature lines from gear; the species' are on the Species card. */
+/** Senses, resistances, immunities and feature lines from gear (the species' and features' are listed with them). */
 const fromGear = computed(() => {
   const sp = new Set(speciesEffects(props.pc, s.value).map(x => x.name)), mine = (x: { from: string }) => !sp.has(x.from)
   return { senses: gt.value.senses.filter(mine), resistances: gt.value.resistances.filter(mine), immunities: gt.value.immunities.filter(mine), features: gt.value.features.filter(mine) }
 })
+/** Choices the character's classes, species and background still wait for. */
+const openChoices = computed(() => speciesTraits(props.pc, s.value).filter(a => a.active && choiceOpen(a)).length)
 const scoreOf = (a: Ability) => scoreWith(s.value, a, gt.value)
 const scoreTip = (a: Ability) => scoreBreakdown(s.value, a, gt.value)
 /** A total's tooltip: what it is without gear, then each item's part. */
@@ -311,14 +313,11 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
     </div>
     <InventoryCard v-else :pc="pc" />
 
-    <!-- what the species gives: traits, uses, choices (species.ts) -->
-    <SpeciesCard v-if="!build" :pc="pc" />
-    <SpeciesCard v-if="!build" :pc="pc" kind="background" />
-    <SpeciesCard v-if="!build" :pc="pc" kind="class" />
 
     <!-- features and traits -->
     <section class="cs-features">
-      <h4>Features &amp; traits <button v-if="build" class="link-btn" @click="addFeature">＋ Add</button></h4>
+      <h4>Features &amp; traits <button v-if="build" class="link-btn" @click="addFeature">＋ Add</button>
+        <span v-if="!build && openChoices" class="sp-open small" :title="`${openChoices} choice${openChoices === 1 ? '' : 's'} still to make`">{{ openChoices }} to choose</span></h4>
       <template v-if="build">
         <div v-for="(f, i) in s.features" :key="i" class="cs-feature">
           <input :value="f.name" placeholder="Name, e.g. Bardic Inspiration (d6)" @change="edit(x => x.features[i].name = ($event.target as HTMLInputElement).value)" />
@@ -326,16 +325,9 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
           <button class="link-btn" title="Remove" @click="edit(x => x.features.splice(i, 1))">✕</button>
         </div>
       </template>
-      <dl v-else-if="s.features.length" class="cs-feature-list">
-        <template v-for="(f, i) in s.features" :key="i"><dt>{{ f.name }}</dt><dd>{{ f.text }}</dd></template>
-      </dl>
-      <dl v-if="!build && (fromGear.resistances.length || fromGear.features.length || fromGear.senses.length || fromGear.immunities.length)" class="cs-feature-list cs-gear-features">
-        <template v-for="(r, i) in fromGear.senses" :key="'s' + i"><dt>{{ r.sense }} {{ r.range }} ft</dt><dd class="muted">from {{ r.from }}</dd></template>
-        <template v-for="(r, i) in fromGear.resistances" :key="'r' + i"><dt>Resistance: {{ r.type.toLowerCase() }}</dt><dd class="muted">from {{ r.from }}</dd></template>
-        <template v-for="(r, i) in fromGear.immunities" :key="'i' + i"><dt><ConditionIcon :name="r.condition" /> Immune: {{ r.condition.toLowerCase() }}</dt><dd class="muted">from {{ r.from }}</dd></template>
-        <template v-for="(f, i) in fromGear.features" :key="'f' + i"><dt>{{ f.text }}</dt><dd class="muted">from {{ f.from }}</dd></template>
-      </dl>
-      <p v-if="!s.features.length" class="muted small">Class features, racial traits, feats<template v-if="!build && !ro">: add them with ✎ Edit</template>.</p>
+      <!-- everything from the classes, species, background, the sheet and the gear, each with its source (species.ts) -->
+      <FeatureList v-else :pc="pc" :s="s" :gear="fromGear" />
+      <p v-if="build" class="muted small">Features from the classes, species and background come by themselves; add feats and anything else here.</p>
     </section>
     <ItemModal v-if="shownLine?.item" :id="shownLine.item" @close="shown = null">
       <template #actions>

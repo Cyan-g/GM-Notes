@@ -58,8 +58,10 @@ A player character's page is its sheet for play; ✎ Edit builds it.
   features* step shows what the class and subclass give at that level and takes their choices. *Make a blank one
   instead* skips the wizard.
 - **Class features:** a Class entry (Archive → Classes, one per class of the Classes list) and each subclass have
-  *Features*, edited like species traits, each from a level in that class. The sheet's **Class features** card shows
-  the ones the character has, folded to a line (the text a click away), with use pips (or − / ＋ for a pool such as Lay
+  *Features*, edited like species traits, each from a level in that class. The sheet's **Features & traits** card lists
+  everything in one place: the class features the character has (by level), then the species' and background's traits,
+  the Origin feat, what's typed on the sheet and what the gear adds, each tagged with its source and folded to a line
+  (the text a click away), with use pips (or − / ＋ for a pool such as Lay
   on Hands), scaling values (Rage Damage, Sneak Attack, Martial Arts die), and choices: Fighting Style feats,
   Expertise (which then counts double), weapons to master, options such as Metamagic or Eldritch Invocations, skills
   and languages, with counts that grow by level. Effects (Fast Movement, Danger Sense, Primal Champion…) and

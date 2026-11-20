@@ -1,323 +1,148 @@
 # GM Notes
 
-A local campaign wiki and toolkit for D&D: the world, its people, the campaign, characters, spells and crafting.
+A local campaign wiki and toolkit for tabletop roleplaying games: the world and its people, campaigns and sessions,
+characters, spells, items and crafting. Everything stays on your computer; players can follow along with their own
+copy.
 
 ## Using it
 
-GM Notes is a desktop app for Windows and macOS. It's installed once and keeps the world in a database in a `data` folder you choose.
+GM Notes is a desktop app for Windows and macOS. Each world lives in its own folder, as a database plus its pictures,
+files and backups.
 
-- **First start:** choose the data folder in a normal folder dialog, or the folder that holds it. The app remembers it; ⚙ → Data & backups shows where it is and can change it.
-  - **A folder with no world yet:** the app offers to start a new one. Give it a name, then choose what it starts with: **D&D 5e** (the SRD 5.2.1 spells and feats, the SRD species, the tool kits, every dropdown list and a standard calendar) an **Empty world** (no entries, a plain calendar, and in the dropdown lists only the options the app relies on), or **From a file…**: a world's file made with ⚙ → *Export the world*, which becomes the new world exactly (its entries, relations, lists, calendar, today's date and pictures, nothing added). Picking the file shows its world, entry count and date, and fills in the name. Then choose *I'm the DM* or *I'm a player*; it's preset to player for D&D 5e (and for a file without DM-only text) and to DM otherwise, and ⚙ → DM mode switches later.
-  - **A folder from before the database:** one holding an early version's JSON world file is converted once, by itself and checked, and the old JSON files stay where they are.
-- **Windows:** the installer (`GM-Notes-Setup-<version>.exe`) installs for your user only and updates itself. When a new version is downloaded, a bar offers *Restart and update*.
-- **macOS:** the app isn't signed with an Apple Developer ID, so the first time, right-click it and choose *Open*. It can't install updates itself; a bar says when a new version is out, with a download link.
-- **Renamed:** GM Notes was called DnDesk before. Updating replaces it, and the first start takes over its settings (the data folder and the list of worlds). The database file keeps its name, `dndesk.sqlite`, as do exports (`.dndesk.json`), so older worlds, backups and players' copies keep working.
-- **Only one copy runs at a time.** Starting it again brings the open window forward.
+- **Install:** on Windows, `GM-Notes-Setup-<version>.exe` installs for your user and updates itself (a bar offers
+  *Restart and update*). On macOS the app isn't signed, so open it the first time with right-click → *Open*; a bar
+  says when a new version is out.
+- **First start:** choose a folder. An empty one gets a new world, starting either with the SRD 5.2.1 content (spells,
+  feats, species, backgrounds, tools, the dropdown lists and a standard calendar; shown as *D&D 5e*), empty, or from
+  an exported world file. Then pick *I'm the DM* or *I'm a player* (⚙ → *DM mode* switches later).
+- **Several worlds:** the world's name at the top left switches between them, makes new ones or opens another
+  folder. Every world has a permanent ID; a copied folder can become a separate world or count as the same one moved.
+- **Renamed:** GM Notes used to be DnDesk. Its settings carry over, and the file names (`dndesk.sqlite`,
+  `.dndesk.json`) stay, so old worlds, backups and exports keep working.
 
-### Editing
+### Writing the world
 
-- **E** or the ✎ Edit button edits the open entry. **Esc** or **Done** goes back. **＋** in the top bar, "New …" in a menu or on a list creates an entry.
-- **Theme (⚙ → Theme & colours):** a colour theme you can adjust colour by colour, a **heading font** (titles, card and section headings, sub-headings) and a **text font** (body text, menus, tabs and tables). Besides the system's fonts there are fonts that ship with the app, so they look the same on every computer: Cinzel, EB Garamond, Cormorant, IM Fell, Uncial, MedievalSharp and Almendra for headings; Atkinson Hyperlegible, Alegreya, Crimson Pro and Lora for text.
-- **Going back:** ← at the left of the top bar goes back to the previous page (greyed out when there's none). **Alt+←** / **Alt+→** and the mouse's side buttons go back and forward too.
-- **New entry (＋):** type the name, then pick the type from the grid (arrow keys, Enter creates); the type of the page you're on is picked already. A name that exists already, or a close one, is shown with *Open*. On a place's page a new place is *located in* it, a new NPC *lives in* it and a new organization has its *seat* there (a ticked box you can untick).
-- **Progress:** exporting, importing and starting a world from a file show a bar at the bottom of the window: the step it's on (pictures and files, writing, saving) and how many of how many.
-- **Search (Ctrl K):** before you type, the entries you opened lately (remembered on this computer) and your favourites. Typing finds pages of the menus ("calendar", "combat"), entries by name or alias (apostrophes and punctuation ignored, one-letter typos forgiven), and under *Found in the text* the entries whose text holds every word, with an excerpt; the exact phrase comes first. Player mode leaves out encounters and creatures, there and in *Mentioned in*.
-- **Menus:** the top menus link pages and tables only, never single entries (those are reached from their tables, search and links; the one shortcut is Campaign › *Latest session*). Types open their dashboard table where there is one (NPCs, characters, organizations, spells, items), else their list. Each table is in one menu: Spells has the Spellbook and *All spells* (the Spells table, with a tab for cantrips and for each level 1st to 9th; a level's tab has no level column or filter); Crafting has Recipes, Ingredients, Potions & poisons and Scrolls; Archive has Weapons, Armor, Tools and Other items.
-- **Printing cards:** spells and items print as poker-size cards (63 × 88 mm), nine to an A4 or Letter page with cut lines, saved as a PDF. *Card* on a spell's or item's page prints that one; *Print as cards* on a table prints every row shown (so the filters pick, e.g. all 3rd-level Wizard spells); the Spellbook's *Cards* prints a character's prepared or known spells, and *Cards* on the Equipped card their items in use or everything they carry. A long text gets smaller first, then goes on on a "(continued)" card right after. DM-only text is never printed. In the print window the pages zoom (− / +, *Fit width*, Ctrl + wheel), a click opens a card big (← → to step through), and *Style* sets the colour (the theme's accent, one colour, or by spell school / item rarity), heading and text font, text size, white or parchment paper, square or rounded corners, a coloured frame, and what shows (facts, classes / properties, the SRD credit, cut lines). The style is kept with the world.
-- **Spells table:** one *Attack / save* column ("DEX save", "Attack", "Utility") and a *C/R* mark for concentration and ritual, with filters for both. Clicking a spell opens it over the table (Esc closes; Ctrl-click opens its page). *＋ Book* adds it to the current character's spellbook (or the world's).
-- Changes save by themselves about a second after you stop typing. The top bar shows the save status, and **Ctrl+S** saves right away.
-- In the text, type `[[` to link to another entry. Paste or drop a picture to store it in `data/images`. 🔒 Secret wraps text that only the DM should see.
-- **Session pages:** the side column has the in-world date (with weekday), when it was played and who was there, the previous and next session, the session's encounters (*＋ Encounter* makes one set to it; not in player mode), and *In this session*: everyone and everything the text links to, grouped by type.
-- **Session order:** sessions go by their *Number*, or without one by the number in their name ("Session 12 - …"), everywhere: the campaign page, previous / next, the Sessions table, the latest session and the next number. Names with numbers sort in numeric order in every table.
-- **Checklists:** `- [ ] open` and `- [x] done` show as boxes you can tick on the page itself, without Edit (not on shared or read-only entries). A campaign's next session (*＋ New session*) starts with the last session's headings and its open checklist items; ticked ones stay behind.
-- Relations (memberships, family, home, ...) are edited on either entry and show up on both.
-- **Dropdowns** (an item's kind, a spell's school, …) pick from lists kept in the world. **Archive → Lists** (DM mode) shows them all: rename, reorder, add and remove options. Weapon properties and ingredient properties are lists too, and their options can have a description (a property's rule): it pops up when you hover the property. A weapon's or ingredient's properties are picked from a dropdown.
-  - Entries point at an option rather than copying its name, so renaming it renames it everywhere.
-  - An option that's in use can't be removed; the page shows which entries use it.
-  - Options marked 🔒 are the ones the app relies on (an item being a Weapon, a spell needing a Saving throw, …). They can be renamed but not removed.
-- **🕘** on an entry's page shows its earlier versions and can go back to one. A version is kept each time the entry changes, at most every 10 minutes, and the last 40 are kept. Going back keeps the version it replaces, so it can be undone.
+- **Entries** of many types (NPCs, places, organizations, items, spells, creatures, sessions, notes…), with fields
+  from the schema and Markdown text. `[[` links another entry, pictures can be pasted or dropped, and 🔒 *Secret*
+  marks GM-only text. Relations (membership, family, home…) show on both ends.
+- **Keys:** **E** edits, **Esc** / *Done* goes back, **Ctrl K** searches names, aliases and text, **Ctrl S** saves
+  at once (it also saves by itself). ← and Alt+← / Alt+→ move through history.
+- **Dropdowns** come from lists kept with the world (Archive → Lists): rename, reorder, add, remove. Entries point at
+  an option, so a rename shows everywhere; options in use, or that the app relies on (🔒), can't be removed.
+- **Sessions** follow their number; a new one starts with the last one's headings and open checklist items.
+  Checklists (`- [ ]`) can be ticked right on the page.
+- **🕘 History** keeps an entry's earlier versions (one per 10 minutes, the last 40) and can go back to one.
+- **Maps:** a place's map has pins for the places in it. Set a scale, measure routes of several legs with travel time
+  and arrival date at a pace or vehicle of your choice, and save named routes.
+- **Calendar:** your own months, leap rule, weekdays, moons, eras and holidays; dates follow when months move.
+- **Cards:** spells and items print as poker-size cards (nine to a page, PDF), one at a time or every row of a filtered
+  table, styled to taste. GM-only text is never printed.
+- **Theme:** colours, plus heading and text fonts, including fonts that ship with the app.
 
 ### DM mode and player mode
 
-**⚙ → DM mode** switches what the app shows. The setting is saved with the world. Nothing is deleted when you switch.
+*DM mode* (the GM's view) shows everything. Player mode is for a player's copy: a Character menu, the shared world, their own notes,
+characters and NPCs; the Archive, combat, encounters and GM-only text are hidden. The mode is saved with the world.
 
-- **DM mode** (the DM's own world) shows everything.
-- **Player mode** is for a player's own copy.
-  - The menus are Character, Campaign (the campaigns, with their session notes), World (Atlas, Timeline, Calendar, places and events) and People (the NPCs and organizations the DM shares, and the player's own). The spellbook and workbench are tabs on the character's page instead of the Spells and Crafting menus. The Archive, Combat and encounters are hidden.
-  - The home page shows the characters, the campaign, the tools, favourites, the regions and links, but not the deities and races.
-  - New entries can be characters, NPCs, organizations, campaigns, sessions, notes, places, events, spells and items. A player's own NPCs and organizations stay theirs: an update from the DM never removes them, and one the DM shares later arrives as its own entry.
-  - DM-only text is never shown.
+### Characters
 
-To set up a player:
-1. They install GM Notes and choose an empty folder as the data folder.
-2. The app offers **Start a new world here**, which starts in player mode. The new world already has every dropdown list, the standard calendar, the SRD spells, feats and species and the tool kits (see *The starting world* below).
-3. They import the world (⚙ → Export the world…) or the entries you send them; importing a newer file later updates their copy.
+A player character's page is its sheet for play; ✎ Edit builds it.
 
-### Character sheet
+- **Built from:** classes (multiclassing, with subclasses), ability scores, proficiencies picked from the same lists
+  items use, species, background, money, speed and features.
+- **Worked out:** modifiers, proficiency bonus, saves, skills, passive Perception, AC from the armor worn, an attack
+  line per weapon (⚠ without proficiency), spell save DC and attack, hit dice per die size, and spell slots from the
+  class levels (multiclass table, pact slots, Mystic Arcanum).
+- **Play:** damage and healing, temporary HP, rests, inspiration, an inventory with drag and drop onto *Equipped*
+  (armor, weapons, three attunement slots). A number that changes glows for a moment: green up, red down.
+- **Gear effects:** what an item does while worn, wielded or attuned: AC, ability scores (added, raised to or forced
+  to a value), saves, attack and damage, spell attack and DC, skills, advantage, extra damage, speed, initiative, max
+  HP, resistances, condition immunities, senses, features. Changed numbers get a ✦ and say where they come from.
+  Items can also give spells with charges, and have requirements (scores, classes, species, skills) that are checked
+  when equipping.
+- **Species and backgrounds:** set up by the GM, picked on the character. Their traits carry effects, proficiencies
+  and languages, spells, uses per rest and choices the player makes on the sheet (a lineage, skills, a tool); a
+  subrace adds its main race's traits. Every granted proficiency can be swapped by the player. Ability score bonuses
+  (fixed, picks, alternatives, a cap) and a background's starting equipment are stored as data but never added by
+  themselves; the coming character creation wizard will hand them out.
+- **The current character** (☆ on a sheet) is the one the Spellbook (spells, slots, prepared spells, spells from items
+  and species) and the Workbench (recipes, tools, the ingredient pouch; crafting takes and gives items) are about.
+- **Combat:** the initiative tracker takes AC, initiative and HP from the sheets, tracks conditions with rounds left,
+  concentration checks and death saves.
 
-A player character's page is its character sheet for play: HP, hit dice, inspiration and the inventory change there. The character is built on its **✎ Edit** page, which shows the whole sheet with everything else editable (the text editor isn't there: the character's notes are written in the *Notes* box at the bottom of its page, with ✎ Write).
+**How items match proficiencies:** a weapon by its category or base weapon, armor by its type (clothing needs
+none), and a Tool item *is* the tool; a recipe's *Crafted with* names it.
 
-- **Classes (multiclassing):** on the Edit page, *＋ Class* adds a class from the Classes list, each with its own level and, if there are Subclass entries for it, a subclass. The character's level is the sum; a character without a class has a plain level instead. The icon follows the highest level class: a game-icons.net picture in the text colour (battle-axe for Barbarian, lyre for Bard, holy symbol for Cleric, oak leaf for Druid, crossed swords for Fighter, fist for Monk, templar shield for Paladin, bow for Ranger, cloak and dagger for Rogue, magic swirl for Sorcerer, eye for Warlock, spell book for Wizard, tinker for Artificer; see Credits). Without a class, or with a homebrew one, it stays 🛡️.
-- **What you fill in:** the classes and ability scores. Each ability has a card with its saving throw and the skills that use it; click a save to mark proficiency, and click a skill to cycle it: proficient, then expertise, then none.
-- **Hit points:** current, max and temporary HP. Type `-7` or `+5` in *Damage / heal* to apply it; temporary HP soak up damage first.
-- **Hit dice:** each class brings its die (d12 Barbarian; d10 Fighter, Paladin, Ranger; d6 Sorcerer, Wizard; d8 the others, and a homebrew class picks one). The sheet has a row per die size, each spent on its own. **Long rest** restores HP and gives back half the level in hit dice, biggest dice first.
-- **Inventory:** items from the world with a quantity, plus anything else by name. Clicking an item opens its card in a pop-up, where it can also be equipped or attuned. Only items marked *Requires attunement* can be attuned.
-- **Equipped card** (beside the sheet, in place of the relation cards): the worn armor and wielded weapons, and the three attunement slots. What's equipped or attuned is shown there and not in the inventory.
-- **Changed numbers light up:** when equipping, attuning, casting, spending a charge or anything else changes a number on the sheet, in the Spellbook or on the Workbench, it glows for a moment: green when it went up, red when it went down (the accent for counts like the attunement slots). Opening a page or switching character lights up nothing.
-- **Drag and drop:** drag an item from the inventory onto *Equipped* to wear or wield it (weapons, armor, and anything else with effects, such as boots or a cloak). An item that requires attunement is attuned instead. Drag it onto the attunement slots to attune it, and back to the inventory to take it off.
-- **Equipped and inventory:** under the sheet, *Equipped* (what is worn and wielded, the attunement slots and the active gear) sits beside the inventory, half and half; in DM and player mode alike.
-- **Proficiencies:** picked from the same lists the items use:
-  - armor: Light, Medium, Heavy, Shield
-  - weapons: Simple, Martial, or single base weapons such as Rapier
-  - tools: the Tool items in the world
-  - languages, plus a line for anything else
-- **Also:** money, speed, inspiration and features.
-- **Worked out for you:**
-  - modifiers and the proficiency bonus (from the level)
-  - saves, skills and passive Perception
-  - armor class from the equipped armor and shield, e.g. "14 + dex(max 2)", or 10 + DEX without armor, plus the AC effects of the gear. A number typed under AC overrides it.
-  - an attack line for each equipped weapon: finesse weapons use the better of STR and DEX, ranged weapons DEX, plus the attack and damage effects of the gear. The proficiency bonus is added only if the character is proficient with the weapon; ⚠ marks one they aren't
-  - ⚠ on the AC and in *Equipped* for armor or a shield worn without the proficiency for it
-  - the spell save DC and attack bonus, from the casting ability of the highest level spellcasting class unless you pick another
-- **Gear effects:** an item's *Effects* (on its ✎ Edit page) say what it does to whoever uses it: AC, an ability score
-  (added, raised to a value like Gauntlets of Ogre Power's STR 19, or forced to one even when lower, like a cursed ring's INT 6), all saves or one, attack and damage rolls, spell
-  attack and save DC, a skill, advantage or disadvantage on a skill or a save, typed extra weapon damage ("+ 2
-  necrotic", optionally only when proficient), speed, initiative, max HP, a resistance, a condition immunity, a sense
-  (Darkvision 120 ft), or a feature line. They count while the item is
-  worn or wielded, or, for an item that requires attunement, while attuned. A weapon's attack and damage effects count
-  for that weapon only. Numbers changed by gear get a ✦; hovering shows where they come from ("16 Chain mail · +1 Ring
-  of Protection"), and *Equipped* lists the active gear with what each item adds. Gear resistances and features show
-  under *Features & traits*. (Data version 25 turned the old free-text Bonus field into effects.)
-- **Species traits:** a race's *Traits* (set up on its ✎ Edit page) carry what the species gives a character: text,
-  the same effects as gear (darkvision, resistances, advantage on saves, speed, *Max HP per level* for Dwarven
-  Toughness…), proficiencies and languages it grants, spells (at will, once per short or long rest, or always
-  prepared, each from a character level on), uses that come back on a rest (a number or the proficiency bonus), a
-  starting level, and a choice for the player: pick skills, languages or tools (any, or only from a list), or one of
-  several options such as an elven lineage or a draconic ancestry, each with its own effects, grants and spells. A
-  subrace has its main race's traits too, and the race's own *Languages* count as known. On the character's sheet the
-  *Species* card lists the traits, their open choices (picked there and kept with the character) and use pips;
-  effects, skills, proficiencies, languages and the species' speed (when none is typed) go into the sheet's numbers
-  with the trait named on hover; the spells are in the Spellbook beside those from items; a long rest gives back
-  every use, a short rest the short-rest ones. Racial ability score increases are not added: the scores stay as typed.
-  (Data version 26 turned the old one-line traits into traits, "Name: text", with the sense or resistance they name.)
-- **Ability score bonuses:** a race's *Ability scores* and a feat's *Ability score increase* are data, set on the Edit
-  page: fixed bonuses per score (+2 Con), picks the player makes (+1 to one score, or only from Str or Dex), an
-  alternative set of picks ("+2 to one score or +1 to two"), a maximum score and a note. They are shown on the race and
-  feat and in the lists, but never added to a sheet on their own; the character creation wizard will offer them. (Data
-  version 27 read the old text, "+2 Str, +1 Cha", into this; what it can't read is kept as the note.)
-- **Backgrounds:** an entry type of their own (Archive → Backgrounds), set up as in the 2024 rules: ability scores (the
-  bonus editor above, e.g. "Str, Dex or Con: +2 to one, +1 to another or +1 to all three"), an Origin feat (and which
-  version of it, "Cleric"), skills, a tool (several tools: the player picks one) and starting equipment (items from the
-  world or just names, coins, or coins instead), plus *Features* like a species' traits for anything more. A character
-  picks one in *Background* on its Edit page; its skills, tool and features count on the sheet like the species', on a
-  **Background** card under the Species card. Ability scores and equipment are not handed out; the character creation
-  wizard will. Every proficiency a background or species grants is a dropdown on its card: the player can swap it for
-  another of the same kind at any time (an overlap with a class skill, a DM's ruling); the swapped one is outlined.
-- **Requirements:** an item's *Requirements* (on its Edit page) name minimum ability scores, classes (or any
-  spellcaster), races (a subrace counts) and skill proficiencies, plus a note that isn't checked. A character who
-  doesn't meet them can't equip the item, or attune to it if it needs attunement: the button is greyed out and says
-  why, and a drop onto *Equipped* is refused. Heavy armor is the exception: below its Strength it can be worn, at
-  −10 ft speed. An item already in use that no longer fits gets a ⚠. The card shows "Requires" or "Attunement by".
-- **Spells and charges from items:** an item's *Spells* (on its ✎ Edit page) are spells its user can cast while it's
-  in use: for some of its *Charges*, once per short or long rest or per day, at will, or *prepared* (cast with the
-  character's own slots), optionally at a set level. *Regains* notes how charges come back (e.g. "1d4 at dawn"; that's
-  done by hand). The Spellbook's *From items* card lists them with their item, attack or save and a *Cast* button that
-  spends the charges or marks the use; *Short rest* there and *Long rest* give uses back. *Equipped* shows each item's
-  charges with − and ＋.
-- **In a fight:** Combat (the initiative tracker) shows the PC's AC and initiative bonus from the sheet, always current. HP is shared with the sheet once it has a max HP: damage in the fight changes the sheet, and the other way round (until then the card keeps its own HP).
-- **Combat cards:** only the conditions in effect show, as chips; *＋ Condition* adds one. A number in a chip is the rounds left, counting down at the end of that creature's turn. Damage to someone *Concentrating* asks for a CON save (DC 10, or half the damage) with *Kept* / *Lost*. Dropping to 0 HP ends concentration; a party member falls *Unconscious* and gets death-save boxes (damage at 0 HP adds a failure; *Nat 20* brings them back with 1 HP).
+### Sharing with players
 
-**How items match proficiencies.** Each item says what it needs:
-- **A weapon:** its *Weapon category* (Simple or Martial) and its *Base weapon* (Rapier). A standard base weapon also tells the category. A weapon with neither, such as a wand, needs no proficiency.
-- **Armor:** its *Armor type*. Clothing needs no proficiency.
-- **A tool:** an item of the kind Tool *is* the tool. A recipe's *Crafted with* links to one, and the Workbench checks the character is proficient with it.
+- **Live on your network:** ⚙ → *Share with players…* → *Start hosting*. Players find the session by themselves (or
+  type the address) and enter the world's code once; *New code* drops everyone. *Send now* sends to everyone
+  connected. Five wrong codes lock a computer out for five minutes. Allow GM Notes on private networks when Windows
+  asks.
+- **Through a shared folder** (e.g. a Google Drive folder shared as *Viewer*): *Publish now* writes the world there,
+  pictures named by their content so only changes sync. Joined worlds check on start and every 5 minutes.
+- **Joining:** the world list has *Join a live session…* and *Join a shared world…*; a world can use both.
+- **What goes out:** entries marked *Known to players* without GM-only text, the lists, the calendar and today's
+  date; never characters, campaigns, sessions, encounters or creatures. Nothing comes back. Shared entries are
+  read-only for players, who keep their own notes on them; their own entries are never touched by an update.
+- **Files:** ⇩ *Export* sends one entry with what it points at, ⚙ → *Export the world…* everything; ⚙ → *Import from a
+  file…* shows what's new and updated before bringing it in. GM-only text and hidden entries are opt-in or opt-out.
 
-**The current character.** "☆ Make current character" at the top of a sheet makes that character the one the other tools are about:
-
-- **Spellbook:** shows the character's own spellbook: spells, slots and prepared spells. The spell attack and save DC come from their sheet once its scores and casting ability are filled in; until then they're typed in.
-- **Spell slots** come from the class levels: full, half and third casters (Eldritch Knight, Arcane Trickster) combined by the multiclass table, warlock pact slots as their own row (back on *☕ Short rest*), and Mystic Arcanum from warlock level 11 (one casting of each level per long rest). *Edit* can type a different count for a level (marked ✎, *↺* goes back to the rules). A character without classes, and the world's book, keep typed slots. *Cast* uses the lowest slot that fits, pact slots first on a tie.
-- **Workbench:** uses the character's recipes and the tool proficiencies from their sheet (set on its ✎ Edit page; the recipes show which tools are missing). The ingredient pouch is the ingredients in their inventory, which the sheet lists separately as *Ingredient pouch*. Crafting takes the ingredients out of the inventory and puts the result in.
-- **Tabs:** a character's page has *Overview* (the sheet), *Family tree*, *📖 Spellbook* and *⚗️ Workbench*; the last two are that character's own, whether or not they're the current one.
-- **Character menu** (player mode): clicking it opens the current character's sheet; hovering offers *New character…* and *All characters*, the list where the current one is marked ★ current.
-
-With no current character, the Spellbook and Workbench use the world's own; the Spellbook then takes typed numbers, and the Workbench picks its tools itself.
-
-### Maps and travel
-
-A place with a map picture shows it with pins for the places in it (✎ Edit pins adds, moves and links them).
-
-- **Scale:** in ✎ Edit pins, *⚖ Set scale*: click two points a known distance apart (the ends of the map's scale
-  bar, or two towns) and type the distance in miles or feet, or the travel time between them ("2 days" at a
-  pace or in a vehicle; it is turned into miles). Each map has its own.
-- **Measure:** *📏 Measure* on a map (also on the place's own page once its map has a scale), then click points or pins to lay a route of several legs. It shows each leg's
-  length, the total, the travel time and the arrival date in the world calendar (setting out today). Pick a pace or
-  vehicle: the 5e slow, normal and fast paces (18 / 24 / 30 miles in an 8-hour travel day) or a ship, galley,
-  airship and the like, which travel around the clock. A leg can be marked difficult terrain (half speed).
-- **Routes:** name a route and save it; the map's *Routes* list shows each with its distance and time, a box to draw
-  it on the map, *Open* to change it and ✕ to delete it.
-- **Own paces and vehicles** (a griffon, a sand skiff): *Paces & vehicles…* under Measure, with their mph and
-  whether they travel all day.
-
-### The calendar
-
-**World → Calendar → ⚙ Edit calendar** changes the world's calendar:
-- **Structure:** its name, the months and their length, which month gets the leap day (every 4 years, except every 100, except every 400; or none) and the weekdays.
-- **Moons:** each with its cycle in days and today's phase.
-- **Eras:** dates show the era's short name (its initials unless you give one), e.g. "892 AC". The first era also covers every year before it; years below 0 count backwards.
-- **Holidays:** they repeat every year.
-- **Timeline colours:** for each event category (the categories themselves are in Archive → Lists) and for sessions. A session appears on the timeline when its *Show on the timeline* box is ticked.
-- **Today stays put:** it keeps the weekday and moon phases picked on the page, whatever else changes.
-- **Dates follow their month:** when months are moved, or one before them is removed, dates move with them. Saving warns first about dates that no longer fit:
-  - a date in a removed last month keeps its number, so adding a month back brings it back;
-  - a date in another removed month keeps only its year;
-  - a day past a shortened month's end stays as it is.
-
-### Several worlds
-
-The desktop app can keep several worlds (your campaign, a one-shot, a player's own copy) and switch between them. Each world is its own folder with its database, pictures, files and backups.
-- **Switching:** click the world's name at the top left (it also has *Home*), or ⚙ → *Switch world*. Both list your worlds, last opened first. The open one is saved before switching. The start screen lists them too.
-- **New world…** asks for a name and makes a folder for it inside your worlds folder (chosen the first time). The start screen then asks what it starts with and whether you're the DM or a player, as for a new folder. A world joined from a shared folder or a live session starts with D&D 5e, in player mode.
-- **Open a world folder…** opens a world anywhere else (and adds it to the list). ✕ takes a world off the list; its folder stays.
-- **World ID:** every world gets a permanent ID the first time it's opened. It's kept by backups and restores and isn't part of exports. Sharing with players will use it, so a player's world only ever follows the right one of your worlds.
-- **Copies:** if the same ID turns up in a second folder that still holds a world, the app asks: *Make it a separate world* (a new ID, e.g. after copying a world to start a new campaign from it) or *It's the same world, moved* (the list forgets the old folder). A world whose old folder is gone simply moved.
-
-### Sharing with players: a live session and/or a shared folder
-
-Players' worlds can follow yours live while you host a session on your network, and through a shared folder, e.g. a Google Drive folder you share with them as *Viewer* (each player adds it to their own Drive so it syncs to their computer). Both carry the same thing, one way only: nothing ever comes back.
-- **Hosting a live session (you):** ⚙ → *Share with players…* → *Start hosting*. Players on the same network (Wi-Fi or LAN) find the session by itself, or type the address the dialog shows. They need the world's code (like `K7QM-4XPT`) once: it stays the same for the world until you click *New code*, which drops everyone connected. The dialog shows who is connected. *Send now* sends to everyone connected and writes the shared folder too, if the world has one; players who connect later get the last send. *Stop hosting*, closing the app or switching worlds ends the session. The first time, Windows asks whether GM Notes may accept connections: allow it on private networks. Five wrong codes from one computer lock it out for five minutes.
-- **Publishing to a shared folder (you):** in the same dialog, *Choose folder…* once, then shows what would go out and what changed since the last publish, including what players will lose. *Publish now* writes `<shared folder>/<world ID>/world.json` and the pictures and files, named by their content so Drive only moves what changed.
-- **What's shared:** every entry marked *Known to players*, without DM-only text, the dropdown lists, the calendar and today's date. Never: characters, campaigns, sessions, encounters, creatures, or anything *DM only*.
-- **Joining (a player):** in the world list (the world's name at the top left, or ⚙ → *Switch world*), *Join a live session…* → pick the session (or type the address) → the code → *Connect*; or *Join a shared world…* → pick the shared folder → *Join*. A new world is made and filled from it. A world that follows yours through the folder can connect live too (⚙ → *Live session…*), and the other way round.
-- **Staying up to date:** live, an update arrives the moment you send it; the app finds your session again whenever you host (also after your computer's address changed) and shows **● Live** in the top bar while connected. Through the folder, a joined world checks on start and every 5 minutes (⚙ → *Check for updates* any time). While connected live, the world comes from your app; otherwise from the folder. A backup is made, then the shared entries are replaced, entries you stopped sharing are removed (the player's own entries keep the name where they pointed at them), your lists win (options the player added stay), and the calendar and today's date are yours.
-- **Shared entries are read-only** for the player (no Edit; the page says where they come from). On people and places (NPCs, organizations, places, deities, events) players have **Your notes**, which updates never touch. Their characters, campaigns, sessions and notes are all theirs.
-- **Versions:** a publish from a newer GM Notes asks the player to update first.
-
-### Sharing entries and the world
-
-An entry, or the whole world, can be sent to someone else who has this app, and sent again later to bring their copy up to date.
-
-- **⇩ Export** on an entry's page saves it as `<name>.dndesk.json`, with everything it points at, and what those point at in turn: *Located in*, race, recipes and their tools, a scroll's spell, shop stock, map pins, a character's inventory, spellbook, recipes and tools. Tick *Also what its text links to* to follow the `[[links]]` in the text too.
-- **⚙ → Export the world…** saves every entry, the connections between them, every dropdown list, your calendar (as edited in *⚙ Edit calendar*), the timeline's colours and today's date.
-- **Never exported:** campaigns, sessions, encounters and creatures stay with the DM.
-- **DM-only text** is left out unless you tick *Include the DM-only parts of the text*. **Hidden entries** (not known to the players) go along unless you untick *Include entries hidden from the players*; their connections stay out with them.
-- **Choosing types:** the *Take along* chips leave whole types out.
-- **Links to what stays home** stay links, so they work wherever that entry exists (the other side has it, or it came in earlier); elsewhere a link becomes plain words and a field leaves it out. A field that loses something on import keeps your own value. A hidden entry left out is never linked in the file (a link to it keeps only its words).
-- **⚙ → Import from a file…** (top right) brings one in and shows what's new, what's updated and what's already the same.
-  - **Updating:** an entry you already have is updated. It counts as the same entry if it has the same id (it came from the same world, even if it was renamed since), or else the same type and name. Untick an updated one to keep yours.
-  - **DM-only text:** a file without DM-only text never wipes out DM-only text you have.
-  - **Connections:** they're matched by their two ends and kind, then added or updated.
-  - **Dropdown lists:** choices are matched to your options by id, then by name; one you don't have is added. A world's file also carries over renamed options.
-  - **Calendar:** a world's file brings its calendar, timeline colours and today's date; the tick box is on when they differ from yours. So a player who imports your world gets your calendar in place of the standard one.
-
-Everything is saved in `data/`:
+### Your data
 
 | Path | What |
 | --- | --- |
-| `data/dndesk.sqlite` | the world: every entry, relation and setting, the play state, and earlier versions of changed and deleted entries |
-| `data/images/`, `data/files/` | pictures and attached files (character sheets) |
-| `data/backups/` | copies of the database (`dndesk-<date>.sqlite`): one at most every 10 minutes while you edit, thinned out over time (see below) |
+| `data/dndesk.sqlite` | the world: entries, relations, settings, play state and earlier versions |
+| `data/images/`, `data/files/` | pictures and attached files |
+| `data/backups/` | automatic copies (`dndesk-<date>.sqlite`), at most one per 10 minutes |
 
-### Backups
-
-**⚙ → Data & backups** (top right) has two tools:
-
-- **Make a backup copy** copies the database (with SQLite's own safe copy), pictures and files into a folder you choose, for example on your PC. Each copy is a new folder named `GM-Notes-backup-<world>-<date>`, so copies of several worlds can share the folder. The app remembers the folder, and the ⚙ gets a dot when the last backup copy is more than a week old.
-- **Earlier versions** lists the automatic backups in `data/backups`. **Go back to this** restores one, after saving the current database as `before-restore-<date>.sqlite`, so a restore can be undone.
-- **Deleted entries** lists every deleted entry the database still remembers. **Bring back** restores it; its relations have to be added again.
-
-The automatic backups keep everything from the last 2 hours, then the newest of each hour for 2 days, of each day for 2 months, and of each month for good. Only files named `dndesk-<date>.sqlite` are ever deleted; anything else in that folder stays.
-
-### Data check
-
-Every time the data is opened, the app checks it against what it expects:
-- each entry's fields are ones its type has, with values of the right kind
-- links in fields point at existing entries of the right type
-- relations connect entries that exist
-- favourites and the current character exist
-
-The check never changes anything. **⚙ → Data & backups → Data check** lists what it found, with links to the entries. A bar under the menu appears only for serious problems.
-
-Imported files are checked too. A damaged file is refused, and fields the app doesn't know or values of the wrong kind are left out.
-
-### Safety while saving
-
-- **Only what changed is written, as one transaction.** A save either lands completely or not at all, so a crash, a full disk or a pulled USB stick never leaves half a world.
-- **The database enforces the basics itself:**
-  - every entry has a known type, an id and a name
-  - its fields are a JSON object
-  - relations only connect existing entries, with a known kind
-  - deleting an entry deletes its relations
-
-  A bug that tries to write anything else is refused.
-- **Changes made elsewhere aren't overwritten.** Each save checks that nothing else saved since the app loaded. If something did, saving stops and the bar offers *Reload* (take the other version) or *Overwrite* (keep this window's; the database is backed up first).
-- **Mass deletions aren't saved.** If more than 10 entries would vanish in one save (deleting in the app goes one at a time), the save is refused with a message.
-- **Newer data stays safe from an older app.** Data saved by a newer version opens read-only. Data from before data version 20 (early test versions) isn't opened or restored.
+- **Backups:** automatic ones are kept for 2 hours, then hourly for 2 days, daily for 2 months and monthly for good.
+  ⚙ → *Data & backups* restores one (saving the current state first), brings back deleted entries and makes a full
+  copy to a folder of your choice (the ⚙ gets a dot after a week without one).
+- **Data check:** each opening checks fields, links and relations, and lists problems without changing anything.
+  Imported files are checked too.
+- **Safe saving:** only changes are written, in one transaction. The database refuses malformed data, a save never
+  overwrites changes made elsewhere without asking, more than 10 deletions in one save are refused, and data from a
+  newer app version opens read-only.
 
 ## Developing it
 
-The source is in `app/` (Vue 3 + TypeScript + Vite). Node is only needed for development, not for using the app.
-
-The folder is a git repository for the app's code. `data/` is ignored: the campaign data is protected by the backups above, not by git. On a FAT32 or exFAT drive (a USB stick, say), which doesn't record file owners, git on another PC (or under another drive letter) refuses with "dubious ownership" until you run `git config --global --add safe.directory <path to the folder>`.
+The source is in `app/` (Vue 3 + TypeScript + Vite; the desktop shell is Electron). `data/` isn't in git; the backups
+protect it.
 
 ```bash
 cd app
 npm install
 npm run dev        # the pages in a browser at http://localhost:5199, on ../data/dndesk.sqlite; add ?write to save
-npm run build      # type-checks and builds the pages into dist/ (what the desktop app shows)
+npm run build      # type-check and build into dist/
+npm run desktop    # build and open the desktop app
+npm run dist       # Windows installer, into %LOCALAPPDATA%\GM-Notes-build
+npm run seed       # rebuild the starting world from ../data (or a folder given after it)
 ```
 
-`app/src/model/schema.ts` describes every entry type and its fields. Forms, pages, the data check (`validate.ts`) and the field types all come from it:
-- **Field types:** `EntryFields` gives each field key the type its kind stores, so `e.fields.recipe` is a `RecipeLine[]` and a misspelled key doesn't compile.
-- **Keys only known at runtime** (a table column, a form field) go through `byKey(e.fields)`.
-- **Adding a field:** adding it to the schema is enough.
+- **Schema:** `app/src/model/schema.ts` describes every entry type and its fields; forms, pages, the data check
+  (`validate.ts`) and the field types (`EntryFields`, `byKey`) all come from it. Adding a field there is enough.
+- **Data versions:** changes to the data's shape are steps in `upgrade()` in `app/src/store.ts`; each raises
+  `version` once, and `DATA_VERSION` must match the last.
+- **Desktop shell** (`app/electron/`): `main.cjs` (window, data folder, updates, live sessions in `live.cjs`),
+  `db.cjs` (the database on Node's built-in `node:sqlite`, transactions, history), `preload.cjs` (the only bridge the
+  pages get).
+- **The starting world** (`app/src/seed/world.json`) holds the dropdown lists, a Gregorian calendar, and only what may
+  be published: the SRD 5.2.1 spells and feats (`app/scripts/srd-5.2.1.json` where your world lacks them), species
+  (`srd-species.json`), backgrounds and their tools (`srd-backgrounds.json`), and Tool items with facts but no text.
+  Homebrew stays in your world.
+- **FAT32 / exFAT drives:** git may need `git config --global --add safe.directory <folder>`, and `npm run dist`
+  builds on the local disk because the packager needs finer file times.
 
-### The starting world
+**Releasing:** raise `version` in `app/package.json`, commit, tag (`v1.2.3`) and push both.
+`.github/workflows/release.yml` builds the Windows installer and the Mac `.dmg`/`.zip` into a draft release and
+publishes it, which is where the apps look for updates. A tag uses the workflow as it was in that commit.
 
-A new world that starts with D&D 5e gets a copy of `app/src/seed/world.json`, which ships inside the app (an empty world doesn't use it). It holds:
-- every dropdown list;
-- the standard calendar: Gregorian months and leap day, the real moon, BC and AD, today 1 January of year 1, and the sessions' timeline colour. It's not taken from your world: a world makes its own on the Calendar page (*⚙ Edit calendar*), and a player gets yours by importing your world;
-- the 339 spells and 17 feats of the SRD 5.2.1 (CC BY 4.0), the nine SRD species with their traits (`app/scripts/srd-species.json`: effects, choices such as the elven lineages and draconic ancestries, spells and uses), the four SRD backgrounds and the tools they name (`app/scripts/srd-backgrounds.json`) and the Tool items (facts only, no text), without DM-only text or pictures. Links to anything else become plain words. Only what may be published goes in: homebrew and rules text from outside the SRD stay in your world.
-
-`npm run seed` rebuilds it from your world (`../data`, or a folder given after the command), taking each SRD spell and feat from your world when it carries the SRD source line (so your fixes, e.g. a spell's type, come along) and from `app/scripts/srd-5.2.1.json` otherwise; commit it and the next build ships it. The seed records its data version, so after an upgrade step a new world from an older seed is brought up to date like any older data. Rebuilding it now and then keeps it current.
-
-### Credits
+## Credits
 
 - **Fonts:** Cinzel, EB Garamond, Cormorant Garamond, IM Fell English, Uncial Antiqua, MedievalSharp, Almendra, Alegreya, Crimson Pro, Lora and Atkinson Hyperlegible, each under the [SIL Open Font License 1.1](https://openfontlicense.org), from Google Fonts. They're in `app/src/fonts/`, each with its licence (OFL.txt), latin characters only.
-- **Spells and feats from the SRD:** this work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode. Those entries end with a *Source* line; the same credit is on the Data page.
+- **Spells, feats, species and backgrounds from the SRD:** this work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode. Those entries end with a *Source* line; the same credit is on the Data page.
 - **Class icons:** [game-icons.net](https://game-icons.net) by Lorc, Delapouite and the other game-icons.net artists, under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). The chosen icons (tinker, battle-axe, lyre, holy-symbol, oak-leaf, crossed-swords, fist, templar-shield, bow-arrow, cloak-dagger, magic-swirl, warlock-eye, spell-book) are in `app/src/icons/classes.ts`, taken from the `@iconify-json/game-icons` package. The same credit is on the Data page.
 - **Menu and page icons:** also [game-icons.net](https://game-icons.net), same artists and licence: world, sands-of-time, calendar, sword-clash, family-tree, enlightenment, magic-palm, level-three, cauldron, scroll-quill, herbs-bundle, round-bottom-flask, tied-scroll, broadsword, breastplate, toolbox, backpack, checklist; and for buttons and headings backward-time, rolling-dices, desk, round-star, checked-shield, skull-crossed-bones, plain-dagger, treasure-map, save, palette, measure-tape, scales, pin, coffee-cup, night-sleep, hazard-sign, cog, save-arrow, paper-arrow, share, cloud-download, upgrade, padlock, party-popper, crown, family-tree, linked-rings, mona-lisa, lightning-arc, house, world, moon. They're in `app/src/icons/ui.ts`. The calendar's moon phases are drawn by the app (`MoonPhase.vue`).
-- **Entry type icons:** also [game-icons.net](https://game-icons.net), same artists and licence: person, character, vertical-banner, position-marker, elf-ear, angel-wings, spiked-dragon-head, swap-bag, sparkles, laurels, scroll-unfurled, hourglass, rolling-dices, campfire, crossed-sabres, quill-ink, notebook. They're in `app/src/icons/types.ts`.
+- **Entry type icons:** also [game-icons.net](https://game-icons.net), same artists and licence: person, character, vertical-banner, position-marker, elf-ear, backpack, angel-wings, spiked-dragon-head, swap-bag, sparkles, laurels, scroll-unfurled, hourglass, rolling-dices, campfire, crossed-sabres, quill-ink, notebook. They're in `app/src/icons/types.ts`.
 - **Condition icons:** also [game-icons.net](https://game-icons.net), same artists and licence: blindfold, charm, hearing-disabled, tired-eye, terror, grab, knockout, invisible, frozen-body, stone-bust, poison-bottle, half-body-crawling, manacles, knocked-out-stars, sleepy, concentration-orb. They're in `app/src/icons/conditions.ts`, and show on combat cards, the initiative strip, statblock condition immunities and item immunities.
-
-### The desktop app
-
-`app/electron/` holds the desktop shell:
-- **`main.cjs`** owns the window, the data folder (remembered in the app's settings), the database, safe file writing for pictures, and updates.
-- **`db.cjs`** is the database: the tables, saving changes as transactions, history, copies, and converting the old JSON files. It runs on the SQLite built into the app's Node (`node:sqlite`), so there's nothing to compile per platform. The dev server uses the same file.
-- **`preload.cjs`** is the only bridge the pages get: a few named calls, no Node.
-- **On the pages' side,** `src/storage/backend.ts` reaches the database and `src/storage/desktop.ts` the pictures and files, each with a desktop and a dev-server version.
-
-```bash
-cd app
-npm run desktop    # build the pages and open them in the desktop app
-npm run dist       # Windows installer, into %LOCALAPPDATA%\GM-Notes-build
-```
-
-Building onto a FAT32 drive fails: it stores file times in 2-second steps, and the packager's lock file needs finer ones. So `npm run dist` builds on the local disk.
-
-**Releasing a version:**
-1. Raise `version` in `app/package.json`.
-2. Commit, then tag the commit, e.g. `v0.2.0`.
-3. Push the commit and the tag.
-
-`.github/workflows/release.yml` then:
-1. creates a draft release for the tag;
-2. builds the Windows installer and the Mac `.dmg`/`.zip` on GitHub's machines, each uploading into the draft;
-3. publishes the release once both are done. That's where the apps look for updates.
-
-A tag's run uses the workflow as it was in that commit, so a fix to the workflow needs a new version and tag.
-
-While the repository is private, the apps can't see its releases, so update checks quietly find nothing. That changes once it's public.
-
-
-Changes to the data's shape happen in `upgrade()` in `app/src/store.ts`: each step raises `version`, and runs once when the app opens older data. `DATA_VERSION` at the top must match the last step.

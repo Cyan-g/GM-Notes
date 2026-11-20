@@ -36,6 +36,8 @@ export const blankSheet = (): CharacterSheet => ({
 /** A PC's sheet for reading, with anything never filled in at its default. */
 export const sheetOf = (pc: Entry): CharacterSheet | undefined =>
   pc.fields.sheet ? own({ ...blankSheet(), ...(pc.fields.sheet) }, pc) : undefined
+/** A PC's sheet for reading, blank if never filled in: still theirs, so their species and classes count on it. */
+export const sheetOrBlank = (pc: Entry): CharacterSheet => sheetOf(pc) ?? own(blankSheet(), pc)
 /** A PC's stored sheet for changing: created, or completed, as needed. */
 export function sheetToEdit(pc: Entry): CharacterSheet {
   const s = (pc.fields.sheet ??= {} as CharacterSheet) as Partial<CharacterSheet>

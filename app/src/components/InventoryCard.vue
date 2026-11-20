@@ -6,7 +6,7 @@ import { computed, ref } from 'vue'
 import { optionLabel } from '../store'
 import type { CharacterSheet, Entry } from '../model/types'
 import { formatMoney, get, state } from '../store'
-import { blankSheet, canAttune, canEquip, carried, draggedLine, dragged, editSheet, endDrag, sheetOf, startDrag } from '../sheet'
+import { canAttune, canEquip, carried, draggedLine, dragged, editSheet, endDrag, sheetOrBlank, startDrag } from '../sheet'
 import EntryPicker from './edit/EntryPicker.vue'
 import MoneyInput from './edit/MoneyInput.vue'
 import ItemModal from './ItemModal.vue'
@@ -14,7 +14,7 @@ import GearToggles from './GearToggles.vue'
 
 const props = defineProps<{ pc: Entry; side?: boolean }>()
 const ro = computed(() => !!state.readOnly)
-const s = computed<CharacterSheet>(() => sheetOf(props.pc) ?? blankSheet())
+const s = computed<CharacterSheet>(() => sheetOrBlank(props.pc))
 const edit = (fn: (s: CharacterSheet) => void) => editSheet(props.pc, fn)
 const num = (ev: Event) => { const v = (ev.target as HTMLInputElement).value.trim(); return v === '' ? undefined : Number(v) }
 const text = (ev: Event) => (ev.target as HTMLInputElement).value.trim() || undefined

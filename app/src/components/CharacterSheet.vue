@@ -15,8 +15,8 @@ import { CLASS_DIE, DICE, classText, classesOf, dieOf, hitDicePools } from '../m
 import { changed } from '../edit'
 import { hrefEntry, hrefTab } from '../router'
 import {
-  ABILITIES, SKILLS, armorClass, attacks, blankSheet, canAttune, canEquip, castingAbility, initiative, levelOf, maxHpOf, mod,
-  passivePerception, profBonus, profsOf, profsToEdit, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, skillLevel, speedOf, baseSpeed, longRest, type Ability,
+  ABILITIES, SKILLS, armorClass, attacks, canAttune, canEquip, castingAbility, initiative, levelOf, maxHpOf, mod,
+  passivePerception, profBonus, profsOf, profsToEdit, saveBonus, sheetOrBlank, sheetToEdit, signed, skillBonus, skillLevel, speedOf, baseSpeed, longRest, type Ability,
 } from '../sheet'
 import { advOf, breakdown, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../gear'
 import InventoryCard from './InventoryCard.vue'
@@ -35,7 +35,7 @@ const ro = computed(() => !!state.readOnly)
 const build = computed(() => !!props.build && !ro.value)
 const locked = computed(() => !build.value)
 /** The stored sheet, or a blank one until the first change stores it. */
-const s = computed<CharacterSheet>(() => sheetOf(props.pc) ?? blankSheet())
+const s = computed<CharacterSheet>(() => sheetOrBlank(props.pc))
 const level = computed(() => levelOf(props.pc))
 const prof = computed(() => profBonus(level.value))
 const ac = computed(() => armorClass(s.value))

@@ -5,14 +5,14 @@ import AppIcon from './AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Entry, Id } from '../model/types'
 import { byType, listOptions } from '../store'
-import { attacks, blankSheet, castingAbility, levelOf, mod, profBonus, profsOf, sheetOf, signed } from '../sheet'
+import { attacks, castingAbility, levelOf, mod, profBonus, profsOf, sheetOrBlank, signed } from '../sheet'
 import { breakdown, gearTotals, scoreWith, sum } from '../gear'
 import { hrefTab } from '../router'
 import ProfChips from './ProfChips.vue'
 import ItemModal from './ItemModal.vue'
 
 const props = defineProps<{ pc: Entry }>()
-const s = computed(() => sheetOf(props.pc) ?? blankSheet())
+const s = computed(() => sheetOrBlank(props.pc))
 const prof = computed(() => profBonus(levelOf(props.pc)))
 const atks = computed(() => attacks(s.value, prof.value))
 const cast = computed(() => castingAbility(props.pc, s.value))

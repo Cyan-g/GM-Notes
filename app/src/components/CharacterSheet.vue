@@ -19,8 +19,6 @@ import {
   passivePerception, profBonus, profsOf, profsToEdit, saveBonus, sheetOrBlank, sheetToEdit, signed, skillBonus, skillLevel, speedOf, baseSpeed, longRest, type Ability,
 } from '../sheet'
 import { advOf, breakdown, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../gear'
-import InventoryCard from './InventoryCard.vue'
-import EquippedCard from './EquippedCard.vue'
 import ProfChips from './ProfChips.vue'
 import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
@@ -332,12 +330,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <p v-if="build" class="muted small">Features from the classes, species, background and the feats here come by themselves; add feats (by their name) and anything else here. The choices they ask for are near the top of this page.</p>
     </section>
 
-    <!-- what's worn and wielded beside the inventory, half and half (the Edit page shows only the inventory) -->
-    <div v-if="!build" class="cs-gear-row">
-      <EquippedCard :pc="pc" />
-      <InventoryCard :pc="pc" />
-    </div>
-    <InventoryCard v-else :pc="pc" />
+    <!-- the gear is on the Inventory tab; here its effects count in the numbers, and its charges are in the Uses card -->
 
 
     <ItemModal v-if="shownLine?.item" :id="shownLine.item" @close="shown = null">

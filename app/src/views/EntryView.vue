@@ -12,6 +12,7 @@ import { TYPES, RELATION_KINDS, byKey, type FieldDef } from '../model/schema'
 import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, hiddenFromPlayers, placePath, playerMode, relationsOf, entries, state } from '../store'
 import { go, hrefEntry, hrefFamily, hrefList, hrefMap, hrefTab, type EntryTab } from '../router'
 import SpellbookView from './SpellbookView.vue'
+import InventoryTab from './InventoryTab.vue'
 import CraftingView from './CraftingView.vue'
 import FamilyTree from '../components/FamilyTree.vue'
 import { familySize } from '../family'
@@ -51,6 +52,7 @@ const e = computed(() => get(props.id))
 /** People have a second tab with their family tree. */
 const hasFamily = computed(() => e.value?.type === 'npc' || e.value?.type === 'pc')
 const onFamily = computed(() => hasFamily.value && props.tab === 'family')
+const onInv = computed(() => e.value?.type === 'pc' && props.tab === 'inventory')
 const onBook = computed(() => e.value?.type === 'pc' && props.tab === 'spellbook')
 const onBench = computed(() => e.value?.type === 'pc' && props.tab === 'crafting')
 const onOverview = computed(() => !onFamily.value && !onBook.value && !onBench.value)
@@ -307,13 +309,17 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
     <MapView v-if="e.fields.map" :place="e" banner />
     <nav v-if="hasFamily" class="tabs entry-tabs">
       <a :href="hrefEntry(e.id)" :class="{ on: onOverview }">Overview</a>
-      <a :href="hrefFamily(e.id)" :class="{ on: onFamily }"><AppIcon ui="family" /> Family tree <span v-if="familySize(e.id)" class="muted small">{{ familySize(e.id) }}</span></a>
+      <!-- a player character's gear, spells and crafting first; the family tree last -->
+      <a v-if="e.type !== 'pc'" :href="hrefFamily(e.id)" :class="{ on: onFamily }"><AppIcon ui="family" /> Family tree <span v-if="familySize(e.id)" class="muted small">{{ familySize(e.id) }}</span></a>
       <template v-if="e.type === 'pc'">
+        <a :href="hrefTab(e.id, 'inventory')" :class="{ on: onInv }"><AppIcon ui="otherItems" /> Inventory <span v-if="e.fields.sheet?.inventory?.length" class="muted small">{{ e.fields.sheet.inventory.length }}</span></a>
         <a :href="hrefTab(e.id, 'spellbook')" :class="{ on: onBook }"><AppIcon ui="spellbook" /> Spellbook <span v-if="e.fields.sheet?.spellbook?.prepared?.length" class="muted small">{{ e.fields.sheet.spellbook.prepared.length }}</span></a>
         <a :href="hrefTab(e.id, 'crafting')" :class="{ on: onBench }"><AppIcon ui="workbench" /> Workbench <span v-if="e.fields.sheet?.crafting?.known?.length" class="muted small">{{ e.fields.sheet.crafting.known.length }}</span></a>
+        <a :href="hrefFamily(e.id)" :class="{ on: onFamily }"><AppIcon ui="family" /> Family tree <span v-if="familySize(e.id)" class="muted small">{{ familySize(e.id) }}</span></a>
       </template>
     </nav>
     <FamilyTree v-if="onFamily" :id="e.id" />
+    <InventoryTab v-else-if="onInv" :pc="e" />
     <SpellbookView v-else-if="onBook" :pc="e" />
     <CraftingView v-else-if="onBench" :pc="e" />
     <div v-else class="entry-grid">

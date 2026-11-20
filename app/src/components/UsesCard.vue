@@ -7,6 +7,7 @@ import type { CharacterSheet, Entry } from '../model/types'
 import { editSheet } from '../sheet'
 import { state } from '../store'
 import { sourceTag, speciesTraits, spendUse, usesLeft, usesMax, type ActiveTrait } from '../species'
+import { chargesLeft, itemsInUse, setCharges } from '../gear'
 
 const props = defineProps<{ pc: Entry; s: CharacterSheet }>()
 const ro = computed(() => !!state.readOnly)
@@ -14,11 +15,14 @@ const rows = computed(() => speciesTraits(props.pc, props.s).filter(a => a.activ
 const max = (a: ActiveTrait) => usesMax(props.pc, a, props.s)
 const left = (a: ActiveTrait) => usesLeft(props.pc, props.s, a)
 const use = (a: ActiveTrait, n: number) => { if (!ro.value) editSheet(props.pc, x => spendUse(x, props.pc, a, n)) }
+/** The charges of the items in use (a staff, a wand), spent and given back here as on the Inventory tab. */
+const charged = computed(() => itemsInUse(props.s).map(({ l, i, item }) => ({ i, name: item.name, max: Number(item.fields.charges) || 0, left: chargesLeft(l, item) ?? 0, recharge: item.fields.recharge as string | undefined })).filter(x => x.max > 0))
+const charge = (i: number, n: number) => { if (!ro.value) editSheet(props.pc, x => setCharges(x, i, n)) }
 const back = (a: ActiveTrait) => (a.trait.uses!.recharge === 'short' ? 'short rest' : a.trait.uses!.shortBack ? `long rest (${a.trait.uses!.shortBack} on a short)` : 'long rest')
 </script>
 
 <template>
-  <div v-if="rows.length" class="cs-hp cs-uses">
+  <div v-if="rows.length || charged.length" class="cs-hp cs-uses">
     <span class="cs-label">Uses</span>
     <div v-for="a in rows" :key="a.key" class="cs-use" :title="`${a.trait.name} (${sourceTag(a)}): back on a ${back(a)}`">
       <span class="cs-use-name">{{ a.trait.name }}</span>
@@ -31,6 +35,19 @@ const back = (a: ActiveTrait) => (a.trait.uses!.recharge === 'short' ? 'short re
           <button class="chip-btn" :disabled="ro || left(a) >= max(a)" title="Get one back" @click="use(a, -1)">＋</button>
         </template>
         <span v-flash="left(a)" class="muted small">{{ left(a) }}/{{ max(a) }} · {{ a.trait.uses!.recharge === 'short' ? 'S' : 'L' }}</span>
+      </span>
+    </div>
+    <div v-for="c in charged" :key="'c' + c.i" class="cs-use" :class="{ wide: c.max > 4 }" :title="`${c.name}: charges${c.recharge ? `, regains ${c.recharge}` : ''}`">
+      <span class="cs-use-name">{{ c.name }}</span>
+      <span class="sp-uses">
+        <template v-if="c.max <= 10">
+          <button v-for="p in c.max" :key="p" class="pip" :class="{ on: p <= c.left }" :disabled="ro" :title="p <= c.left ? 'Spend a charge' : 'Get a charge back'" @click="charge(c.i, p <= c.left ? c.left - 1 : c.left + 1)" />
+        </template>
+        <template v-else>
+          <button class="chip-btn" :disabled="ro || !c.left" title="Spend a charge" @click="charge(c.i, c.left - 1)">−</button>
+          <button class="chip-btn" :disabled="ro || c.left >= c.max" title="Get a charge back" @click="charge(c.i, c.left + 1)">＋</button>
+        </template>
+        <span v-flash="c.left" class="muted small">{{ c.left }}/{{ c.max }} charges</span>
       </span>
     </div>
   </div>

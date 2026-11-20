@@ -1133,6 +1133,8 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .cs-active { grid-column: 1 / -1; display: grid; gap: .15rem; }
 .cs-active-row { display: flex; gap: .5rem; align-items: baseline; flex-wrap: wrap; }
 .cs-use { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-width: 0; }
+.cs-use.wide { grid-column: 1 / -1; }
+.cs-inventory > h3 { margin-top: 0; }
 .cs-use-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .cs-hp-row { display: flex; align-items: center; gap: .4rem; }
 .cs-hp-row input { width: 3.6em; text-align: center; -moz-appearance: textfield; }
@@ -1382,6 +1384,9 @@ h1 .icon svg.gi { color: var(--accent); }
 .active-gear .muted { font-size: 12px; }
 
 /* A character's Equipped card beside the inventory, half and half; stacked when narrow. */
+.inventory-tab { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 1rem; align-items: start; }
+.inventory-tab > * { margin: 0; min-width: 0; }
+@media (max-width: 900px) { .inventory-tab { grid-template-columns: minmax(0, 1fr); } }
 .cs-gear-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
 .cs-gear-row > * { margin: 0; min-width: 0; }
 @media (max-width: 900px) { .cs-gear-row { grid-template-columns: minmax(0, 1fr); } }

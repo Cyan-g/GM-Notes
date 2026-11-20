@@ -51,9 +51,9 @@ function onDrop(ev: DragEvent) {
 </script>
 
 <template>
-  <section class="cs-inventory" :class="{ card: side, 'cs-inv-side': side, 'drop-over': over }"
+  <section class="cs-inventory card" :class="{ 'cs-inv-side': side, 'drop-over': over }"
            @dragover="onDragOver" @dragleave="over = false" @drop="onDrop">
-    <component :is="side ? 'h3' : 'h4'">Inventory <span v-flash.neutral="weight" class="muted small">{{ weight ? `${Math.round(weight * 10) / 10} lb, with what's equipped` : '' }}</span></component>
+    <component :is="'h3'">Inventory <span v-flash.neutral="weight" class="muted small">{{ weight ? `${Math.round(weight * 10) / 10} lb, with what's equipped` : '' }}</span></component>
     <table class="cs-inv">
       <tr v-for="{ l, i, e } in gear" :key="i" :draggable="!ro && !!e"
           @dragstart="startDrag($event, pc, i, 'inventory')" @dragend="endDrag">
@@ -69,6 +69,7 @@ function onDrop(ev: DragEvent) {
         <td><button class="link-btn" title="Remove" :disabled="ro" @click="edit(x => x.inventory.splice(i, 1))">✕</button></td>
       </tr>
     </table>
+    <p v-if="!gear.length && !pouch.length" class="muted small">Nothing carried yet: add items below. Weapons, armor and other gear go onto Equipped with their Equip and Attune buttons, or by dragging.</p>
     <template v-if="pouch.length">
       <h5 class="cs-sub">Ingredient pouch</h5>
       <table class="cs-inv">

@@ -6,7 +6,8 @@ import { computed, ref } from 'vue'
 import { optionLabel } from '../store'
 import type { Entry, Id, Spellbook } from '../model/types'
 import { db, get, touch } from '../store'
-import { activeSpellbook, currentPc, editSheet, longRest, sheetOf, spellStats, type Ability } from '../sheet'
+import { activeSpellbook, currentPc, editSheet, levelOf as charLevel, longRest, mod, score, sheetOf, spellStats, type Ability } from '../sheet'
+import { activeEffectsOf, isActive, rollsLine, toggleActive } from '../spells'
 import { castFromItem, grantedSpells, restItems, unuse, type GrantedSpell } from '../gear'
 import { restSpecies, speciesSpells, useSpeciesSpell, type SpeciesSpell } from '../species'
 import { classesOf } from '../model/classes'
@@ -126,6 +127,17 @@ const spells = (ids: Id[]) => ids.map(id => get(id)).filter((e): e is Entry => !
   .sort((a, b) => levelOf(a) - levelOf(b) || a.name.localeCompare(b.name))
 const knownList = computed(() => spells(book.value.known))
 const preparedList = computed(() => spells([...book.value.always, ...book.value.prepared]))
+/** What the spell rolls, at the caster's level and with their spellcasting modifier (a trait's spell: its own ability). */
+function rolls(e: Entry | undefined, ability?: Ability) {
+  if (!e) return ''
+  const pc = caster.value, sh = pc ? sheetOf(pc) : undefined
+  const ab = ability ?? fromSheet.value?.ability
+  return rollsLine(e, { level: pc ? charLevel(pc) : undefined, mod: sh && ab ? mod(score(sh, ab)) : undefined })
+}
+/** Spells with effects while active can be switched on for the current character (their sheet counts them). */
+const switchable = (e: Entry | undefined) => !!caster.value && activeEffectsOf(e).length > 0
+const on = (e: Entry) => isActive(caster.value ? sheetOf(caster.value) : undefined, e.id)
+const toggleOn = (e: Entry) => { if (caster.value) editSheet(caster.value, s => toggleActive(s, e.id)) }
 /** What the spell asks for, with this caster's numbers filled in. */
 function check(e: Entry, ability?: Ability) {
   const f = e.fields
@@ -283,10 +295,11 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
               <td>{{ e.fields.castingTime ?? '' }}</td>
               <td>{{ e.fields.range ?? '' }}</td>
               <td>{{ e.fields.duration ?? '' }}</td>
-              <td class="sbk-check">{{ check(e) }}</td>
+              <td class="sbk-check">{{ check(e) }}<div v-if="rolls(e)" class="sbk-rolls">{{ rolls(e) }}</div></td>
               <td>{{ [e.fields.concentration && 'C', e.fields.ritual && 'R'].filter(Boolean).join(' ') }}</td>
               <td class="sbk-actions">
                 <button v-if="levelOf(e)" class="chip-btn" :disabled="!canCast(e)" :title="canCast(e) ? 'Spend a slot of this level (or the next free higher one)' : 'No slot left for this level'" @click="cast(e)">Cast</button>
+                <button v-if="switchable(e)" class="chip-btn sbk-on" :class="{ on: on(e) }" :aria-pressed="on(e)" :title="on(e) ? 'Active: the sheet counts its effects. Click to end it' : 'Switch it on: the sheet counts its effects until you end it or take a long rest'" @click="toggleOn(e)">{{ on(e) ? 'Active' : 'On' }}</button>
               </td>
             </tr>
           </tbody>
@@ -307,7 +320,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
               <td><span v-flash="g.status.match(/(\d+) left/)?.[1] ?? g.status">{{ g.status }}</span></td>
               <td>{{ get(g.spell.spell)!.fields.castingTime ?? '' }}</td>
               <td>{{ get(g.spell.spell)!.fields.range ?? '' }}</td>
-              <td class="sbk-check">{{ check(get(g.spell.spell)!) }}</td>
+              <td class="sbk-check">{{ check(get(g.spell.spell)!) }}<div v-if="rolls(get(g.spell.spell))" class="sbk-rolls">{{ rolls(get(g.spell.spell)) }}</div></td>
               <td class="sbk-actions">
                 <template v-if="g.spell.how === 'prepared'"><span class="muted small" title="Cast with your own spell slots, from Prepared spells' Cast or the slots above">own slots</span></template>
                 <template v-else-if="g.spell.how === 'atWill'"><span class="muted small">at will</span></template>
@@ -328,7 +341,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
               <td><span v-flash.neutral="row.x!.ready">{{ row.x!.status }}</span></td>
               <td>{{ get(row.x!.spell.spell)!.fields.castingTime ?? '' }}</td>
               <td>{{ get(row.x!.spell.spell)!.fields.range ?? '' }}</td>
-              <td class="sbk-check">{{ check(get(row.x!.spell.spell)!, row.x!.spell.ability) }}</td>
+              <td class="sbk-check">{{ check(get(row.x!.spell.spell)!, row.x!.spell.ability) }}<div v-if="rolls(get(row.x!.spell.spell), row.x!.spell.ability)" class="sbk-rolls">{{ rolls(get(row.x!.spell.spell), row.x!.spell.ability) }}</div></td>
               <td class="sbk-actions">
                 <template v-if="row.x!.spell.how === 'prepared'"><span class="muted small" title="Always prepared; cast with your own spell slots">own slots</span></template>
                 <template v-else-if="row.x!.spell.how === 'atWill'"><span class="muted small">at will</span></template>

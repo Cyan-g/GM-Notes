@@ -28,6 +28,7 @@ import PcPortrait from './PcPortrait.vue'
 import FeatureList from './FeatureList.vue'
 import FeatureChoices from './FeatureChoices.vue'
 import UsesCard from './UsesCard.vue'
+import ActiveSpellsCard from './ActiveSpellsCard.vue'
 import { picksLeft, speciesEffects, speciesTraits } from '../species'
 import { ui } from '../ui'
 
@@ -246,6 +247,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
     </div>
     <!-- in play: the limited uses of features, to tick off without scrolling -->
     <UsesCard v-if="!build" :pc="pc" :s="s" />
+    <ActiveSpellsCard v-if="!build" :pc="pc" :s="s" />
     </div>
     <!-- abilities, then attacks, spellcasting and proficiencies, in the same column -->
     <div class="cs-grid">

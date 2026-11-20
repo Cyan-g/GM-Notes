@@ -113,6 +113,20 @@ export interface ItemSpell {
   cost?: number
   level?: number
 }
+/**
+ * A roll a spell makes (spells.ts): damage of a type, healing or temporary hit points; `dice` like "2d10", plus the
+ * caster's spellcasting modifier if `mod`. A cantrip's dice grow at levels 5, 11 and 17 (`cantrip`); `slot` is added
+ * for each slot level above the spell's ("1d6"). `note`: when or to whom ("half on a save", "each target").
+ */
+export interface SpellRoll {
+  kind: 'damage' | 'healing' | 'tempHp'
+  dice: string
+  type?: string
+  mod?: boolean
+  cantrip?: boolean
+  slot?: string
+  note?: string
+}
 /** One of a character's classes: an option of the "class" list, its level, a subclass entry, a hit die for a class without a standard one. */
 export interface ClassLine { class: string; level: number; subclass?: Id; die?: string }
 
@@ -169,6 +183,8 @@ export interface CharacterSheet {
   proficiencies?: Proficiencies
   /** The character's own spellbook (the Spellbook page shows it while they're the current character). */
   spellbook?: Spellbook
+  /** Spells switched on, whose "while active" effects count on the sheet (Bless, Shield of Faith); a long rest ends them. */
+  activeSpells?: Id[]
   /** Known recipes for the Workbench; the tools are in the proficiencies, the ingredients in the inventory. */
   crafting?: { known: Id[] }
   /** What the player chose in their species' traits and the uses spent (species.ts), by trait key. */

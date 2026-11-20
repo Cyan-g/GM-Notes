@@ -369,6 +369,7 @@ export function longRest(pc: Entry) {
   restSlots(s.spellbook, 'long')
   restItems(s, 'long')
   restSpecies(s, pc, 'long')
+  delete s.activeSpells
   let back = Math.max(1, Math.floor(totalLevel(pc) / 2))
   const m = { ...(s.hitDiceSpent ?? {}) }
   for (const p of hitDiceOf(pc, s)) {

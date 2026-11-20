@@ -6,6 +6,8 @@ import { fieldOptions } from '../../store'
 import type { Entry } from '../../model/types'
 import { TYPES, byKey, type FieldKey } from '../../model/schema'
 import { changed } from '../../edit'
+import SpellRollsInput from './SpellRollsInput.vue'
+import EffectsInput from './EffectsInput.vue'
 
 const props = defineProps<{ entry: Entry }>()
 const f = computed(() => props.entry.fields)
@@ -29,6 +31,7 @@ const SCHOOLS = computed(() => opts('school'))
 const KINDS = computed(() => opts('spellType'))
 const ABILITIES = computed(() => opts('savingThrow'))
 const CLASSES = computed(() => opts('classes'))
+const CONDITION_OPTS = TYPES.spell.fields.find(x => x.key === 'conditions')?.options ?? []
 const QUICK = {
   castingTime: ['action', 'bonus action', 'reaction', '1 minute', '10 minutes', '1 hour'],
   range: ['Self', 'touch', '30 feet', '60 feet', '120 feet', '150 feet'],
@@ -106,6 +109,23 @@ const setMaterial = (v: string) => set('material', v.trim() || 'yes')
         <button type="button" :class="{ on: f.concentration }" @click="toggle('concentration')">Concentration</button>
         <button type="button" :class="{ on: f.ritual }" @click="toggle('ritual')">Ritual</button>
       </div>
+    </div>
+
+    <div class="sf-cell full">
+      <span class="sf-label">Damage &amp; healing</span>
+      <SpellRollsInput :model-value="f.rolls" :cantrip="f.level === 'Cantrip'" @update:model-value="v => set('rolls', v)" />
+    </div>
+
+    <div class="sf-cell full">
+      <span class="sf-label">Conditions it can cause</span>
+      <div class="seg wrap">
+        <button v-for="c in CONDITION_OPTS" :key="c" type="button" :class="{ on: (f.conditions ?? []).includes(c) }" @click="toggleIn('conditions', c)">{{ c }}</button>
+      </div>
+    </div>
+
+    <div class="sf-cell full">
+      <span class="sf-label" title="What it does to a character while it lasts; switched on in their Spellbook, the sheet counts it until a long rest">While active</span>
+      <EffectsInput :model-value="f.active" @update:model-value="v => set('active', v)" />
     </div>
 
     <div class="sf-cell full">

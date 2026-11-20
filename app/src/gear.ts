@@ -5,6 +5,7 @@ import type { Abilities, CharacterSheet, Entry, GearEffect, Id, InventoryLine, I
 import { get } from './store'
 import { isHeavyStrength, requirementsOf } from './requirements'
 import { ownerOf, speciesEffects } from './species'
+import { activeEffectsOf, activeSpells } from './spells'
 import { totalLevel } from './model/classes'
 
 type Ability = keyof Abilities
@@ -217,6 +218,8 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
   const sources = [
     ...activeGear(s).map(({ item, effects }) => ({ item, name: item.name, isWeapon: item.fields.kind === 'Weapon', effects })),
     ...speciesEffects(pc, s).map(x => ({ item: { id: '' } as Entry, name: x.name, isWeapon: false, effects: x.effects })),
+    // spells switched on (Bless, Shield of Faith), while they last
+    ...activeSpells(s).map(e => ({ item: { id: '' } as Entry, name: e.name, isWeapon: false, effects: activeEffectsOf(e) })),
   ]
   /** Parts that add an ability's modifier too (Sanguine expert), worked out once every ability effect is counted. */
   const plusMod: { part: Part; ability: Ability }[] = []

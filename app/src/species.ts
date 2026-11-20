@@ -199,6 +199,29 @@ export function spendUse(s: CharacterSheet, pc: Entry, a: ActiveTrait, n = 1) {
   st.used = used
 }
 
+// ---- what's listed in play ----
+/** Effects the sheet works into its numbers or marks (a score, a save's advantage, speed…); others are rules to read. */
+const COUNTED: GearEffect['on'][] = ['ac', 'ability', 'saves', 'save', 'attack', 'damage', 'spellAttack', 'spellDC', 'skill', 'speed', 'initiative', 'maxHp', 'maxHpLevel', 'skillAdv', 'saveAdv']
+/**
+ * Whether a trait is listed on the sheet in play: unless set by its `onSheet`, it is when it has uses or a scaling
+ * value, asks to pick options, feats or weapons to master (those are what's used), or carries no data at all (its
+ * text is the rule). A trait whose data is all counted elsewhere (proficiencies, languages, Expertise, spells, numbers)
+ * is left out; one with a sense, resistance, immunity or feature line stays, since those are only read here.
+ */
+export function shownInPlay(a: ActiveTrait): boolean {
+  const t = a.trait
+  if (t.onSheet) return t.onSheet === 'show'
+  if (t.uses || t.scale) return true
+  const k = t.choice?.kind
+  if (k === 'option' || k === 'feat' || k === 'mastery') return true
+  const effects = [...(t.effects ?? []), ...a.options.flatMap(o => o.effects ?? [])]
+  if (effects.some(e => !COUNTED.includes(e.on))) return true
+  const data = !!(t.grants?.length || t.spells?.length || effects.length || k)
+  return !data
+}
+/** Whether a trait asks the player for anything: a choice, or proficiencies they may swap. */
+export const hasChoices = (a: ActiveTrait) => !!a.trait.choice || !!(a.trait.grants?.length || a.options.some(o => o.grants?.length))
+
 // ---- choices ----
 /** Set the picks of a trait's choice (an empty list clears it). */
 export function setPicks(s: CharacterSheet, key: string, picks: string[]) {

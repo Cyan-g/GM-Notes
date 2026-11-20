@@ -268,6 +268,8 @@ export function sheetOf(d: Draft): CharacterSheet {
   const origin = get(d.background)?.fields.originFeat
   const featLine = (id: Id | undefined, note?: string) => {
     const f = get(id)
+    // An Ability Score Improvement is all in the scores; nothing to list.
+    if (f && /^ability score improvement$/i.test(f.name.trim())) return
     if (f) feats.push({ name: note ? `${f.name} (${note})` : f.name, text: String(f.fields.summary ?? '').trim() })
   }
   featLine(origin, get(d.background)?.fields.originFeatNote)

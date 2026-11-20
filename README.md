@@ -61,7 +61,11 @@ A player character's page is its sheet for play; ✎ Edit builds it.
   *Features*, edited like species traits, each from a level in that class. The sheet's **Features & traits** card lists
   everything in one place: the class features the character has (by level), then the species' and background's traits,
   the Origin feat, what's typed on the sheet and what the gear adds, each tagged with its source and folded to a line
-  (the text a click away), with use pips (or − / ＋ for a pool such as Lay
+  (the text a click away). In play it lists only what's used or read there: a feature that just gives proficiencies,
+  spells or numbers the sheet already shows is left out (a feature's *On the sheet* setting can say otherwise), and
+  picked invocations, Metamagic options or Fighting Style feats are lines of their own. Choices and proficiency swaps are
+  made on the character's Edit page (*Choices from classes, species and background*); the card links there while one is
+  open. Lines have use pips (or − / ＋ for a pool such as Lay
   on Hands), scaling values (Rage Damage, Sneak Attack, Martial Arts die), and choices: Fighting Style feats,
   Expertise (which then counts double), weapons to master, options such as Metamagic or Eldritch Invocations, skills
   and languages, with counts that grow by level. Effects (Fast Movement, Danger Sense, Primal Champion…) and

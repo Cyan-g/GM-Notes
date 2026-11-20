@@ -14,7 +14,7 @@ function put(i: number, t: Trait) { const l = [...list.value]; l[i] = t; save(l)
 const patch = (i: number, p: Partial<Trait>) => {
   const t: Trait = { ...list.value[i], ...p }
   if (!t.level || t.level <= 1) delete t.level
-  for (const k of ['uses', 'choice', 'scale'] as const) if (t[k] == null) delete t[k]
+  for (const k of ['uses', 'choice', 'scale', 'onSheet'] as const) if (t[k] == null) delete t[k]
   put(i, t)
 }
 const add = () => save([...list.value, { id: newTraitId(), name: 'New trait' }])
@@ -84,6 +84,10 @@ const kindLabel = (k: TraitChoice['kind'], n = 2) => CHOICE_WORDS[k][n === 1 ? 0
       <TraitOptionFields :model-value="t" @update:model-value="v => put(i, v as Trait)" />
       <div class="trait-row">
         <label class="small">From level <input type="number" min="1" max="20" class="effect-value" :value="t.level ?? 1" @change="patch(i, { level: Number(val($event)) || 1 })" /></label>
+        <label class="small" title="Listed on the sheet in play? By default only when there's something to use or read there; one that only gives proficiencies, spells or numbers the sheet shows anyway is left out.">On the sheet
+          <select :value="t.onSheet ?? ''" @change="patch(i, { onSheet: (val($event) || undefined) as Trait['onSheet'] })">
+            <option value="">when useful</option><option value="show">always</option><option value="hide">not in play</option>
+          </select></label>
         <label class="small"><input type="checkbox" :checked="!!t.uses" @change="setUses(i, ($event.target as HTMLInputElement).checked)" /> Limited uses</label>
         <template v-if="t.uses">
           <select :value="countKind(t.uses)" aria-label="How many" @change="setUse(i, { count: val($event) === 'n' ? 1 : val($event) as Uses['count'] })">

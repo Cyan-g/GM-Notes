@@ -13,7 +13,7 @@ import type { CharacterSheet, ClassLine, Entry, Proficiencies } from '../model/t
 import { byType, get, listOptions, setList, state } from '../store'
 import { CLASS_DIE, DICE, classText, classesOf, dieOf, hitDicePools } from '../model/classes'
 import { changed } from '../edit'
-import { hrefTab } from '../router'
+import { hrefEntry, hrefTab } from '../router'
 import {
   ABILITIES, SKILLS, armorClass, attacks, blankSheet, canAttune, canEquip, castingAbility, initiative, levelOf, maxHpOf, mod,
   passivePerception, profBonus, profsOf, profsToEdit, saveBonus, sheetOf, sheetToEdit, signed, skillBonus, skillLevel, speedOf, baseSpeed, longRest, type Ability,
@@ -26,6 +26,7 @@ import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
 import PcPortrait from './PcPortrait.vue'
 import FeatureList from './FeatureList.vue'
+import FeatureChoices from './FeatureChoices.vue'
 import { choiceOpen, speciesEffects, speciesTraits } from '../species'
 
 const props = defineProps<{ pc: Entry; build?: boolean }>()
@@ -317,7 +318,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
     <!-- features and traits -->
     <section class="cs-features">
       <h4>Features &amp; traits <button v-if="build" class="link-btn" @click="addFeature">＋ Add</button>
-        <span v-if="!build && openChoices" class="sp-open small" :title="`${openChoices} choice${openChoices === 1 ? '' : 's'} still to make`">{{ openChoices }} to choose</span></h4>
+        <a v-if="!build && openChoices && !ro" class="sp-open small" :href="hrefEntry(pc.id, true)" :title="`${openChoices} choice${openChoices === 1 ? '' : 's'} still to make, on the Edit page`">{{ openChoices }} to choose ✎</a></h4>
       <template v-if="build">
         <div v-for="(f, i) in s.features" :key="i" class="cs-feature">
           <input :value="f.name" placeholder="Name, e.g. Bardic Inspiration (d6)" @change="edit(x => x.features[i].name = ($event.target as HTMLInputElement).value)" />
@@ -328,6 +329,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <!-- everything from the classes, species, background, the sheet and the gear, each with its source (species.ts) -->
       <FeatureList v-else :pc="pc" :s="s" :gear="fromGear" />
       <p v-if="build" class="muted small">Features from the classes, species and background come by themselves; add feats and anything else here.</p>
+      <FeatureChoices v-if="build" :pc="pc" :s="s" />
     </section>
     <ItemModal v-if="shownLine?.item" :id="shownLine.item" @close="shown = null">
       <template #actions>

@@ -250,6 +250,12 @@ export interface Trait extends TraitOption {
    */
   uses?: { count: number | 'pb' | 'level' | 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'; recharge: 'short' | 'long'; times?: number; steps?: [number, number][]; shortBack?: number }
   scale?: TraitScale
+  /**
+   * Whether it's listed on the sheet in play: by default only when there's something to use or read there (uses, a
+   * scaling value, picked options, or rules the sheet doesn't work out); one that only gives what the sheet already
+   * counts (proficiencies, spells, numbers) is left out. 'show' or 'hide' decides it instead.
+   */
+  onSheet?: 'show' | 'hide'
   choice?: TraitChoice
 }
 /**

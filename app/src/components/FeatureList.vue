@@ -20,7 +20,7 @@ import MarkdownView from './MarkdownView.vue'
 import TraitChips from './TraitChips.vue'
 
 interface GearLine { text: string; from: string }
-const props = defineProps<{ pc: Entry; s: CharacterSheet; gear: { senses: { sense: string; range: number; from: string }[]; resistances: { type: string; from: string }[]; immunities: { condition: string; from: string }[]; features: GearLine[] } }>()
+const props = defineProps<{ pc: Entry; s: CharacterSheet; gear: { senses: { sense: string; range: number; from: string }[]; resistances: { type: string; from: string }[]; immunities: { condition: string; from: string }[]; damageImmunities: { type: string; from: string }[]; features: GearLine[] } }>()
 const ro = computed(() => !!state.readOnly)
 const all = computed(() => speciesTraits(props.pc, props.s))
 /** A trait whose picks are what's used (invocations, a Fighting Style feat): once picked, its picks are listed instead. */
@@ -56,7 +56,7 @@ const own = (f: Feature) => f.text?.trim()
 /** A text without the SRD's source line (it's for the entry's page, not the sheet). */
 const clean = (t: unknown) => String(t ?? '').replace(/\s*\*?Source: System Reference Document[^*]*\*?\s*$/i, '').trim()
 const empty = computed(() => !lines.value.length && !originFeat.value && !props.s.features.length && !props.gear.senses.length
-  && !props.gear.resistances.length && !props.gear.immunities.length && !props.gear.features.length)
+  && !props.gear.resistances.length && !props.gear.immunities.length && !props.gear.damageImmunities.length && !props.gear.features.length)
 </script>
 
 <template>
@@ -127,6 +127,7 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !props.
     <!-- what the gear adds -->
     <div v-for="(r, i) in gear.senses" :key="'s' + i" class="sp-trait sp-head"><b>{{ r.sense }} {{ r.range }} ft</b> <span class="feat-tag tag-gear">{{ r.from }}</span></div>
     <div v-for="(r, i) in gear.resistances" :key="'r' + i" class="sp-trait sp-head"><b>Resistance: {{ r.type.toLowerCase() }}</b> <span class="feat-tag tag-gear">{{ r.from }}</span></div>
+    <div v-for="(r, i) in gear.damageImmunities" :key="'d' + i" class="sp-trait sp-head"><b>Immune: {{ r.type.toLowerCase() }} damage</b> <span class="feat-tag tag-gear">{{ r.from }}</span></div>
     <div v-for="(r, i) in gear.immunities" :key="'i' + i" class="sp-trait sp-head"><b><ConditionIcon :name="r.condition" /> Immune: {{ r.condition.toLowerCase() }}</b> <span class="feat-tag tag-gear">{{ r.from }}</span></div>
     <div v-for="(f, i) in gear.features" :key="'f' + i" class="sp-trait sp-head"><b>{{ f.text }}</b> <span class="feat-tag tag-gear">{{ f.from }}</span></div>
 

@@ -46,7 +46,7 @@ const gt = computed(() => gearTotals(s.value))
 /** Senses, resistances, immunities and feature lines from gear (the species' and features' are listed with them). */
 const fromGear = computed(() => {
   const sp = new Set(speciesEffects(props.pc, s.value).map(x => x.name)), mine = (x: { from: string }) => !sp.has(x.from)
-  return { senses: gt.value.senses.filter(mine), resistances: gt.value.resistances.filter(mine), immunities: gt.value.immunities.filter(mine), features: gt.value.features.filter(mine) }
+  return { senses: gt.value.senses.filter(mine), resistances: gt.value.resistances.filter(mine), immunities: gt.value.immunities.filter(mine), damageImmunities: gt.value.damageImmunities.filter(mine), features: gt.value.features.filter(mine) }
 })
 /** Choices the character's classes, species and background still wait for. */
 const openChoices = computed(() => speciesTraits(props.pc, s.value).filter(a => a.active && choiceOpen(a)).length)

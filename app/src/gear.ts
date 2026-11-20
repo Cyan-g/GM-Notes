@@ -32,6 +32,7 @@ export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: Effect
   { on: 'maxHp', label: 'Maximum HP' },
   { on: 'maxHpLevel', label: 'Max HP per level' },
   { on: 'resistance', label: 'Resistance', needs: ['type'], noValue: true },
+  { on: 'damageImmunity', label: 'Damage immunity', needs: ['type'], noValue: true },
   { on: 'immunity', label: 'Condition immunity', needs: ['condition'], noValue: true },
   { on: 'sense', label: 'Sense (ft)', needs: ['sense'] },
   { on: 'feature', label: 'Feature', needs: ['text'], noValue: true },
@@ -59,6 +60,7 @@ export function describeEffect(f: GearEffect): string {
     case 'maxHp': return `${signed(v)} max HP`
     case 'maxHpLevel': return `${signed(v)} max HP per level`
     case 'resistance': return `Resistance: ${(f.type ?? '').toLowerCase()}`
+    case 'damageImmunity': return `Immune: ${(f.type ?? '').toLowerCase()} damage`
     case 'skillAdv': return `${MODE[f.mode ?? 'adv']} on ${f.skill ?? 'a skill'}`
     case 'saveAdv': return `${MODE[f.mode ?? 'adv']} on ${ABILITY_SHORT[f.ability ?? ''] ?? '?'} saves${f.note ? ' ' + f.note : ''}`
     case 'extraDamage': return `+${f.dice || '?'} ${(f.type ?? '').toLowerCase()} damage${f.proficient ? ' (if proficient)' : ''}`.replace('  ', ' ')
@@ -173,6 +175,7 @@ export interface GearTotals {
   extraAll: Extra[]
   senses: { sense: string; range: number; from: string }[]
   immunities: { condition: string; from: string }[]
+  damageImmunities: { type: string; from: string }[]
 }
 
 /**
@@ -183,7 +186,7 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
   const t: GearTotals = {
     setAbility: {}, forceAbility: {}, addAbility: {}, save: {}, saves: [], skill: {}, ac: [], speed: [], initiative: [], maxHp: [], spellAttack: [], spellDC: [],
     attackAll: [], damageAll: [], attackOf: {}, damageOf: {}, resistances: [], features: [],
-    skillAdv: {}, saveAdv: {}, extraOf: {}, extraAll: [], senses: [], immunities: [],
+    skillAdv: {}, saveAdv: {}, extraOf: {}, extraAll: [], senses: [], immunities: [], damageImmunities: [],
   }
   const pc = ownerOf(s)
   const level = pc ? totalLevel(pc) : 1
@@ -215,6 +218,7 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
         case 'maxHp': t.maxHp.push(p); break
         case 'maxHpLevel': t.maxHp.push({ label: `${name} (${n} × level ${level})`, n: n * level }); break
         case 'resistance': if (f.type) t.resistances.push({ type: f.type, from: name }); break
+        case 'damageImmunity': if (f.type) t.damageImmunities.push({ type: f.type, from: name }); break
         case 'feature': if (f.text?.trim()) t.features.push({ text: f.text.trim(), from: name }); break
         case 'skillAdv': if (f.skill) (t.skillAdv[f.skill] ??= []).push({ mode: f.mode ?? 'adv', from: name }); break
         case 'saveAdv': if (f.ability) (t.saveAdv[f.ability] ??= []).push({ mode: f.mode ?? 'adv', note: f.note, from: name }); break

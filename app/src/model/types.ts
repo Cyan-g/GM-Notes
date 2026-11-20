@@ -72,7 +72,7 @@ export interface RankLine { title: string; renown?: number; station?: string }
  * `condition`: a condition it makes the wearer immune to.
  */
 export interface GearEffect {
-  on: 'ac' | 'ability' | 'saves' | 'save' | 'attack' | 'damage' | 'spellAttack' | 'spellDC' | 'skill' | 'speed' | 'initiative' | 'maxHp' | 'maxHpLevel' | 'resistance' | 'feature'
+  on: 'ac' | 'ability' | 'saves' | 'save' | 'attack' | 'damage' | 'spellAttack' | 'spellDC' | 'skill' | 'speed' | 'initiative' | 'maxHp' | 'maxHpLevel' | 'resistance' | 'damageImmunity' | 'feature'
     | 'skillAdv' | 'saveAdv' | 'extraDamage' | 'sense' | 'immunity'
   value?: number
   set?: boolean

@@ -236,12 +236,13 @@ table.grid td.name { font-weight: 500; }
   .search-btn { min-width: 0; }
   .search-btn kbd, .save-status { display: none; }
 }
-@media (max-width: 760px) {
+/* the top bar takes two rows (menus below) before it runs out of room */
+@media (max-width: 1200px) {
   :root { --bar-h: 88px; }
   .topbar { flex-wrap: wrap; height: auto; min-height: var(--bar-h); gap: .25rem .5rem; padding: .4rem 16px; }
   .menubar { order: 3; width: 100%; overflow-x: auto; }
-  .main { padding: 1rem 16px 3rem; }
 }
+@media (max-width: 760px) { .main { padding: 1rem 16px 3rem; } }
 
 /* ---------- editing ---------- */
 .small { font-size: 12px; }
@@ -260,6 +261,10 @@ input.bad { border-color: var(--accent); background: var(--secret-bg); }
 textarea { width: 100%; resize: vertical; }
 .entry-head { position: relative; }
 .head-actions { position: absolute; right: 0; top: 0; display: flex; gap: .4rem; }
+@media (max-width: 1200px) {
+  .head-actions { position: static; justify-content: flex-end; flex-wrap: wrap; margin-bottom: .4rem; }
+  .title-line { padding-right: 0; }
+}
 .fav-btn { font-size: 1.15rem; line-height: 1; padding: .35em .55em; color: var(--muted); }
 .fav-btn.on { color: var(--accent); border-color: var(--accent); }
 
@@ -652,7 +657,7 @@ input.init { width: 4em; }
 .pip:hover { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
 .slot-left { font-size: 12px; color: var(--muted); }
 .slot-max { width: 4em; text-align: center; padding: .2em; }
-.sbk-list { margin-bottom: 1rem; }
+.sbk-list { margin-bottom: 1rem; overflow-x: auto; }
 .sbk-list table { margin-bottom: .6rem; }
 .sbk-check { white-space: nowrap; color: var(--ink); font-weight: 500; }
 .sbk-actions { white-space: nowrap; text-align: right; }
@@ -937,11 +942,10 @@ tr.craft-time td { color: var(--ink-2); font-weight: 600; border-top: 0; }
 .home h4 > a { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 400; }
 .home-current { font-size: 1.15rem; font-weight: 600; margin: 0 0 .3rem; }
 .home ul.rel.compact li { padding: .15rem 0; }
-/* two rows of five small tiles; wider where the card takes the whole row */
-.tool-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .35rem; }
-@media (max-width: 700px) { .tool-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); } }
+/* as many small tiles a row as fit (five in the Home card on a wide window); labels break between words only */
+.tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: .35rem; }
 .tool { display: flex; flex-direction: column; align-items: center; gap: .1rem; padding: .45rem .15rem; border: 1px solid var(--line); border-radius: 10px; text-align: center;
-  text-decoration: none; color: var(--ink); font-size: 12px; line-height: 1.2; overflow-wrap: anywhere; background: color-mix(in srgb, var(--accent) 3%, var(--panel)); transition: border-color .12s, transform .12s; }
+  text-decoration: none; color: var(--ink); font-size: 12px; line-height: 1.2; overflow-wrap: normal; hyphens: manual; background: color-mix(in srgb, var(--accent) 3%, var(--panel)); transition: border-color .12s, transform .12s; }
 .tool > span { font-size: 1.15rem; }
 .tool:hover { border-color: var(--accent); transform: translateY(-1px); }
 .home-regions { margin: 1rem 0; }
@@ -1120,6 +1124,8 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 /* six ability cards (score, save, skills) in a grid, attacks and spellcasting beside them */
 .cs-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: .8rem; align-items: start; }
 .cs-abilities { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: .5rem; align-items: stretch; }
+@media (max-width: 900px) { .cs-top.with-portrait:not(.no-portrait) { grid-template-columns: 160px minmax(0, 1fr); } }
+@media (max-width: 800px) { .cs-abilities { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .cs-abilities { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .cs-ability { display: flex; flex-direction: column; padding: .25rem .35rem .25rem; background: var(--panel); border: 1px solid var(--line); border-radius: 9px; }
 .cs-ab-head { display: grid; grid-template-columns: auto 1fr 3em; align-items: center; gap: .3rem; padding: 0 .15rem .15rem; margin-bottom: .1rem; border-bottom: 1px solid var(--line); }
@@ -1524,3 +1530,6 @@ button.start-choice { margin: 0; text-align: left; align-items: flex-start; font
 .moon-phase .moon-lit { fill: currentColor; }
 /* an icon that is off (a star not yet given): faint */
 svg.gi.off { opacity: .35; }
+
+/* narrow windows: the Spells table leaves out casting time and duration (quick view and the page still show them) */
+@media (max-width: 800px) { .grid .col-castingTime, .grid .col-duration { display: none; } }

@@ -97,14 +97,14 @@ defineExpose({ count: computed(() => shown.value.length) })
         <thead>
           <tr>
             <th class="sortable" title="Sort by name" @click="sortBy('name')">Name{{ arrow('name') }}</th>
-            <th v-for="c in columns" :key="c.key" class="sortable" :class="{ num: c.kind === 'money' || c.field?.kind === 'money' }" :title="c.key === '@concRitual' ? 'Concentration · Ritual' : `Sort by ${c.label.toLowerCase()}`" @click="sortBy(c.key)">{{ c.label }}{{ arrow(c.key) }}</th>
+            <th v-for="c in columns" :key="c.key" class="sortable" :class="['col-' + c.key.replace('@', ''), { num: c.kind === 'money' || c.field?.kind === 'money' }]" :title="c.key === '@concRitual' ? 'Concentration · Ritual' : `Sort by ${c.label.toLowerCase()}`" @click="sortBy(c.key)">{{ c.label }}{{ arrow(c.key) }}</th>
             <th v-if="spells" class="book-col" />
           </tr>
         </thead>
         <tbody>
           <tr v-for="e in shown" :key="e.id">
             <td class="name" @click.capture="open($event, e)"><EntryLink :id="e.id" :icon="e.type === 'pc'" /><span v-if="e.id === currentPc?.id" class="current-mark" title="The current character"><AppIcon ui="star" /> current</span></td>
-            <td v-for="c in columns" :key="c.key" :class="{ num: c.kind === 'money' || c.field?.kind === 'money', clip: c.field?.kind === 'longtext' }">
+            <td v-for="c in columns" :key="c.key" :class="['col-' + c.key.replace('@', ''), { num: c.kind === 'money' || c.field?.kind === 'money', clip: c.field?.kind === 'longtext' }]">
               <template v-if="empty(c.value(e))" />
               <FieldValue v-else-if="c.field" :def="c.field" :value="c.value(e)" :entry="e" />
               <span v-else-if="c.kind === 'ids'" class="chips"><EntryLink v-for="id in (c.value(e) as string[])" :key="id" :id="id" class="chip" /></span>

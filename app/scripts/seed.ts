@@ -65,7 +65,9 @@ const species: Entry[] = SPECIES.map(x => {
     id: own && !own.fields.parent ? own.id : slug(x.name), type: 'race', name: x.name, aliases: [], tags: [], visibility: 'known',
     body: '*Source: System Reference Document 5.2.1 (CC BY 4.0).*',
     fields: {
-      size: x.size, speed: x.speed,
+      // sizes as the main one and the others ("Medium or Small"), speed as numbers (data version 30); all SRD species are Humanoids
+      size: x.size.split(/\s+or\s+/)[0], ...(/ or /.test(x.size) ? { otherSizes: x.size.split(/\s+or\s+/).slice(1) } : {}),
+      creatureType: 'Humanoid', speeds: { walk: Number(x.speed.match(/\d+/)?.[0] ?? 30) },
       speciesTraits: x.traits.map(t => {
         const c = withIds(t)
         return c.choice?.options ? { ...c, choice: { ...c.choice, options: c.choice.options.map(withIds) } } : c

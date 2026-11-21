@@ -13,7 +13,8 @@ import { subclassLevelOf } from '../classRules'
 import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, abilityBonusText } from '../abilityBonus'
 import { DICE } from '../model/classes'
 import { SKILLS, mod, signed, currentPc, setCurrent } from '../sheet'
-import { choiceOpen, grantOptions, isClassOrigin, scaleAt, setCastAbility, setPicks as setTraitPicks, sourceTag, speciesGrants, speciesTraits, traitsOf, type ActiveTrait } from '../species'
+import { choiceOpen, grantOptions, isClassOrigin, scaleAt, setCastAbility, setPicks as setTraitPicks, sourceTag, speciesGrants, speciesSizes, speciesTraits, traitsOf, type ActiveTrait } from '../species'
+import { rule } from '../rules'
 import { entries, formatMoney, get, listOptions, playerMode } from '../store'
 import { go, hrefEntry } from '../router'
 import { newBlankEntry } from '../ui'
@@ -56,6 +57,7 @@ const raceList = computed(() => species())
 /** The main race picked, and its subraces (the character gets the subrace once one is picked). */
 const main = computed(() => mainRace(d.value.race))
 const subs = computed(() => subracesOf(main.value?.id))
+const sizes = computed(() => speciesSizes(pc.value))
 const bgList = computed(() => backgrounds())
 const pc = computed(() => draftPc(d.value))
 const choices = computed(() => speciesTraits(pc.value).filter(a => !isClassOrigin(a.race) && a.active && (a.trait.choice || a.trait.castWith?.among?.length)))
@@ -242,6 +244,11 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
                 <option v-for="x in subs" :key="x.id" :value="x.id">{{ x.name }}</option>
               </select>
             </label>
+            <label v-if="sizes.length > 1">Size
+              <select :value="d.size && sizes.includes(d.size) ? d.size : sizes[0]" @change="wizard.d.size = val($event)">
+                <option v-for="z in sizes" :key="z" :value="z">{{ z }}</option>
+              </select>
+            </label>
             <label>Background
               <select :value="d.background ?? ''" @change="wizard.d.background = val($event) || undefined">
                 <option value="">{{ bgList.length ? 'Choose…' : 'none in this world' }}</option>
@@ -303,8 +310,8 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
           </table>
           <h3>Ability score bonus</h3>
           <div class="seg">
-            <button type="button" :class="{ on: d.bonusFrom === 'background' }" @click="setBonusFrom('background')">Background's</button>
-            <button type="button" :class="{ on: d.bonusFrom === 'species' }" @click="setBonusFrom('species')">Species'</button>
+            <button v-if="rule('abilityIncrease') !== 'species'" type="button" :class="{ on: d.bonusFrom === 'background' }" @click="setBonusFrom('background')">Background's</button>
+            <button v-if="rule('abilityIncrease') !== 'background'" type="button" :class="{ on: d.bonusFrom === 'species' }" @click="setBonusFrom('species')">Species'</button>
             <button type="button" :class="{ on: d.bonusFrom === 'custom' }" @click="setBonusFrom('custom')">Custom</button>
           </div>
           <p class="muted small">

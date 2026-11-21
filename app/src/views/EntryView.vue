@@ -15,6 +15,7 @@ import SpellbookView from './SpellbookView.vue'
 import InventoryTab from './InventoryTab.vue'
 import ClassOverview from '../components/ClassOverview.vue'
 import SubclassInfo from '../components/SubclassInfo.vue'
+import RaceGlance from '../components/RaceGlance.vue'
 import CompanionsTab from './CompanionsTab.vue'
 import CraftingView from './CraftingView.vue'
 import FamilyTree from '../components/FamilyTree.vue'
@@ -74,7 +75,7 @@ const groups = computed(() => {
   const big = ['statblock', 'recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes', 'classBasics', 'speciesTraits']
   const out = new Map<string, { def: FieldDef; value: unknown }[]>()
   for (const f of def.value.fields) {
-    if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'creature' && f.key === 'creatureType') || (x.type === 'session' && ['campaign', 'number', 'date', 'playedOn', 'players'].includes(f.key)) || f.key === 'parent' || (x.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || f.key === 'map' || f.key === 'pins' || f.kind === 'mapData' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
+    if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'creature' && f.key === 'creatureType') || (x.type === 'session' && ['campaign', 'number', 'date', 'playedOn', 'players'].includes(f.key)) || f.key === 'parent' || (x.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || (x.type === 'race' && ['size', 'otherSizes', 'creatureType', 'speeds', 'abilityIncrease', 'languages'].includes(f.key)) || f.key === 'map' || f.key === 'pins' || f.kind === 'mapData' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
     const g = f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
     out.get(g)!.push({ def: f, value: byKey(x.fields)[f.key] })
@@ -93,6 +94,8 @@ const inherited = computed(() => {
   while (r && r.type === 'race' && !out.includes(r) && r.id !== e.value!.id) { out.push(r); r = get(r.fields.parent as string | undefined) }
   return out.filter(x => traitsOf(x).length)
 })
+/** The main races' traits this subrace (or a race between) replaces with its own. */
+const replacedHere = computed(() => new Set([e.value, ...inherited.value].flatMap(x => (x ? traitsOf(x).map(t => t.replaces).filter(Boolean) : [])) as string[]))
 /** The feats an entry grants (an organization's fighting styles and the like). */
 const grantedFeats = computed(() => (e.value ? (byType.value.get('feat') ?? []).filter(f => f.fields.source === e.value!.id).sort((a, b) => a.name.localeCompare(b.name)) : []))
 const ranksDef = computed(() => def.value?.fields.find(f => f.kind === 'ranks'))
@@ -345,6 +348,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
         <FeatCard v-if="e.type === 'feat'" :e="e" source />
         <SubclassInfo v-if="e.type === 'subclass'" :e="e" />
+        <RaceGlance v-if="e.type === 'race'" :e="e" />
         <template v-for="(p, i) in e.type === 'pc' ? [] : bodyParts.parts" :key="i">
           <MarkdownView v-if="p.md" :source="p.md" :tasks="canTick" @update:source="v => setPart(p, v)" />
           <FieldValue v-else-if="p.insert === 'ranks' && ranksDef" :def="ranksDef" :value="e.fields.ranks" :entry="e" />
@@ -361,7 +365,8 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
 
         <section v-for="r in inherited" :key="'from-' + r.id">
           <h2>From <EntryLink :id="r.id" /></h2>
-          <TraitList :traits="traitsOf(r)" :lineage="e.name" :parent="r.name" />
+          <TraitList :traits="traitsOf(r).filter(t => !replacedHere.has(t.id))" :lineage="e.name" :parent="r.name" />
+          <p v-if="traitsOf(r).some(t => replacedHere.has(t.id))" class="muted small">{{ e.name }} replaces: {{ traitsOf(r).filter(t => replacedHere.has(t.id)).map(t => `${t.name} (by ${traitsOf(e).find(x => x.replaces === t.id)?.name})`).join(', ') }}</p>
         </section>
 
         <section v-if="grantedFeats.length && !bodyParts.placed.has('feats')">

@@ -14,39 +14,41 @@ import StepsInput from './StepsInput.vue'
 import TraitChips from '../TraitChips.vue'
 
 const model = defineModel<Trait[] | undefined>()
-const props = defineProps<{ /** The entry's type: a class's or subclass's features are grouped by level. */ entryType?: string; /** Its class, for "Warlock level". */ className?: string; /** A subclass's levels to expect features at (its class's other subclasses'): shown even while empty. */ expectedLevels?: number[] }>()
+const props = defineProps<{ /** The entry's type: a class's or subclass's features are grouped by level. */ entryType?: string; /** Its class, for "Warlock level". */ className?: string; /** A subclass's levels to expect features at (its class's other subclasses'): shown even while empty. */ expectedLevels?: number[]; /** A subrace's: its main races' traits, one of which a trait may replace. */ parentTraits?: { id: string; name: string }[] }>()
 const forClass = computed(() => props.entryType === 'class' || props.entryType === 'subclass')
 const word = computed(() => (forClass.value ? 'feature' : 'trait'))
-const levelWord = computed(() => (forClass.value && props.className ? `${props.className} level` : 'Level'))
+const levelWord = computed(() => (forClass.value && props.className ? `${props.className} level` : forClass.value ? 'Level' : 'Character level'))
+/** Grouped under level headings: a class's features always, other traits once some come after level 1. */
+const grouped = computed(() => forClass.value || list.value.some(t => (t.level ?? 1) > 1))
 const list = computed(() => model.value ?? [])
 const save = (l: Trait[]) => { model.value = l.length ? l : undefined }
 function put(i: number, t: Trait) { const l = [...list.value]; l[i] = t; save(l) }
 const patch = (i: number, p: Partial<Trait>) => {
   const t: Trait = { ...list.value[i], ...p }
   if (!t.level || t.level <= 1) delete t.level
-  for (const k of ['uses', 'choice', 'scale', 'onSheet', 'spellLists', 'castWith', 'toggle'] as const) if (t[k] == null) delete t[k]
+  for (const k of ['uses', 'choice', 'scale', 'onSheet', 'spellLists', 'castWith', 'toggle', 'replaces'] as const) if (t[k] == null) delete t[k]
   put(i, t)
 }
 const lv = (t: Trait) => t.level ?? 1
 /** The cards in order: a class's by level (then as listed), anything else as listed. */
-const order = computed(() => list.value.map((_, i) => i).sort((a, b) => (forClass.value ? lv(list.value[a]) - lv(list.value[b]) : 0) || a - b))
+const order = computed(() => list.value.map((_, i) => i).sort((a, b) => (grouped.value ? lv(list.value[a]) - lv(list.value[b]) : 0) || a - b))
 /** The cards by level (a class's), with the expected levels that have none yet; one group for anything else. */
 const sections = computed(() => {
   const all = order.value.map((i, pos) => ({ i, pos }))
-  if (!forClass.value) return [{ level: 0, cards: all }]
+  if (!grouped.value) return [{ level: 0, cards: all }]
   const levels = new Set([...all.map(c => lv(list.value[c.i])), ...(props.expectedLevels ?? [])])
   return [...levels].sort((a, b) => a - b).map(level => ({ level, cards: all.filter(c => lv(list.value[c.i]) === level) }))
 })
 const opened = ref<string | null>(null)
 /** A new feature at a level (by default the last one's). */
 const add = (at?: number) => {
-  const id = newTraitId(), level = at ?? (order.value.length ? lv(list.value[order.value.at(-1)!]) : 1)
-  save([...list.value, { id, name: forClass.value ? 'New feature' : 'New trait', ...(forClass.value && level > 1 ? { level } : {}) }])
+  const id = newTraitId(), level = at ?? (forClass.value && order.value.length ? lv(list.value[order.value.at(-1)!]) : 1)
+  save([...list.value, { id, name: forClass.value ? 'New feature' : 'New trait', ...(level > 1 ? { level } : {}) }])
   opened.value = id
 }
 const remove = (i: number) => { if (confirm(`Remove the ${word.value} “${list.value[i].name}”? Characters lose its choices and uses.`)) save(list.value.filter((_, k) => k !== i)) }
 /** Up and down among the cards as shown: a class's only within its level (the level sets its place). */
-const canMove = (pos: number, by: number) => { const j = pos + by; return j >= 0 && j < order.value.length && (!forClass.value || lv(list.value[order.value[j]]) === lv(list.value[order.value[pos]])) }
+const canMove = (pos: number, by: number) => { const j = pos + by; return j >= 0 && j < order.value.length && (!grouped.value || lv(list.value[order.value[j]]) === lv(list.value[order.value[pos]])) }
 function move(pos: number, by: number) {
   if (!canMove(pos, by)) return
   const l = [...list.value], a = order.value[pos], b = order.value[pos + by]
@@ -141,24 +143,29 @@ const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
 <template>
   <div class="traits-input">
     <template v-for="sec in sections" :key="sec.level">
-      <h4 v-if="forClass" class="trait-level-head">{{ levelWord }} {{ sec.level }}
-        <button type="button" class="link-btn small" :title="`A new feature at ${levelWord.toLowerCase()} ${sec.level}`" @click="add(sec.level)">+ Feature here</button></h4>
+      <h4 v-if="grouped" class="trait-level-head">{{ levelWord }} {{ sec.level }}
+        <button type="button" class="link-btn small" :title="`A new ${word} at ${levelWord.toLowerCase()} ${sec.level}`" @click="add(sec.level)">+ {{ forClass ? 'Feature' : 'Trait' }} here</button></h4>
       <p v-if="forClass && !sec.cards.length" class="muted small trait-gap">No feature yet: the other {{ className }} subclasses have one at this level.</p>
     <template v-for="{ i, pos } in sec.cards" :key="list[i].id">
       <details class="trait-card" :open="opened === list[i].id">
         <summary>
-          <span v-if="forClass" class="lv-badge" :title="`Gained at ${levelWord.toLowerCase()} ${lv(list[i])}`">Lv {{ lv(list[i]) }}</span>
+          <span v-if="forClass || lv(list[i]) > 1" class="lv-badge" :title="`Gained at ${levelWord.toLowerCase()} ${lv(list[i])}`">Lv {{ lv(list[i]) }}</span>
           <b>{{ list[i].name || `Unnamed ${word}` }}</b>
-          <span v-if="!forClass && lv(list[i]) > 1" class="muted small">from level {{ lv(list[i]) }}</span>
+          <span v-if="list[i].replaces" class="chip">replaces {{ parentTraits?.find(p => p.id === list[i].replaces)?.name ?? 'a main race trait' }}</span>
           <TraitChips :t="list[i]" />
           <span v-if="list[i].choice" class="chip">choice: {{ list[i].choice!.kind === 'option' ? `${list[i].choice!.count ?? 1} of ${list[i].choice!.options?.length ?? 0} options` : `${list[i].choice!.count ?? 1} ${kindLabel(list[i].choice!)}` }}{{ list[i].choice!.steps?.length ? ', more by level' : '' }}</span>
         </summary>
 
         <div class="trait-row trait-when">
-          <label>{{ forClass ? levelWord : 'From level' }} <input type="number" min="1" max="20" class="effect-value" :value="lv(list[i])" @change="patch(i, { level: Number(val($event)) || 1 })" /></label>
-          <span class="muted small">{{ forClass ? `a character gets it when their ${levelWord.toLowerCase()} reaches this` : 'the character level it comes at' }}</span>
+          <label>{{ levelWord }} <input type="number" min="1" max="20" class="effect-value" :value="lv(list[i])" @change="patch(i, { level: Number(val($event)) || 1 })" /></label>
+          <span v-if="forClass" class="muted small">a character gets it when their {{ levelWord.toLowerCase() }} reaches this</span>
+          <label v-if="parentTraits?.length" class="small" title="This trait takes the place of the main race's: characters of this subrace don't get that one">Replaces
+            <select :value="list[i].replaces ?? ''" @change="patch(i, { replaces: val($event) || undefined })">
+              <option value="">nothing (adds to them)</option>
+              <option v-for="p in parentTraits" :key="p.id" :value="p.id">{{ p.name }}</option>
+            </select></label>
         </div>
-        <TraitOptionFields :model-value="list[i]" :trait-level="lv(list[i])" :by-level="forClass ? levelWord : undefined" @update:model-value="v => put(i, v as Trait)" />
+        <TraitOptionFields :model-value="list[i]" :trait-level="lv(list[i])" :by-level="levelWord" @update:model-value="v => put(i, v as Trait)" />
 
         <!-- the choice for the player -->
         <fieldset class="trait-sec">
@@ -177,7 +184,7 @@ const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
             <details v-for="{ o, k } in shownOptions(list[i])" :key="o.id" class="trait-option-card" :open="openOption === o.id">
               <summary><b>{{ o.name }}</b> <span v-if="needsText(list[i], o)" class="sp-prereq">{{ needsText(list[i], o) }}</span> <TraitChips :t="o" />
                 <span v-if="o.choices?.length" class="chip">+ {{ o.choices.length }} choice{{ o.choices.length > 1 ? 's' : '' }}</span></summary>
-              <TraitOptionFields :model-value="o" :trait-level="lv(list[i])" :siblings="list[i].choice!.options!.map(x => ({ id: x.id, name: x.name }))" :level-word="forClass ? levelWord : 'level'" @update:model-value="v => setOption(i, k, v)" />
+              <TraitOptionFields :model-value="o" :trait-level="lv(list[i])" :siblings="list[i].choice!.options!.map(x => ({ id: x.id, name: x.name }))" :level-word="forClass ? levelWord : 'level'" :by-level="levelWord" @update:model-value="v => setOption(i, k, v)" />
               <div v-for="(c, n) in o.choices ?? []" :key="n" class="trait-row">
                 <span class="small muted">Comes with a choice:</span>
                 <select :value="c.kind" aria-label="What's picked" @change="setSubChoice(i, k, n, newChoice(val($event) as TraitChoice['kind']))">

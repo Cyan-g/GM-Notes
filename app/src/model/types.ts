@@ -138,6 +138,9 @@ export interface SpellRoll {
 /** One of a character's classes: an option of the "class" list, its level, a subclass entry, a hit die for a class without a standard one. */
 export interface ClassLine { class: string; level: number; subclass?: Id; die?: string }
 
+/** A race's speeds in feet (walk is its speed); `note` keeps what an old text speed said that isn't a number. */
+export interface Speeds { walk?: number; swim?: number; fly?: number; climb?: number; burrow?: number; hover?: boolean; note?: string }
+
 /**
  * What a class entry sets about its class ("Class basics" on its Edit page): each one it sets wins over the app's
  * built-in SRD value (classRules.ts); a homebrew class fills them in to work in the wizard, level-up and spell slots.
@@ -217,6 +220,8 @@ export interface CharacterSheet {
   spellbook?: Spellbook
   /** Experience points (when the ruleset uses them; rules.ts). */
   xp?: number
+  /** The size the player picked, when the species offers more than one ("Medium or Small"). */
+  size?: string
   /** Conditions the character has (conditions.ts), the same list as their combatants' in the combat tracker. */
   conditions?: string[]
   /** Their exhaustion level (1–6) while they have Exhaustion. */
@@ -328,6 +333,8 @@ export interface TraitScale { label: string; steps: [number, string][] }
 export interface Trait extends TraitOption {
   /** From this character level on (default 1). */
   level?: number
+  /** A subrace's trait that takes the place of one of its main race's (its id): that one is left out for the subrace. */
+  replaces?: string
   /**
    * Uses that come back on a rest: a number, the proficiency bonus, the level (of the class it comes from), or an
    * ability modifier (at least 1); `times` multiplies it (Lay on Hands: 5 × level), `steps` gives the count by level.

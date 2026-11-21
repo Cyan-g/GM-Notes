@@ -43,6 +43,16 @@ export const RULES: RuleDef[] = [
     default: 'milestone', keywords: 'xp level up advancement',
   },
   {
+    id: 'abilityIncrease', group: 'Character creation', label: 'Ability score increase',
+    text: 'Where a new character\u2019s ability score increase comes from in the character creation wizard.',
+    options: [
+      { id: 'choice', label: 'The player\u2019s choice', text: 'The wizard offers the background\u2019s or the species\u2019 increase (or one typed in).' },
+      { id: 'background', label: 'Background (2024)', text: 'The background\u2019s increase; the species gives none.' },
+      { id: 'species', label: 'Species (2014)', text: 'The species\u2019 increase; the background gives none.' },
+    ],
+    default: 'choice', keywords: 'asi ability scores race species background creation',
+  },
+  {
     id: 'multiclassing', group: 'Advancement', label: 'Multiclassing',
     text: 'Whether a character can take a level in another class when they level up.',
     options: [

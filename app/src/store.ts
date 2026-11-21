@@ -1,6 +1,6 @@
 // The loaded world plus lookups the pages need, and saving it (only what changed) with backups.
 import { reactive, computed, shallowRef } from 'vue'
-import type { ClassLine, Database, Entry, EntryType, GearEffect, Id, Relation, Trait, WorldDate } from './model/types'
+import type { ClassLine, Database, Entry, EntryType, GearEffect, Id, Relation, Speeds, Trait, WorldDate } from './model/types'
 import type { Storage } from './storage/storage'
 import type { Backend, Changes } from './storage/backend'
 import { SCHEMA, RELATION_KINDS, MARTIAL_WEAPONS, SIMPLE_WEAPONS, byKey, type FieldDef } from './model/schema'
@@ -15,7 +15,7 @@ const PLAY_KEYS = ['tracker', 'spellbook', 'crafting', 'follow', 'playerNotes'] 
 const BACKUP_DIR = 'backups'
 const BACKUP_EVERY_MS = 10 * 60 * 1000
 /** The newest data version this build understands (the last step in upgrade()). Newer data opens read-only. */
-export const DATA_VERSION = 29
+export const DATA_VERSION = 30
 /** The oldest data version this build can still open; older data is refused instead of guessed at. */
 export const OLDEST_VERSION = 20
 /** What the database must allow: every entry type and relation kind the app knows. */
@@ -110,7 +110,40 @@ function upgrade(d: Database): boolean {
   if ((d.version ?? 1) < 28) { d.version = 28; changed = true }
   // 29: classes, a new entry type with features (and subclasses got features); nothing to convert.
   if ((d.version ?? 1) < 29) { d.version = 29; changed = true }
+  if ((d.version ?? 1) < 30) { upgradeTo30(d); d.version = 30; changed = true }
   return changed
+}
+
+/**
+ * 30: a race's speed became numbers ("30 ft" → walk 30; "30 ft, swim 30 ft" → walk 30, swim 30). Text that isn't a
+ * speed is kept as the speeds' note. A size written as "Medium or Small" became the main size and the other sizes.
+ */
+export function speedsFromText(text: string): Speeds {
+  const out: Speeds = {}
+  let rest = text
+  for (const k of ['swim', 'fly', 'climb', 'burrow'] as const) {
+    const m = rest.match(new RegExp(`${k}(?:ing)?(?: speed)?\\s*(?:of\\s*)?(\\d+)\\s*(?:ft|feet)?\\.?`, 'i'))
+    if (m) { out[k] = Number(m[1]); rest = rest.replace(m[0], '') }
+  }
+  if (/hover/i.test(rest)) { out.hover = true; rest = rest.replace(/\(?hover\)?/i, '') }
+  const w = rest.match(/(\d+)\s*(?:ft|feet)?\.?/i)
+  if (w) { out.walk = Number(w[1]); rest = rest.replace(w[0], '') }
+  const note = rest.replace(/^[\s,;.]+|[\s,;.]+$/g, '').trim()
+  if (note) out.note = note
+  return out
+}
+function upgradeTo30(d: Database) {
+  for (const e of Object.values(d.entries)) {
+    if (e.type !== 'race') continue
+    const f = e.fields as Record<string, unknown>
+    if (typeof f.speed === 'string' && f.speed.trim()) f.speeds = speedsFromText(f.speed)
+    delete f.speed
+    if (typeof f.size === 'string' && / or /i.test(f.size)) {
+      const [main, ...rest] = f.size.split(/\s*(?:,|\bor\b)\s*/i).map(x => x.trim()).filter(Boolean)
+      f.size = main
+      if (rest.length) f.otherSizes = rest
+    }
+  }
 }
 
 /**

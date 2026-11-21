@@ -16,7 +16,7 @@ import { changed } from '../edit'
 import { hrefEntry, hrefTab } from '../router'
 import {
   ABILITIES, SKILLS, armorClass, attacks, canAttune, canEquip, castingAbility, hitDiceOf, initiative, levelOf, maxHpOf, mod,
-  passivePerception, profBonus, profsOf, profsToEdit, saveBonus, sheetOrBlank, sheetToEdit, signed, skillBonus, skillLevel, speedOf, baseSpeed, longRest, shortRest, type Ability,
+  passivePerception, profBonus, profsOf, profsToEdit, saveBonus, sheetOrBlank, sheetToEdit, signed, skillBonus, skillLevel, speedOf, baseSpeed, otherSpeeds, longRest, shortRest, type Ability,
 } from '../sheet'
 import { advOf, breakdown, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../gear'
 import ProfChips from './ProfChips.vue'
@@ -32,7 +32,7 @@ import ConditionsBar from './ConditionsBar.vue'
 import DeathSaves from './DeathSaves.vue'
 import LevelUpModal from './LevelUpModal.vue'
 import { concentrationDc, endConcentration, hpChanged } from '../conditions'
-import { picksLeft, speciesEffects, speciesTraits } from '../species'
+import { picksLeft, speciesEffects, speciesSizes, speciesTraits } from '../species'
 import { ui } from '../ui'
 
 const props = defineProps<{ pc: Entry; build?: boolean }>()
@@ -191,6 +191,7 @@ const castLabel = computed(() => (s.value.spellAbility ? s.value.spellAbility.to
 /** Experience needed for each level (1…20), the same in 2014 and 2024. */
 const XP_AT = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
 const xpNext = computed(() => XP_AT[level.value])
+const sizes = computed(() => speciesSizes(props.pc))
 const leveling = ref(false)
 const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
 </script>
@@ -233,7 +234,8 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <div class="cs-stat"><span>Proficiency</span><b v-flash="prof">{{ signed(prof) }}</b></div>
       <div class="cs-stat cs-ac tip" :class="{ warn: ac.untrained.length }" :data-tip="ac.from + (ac.untrained.length ? ` — not proficient with ${ac.untrained.join(', ')}: disadvantage on STR and DEX rolls, no spellcasting` : '')"><span>Armor class<template v-if="ac.untrained.length"> <AppIcon ui="warning" /></template></span><b v-flash="ac.ac" :class="{ 'gear-mod': gt.ac.length }">{{ ac.ac }}</b>
         <input v-if="build" class="cs-mini" type="number" :value="s.acOverride ?? ''" placeholder="auto" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></div>
-      <label class="cs-stat" :class="{ tip: gt.speed.length }" :data-tip="breakdown(`${baseSpeed(s) ?? '30 ft'} without gear`, gt.speed)"><span :class="{ 'gear-mod': gt.speed.length }">Speed</span><input v-flash="locked ? speedOf(s) : s.speed" :value="(locked ? speedOf(s) : s.speed) ?? ''" :placeholder="baseSpeed(s) ?? '30 ft'" :disabled="locked" @change="edit(x => x.speed = text($event))" /></label>
+      <label class="cs-stat" :class="{ tip: gt.speed.length }" :data-tip="breakdown(`${baseSpeed(s) ?? '30 ft'} without gear`, gt.speed)"><span :class="{ 'gear-mod': gt.speed.length }">Speed</span><input v-flash="locked ? speedOf(s) : s.speed" :value="(locked ? speedOf(s) : s.speed) ?? ''" :placeholder="baseSpeed(s) ?? '30 ft'" :disabled="locked" @change="edit(x => x.speed = text($event))" /><small v-if="otherSpeeds(s)" class="muted cs-speeds">{{ otherSpeeds(s) }}</small></label>
+      <label v-if="build && sizes.length > 1" class="cs-stat" title="The species lets the player pick its size"><span>Size</span><select :value="s.size && sizes.includes(s.size) ? s.size : sizes[0]" @change="edit(x => x.size = ($event.target as HTMLSelectElement).value === sizes[0] ? undefined : ($event.target as HTMLSelectElement).value)"><option v-for="z in sizes" :key="z" :value="z">{{ z }}</option></select></label>
       <label v-if="rule('experience') === 'xp'" class="cs-stat cs-xp" :title="xpNext ? `Level ${level + 1} at ${xpNext.toLocaleString()} XP` : 'Highest level'"><span>XP</span><input v-flash="s.xp ?? 0" type="number" min="0" :value="s.xp ?? ''" placeholder="0" :disabled="ro" @change="edit(x => x.xp = num($event) || undefined)" /><small v-if="xpNext" class="muted">/ {{ xpNext.toLocaleString() }}</small></label>
       <button v-if="!build && !ro && level < 20" class="cs-stat cs-lvlup" :class="{ ready: rule('experience') === 'xp' && xpNext && (s.xp ?? 0) >= xpNext }" title="Level up: class, hit points, new features, feat and spells" @click="leveling = true"><span>Level up</span><b>↑</b></button>
       <button v-if="!build" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" title="Inspiration" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>Inspiration</span><b><AppIcon ui="star" :class="{ off: !(s.inspiration) }" /></b></button>

@@ -1986,3 +1986,18 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .spell-level-row.new { border-style: dashed; }
 .spell-level-row .chip .link-btn { padding: 0 0 0 .25rem; }
 .spell-level-row .entry-picker, .spell-level-row input[type=search] { width: 12rem; }
+/* a race's speeds, inherited hints, its ability score increase */
+.speeds-input { display: flex; flex-wrap: wrap; gap: .3rem .7rem; align-items: center; }
+.speeds-input label { display: inline-flex; gap: .25rem; align-items: center; }
+.speeds-input input[type=number] { width: 4rem; }
+.speeds-note { flex-basis: 100%; }
+.inherit-hint { display: block; margin-top: .15rem; }
+.race-bonus { border: 1px solid var(--line); border-radius: 10px; padding: .5rem .8rem; margin-bottom: 1rem; }
+.race-bonus h4 { margin: 0 0 .3rem; }
+.race-bonus .rb-preview { margin-top: .5rem; }
+.cs-speeds { display: block; font-size: 11px; text-align: center; }
+/* a race at a glance, at the top of its page */
+.race-glance { display: flex; flex-wrap: wrap; gap: .6rem 1.5rem; align-items: flex-start; justify-content: space-between; padding: .6rem .9rem; margin-bottom: 1rem; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.race-glance dl { display: grid; grid-template-columns: max-content 1fr; gap: .2rem 1rem; margin: 0; font-size: 14px; }
+.race-glance dt { color: var(--muted); }
+.race-glance dd { margin: 0; }

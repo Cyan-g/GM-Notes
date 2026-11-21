@@ -5,7 +5,8 @@ import { isShared } from '../sync'
 import { computed } from 'vue'
 import type { EntryType, Statblock } from '../model/types'
 import { TYPES, byKey, type FieldDef } from '../model/schema'
-import { backlinks, get, relationsOf, state } from '../store'
+import { backlinks, fieldLabel, get, relationsOf, state } from '../store'
+import RaceBonusEdit from '../components/edit/RaceBonusEdit.vue'
 import { changed, deleteEntry } from '../edit'
 import { go, hrefEntry, hrefList } from '../router'
 import FieldInput from '../components/edit/FieldInput.vue'
@@ -24,6 +25,14 @@ import MapView from '../components/MapView.vue'
 const props = defineProps<{ id: string }>()
 const e = computed(() => get(props.id))
 const def = computed(() => (e.value ? TYPES[e.value.type] : undefined))
+/** A subrace's empty list (languages, other sizes): what its main race has, which it keeps. */
+function inheritedList(f: FieldDef): string {
+  const x = e.value, p = x?.type === 'race' ? get(x.fields.parent) : undefined
+  if (!p || f.kind !== 'list') return ''
+  const mine = byKey(x!.fields)[f.key] as string[] | undefined, theirs = byKey(p.fields)[f.key] as string[] | undefined
+  return !mine?.length && theirs?.length ? `From ${p.name}: ${theirs.map(v => fieldLabel(f, v)).join(', ')}` : ''
+}
+const abilityDef = computed(() => def.value?.fields.find(f => f.key === 'abilityIncrease'))
 
 const shown = (f: FieldDef) => !f.when || f.when.is.includes(String(byKey(e.value!.fields)[f.when.field] ?? ''))
 // A character's sheet is the main column of its Edit page.
@@ -32,7 +41,8 @@ const groups = computed(() => {
   const out = new Map<string, FieldDef[]>()
   for (const f of def.value?.fields ?? []) {
     // a subclass's class and tagline are at the top of its main column (SubclassInfo)
-    if (BIG.includes(f.kind) || (e.value?.type === 'pc' && f.key === 'level') || (e.value?.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || !shown(f) || f.key === 'pins' || f.key === 'map' || f.kind === 'mapData') continue
+    // a race's ability score increase has its own section in the main column
+    if (BIG.includes(f.kind) || (e.value?.type === 'race' && f.key === 'abilityIncrease') || (e.value?.type === 'pc' && f.key === 'level') || (e.value?.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || !shown(f) || f.key === 'pins' || f.key === 'map' || f.kind === 'mapData') continue
     const g = f.kind === 'statblock' ? 'Stats' : f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
     out.get(g)!.push(f)
@@ -150,6 +160,7 @@ function remove() {
         <CharacterSheet v-else-if="e.type === 'pc'" :pc="e" build />
         <section v-else class="edit-text">
           <SubclassInfo v-if="e.type === 'subclass'" :e="e" edit />
+          <RaceBonusEdit v-if="e.type === 'race' && abilityDef" :e="e" :def="abilityDef" />
           <h4 class="field-label">Text</h4>
           <BodyEditor :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
         </section>
@@ -186,7 +197,8 @@ function remove() {
               <template v-if="f.kind === 'statblock'"><div class="full"><FieldInput :def="f" :entry="e" /></div></template>
               <template v-else>
                 <label :for="`f-${f.key}`">{{ f.label }}</label>
-                <div><FieldInput :id="`f-${f.key}`" :def="f" :entry="e" /></div>
+                <div><FieldInput :id="`f-${f.key}`" :def="f" :entry="e" />
+                  <small v-if="inheritedList(f)" class="muted inherit-hint">{{ inheritedList(f) }}</small></div>
               </template>
             </template>
           </div>

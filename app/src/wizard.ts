@@ -12,6 +12,7 @@ import { ruleSlots } from './slots'
 import { blankSheet, mod } from './sheet'
 import { choiceOpen, classSpellsFrom, isClassOrigin, own, speciesTraits } from './species'
 import { entries, get } from './store'
+import { rule } from './rules'
 import { changed, createEntry } from './edit'
 
 type Ability = keyof Abilities
@@ -36,6 +37,8 @@ export interface Draft {
   ownWeapons: string[]
   ownSkillCount: number
   race?: Id
+  /** The size picked, when the species offers more than one. */
+  size?: string
   background?: Id
   method: ScoreMethod
   /** The base scores; for the standard array, unassigned scores are undefined. */
@@ -66,7 +69,7 @@ export interface Draft {
 
 export const newDraft = (): Draft => ({
   cls: '', level: 1, ownSaves: [], ownArmor: [], ownWeapons: [], ownSkillCount: 2,
-  method: 'array', base: {}, bonusFrom: 'background', bonusChoice: { picks: [] }, custom: {},
+  method: 'array', base: {}, bonusFrom: rule('abilityIncrease') === 'species' ? 'species' : 'background', bonusChoice: { picks: [] }, custom: {},
   skills: [], tools: [], languages: ['Common'], species: {}, feats: [], hpRolls: [], classKit: 0, bgKit: 'items',
   cantrips: [], spells: [], book: [], name: '', player: '',
   looks: { gender: '', age: '', hair: '', eyes: '', skin: '', clothing: '' }, story: '',
@@ -250,6 +253,7 @@ export function sheetOf(d: Draft): CharacterSheet {
   s.skills = Object.fromEntries(d.skills.map(k => [k, 1 as const]))
   s.maxHp = hpOf(d)
   s.hp = s.maxHp
+  if (d.size) s.size = d.size
   // Tools by name become the world's Tool items where it has them, else a line of their own.
   const toolIds: Id[] = [], other: string[] = []
   for (const t of [...(r?.tools ?? []), ...d.tools]) {

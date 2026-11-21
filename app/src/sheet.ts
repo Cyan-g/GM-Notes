@@ -12,7 +12,7 @@ import { unmet } from './requirements'
 import { setConditions } from './conditions'
 import { rule } from './rules'
 import { castingOf } from './classRules'
-import { own, ownerOf, restSpecies, speciesExpertise, speciesGrants, speciesSkills, speciesSpeed, speciesTraits } from './species'
+import { own, ownerOf, restSpecies, speciesExpertise, speciesGrants, speciesSkills, speciesSpeed, speciesSpeeds, speciesTraits } from './species'
 
 export type Ability = keyof Abilities
 export const ABILITIES: { key: Ability; label: string; short: string }[] = [
@@ -214,6 +214,11 @@ export const maxHpOf = (s: CharacterSheet) => {
   return t.maxHpHalf ? Math.floor(n / 2) : n // 2014 exhaustion, level 4
 }
 /** The speed before gear: typed on the sheet, else the species' ("25 ft"), else nothing (30 ft is assumed). */
+/** The species' other speeds, in words: "swim 30 ft, fly 30 ft (hover)". */
+export function otherSpeeds(s: CharacterSheet): string {
+  const sp = speciesSpeeds(ownerOf(s))
+  return (['swim', 'fly', 'climb', 'burrow'] as const).filter(k => sp[k]).map(k => `${k} ${sp[k]} ft${k === 'fly' && sp.hover ? ' (hover)' : ''}`).join(', ')
+}
 export function baseSpeed(s: CharacterSheet): string | undefined {
   if (s.speed) return s.speed
   const n = speciesSpeed(ownerOf(s))

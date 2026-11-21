@@ -32,7 +32,7 @@ export function describe(e: Entry, { parent = true } = {}): string {
       return join(e.type === 'subclass' && L(e, 'class') && `${L(e, 'class')} subclass`, n && `${n} feature${n === 1 ? '' : 's'}`)
     }
     case 'background': return join(f.originFeat && name(f.originFeat), (f.skillProfs as string[] | undefined)?.join(', '))
-    case 'race': return join(f.parent ? `subrace of ${name(f.parent)}` : '', L(e, 'size'), f.speed && `speed ${f.speed}`, abilityBonusText(f.abilityIncrease))
+    case 'race': return join(f.parent ? `subrace of ${name(f.parent)}` : '', [L(e, 'size'), ...((f.otherSizes as string[] | undefined) ?? [])].filter(Boolean).join(' or '), (f.speeds as { walk?: number } | undefined)?.walk && `speed ${(f.speeds as { walk: number }).walk} ft`, abilityBonusText(f.abilityIncrease))
     case 'event': return join(formatDate(f.date as WorldDate), L(e, 'category'))
     case 'session': return join(name(f.campaign), f.number != null && `session ${f.number}`, formatDate(f.date as WorldDate))
     case 'campaign': return join(L(e, 'status'))

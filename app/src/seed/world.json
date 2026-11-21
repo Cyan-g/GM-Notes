@@ -905,6 +905,64 @@
      "label": "Plane"
     }
    ],
+   "race.creatureType": [
+    {
+     "id": "Aberration",
+     "label": "Aberration"
+    },
+    {
+     "id": "Beast",
+     "label": "Beast"
+    },
+    {
+     "id": "Celestial",
+     "label": "Celestial"
+    },
+    {
+     "id": "Construct",
+     "label": "Construct"
+    },
+    {
+     "id": "Dragon",
+     "label": "Dragon"
+    },
+    {
+     "id": "Elemental",
+     "label": "Elemental"
+    },
+    {
+     "id": "Fey",
+     "label": "Fey"
+    },
+    {
+     "id": "Fiend",
+     "label": "Fiend"
+    },
+    {
+     "id": "Giant",
+     "label": "Giant"
+    },
+    {
+     "id": "Humanoid",
+     "label": "Humanoid"
+    },
+    {
+     "id": "Monstrosity",
+     "label": "Monstrosity"
+    },
+    {
+     "id": "Ooze",
+     "label": "Ooze"
+    },
+    {
+     "id": "Plant",
+     "label": "Plant"
+    },
+    {
+     "id": "Undead",
+     "label": "Undead"
+    }
+   ],
    "size": [
     {
      "id": "Tiny",
@@ -4772,7 +4830,10 @@
    "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
    "fields": {
     "size": "Medium",
-    "speed": "30 ft",
+    "creatureType": "Humanoid",
+    "speeds": {
+     "walk": 30
+    },
     "speciesTraits": [
      {
       "id": "draconic-ancestry",
@@ -4945,7 +5006,10 @@
    "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
    "fields": {
     "size": "Medium",
-    "speed": "30 ft",
+    "creatureType": "Humanoid",
+    "speeds": {
+     "walk": 30
+    },
     "speciesTraits": [
      {
       "id": "darkvision",
@@ -5009,7 +5073,10 @@
    "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
    "fields": {
     "size": "Medium",
-    "speed": "30 ft",
+    "creatureType": "Humanoid",
+    "speeds": {
+     "walk": 30
+    },
     "speciesTraits": [
      {
       "id": "darkvision",
@@ -5166,7 +5233,10 @@
    "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
    "fields": {
     "size": "Small",
-    "speed": "30 ft",
+    "creatureType": "Humanoid",
+    "speeds": {
+     "walk": 30
+    },
     "speciesTraits": [
      {
       "id": "darkvision",
@@ -5264,7 +5334,10 @@
    "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
    "fields": {
     "size": "Medium",
-    "speed": "35 ft",
+    "creatureType": "Humanoid",
+    "speeds": {
+     "walk": 35
+    },
     "speciesTraits": [
      {
       "id": "giant-ancestry",
@@ -5340,7 +5413,10 @@
    "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
    "fields": {
     "size": "Small",
-    "speed": "30 ft",
+    "creatureType": "Humanoid",
+    "speeds": {
+     "walk": 30
+    },
     "speciesTraits": [
      {
       "id": "brave",
@@ -5382,8 +5458,14 @@
    "visibility": "known",
    "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
    "fields": {
-    "size": "Medium or Small",
-    "speed": "30 ft",
+    "size": "Medium",
+    "otherSizes": [
+     "Small"
+    ],
+    "creatureType": "Humanoid",
+    "speeds": {
+     "walk": 30
+    },
     "speciesTraits": [
      {
       "id": "resourceful",
@@ -5419,7 +5501,10 @@
    "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
    "fields": {
     "size": "Medium",
-    "speed": "30 ft",
+    "creatureType": "Humanoid",
+    "speeds": {
+     "walk": 30
+    },
     "speciesTraits": [
      {
       "id": "adrenaline-rush",
@@ -5465,8 +5550,14 @@
    "visibility": "known",
    "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
    "fields": {
-    "size": "Medium or Small",
-    "speed": "30 ft",
+    "size": "Medium",
+    "otherSizes": [
+     "Small"
+    ],
+    "creatureType": "Humanoid",
+    "speeds": {
+     "walk": 30
+    },
     "speciesTraits": [
      {
       "id": "darkvision",

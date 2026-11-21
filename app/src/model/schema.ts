@@ -1,12 +1,12 @@
 // Describes every entry type: its label, fields and dropdown options.
 // Forms and pages are generated from this, so adding a field here is enough.
 import type {
-  Abilities, AbilityBonus, CharacterSheet, ClassBasics, Equipment, ClassLine, Copper, GearEffect, ItemSpell, SpellRoll, Trait, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
+  Abilities, AbilityBonus, CharacterSheet, ClassBasics, Equipment, Speeds, ClassLine, Copper, GearEffect, ItemSpell, SpellRoll, Trait, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
 } from './types'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
-  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData' | 'speciesTraits' | 'abilityBonus' | 'skills' | 'equipment' | 'spellRolls' | 'classBasics'
+  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData' | 'speciesTraits' | 'abilityBonus' | 'skills' | 'equipment' | 'spellRolls' | 'classBasics' | 'speeds'
 
 export interface FieldDef {
   key: string
@@ -134,7 +134,11 @@ export const SCHEMA = [
       // A subrace is a race of its own that names its main race here (Hill Dwarf: Subrace of Dwarf).
       { key: 'parent', label: 'Subrace of', kind: 'ref', to: ['race'] },
       { key: 'size', label: 'Size', kind: 'select', options: SIZES, list: 'size' },
-      { key: 'speed', label: 'Speed', kind: 'text' },
+      // Sizes the player may pick instead (a "Medium or Small" species); the pick is on the character's sheet.
+      { key: 'otherSizes', label: 'Or size', kind: 'list', options: SIZES, list: 'size' },
+      { key: 'creatureType', label: 'Creature type', kind: 'select', options: ['Aberration', 'Beast', 'Celestial', 'Construct', 'Dragon', 'Elemental', 'Fey', 'Fiend', 'Giant', 'Humanoid', 'Monstrosity', 'Ooze', 'Plant', 'Undead'], list: 'creature.creatureType' },
+      // Walking, swimming, flying, climbing and burrowing speeds in feet (data version 30; it was text before).
+      { key: 'speeds', label: 'Speed', kind: 'speeds' },
       // What the race may add to ability scores; not added on its own (abilityBonus.ts).
       { key: 'abilityIncrease', label: 'Ability scores', kind: 'abilityBonus' },
       { key: 'languages', label: 'Languages', kind: 'list' },
@@ -331,7 +335,7 @@ export interface KindValue {
   money: Copper; weight: number; ref: Id; refs: Id[]; date: WorldDate
   recipe: RecipeLine[]; stock: StockLine[]; statblock: Statblock; abilities: Abilities
   combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]; effects: GearEffect[]; itemSpells: ItemSpell[]; requires: Requirements; mapData: MapScale | MapRoute[]
-  speciesTraits: Trait[]; abilityBonus: AbilityBonus; skills: string[]; equipment: Equipment; spellRolls: SpellRoll[]; classBasics: ClassBasics
+  speciesTraits: Trait[]; abilityBonus: AbilityBonus; skills: string[]; equipment: Equipment; spellRolls: SpellRoll[]; classBasics: ClassBasics; speeds: Speeds
 }
 type Defs = (typeof SCHEMA)[number]['fields'][number]
 /** A field key used by any type. */

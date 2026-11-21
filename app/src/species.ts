@@ -8,7 +8,7 @@
 // player for another of the same kind (an overlap with the class's skills, a DM's ruling).
 // A character's classes and subclasses count the same way too: their Features, each from a level in that class, with
 // uses that can grow by level (Rage), scaling values (Sneak Attack), and picks (Fighting Style, Expertise, Metamagic).
-import type { Abilities, CharacterSheet, Entry, GearEffect, Id, SpeciesState, Trait, TraitChoice, TraitGrant, TraitOption, TraitSpell } from './model/types'
+import type { Abilities, CharacterSheet, Entry, GearEffect, Id, SpeciesState, Speeds, Trait, TraitChoice, TraitGrant, TraitOption, TraitSpell } from './model/types'
 import { classesOf, totalLevel, withoutClass } from './model/classes'
 import { subclassLevelOf } from './classRules'
 import { entries, get, listOptions, state } from './store'
@@ -97,7 +97,9 @@ export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): Active
   if (!pc) return []
   const sheet = s ?? (pc.fields.sheet as CharacterSheet | undefined), st = stateOf(sheet)
   const lin = lineage(pc), subrace = lin.length > 1 ? lin.at(-1)! : undefined
-  const build = ({ from: race, level }: { from: Entry; level: number }) => traitsOf(race).flatMap(trait => {
+  // a subrace's trait can take the place of its main race's (Wood Elf's speed): that one is left out
+  const replaced = new Set(lin.flatMap(r => traitsOf(r).map(t => t.replaces).filter((x): x is string => !!x)))
+  const build = ({ from: race, level }: { from: Entry; level: number }) => traitsOf(race).filter(t => !(lin.includes(race) && replaced.has(t.id))).flatMap(trait => {
     const key = traitKey(race, trait)
     // a lineage the subrace stands for (a High Elf has the High Elf lineage) is picked unless the player picked another
     const auto = subrace && race !== subrace && lin.includes(race) && trait.choice?.kind === 'option' ? subraceOption(trait.choice, subrace.name, race.name) : undefined
@@ -165,6 +167,12 @@ export function subraceOption(c: TraitChoice, subrace: string, parent: string): 
 export function expectedSubclassLevels(cls: string, except?: string): number[] {
   const other = entries.value.filter(e => e.type === 'subclass' && e.fields.class === cls && e.id !== except)
   return [...new Set([subclassLevelOf(cls), ...other.flatMap(e => traitsOf(e).map(t => t.level ?? 1))])].sort((a, b) => a - b)
+}
+/** A subrace's main races, nearest first (High Elf: Elf), for its "replaces" choice and the "From Elf" sections. */
+export function parentRaces(e: Entry): Entry[] {
+  const out: Entry[] = []
+  for (let r = get(e.fields.parent as string | undefined); r && r.type === 'race' && !out.includes(r) && r.id !== e.id; r = get(r.fields.parent as string | undefined)) out.push(r)
+  return out
 }
 /** The class a class or subclass entry belongs to, by its list label ("Warlock"). */
 export function classLabel(e: Entry): string {
@@ -265,12 +273,23 @@ export const speciesExpertise = (pc: Entry | undefined, s?: CharacterSheet) =>
 
 /** The species' speed in feet (the subrace's, else the main race's), if one says. */
 export function speciesSpeed(pc: Entry | undefined): number | undefined {
-  for (const r of [...lineage(pc)].reverse()) { const m = String(r.fields.speed ?? '').match(/(\d+)/); if (m) return Number(m[1]) }
-  return undefined
+  return speciesSpeeds(pc).walk
 }
+/** The species' speeds: each one the subrace sets, else the main race's. */
+export function speciesSpeeds(pc: Entry | undefined): Speeds {
+  const out: Speeds = {}
+  for (const r of lineage(pc)) Object.assign(out, Object.fromEntries(Object.entries(r.fields.speeds ?? {}).filter(([, v]) => v != null && v !== '')))
+  return out
+}
+/** The sizes a character of this species may be: the main one first (the subrace's, else the main race's). */
+export function speciesSizes(pc: Entry | undefined): string[] {
+  for (const r of [...lineage(pc)].reverse()) if (r.fields.size) return [String(r.fields.size), ...((r.fields.otherSizes as string[] | undefined) ?? []).filter(x => x !== r.fields.size)]
+  return []
+}
+/** The character's size: the one the player picked where the species offers a choice, else its main size. */
 export function speciesSize(pc: Entry | undefined): string | undefined {
-  for (const r of [...lineage(pc)].reverse()) if (r.fields.size) return String(r.fields.size)
-  return undefined
+  const all = speciesSizes(pc), picked = pc?.fields.sheet?.size
+  return picked && all.includes(picked) ? picked : all[0]
 }
 
 // ---- uses ----

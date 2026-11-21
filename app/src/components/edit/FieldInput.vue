@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import TraitsInput from './TraitsInput.vue'
 import ClassBasicsInput from './ClassBasicsInput.vue'
-import { classLabel, expectedSubclassLevels } from '../../species'
+import SpeedsInput from './SpeedsInput.vue'
+import { classLabel, expectedSubclassLevels, parentRaces, traitsOf } from '../../species'
 import AbilityBonusInput from './AbilityBonusInput.vue'
 import EquipmentInput from './EquipmentInput.vue'
 import { SKILLS } from '../../sheet'
@@ -10,9 +11,9 @@ import ChoiceListInput from './ChoiceListInput.vue'
 import { computed } from 'vue'
 import { byKey, type FieldDef } from '../../model/schema'
 import { listKeyOf } from '../../model/lists'
-import { byType, fieldOptions } from '../../store'
+import { byType, fieldOptions, get } from '../../store'
 import ProfChips from '../ProfChips.vue'
-import type { Entry } from '../../model/types'
+import type { Entry, Speeds } from '../../model/types'
 import { changed } from '../../edit'
 import EntryPicker from './EntryPicker.vue'
 import DateInput from './DateInput.vue'
@@ -29,6 +30,12 @@ import RequirementsInput from './RequirementsInput.vue'
 const SKILL_OPTIONS = SKILLS.map(x => ({ id: x.name, label: x.name }))
 
 const props = defineProps<{ def: FieldDef; entry: Entry }>()
+/** A subrace's empty field: what its main race has, said in the empty choice ("Medium from Elf"). */
+const fromParent = computed(() => {
+  const p = props.entry.type === 'race' ? get(props.entry.fields.parent) : undefined
+  const v = p ? byKey(p.fields)[props.def.key] : undefined
+  return v != null && v !== '' ? `${fieldOptions(props.def).find(o => o.id === v)?.label ?? v} from ${p!.name}` : ''
+})
 
 const value = computed({
   get: () => byKey(props.entry.fields)[props.def.key] as any,
@@ -66,7 +73,7 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
   <input v-else-if="def.kind === 'weight'" type="number" step="0.1" min="0" :value="value ?? ''" placeholder="lb" @change="value = ($event.target as HTMLInputElement).value === '' ? undefined : Number(($event.target as HTMLInputElement).value)" />
   <label v-else-if="def.kind === 'bool'" class="toggle"><input type="checkbox" :checked="!!value" @change="value = ($event.target as HTMLInputElement).checked || undefined" /><span>{{ value ? 'Yes' : 'No' }}</span></label>
   <select v-else-if="def.kind === 'select'" :value="value ?? ''" @change="value = ($event.target as HTMLSelectElement).value">
-    <option value="">—</option>
+    <option value="">{{ fromParent ? `— (${fromParent})` : '—' }}</option>
     <option v-for="o in selectOptions" :key="o.id" :value="o.id">{{ o.label }}</option>
   </select>
   <ChoiceListInput v-else-if="def.kind === 'list' && hasList && DROPDOWN_LISTS.includes(listKeyOf(def) ?? '')" :values="value ?? []" :options="options" :placeholder="`Add a ${def.label.toLowerCase().replace(/ies$/, 'y').replace(/s$/, '')}…`" @change="value = $event" />
@@ -83,8 +90,9 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
   <EffectsInput v-else-if="def.kind === 'effects'" v-model="value" />
   <ItemSpellsInput v-else-if="def.kind === 'itemSpells'" v-model="value" />
   <ClassBasicsInput v-else-if="def.kind === 'classBasics'" v-model="value" :cls="String(entry.fields.class ?? '')" />
-  <TraitsInput v-else-if="def.kind === 'speciesTraits'" v-model="value" :entry-type="entry.type" :class-name="entry.type === 'class' || entry.type === 'subclass' ? classLabel(entry) : undefined" :expected-levels="entry.type === 'subclass' && entry.fields.class ? expectedSubclassLevels(String(entry.fields.class), entry.id) : undefined" />
+  <TraitsInput v-else-if="def.kind === 'speciesTraits'" v-model="value" :entry-type="entry.type" :class-name="entry.type === 'class' || entry.type === 'subclass' ? classLabel(entry) : undefined" :expected-levels="entry.type === 'subclass' && entry.fields.class ? expectedSubclassLevels(String(entry.fields.class), entry.id) : undefined" :parent-traits="entry.type === 'race' ? parentRaces(entry).flatMap(r => traitsOf(r).map(t => ({ id: t.id, name: `${t.name} (${r.name})` }))) : undefined" />
   <AbilityBonusInput v-else-if="def.kind === 'abilityBonus'" v-model="value" />
+  <SpeedsInput v-else-if="def.kind === 'speeds'" v-model="value" :inherited="entry.type === 'race' ? (get(entry.fields.parent)?.fields.speeds as Speeds | undefined) : undefined" />
   <ProfChips v-else-if="def.kind === 'skills'" :values="value ?? []" :toggles="SKILL_OPTIONS" @change="value = $event.length ? $event : undefined" />
   <EquipmentInput v-else-if="def.kind === 'equipment'" v-model="value" />
   <RequirementsInput v-else-if="def.kind === 'requires'" v-model="value" />

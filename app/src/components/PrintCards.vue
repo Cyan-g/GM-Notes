@@ -51,6 +51,26 @@ const styleVars = computed(() => ({
 }))
 const colorOf = (c: Card) => (style.value.color === 'custom' ? style.value.custom || '#8c2f1f' : style.value.color === 'kind' ? kindColor(c) : 'var(--accent)')
 
+/** A paragraph as HTML, made once (the preview draws every card again on each change). */
+const htmlCache = new Map<string, string>()
+const md = (t: string) => { let h = htmlCache.get(t); if (h == null) { h = renderMarkdown(t); htmlCache.set(t, h) } return h }
+const bodyAt = (i: number) => root.value?.querySelectorAll<HTMLElement>('.print-pages .pc-body')[i]
+const fits = (body: HTMLElement) => body.scrollHeight <= body.clientHeight + 1
+/**
+ * The biggest text size (in half points, from `max` down to the smallest) at which a card's text fits, tried on the
+ * card in the page itself (no redraw of the others), halving the range each time; the smallest when nothing fits.
+ */
+function fitFont(body: HTMLElement, max: number): number {
+  const sizes: number[] = []
+  for (let f = max; f > MIN_FONT; f = Math.round((f - 0.5) * 10) / 10) sizes.push(f)
+  sizes.push(MIN_FONT)
+  const at = (k: number) => { body.style.fontSize = `${sizes[k]}pt`; return fits(body) }
+  if (at(0)) return sizes[0]
+  let lo = 0, hi = sizes.length - 1 // sizes[lo] doesn't fit; find the first that does
+  if (!at(hi)) return MIN_FONT
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (at(mid)) hi = mid; else lo = mid }
+  return sizes[hi]
+}
 /** The cards laid out again, then fitted one by one until none overflows. */
 async function layout() {
   fitting.value = true; saved.value = ''
@@ -59,14 +79,18 @@ async function layout() {
   await document.fonts.ready
   const total = pieces.value.length
   if (total > 6) await stage('Preparing the cards', 'Fitting the text', total)
+  await nextTick()
   for (let i = 0; i < pieces.value.length && i < 2000; i++) {
     if (total > 6) await tick(Math.min(total, i + 1))
+    // the text size first, on the card itself; only a card that still overflows at the smallest size is drawn again
+    const first = bodyAt(i)
+    if (first) { const f = fitFont(first, pieces.value[i].font); first.style.fontSize = `${f}pt`; pieces.value[i].font = f; if (fits(first)) continue }
     for (let guard = 0; guard < 400; guard++) {
       await nextTick()
-      const body = root.value?.querySelectorAll<HTMLElement>('.print-pages .pc-body')[i]
-      if (!body || body.scrollHeight <= body.clientHeight + 1) break
+      const body = bodyAt(i)
+      if (!body || fits(body)) break
       const p = pieces.value[i]
-      if (p.font > MIN_FONT) { p.font = Math.max(MIN_FONT, Math.round((p.font - 0.5) * 10) / 10); continue }
+      if (p.font > MIN_FONT) { p.font = fitFont(body, p.font); continue }
       // still too long at the smallest size: the end of the text moves on to a "(continued)" card, a sentence at a
       // time, so the card stays full (a table or list moves as a whole)
       let next = pieces.value[i + 1]
@@ -185,7 +209,7 @@ const count = computed(() => pieces.value.length)
                   <div v-for="[k2, v] in p.card.facts" :key="k2"><dt>{{ k2 }}</dt><dd>{{ v || '—' }}</dd></div>
                 </dl>
                 <div class="pc-body" :style="{ fontSize: p.font + 'pt' }">
-                  <div v-for="(t, j) in p.paras" :key="j" class="md" v-html="renderMarkdown(t)" />
+                  <div v-for="(t, j) in p.paras" :key="j" class="md" v-html="md(t)" />
                 </div>
                 <footer v-if="(style.show.foot && p.card.foot) || (style.show.credit && p.card.credit)" class="pc-foot">
                   <span>{{ style.show.foot ? p.card.foot : '' }}</span><span v-if="style.show.credit" class="pc-credit">{{ p.card.credit }}</span>
@@ -254,7 +278,7 @@ const count = computed(() => pieces.value.length)
               <div v-for="[k2, v] in pieces[big].card.facts" :key="k2"><dt>{{ k2 }}</dt><dd>{{ v || '—' }}</dd></div>
             </dl>
             <div class="pc-body" :style="{ fontSize: pieces[big].font + 'pt' }">
-              <div v-for="(t, j) in pieces[big].paras" :key="j" class="md" v-html="renderMarkdown(t)" />
+              <div v-for="(t, j) in pieces[big].paras" :key="j" class="md" v-html="md(t)" />
             </div>
             <footer v-if="(style.show.foot && pieces[big].card.foot) || (style.show.credit && pieces[big].card.credit)" class="pc-foot">
               <span>{{ style.show.foot ? pieces[big].card.foot : '' }}</span><span v-if="style.show.credit" class="pc-credit">{{ pieces[big].card.credit }}</span>

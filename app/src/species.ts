@@ -378,7 +378,8 @@ export function setCastAbility(s: CharacterSheet, key: string, ability: Ability 
 
 // ---- spells ----
 export const HOW_SPECIES: Record<TraitSpell['how'], string> = { atWill: 'at will', short: '1/short rest', long: '1/long rest', prepared: 'always prepared', list: 'on the spell list', book: 'in the spellbook' }
-export interface SpeciesSpell { key: string; spell: TraitSpell; from: string; ready: boolean; status: string; level: number }
+/** `source`: what gives the trait (a species, background or feat by name; a class feature by the feature's name). */
+export interface SpeciesSpell { key: string; spell: TraitSpell; from: string; source: string; ready: boolean; status: string; level: number }
 /** The spells the species gives at the character's level, with whether a once-per-rest one can be cast now. */
 export function speciesSpells(pc: Entry | undefined, s?: CharacterSheet): SpeciesSpell[] {
   if (!pc) return []
@@ -398,7 +399,7 @@ export function speciesSpells(pc: Entry | undefined, s?: CharacterSheet): Specie
         if (!get(x.spell) || (x.from ?? 1) > a.level) return
         const perRest = x.how === 'short' || x.how === 'long'
         const ready = !perRest || !used.includes(key)
-        out.push({ key, spell: x, from, ready, status: HOW_SPECIES[x.how] + (ready ? '' : ' · used'), level: x.from ?? 1 })
+        out.push({ key, spell: x, from, source: isClassOrigin(a.race) ? a.trait.name : a.race.name, ready, status: HOW_SPECIES[x.how] + (ready ? '' : ' · used'), level: x.from ?? 1 })
       })
     }
   }

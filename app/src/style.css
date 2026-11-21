@@ -1771,6 +1771,9 @@ button.live-tag { cursor: pointer; }
 .wz-skills { display: flex; flex-wrap: wrap; gap: .35rem; }
 .wz-skills .chip-btn.on, .wz-book.on { background: var(--accent); color: var(--bg); border-color: var(--accent); }
 .wz-spell { display: inline-flex; gap: 2px; }
+/* a spell the character has already from elsewhere (a species, a feat): marked, still pickable */
+.chip-btn.had { border-style: dashed; }
+.wz-had { margin-left: 6px; font-size: 0.85em; opacity: 0.75; }
 .wz-filter { max-width: 18rem; }
 .wz-kit { display: flex; gap: .5rem; align-items: baseline; margin: .3rem 0; }
 .wz-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: .5rem 1rem; }

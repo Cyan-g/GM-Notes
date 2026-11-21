@@ -8,10 +8,10 @@ import type {
 } from './model/types'
 import { bonusApplied, bonusOpen, type BonusChoice } from './abilityBonus'
 import { ABILITY_KEYS, dieSize, mod, spellLevel, type Ability } from './model/dnd'
-import { EPIC_BOON_LEVEL, basicsOf, hitDieOf, rulesOf, subclassLevelOf, type Kit, type KitLine } from './classRules'
+import { EPIC_BOON_LEVEL, basicsOf, classEntry, classLabel, hitDieOf, rulesOf, subclassLevelOf, type Kit, type KitLine } from './classRules'
 import { ruleSlots } from './slots'
 import { blankSheet, emptyBook, own } from './sheetData'
-import { choiceOpen, classSpellsFrom, featGivesSave, isClassOrigin, isPlayable, raceChain, speciesGrants, speciesTraits } from './species'
+import { choiceOpen, classSpellsFrom, featGivesSave, isClassOrigin, isPlayable, raceChain, speciesGrants, speciesSpells, speciesTraits } from './species'
 import { PROFS_TRAIT } from './model/traits'
 import { entries, get } from './store'
 import { rule } from './rules'
@@ -100,6 +100,19 @@ export function draftPc(d: Draft, sheet?: CharacterSheet): Entry {
   } as unknown as Entry
   own(pc.fields.sheet as CharacterSheet, pc)
   return pc
+}
+
+/**
+ * The spells the draft already has, each with where from ("High Elf", "Magic Initiate", "Wizard"): what its species,
+ * background, feats and class features give or had picked (but `skip`, the trait whose picks these are), and with
+ * `withClass`, the cantrips and spells picked in the Spells step.
+ */
+export function ownedSpells(d: Draft, opts: { skip?: string; withClass?: boolean } = {}): Map<Id, string[]> {
+  const out = new Map<Id, string[]>()
+  const add = (id: Id, from: string) => { const l = out.get(id) ?? []; if (!l.includes(from)) out.set(id, [...l, from]) }
+  for (const x of speciesSpells(draftPc(d))) if (!opts.skip || !x.key.startsWith(opts.skip + '.')) add(x.spell.spell, x.source)
+  if (opts.withClass) for (const id of [...d.cantrips, ...d.spells, ...d.book]) add(id, `${(classEntry(d.cls) && classLabel(classEntry(d.cls)!)) || 'class'} spells`)
+  return out
 }
 
 /** The ability bonus the draft takes: the species' (the subrace's, else its main race's), the background's, or custom. */

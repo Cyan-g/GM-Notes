@@ -14,7 +14,9 @@ import MarkdownView from './MarkdownView.vue'
 import EntryLink from './EntryLink.vue'
 import TraitChips from './TraitChips.vue'
 
-const props = defineProps<{ a: ActiveTrait; disabled?: boolean }>()
+/** `owned`: the spells the character has already, with where from, marked in a spell pick's dropdown (the wizard). */
+const props = defineProps<{ a: ActiveTrait; disabled?: boolean; owned?: Map<string, string[]> }>()
+const hasIt = (id: string) => (c.value.kind === 'spell' ? props.owned?.get(id)?.join(', ') : undefined)
 const emit = defineEmits<{ pick: [picks: string[]] }>()
 const c = computed(() => props.a.trait.choice!)
 const n = computed(() => choiceCount(props.a))
@@ -140,9 +142,9 @@ function toggle(id: string) {
     <div v-if="!listed" class="sp-pick-selects">
       <select v-for="k in n" :key="k" :value="a.picks[k - 1] ?? ''" :disabled="disabled" :aria-label="`${a.trait.name}: pick ${k}`" @change="set(k - 1, ($event.target as HTMLSelectElement).value)">
         <option value="">—</option>
-        <option v-for="o in options" :key="o.id" :value="o.id" :disabled="a.picks.includes(o.id) && a.picks[k - 1] !== o.id">{{ weaponLabel(o) }}</option>
+        <option v-for="o in options" :key="o.id" :value="o.id" :disabled="a.picks.includes(o.id) && a.picks[k - 1] !== o.id">{{ weaponLabel(o) }}{{ hasIt(o.id) ? ` ✓ has it: ${hasIt(o.id)}` : '' }}</option>
       </select>
-      <template v-if="c.kind === 'spell'"><EntryLink v-for="id in a.picks" :key="id" :id="id" /></template>
+      <template v-if="c.kind === 'spell'"><span v-for="id in a.picks" :key="id"><EntryLink :id="id" /><span v-if="hasIt(id)" class="wz-had small" :title="`Already has it: ${hasIt(id)}`">✓ also from {{ hasIt(id) }}</span></span></template>
     </div>
     <template v-if="mastery">
       <ul v-if="mastered.length" class="sp-masteries small">

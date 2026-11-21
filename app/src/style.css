@@ -1038,6 +1038,8 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
   background: color-mix(in srgb, #d08a24 18%, var(--panel)); border-bottom: 1px solid #d08a24; font-size: 14px; }
 .save-banner.err { background: color-mix(in srgb, #b33 14%, var(--panel)); border-bottom-color: #b33; }
 .save-banner > span { flex: 1 1 30rem; }
+/* an update downloading in the background */
+.update-progress { flex: 0 1 12rem; height: .5rem; accent-color: var(--accent); }
 
 /* ---------- export / import ---------- */
 .transfer { padding: 1.2rem; display: flex; flex-direction: column; gap: .55rem; max-height: 80vh; overflow-y: auto; }

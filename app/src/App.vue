@@ -107,9 +107,12 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <button @click="state.converted = null">OK</button>
     </div>
     <div v-if="update" class="save-banner update-banner" role="status">
-      <template v-if="update.state === 'ready'"><span><AppIcon ui="upgrade" /> GM Notes {{ update.version }} is downloaded.</span><button class="primary" @click="installUpdate">Restart and update</button></template>
+      <template v-if="update.state === 'downloading'"><span><AppIcon ui="upgrade" /> Downloading GM Notes {{ update.version }}… {{ update.percent ?? 0 }} %</span>
+        <progress class="update-progress" :value="update.percent ?? 0" max="100" /></template>
+      <template v-else-if="update.state === 'ready'"><span><AppIcon ui="upgrade" /> GM Notes {{ update.version }} is downloaded.</span><button class="primary" @click="installUpdate">Restart and update</button></template>
+      <template v-else-if="update.state === 'failed'"><span><AppIcon ui="upgrade" /> GM Notes {{ update.version }} couldn't be downloaded; it's tried again the next time the app starts.</span></template>
       <template v-else><span><AppIcon ui="upgrade" /> GM Notes {{ update.version }} is out.</span><button class="primary" @click="desktop!.open(update.url!)">Download</button></template>
-      <button @click="update = null">Later</button>
+      <button @click="update = null">{{ update.state === 'ready' || update.state === 'available' ? 'Later' : update.state === 'failed' ? 'OK' : 'Hide' }}</button>
     </div>
     <main class="main">
       <HomeView v-if="route.current.name === 'home'" />

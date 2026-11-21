@@ -449,11 +449,18 @@ function checkForUpdates(win) {
   if (!app.isPackaged) return
   const tell = info => win.webContents.send('update', info)
   if (process.platform === 'win32') {
-    // Windows: download in the background, then offer a restart.
+    // Windows: download in the background (the window shows how far it got), then offer a restart.
     updater = require('electron-updater').autoUpdater
     updater.autoDownload = true
-    updater.on('update-downloaded', i => tell({ state: 'ready', version: i.version }))
-    updater.on('error', () => { /* offline, or the releases aren't public yet */ })
+    let version = '', percent = -1
+    updater.on('update-available', i => { version = i.version; percent = 0; tell({ state: 'downloading', version, percent }) })
+    updater.on('download-progress', p => {
+      const n = Math.floor(p.percent)
+      if (version && n !== percent) { percent = n; tell({ state: 'downloading', version, percent }) }
+    })
+    updater.on('update-downloaded', i => { version = ''; tell({ state: 'ready', version: i.version }) })
+    // Offline, or the releases aren't public yet: only said when a download had started (it's tried again next time).
+    updater.on('error', () => { if (version) tell({ state: 'failed', version }); version = '' })
     updater.checkForUpdates().catch(() => {})
   } else {
     // Mac (unsigned, so it can't install updates itself): look at the latest release and point to it.

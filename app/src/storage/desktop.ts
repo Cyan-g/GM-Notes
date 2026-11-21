@@ -2,7 +2,8 @@
 // No permission prompts, no folder handle that can go stale.
 import type { Storage } from './storage'
 
-export interface UpdateInfo { state: 'ready' | 'available'; version: string; url?: string }
+/** A new version: downloading (with how far, in percent), downloaded, failed to download, or out (Mac: a link). */
+export interface UpdateInfo { state: 'downloading' | 'ready' | 'failed' | 'available'; version: string; percent?: number; url?: string }
 interface Bridge {
   read(root: string, rel: string): Promise<Uint8Array | null>
   write(root: string, rel: string, bytes: Uint8Array): Promise<boolean>

@@ -1,0 +1,1197 @@
+{
+ "about": "SRD 5.2.1 (CC BY 4.0) equipment for the seed: every weapon and armor, the musical instruments, and the gear the SRD's class and background starting kits name, with their cost (copper), weight (lb) and stats. Made by a script from the SRD's tables; checked against its text.",
+ "items": [
+  {
+   "name": "Club",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Club",
+    "damage": "1d4",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Light"
+    ],
+    "weight": 2,
+    "value": 10
+   }
+  },
+  {
+   "name": "Dagger",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Dagger",
+    "damage": "1d4",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Finesse",
+     "Light",
+     "Thrown"
+    ],
+    "range": "20/60",
+    "weight": 1,
+    "value": 200
+   }
+  },
+  {
+   "name": "Greatclub",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Greatclub",
+    "damage": "1d8",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Two-Handed"
+    ],
+    "weight": 10,
+    "value": 20
+   }
+  },
+  {
+   "name": "Handaxe",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Handaxe",
+    "damage": "1d6",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Light",
+     "Thrown"
+    ],
+    "range": "20/60",
+    "weight": 2,
+    "value": 500
+   }
+  },
+  {
+   "name": "Javelin",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Javelin",
+    "damage": "1d6",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Thrown"
+    ],
+    "range": "30/120",
+    "weight": 2,
+    "value": 50
+   }
+  },
+  {
+   "name": "Light Hammer",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Light Hammer",
+    "damage": "1d4",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Light",
+     "Thrown"
+    ],
+    "range": "20/60",
+    "weight": 2,
+    "value": 200
+   }
+  },
+  {
+   "name": "Mace",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Mace",
+    "damage": "1d6",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "weight": 4,
+    "value": 500
+   }
+  },
+  {
+   "name": "Quarterstaff",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Quarterstaff",
+    "damage": "1d6/1d8",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Versatile"
+    ],
+    "weight": 4,
+    "value": 20
+   }
+  },
+  {
+   "name": "Sickle",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Sickle",
+    "damage": "1d4",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Light"
+    ],
+    "weight": 2,
+    "value": 100
+   }
+  },
+  {
+   "name": "Spear",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Spear",
+    "damage": "1d6/1d8",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Thrown",
+     "Versatile"
+    ],
+    "range": "20/60",
+    "weight": 3,
+    "value": 100
+   }
+  },
+  {
+   "name": "Dart",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Dart",
+    "damage": "1d4",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Finesse",
+     "Thrown"
+    ],
+    "range": "20/60",
+    "weight": 0.25,
+    "value": 5
+   }
+  },
+  {
+   "name": "Light Crossbow",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Light Crossbow",
+    "damage": "1d8",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Loading",
+     "Two-Handed"
+    ],
+    "range": "80/320",
+    "weight": 5,
+    "value": 2500
+   }
+  },
+  {
+   "name": "Shortbow",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Shortbow",
+    "damage": "1d6",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Two-Handed"
+    ],
+    "range": "80/320",
+    "weight": 2,
+    "value": 2500
+   }
+  },
+  {
+   "name": "Sling",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Sling",
+    "damage": "1d4",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Ammunition"
+    ],
+    "range": "30/120",
+    "value": 10
+   }
+  },
+  {
+   "name": "Battleaxe",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Battleaxe",
+    "damage": "1d8/1d10",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Versatile"
+    ],
+    "weight": 4,
+    "value": 1000
+   }
+  },
+  {
+   "name": "Flail",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Flail",
+    "damage": "1d8",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "weight": 2,
+    "value": 1000
+   }
+  },
+  {
+   "name": "Glaive",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Glaive",
+    "damage": "1d10",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Heavy",
+     "Reach",
+     "Two-Handed"
+    ],
+    "weight": 6,
+    "value": 2000
+   }
+  },
+  {
+   "name": "Greataxe",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Greataxe",
+    "damage": "1d12",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Heavy",
+     "Two-Handed"
+    ],
+    "weight": 7,
+    "value": 3000
+   }
+  },
+  {
+   "name": "Greatsword",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Greatsword",
+    "damage": "2d6",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Heavy",
+     "Two-Handed"
+    ],
+    "weight": 6,
+    "value": 5000
+   }
+  },
+  {
+   "name": "Halberd",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Halberd",
+    "damage": "1d10",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Heavy",
+     "Reach",
+     "Two-Handed"
+    ],
+    "weight": 6,
+    "value": 2000
+   }
+  },
+  {
+   "name": "Lance",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Lance",
+    "damage": "1d10",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Heavy",
+     "Reach",
+     "Two-Handed"
+    ],
+    "weight": 6,
+    "value": 1000
+   }
+  },
+  {
+   "name": "Longsword",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Longsword",
+    "damage": "1d8/1d10",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Versatile"
+    ],
+    "weight": 3,
+    "value": 1500
+   }
+  },
+  {
+   "name": "Maul",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Maul",
+    "damage": "2d6",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Heavy",
+     "Two-Handed"
+    ],
+    "weight": 10,
+    "value": 1000
+   }
+  },
+  {
+   "name": "Morningstar",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Morningstar",
+    "damage": "1d8",
+    "damageType": [
+     "Piercing"
+    ],
+    "weight": 4,
+    "value": 1500
+   }
+  },
+  {
+   "name": "Pike",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Pike",
+    "damage": "1d10",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Heavy",
+     "Reach",
+     "Two-Handed"
+    ],
+    "weight": 18,
+    "value": 500
+   }
+  },
+  {
+   "name": "Rapier",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Rapier",
+    "damage": "1d8",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Finesse"
+    ],
+    "weight": 2,
+    "value": 2500
+   }
+  },
+  {
+   "name": "Scimitar",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Scimitar",
+    "damage": "1d6",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Finesse",
+     "Light"
+    ],
+    "weight": 3,
+    "value": 2500
+   }
+  },
+  {
+   "name": "Shortsword",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Shortsword",
+    "damage": "1d6",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Finesse",
+     "Light"
+    ],
+    "weight": 2,
+    "value": 1000
+   }
+  },
+  {
+   "name": "Trident",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Trident",
+    "damage": "1d8/1d10",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Thrown",
+     "Versatile"
+    ],
+    "range": "20/60",
+    "weight": 4,
+    "value": 500
+   }
+  },
+  {
+   "name": "Warhammer",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Warhammer",
+    "damage": "1d8/1d10",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Versatile"
+    ],
+    "weight": 5,
+    "value": 1500
+   }
+  },
+  {
+   "name": "War Pick",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "War Pick",
+    "damage": "1d8/1d10",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Versatile"
+    ],
+    "weight": 2,
+    "value": 500
+   }
+  },
+  {
+   "name": "Whip",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Whip",
+    "damage": "1d4",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Finesse",
+     "Reach"
+    ],
+    "weight": 3,
+    "value": 200
+   }
+  },
+  {
+   "name": "Blowgun",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Blowgun",
+    "damage": "1",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Loading"
+    ],
+    "range": "25/100",
+    "weight": 1,
+    "value": 1000
+   }
+  },
+  {
+   "name": "Hand Crossbow",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Hand Crossbow",
+    "damage": "1d6",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Light",
+     "Loading"
+    ],
+    "range": "30/120",
+    "weight": 3,
+    "value": 7500
+   }
+  },
+  {
+   "name": "Heavy Crossbow",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Heavy Crossbow",
+    "damage": "1d10",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Heavy",
+     "Loading",
+     "Two-Handed"
+    ],
+    "range": "100/400",
+    "weight": 18,
+    "value": 5000
+   }
+  },
+  {
+   "name": "Longbow",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Longbow",
+    "damage": "1d8",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Heavy",
+     "Two-Handed"
+    ],
+    "range": "150/600",
+    "weight": 2,
+    "value": 5000
+   }
+  },
+  {
+   "name": "Musket",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Musket",
+    "damage": "1d12",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Loading",
+     "Two-Handed"
+    ],
+    "range": "40/120",
+    "weight": 10,
+    "value": 50000
+   }
+  },
+  {
+   "name": "Pistol",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Pistol",
+    "damage": "1d10",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Loading"
+    ],
+    "range": "30/90",
+    "weight": 3,
+    "value": 25000
+   }
+  },
+  {
+   "name": "Arcane Focus (Quarterstaff)",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Quarterstaff",
+    "damage": "1d6/1d8",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Versatile"
+    ],
+    "weight": 4,
+    "value": 500,
+    "subtype": "Spellcasting Focus",
+    "summary": "A staff carved to channel arcane magic; also a Quarterstaff. A Sorcerer, Warlock or Wizard can use it as a Spellcasting Focus."
+   }
+  },
+  {
+   "name": "Druidic Focus (Quarterstaff)",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Quarterstaff",
+    "damage": "1d6/1d8",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Versatile"
+    ],
+    "weight": 4,
+    "value": 500,
+    "subtype": "Spellcasting Focus",
+    "summary": "A wooden staff carved to channel primal magic; also a Quarterstaff. A Druid or Ranger can use it as a Spellcasting Focus."
+   }
+  },
+  {
+   "name": "Padded Armor",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Light",
+    "armorClass": "11 + Dex",
+    "slot": "Chest",
+    "stealthDis": true,
+    "weight": 8,
+    "value": 500
+   }
+  },
+  {
+   "name": "Leather Armor",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Light",
+    "armorClass": "11 + Dex",
+    "slot": "Chest",
+    "weight": 10,
+    "value": 1000
+   }
+  },
+  {
+   "name": "Studded Leather Armor",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Light",
+    "armorClass": "12 + Dex",
+    "slot": "Chest",
+    "weight": 13,
+    "value": 4500
+   }
+  },
+  {
+   "name": "Hide Armor",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Medium",
+    "armorClass": "12 + Dex (max 2)",
+    "slot": "Chest",
+    "weight": 12,
+    "value": 1000
+   }
+  },
+  {
+   "name": "Chain Shirt",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Medium",
+    "armorClass": "13 + Dex (max 2)",
+    "slot": "Chest",
+    "weight": 20,
+    "value": 5000
+   }
+  },
+  {
+   "name": "Scale Mail",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Medium",
+    "armorClass": "14 + Dex (max 2)",
+    "slot": "Chest",
+    "stealthDis": true,
+    "weight": 45,
+    "value": 5000
+   }
+  },
+  {
+   "name": "Breastplate",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Medium",
+    "armorClass": "14 + Dex (max 2)",
+    "slot": "Chest",
+    "weight": 20,
+    "value": 40000
+   }
+  },
+  {
+   "name": "Half Plate Armor",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Medium",
+    "armorClass": "15 + Dex (max 2)",
+    "slot": "Chest",
+    "stealthDis": true,
+    "weight": 40,
+    "value": 75000
+   }
+  },
+  {
+   "name": "Ring Mail",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Heavy",
+    "armorClass": "14",
+    "slot": "Chest",
+    "stealthDis": true,
+    "weight": 40,
+    "value": 3000
+   }
+  },
+  {
+   "name": "Chain Mail",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Heavy",
+    "armorClass": "16",
+    "slot": "Chest",
+    "stealthDis": true,
+    "weight": 55,
+    "value": 7500,
+    "requirements": {
+     "scores": [
+      {
+       "ability": "str",
+       "min": 13
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "Splint Armor",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Heavy",
+    "armorClass": "17",
+    "slot": "Chest",
+    "stealthDis": true,
+    "weight": 60,
+    "value": 20000,
+    "requirements": {
+     "scores": [
+      {
+       "ability": "str",
+       "min": 15
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "Plate Armor",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Heavy",
+    "armorClass": "18",
+    "slot": "Chest",
+    "stealthDis": true,
+    "weight": 65,
+    "value": 150000,
+    "requirements": {
+     "scores": [
+      {
+       "ability": "str",
+       "min": 15
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "Shield",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Shield",
+    "armorClass": "+2",
+    "slot": "Shield",
+    "weight": 6,
+    "value": 1000
+   }
+  },
+  {
+   "name": "Bagpipes",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 6,
+    "value": 3000
+   }
+  },
+  {
+   "name": "Drum",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 3,
+    "value": 600
+   }
+  },
+  {
+   "name": "Dulcimer",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 10,
+    "value": 2500
+   }
+  },
+  {
+   "name": "Flute",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 1,
+    "value": 200
+   }
+  },
+  {
+   "name": "Horn",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 2,
+    "value": 300
+   }
+  },
+  {
+   "name": "Lute",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 2,
+    "value": 3500
+   }
+  },
+  {
+   "name": "Lyre",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 2,
+    "value": 3000
+   }
+  },
+  {
+   "name": "Pan Flute",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 2,
+    "value": 1200
+   }
+  },
+  {
+   "name": "Shawm",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 1,
+    "value": 200
+   }
+  },
+  {
+   "name": "Viol",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 1,
+    "value": 3000
+   }
+  },
+  {
+   "name": "Arrow",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "subtype": "Ammunition",
+    "weight": 0.05,
+    "value": 5,
+    "summary": "Ammunition for a bow; 20 Arrows cost 1 GP and weigh 1 lb. A Quiver holds 20."
+   }
+  },
+  {
+   "name": "Quiver",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 1,
+    "value": 100,
+    "summary": "A Quiver holds up to 20 Arrows."
+   }
+  },
+  {
+   "name": "Holy Symbol",
+   "fields": {
+    "kind": "Accessory",
+    "subtype": "Spellcasting Focus",
+    "weight": 1,
+    "value": 500,
+    "summary": "An amulet, emblem or reliquary bejeweled or painted to channel divine magic. A Cleric or Paladin can use it as a Spellcasting Focus."
+   }
+  },
+  {
+   "name": "Arcane Focus (crystal)",
+   "fields": {
+    "kind": "Accessory",
+    "subtype": "Spellcasting Focus",
+    "weight": 1,
+    "value": 1000,
+    "summary": "A crystal bejeweled or carved to channel arcane magic. A Sorcerer, Warlock or Wizard can use it as a Spellcasting Focus."
+   }
+  },
+  {
+   "name": "Arcane Focus (orb)",
+   "fields": {
+    "kind": "Accessory",
+    "subtype": "Spellcasting Focus",
+    "weight": 3,
+    "value": 2000,
+    "summary": "An orb bejeweled or carved to channel arcane magic. A Sorcerer, Warlock or Wizard can use it as a Spellcasting Focus."
+   }
+  },
+  {
+   "name": "Druidic Focus (sprig of mistletoe)",
+   "fields": {
+    "kind": "Accessory",
+    "subtype": "Spellcasting Focus",
+    "value": 100,
+    "summary": "A sprig of mistletoe tied with ribbon or painted to channel primal magic. A Druid or Ranger can use it as a Spellcasting Focus."
+   }
+  },
+  {
+   "name": "Spellbook",
+   "fields": {
+    "kind": "Tome",
+    "weight": 3,
+    "value": 5000,
+    "summary": "A Wizard's spellbook: their spells, written down."
+   }
+  },
+  {
+   "name": "Robe",
+   "fields": {
+    "kind": "Armor",
+    "subtype": "Clothing",
+    "weight": 4,
+    "value": 100,
+    "summary": "A Robe has vocational or ceremonial significance.",
+    "armorType": "Clothing",
+    "slot": "Chest"
+   }
+  },
+  {
+   "name": "Book (occult lore)",
+   "fields": {
+    "kind": "Tome",
+    "weight": 5,
+    "value": 2500,
+    "summary": "A nonfiction Book about occult lore: +5 to Intelligence checks about its topic when you consult it."
+   }
+  },
+  {
+   "name": "Book (prayers)",
+   "fields": {
+    "kind": "Tome",
+    "weight": 5,
+    "value": 2500,
+    "summary": "A Book of prayers."
+   }
+  },
+  {
+   "name": "Book (history)",
+   "fields": {
+    "kind": "Tome",
+    "weight": 5,
+    "value": 2500,
+    "summary": "A nonfiction Book about history: +5 to Intelligence (History) checks about its topic when you consult it."
+   }
+  },
+  {
+   "name": "Parchment",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "value": 10,
+    "summary": "One sheet of Parchment holds about 250 handwritten words."
+   }
+  },
+  {
+   "name": "Crowbar",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 5,
+    "value": 200,
+    "summary": "Advantage on Strength checks where the Crowbar's leverage can be applied."
+   }
+  },
+  {
+   "name": "Pouch",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 1,
+    "value": 50,
+    "summary": "A Pouch holds up to 6 pounds within one-fifth of a cubic foot."
+   }
+  },
+  {
+   "name": "Traveler's Clothes",
+   "fields": {
+    "kind": "Armor",
+    "subtype": "Clothing",
+    "weight": 4,
+    "value": 200,
+    "summary": "Sturdy clothes for the road.",
+    "armorType": "Clothing",
+    "slot": "Chest"
+   }
+  },
+  {
+   "name": "Healer's Kit",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 3,
+    "value": 500,
+    "summary": "A Healer's Kit has ten uses. As a Utilize action, expend one use to stabilize an Unconscious creature at 0 Hit Points without a Wisdom (Medicine) check."
+   }
+  },
+  {
+   "name": "Burglar's Pack",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "subtype": "Pack",
+    "weight": 42,
+    "value": 1600,
+    "summary": "Contains: Backpack, Ball Bearings, Bell, 10 Candles, Crowbar, Hooded Lantern, 7 flasks of Oil, 5 days of Rations, Rope, Tinderbox and Waterskin."
+   }
+  },
+  {
+   "name": "Dungeoneer's Pack",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "subtype": "Pack",
+    "weight": 55,
+    "value": 1200,
+    "summary": "Contains: Backpack, Caltrops, Crowbar, 2 flasks of Oil, 10 days of Rations, Rope, Tinderbox, 10 Torches and Waterskin."
+   }
+  },
+  {
+   "name": "Entertainer's Pack",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "subtype": "Pack",
+    "weight": 58.5,
+    "value": 4000,
+    "summary": "Contains: Backpack, Bedroll, Bell, Bullseye Lantern, 3 Costumes, Mirror, 8 flasks of Oil, 9 days of Rations, Tinderbox and Waterskin."
+   }
+  },
+  {
+   "name": "Explorer's Pack",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "subtype": "Pack",
+    "weight": 55,
+    "value": 1000,
+    "summary": "Contains: Backpack, Bedroll, 2 flasks of Oil, 10 days of Rations, Rope, Tinderbox, 10 Torches and Waterskin."
+   }
+  },
+  {
+   "name": "Priest's Pack",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "subtype": "Pack",
+    "weight": 29,
+    "value": 3300,
+    "summary": "Contains: Backpack, Blanket, Holy Water, Lamp, 7 days of Rations, Robe and Tinderbox."
+   }
+  },
+  {
+   "name": "Scholar's Pack",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "subtype": "Pack",
+    "weight": 22,
+    "value": 4000,
+    "summary": "Contains: Backpack, Book, Ink, Ink Pen, Lamp, 10 flasks of Oil, 10 sheets of Parchment and Tinderbox."
+   }
+  }
+ ]
+}

@@ -193,7 +193,15 @@ export function classKitsOf(cls: string | undefined): Kit[] {
 }
 /** The kits taken: the class's chosen option and the background's items or gold. */
 export function kitsOf(d: Draft): { items: KitLine[]; money: Copper } {
-  const cls = classKitsOf(d.cls)[d.classKit]
+  const kit = classKitsOf(d.cls)[d.classKit]
+  // "Musical Instrument (one you chose)": the instrument or tool the player picked for the class (a Bard's, a Monk's)
+  const chosen = d.tools.map(t => (get(t)?.type === 'item' ? get(t)! : itemNamed(t))).filter((e): e is Entry => !!e)
+  let next = 0
+  const cls = kit && { ...kit, items: kit.items.map(l => {
+    if (l.item || !/one you chose|of your choice|chosen above/i.test(l.name)) return l
+    const t = chosen[next++]
+    return t ? { ...l, name: t.name, item: t.id } : l
+  }) }
   const bg = d.bgKit === 'items' ? backgroundKit(d) : { items: [], money: backgroundGold(d) ?? 0 }
   return { items: [...(cls?.items ?? []), ...(bg?.items ?? [])], money: (cls?.money ?? 0) + (bg?.money ?? 0) }
 }

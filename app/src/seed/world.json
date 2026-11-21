@@ -197,6 +197,64 @@
      "label": "Wizard"
     }
    ],
+   "deity.domains": [
+    {
+     "id": "Arcana",
+     "label": "Arcana"
+    },
+    {
+     "id": "Death",
+     "label": "Death"
+    },
+    {
+     "id": "Forge",
+     "label": "Forge"
+    },
+    {
+     "id": "Grave",
+     "label": "Grave"
+    },
+    {
+     "id": "Knowledge",
+     "label": "Knowledge"
+    },
+    {
+     "id": "Life",
+     "label": "Life"
+    },
+    {
+     "id": "Light",
+     "label": "Light"
+    },
+    {
+     "id": "Nature",
+     "label": "Nature"
+    },
+    {
+     "id": "Order",
+     "label": "Order"
+    },
+    {
+     "id": "Peace",
+     "label": "Peace"
+    },
+    {
+     "id": "Tempest",
+     "label": "Tempest"
+    },
+    {
+     "id": "Trickery",
+     "label": "Trickery"
+    },
+    {
+     "id": "Twilight",
+     "label": "Twilight"
+    },
+    {
+     "id": "War",
+     "label": "War"
+    }
+   ],
    "deity.rank": [
     {
      "id": "Greater deity",
@@ -209,6 +267,10 @@
     {
      "id": "Demigod",
      "label": "Demigod"
+    },
+    {
+     "id": "Primordial",
+     "label": "Primordial"
     },
     {
      "id": "Other",
@@ -251,80 +313,7 @@
      "label": "Other"
     }
    ],
-   "ingredientProperty": [
-    {
-     "id": "arcane",
-     "label": "arcane"
-    },
-    {
-     "id": "healing",
-     "label": "healing"
-    },
-    {
-     "id": "poisonous",
-     "label": "poisonous"
-    },
-    {
-     "id": "sleep",
-     "label": "sleep"
-    },
-    {
-     "id": "radiant",
-     "label": "radiant"
-    },
-    {
-     "id": "underwater breathing",
-     "label": "underwater breathing"
-    },
-    {
-     "id": "fire",
-     "label": "fire"
-    },
-    {
-     "id": "cold",
-     "label": "cold"
-    },
-    {
-     "id": "inivisibility",
-     "label": "inivisibility"
-    },
-    {
-     "id": "dark",
-     "label": "dark"
-    },
-    {
-     "id": "metal",
-     "label": "metal"
-    },
-    {
-     "id": "magical",
-     "label": "magical"
-    },
-    {
-     "id": "petrifying",
-     "label": "petrifying"
-    },
-    {
-     "id": "paralytic",
-     "label": "paralytic"
-    },
-    {
-     "id": "Mind altering",
-     "label": "Mind altering"
-    },
-    {
-     "id": "Lightning",
-     "label": "Lightning"
-    },
-    {
-     "id": "divine",
-     "label": "divine"
-    },
-    {
-     "id": "acid",
-     "label": "acid"
-    }
-   ],
+   "ingredientProperty": [],
    "item.armorType": [
     {
      "id": "Light",
@@ -495,10 +484,6 @@
     {
      "id": "Whip",
      "label": "Whip"
-    },
-    {
-     "id": "Scythe",
-     "label": "Scythe"
     }
    ],
    "item.damageType": [
@@ -697,6 +682,20 @@
      "label": "Martial"
     }
    ],
+   "item.worksWhile": [
+    {
+     "id": "carried",
+     "label": "carried"
+    },
+    {
+     "id": "equipped",
+     "label": "equipped"
+    },
+    {
+     "id": "attuned",
+     "label": "attuned"
+    }
+   ],
    "language": [
     {
      "id": "Common",
@@ -769,6 +768,34 @@
     {
      "id": "Druidic",
      "label": "Druidic"
+    }
+   ],
+   "npc.attitude": [
+    {
+     "id": "Friendly",
+     "label": "Friendly"
+    },
+    {
+     "id": "Indifferent",
+     "label": "Indifferent"
+    },
+    {
+     "id": "Hostile",
+     "label": "Hostile"
+    }
+   ],
+   "organization.attitude": [
+    {
+     "id": "Friendly",
+     "label": "Friendly"
+    },
+    {
+     "id": "Indifferent",
+     "label": "Indifferent"
+    },
+    {
+     "id": "Hostile",
+     "label": "Hostile"
     }
    ],
    "organization.orgType": [
@@ -1195,69 +1222,6 @@
      "id": "Versatile",
      "label": "Versatile",
      "note": "Can be used with one or two hands; the damage in brackets is for two hands."
-    },
-    {
-     "id": "Serrated",
-     "label": "Serrated",
-     "note": "Critical hits with this weapon do an additional 1d4 damage."
-    },
-    {
-     "id": "Parry",
-     "label": "Parry",
-     "note": "While wielding this weapon, you may use your reaction upon being hit by a melee weapon attack, before the damage is rolled, to add half your proficiency bonus (rounded down) to your Armor Class."
-    },
-    {
-     "id": "Trip",
-     "label": "Trip",
-     "note": "When you deal damage by throwing this weapon, the target must succeed a strength or dexterity saving throw (DC8+attack modifier) or fall prone. Enemies one size category larger than you gain advantage on this save. Enemies two size categories larger than you are immune to this attack from you."
-    },
-    {
-     "id": "Skewer",
-     "label": "Skewer",
-     "note": "When hitting an enemy with a roll 5 or more over their Armor Class using this weapon, you deal additional damage equal to your proficiency modifier."
-    },
-    {
-     "id": "Brute Force",
-     "label": "Brute Force",
-     "note": "When failing to pass an enemy's Armor Class, they still take damage equal to your proficiency modifier."
-    },
-    {
-     "id": "Sweeping",
-     "label": "Sweeping",
-     "note": "When landing a killing blow with this weapon, you carry over any remaining damage to another creature in melee range, which the attack roll can also hit."
-    },
-    {
-     "id": "Stagger",
-     "label": "Stagger",
-     "note": "When a creature in melee range fails an attack roll against you, you can use your reaction to try knocking them prone. The target must succeed a strength or dexterity saving throw (DC8+attack modifier) or fall prone. Enemies one size category larger than you gain advantage on this save. Enemies two size categories larger than you are immune to this attack from you."
-    },
-    {
-     "id": "Ranged",
-     "label": "Ranged"
-    },
-    {
-     "id": "Wind Up",
-     "label": "Wind Up",
-     "note": "You may use your bonus action to wind up this weapon and add an additional 1d4 to your damage dice on your next hit."
-    },
-    {
-     "id": "Curved Blade",
-     "label": "Curved Blade",
-     "note": "Melee attacks with this weapon may ignore any AC bonus gained through shields."
-    },
-    {
-     "id": "Riposte",
-     "label": "Riposte",
-     "note": "When an creature in melee range misses you with a melee weapon attack you can use your reaction to counterattack, doing 1d4/1d6 damage depending on if you are one or two-handing."
-    },
-    {
-     "id": "Swift",
-     "label": "Swift",
-     "note": "Attacks of opportunity with this weapon are done at advantage."
-    },
-    {
-     "id": "Graze",
-     "label": "Graze"
     }
    ],
    "writing.writingType": [
@@ -1344,17 +1308,17 @@
        "item": "calligraphers-supplies"
       },
       {
-       "name": "Book (prayers)"
+       "item": "book-prayers"
       },
       {
-       "name": "Holy Symbol"
+       "item": "holy-symbol"
       },
       {
-       "name": "Parchment",
+       "item": "parchment",
        "amount": 10
       },
       {
-       "name": "Robe"
+       "item": "robe"
       }
      ],
      "money": 800,
@@ -1415,21 +1379,21 @@
     "equipment": {
      "items": [
       {
-       "name": "Dagger",
+       "item": "dagger",
        "amount": 2
       },
       {
        "item": "thieves-tools"
       },
       {
-       "name": "Crowbar"
+       "item": "crowbar"
       },
       {
-       "name": "Pouch",
+       "item": "pouch",
        "amount": 2
       },
       {
-       "name": "Traveler's Clothes"
+       "item": "travelers-clothes"
       }
      ],
      "money": 1600,
@@ -1491,20 +1455,20 @@
     "equipment": {
      "items": [
       {
-       "name": "Quarterstaff"
+       "item": "quarterstaff"
       },
       {
        "item": "calligraphers-supplies"
       },
       {
-       "name": "Book (history)"
+       "item": "book-history"
       },
       {
-       "name": "Parchment",
+       "item": "parchment",
        "amount": 8
       },
       {
-       "name": "Robe"
+       "item": "robe"
       }
      ],
      "money": 800,
@@ -1568,26 +1532,26 @@
     "equipment": {
      "items": [
       {
-       "name": "Spear"
+       "item": "spear"
       },
       {
-       "name": "Shortbow"
+       "item": "shortbow"
       },
       {
-       "name": "Arrows",
+       "item": "arrow",
        "amount": 20
       },
       {
        "name": "Gaming Set (the one chosen above)"
       },
       {
-       "name": "Healer's Kit"
+       "item": "healers-kit"
       },
       {
-       "name": "Quiver"
+       "item": "quiver"
       },
       {
-       "name": "Traveler's Clothes"
+       "item": "travelers-clothes"
       }
      ],
      "money": 1400,
@@ -4621,6 +4585,225 @@
    "updated": "2026-11-15T20:32:34.371Z"
   },
   {
+   "id": "arcane-focus-crystal",
+   "type": "item",
+   "name": "Arcane Focus (crystal)",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Accessory",
+    "subtype": "Spellcasting Focus",
+    "weight": 1,
+    "value": 1000,
+    "summary": "A crystal bejeweled or carved to channel arcane magic. A Sorcerer, Warlock or Wizard can use it as a Spellcasting Focus."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "arcane-focus-orb",
+   "type": "item",
+   "name": "Arcane Focus (orb)",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Accessory",
+    "subtype": "Spellcasting Focus",
+    "weight": 3,
+    "value": 2000,
+    "summary": "An orb bejeweled or carved to channel arcane magic. A Sorcerer, Warlock or Wizard can use it as a Spellcasting Focus."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "arcane-focus-quarterstaff",
+   "type": "item",
+   "name": "Arcane Focus (Quarterstaff)",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Quarterstaff",
+    "damage": "1d6/1d8",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Versatile"
+    ],
+    "weight": 4,
+    "value": 500,
+    "subtype": "Spellcasting Focus",
+    "summary": "A staff carved to channel arcane magic; also a Quarterstaff. A Sorcerer, Warlock or Wizard can use it as a Spellcasting Focus."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "arrow",
+   "type": "item",
+   "name": "Arrow",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "subtype": "Ammunition",
+    "weight": 0.05,
+    "value": 5,
+    "summary": "Ammunition for a bow; 20 Arrows cost 1 GP and weigh 1 lb. A Quiver holds 20."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "bagpipes",
+   "type": "item",
+   "name": "Bagpipes",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 6,
+    "value": 3000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "battleaxe",
+   "type": "item",
+   "name": "Battleaxe",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Battleaxe",
+    "damage": "1d8/1d10",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Versatile"
+    ],
+    "weight": 4,
+    "value": 1000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "blowgun",
+   "type": "item",
+   "name": "Blowgun",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Blowgun",
+    "damage": "1",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Loading"
+    ],
+    "range": "25/100",
+    "weight": 1,
+    "value": 1000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "book-history",
+   "type": "item",
+   "name": "Book (history)",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Tome",
+    "weight": 5,
+    "value": 2500,
+    "summary": "A nonfiction Book about history: +5 to Intelligence (History) checks about its topic when you consult it."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "book-occult-lore",
+   "type": "item",
+   "name": "Book (occult lore)",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Tome",
+    "weight": 5,
+    "value": 2500,
+    "summary": "A nonfiction Book about occult lore: +5 to Intelligence checks about its topic when you consult it."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "book-prayers",
+   "type": "item",
+   "name": "Book (prayers)",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Tome",
+    "weight": 5,
+    "value": 2500,
+    "summary": "A Book of prayers."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "breastplate",
+   "type": "item",
+   "name": "Breastplate",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Medium",
+    "armorClass": "14 + Dex (max 2)",
+    "slot": "Chest",
+    "weight": 20,
+    "value": 40000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
    "id": "brewers-supplies",
    "type": "item",
    "name": "Brewer's Supplies",
@@ -4636,6 +4819,24 @@
    "updated": "2026-11-20T15:06:38.000Z"
   },
   {
+   "id": "burglars-pack",
+   "type": "item",
+   "name": "Burglar's Pack",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "subtype": "Pack",
+    "weight": 42,
+    "value": 1600,
+    "summary": "Contains: Backpack, Ball Bearings, Bell, 10 Candles, Crowbar, Hooded Lantern, 7 flasks of Oil, 5 days of Rations, Rope, Tinderbox and Waterskin."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
    "id": "calligraphers-supplies",
    "type": "item",
    "name": "Calligrapher's Supplies",
@@ -4648,6 +4849,150 @@
    },
    "body": "",
    "visibility": "known",
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "chain-mail",
+   "type": "item",
+   "name": "Chain Mail",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Heavy",
+    "armorClass": "16",
+    "slot": "Chest",
+    "stealthDis": true,
+    "weight": 55,
+    "value": 7500,
+    "requirements": {
+     "scores": [
+      {
+       "ability": "str",
+       "min": 13
+      }
+     ]
+    }
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "chain-shirt",
+   "type": "item",
+   "name": "Chain Shirt",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Medium",
+    "armorClass": "13 + Dex (max 2)",
+    "slot": "Chest",
+    "weight": 20,
+    "value": 5000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "club",
+   "type": "item",
+   "name": "Club",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Club",
+    "damage": "1d4",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Light"
+    ],
+    "weight": 2,
+    "value": 10
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "crowbar",
+   "type": "item",
+   "name": "Crowbar",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 5,
+    "value": 200,
+    "summary": "Advantage on Strength checks where the Crowbar's leverage can be applied."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "dagger",
+   "type": "item",
+   "name": "Dagger",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Dagger",
+    "damage": "1d4",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Finesse",
+     "Light",
+     "Thrown"
+    ],
+    "range": "20/60",
+    "weight": 1,
+    "value": 200
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "dart",
+   "type": "item",
+   "name": "Dart",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Dart",
+    "damage": "1d4",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Finesse",
+     "Thrown"
+    ],
+    "range": "20/60",
+    "weight": 0.25,
+    "value": 5
+   },
    "created": "2026-11-20T00:00:00.000Z",
    "updated": "2026-11-20T00:00:00.000Z"
   },
@@ -4682,6 +5027,426 @@
    "updated": "2026-11-20T00:00:00.000Z"
   },
   {
+   "id": "druidic-focus-quarterstaff",
+   "type": "item",
+   "name": "Druidic Focus (Quarterstaff)",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Quarterstaff",
+    "damage": "1d6/1d8",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Versatile"
+    ],
+    "weight": 4,
+    "value": 500,
+    "subtype": "Spellcasting Focus",
+    "summary": "A wooden staff carved to channel primal magic; also a Quarterstaff. A Druid or Ranger can use it as a Spellcasting Focus."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "druidic-focus-sprig-of-mistletoe",
+   "type": "item",
+   "name": "Druidic Focus (sprig of mistletoe)",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Accessory",
+    "subtype": "Spellcasting Focus",
+    "value": 100,
+    "summary": "A sprig of mistletoe tied with ribbon or painted to channel primal magic. A Druid or Ranger can use it as a Spellcasting Focus."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "drum",
+   "type": "item",
+   "name": "Drum",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 3,
+    "value": 600
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "dulcimer",
+   "type": "item",
+   "name": "Dulcimer",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 10,
+    "value": 2500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "dungeoneers-pack",
+   "type": "item",
+   "name": "Dungeoneer's Pack",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "subtype": "Pack",
+    "weight": 55,
+    "value": 1200,
+    "summary": "Contains: Backpack, Caltrops, Crowbar, 2 flasks of Oil, 10 days of Rations, Rope, Tinderbox, 10 Torches and Waterskin."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "entertainers-pack",
+   "type": "item",
+   "name": "Entertainer's Pack",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "subtype": "Pack",
+    "weight": 58.5,
+    "value": 4000,
+    "summary": "Contains: Backpack, Bedroll, Bell, Bullseye Lantern, 3 Costumes, Mirror, 8 flasks of Oil, 9 days of Rations, Tinderbox and Waterskin."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "explorers-pack",
+   "type": "item",
+   "name": "Explorer's Pack",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "subtype": "Pack",
+    "weight": 55,
+    "value": 1000,
+    "summary": "Contains: Backpack, Bedroll, 2 flasks of Oil, 10 days of Rations, Rope, Tinderbox, 10 Torches and Waterskin."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "flail",
+   "type": "item",
+   "name": "Flail",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Flail",
+    "damage": "1d8",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "weight": 2,
+    "value": 1000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "flute",
+   "type": "item",
+   "name": "Flute",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 1,
+    "value": 200
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "glaive",
+   "type": "item",
+   "name": "Glaive",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Glaive",
+    "damage": "1d10",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Heavy",
+     "Reach",
+     "Two-Handed"
+    ],
+    "weight": 6,
+    "value": 2000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "greataxe",
+   "type": "item",
+   "name": "Greataxe",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Greataxe",
+    "damage": "1d12",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Heavy",
+     "Two-Handed"
+    ],
+    "weight": 7,
+    "value": 3000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "greatclub",
+   "type": "item",
+   "name": "Greatclub",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Greatclub",
+    "damage": "1d8",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Two-Handed"
+    ],
+    "weight": 10,
+    "value": 20
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "greatsword",
+   "type": "item",
+   "name": "Greatsword",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Greatsword",
+    "damage": "2d6",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Heavy",
+     "Two-Handed"
+    ],
+    "weight": 6,
+    "value": 5000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "halberd",
+   "type": "item",
+   "name": "Halberd",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Halberd",
+    "damage": "1d10",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Heavy",
+     "Reach",
+     "Two-Handed"
+    ],
+    "weight": 6,
+    "value": 2000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "half-plate-armor",
+   "type": "item",
+   "name": "Half Plate Armor",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Medium",
+    "armorClass": "15 + Dex (max 2)",
+    "slot": "Chest",
+    "stealthDis": true,
+    "weight": 40,
+    "value": 75000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "hand-crossbow",
+   "type": "item",
+   "name": "Hand Crossbow",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Hand Crossbow",
+    "damage": "1d6",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Light",
+     "Loading"
+    ],
+    "range": "30/120",
+    "weight": 3,
+    "value": 7500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "handaxe",
+   "type": "item",
+   "name": "Handaxe",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Handaxe",
+    "damage": "1d6",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Light",
+     "Thrown"
+    ],
+    "range": "20/60",
+    "weight": 2,
+    "value": 500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "healers-kit",
+   "type": "item",
+   "name": "Healer's Kit",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 3,
+    "value": 500,
+    "summary": "A Healer's Kit has ten uses. As a Utilize action, expend one use to stabilize an Unconscious creature at 0 Hit Points without a Wisdom (Medicine) check."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "heavy-crossbow",
+   "type": "item",
+   "name": "Heavy Crossbow",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Heavy Crossbow",
+    "damage": "1d10",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Heavy",
+     "Loading",
+     "Two-Handed"
+    ],
+    "range": "100/400",
+    "weight": 18,
+    "value": 5000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
    "id": "herbalism-kit",
    "type": "item",
    "name": "Herbalism Kit",
@@ -4695,6 +5460,85 @@
    "visibility": "known",
    "created": "2026-11-15T20:32:34.371Z",
    "updated": "2026-11-15T20:32:34.371Z"
+  },
+  {
+   "id": "hide-armor",
+   "type": "item",
+   "name": "Hide Armor",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Medium",
+    "armorClass": "12 + Dex (max 2)",
+    "slot": "Chest",
+    "weight": 12,
+    "value": 1000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "holy-symbol",
+   "type": "item",
+   "name": "Holy Symbol",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Accessory",
+    "subtype": "Spellcasting Focus",
+    "weight": 1,
+    "value": 500,
+    "summary": "An amulet, emblem or reliquary bejeweled or painted to channel divine magic. A Cleric or Paladin can use it as a Spellcasting Focus."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "horn",
+   "type": "item",
+   "name": "Horn",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 2,
+    "value": 300
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "javelin",
+   "type": "item",
+   "name": "Javelin",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Javelin",
+    "damage": "1d6",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Thrown"
+    ],
+    "range": "30/120",
+    "weight": 2,
+    "value": 50
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
   },
   {
    "id": "jewelers-tools",
@@ -4712,6 +5556,214 @@
    "updated": "2026-11-15T20:32:34.371Z"
   },
   {
+   "id": "lance",
+   "type": "item",
+   "name": "Lance",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Lance",
+    "damage": "1d10",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Heavy",
+     "Reach",
+     "Two-Handed"
+    ],
+    "weight": 6,
+    "value": 1000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "leather-armor",
+   "type": "item",
+   "name": "Leather Armor",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Light",
+    "armorClass": "11 + Dex",
+    "slot": "Chest",
+    "weight": 10,
+    "value": 1000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "light-crossbow",
+   "type": "item",
+   "name": "Light Crossbow",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Light Crossbow",
+    "damage": "1d8",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Loading",
+     "Two-Handed"
+    ],
+    "range": "80/320",
+    "weight": 5,
+    "value": 2500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "light-hammer",
+   "type": "item",
+   "name": "Light Hammer",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Light Hammer",
+    "damage": "1d4",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Light",
+     "Thrown"
+    ],
+    "range": "20/60",
+    "weight": 2,
+    "value": 200
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "longbow",
+   "type": "item",
+   "name": "Longbow",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Longbow",
+    "damage": "1d8",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Heavy",
+     "Two-Handed"
+    ],
+    "range": "150/600",
+    "weight": 2,
+    "value": 5000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "longsword",
+   "type": "item",
+   "name": "Longsword",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Longsword",
+    "damage": "1d8/1d10",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Versatile"
+    ],
+    "weight": 3,
+    "value": 1500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "lute",
+   "type": "item",
+   "name": "Lute",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 2,
+    "value": 3500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "lyre",
+   "type": "item",
+   "name": "Lyre",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 2,
+    "value": 3000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "mace",
+   "type": "item",
+   "name": "Mace",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Mace",
+    "damage": "1d6",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "weight": 4,
+    "value": 500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
    "id": "masons-tools",
    "type": "item",
    "name": "Mason's Tools",
@@ -4725,6 +5777,216 @@
    "visibility": "known",
    "created": "2026-11-20T15:06:38.000Z",
    "updated": "2026-11-20T15:06:38.000Z"
+  },
+  {
+   "id": "maul",
+   "type": "item",
+   "name": "Maul",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Maul",
+    "damage": "2d6",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Heavy",
+     "Two-Handed"
+    ],
+    "weight": 10,
+    "value": 1000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "morningstar",
+   "type": "item",
+   "name": "Morningstar",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Morningstar",
+    "damage": "1d8",
+    "damageType": [
+     "Piercing"
+    ],
+    "weight": 4,
+    "value": 1500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "musket",
+   "type": "item",
+   "name": "Musket",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Musket",
+    "damage": "1d12",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Loading",
+     "Two-Handed"
+    ],
+    "range": "40/120",
+    "weight": 10,
+    "value": 50000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "padded-armor",
+   "type": "item",
+   "name": "Padded Armor",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Light",
+    "armorClass": "11 + Dex",
+    "slot": "Chest",
+    "stealthDis": true,
+    "weight": 8,
+    "value": 500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "pan-flute",
+   "type": "item",
+   "name": "Pan Flute",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 2,
+    "value": 1200
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "parchment",
+   "type": "item",
+   "name": "Parchment",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "value": 10,
+    "summary": "One sheet of Parchment holds about 250 handwritten words."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "pike",
+   "type": "item",
+   "name": "Pike",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Pike",
+    "damage": "1d10",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Heavy",
+     "Reach",
+     "Two-Handed"
+    ],
+    "weight": 18,
+    "value": 500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "pistol",
+   "type": "item",
+   "name": "Pistol",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Pistol",
+    "damage": "1d10",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Loading"
+    ],
+    "range": "30/90",
+    "weight": 3,
+    "value": 25000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "plate-armor",
+   "type": "item",
+   "name": "Plate Armor",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Heavy",
+    "armorClass": "18",
+    "slot": "Chest",
+    "stealthDis": true,
+    "weight": 65,
+    "value": 150000,
+    "requirements": {
+     "scores": [
+      {
+       "ability": "str",
+       "min": 15
+      }
+     ]
+    }
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
   },
   {
    "id": "playing-card-set",
@@ -4756,6 +6018,350 @@
    "updated": "2026-11-15T20:32:34.371Z"
   },
   {
+   "id": "pouch",
+   "type": "item",
+   "name": "Pouch",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 1,
+    "value": 50,
+    "summary": "A Pouch holds up to 6 pounds within one-fifth of a cubic foot."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "priests-pack",
+   "type": "item",
+   "name": "Priest's Pack",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "subtype": "Pack",
+    "weight": 29,
+    "value": 3300,
+    "summary": "Contains: Backpack, Blanket, Holy Water, Lamp, 7 days of Rations, Robe and Tinderbox."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "quarterstaff",
+   "type": "item",
+   "name": "Quarterstaff",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Quarterstaff",
+    "damage": "1d6/1d8",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Versatile"
+    ],
+    "weight": 4,
+    "value": 20
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "quiver",
+   "type": "item",
+   "name": "Quiver",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 1,
+    "value": 100,
+    "summary": "A Quiver holds up to 20 Arrows."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "rapier",
+   "type": "item",
+   "name": "Rapier",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Rapier",
+    "damage": "1d8",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Finesse"
+    ],
+    "weight": 2,
+    "value": 2500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "ring-mail",
+   "type": "item",
+   "name": "Ring Mail",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Heavy",
+    "armorClass": "14",
+    "slot": "Chest",
+    "stealthDis": true,
+    "weight": 40,
+    "value": 3000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "robe",
+   "type": "item",
+   "name": "Robe",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Armor",
+    "subtype": "Clothing",
+    "weight": 4,
+    "value": 100,
+    "summary": "A Robe has vocational or ceremonial significance.",
+    "armorType": "Clothing",
+    "slot": "Chest"
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "scale-mail",
+   "type": "item",
+   "name": "Scale Mail",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Medium",
+    "armorClass": "14 + Dex (max 2)",
+    "slot": "Chest",
+    "stealthDis": true,
+    "weight": 45,
+    "value": 5000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "scholars-pack",
+   "type": "item",
+   "name": "Scholar's Pack",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "subtype": "Pack",
+    "weight": 22,
+    "value": 4000,
+    "summary": "Contains: Backpack, Book, Ink, Ink Pen, Lamp, 10 flasks of Oil, 10 sheets of Parchment and Tinderbox."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "scimitar",
+   "type": "item",
+   "name": "Scimitar",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Scimitar",
+    "damage": "1d6",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Finesse",
+     "Light"
+    ],
+    "weight": 3,
+    "value": 2500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "shawm",
+   "type": "item",
+   "name": "Shawm",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 1,
+    "value": 200
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "shield-item",
+   "type": "item",
+   "name": "Shield",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Shield",
+    "armorClass": "+2",
+    "slot": "Shield",
+    "weight": 6,
+    "value": 1000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "shortbow",
+   "type": "item",
+   "name": "Shortbow",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Shortbow",
+    "damage": "1d6",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Ammunition",
+     "Two-Handed"
+    ],
+    "range": "80/320",
+    "weight": 2,
+    "value": 2500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "shortsword",
+   "type": "item",
+   "name": "Shortsword",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Shortsword",
+    "damage": "1d6",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Finesse",
+     "Light"
+    ],
+    "weight": 2,
+    "value": 1000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "sickle",
+   "type": "item",
+   "name": "Sickle",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Sickle",
+    "damage": "1d4",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Light"
+    ],
+    "weight": 2,
+    "value": 100
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "sling",
+   "type": "item",
+   "name": "Sling",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Sling",
+    "damage": "1d4",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Ammunition"
+    ],
+    "range": "30/120",
+    "value": 10
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
    "id": "smiths-tools",
    "type": "item",
    "name": "Smith's Tools",
@@ -4769,6 +6375,97 @@
    "visibility": "known",
    "created": "2026-11-20T15:06:38.000Z",
    "updated": "2026-11-20T15:06:38.000Z"
+  },
+  {
+   "id": "spear",
+   "type": "item",
+   "name": "Spear",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Simple",
+    "baseWeapon": "Spear",
+    "damage": "1d6/1d8",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Thrown",
+     "Versatile"
+    ],
+    "range": "20/60",
+    "weight": 3,
+    "value": 100
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "spellbook",
+   "type": "item",
+   "name": "Spellbook",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Tome",
+    "weight": 3,
+    "value": 5000,
+    "summary": "A Wizard's spellbook: their spells, written down."
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "splint-armor",
+   "type": "item",
+   "name": "Splint Armor",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Heavy",
+    "armorClass": "17",
+    "slot": "Chest",
+    "stealthDis": true,
+    "weight": 60,
+    "value": 20000,
+    "requirements": {
+     "scores": [
+      {
+       "ability": "str",
+       "min": 15
+      }
+     ]
+    }
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "studded-leather-armor",
+   "type": "item",
+   "name": "Studded Leather Armor",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Armor",
+    "armorType": "Light",
+    "armorClass": "12 + Dex",
+    "slot": "Chest",
+    "weight": 13,
+    "value": 4500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
   },
   {
    "id": "thieves-tools",
@@ -4798,6 +6495,145 @@
    },
    "body": "",
    "visibility": "known",
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "travelers-clothes",
+   "type": "item",
+   "name": "Traveler's Clothes",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Armor",
+    "subtype": "Clothing",
+    "weight": 4,
+    "value": 200,
+    "summary": "Sturdy clothes for the road.",
+    "armorType": "Clothing",
+    "slot": "Chest"
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "trident",
+   "type": "item",
+   "name": "Trident",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Trident",
+    "damage": "1d8/1d10",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Thrown",
+     "Versatile"
+    ],
+    "range": "20/60",
+    "weight": 4,
+    "value": 500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "viol",
+   "type": "item",
+   "name": "Viol",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Instrument",
+    "weight": 1,
+    "value": 3000
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "war-pick",
+   "type": "item",
+   "name": "War Pick",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "War Pick",
+    "damage": "1d8/1d10",
+    "damageType": [
+     "Piercing"
+    ],
+    "properties": [
+     "Versatile"
+    ],
+    "weight": 2,
+    "value": 500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "warhammer",
+   "type": "item",
+   "name": "Warhammer",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Warhammer",
+    "damage": "1d8/1d10",
+    "damageType": [
+     "Bludgeoning"
+    ],
+    "properties": [
+     "Versatile"
+    ],
+    "weight": 5,
+    "value": 1500
+   },
+   "created": "2026-11-20T00:00:00.000Z",
+   "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "whip",
+   "type": "item",
+   "name": "Whip",
+   "aliases": [],
+   "tags": [],
+   "body": "*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+   "visibility": "known",
+   "fields": {
+    "kind": "Weapon",
+    "weaponCategory": "Martial",
+    "baseWeapon": "Whip",
+    "damage": "1d4",
+    "damageType": [
+     "Slashing"
+    ],
+    "properties": [
+     "Finesse",
+     "Reach"
+    ],
+    "weight": 3,
+    "value": 200
+   },
    "created": "2026-11-20T00:00:00.000Z",
    "updated": "2026-11-20T00:00:00.000Z"
   },

@@ -1,16 +1,18 @@
 // npm run seed [data folder]: rebuilds src/seed/world.json, what every new world starts with, from a world's database
-// (default ../data). Commit the result; the next build ships it.
+// (default: the world GM Notes has open, from its config; else ../data). Commit the result; the next build ships it.
 //
-// The seed holds every dropdown list, the standard calendar (Gregorian, real moon, BC/AD; today is 1 January of
+// The seed holds every dropdown list with its standard options (a world's own options stay in that world), the standard calendar (Gregorian, real moon, BC/AD; today is 1 January of
 // year 1; worlds make their own in the calendar editor), the session colour of the timeline, and only what may be
 // published (the repository is public): spells and feats from the SRD (their text ends with the SRD source line), the
 // nine SRD species with their traits (scripts/srd-species.json), the four SRD backgrounds and the tools they name
 // (scripts/srd-backgrounds.json), the twelve SRD classes and their SRD subclasses with their features
-// (scripts/srd-classes.json), and the Tool items without text (crafting needs them). Your
+// (scripts/srd-classes.json), the SRD's weapons, armor, instruments and the gear its starting kits name
+// (scripts/srd-equipment.json), and the Tool items without text (crafting needs them). Your
 // own homebrew and rules text from outside the SRD stay in your world only. DM-only text, pictures and attached files
 // are left out, and references to anything else become plain words.
 import { createRequire } from 'node:module'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Abilities, Database, Entry, EntryType, Equipment, Trait, TraitOption } from '../src/model/types'
@@ -21,7 +23,13 @@ import { cleanBonus, parseAbilityBonus } from '../src/abilityBonus'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const { WorldDb } = createRequire(import.meta.url)('../electron/db.cjs')
-const dataDir = resolve(process.argv[2] ?? resolve(here, '../../data'))
+/** The world GM Notes has open (its config in the app's folder), where the DM's world lives since worlds moved there. */
+function openWorld(): string | undefined {
+  const appData = process.env.APPDATA ?? (process.platform === 'darwin' ? resolve(homedir(), 'Library/Application Support') : resolve(homedir(), '.config'))
+  try { return JSON.parse(readFileSync(resolve(appData, 'gm-notes', 'config.json'), 'utf8')).dataDir } catch { return undefined }
+}
+const dataDir = resolve(process.argv[2] ?? openWorld() ?? resolve(here, '../../data'))
+if (!existsSync(resolve(dataDir, 'dndesk.sqlite'))) throw new Error(`No world in ${dataDir}: give its folder, e.g. npm run seed -- "<folder>"`)
 const out = resolve(here, '../src/seed/world.json')
 
 const TYPES: EntryType[] = ['race', 'background', 'class', 'subclass', 'spell', 'feat']
@@ -29,8 +37,8 @@ const fromSrd = (e: Entry) => /System Reference Document/.test(`${e.body}\n${Str
 const takes = (e: Entry) =>
   ((e.type === 'spell' || e.type === 'feat') && fromSrd(e))
   || (e.type === 'item' && e.fields.kind === 'Tool')
-/** Tools keep their facts but not their text (it isn't from the SRD). */
-const textless = (e: Entry) => e.type === 'item'
+/** The world's tools keep their facts but not their text (it isn't from the SRD). */
+const textless = (e: Entry) => e.type === 'item' && !gearIds.has(e.id)
 
 const w = new WorldDb(dataDir, { readOnly: true })
 const d = w.load().data as Database
@@ -90,6 +98,22 @@ const tools: Entry[] = BG.tools.filter(t => !toolIds.has(norm(t.name))).map(t =>
   fields: { kind: 'Tool', value: t.value, ...(t.weight ? { weight: t.weight } : {}) }, created: stamp, updated: stamp,
 } as Entry))
 for (const t of tools) toolIds.set(norm(t.name), t.id)
+
+// The SRD's weapons, armor, musical instruments and the gear its class and background kits name
+// (scripts/srd-equipment.json), so a new world's starting kits hand out real items. A tool the world has keeps its own.
+type GearFile = { items: { name: string; fields: Entry['fields'] }[] }
+const GEAR = JSON.parse(readFileSync(resolve(here, 'srd-equipment.json'), 'utf8')) as GearFile
+const takenIds = new Set([...chosen, ...tools].map(e => e.id))
+/** An id of its own: the Shield item isn't the Shield spell. */
+const freeId = (name: string) => { let id = slug(name); if (takenIds.has(id)) id = `${id}-item`; takenIds.add(id); return id }
+const gear: Entry[] = GEAR.items.filter(g => !toolIds.has(norm(g.name))).map(g => ({
+  id: freeId(g.name), type: 'item', name: g.name, aliases: [], tags: [], body: '*Source: System Reference Document 5.2.1 (CC BY 4.0).*', visibility: 'known',
+  fields: g.fields, created: stamp, updated: stamp,
+} as Entry))
+const gearIds = new Set(gear.map(e => e.id))
+/** Every item the seed has, by name ("Arrows" finds "Arrow"). */
+const itemIds = new Map([...chosen.filter(e => e.type === 'item'), ...tools, ...gear].map(e => [norm(e.name), e.id]))
+const itemId = (name: string) => itemIds.get(norm(name)) ?? itemIds.get(norm(name).replace(/s$/, ''))
 const featId = new Map(chosen.filter(e => e.type === 'feat').map(e => [norm(e.name), e.id]))
 const need = (m: Map<string, string>, name: string, what: string) => { const id = m.get(norm(name)); if (!id) throw new Error(`srd-backgrounds.json names a ${what} the seed doesn't have: ${name}`); return id }
 const backgrounds: Entry[] = BG.backgrounds.map(b => ({
@@ -99,7 +123,7 @@ const backgrounds: Entry[] = BG.backgrounds.map(b => ({
     abilityIncrease: { pick: [{ amount: 2, among: b.abilities }, { amount: 1, among: b.abilities }], orPick: [{ amount: 1, count: 3, among: b.abilities }] },
     originFeat: need(featId, b.feat, 'feat'), ...(b.featNote ? { originFeatNote: b.featNote } : {}),
     skillProfs: b.skills, toolProfs: b.tools.map(t => need(toolIds, t, 'tool')),
-    equipment: { ...b.equipment, items: b.equipment.items.map(l => { const id = toolIds.get(norm(l.name)); return id ? { item: id, ...(l.amount ? { amount: l.amount } : {}) } : l }) },
+    equipment: { ...b.equipment, items: b.equipment.items.map(l => { const id = itemId(l.name); return id ? { item: id, ...(l.amount ? { amount: l.amount } : {}) } : l }) },
   },
   created: stamp, updated: stamp,
 } as Entry))
@@ -126,7 +150,7 @@ const classes: Entry[] = [
     } as Entry
   }),
 ]
-const picked = [...chosen, ...species, ...tools, ...backgrounds, ...classes].sort((a, b) => a.type.localeCompare(b.type) || a.id.localeCompare(b.id))
+const picked = [...chosen, ...species, ...tools, ...gear, ...backgrounds, ...classes].sort((a, b) => a.type.localeCompare(b.type) || a.id.localeCompare(b.id))
 const ids = new Set(picked.map(e => e.id))
 
 const entries = picked.map(e => {
@@ -154,7 +178,8 @@ const seed = {
     calendar: defaultCalendar(),
     eventCategories: d.meta.eventCategories.filter(c => c.name === 'Session'),
     today: { year: 1, month: 1, day: 1 },
-    lists: Object.fromEntries(LISTS.map(l => [l.key, optionsIn(d.meta, l.key)])),
+    // the standard options only: a world's own (homebrew weapon properties, ingredient properties) stay in it
+    lists: Object.fromEntries(LISTS.map(l => [l.key, optionsIn(undefined, l.key)])),
   },
   entries,
   relations,
@@ -163,4 +188,4 @@ mkdirSync(dirname(out), { recursive: true })
 writeFileSync(out, JSON.stringify(seed, null, 1) + '\n')
 const count = (t: string) => entries.filter(e => e.type === t).length
 console.log(`Seed written to ${out}: data version ${d.version}, ${LISTS.length} lists, ${entries.length} entries `
-  + `(${TYPES.map(t => `${count(t)} ${t}`).join(', ')}, ${count('item')} tools), ${relations.length} relations.`)
+  + `(${TYPES.map(t => `${count(t)} ${t}`).join(', ')}, ${count('item') - gear.length} tools, ${gear.length} SRD gear), ${relations.length} relations.`)

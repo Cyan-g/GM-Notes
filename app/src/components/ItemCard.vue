@@ -9,6 +9,7 @@ import { optionsIn } from '../model/lists'
 import { renderInline } from '../markdown'
 import { describeEffect, effectsOf, howCast, regainText, spellsOf, worksWhileOf } from '../gear'
 import EntryLink from './EntryLink.vue'
+import DataImage from './DataImage.vue'
 import TraitList from './TraitList.vue'
 import { traitsOf, wearable } from '../species'
 import { describeRequirements } from '../requirements'
@@ -54,6 +55,7 @@ const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magic
 <template>
   <div class="item-card" :class="'r-' + rarity">
     <div class="ic-line">{{ kindLine }}</div>
+    <DataImage v-if="e.image" :path="e.image" :alt="e.name" class="ic-pic" />
     <div class="ic-body">
       <div class="ic-text">
         <p v-if="f.summary" class="ic-summary" v-html="renderInline(f.summary)" />

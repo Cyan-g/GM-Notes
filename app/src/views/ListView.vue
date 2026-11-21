@@ -26,7 +26,7 @@ const COLS: Partial<Record<EntryType, { cols: string[]; facets?: string[]; sort?
   // the pantheon: what a deity table in a sourcebook shows
   deity: { cols: ['epithet', 'rank', 'domains', 'portfolio', 'alignment', 'plane', 'worshippers', 'symbol'], facets: ['rank', 'domains', 'alignment'], groups: ['rank', 'plane'] },
   creature: { cols: ['creatureType', '@cr'], facets: ['creatureType'] },
-  item: { cols: ['kind', 'subtype', 'rarity', 'magical', 'value'], facets: ['kind', 'rarity', 'magical'] },
+  item: { cols: ['kind', 'subtype', 'rarity', 'magical', 'attunement', 'weight', 'value', '@where'], facets: ['kind', 'rarity', 'attunement', 'magical'], groups: ['kind', 'rarity'] },
   spell: { cols: ['level', 'school', 'castingTime', 'spellType', 'classes'], facets: ['level', 'school', 'classes'] },
   event: { cols: ['date', 'category', 'places'], facets: ['category'] },
   campaign: { cols: ['status'] },

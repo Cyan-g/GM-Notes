@@ -23,11 +23,11 @@ export interface CardStyle {
   corners: 'square' | 'rounded'
   /** A thin frame in the card's colour inside the cut line. */
   frame: boolean
-  show: { facts: boolean; foot: boolean; credit: boolean; cutLines: boolean }
+  show: { facts: boolean; foot: boolean; credit: boolean; cutLines: boolean; picture: boolean }
 }
 export const DEFAULT_STYLE: CardStyle = {
   color: 'theme', headFont: 'theme', textFont: 'theme', size: 8.5, paper: 'white', corners: 'square', frame: false,
-  show: { facts: true, foot: true, credit: true, cutLines: true },
+  show: { facts: true, foot: true, credit: true, cutLines: true, picture: true },
 }
 export const cardStyle = (): CardStyle => {
   const s = state.db?.meta.cardStyle
@@ -57,6 +57,8 @@ export interface Card {
   title: string
   /** "3rd-level evocation", "Magical Melee (Quarterstaff) · rare". */
   sub: string
+  /** The item's picture (a data path), shown small beside the title. */
+  image?: string
   /** Small marks after the subline: C (concentration), R (ritual), attunement. */
   marks: string[]
   /** Label and value pairs in a grid under the title. */
@@ -120,7 +122,7 @@ function itemCard(e: Entry): Card {
   const w = worksWhileOf(e), when = w === 'attuned' ? 'While attuned' : w === 'carried' ? 'While carried' : f.kind === 'Weapon' ? 'While wielded' : 'While worn'
   const rarity = f.rarity ? L('rarity').toLowerCase() : ''
   return {
-    id: e.id, kind: 'item', rarity: f.rarity ? String(f.rarity) : undefined, title: e.name,
+    id: e.id, kind: 'item', rarity: f.rarity ? String(f.rarity) : undefined, title: e.name, image: e.image,
     sub: cap([describe(e, { parent: false }) || L('kind'), rarity].filter(Boolean).join(' · ')),
     marks: [],
     facts: ([

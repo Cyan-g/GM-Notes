@@ -39,6 +39,11 @@ export const recipeCost = (e: Entry) => {
 const usedIn = (e: Entry) => entries.value.filter(n => ((n.fields.recipe) ?? []).some(l => l.item === e.id)).length
 const crNum = (cr?: string) => { if (!cr) return 999; const [a, b] = cr.split('/').map(Number); return b ? a / b : a }
 const nameOf = (id?: string) => get(id)?.name ?? '~'
+/** Who carries an item and where it's sold (characters first). */
+const whereItem = (e: Entry) => [
+  ...entries.value.filter(p => p.type === 'pc' && (p.fields.sheet?.inventory ?? []).some(l => l.item === e.id && l.qty > 0)),
+  ...entries.value.filter(p => p.type === 'place' && ((p.fields.stock as { item: string }[] | undefined) ?? []).some(l => l.item === e.id)),
+].map(x => x.id)
 const ORD = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 const spellLevel = (e: Entry) => (e.fields.level === 'Cantrip' ? 0 : Number(e.fields.level) || -1)
 /** "DEX save", "Attack", or the spell's type ("Utility", "Healing"). */
@@ -59,6 +64,8 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   '@aliases': { label: 'Also known as', value: e => e.aliases.join(', '), sort: e => e.aliases.join(', ').toLowerCase() || '~', kind: 'text' },
   '@lives-in': { label: 'Lives in', value: e => current(e, 'lives-in', true), sort: e => nameOf(current(e, 'lives-in', true)[0]), kind: 'ids' },
   '@member': { label: 'Member of', value: e => current(e, 'member', true), sort: e => nameOf(current(e, 'member', true)[0]), kind: 'ids' },
+  // an item: the characters carrying it, then the shops selling it
+  '@where': { label: 'Where', value: e => (e.type === 'item' ? whereItem(e) : []), sort: e => (e.type === 'item' ? -whereItem(e).length : 0), kind: 'ids' },
   // a place: how many places are right inside it, and how many live there now
   '@subplaces': { label: 'Places inside', value: e => (e.type === 'place' ? entries.value.filter(p => p.type === 'place' && p.fields.parent === e.id).length || '' : ''), sort: e => -entries.value.filter(p => p.type === 'place' && p.fields.parent === e.id).length, kind: 'text' },
   '@residents': { label: 'Residents', value: e => current(e, 'lives-in', false).length || '', sort: e => -current(e, 'lives-in', false).length, kind: 'text' },

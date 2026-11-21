@@ -107,11 +107,13 @@ function setRegain(p: Partial<Regain>) {
 function setCharges(v: string) { const n = Number(v); if (n > 0) f.value.charges = n; else delete f.value.charges; changed(props.entry) }
 /** The written "regains" read as an amount and a time ("1d6 + 1 at dawn"), when it reads as one. */
 const parsed = computed<Regain | undefined>(() => {
-  const m = String(f.value.recharge ?? '').trim().match(/^(?:regains?\s+)?(all|\d+(?:d\d+)?(?:\s*[+-]\s*\d+)?)\s*(?:charges?\s*)?(?:daily\s+)?(at dawn|on a long rest|after a long rest|on a short rest|after a short rest)?$/i)
+  const m = String(f.value.recharge ?? '').trim().match(/^(?:regains?\s+)?(all|\d+(?:d\d+)?(?:\s*[+-]\s*\d+)?)\s*(?:charges?\s*)?(?:daily\s+)?(at dawn|at sunrise|each morning|every morning|daily|on a long rest|after a long rest|on a short rest|after a short rest)?$/i)
   if (!m) return undefined
   const w = (m[2] ?? '').toLowerCase()
   return { amount: m[1].replace(/\s+/g, ''), when: w.includes('dawn') ? 'dawn' : w.includes('long') ? 'long' : w.includes('short') ? 'short' : 'dawn' }
 })
+/** Spells cast for charges, while the item has none. */
+const needsCharges = computed(() => ((f.value.spells as { how: string }[] | undefined) ?? []).some(x => x.how === 'charges'))
 function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete f.value.recharge; changed(props.entry) } }
 const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement).value
 </script>
@@ -168,15 +170,22 @@ const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement).v
         <section v-for="x in visible" :key="x.id" class="if-part">
           <h5>{{ x.label }} <span class="muted small">{{ x.hint }}</span> <button type="button" class="link-btn if-close" :title="has(x.id) ? `Remove the ${x.label.toLowerCase()}` : 'Hide this part'" @click="close(x.id)">✕</button></h5>
           <template v-if="x.id === 'spells'">
-            <div class="cb-line">
-              <label class="small">Charges <input type="number" min="0" class="effect-value" :value="f.charges ?? ''" @change="setCharges(val($event))" /></label>
-              <label class="small">regains <input class="effect-value if-amount" :value="regain.amount ?? ''" placeholder="1d6+1, 3, all" @change="setRegain({ amount: val($event) })" /></label>
-              <select :value="regain.when ?? ''" aria-label="When" @change="setRegain({ when: (val($event) || undefined) as Regain['when'] })">
-                <option value="">when…</option><option value="dawn">at dawn</option><option value="long">on a long rest</option><option value="short">on a short rest</option><option value="never">never</option>
-              </select>
+            <!-- one line: how many charges, how many come back and when -->
+            <div class="if-charges small">
+              <label>Charges <input type="number" min="0" :value="f.charges ?? ''" placeholder="—" @change="setCharges(val($event))" /></label>
+              <template v-if="f.charges">
+                <span class="muted">·</span>
+                <label>regains <input class="if-amount" :value="regain.amount ?? ''" placeholder="1d6+1, 3, all" @change="setRegain({ amount: val($event) })" /></label>
+                <select :value="regain.when ?? ''" aria-label="When" @change="setRegain({ when: (val($event) || undefined) as Regain['when'] })">
+                  <option value="">when…</option><option value="dawn">at dawn</option><option value="long">on a long rest</option><option value="short">on a short rest</option><option value="never">never</option>
+                </select>
+              </template>
             </div>
-            <label v-if="f.recharge || !regain.amount" class="small cb-line">or as written <input :value="String(f.recharge ?? '')" placeholder="e.g. regains 1d6 + 1 at dawn" @change="setText('recharge', val($event))" />
-              <button v-if="parsed && !regain.amount" type="button" class="link-btn small" :title="`Regains ${parsed.amount}, ${parsed.when}: the sheet gives them back (or asks for the roll) on that rest`" @click="useParsed">use as Regains</button></label>
+            <!-- an older item's regains as written, until it's turned into the line above -->
+            <p v-if="f.recharge" class="small if-written"><span class="muted">Written as</span> “{{ f.recharge }}”
+              <button v-if="parsed && !regain.amount" type="button" class="link-btn small" :title="`Regains ${parsed.amount}, ${parsed.when}: the sheet gives them back (or asks for the roll) on that rest`" @click="useParsed">use it as Regains</button>
+              <button type="button" class="link-btn small" title="Remove the written version" @click="setText('recharge', '')">×</button></p>
+            <p v-if="needsCharges && !f.charges" class="small warn-text">Some spells cost charges: give the item its Charges.</p>
             <FieldInput v-if="fieldOf('spells')" :def="fieldOf('spells')!" :entry="entry" />
           </template>
           <template v-else>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// The spells an item lets its user cast (gear.ts): one row each, the spell, how it's cast and at what level.
+// The spells an item lets its user cast (gear.ts), as a table: the spell, how it's cast, what it costs in charges
+// and the level it's cast at (blank: its own).
 import { computed } from 'vue'
 import type { ItemSpell } from '../../model/types'
 import { howCast } from '../../gear'
@@ -25,17 +26,21 @@ const num = (ev: Event) => Number((ev.target as HTMLInputElement).value) || unde
 </script>
 
 <template>
-  <div class="effects-input">
-    <div v-for="(x, i) in list" :key="i" class="effect-row">
-      <EntryPicker :model-value="x.spell" :types="['spell']" @update:model-value="v => v ? put(i, { spell: v }) : remove(i)" />
-      <select :value="x.how" aria-label="How it's cast" @change="put(i, { how: ($event.target as HTMLSelectElement).value as ItemSpell['how'] })">
-        <option v-for="h in HOW" :key="h.id" :value="h.id">{{ h.label }}</option>
-      </select>
-      <label v-if="x.how === 'charges'" class="small">cost <input type="number" min="1" class="effect-value" :value="x.cost ?? 1" @change="put(i, { cost: num($event) ?? 1 })" /></label>
-      <label class="small" title="Cast at this level (blank: its own level)">level <input type="number" min="1" max="9" class="effect-value" :value="x.level ?? ''" placeholder="—" @change="put(i, { level: num($event) })" /></label>
-      <span class="muted effect-say">{{ howCast(x) }}</span>
-      <button type="button" class="link-btn" title="Remove this spell" @click="remove(i)">×</button>
-    </div>
-    <EntryPicker add :types="['spell']" :exclude="list.map(x => x.spell)" placeholder="Add a spell…" @pick="add" />
+  <div class="item-spells">
+    <table v-if="list.length" class="mini edit-table if-spells">
+      <thead><tr><th>Spell</th><th>How</th><th class="num" title="Charges each casting costs">Cost</th><th class="num" title="Cast at this level (blank: its own level)">Level</th><th /></tr></thead>
+      <tbody>
+        <tr v-for="(x, i) in list" :key="i" :title="howCast(x)">
+          <td><EntryPicker :model-value="x.spell" :types="['spell']" @update:model-value="v => v ? put(i, { spell: v }) : remove(i)" /></td>
+          <td><select :value="x.how" aria-label="How it's cast" @change="put(i, { how: ($event.target as HTMLSelectElement).value as ItemSpell['how'] })">
+            <option v-for="h in HOW" :key="h.id" :value="h.id">{{ h.label }}</option>
+          </select></td>
+          <td class="num"><input v-if="x.how === 'charges'" type="number" min="1" class="effect-value" :value="x.cost ?? 1" aria-label="Charges it costs" @change="put(i, { cost: num($event) ?? 1 })" /><span v-else class="muted">—</span></td>
+          <td class="num"><input type="number" min="1" max="9" class="effect-value" :value="x.level ?? ''" placeholder="—" aria-label="Level it's cast at" @change="put(i, { level: num($event) })" /></td>
+          <td><button type="button" class="x" title="Remove this spell" @click="remove(i)">×</button></td>
+        </tr>
+      </tbody>
+    </table>
+    <EntryPicker add :types="['spell']" :exclude="list.map(x => x.spell)" placeholder="＋ Add a spell…" @pick="add" />
   </div>
 </template>

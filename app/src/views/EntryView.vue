@@ -66,6 +66,7 @@ import OrgsHere from '../components/OrgsHere.vue'
 import PlaceCards from '../components/PlaceCards.vue'
 import PartyHere from '../components/PartyHere.vue'
 import OutlineCard from '../components/OutlineCard.vue'
+import ItemWhere from '../components/ItemWhere.vue'
 
 const props = defineProps<{ id: string; tab?: EntryTab }>()
 const e = computed(() => get(props.id))
@@ -319,7 +320,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
       <a class="crumb-root" :href="hrefList(e.type)"><TypeIcon :type="e.type" /> {{ def.plural }}</a>
       <template v-for="c in crumbs" :key="c.id"><span class="sep">›</span><EntryLink :id="c.id" /></template>
     </nav>
-    <header class="entry-head" :class="{ 'has-portrait': e.image && e.type !== 'pc' }">
+    <header class="entry-head" :class="{ 'has-portrait': e.image && e.type !== 'pc' && e.type !== 'item' }">
       <div class="head-actions">
         <button class="fav-btn" :class="{ on: isFavourite(e.id) }" :title="isFavourite(e.id) ? 'Remove from favourites (F)' : 'Add to favourites (F)'" :aria-pressed="isFavourite(e.id)" @click="toggleFavourite(e.id)"><AppIcon ui="star" :class="{ off: !(isFavourite(e.id)) }" /></button>
         <button class="export-btn" title="Earlier versions of this entry" @click="showHistory = true"><AppIcon ui="history" /> History</button>
@@ -330,7 +331,8 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
       </div>
       <ExportDialog v-if="canExport(e)" v-model="exporting" :id="e.id" />
       <HistoryDialog v-if="showHistory" :entry="e" @close="showHistory = false" />
-      <DataImage v-if="e.image && e.type !== 'pc'" :path="e.image" :alt="e.name" class="portrait head-portrait" />
+      <!-- an item's picture is on its card -->
+      <DataImage v-if="e.image && e.type !== 'pc' && e.type !== 'item'" :path="e.image" :alt="e.name" class="portrait head-portrait" />
       <div class="head-text">
       <div class="title-line">
         <h1><span class="icon"><EntryIcon :e="e" /></span>{{ e.name }}</h1>
@@ -530,10 +532,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
           <h3>Used in</h3>
           <ul class="rel"><li v-for="c in usedIn" :key="c.id"><EntryLink :id="c.id" icon /></li></ul>
         </div>
-        <div v-if="soldAt.length" class="card">
-          <h3>Sold at</h3>
-          <ul class="rel"><li v-for="c in soldAt" :key="c.id"><EntryLink :id="c.id" icon /></li></ul>
-        </div>
+        <ItemWhere v-if="e.type === 'item'" :item="e" />
 
         <div v-if="onMaps.length" class="card">
           <h3>On the map</h3>
@@ -544,11 +543,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
           <h3>Known by</h3>
           <ul class="plain"><li v-for="p in knownBy" :key="p.id"><EntryLink :id="p.id" icon /></li></ul>
         </div>
-        <div v-if="carriedBy.length" class="card">
-          <h3>Carried by</h3>
-          <ul class="plain"><li v-for="p in carriedBy" :key="p.id"><EntryLink :id="p.id" icon /> <span class="muted small">× {{ p.fields.sheet!.inventory.filter(l => l.item === e!.id).reduce((n, l) => n + l.qty, 0) }}</span>
-            <span v-if="p.fields.sheet!.inventory.some(l => l.item === e!.id && l.attuned)" class="chip small">attuned</span><span v-else-if="p.fields.sheet!.inventory.some(l => l.item === e!.id && l.equipped)" class="chip small">equipped</span></li></ul>
-        </div>
+        <!-- an item's carriers and shops are in ItemWhere -->
         <!-- a player character's notes beside the sheet, where other pages list what mentions them -->
         <PcNotes v-if="e.type === 'pc'" :pc="e" />
         <div v-else-if="mentions.length" class="card">

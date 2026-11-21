@@ -12,6 +12,7 @@ import { renderMarkdown } from '../markdown'
 import { desktop } from '../storage/desktop'
 import { FONTS, TEXT_FONTS } from '../theme'
 import AppIcon from './AppIcon.vue'
+import DataImage from './DataImage.vue'
 
 /** A printed card: a card's text, or the part of it that continues; `joins`: its first paragraph goes on from the card before. */
 interface Piece { card: Card; paras: string[]; font: number; cont: boolean; joins: boolean }
@@ -168,7 +169,8 @@ const count = computed(() => pieces.value.length)
           <div class="print-pages" :style="[styleVars, { zoom: fitting ? 1 : zoom }]" :class="{ measuring: fitting }">
             <section v-for="(pg, n) in pages" :key="n" class="print-page">
               <article v-for="(p, k) in pg" :key="k" class="pcard" :class="['pc-' + p.card.kind, { framed: style.frame }]" :style="{ '--pc-accent': colorOf(p.card) }" @click="big = n * 9 + k">
-                <header>
+                <header :class="{ 'pc-has-pic': !p.cont && style.show.picture && p.card.image }">
+                  <DataImage v-if="!p.cont && style.show.picture && p.card.image" :path="p.card.image" :alt="p.card.title" class="pc-pic" />
                   <h3 class="pc-title">{{ p.card.title }}<span v-if="p.cont" class="pc-cont"> (continued)</span></h3>
                   <div v-if="!p.cont" class="pc-sub">{{ p.card.sub }}<span v-for="m in p.card.marks" :key="m" class="pc-mark">{{ m }}</span></div>
                 </header>
@@ -227,7 +229,8 @@ const count = computed(() => pieces.value.length)
           <label class="ps-check"><input type="checkbox" :checked="style.show.foot" @change="setShow('foot', ($event.target as HTMLInputElement).checked)" /> Classes / properties</label>
           <label class="ps-check"><input type="checkbox" :checked="style.show.credit" @change="setShow('credit', ($event.target as HTMLInputElement).checked)" /> SRD credit</label>
           <label class="ps-check"><input type="checkbox" :checked="style.show.cutLines" @change="setShow('cutLines', ($event.target as HTMLInputElement).checked)" /> Cut lines</label>
-          <button type="button" class="link-btn small" @click="set_({ ...{ color: 'theme', headFont: 'theme', textFont: 'theme', size: 8.5, paper: 'white', corners: 'square', frame: false }, show: { facts: true, foot: true, credit: true, cutLines: true } })">Back to the defaults</button>
+          <label class="ps-check"><input type="checkbox" :checked="style.show.picture" @change="setShow('picture', ($event.target as HTMLInputElement).checked)" /> Item pictures</label>
+          <button type="button" class="link-btn small" @click="set_({ ...{ color: 'theme', headFont: 'theme', textFont: 'theme', size: 8.5, paper: 'white', corners: 'square', frame: false }, show: { facts: true, foot: true, credit: true, cutLines: true, picture: true } })">Back to the defaults</button>
         </aside>
       </div>
 

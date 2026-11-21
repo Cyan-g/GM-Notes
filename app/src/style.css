@@ -1902,3 +1902,12 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .spread-add { color: var(--accent); }
 .spread-btns { display: flex; gap: .25rem; }
 .spread-btns .chip-btn { min-width: 1.8rem; }
+/* a feature's options (invocations, Metamagic) in a dialog; the picks listed under the feature */
+.sp-choice-modal { width: min(980px, 100%); display: flex; flex-direction: column; }
+.sp-choice-modal .sp-optlist { max-height: none; overflow: visible; }
+.sp-choice-foot { display: flex; position: sticky; bottom: -1rem; background: var(--panel); padding: .6rem 0 .1rem; margin-top: .6rem; border-top: 1px solid var(--line); }
+.sp-choice-foot .spacer { flex: 1; }
+.sp-picked { margin: .3rem 0 0; padding-left: 1.1rem; display: grid; gap: .15rem; font-size: 14px; }
+.sp-choose.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
+.sp-choice-top { position: sticky; top: -1rem; z-index: 1; background: var(--panel); margin: -1rem -1.2rem 0; padding: 1rem 1.2rem .5rem; border-bottom: 1px solid var(--line); }
+.sp-choice-top .modal-head { margin-bottom: .2rem; }

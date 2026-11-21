@@ -1,9 +1,9 @@
 <script setup lang="ts">
 // A trait's choice, as many picks as it takes at the trait's level (Expertise: 2, then 4). Options (invocations,
-// Metamagic, a lineage) and feats (a Fighting Style) are a list to tick, each with its text, a prerequisite level it
-// names and a filter for long lists; skills, languages, tools, spells and weapons are dropdowns. A count says how many
-// are picked. Used on the Edit page and in the creation wizard.
-import { computed, ref } from 'vue'
+// Metamagic, a lineage) and feats (a Fighting Style) show as the picks made and a Choose button; the list to tick opens
+// in a dialog, each option with its text, a prerequisite level it names and a filter. Skills, languages, tools, spells
+// and weapons are dropdowns right here. A count says how many are picked. Used on the Edit page and in the wizard.
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { TraitOption } from '../model/types'
 import { choiceCandidates, choiceCount, choiceWords, type ActiveTrait } from '../species'
 import { get } from '../store'
@@ -46,6 +46,15 @@ const shown = computed(() => {
 })
 /** The first sentence, shown on the row; the rest folds away. */
 const lead = (t: string) => t.match(/^[^.!?]*[.!?]/)?.[0] ?? t
+/** The picks made, by name, for the line under the trait. */
+const pickedRows = computed(() => props.a.picks.filter(Boolean).map(id => rows.value.find(r => r.id === id) ?? { id, label: get(id)?.name ?? id, text: '' }))
+
+// ---- the dialog with the list ----
+const open = ref(false)
+const close = () => { open.value = false; filter.value = '' }
+const onKey = (ev: KeyboardEvent) => { if (ev.key === 'Escape') { ev.stopPropagation(); close() } }
+watch(open, v => (v ? window.addEventListener('keydown', onKey, true) : window.removeEventListener('keydown', onKey, true)))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 function toggle(id: string) {
   if (props.disabled) return
   const now = props.a.picks.filter(Boolean)
@@ -60,11 +69,29 @@ function toggle(id: string) {
     <div class="sp-pick-head small">
       <span class="muted">Choose {{ n }} {{ words }}</span>
       <b class="sp-count" :class="{ done: full }">{{ picked }} of {{ n }} picked</b>
-      <input v-if="listed && rows.length > 8" v-model="filter" class="sp-filter" type="search" placeholder="Filter…" :aria-label="`Filter the ${words}`" />
+      <button v-if="listed" type="button" class="chip-btn sp-choose" :class="{ primary: !full }" :disabled="disabled && !picked" @click="open = true">{{ disabled ? 'Show' : picked ? 'Change…' : 'Choose…' }}</button>
     </div>
+    <!-- options and feats: the picks here, the list in a dialog -->
+    <ul v-if="listed && pickedRows.length" class="sp-picked">
+      <li v-for="r in pickedRows" :key="r.id"><b>{{ r.label }}</b> <span v-if="r.text" class="muted small">{{ lead(r.text) }}</span></li>
+    </ul>
 
-    <!-- options and feats: a list with their text -->
-    <div v-if="listed" class="sp-optlist" role="group" :aria-label="a.trait.name">
+    <Teleport v-if="listed && open" to="body">
+    <div class="modal-back" @mousedown.self="close">
+    <div class="modal sp-choice-modal" role="dialog" :aria-label="`${a.trait.name}: choose ${n} ${words}`">
+      <div class="sp-choice-top">
+      <header class="modal-head">
+        <h2>{{ a.trait.name }}</h2>
+        <span class="spacer" />
+        <button class="x" title="Close (Esc)" @click="close">×</button>
+      </header>
+      <div class="sp-pick-head small">
+        <span class="muted">Choose {{ n }} {{ words }}</span>
+        <b class="sp-count" :class="{ done: full }">{{ picked }} of {{ n }} picked</b>
+        <input v-if="rows.length > 6" v-model="filter" class="sp-filter" type="search" placeholder="Filter…" :aria-label="`Filter the ${words}`" />
+      </div>
+      </div>
+    <div class="sp-optlist" role="group" :aria-label="a.trait.name">
       <label v-for="r in shown" :key="r.id" class="sp-opt" :class="{ on: a.picks.includes(r.id), off: !a.picks.includes(r.id) && full && n > 1, early: r.needs && r.needs > a.level }">
         <input :type="n === 1 ? 'radio' : 'checkbox'" :name="a.key" :checked="a.picks.includes(r.id)" :disabled="disabled || (!a.picks.includes(r.id) && full && n > 1)" @change="toggle(r.id)" />
         <span class="sp-opt-body">
@@ -77,9 +104,13 @@ function toggle(id: string) {
       </label>
       <p v-if="!shown.length" class="muted small">Nothing matches “{{ filter }}”.</p>
     </div>
+      <footer class="sp-choice-foot"><span class="spacer" /><button class="primary" @click="close">Done</button></footer>
+    </div>
+    </div>
+    </Teleport>
 
     <!-- everything else: one dropdown per pick -->
-    <div v-else class="sp-pick-selects">
+    <div v-if="!listed" class="sp-pick-selects">
       <select v-for="k in n" :key="k" :value="a.picks[k - 1] ?? ''" :disabled="disabled" :aria-label="`${a.trait.name}: pick ${k}`" @change="set(k - 1, ($event.target as HTMLSelectElement).value)">
         <option value="">—</option>
         <option v-for="o in options" :key="o.id" :value="o.id" :disabled="a.picks.includes(o.id) && a.picks[k - 1] !== o.id">{{ o.label }}</option>

@@ -6,7 +6,7 @@ import { computed } from 'vue'
 import type { Entry, Trait } from '../model/types'
 import { basicsOf, ownBasics } from '../classRules'
 import { classSlotsAt } from '../slots'
-import { byType, playerMode, state } from '../store'
+import { byType, get, playerMode, state } from '../store'
 import { traitsOf } from '../species'
 import { ABILITY_SHORT } from '../abilityBonus'
 import { newBlankEntry } from '../ui'
@@ -26,7 +26,7 @@ const basicsLine = computed(() => [
   b.value.saves?.length && `Saves ${b.value.saves.map(a => ABILITY_SHORT[a]).join(', ')}`,
   b.value.armor?.length && `Armor ${b.value.armor.join(', ')}`,
   b.value.weapons?.length && `Weapons ${b.value.weapons.join(', ')}`,
-  b.value.tools?.length && `Tools ${b.value.tools.join(', ')}`,
+  b.value.tools?.length && `Tools ${b.value.tools.map(t => get(t)?.name ?? t).join(', ')}`,
   b.value.skills && `Skills: ${b.value.skills.count} ${b.value.skills.from.length ? `from ${b.value.skills.from.join(', ')}` : 'of any'}`,
   b.value.caster && b.value.caster !== 'none' && `Spellcasting: ${CASTER[b.value.caster]}${b.value.casting ? `, ${ABILITY_SHORT[b.value.casting]}` : ''}`,
   `Subclass at level ${b.value.subclassLevel}`,

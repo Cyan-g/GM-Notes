@@ -7,6 +7,10 @@ import { computed } from 'vue'
 import type { ClassBasics } from '../../model/types'
 import { builtInBasics } from '../../classRules'
 import { DICE } from '../../model/classes'
+import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from '../../model/schema'
+import { entries, get } from '../../store'
+import { itemNamed } from '../../wizard'
+import ProfChips from '../ProfChips.vue'
 import { SKILLS } from '../../sheet'
 import { ABILITY_KEYS, ABILITY_SHORT } from '../../abilityBonus'
 
@@ -34,6 +38,9 @@ const CASTERS: { id: NonNullable<ClassBasics['caster']>; label: string }[] = [
 ]
 const ARMOR = ['Light', 'Medium', 'Heavy', 'Shield']
 const WEAPONS = ['Simple', 'Martial']
+const WEAPON_TOGGLES = WEAPONS.map(x => ({ id: x, label: `${x} weapons` }))
+/** Single weapons a class can be proficient with (a Rogue's Rapier), besides Simple and Martial ones. */
+const WEAPON_NAMES = [...SIMPLE_WEAPONS, ...MARTIAL_WEAPONS].sort().map(x => ({ id: x, label: x }))
 const LEVELS = Array.from({ length: 20 }, (_, i) => i + 1)
 const casts = computed(() => (cur.value.caster ?? 'none') !== 'none')
 /** One number per level for a by-level table (cantrips, prepared spells). */
@@ -46,6 +53,10 @@ function setAt(k: 'cantrips' | 'prepared', i: number, v: string) {
 const num = (ev: Event) => { const v = (ev.target as HTMLInputElement).value.trim(); return v === '' ? undefined : Number(v) }
 const mc = computed(() => cur.value.multiclass ?? { primary: [], armor: [], weapons: [], tools: [] })
 const setMc = (patch: Partial<NonNullable<ClassBasics['multiclass']>>) => set('multiclass', { ...mc.value, ...patch })
+/** The world's tools and instruments (its Tool items), offered as the class's tool proficiencies. */
+const toolItems = computed(() => entries.value.filter(e => e.type === 'item' && ['Tool', 'Instrument'].includes(String(e.fields.kind))).map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label)))
+/** Tools stored by name (the built-in SRD values) shown as the world's item of that name, where it has one. */
+const toolIds = (l?: string[]) => (l ?? []).map(t => (get(t)?.type === 'item' ? t : itemNamed(t)?.id ?? t))
 const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 'standard' : '')
 </script>
 
@@ -68,8 +79,8 @@ const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 's
     <h4>Proficiencies <span class="cb-tag" :class="isOwn('armor') || isOwn('weapons') || isOwn('tools') ? 'changed' : tag('armor')">{{ isOwn('armor') || isOwn('weapons') || isOwn('tools') ? 'changed' : tag('armor') }}</span>
       <button v-if="isOwn('armor') || isOwn('weapons') || isOwn('tools')" type="button" class="link-btn small" @click="reset('armor'); reset('weapons'); reset('tools')">Reset</button></h4>
     <div class="cb-line"><span class="muted small">Armor</span><div class="seg cb-toggles"><button v-for="x in ARMOR" :key="x" type="button" :class="{ on: cur.armor?.includes(x) }" @click="set('armor', toggle(cur.armor, x))">{{ x }}</button></div></div>
-    <div class="cb-line"><span class="muted small">Weapons</span><div class="seg cb-toggles"><button v-for="x in WEAPONS" :key="x" type="button" :class="{ on: cur.weapons?.includes(x) }" @click="set('weapons', toggle(cur.weapons, x))">{{ x }}</button></div></div>
-    <label class="cb-line"><span class="muted small">Tools</span><input :value="(cur.tools ?? []).join(', ')" placeholder="e.g. Thieves' Tools" @change="set('tools', ($event.target as HTMLInputElement).value.split(',').map(x => x.trim()).filter(Boolean))" /></label>
+    <div class="cb-line"><span class="muted small">Weapons</span><ProfChips :values="cur.weapons ?? []" :toggles="WEAPON_TOGGLES" :suggest="WEAPON_NAMES" :create="(x: string) => x" placeholder="Add a weapon…" @change="v => set('weapons', v)" /></div>
+    <div class="cb-line"><span class="muted small">Tools</span><ProfChips :values="toolIds(cur.tools)" :suggest="toolItems" :create="(x: string) => x" placeholder="Add a tool…" @change="v => set('tools', v)" /></div>
 
     <h4>Skills <span class="cb-tag" :class="tag('skills')">{{ tag('skills') }}</span><button v-if="isOwn('skills')" type="button" class="link-btn small" @click="reset('skills')">Reset</button></h4>
     <div class="cb-line"><span class="muted small">Pick</span><input class="cb-num" type="number" min="0" max="18" :value="cur.skills?.count ?? 2" @change="set('skills', { count: num($event) ?? 0, from: cur.skills?.from ?? [] })" />
@@ -106,7 +117,8 @@ const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 's
       <label v-if="mc.primary.length > 1" class="small"><input type="checkbox" :checked="!!mc.any" @change="setMc({ any: ($event.target as HTMLInputElement).checked || undefined })" /> one of them is enough</label></div>
     <div class="cb-line"><span class="muted small">Gives</span>
       <div class="seg cb-toggles"><button v-for="x in [...ARMOR, ...WEAPONS]" :key="x" type="button" :class="{ on: [...mc.armor, ...mc.weapons].includes(x) }" @click="ARMOR.includes(x) ? setMc({ armor: toggle(mc.armor, x) }) : setMc({ weapons: toggle(mc.weapons, x) })">{{ x }}</button></div></div>
-    <div class="cb-line"><label class="small">Tools <input :value="mc.tools.join(', ')" @change="setMc({ tools: ($event.target as HTMLInputElement).value.split(',').map(x => x.trim()).filter(Boolean) })" /></label>
+    <div class="cb-line"><span class="muted small">Tools</span><ProfChips :values="toolIds(mc.tools)" :suggest="toolItems" :create="(x: string) => x" placeholder="Add a tool…" @change="v => setMc({ tools: v })" /></div>
+    <div class="cb-line">
       <label class="small">Skills <input class="cb-num" type="number" min="0" :value="mc.skills ?? 0" @change="setMc({ skills: num($event) || undefined })" /></label>
       <label class="small">Instruments <input class="cb-num" type="number" min="0" :value="mc.instruments ?? 0" @change="setMc({ instruments: num($event) || undefined })" /></label></div>
   </div>

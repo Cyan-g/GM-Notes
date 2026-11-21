@@ -109,7 +109,7 @@ function addSkill(ev: Event) {
   el.value = ''
 }
 const instruments = computed(() => entries.value.filter(e => e.type === 'item' && ['Tool', 'Instrument'].includes(String(e.fields.kind))).sort((a, b) => a.name.localeCompare(b.name)))
-const gains = computed(() => (mc.value ? [...mc.value.armor.map(x => (x === 'Shield' ? 'Shields' : `${x} armor`)), ...mc.value.weapons.map(x => `${x} weapons`), ...mc.value.tools] : []))
+const gains = computed(() => (mc.value ? [...mc.value.armor.map(x => (x === 'Shield' ? 'Shields' : `${x} armor`)), ...mc.value.weapons.map(x => `${x} weapons`), ...mc.value.tools.map(t => get(t)?.name ?? t)] : []))
 const pickFeat = (id: string) => { feat.value = id; choice.value = { picks: [] } }
 
 // ---- spells: what the class's table gives at the new level ----

@@ -297,9 +297,37 @@ ipcMain.handle('worlds:list', () => {
   const current = config.dataDir
   return {
     current,
-    worldsDir: config.worldsDir ?? null,
-    worlds: (config.worlds ?? []).map(x => ({ ...x, exists: WorldDb.exists(x.dir), current: !!current && same(x.dir, current) })),
+    worldsDir: appWorldsDir(),
+    worlds: (config.worlds ?? []).map(x => ({ ...x, exists: WorldDb.exists(x.dir), current: !!current && same(x.dir, current), inApp: inAppWorlds(x.dir) })),
   }
+})
+/**
+ * Move a world into the app's worlds folder: copied there (pictures, files and backups too), checked, and the app
+ * switched to the copy; the old folder is renamed "… (moved to GM Notes)", not deleted, so nothing is lost if
+ * something went wrong. Returns the new folder.
+ */
+ipcMain.handle('worlds:move', (_e, dir) => {
+  if (!dir || !WorldDb.exists(dir)) throw new Error('There is no world in that folder.')
+  if (inAppWorlds(dir)) return dir
+  const known = (config.worlds ?? []).find(x => same(x.dir, dir))
+  const to = freeWorldDir(known?.title || path.basename(path.resolve(dir)))
+  const wasOpen = !!config.dataDir && same(config.dataDir, dir)
+  if (wasOpen) closeWorld()
+  fs.cpSync(dir, to, { recursive: true, errorOnExist: true, preserveTimestamps: true })
+  if (!WorldDb.exists(to)) throw new Error('The copy has no world in it; the world stays where it was.')
+  const db = path.join(dir, 'dndesk.sqlite'), copy = path.join(to, 'dndesk.sqlite')
+  if (fs.existsSync(db) && fs.statSync(db).size !== fs.statSync(copy).size) throw new Error('The copy differs from the world; it stays where it was.')
+  const moveIn = p => (p && (same(p, dir) || path.resolve(p).toLowerCase().startsWith(path.resolve(dir).toLowerCase() + path.sep)) ? path.join(to, path.relative(dir, p)) : p)
+  config.worlds = (config.worlds ?? []).map(x => (same(x.dir, dir) ? { ...x, dir: to } : x))
+  if (wasOpen) config.dataDir = to
+  config.backupDir = moveIn(config.backupDir)
+  if (config.follow) config.follow = Object.fromEntries(Object.entries(config.follow).map(([d, f]) => [same(d, dir) ? to : d, f]))
+  config.worldsDir = appWorldsDir()
+  writeConfig(config)
+  let old = `${dir} (moved to GM Notes)`
+  for (let n = 2; fs.existsSync(old); n++) old = `${dir} (moved to GM Notes ${n})`
+  try { fs.renameSync(dir, old) } catch { /* in use: it stays as it is; the app uses the copy now */ }
+  return to
 })
 /** Open another world (the pages reload afterwards). */
 ipcMain.handle('worlds:switch', (_e, dir) => {
@@ -315,24 +343,22 @@ ipcMain.handle('worlds:forget', (_e, dir) => {
   writeConfig(config)
   return true
 })
-/**
- * Make the folder for a new world inside the worlds folder (chosen once, the first time) and switch to it; the
- * pages then start the world there. Returns the folder, or null if no worlds folder was chosen.
- */
-ipcMain.handle('worlds:create', async (e, name) => {
-  if (!config.worldsDir || !fs.existsSync(config.worldsDir)) {
-    const win = BrowserWindow.fromWebContents(e.sender)
-    const r = await dialog.showOpenDialog(win, {
-      title: 'Choose the folder for your worlds (each new world gets a folder in it)',
-      properties: ['openDirectory', 'createDirectory'],
-      defaultPath: config.dataDir ? path.dirname(config.dataDir) : undefined,
-    })
-    if (r.canceled || !r.filePaths[0]) return null
-    config.worldsDir = r.filePaths[0]
-  }
+/** Where worlds live: the app's own folder (%APPDATA%\gm-notes\Worlds), so nobody has to keep track of a folder. */
+const appWorldsDir = () => path.join(app.getPath('userData'), 'Worlds')
+/** A free folder for a world called `name` in the app's worlds folder. */
+function freeWorldDir(name) {
+  const root = appWorldsDir()
+  fs.mkdirSync(root, { recursive: true })
   const base = String(name || 'New world').replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim() || 'New world'
-  let dir = path.join(config.worldsDir, base)
-  for (let n = 2; fs.existsSync(dir); n++) dir = path.join(config.worldsDir, `${base} ${n}`)
+  let dir = path.join(root, base)
+  for (let n = 2; fs.existsSync(dir); n++) dir = path.join(root, `${base} ${n}`)
+  return dir
+}
+const inAppWorlds = dir => !!dir && path.resolve(dir).toLowerCase().startsWith(path.resolve(appWorldsDir()).toLowerCase() + path.sep)
+/** Make the folder for a new world in the app's worlds folder and switch to it; the pages then start the world there. */
+ipcMain.handle('worlds:create', async (_e, name) => {
+  const dir = freeWorldDir(name)
+  config.worldsDir = appWorldsDir()
   fs.mkdirSync(dir, { recursive: true })
   closeWorld()
   config.dataDir = dir

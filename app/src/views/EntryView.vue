@@ -344,7 +344,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
                   @click="setCurrent(currentPc?.id === e.id ? undefined : e.id)"><AppIcon ui="star" :class="{ off: !(currentPc?.id === e.id) }" /> {{ currentPc?.id === e.id ? 'Current character' : 'Make current' }}</button>
           <span v-if="status" class="badge npc-status-badge" :class="'st-' + String(e.fields.status).toLowerCase()">{{ status }}</span>
           <span v-if="attitude" class="badge" :class="'att-' + attitude.toLowerCase()" title="How they stand with the party">{{ attitude }}</span>
-          <span v-if="e.visibility === 'secret'" class="badge dm-only" title="Players don't know this entry yet">DM only</span>
+          <span v-if="e.visibility === 'secret' && !playerMode && e.type !== 'pc'" class="badge dm-only" title="Players don't know this entry yet">DM only</span>
           <span v-if="e.aliases.length" class="aliases">also: {{ e.aliases.join(' · ') }}</span>
         </div>
       </div>

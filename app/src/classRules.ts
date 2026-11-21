@@ -3,13 +3,13 @@
 // the levels with a feat (Ability Score Improvement, or an Epic Boon at 19), and starting equipment or gold instead.
 // The hit die, spell slots and casting ability are in model/classes.ts, slots.ts and sheet.ts. A class that isn't
 // here (homebrew, or one the SRD doesn't have) is filled in by hand in the wizard.
-import type { Abilities, ClassBasics, Copper } from './model/types'
+import type { Abilities, ClassBasics, Copper, Id } from './model/types'
 import { state } from './store'
 import { CLASS_DIE } from './model/classes'
 
 type Ability = keyof Abilities
 /** A thing a class's or background's equipment holds, by name (matched to the world's items when it has them). */
-export interface KitLine { name: string; amount?: number }
+export interface KitLine { name: string; amount?: number; item?: Id }
 /** One equipment option: items and coins. */
 export interface Kit { items: KitLine[]; money: Copper }
 
@@ -166,6 +166,8 @@ export function builtInBasics(cls: string): ClassBasics {
     ...(r ? { saves: r.saves, skills: r.skills, armor: r.armor, weapons: r.weapons, tools: r.tools } : {}),
     ...(r?.cantrips ? { cantrips: r.cantrips } : {}), ...(r?.prepared ? { prepared: r.prepared } : {}), ...(r?.spellbook ? { spellbook: r.spellbook } : {}),
     ...(MULTICLASS[cls] ? { multiclass: MULTICLASS[cls] } : {}),
+    // the SRD's kits by name (the editor and the wizard match them to the world's items)
+    ...(r?.equipment.length ? { equipment: r.equipment.map(k => ({ items: k.items.map(l => ({ name: l.name, ...(l.amount ? { amount: l.amount } : {}) })), money: k.money })) } : {}),
   }
 }
 /** A class's basics: the entry's where it sets them, else the built-in ones. */

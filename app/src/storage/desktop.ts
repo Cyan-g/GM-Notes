@@ -53,6 +53,8 @@ interface Bridge {
     create(name: string): Promise<string | null>
     newId(title?: string): Promise<string>
     moved(title?: string): Promise<boolean>
+    /** Move a world into the app's worlds folder (the old folder is renamed, not deleted). */
+    move(dir: string): Promise<string>
   }
   onUpdate(cb: (info: UpdateInfo) => void): void
   installUpdate(): Promise<boolean>

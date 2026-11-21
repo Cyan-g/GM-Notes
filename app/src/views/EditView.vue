@@ -5,7 +5,7 @@ import { isShared } from '../sync'
 import { computed } from 'vue'
 import type { EntryType, Statblock } from '../model/types'
 import { TYPES, byKey, type FieldDef } from '../model/schema'
-import { backlinks, byType, fieldLabel, get, relationsOf, state } from '../store'
+import { backlinks, byType, fieldLabel, get, playerMode, relationsOf, state } from '../store'
 import RaceBonusEdit from '../components/edit/RaceBonusEdit.vue'
 import BackgroundEdit from '../components/edit/BackgroundEdit.vue'
 import { changed, deleteEntry } from '../edit'
@@ -159,7 +159,8 @@ function remove() {
       <div class="edit-meta">
         <!-- The type is chosen when the entry is made and can't change after (its fields and pages depend on it). -->
         <span class="edit-type"><TypeIcon :type="e.type" /> {{ TYPES[e.type].label }}</span>
-        <label class="toggle" :title="e.visibility === 'secret' ? 'Players don\'t know about this yet' : 'Players know this exists'">
+        <!-- whether players know of it: the DM's choice, for what can be shared (not a player's own world or a character) -->
+        <label v-if="!playerMode && e.type !== 'pc'" class="toggle" :title="e.visibility === 'secret' ? 'Players don\'t know about this yet' : 'Players know this exists'">
           <input type="checkbox" :checked="e.visibility === 'known'" @change="toggleSecret" />
           <span>Known to players</span><span v-if="e.visibility !== 'known'" class="badge dm-only">DM only</span>
         </label>
@@ -234,7 +235,7 @@ function remove() {
           <div v-if="sectioned" class="npc-add body-sections">
             <span class="muted small">Add a section:</span>
             <button v-for="h in sections" :key="h" type="button" class="chip-btn" @click="addSection(h)">＋ {{ h }}</button>
-            <button v-if="!/^:::secret/m.test(e.body)" type="button" class="chip-btn" title="A part of the text players never see" @click="addSecretBlock">＋ DM-only part</button>
+            <button v-if="!playerMode && !/^:::secret/m.test(e.body)" type="button" class="chip-btn" title="A part of the text players never see" @click="addSecretBlock">＋ DM-only part</button>
           </div>
         </section>
         <NpcStats v-if="npc" :entry="e" />

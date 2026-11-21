@@ -2211,3 +2211,28 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .pcard .pc-pic { grid-column: 2; grid-row: 1 / span 2; width: 13mm; height: 13mm; object-fit: cover; border-radius: 1.5mm; }
 .item-where .iw-sub { margin: .4rem 0 .2rem; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .item-where .chip-btn { margin-top: .5rem; }
+/* the entry picker's list floats over the page (EntryPicker): fixed at its input, above dialogs too */
+.picker-list.floating { position: fixed; right: auto; z-index: 2000; margin: 0; min-width: 0; }
+/* ---- the wizard: the picked class's or species' page under the choices; the subrace as its own choice ---- */
+.wz-page { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.wz-page-head { display: flex; align-items: baseline; gap: .8rem; margin: 0 0 .6rem; }
+.wz-page-head a { font-family: var(--sans); font-weight: 400; }
+.wz-page-sub { margin: 1rem 0 .4rem; }
+.wz-page .class-table-wrap > summary h2 { font-size: 1.1rem; }
+.wz-subraces { margin: .2rem 0 1rem; padding: .7rem .9rem; border: 1px solid var(--line); border-radius: 10px; }
+.wz-subraces.open { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.wz-subraces .wz-sub { margin-top: 0; }
+.wz-subraces .wz-tiles { margin-bottom: 0; }
+.wz-need { color: var(--accent); font-family: var(--sans); font-weight: 600; margin-left: .4rem; }
+/* ---- a class's starting equipment (ClassKitsInput) ---- */
+.class-kits { display: grid; gap: .6rem; margin-bottom: 1rem; }
+.ck-option { border: 1px solid var(--line); border-radius: 8px; padding: .5rem .7rem; display: grid; gap: .35rem; }
+.ck-head { display: flex; align-items: baseline; gap: .6rem; }
+.ck-head .link-btn { margin-left: auto; }
+.ck-line { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.ck-line > .picker { flex: 1 1 12rem; }
+.ck-line.missing { padding: .2rem .4rem; border: 1px dashed var(--line); border-radius: 6px; }
+.ck-name { flex: 1 1 12rem; }
+.ck-foot { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.ck-foot > .picker { flex: 1 1 12rem; }
+.ck-foot label { display: flex; align-items: center; gap: .3rem; }

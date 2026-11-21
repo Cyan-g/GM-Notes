@@ -1,6 +1,6 @@
 // Changing the database: every change goes through here so it gets timestamped and saved.
 import type { Entry, EntryType, Id, Relation, RelationKind } from './model/types'
-import { db, get, state, touch } from './store'
+import { db, get, playerMode, state, touch } from './store'
 
 const slug = (s: string) => s.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
   .replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'entry'
@@ -20,9 +20,12 @@ export function changed(e: Entry) {
 
 export function createEntry(type: EntryType, name: string, fields: Record<string, unknown> = {}): Entry {
   const now = new Date().toISOString()
+  // The DM's new entries start DM only, until marked Known to players. A player's own entries never go anywhere,
+  // and characters are never shared, so for those "DM only" means nothing: they start known.
+  const known = playerMode.value || type === 'pc'
   const e: Entry = {
     id: newId(name), type, name: name.trim(), aliases: [], tags: [], fields, body: '',
-    visibility: 'secret', created: now, updated: now,
+    visibility: known ? 'known' : 'secret', created: now, updated: now,
   }
   db().entries[e.id] = e
   touch()

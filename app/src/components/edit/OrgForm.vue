@@ -5,6 +5,7 @@ import { computed, ref } from 'vue'
 import type { Entry } from '../../model/types'
 import { TYPES, byKey } from '../../model/schema'
 import { changed } from '../../edit'
+import { playerMode } from '../../store'
 import { ATTITUDES } from '../../npc'
 import FieldInput from './FieldInput.vue'
 
@@ -25,7 +26,8 @@ const HINT: Partial<Record<Part, string>> = { goals: 'What they are after right 
 const has = (k: Part) => { const v = byKey(f.value)[k]; return Array.isArray(v) ? v.length > 0 : v != null && v !== '' }
 const opened = ref(new Set<Part>())
 const shown = computed(() => PARTS.filter(k => has(k) || opened.value.has(k)))
-const addable = computed(() => PARTS.filter(k => !shown.value.includes(k)))
+// a secret is the DM's: not offered in a player's own world
+const addable = computed(() => PARTS.filter(k => !shown.value.includes(k) && !(k === 'secret' && playerMode.value)))
 function open(k: Part) { opened.value = new Set([...opened.value, k]) }
 function close(k: Part) { const s = new Set(opened.value); s.delete(k); opened.value = s; set(k, undefined) }
 const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() => grow(el)) }

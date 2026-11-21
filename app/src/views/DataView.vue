@@ -10,6 +10,7 @@ import { checkDatabase } from '../validate'
 import EntryLink from '../components/EntryLink.vue'
 import { backupTo, daysSince, listBackups, restoreBackup } from '../backup'
 import { DesktopStorage, desktop, folderName } from '../storage/desktop'
+import { loadWorlds, moveWorld, worlds } from '../worlds'
 
 const progress = ref<{ done: number; total: number } | null>(null)
 const message = ref('')
@@ -35,6 +36,7 @@ async function bringBack(d: { entry: Entry }) {
 }
 
 onMounted(async () => {
+  if (desktop) void loadWorlds()
   loadDeleted()
   if (desktop) {
     destPath.value = await desktop.getFolder('backup')
@@ -44,6 +46,15 @@ onMounted(async () => {
   backups.value = await listBackups()
 })
 
+/** The open world in the list of worlds: whether it's in the app's own folder. */
+const here = computed(() => worlds.list.find(w => w.current))
+const moving = ref('')
+async function moveHere() {
+  const w = here.value
+  if (!w || !confirm(`Move “${w.title}” into GM Notes' own folder?\n\nIt's copied there with its pictures, files and backups, then the app uses the copy. The old folder is renamed “… (moved to GM Notes)” and kept, so you can delete it yourself once all is well.`)) return
+  moving.value = 'Moving… (a big world takes a moment)'
+  try { await moveWorld(w) } catch (e) { moving.value = ''; alert((e as Error).message) }
+}
 /** Desktop: open another data folder (the app starts over with it). */
 async function changeDataFolder() {
   if (state.dirty) await save()
@@ -100,7 +111,9 @@ const open = (url: string) => (desktop ? desktop.open(url) : window.open(url, '_
         <h3>Your data</h3>
         <dl>
           <dt>Folder</dt>
-          <dd v-if="desktop">{{ dataPath }} <button class="link-btn" @click="desktop.showFolder('data')">Show</button> <button class="link-btn" @click="changeDataFolder">Change…</button></dd>
+          <dd v-if="desktop">{{ dataPath }} <button class="link-btn" @click="desktop.showFolder('data')">Show in Explorer</button> <button class="link-btn" @click="changeDataFolder">Open another…</button>
+            <template v-if="here && !here.inApp"><br /><button class="link-btn" title="Copy it into GM Notes' own folder, where new worlds go; the old folder is renamed, not deleted" @click="moveHere">Move into GM Notes' folder</button>
+              <span class="muted small">{{ moving }}</span></template></dd>
           <dd v-else>{{ state.storage?.label }}</dd>
           <dt>Entries</dt><dd>{{ entries.length }}, with {{ db().relations.length }} relations</dd>
           <dt>Saved</dt><dd>{{ state.saving ? 'saving…' : state.dirty ? 'unsaved changes' : state.savedAt ? `all saved, ${new Date(state.savedAt).toLocaleTimeString()}` : 'all saved' }} <button v-if="state.dirty" class="link-btn" @click="save()">Save now</button></dd>

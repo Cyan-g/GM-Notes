@@ -11,6 +11,7 @@ import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from '../../model/schema'
 import { entries, get } from '../../store'
 import { itemNamed } from '../../wizard'
 import ProfChips from '../ProfChips.vue'
+import ClassKitsInput from './ClassKitsInput.vue'
 import { SKILLS } from '../../sheet'
 import { ABILITY_KEYS, ABILITY_SHORT } from '../../abilityBonus'
 
@@ -110,6 +111,10 @@ const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 's
 
     <h4>Feat levels <span class="cb-tag" :class="tag('featLevels')">{{ tag('featLevels') }}</span><button v-if="isOwn('featLevels')" type="button" class="link-btn small" @click="reset('featLevels')">Reset</button></h4>
     <div class="cb-skills"><button v-for="l in LEVELS" :key="l" type="button" class="chip-btn cb-lv" :class="{ on: cur.featLevels?.includes(l) }" @click="set('featLevels', toggle(cur.featLevels, l).sort((a, b) => a - b))">{{ l }}</button></div>
+
+    <h4>Starting equipment <span class="cb-tag" :class="tag('equipment')">{{ tag('equipment') }}</span><button v-if="isOwn('equipment')" type="button" class="link-btn small" @click="reset('equipment')">Reset</button></h4>
+    <p class="muted small">The options a new character picks one of in the wizard. Only your world's items are handed out.</p>
+    <ClassKitsInput :kits="cur.equipment ?? []" @change="v => set('equipment', v.length ? v : undefined)" />
 
     <h4>Multiclassing <span class="cb-tag" :class="tag('multiclass')">{{ tag('multiclass') }}</span><button v-if="isOwn('multiclass')" type="button" class="link-btn small" @click="reset('multiclass')">Reset</button></h4>
     <div class="cb-line"><span class="muted small">Needs 13 in</span>

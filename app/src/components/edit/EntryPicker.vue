@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Pick an entry by typing its name. Single mode shows the current pick; add mode clears after each pick.
 import EntryIcon from '../EntryIcon.vue'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import type { EntryType } from '../../model/types'
 import { TYPES, typeWord } from '../../model/schema'
 import { search } from '../../search'
@@ -36,6 +36,26 @@ const options = computed(() => [
     ? [{ kind: 'text' as const, e: null }] : []),
 ])
 watch(q, () => { sel.value = 0 })
+
+// The list floats over the page (fixed, at the input), so a card or a scrolling list it sits in never grows or
+// scrolls when it opens; it opens upwards when there's no room below.
+const place = ref<Record<string, string>>({})
+function position() {
+  const r = input.value?.getBoundingClientRect()
+  if (!r) return
+  const below = window.innerHeight - r.bottom, up = below < 220 && r.top > below
+  place.value = {
+    left: `${Math.max(4, Math.min(r.left, window.innerWidth - Math.max(240, r.width) - 4))}px`,
+    width: `${Math.max(240, r.width)}px`,
+    ...(up ? { bottom: `${window.innerHeight - r.top + 2}px`, maxHeight: `${Math.min(300, r.top - 8)}px` } : { top: `${r.bottom + 2}px`, maxHeight: `${Math.min(300, below - 8)}px` }),
+  }
+}
+const showList = computed(() => editing.value && !!q.value && options.value.length > 0)
+watch(showList, on => {
+  if (on) { position(); window.addEventListener('scroll', position, true); window.addEventListener('resize', position) }
+  else { window.removeEventListener('scroll', position, true); window.removeEventListener('resize', position) }
+})
+onBeforeUnmount(() => { window.removeEventListener('scroll', position, true); window.removeEventListener('resize', position) })
 
 async function start() {
   editing.value = true
@@ -73,7 +93,8 @@ function blur() { setTimeout(() => { if (!props.add) editing.value = false; q.va
     </div>
     <template v-else>
       <input ref="input" v-model="q" :placeholder="placeholder || 'Type a name…'" @keydown="key" @blur="blur" @focus="editing = true" />
-      <ul v-if="editing && q && options.length" class="picker-list">
+      <Teleport to="body">
+      <ul v-if="showList" class="picker-list floating" :style="place">
         <li v-for="(o, i) in options" :key="o.e?.id ?? o.kind" :class="{ sel: i === sel }" @mousedown.prevent="choose(i)" @mousemove="sel = i">
           <template v-if="o.kind === 'pick'">
             <span class="icon"><EntryIcon :e="o.e!" /></span>{{ o.e!.name }}
@@ -83,6 +104,7 @@ function blur() { setTimeout(() => { if (!props.add) editing.value = false; q.va
           <template v-else>＋ Create {{ typeWord(createType!) }} “{{ q.trim() }}”</template>
         </li>
       </ul>
+      </Teleport>
     </template>
   </div>
 </template>

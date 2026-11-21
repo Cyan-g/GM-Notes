@@ -7,7 +7,7 @@ import type {
   Abilities, AbilityBonus, CharacterSheet, ClassLine, Copper, Entry, Feature, Id, InventoryLine, SpeciesState, Spellbook,
 } from './model/types'
 import { ABILITY_KEYS, bonusApplied, bonusOpen, type BonusChoice } from './abilityBonus'
-import { EPIC_BOON_LEVEL, hitDieOf, rulesOf, subclassLevelOf, type Kit, type KitLine } from './classRules'
+import { EPIC_BOON_LEVEL, basicsOf, hitDieOf, rulesOf, subclassLevelOf, type Kit, type KitLine } from './classRules'
 import { ruleSlots } from './slots'
 import { blankSheet, mod } from './sheet'
 import { choiceOpen, classSpellsFrom, isClassOrigin, own, speciesTraits, PROFS_TRAIT } from './species'
@@ -180,9 +180,20 @@ export function backgroundKit(d: Draft): Kit | undefined {
   return { items: (eq.items ?? []).map(l => ({ name: (!l.item && tool && /chosen above|of your choice/i.test(l.name ?? '') ? tool : (l.item ? get(l.item)?.name : l.name)) ?? l.name ?? '?', amount: l.amount })), money: eq.money ?? 0 }
 }
 export const backgroundGold = (d: Draft): Copper | undefined => get(d.background)?.fields.equipment?.instead
+/** A class's starting equipment options (its own on the class entry, else the SRD's), each line with its world item. */
+export function classKitsOf(cls: string | undefined): Kit[] {
+  if (!cls) return []
+  return (basicsOf(cls).equipment ?? []).map(k => ({
+    money: k.money ?? 0,
+    items: (k.items ?? []).map(l => {
+      const id = l.item && get(l.item) ? l.item : l.name ? itemNamed(l.name)?.id : undefined
+      return { name: (id ? get(id)?.name : l.name) ?? l.name ?? '?', ...(l.amount ? { amount: l.amount } : {}), ...(id ? { item: id } : {}) }
+    }),
+  }))
+}
 /** The kits taken: the class's chosen option and the background's items or gold. */
 export function kitsOf(d: Draft): { items: KitLine[]; money: Copper } {
-  const cls = rules(d)?.equipment[d.classKit]
+  const cls = classKitsOf(d.cls)[d.classKit]
   const bg = d.bgKit === 'items' ? backgroundKit(d) : { items: [], money: backgroundGold(d) ?? 0 }
   return { items: [...(cls?.items ?? []), ...(bg?.items ?? [])], money: (cls?.money ?? 0) + (bg?.money ?? 0) }
 }
@@ -263,13 +274,15 @@ export function sheetOf(d: Draft): CharacterSheet {
     if (id) toolIds.push(id); else other.push(t)
   }
   s.proficiencies = { armor: r ? [...r.armor] : [...d.ownArmor], weapons: r ? [...r.weapons] : [...d.ownWeapons], tools: toolIds, languages: [...d.languages], ...(other.length ? { other: other.join(', ') } : {}) }
+  // Only the world's items go in: a name it has no item for is left out (the Equipment step says which).
   const kits = kitsOf(d)
   const inventory: InventoryLine[] = []
   for (const l of kits.items) {
-    const e = itemNamed(l.name), qty = l.amount ?? 1
-    const same = inventory.find(x => (e ? x.item === e.id : x.name === l.name))
+    const id = l.item ?? itemNamed(l.name)?.id, qty = l.amount ?? 1
+    if (!id) continue
+    const same = inventory.find(x => x.item === id)
     if (same) same.qty += qty
-    else inventory.push(e ? { item: e.id, qty } : { name: l.name, qty })
+    else inventory.push({ item: id, qty })
   }
   s.inventory = inventory
   if (kits.money) s.money = kits.money

@@ -12,7 +12,8 @@ import { changed, createEntry } from '../edit'
 import { go, hrefEntry } from '../router'
 import EntryLink from './EntryLink.vue'
 
-const props = defineProps<{ e: Entry }>()
+/** `noActions`: shown somewhere it's only read (the character wizard), without "Copy as new race". */
+const props = defineProps<{ e: Entry; noActions?: boolean }>()
 const chain = computed(() => [props.e, ...parentRaces(props.e)])
 /** The traits a character of this race has: the main races' except those a subrace replaces. */
 const replaced = computed(() => new Set(chain.value.flatMap(x => traitsOf(x).map(t => t.replaces).filter(Boolean)) as string[]))
@@ -62,6 +63,6 @@ function copy() {
       <template v-if="bonus"><dt>Ability scores</dt><dd>{{ bonus.v }} <small v-if="bonus.from" class="muted">from {{ bonus.from.name }}</small></dd></template>
       <dt>Traits</dt><dd>{{ traitCount }}<template v-if="lineages.length"> · choose: {{ lineages.join(', ') }}</template></dd>
     </dl>
-    <button v-if="canEdit" type="button" class="chip-btn" title="A new race with the same fields, traits and text, to make your own from" @click="copy">Copy as new race</button>
+    <button v-if="canEdit && !noActions" type="button" class="chip-btn" title="A new race with the same fields, traits and text, to make your own from" @click="copy">Copy as new race</button>
   </section>
 </template>

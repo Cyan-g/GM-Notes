@@ -6,14 +6,14 @@ import { computed, ref, watch } from 'vue'
 import type { Entry, Id } from '../model/types'
 import {
   POINTS, POINT_COST, STANDARD_ARRAY, backgroundGold, backgroundKit, backgrounds, bonusAdds, bonusOf, casts, dieOfDraft,
-  draftPc, featLevels, finalScores, hpOf, itemNamed, kitsOf, makeCharacter, pointsSpent, resetWizard, rules, species, subracesOf, mainRace,
+  classKitsOf, draftPc, featLevels, finalScores, hpOf, itemNamed, kitsOf, makeCharacter, pointsSpent, resetWizard, rules, species, subracesOf, mainRace,
   spellChoices, spellCounts, steps, subclassesOf, wizard,
 } from '../wizard'
 import { subclassLevelOf } from '../classRules'
 import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, abilityBonusText } from '../abilityBonus'
 import { DICE } from '../model/classes'
 import { SKILLS, mod, signed, currentPc, setCurrent } from '../sheet'
-import { choiceOpen, grantOptions, isClassOrigin, scaleAt, setCastAbility, setPicks as setTraitPicks, sourceTag, speciesGrants, speciesSizes, speciesTraits, traitsOf, type ActiveTrait } from '../species'
+import { classEntry, choiceOpen, grantOptions, isClassOrigin, scaleAt, setCastAbility, setPicks as setTraitPicks, sourceTag, speciesGrants, speciesSizes, speciesTraits, traitsOf, type ActiveTrait } from '../species'
 import { rule } from '../rules'
 import { entries, formatMoney, get, listOptions, playerMode } from '../store'
 import { go, hrefEntry } from '../router'
@@ -26,6 +26,7 @@ import ProfChips from '../components/ProfChips.vue'
 import TraitChips from '../components/TraitChips.vue'
 import TraitChoicePicker from '../components/TraitChoicePicker.vue'
 import MarkdownView from '../components/MarkdownView.vue'
+import WizardPage from '../components/WizardPage.vue'
 
 const d = computed(() => wizard.d)
 const all = computed(() => steps(d.value))
@@ -57,6 +58,17 @@ const raceList = computed(() => species())
 /** The main race picked, and its subraces (the character gets the subrace once one is picked). */
 const main = computed(() => mainRace(d.value.race))
 const subs = computed(() => subracesOf(main.value?.id))
+/** The class entry picked, for its page under the choices. */
+const classPage = computed(() => classEntry(d.value.cls))
+/** The subrace picked (when the species has subraces). */
+const subPicked = computed(() => (d.value.race && d.value.race !== main.value?.id ? get(d.value.race) : undefined))
+/** A subrace's traits besides those it replaces. */
+const ownTraits = (x: Entry) => traitsOf(x).filter(t => !t.replaces).length
+/** A species' short line on its tile: its size and walking speed, and how many subraces it has. */
+function raceLine(x: Entry): string {
+  const sp = x.fields.speeds as { walk?: number } | undefined
+  return [x.fields.size, sp?.walk != null && `${sp.walk} ft`, subracesOf(x.id).length && `${subracesOf(x.id).length} subraces`].filter(Boolean).join(' · ')
+}
 const sizes = computed(() => speciesSizes(pc.value))
 const bgList = computed(() => backgrounds())
 const pc = computed(() => draftPc(d.value))
@@ -142,7 +154,9 @@ const dieSize = computed(() => Number(dieOfDraft(d.value).replace(/\D/g, '')) ||
 const setRoll = (i: number, v: string) => { const l = [...d.value.hpRolls]; l[i] = v === '' ? undefined : Math.max(1, Math.min(dieSize.value, Number(v) || 1)); wizard.d.hpRolls = l }
 
 // ---- equipment ----
-const kits = computed(() => r.value?.equipment ?? [])
+const kits = computed(() => classKitsOf(d.value.cls))
+/** What the kits name but the world has no item for: left out of the inventory. */
+const missing = computed(() => taken.value.items.filter(l => !(l.item ?? itemNamed(l.name)?.id)).map(l => l.name))
 const bgKit = computed(() => backgroundKit(d.value))
 const bgGold = computed(() => backgroundGold(d.value))
 const taken = computed(() => kitsOf(d.value))
@@ -227,23 +241,29 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
               </button>
             </div>
           </template>
+          <!-- the class's page, for its lore, table and features -->
+          <WizardPage v-if="classPage" :e="classPage" :title="`About the ${classPage.name}`" />
         </template>
 
         <!-- species and background -->
         <template v-else-if="step.id === 'origin'">
+          <h3 class="wz-sub">Species</h3>
+          <div class="wz-tiles">
+            <button v-for="x in raceList" :key="x.id" type="button" class="wz-tile" :class="{ on: main?.id === x.id }" :aria-pressed="main?.id === x.id" @click="wizard.d.race = x.id">
+              <b>{{ x.name }}</b><small class="muted">{{ raceLine(x) }}</small>
+            </button>
+          </div>
+          <!-- a species with subraces: the subrace is its own choice, and needed -->
+          <div v-if="subs.length" class="wz-subraces" :class="{ open: !subPicked }">
+            <h3 class="wz-sub">{{ main?.name }}: pick a subrace <span v-if="!subPicked" class="wz-need small">needed</span></h3>
+            <p class="muted small">Each {{ main?.name }} is one of these; the subrace adds its own traits to the {{ main?.name }}'s.</p>
+            <div class="wz-tiles">
+              <button v-for="x in subs" :key="x.id" type="button" class="wz-tile" :class="{ on: d.race === x.id }" :aria-pressed="d.race === x.id" @click="wizard.d.race = d.race === x.id ? main?.id : x.id">
+                <b>{{ x.name }}</b><small class="muted">{{ ownTraits(x) ? `${ownTraits(x)} trait${ownTraits(x) === 1 ? '' : 's'} of its own` : 'no traits of its own' }}</small>
+              </button>
+            </div>
+          </div>
           <div class="wz-row">
-            <label>Species
-              <select :value="main?.id ?? ''" @change="wizard.d.race = val($event) || undefined">
-                <option value="">Choose…</option>
-                <option v-for="x in raceList" :key="x.id" :value="x.id">{{ x.name }}{{ subracesOf(x.id).length ? ` (${subracesOf(x.id).length} subrace${subracesOf(x.id).length === 1 ? '' : 's'})` : '' }}</option>
-              </select>
-            </label>
-            <label v-if="subs.length">Subrace
-              <select :value="d.race !== main?.id ? d.race : ''" @change="wizard.d.race = val($event) || main?.id">
-                <option value="">Choose…</option>
-                <option v-for="x in subs" :key="x.id" :value="x.id">{{ x.name }}</option>
-              </select>
-            </label>
             <label v-if="sizes.length > 1">Size
               <select :value="d.size && sizes.includes(d.size) ? d.size : sizes[0]" @change="wizard.d.size = val($event)">
                 <option v-for="z in sizes" :key="z" :value="z">{{ z }}</option>
@@ -256,6 +276,9 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
               </select>
             </label>
           </div>
+          <!-- the species' page (and the subrace's), for its lore and traits -->
+          <WizardPage v-if="main" :e="main" :title="`About the ${main.name}`" />
+          <WizardPage v-if="subPicked" :e="subPicked" :title="`The ${subPicked.name}`" />
           <p v-if="d.background" class="small">
             <EntryLink :id="d.background" />: <template v-if="get(d.background)?.fields.originFeat">Origin feat <EntryLink :id="String(get(d.background)?.fields.originFeat)" /><template v-if="get(d.background)?.fields.originFeatNote"> ({{ get(d.background)?.fields.originFeatNote }})</template>; </template>
             skills {{ (get(d.background)?.fields.skillProfs ?? []).join(', ') || '—' }}
@@ -415,9 +438,9 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
               <span><b>B</b> {{ formatMoney(bgGold) }}</span></label>
           </template>
           <h3>Goes into the inventory</h3>
-          <p class="small"><template v-for="(l, i) in taken.items" :key="i"><template v-if="i">, </template>{{ l.amount ? l.amount + ' × ' : '' }}<EntryLink v-if="itemNamed(l.name)" :id="itemNamed(l.name)!.id" /><span v-else class="muted">{{ l.name }}</span></template>
-            <template v-if="taken.money">; {{ formatMoney(taken.money) }}</template></p>
-          <p class="muted small">Linked items are the world's; the rest go in by name.</p>
+          <p class="small"><template v-for="(l, i) in taken.items.filter(x => x.item ?? itemNamed(x.name))" :key="i"><template v-if="i">, </template>{{ l.amount ? l.amount + ' × ' : '' }}<EntryLink :id="(l.item ?? itemNamed(l.name)!.id)" /></template>
+            <template v-if="taken.money">{{ taken.items.some(x => x.item ?? itemNamed(x.name)) ? '; ' : '' }}{{ formatMoney(taken.money) }}</template></p>
+          <p v-if="missing.length" class="small warn-text">Not in this world, so left out: {{ missing.join(', ') }}. Your DM can add them to the {{ classPage?.name ?? 'class' }}'s starting equipment, or you can add something else on the sheet.</p>
         </template>
 
         <!-- spells -->

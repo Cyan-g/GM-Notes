@@ -1,5 +1,7 @@
 # Campaign data: protected by the app's backups (💾 Data & backups), not by git
 data/
+# the old folder after the world moved into the app's own folder
+data (moved to GM Notes*/
 
 # Installed and built by npm; recreate with `npm install` / `npm run build`
 app/node_modules/

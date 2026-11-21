@@ -4,7 +4,7 @@
 import AppIcon from './AppIcon.vue'
 import LiveJoin from './LiveJoin.vue'
 import { onMounted, ref } from 'vue'
-import { forgetWorld, joinLive, joinWorld, loadWorlds, newWorld, openWorldFolder, switchWorld, worlds } from '../worlds'
+import { forgetWorld, joinLive, joinWorld, loadWorlds, moveWorld, newWorld, openWorldFolder, switchWorld, worlds } from '../worlds'
 import { desktop } from '../storage/desktop'
 
 const emit = defineEmits<{ done: [] }>()
@@ -17,6 +17,12 @@ const found = ref<{ folder: string; worlds: { worldId: string; title: string; pu
 async function scan() { found.value = await desktop!.shared.scan() }
 /** Join: a DM's live session on this network. */
 const joiningLive = ref(false)
+const busy = ref('')
+async function moving(w: import('../worlds').KnownWorld) {
+  if (!confirm(`Move “${w.title}” into GM Notes' own folder?\n\nIt's copied there with its pictures, files and backups, then the app uses the copy. The old folder is renamed “… (moved to GM Notes)” and kept, so you can delete it yourself once all is well.`)) return
+  busy.value = `Moving ${w.title}…`
+  try { await moveWorld(w) } catch (e) { alert((e as Error).message) } finally { busy.value = '' }
+}
 async function create() {
   if (!name.value.trim()) return
   await newWorld(name.value)
@@ -32,15 +38,17 @@ async function create() {
           <span class="world-name">{{ w.current ? '● ' : '' }}{{ w.title }}</span>
           <span class="hint">{{ w.current ? 'open' : !w.exists ? 'folder missing' : when(w.opened) }}</span>
         </button>
+        <button v-if="w.exists && !w.inApp" class="link-btn small" :title="`${w.dir}: move it into GM Notes' own folder, where new worlds go (the old folder is renamed, not deleted)`" @click="moving(w)">Move into GM Notes' folder</button>
         <button v-if="!w.current" class="link-btn x" :title="`Take ${w.title} off the list (its folder stays)`" @click="forgetWorld(w)">✕</button>
       </li>
     </ul>
     <p v-else-if="worlds.loaded" class="muted small">No worlds yet.</p>
+    <p v-if="busy" class="muted small">{{ busy }} (a big world takes a moment)</p>
     <form v-if="naming" class="world-new" @submit.prevent="create">
       <input v-model="name" placeholder="Name of the new world" aria-label="Name of the new world" />
       <button type="submit" class="primary" :disabled="!name.trim()">Create</button>
       <button type="button" @click="naming = false">Cancel</button>
-      <p class="muted small">{{ worlds.worldsDir ? `It gets its own folder in ${worlds.worldsDir}.` : 'First, choose the folder your worlds go in; each new world gets its own folder in it.' }}</p>
+      <p class="muted small">It's kept in GM Notes' own folder{{ worlds.worldsDir ? ` (${worlds.worldsDir})` : '' }}; ⚙ → Data shows it.</p>
     </form>
     <div v-else-if="joiningLive" class="world-join">
       <p class="small"><b>Join a live session</b>: your DM hosts it from their GM Notes on this network.</p>

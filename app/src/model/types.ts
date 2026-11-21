@@ -170,6 +170,8 @@ export interface ClassBasics {
   prepared?: number[]
   /** Spellbook spells at level 1 (two more each level after). */
   spellbook?: number
+  /** Starting equipment: the options (A, B…), each items (the world's, or by name) and coins. */
+  equipment?: Equipment[]
   featLevels?: number[]
   subclassLevel?: number
   multiclass?: { primary: ('str' | 'dex' | 'con' | 'int' | 'wis' | 'cha')[]; any?: boolean; armor: string[]; weapons: string[]; tools: string[]; skills?: number; instruments?: number }

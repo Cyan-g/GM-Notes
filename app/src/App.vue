@@ -277,9 +277,8 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
           <h4 class="start-sub">Your worlds</h4>
           <WorldList />
         </template>
-        <p v-if="desktop" class="muted small">Or choose a <b>data</b> folder (or the folder that holds it).</p>
+        <p v-if="desktop" class="muted small">New and joined worlds are kept in GM Notes' own folder. Have a world in a folder already? <button class="link-btn" @click="choose">Open its folder…</button></p>
         <p v-else>The dev server couldn't open the data.</p>
-        <button v-if="desktop" class="primary" @click="choose">Choose folder…</button>
         <p v-if="startError" class="error">{{ startError }}</p>
       </template>
     </div>

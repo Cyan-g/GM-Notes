@@ -4,7 +4,7 @@ import { reactive } from 'vue'
 import { desktop } from './storage/desktop'
 import { save, state } from './store'
 
-export interface KnownWorld { id: string; title: string; dir: string; opened: string; exists: boolean; current: boolean }
+export interface KnownWorld { id: string; title: string; dir: string; opened: string; exists: boolean; current: boolean; inApp?: boolean }
 
 export const worlds = reactive({ list: [] as KnownWorld[], worldsDir: null as string | null, loaded: false })
 
@@ -43,6 +43,14 @@ export async function newWorld(name: string) {
   if (!dir) return
   try { sessionStorage.setItem(PENDING_NEW_WORLD, name.trim() || 'New world') } catch { /* the start screen asks for the name instead */ }
   location.reload()
+}
+
+/** Move a world into the app's own folder (the open one is saved first; the app starts again with it). */
+export async function moveWorld(w: KnownWorld) {
+  if (w.current) await leave()
+  await desktop!.worlds.move(w.dir)
+  if (w.current) location.reload()
+  else await loadWorlds()
 }
 
 export async function forgetWorld(w: KnownWorld) {

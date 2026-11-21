@@ -107,7 +107,8 @@ none), and a Tool item *is* the tool; a recipe's *Crafted with* names it.
   pictures named by their content so only changes sync. Joined worlds check on start and every 5 minutes.
 - **Joining:** the world list has *Join a live session…* and *Join a shared world…*; a world can use both.
 - **What goes out:** entries marked *Known to players* without GM-only text, the lists, the calendar and today's
-  date; never characters, campaigns, sessions, encounters or creatures. Nothing comes back. Shared entries are
+  date; never characters, campaigns, sessions or encounters (creatures go when known to players, e.g. companions).
+  Nothing comes back. Shared entries are
   read-only for players, who keep their own notes on them; their own entries are never touched by an update.
 - **Files:** ⇩ *Export* sends one entry with what it points at, ⚙ → *Export the world…* everything; ⚙ → *Import from a
   file…* shows what's new and updated before bringing it in. GM-only text and hidden entries are opt-in or opt-out.

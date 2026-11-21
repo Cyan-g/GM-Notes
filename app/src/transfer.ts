@@ -16,7 +16,8 @@ import { progress, stage, tick } from './progress'
 import { parseClassText } from './model/classes'
 // - Choices (kind, rarity, school…) travel with their labels: one this world doesn't have is added to its list;
 //   from a world's file, a renamed option is renamed here too.
-import type { Database, Entry, EntryType, Id, Relation } from './model/types'
+import type { Database, Entry, EntryType, Id, Relation, Statblock } from './model/types'
+import { statsOf } from './encounter'
 import { db, get, listOptions, setList, state, touch } from './store'
 import { LIST_BY_KEY, LISTS, listKeyOf, type ListOption } from './model/lists'
 import { addRelation, newId } from './edit'
@@ -27,8 +28,8 @@ import { checkEntry, checkField } from './validate'
 export const FORMAT = 'dndesk-export'
 const VERSION = 2
 
-/** Never shared: what the DM runs the game with. */
-export const NEVER: readonly EntryType[] = ['campaign', 'session', 'encounter', 'creature']
+/** Never shared: what the DM runs the game with. Creatures known to players are shared (a player's companions). */
+export const NEVER: readonly EntryType[] = ['campaign', 'session', 'encounter']
 export const canExport = (e: Entry) => !NEVER.includes(e.type)
 
 /** The parts of the world's settings that travel with the world. */
@@ -147,6 +148,9 @@ export function outgoingEntries(plan: ExportPlan): { entries: Entry[]; names: Re
     if (!plan.opts.dmText && hasSecrets(c.body)) c.body = stripSecrets(c.body)
     // an NPC's secret is DM-only text too
     if (!plan.opts.dmText) delete (c.fields as Record<string, unknown>).secret
+    // stats based on a creature that doesn't go along: its stats written out, so the copy is complete
+    const sb = c.fields.statblock as Statblock | undefined
+    if (sb?.base && !ids.has(sb.base)) { const full = { ...(statsOf(e) ?? sb) }; delete full.base; c.fields.statblock = full }
     mapRefs(c, id => { if (!keep(id)) return null; if (!ids.has(id)) names[id] = word(id); return id }, word)
     return c
   })

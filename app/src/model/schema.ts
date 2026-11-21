@@ -157,6 +157,8 @@ export const SCHEMA = [
       { key: 'skillProfs', label: 'Skills', kind: 'skills' },
       // One Tool item is granted; with several, the player picks one of them (one kind of gaming set).
       { key: 'toolProfs', label: 'Tool', kind: 'refs', to: ['item'], pick: { field: 'kind', is: ['Tool'] } },
+      // With several tools: it gives all of them (instead of the player picking one).
+      { key: 'toolsAll', label: 'All tools', kind: 'bool' },
       { key: 'equipment', label: 'Equipment', kind: 'equipment' },
       // Anything else it gives, as species traits: features, effects, more proficiencies, spells, uses, choices.
       { key: 'speciesTraits', label: 'Features', kind: 'speciesTraits' },

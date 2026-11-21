@@ -10,7 +10,7 @@ import { ABILITY_KEYS, bonusApplied, bonusOpen, type BonusChoice } from './abili
 import { EPIC_BOON_LEVEL, hitDieOf, rulesOf, subclassLevelOf, type Kit, type KitLine } from './classRules'
 import { ruleSlots } from './slots'
 import { blankSheet, mod } from './sheet'
-import { choiceOpen, classSpellsFrom, isClassOrigin, own, speciesTraits } from './species'
+import { choiceOpen, classSpellsFrom, isClassOrigin, own, speciesTraits, PROFS_TRAIT } from './species'
 import { entries, get } from './store'
 import { rule } from './rules'
 import { changed, createEntry } from './edit'
@@ -175,7 +175,9 @@ export function itemNamed(name: string): Entry | undefined {
 export function backgroundKit(d: Draft): Kit | undefined {
   const eq = get(d.background)?.fields.equipment
   if (!eq) return undefined
-  return { items: (eq.items ?? []).map(l => ({ name: (l.item ? get(l.item)?.name : l.name) ?? l.name ?? '?', amount: l.amount })), money: eq.money ?? 0 }
+  // a line for "the one chosen above" (Soldier: a gaming set) is the tool the player picked for the background
+  const tool = get(d.species.picks?.[`${d.background}.${PROFS_TRAIT}`]?.[0])?.name
+  return { items: (eq.items ?? []).map(l => ({ name: (!l.item && tool && /chosen above|of your choice/i.test(l.name ?? '') ? tool : (l.item ? get(l.item)?.name : l.name)) ?? l.name ?? '?', amount: l.amount })), money: eq.money ?? 0 }
 }
 export const backgroundGold = (d: Draft): Copper | undefined => get(d.background)?.fields.equipment?.instead
 /** The kits taken: the class's chosen option and the background's items or gold. */

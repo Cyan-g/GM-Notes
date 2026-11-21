@@ -16,6 +16,7 @@ import InventoryTab from './InventoryTab.vue'
 import ClassOverview from '../components/ClassOverview.vue'
 import SubclassInfo from '../components/SubclassInfo.vue'
 import RaceGlance from '../components/RaceGlance.vue'
+import BackgroundGlance from '../components/BackgroundGlance.vue'
 import CompanionsTab from './CompanionsTab.vue'
 import CraftingView from './CraftingView.vue'
 import FamilyTree from '../components/FamilyTree.vue'
@@ -75,7 +76,7 @@ const groups = computed(() => {
   const big = ['statblock', 'recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes', 'classBasics', 'speciesTraits']
   const out = new Map<string, { def: FieldDef; value: unknown }[]>()
   for (const f of def.value.fields) {
-    if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'creature' && f.key === 'creatureType') || (x.type === 'session' && ['campaign', 'number', 'date', 'playedOn', 'players'].includes(f.key)) || f.key === 'parent' || (x.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || (x.type === 'race' && ['size', 'otherSizes', 'creatureType', 'speeds', 'abilityIncrease', 'languages'].includes(f.key)) || f.key === 'map' || f.key === 'pins' || f.kind === 'mapData' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
+    if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'creature' && f.key === 'creatureType') || (x.type === 'session' && ['campaign', 'number', 'date', 'playedOn', 'players'].includes(f.key)) || f.key === 'parent' || (x.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || (x.type === 'race' && ['size', 'otherSizes', 'creatureType', 'speeds', 'abilityIncrease', 'languages'].includes(f.key)) || (x.type === 'background' && ['abilityIncrease', 'originFeat', 'originFeatNote', 'skillProfs', 'toolProfs', 'toolsAll', 'equipment'].includes(f.key)) || f.key === 'map' || f.key === 'pins' || f.kind === 'mapData' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
     const g = f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
     out.get(g)!.push({ def: f, value: byKey(x.fields)[f.key] })
@@ -349,6 +350,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         <FeatCard v-if="e.type === 'feat'" :e="e" source />
         <SubclassInfo v-if="e.type === 'subclass'" :e="e" />
         <RaceGlance v-if="e.type === 'race'" :e="e" />
+        <BackgroundGlance v-if="e.type === 'background'" :e="e" />
         <template v-for="(p, i) in e.type === 'pc' ? [] : bodyParts.parts" :key="i">
           <MarkdownView v-if="p.md" :source="p.md" :tasks="canTick" @update:source="v => setPart(p, v)" />
           <FieldValue v-else-if="p.insert === 'ranks' && ranksDef" :def="ranksDef" :value="e.fields.ranks" :entry="e" />

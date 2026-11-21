@@ -7,6 +7,7 @@ import type { EntryType, Statblock } from '../model/types'
 import { TYPES, byKey, type FieldDef } from '../model/schema'
 import { backlinks, fieldLabel, get, relationsOf, state } from '../store'
 import RaceBonusEdit from '../components/edit/RaceBonusEdit.vue'
+import BackgroundEdit from '../components/edit/BackgroundEdit.vue'
 import { changed, deleteEntry } from '../edit'
 import { go, hrefEntry, hrefList } from '../router'
 import FieldInput from '../components/edit/FieldInput.vue'
@@ -33,6 +34,8 @@ function inheritedList(f: FieldDef): string {
   return !mine?.length && theirs?.length ? `From ${p.name}: ${theirs.map(v => fieldLabel(f, v)).join(', ')}` : ''
 }
 const abilityDef = computed(() => def.value?.fields.find(f => f.key === 'abilityIncrease'))
+/** A background's fields edited in its main column (BackgroundEdit). */
+const BG_MAIN = ['abilityIncrease', 'originFeat', 'originFeatNote', 'skillProfs', 'toolProfs', 'toolsAll', 'equipment']
 
 const shown = (f: FieldDef) => !f.when || f.when.is.includes(String(byKey(e.value!.fields)[f.when.field] ?? ''))
 // A character's sheet is the main column of its Edit page.
@@ -42,7 +45,7 @@ const groups = computed(() => {
   for (const f of def.value?.fields ?? []) {
     // a subclass's class and tagline are at the top of its main column (SubclassInfo)
     // a race's ability score increase has its own section in the main column
-    if (BIG.includes(f.kind) || (e.value?.type === 'race' && f.key === 'abilityIncrease') || (e.value?.type === 'pc' && f.key === 'level') || (e.value?.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || !shown(f) || f.key === 'pins' || f.key === 'map' || f.kind === 'mapData') continue
+    if (BIG.includes(f.kind) || (e.value?.type === 'race' && f.key === 'abilityIncrease') || (e.value?.type === 'background' && BG_MAIN.includes(f.key)) || (e.value?.type === 'pc' && f.key === 'level') || (e.value?.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || !shown(f) || f.key === 'pins' || f.key === 'map' || f.kind === 'mapData') continue
     const g = f.kind === 'statblock' ? 'Stats' : f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
     out.get(g)!.push(f)
@@ -161,6 +164,7 @@ function remove() {
         <section v-else class="edit-text">
           <SubclassInfo v-if="e.type === 'subclass'" :e="e" edit />
           <RaceBonusEdit v-if="e.type === 'race' && abilityDef" :e="e" :def="abilityDef" />
+          <BackgroundEdit v-if="e.type === 'background'" :e="e" />
           <h4 class="field-label">Text</h4>
           <BodyEditor :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
         </section>

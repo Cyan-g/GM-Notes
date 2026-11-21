@@ -35,9 +35,11 @@ export function traitsOf(e: Entry | undefined): Trait[] {
   if (e?.type !== 'background') return ownTraits(e)
   const skills = (e.fields.skillProfs ?? []).filter(Boolean), tools = (e.fields.toolProfs ?? []).filter(Boolean)
   const t: Trait = { id: PROFS_TRAIT, name: 'Proficiencies' }
-  const grants: TraitGrant[] = [...skills.map(id => ({ kind: 'skill' as const, id })), ...(tools.length === 1 ? [{ kind: 'tool' as const, id: tools[0] }] : [])]
+  // several tools: the player picks one (one kind of gaming set), unless the background gives them all
+  const all = tools.length === 1 || !!e.fields.toolsAll
+  const grants: TraitGrant[] = [...skills.map(id => ({ kind: 'skill' as const, id })), ...(all ? tools.map(id => ({ kind: 'tool' as const, id })) : [])]
   if (grants.length) t.grants = grants
-  if (tools.length > 1) t.choice = { kind: 'tool', count: 1, among: tools }
+  if (!all) t.choice = { kind: 'tool', count: 1, among: tools }
   return grants.length || t.choice ? [t, ...ownTraits(e)] : ownTraits(e)
 }
 
@@ -96,13 +98,15 @@ export interface ActiveTrait {
 export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): ActiveTrait[] {
   if (!pc) return []
   const sheet = s ?? (pc.fields.sheet as CharacterSheet | undefined), st = stateOf(sheet)
-  const lin = lineage(pc), subrace = lin.length > 1 ? lin.at(-1)! : undefined
+  const lin = lineage(pc), subrace = lin.length > 1 ? lin.at(-1)! : undefined, bg = backgroundOf(pc)
   // a subrace's trait can take the place of its main race's (Wood Elf's speed): that one is left out
   const replaced = new Set(lin.flatMap(r => traitsOf(r).map(t => t.replaces).filter((x): x is string => !!x)))
   const build = ({ from: race, level }: { from: Entry; level: number }) => traitsOf(race).filter(t => !(lin.includes(race) && replaced.has(t.id))).flatMap(trait => {
     const key = traitKey(race, trait)
     // a lineage the subrace stands for (a High Elf has the High Elf lineage) is picked unless the player picked another
-    const auto = subrace && race !== subrace && lin.includes(race) && trait.choice?.kind === 'option' ? subraceOption(trait.choice, subrace.name, race.name) : undefined
+    const auto = subrace && race !== subrace && lin.includes(race) && trait.choice?.kind === 'option' ? subraceOption(trait.choice, subrace.name, race.name)
+      : race.type === 'feat' && trait.choice?.kind === 'option' && bg?.fields.originFeat === race.id && bg.fields.originFeatNote
+        ? trait.choice.options?.find(o => o.name.toLowerCase() === String(bg.fields.originFeatNote).trim().toLowerCase()) : undefined
     const picks = st.picks?.[key]?.length ? st.picks[key] : auto ? [auto.id] : []
     const options = trait.choice?.kind === 'option'
       ? picks.map(id => trait.choice!.options?.find(o => o.id === id)).filter((o): o is TraitOption => !!o) : []

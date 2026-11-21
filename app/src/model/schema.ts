@@ -160,6 +160,8 @@ export const SCHEMA = [
     type: 'race', label: 'Race', plural: 'Races', icon: '🧬', fields: [
       // A subrace is a race of its own that names its main race here (Hill Dwarf: Subrace of Dwarf).
       { key: 'parent', label: 'Subrace of', kind: 'ref', to: ['race'] },
+      // Left out of the character wizard (a monster race, a lost people); a main race takes its subraces with it.
+      { key: 'notPlayable', label: 'Not playable', kind: 'bool' },
       { key: 'size', label: 'Size', kind: 'select', options: SIZES, list: 'size' },
       // Sizes the player may pick instead (a "Medium or Small" species); the pick is on the character's sheet.
       { key: 'otherSizes', label: 'Or size', kind: 'list', options: SIZES, list: 'size' },

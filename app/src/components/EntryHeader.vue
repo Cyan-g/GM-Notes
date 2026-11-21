@@ -16,6 +16,7 @@ import { canExport } from '../transfer'
 import { describe } from '../describe'
 import { statusText } from '../npc'
 import { factsOf } from '../entryFacts'
+import { isPlayable } from '../species'
 import AppIcon from './AppIcon.vue'
 import EntryIcon from './EntryIcon.vue'
 import EntryLink from './EntryLink.vue'
@@ -64,6 +65,7 @@ const facts = computed(() => factsOf(props.e))
                 @click="setCurrent(currentPc?.id === e.id ? undefined : e.id)"><AppIcon ui="star" :class="{ off: !(currentPc?.id === e.id) }" /> {{ currentPc?.id === e.id ? 'Current character' : 'Make current' }}</button>
         <span v-if="status" class="badge npc-status-badge" :class="'st-' + String(e.fields.status).toLowerCase()">{{ status }}</span>
         <AttitudeBadge :e="e" title="How they stand with the party" />
+        <span v-if="e.type === 'race' && !isPlayable(e)" class="badge" :title="e.fields.notPlayable ? 'Left out of the character wizard' : 'Its main race is marked not playable, so the character wizard leaves it out'">not playable</span>
         <DmOnlyBadge v-if="e.visibility === 'secret' && !playerMode && e.type !== 'pc'" title="Players don't know this entry yet" />
         <span v-if="e.aliases.length" class="aliases">also: {{ e.aliases.join(' · ') }}</span>
       </div>

@@ -31,6 +31,8 @@ export function raceChain(id: Id | undefined, anyType = false): Entry[] {
   for (let r = get(id); r && (anyType || r.type === 'race') && !out.includes(r); r = get(r.fields.parent as Id | undefined)) out.push(r)
   return out
 }
+/** Whether a character may be of this race: neither it nor a race it's a subrace of is marked not playable. */
+export const isPlayable = (race: Entry) => !raceChain(race.id).some(r => r.fields.notPlayable)
 /** The character's race and the races it's a subrace of, the main race first. */
 export const lineage = (pc: Entry | undefined): Entry[] => raceChain(pc?.fields.race as Id | undefined).reverse()
 

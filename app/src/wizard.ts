@@ -11,7 +11,7 @@ import { ABILITY_KEYS, dieSize, mod, spellLevel, type Ability } from './model/dn
 import { EPIC_BOON_LEVEL, basicsOf, hitDieOf, rulesOf, subclassLevelOf, type Kit, type KitLine } from './classRules'
 import { ruleSlots } from './slots'
 import { blankSheet, emptyBook, own } from './sheetData'
-import { choiceOpen, classSpellsFrom, isClassOrigin, raceChain, speciesGrants, speciesTraits } from './species'
+import { choiceOpen, classSpellsFrom, isClassOrigin, isPlayable, raceChain, speciesGrants, speciesTraits } from './species'
 import { PROFS_TRAIT } from './model/traits'
 import { entries, get } from './store'
 import { rule } from './rules'
@@ -271,10 +271,10 @@ export function steps(d: Draft): Step[] {
 
 export const subclassesOf = (cls: string) => entries.value.filter(e => e.type === 'subclass' && e.fields.class === cls).sort((a, b) => a.name.localeCompare(b.name))
 export const backgrounds = () => entries.value.filter(e => e.type === 'background').sort((a, b) => a.name.localeCompare(b.name))
-/** The main races (no "Subrace of"), by name. */
-export const species = () => entries.value.filter(e => e.type === 'race' && !get(e.fields.parent as Id | undefined)).sort((a, b) => a.name.localeCompare(b.name))
-/** A race's subraces, by name. */
-export const subracesOf = (id: Id | undefined) => (id ? entries.value.filter(e => e.type === 'race' && e.fields.parent === id).sort((a, b) => a.name.localeCompare(b.name)) : [])
+/** The playable main races (no "Subrace of"), by name. */
+export const species = () => entries.value.filter(e => e.type === 'race' && !get(e.fields.parent as Id | undefined) && isPlayable(e)).sort((a, b) => a.name.localeCompare(b.name))
+/** A race's playable subraces, by name. */
+export const subracesOf = (id: Id | undefined) => (id ? entries.value.filter(e => e.type === 'race' && e.fields.parent === id && isPlayable(e)).sort((a, b) => a.name.localeCompare(b.name)) : [])
 /** The main race of a race (itself if it has none). */
 export const mainRace = (id: Id | undefined): Entry | undefined => raceChain(id, true).at(-1)
 

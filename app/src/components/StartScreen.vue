@@ -9,7 +9,7 @@ import { FORMAT as EXPORT_FORMAT, applyImport, readImport } from '../transfer'
 import { DesktopStorage, desktop, folderName } from '../storage/desktop'
 import { HttpStorage } from '../storage/storage'
 import { DesktopBackend, DevBackend } from '../storage/backend'
-import { startFollowing, syncStatus } from '../sync'
+import { startSharing, syncStatus } from '../sync'
 import { PENDING_JOIN, PENDING_NEW_WORLD } from '../worlds'
 import WorldList from './WorldList.vue'
 
@@ -77,8 +77,8 @@ onMounted(async () => {
   } catch { /* asked on the start screen */ }
   // a joined world takes the 5e start in player mode; a new one asks for its start on the start screen
   if (pending && phase.value === 'new-world') { worldName.value = pending; if (joining) await startWorld() }
-  // A world that follows a shared one: up to date on start, then every few minutes.
-  else if (phase.value === 'ready') await startFollowing()
+  // A world that follows a shared one: up to date on start, then every few minutes; a DM's: hosting, if they asked.
+  else if (phase.value === 'ready') await startSharing()
   if (joining && syncStatus.note) syncStatus.note = `Joined. ${syncStatus.note}`
 })
 
@@ -100,7 +100,7 @@ async function startWorld() {
     } else await createWorld(state.backend!, state.storage!, worldName.value, worldStart.value, worldMode.value)
     phase.value = 'ready'
     // A joined world gets its shared world right away.
-    await startFollowing()
+    await startSharing()
   } catch (e) { startError.value = (e as Error).message }
 }
 

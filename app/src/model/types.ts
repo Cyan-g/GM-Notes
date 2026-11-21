@@ -566,6 +566,8 @@ export interface Database {
     lists?: Record<string, import('./lists').ListOption[]>
     /** When this world was last published for players (see sync.ts). */
     lastPublished?: string
+    /** The DM's sharing choices (sync.ts): host the live session whenever the world opens, send changes as they're made. */
+    sharing?: { hostOnOpen?: boolean; autoSend?: boolean }
     /** Paces and vehicles added for travel on maps (travel.ts); the 5e ones are built in. */
     travelModes?: import('../travel').TravelMode[]
     /** Colour theme and heading font (see theme.ts). */

@@ -77,7 +77,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid color-mix(in srgb
 :root { --bar-h: 52px; }
 .shell { min-height: 100vh; }
 .topbar {
-  position: sticky; top: 0; z-index: 20; height: var(--bar-h);
+  /* above the banners under it (save-banner), so its menus and panels open over them */
+  position: sticky; top: 0; z-index: 26; height: var(--bar-h);
   display: flex; align-items: center; gap: 1rem; padding: 0 1.25rem;
   background: linear-gradient(var(--panel), var(--panel-2));
   border-bottom: 1px solid var(--line);
@@ -1624,6 +1625,14 @@ svg.gi.off { opacity: .35; }
 .live-code-input { width: 8em; text-transform: uppercase; letter-spacing: .08em; }
 .live-tag { border: 1px solid color-mix(in srgb, #3aa86b 50%, var(--line)); border-radius: 999px; padding: .15rem .55rem; background: transparent; white-space: nowrap; }
 button.live-tag { cursor: pointer; }
+/* not hosting or not connected: a quiet tag; something wrong: the accent */
+.live-tag.off { color: var(--ink-2); border-color: var(--line); }
+.live-tag.warn { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); }
+.session-box { position: relative; }
+.session-panel { width: 340px; }
+.live-switch { display: flex; gap: .5rem; align-items: baseline; margin: .35rem 0; }
+.live-switch input { width: auto; flex: none; margin: 0; }
+.live-switch > span { flex: 1; }
 
 /* a number that just changed (flash.ts): its background and text tinted for a moment, green when it went up, red when
    down; no ring or glow around it */

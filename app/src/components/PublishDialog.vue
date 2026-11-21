@@ -1,12 +1,13 @@
 <script setup lang="ts">
 // Share with players: host a live session on the local network and/or publish to a shared folder (Google Drive),
-// after showing what would change. "Send now" writes to both and tells the players connected live.
+// after showing what would change. "Send now" writes to both and tells the players connected live. The DM can also
+// host whenever the world opens and have changes sent to the session as they're made (sync.ts).
 import TypeIcon from './TypeIcon.vue'
 import { computed, ref, watch } from 'vue'
 import { SCHEMA } from '../model/schema'
 import { desktop } from '../storage/desktop'
 import { db } from '../store'
-import { live, planPublish, publish, type PublishPlan, type PublishTarget } from '../sync'
+import { autoSend, hasChanges, hostErrorText, live, planPublish, publish, setSharing, type PublishPlan, type PublishTarget } from '../sync'
 
 const open = defineModel<boolean>({ required: true })
 const folder = ref<string | null>(null)
@@ -28,7 +29,7 @@ async function choose() { if (await desktop!.publish.pick()) await prepare() }
 
 async function startHosting() {
   hostError.value = ''
-  try { live.host = await desktop!.live.start(db().meta.title) } catch (e) { hostError.value = (e as Error).message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') }
+  try { live.host = await desktop!.live.start(db().meta.title); live.hostError = '' } catch (e) { hostError.value = hostErrorText(e) }
   await prepare()
 }
 async function stopHosting() { await desktop!.live.stop(); live.host = { hosting: false }; await prepare() }
@@ -44,7 +45,8 @@ const byType = computed(() => {
   return SCHEMA.filter(s => m.has(s.type)).map(s => ({ s, n: m.get(s.type)! }))
 })
 const when = (iso?: string | null) => (iso ? new Date(iso).toLocaleString() : 'never')
-const nothingNew = computed(() => !!plan.value?.previous && !plan.value.added.length && !plan.value.changed.length && !plan.value.removed.length && !plan.value.rulesChanged)
+const nothingNew = computed(() => !!plan.value?.previous && !hasChanges(plan.value))
+const sharing = computed(() => db().meta.sharing ?? {})
 /** A session that hasn't had anything sent yet still needs a first send, even when the folder is up to date. */
 const liveBehind = computed(() => !!host.value && host.value.published !== plan.value?.previous)
 const targets = computed<PublishTarget[]>(() => [...(hosting.value ? ['live' as const] : []), ...(folder.value ? ['publish' as const] : [])])
@@ -87,6 +89,10 @@ async function go() {
           <div class="actions"><button type="button" class="primary" @click="startHosting">Start hosting</button></div>
           <p class="muted small">The first time, Windows asks whether GM Notes may accept connections: allow it on private networks.</p>
         </template>
+        <label class="small live-switch"><input type="checkbox" :checked="!!sharing.autoSend" @change="setSharing({ autoSend: ($event.target as HTMLInputElement).checked })" />
+          <span><b>Send changes as I make them</b>: while hosting, what players may see goes out a few seconds after you change it.<template v-if="sharing.autoSend && autoSend.error"> <span class="error">Last try: {{ autoSend.error }}</span></template></span></label>
+        <label class="small live-switch"><input type="checkbox" :checked="!!sharing.hostOnOpen" @change="setSharing({ hostOnOpen: ($event.target as HTMLInputElement).checked })" />
+          <span><b>Host every time this world opens</b>, so players reconnect on their own.</span></label>
       </section>
 
       <p class="small"><b>Shared folder:</b> <template v-if="folder">{{ folder }} <button class="link-btn small" @click="choose">Change…</button></template>
@@ -95,7 +101,7 @@ async function go() {
 
       <p v-if="busy" class="muted">{{ busy }}</p>
       <template v-else-if="plan">
-        <p class="muted small">Shared: every entry marked <b>Known to players</b>, without DM-only text, with the dropdown lists, the calendar, today's date and the ruleset. Never: characters, campaigns, sessions, encounters, or anything <b>DM only</b> (creatures go when known to players, e.g. companions).</p>
+        <p class="muted small">Shared: every entry marked <b>Known to players</b>, without DM-only text, with the dropdown lists, the calendar, today's date, the ruleset and the travel paces. Never: characters, campaigns, sessions, encounters, or anything <b>DM only</b> (creatures go when known to players, e.g. companions).</p>
         <p class="small">{{ plan.pub.entries.length }} entries · {{ plan.pub.relations.length }} connections · {{ plan.blobs.size }} pictures and files</p>
         <p class="publish-types small"><span v-for="t in byType" :key="t.s.type"><TypeIcon :type="t.s.type" /> {{ t.n }} {{ t.n === 1 ? t.s.label : t.s.plural }}</span></p>
         <template v-if="plan.previous">
@@ -108,7 +114,7 @@ async function go() {
               <p class="transfer-list"><span v-for="e in plan.changed" :key="e.id"><TypeIcon :type="e.type" /> {{ e.name }}</span></p></details>
             <details v-if="plan.removed.length" class="small" open><summary>{{ plan.removed.length }} no longer shared (players lose them)</summary>
               <p class="transfer-list"><span v-for="e in plan.removed" :key="e.id">{{ e.name }}</span></p></details>
-            <p v-if="plan.rulesChanged" class="small">The ruleset changed.</p>
+            <p v-if="plan.worldChanged.length" class="small">Also changed: {{ plan.worldChanged.join(', ') }}.</p>
           </template>
         </template>
         <p v-else class="small">This is the first time this world is shared. Check that your secrets are marked <b>DM only</b> first.</p>

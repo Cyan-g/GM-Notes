@@ -6,14 +6,16 @@
 //   calendar, today's date and the ruleset, and leaves everything of the player's own alone (characters, notes, sessions…).
 // - Live sessions (electron/live.cjs) carry the same publish over the local network: the DM hosts, "Send now" writes
 //   the publish for the session (and the shared folder, if the world has one) and tells the connected players, whose
-//   app reads it from the DM instead of the folder while connected.
-import { reactive } from 'vue'
-import type { Entry, Follow, Id, Relation } from './model/types'
+//   app reads it from the DM instead of the folder while connected. The DM can host whenever the world opens, and
+//   have changes sent on their own a few seconds after they're made.
+import { reactive, watch } from 'vue'
+import type { Database, Entry, Follow, Id, Relation } from './model/types'
 import { LISTS, type ListOption } from './model/lists'
 import { mapRefs } from './model/refs'
 import { backupNow, db, listOptions, save, state, touch } from './store'
 import { DATA_VERSION, upgradeEntries } from './migrations'
 import type { RulesMeta } from './rules'
+import type { TravelMode } from './travel'
 import { desktop, type HostStatus, type PlayerStatus } from './storage/desktop'
 import { clone, dataPaths, outgoingEntries, planExport, stable } from './transfer'
 
@@ -35,7 +37,7 @@ export interface Published {
   /** Names of entries referenced but not shared. */
   names: Record<Id, string>
   /** The ruleset is null when the DM keeps the standard rules (missing in publishes from before it was shared). */
-  world: { calendar: unknown; eventCategories: unknown; today: unknown; rules?: RulesMeta | null }
+  world: { calendar: unknown; eventCategories: unknown; today: unknown; rules?: RulesMeta | null; travelModes?: TravelMode[] | null }
   /** Data path → file name in files/. */
   files: Record<string, string>
 }
@@ -47,6 +49,22 @@ async function hashOf(blob: Blob) {
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32)
 }
 const content = (e: Entry) => stable({ ...e, updated: undefined, created: undefined })
+/**
+ * The content names of pictures and files already worked out, by path and size: the app never rewrites a picture in
+ * place (a new one gets a new name), so a send only reads the files again, without hashing each one.
+ */
+const hashes = new Map<string, string>()
+async function fileName(p: string, b: Blob) {
+  const key = `${p}|${b.size}`
+  let name = hashes.get(key)
+  if (!name) { name = (await hashOf(b)) + extOf(p); hashes.set(key, name) }
+  return name
+}
+/** The parts of the world besides entries a publish carries, with how a change to each is named. */
+const WORLD_PARTS = [
+  ['today', "today's date"], ['calendar', 'the calendar'], ['eventCategories', 'the event categories'],
+  ['rules', 'the ruleset'], ['travelModes', 'the travel paces'],
+] as const
 
 // ---------- the DM's side ----------
 
@@ -56,8 +74,8 @@ export interface PublishPlan {
   added: Entry[]
   changed: Entry[]
   removed: { id: Id; name: string }[]
-  /** Whether the ruleset differs from the last publish's. */
-  rulesChanged: boolean
+  /** What else differs from the last publish ("today's date", "the ruleset"). */
+  worldChanged: string[]
   /** The last publish, if any. */
   previous?: string
 }
@@ -79,7 +97,7 @@ export async function planPublish(since: PublishTarget = 'publish'): Promise<Pub
   for (const p of new Set(entries.flatMap(dataPaths))) {
     const b = await state.storage!.readBlob(p)
     if (!b) continue
-    const name = (await hashOf(b)) + extOf(p)
+    const name = await fileName(p, b)
     files[p] = name
     blobs.set(name, b)
   }
@@ -89,7 +107,7 @@ export async function planPublish(since: PublishTarget = 'publish'): Promise<Pub
     published: new Date().toISOString(),
     entries, relations: plan.relations.filter(r => ids.has(r.a) && ids.has(r.b)).map(clone),
     options: Object.fromEntries(LISTS.map(l => [l.key, listOptions(l.key)])),
-    names, world: clone({ calendar: m.calendar, eventCategories: m.eventCategories, today: m.today, rules: m.rules ?? null }), files,
+    names, world: clone({ calendar: m.calendar, eventCategories: m.eventCategories, today: m.today, rules: m.rules ?? null, travelModes: m.travelModes ?? null }), files,
   }
   let last: Published | null = null
   try { last = JSON.parse(decode(await desktop!.read(since, 'world.json')) ?? 'null') } catch { last = null }
@@ -99,7 +117,10 @@ export async function planPublish(since: PublishTarget = 'publish'): Promise<Pub
     added: entries.filter(e => !before.has(e.id)),
     changed: entries.filter(e => before.has(e.id) && content(before.get(e.id)!) !== content(e)),
     removed: [...before.values()].filter(e => !ids.has(e.id)).map(e => ({ id: e.id, name: e.name })),
-    rulesChanged: !!last && stable(last.world?.rules ?? null) !== stable(pub.world.rules),
+    worldChanged: !last ? [] : [
+      ...WORLD_PARTS.filter(([k]) => stable(last!.world?.[k] ?? null) !== stable(pub.world[k] ?? null)).map(([, label]) => label),
+      ...(stable(last.options ?? {}) !== stable(pub.options) ? ['the dropdown lists'] : []),
+    ],
     previous: last?.published,
   }
 }
@@ -136,6 +157,10 @@ export function isShared(e: Entry | undefined): boolean {
 
 export interface SyncResult { added: number; changed: number; removed: number; title: string }
 
+/** When the player's world was last backed up before an update (0: not since it was opened). */
+let lastBackup = 0
+const BACKUP_EVERY = 60 * 60 * 1000
+
 /**
  * Bring this world up to date with the world it follows. Returns what changed, or null when there's nothing new.
  * A backup is made before anything changes.
@@ -157,7 +182,6 @@ export async function syncNow(): Promise<SyncResult | null> {
     if (u.lists) pub.options = u.lists
   }
 
-  await backupNow()
   const old = d.follow ?? { worldId: pub.worldId, title: pub.title, ids: [], relations: [], files: {} } as Follow
   const oldIds = new Set(old.ids)
   const newIds = new Set(pub.entries.map(e => e.id))
@@ -181,6 +205,9 @@ export async function syncNow(): Promise<SyncResult | null> {
 
   // No longer shared: removed; the player's own entries keep the name where they pointed at it.
   const gone = new Set([...oldIds].filter(id => !newIds.has(id) && d.entries[id]))
+  // A backup first: the first update after opening the world, then at most every hour, and whenever entries go
+  // (live sessions can send many small updates in an evening).
+  if (gone.size || Date.now() - lastBackup > BACKUP_EVERY) { await backupNow(); lastBackup = Date.now() }
   if (gone.size) {
     for (const x of Object.values(d.entries)) if (!oldIds.has(x.id)) mapRefs(x, id => (gone.has(id) ? null : id), name)
     for (const id of gone) delete d.entries[id]
@@ -210,17 +237,18 @@ export async function syncNow(): Promise<SyncResult | null> {
     if (b) await state.storage!.writeBlob(p, new Blob([b as BlobPart]))
   }
 
-  // Lists: the DM's, plus options the player added themselves. Calendar, categories, today and the ruleset: the DM's
-  // (a publish from before the ruleset was shared leaves the world's own).
+  // Lists: the DM's, plus options the player added themselves. Calendar, categories, today, the ruleset and the travel
+  // paces: the DM's (a publish from before those were shared leaves the world's own).
   const lists = { ...(d.meta.lists ?? {}) }
   for (const [key, opts] of Object.entries(pub.options)) {
     const own = (lists[key] ?? []).filter(o => !opts.some(x => x.id === o.id))
     lists[key] = [...clone(opts), ...own]
   }
   d.meta.lists = lists
-  const { rules, ...world } = clone(pub.world)
+  const { rules, travelModes, ...world } = clone(pub.world)
   Object.assign(d.meta, world)
   if (rules !== undefined) d.meta.rules = rules ?? undefined
+  if (travelModes !== undefined) d.meta.travelModes = travelModes ?? undefined
 
   d.follow = { worldId: pub.worldId, title: pub.title, published: pub.published, ids: [...newIds], relations: [...pubRel], files: { ...pub.files } }
   touch()
@@ -259,8 +287,14 @@ export async function checkShared(manual = false) {
 
 // ---------- live sessions ----------
 
-/** The DM's hosting and a player's connection, as the main process reports them. */
-export const live = reactive({ host: { hosting: false } as HostStatus, player: { state: 'off' } as PlayerStatus })
+/**
+ * The DM's hosting and a player's connection, as the main process reports them; how a player's world gets its
+ * updates (`via`: from the live session and/or a shared folder); and why hosting on opening didn't start.
+ */
+export const live = reactive({
+  host: { hosting: false } as HostStatus, player: { state: 'off' } as PlayerStatus,
+  via: { live: false, folder: false }, hostError: '',
+})
 if (desktop?.live) {
   desktop.live.onHost(s => { live.host = s })
   desktop.live.onPlayer(s => { live.player = s })
@@ -282,6 +316,7 @@ export async function startFollowing() {
   if (!desktop) return
   const f = await desktop.shared.get()
   if (!(state.db?.follow || f)) return
+  live.via = { live: !!f?.live, folder: !!f?.folder }
   if (f?.live) live.player = await desktop.live.follow(whoAmI())
   if (f?.live && !f.folder) return
   await checkShared()
@@ -292,5 +327,63 @@ export async function startFollowing() {
 /** Follow the world's live session from now on (a world that already follows the same DM world, e.g. via Drive). */
 export async function connectLive(s: { host: string; port: number; worldId: string }, code: string) {
   await desktop!.shared.follow(null, s.worldId, { host: s.host, port: s.port, code })
+  live.via.live = true
   live.player = await desktop!.live.follow(whoAmI())
 }
+
+/** On opening a world: follow the DM's world (a player's), or host the live session if the DM asked for that. */
+export async function startSharing() {
+  await startFollowing()
+  if (!desktop?.live || state.db?.follow || state.readOnly || !state.db?.meta.sharing?.hostOnOpen) return
+  try {
+    live.host = await desktop.live.start(db().meta.title)
+    live.hostError = ''
+    if (state.db.meta.sharing.autoSend) await sendChanges()
+  } catch (e) { live.hostError = hostErrorText(e) }
+}
+/** A hosting error without Electron's wrapping. */
+export const hostErrorText = (e: unknown) => (e as Error).message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '')
+
+/** Change the DM's sharing choices; turning auto-send on while hosting sends what's new right away. */
+export function setSharing(patch: NonNullable<Database['meta']['sharing']>) {
+  const m = db().meta
+  const next = { ...m.sharing, ...patch }
+  for (const k of Object.keys(next) as (keyof typeof next)[]) if (!next[k]) delete next[k]
+  m.sharing = Object.keys(next).length ? next : undefined
+  touch()
+  if (patch.autoSend && live.host.hosting) sendChanges()
+}
+
+// ---------- sending changes as they're made ----------
+
+/** What auto-send did last, for the Live button. */
+export const autoSend = reactive({ sent: '', error: '', busy: false })
+/** How long after the last saved change auto-send waits, so a burst of edits goes out once. */
+const AUTO_DELAY = 5000
+let autoTimer: number | undefined
+let sending = false
+/** Whether a publish would change anything for the players. */
+export const hasChanges = (p: PublishPlan) => !!(p.added.length || p.changed.length || p.removed.length || p.worldChanged.length)
+
+/** Send what players don't have yet to the live session (nothing happens when nothing they see changed). */
+export async function sendChanges() {
+  if (!desktop?.live || !live.host.hosting || sending) return
+  sending = true
+  autoSend.busy = true
+  try {
+    const p = await planPublish('live')
+    if (p.previous && p.previous === live.host.published && !hasChanges(p)) return
+    await publish(p, undefined, ['live'])
+    live.host = await desktop.live.hostStatus()
+    autoSend.sent = p.pub.published
+    autoSend.error = ''
+  } catch (e) {
+    autoSend.error = (e as Error).message
+  } finally { sending = false; autoSend.busy = false }
+}
+// Every save while hosting with auto-send on starts the wait again (a send's own save doesn't count).
+watch(() => state.savedAt, () => {
+  if (sending || !live.host.hosting || !state.db?.meta.sharing?.autoSend || state.db.follow) return
+  clearTimeout(autoTimer)
+  autoTimer = window.setTimeout(sendChanges, AUTO_DELAY)
+}, { flush: 'sync' })

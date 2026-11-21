@@ -4,13 +4,13 @@ import AppIcon from './AppIcon.vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { visibleMenus } from '../menu'
 import { db, playerMode, save, state } from '../store'
-import { newEntry, ui } from '../ui'
+import { newEntry } from '../ui'
 import { goBack, nav, route } from '../router'
 import MenuPanel from './MenuPanel.vue'
 import SettingsMenu from './SettingsMenu.vue'
 import WorldList from './WorldList.vue'
 import { desktop } from '../storage/desktop'
-import { live } from '../sync'
+import SessionButton from './SessionButton.vue'
 /** The world's name: a menu with Home and the known worlds (desktop app). */
 const worldsOpen = ref(false)
 const brandBox = ref<HTMLElement | null>(null)
@@ -100,9 +100,8 @@ const current = computed(() => visibleMenus.value.findIndex(m => m.owns(route.cu
         <template v-else-if="state.dirty">Unsaved…</template>
         <template v-else-if="state.savedAt">✓ Saved</template>
       </span>
-      <button v-if="live.host.hosting" class="live-tag" :title="`Hosting a live session; code ${live.host.code}. Click to send.`" @click="ui.publishOpen = true">● Live · {{ live.host.players.length }}</button>
-      <span v-else-if="live.player.state === 'connected'" class="live-tag" :title="`Connected to your DM's live session at ${live.player.host}`">● Live</span>
-      <button class="mode-tag" :title="`${playerMode ? 'Player' : 'DM'} mode: switch it in Settings`" @click.stop="settingsMenu?.toggle()">{{ playerMode ? 'Player mode' : 'DM mode' }}</button>
+      <SessionButton />
+      <button class="mode-tag" :title="state.db?.follow ? 'Player mode: a world your DM shares' : `${playerMode ? 'Player' : 'DM'} mode: switch it in Settings`" @click.stop="settingsMenu?.toggle()">{{ playerMode ? 'Player mode' : 'DM mode' }}</button>
       <SettingsMenu ref="settingsMenu" />
     </div>
   </header>

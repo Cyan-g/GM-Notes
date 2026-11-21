@@ -1,34 +1,24 @@
 <script setup lang="ts">
-// The ⚙ menu at the top right: the theme (colours, heading and text fonts), exporting the world and importing a shared file,
-// and data & backups. The button shows when the last backup copy is overdue.
+// The ⚙ menu at the top right: the theme (colours, heading and text fonts), DM or player mode, exporting the world and
+// importing a shared file, and data & backups. The button shows when the last backup copy is overdue. Worlds are in the
+// menu under the world's name (top left); sharing and connecting are on the session button (SessionButton.vue).
 import AppIcon from './AppIcon.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { playerMode, setMode, state } from '../store'
 import { daysSince } from '../backup'
 import { pickImport, ui } from '../ui'
 import { go } from '../router'
-import { desktop } from '../storage/desktop'
-import WorldList from './WorldList.vue'
-import LiveJoin from './LiveJoin.vue'
-import { checkShared, connectLive, live, syncStatus } from '../sync'
 import { COLOR_LABELS, FONTS, PRESETS, TEXT_FONTS, effectiveColors, setColor, setTheme, settings, type Preset, type ThemeColors } from '../theme'
 
 /** Closed, the short menu, or the theme panel. */
-const open = ref<null | 'menu' | 'theme' | 'worlds' | 'live'>(null)
+const open = ref<null | 'menu' | 'theme'>(null)
 const backupAge = computed(() => daysSince(state.db?.meta.externalBackup))
 const overdue = computed(() => backupAge.value == null || backupAge.value > 7)
 const toggle = () => { open.value = open.value ? null : 'menu' }
 defineExpose({ toggle })
 function importFile() { open.value = null; pickImport() }
 function exportWorld() { open.value = null; ui.worldExport = true }
-function openPublish() { open.value = null; ui.publishOpen = true }
 function data() { open.value = null; go('#/data') }
-/** A player's live connection: what it says, and connecting with (another) code. */
-const LIVE_STATE = { off: 'not connected', searching: 'looking for the DM…', connected: 'connected', 'wrong-code': 'the code changed' } as const
-const liveHint = computed(() => LIVE_STATE[live.player.state])
-const reconnecting = ref(false)
-async function chosenLive(s: { host: string; port: number; worldId: string }, code: string) { await connectLive(s, code); reconnecting.value = false }
-function openLive() { reconnecting.value = live.player.state === 'off' || live.player.state === 'wrong-code'; open.value = 'live' }
 const root = ref<HTMLElement | null>(null)
 const s = computed(settings)
 const colors = computed(() => effectiveColors(s.value))
@@ -57,36 +47,18 @@ onUnmounted(() => { document.removeEventListener('pointerdown', outside); window
 <template>
   <div ref="root" class="theme-menu">
     <button class="theme-btn" :class="{ open: !!open, warn: overdue }" :aria-expanded="!!open" aria-haspopup="menu"
-            :title="overdue ? `Theme, import, data & backups. ${backupAge == null ? 'No backup copy yet' : `Last backup copy ${backupAge} days ago`}` : 'Theme, import, data & backups'"
+            :title="overdue ? `Settings: theme, mode, export and import, data & backups. ${backupAge == null ? 'No backup copy yet' : `Last backup copy ${backupAge} days ago`}` : 'Settings: theme, mode, export and import, data & backups'"
             @click="toggle"><AppIcon ui="cog" /><span v-if="overdue" class="settings-dot" /></button>
     <div v-if="open === 'menu'" class="theme-panel settings-list" role="menu">
-      <button v-if="desktop" role="menuitem" @click="open = 'worlds'"><span><AppIcon ui="world" /></span>Switch world<span class="hint">{{ state.db?.meta.title }} ›</span></button>
       <button role="menuitem" @click="open = 'theme'"><span><AppIcon ui="palette" /></span>Theme &amp; colours<span class="hint">›</span></button>
-      <label class="settings-switch" title="Off: player mode, trimmed to spells, crafting and maps, without DM-only text">
+      <label v-if="!state.db?.follow" class="settings-switch" title="Off: player mode, trimmed to spells, crafting and maps, without DM-only text">
         <span><AppIcon ui="dice" /></span>DM mode
         <input type="checkbox" role="switch" :checked="!playerMode" :disabled="!!state.readOnly" @change="setMode(($event.target as HTMLInputElement).checked ? 'dm' : 'player')" />
       </label>
-      <button v-if="desktop && !state.db?.follow" role="menuitem" @click="openPublish"><span><AppIcon ui="share" /></span>Share with players…<span class="hint">{{ live.host.hosting ? `live · ${live.host.players.length} connected` : state.db?.meta.lastPublished ? 'live or shared folder' : 'not yet' }}</span></button>
-      <button v-if="desktop && state.db?.follow" role="menuitem" @click="openLive"><span><AppIcon ui="share" /></span>Live session…<span class="hint">{{ liveHint }} ›</span></button>
-      <button v-if="state.db?.follow" role="menuitem" :disabled="syncStatus.busy" @click="checkShared(true)"><span><AppIcon ui="download" /></span>Check for updates<span class="hint">from {{ state.db.follow.title }}</span></button>
       <button role="menuitem" @click="exportWorld"><span><AppIcon ui="exportFile" /></span>Export the world…<span class="hint">{{ playerMode ? 'to share' : 'for a player' }}</span></button>
       <button role="menuitem" @click="importFile"><span><AppIcon ui="importFile" /></span>Import from a file…<span class="hint">entry or world</span></button>
       <button role="menuitem" :class="{ warn: overdue }" @click="data"><span><AppIcon ui="save" /></span>Data &amp; backups
         <span class="hint">{{ backupAge == null ? 'no backup copy yet' : backupAge === 0 ? 'backup copy today' : `backup copy ${backupAge} d ago` }}</span></button>
-    </div>
-    <div v-if="open === 'worlds'" class="theme-panel" role="dialog" aria-label="Worlds">
-      <h4><button class="link-btn back" @click="open = 'menu'">‹ Back</button></h4>
-      <h4>Worlds</h4>
-      <WorldList @done="open = null" />
-    </div>
-    <div v-if="open === 'live' && state.db?.follow" class="theme-panel" role="dialog" aria-label="Live session">
-      <h4><button class="link-btn back" @click="open = 'menu'">‹ Back</button></h4>
-      <h4>Live session</h4>
-      <p class="small">While your DM hosts {{ state.db.follow.title }} on this network, updates arrive the moment they send them. Otherwise they come from the shared folder (if this world has one).</p>
-      <p class="small"><b>Now:</b> {{ liveHint }}<template v-if="live.player.state === 'connected'"> to {{ live.player.host }}</template>.</p>
-      <p v-if="live.player.state === 'wrong-code'" class="error small">Your DM made a new code. Ask them for it.</p>
-      <LiveJoin v-if="reconnecting" :world-id="state.db.follow.worldId" @chosen="chosenLive" @cancel="reconnecting = false" />
-      <div v-else class="world-actions"><button type="button" @click="reconnecting = true">{{ live.player.state === 'off' ? 'Connect…' : 'Use another code…' }}</button></div>
     </div>
     <div v-if="open === 'theme'" class="theme-panel" role="dialog" aria-label="Theme and colours">
       <h4><button class="link-btn back" @click="open = 'menu'">‹ Back</button></h4>

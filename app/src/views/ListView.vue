@@ -16,10 +16,10 @@ const COLS: Partial<Record<EntryType, { cols: string[]; facets?: string[]; sort?
   pc: { cols: ['player', 'race', '@classes', '@level', 'campaigns'] },
   organization: { cols: ['orgType', 'parent', 'seat', '@members'], facets: ['orgType'] },
   place: { cols: ['placeType', 'parent'], facets: ['placeType', 'parent'] },
-  feat: { cols: ['category', 'level', 'source', 'abilityIncrease'], facets: ['category', 'source'] },
+  feat: { cols: ['category', 'level', '@prereq', 'repeatable', 'source', 'abilityIncrease'], facets: ['category', '@takeable', 'repeatable', 'source'] },
   background: { cols: ['originFeat', 'skillProfs', 'toolProfs', 'abilityIncrease'] },
   // Subraces under their main race.
-  race: { cols: ['size', 'speed', 'abilityIncrease'], tree: 'parent' },
+  race: { cols: ['size', 'creatureType', '@speed', 'abilityIncrease'], tree: 'parent' },
   deity: { cols: ['rank', 'alignment'], facets: ['rank'] },
   creature: { cols: ['creatureType', '@cr'], facets: ['creatureType'] },
   item: { cols: ['kind', 'subtype', 'rarity', 'magical', 'value'], facets: ['kind', 'rarity', 'magical'] },

@@ -150,12 +150,12 @@ function remove() {
             </div>
             <!-- The description closes the card, the way it ends a spell or item card. -->
             <div v-if="showDesc" class="sheet-desc">
-              <span class="sf-label">Description</span>
+              <span class="sf-label" title="What it says: shown on its card, in pop-ups and printed cards">Card text</span>
               <BodyEditor compact :model-value="String(e.fields.summary ?? '')" :hint="e.name" @update:model-value="setSummary" />
             </div>
           </section>
           <details class="sheet-notes" :class="{ empty: !e.body.trim() }" :open="!!e.body.trim()">
-            <summary>Text <span class="muted small">(under the card{{ e.body.trim() ? '' : ', none yet' }})</span></summary>
+            <summary>Notes under the card <span class="muted small">(lore, DM notes; shown on its page below the card{{ e.body.trim() ? '' : ', none yet' }})</span></summary>
             <BodyEditor :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
           </details>
         </template>

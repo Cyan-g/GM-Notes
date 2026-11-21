@@ -13,7 +13,7 @@ const orList = (l: string[]) => (l.length < 2 ? l.join('') : `${l.slice(0, -1).j
 export function requirementsOf(e: Entry | undefined): Requirements | undefined {
   const r = e?.fields.requirements
   if (!r) return undefined
-  const any = r.scores?.length || r.classes?.length || r.spellcaster || r.races?.length || r.skills?.length || r.note?.trim()
+  const any = r.scores?.length || r.classes?.length || r.spellcaster || r.races?.length || r.skills?.length || r.features?.length || r.note?.trim()
   return any ? r : undefined
 }
 
@@ -29,7 +29,8 @@ export function describeRequirements(e: Entry): string {
   if (!r) return ''
   const races = (r.races ?? []).map(id => get(id)?.name ?? id)
   const parts = [
-    ...(r.scores ?? []).map(x => `${ABILITY_SHORT[x.ability] ?? x.ability} ${x.min}`),
+    ...(r.anyScore && (r.scores?.length ?? 0) > 1 ? [orList((r.scores ?? []).map(x => `${ABILITY_SHORT[x.ability] ?? x.ability} ${x.min}`))] : (r.scores ?? []).map(x => `${ABILITY_SHORT[x.ability] ?? x.ability} ${x.min}`)),
+    ...(r.features ?? []).map(x => `the ${x} feature`),
     ...(r.classes?.length || r.spellcaster ? [whoText(r)] : []),
     ...(races.length ? [`someone of ${orList(races)} heritage`] : []),
     ...(r.skills?.length ? [`proficiency in ${orList(r.skills)}`] : []),
@@ -53,15 +54,15 @@ function raceFits(raceId: Id | undefined, races: Id[]): boolean {
  * `score` gives the character's ability scores (with their gear); `caster` whether they cast spells.
  * Heavy armor's Strength isn't a reason (it slows instead).
  */
-export function unmet(pc: Entry, s: CharacterSheet, e: Entry, score: (a: string) => number, caster: boolean): string[] {
+export function unmet(pc: Entry, s: CharacterSheet, e: Entry, score: (a: string) => number, caster: boolean, hasFeature?: (name: string) => boolean): string[] {
   const r = requirementsOf(e)
   if (!r) return []
   const out: string[] = []
-  for (const x of r.scores ?? []) {
-    if (isHeavyStrength(e, x.ability)) continue
-    const have = score(x.ability)
-    if (have < x.min) out.push(`needs ${ABILITY_SHORT[x.ability] ?? x.ability} ${x.min} (has ${have})`)
-  }
+  const low = (r.scores ?? []).filter(x => !isHeavyStrength(e, x.ability) && score(x.ability) < x.min)
+  // "Strength or Dexterity 13": one of them is enough
+  if (r.anyScore && (r.scores?.length ?? 0) > 1) { if (low.length === r.scores!.length) out.push(`needs ${orList(r.scores!.map(x => `${ABILITY_SHORT[x.ability] ?? x.ability} ${x.min}`))}`) }
+  else for (const x of low) out.push(`needs ${ABILITY_SHORT[x.ability] ?? x.ability} ${x.min} (has ${score(x.ability)})`)
+  if (hasFeature) for (const f of r.features ?? []) if (!hasFeature(f)) out.push(`needs the ${f} feature`)
   const classes = (r.classes ?? []).map(c => c.toLowerCase())
   if (classes.length || r.spellcaster) {
     const mine = classesOf(pc).map(l => l.class.toLowerCase())

@@ -17,6 +17,7 @@ import ClassOverview from '../components/ClassOverview.vue'
 import SubclassInfo from '../components/SubclassInfo.vue'
 import RaceGlance from '../components/RaceGlance.vue'
 import BackgroundGlance from '../components/BackgroundGlance.vue'
+import FeatInfo from '../components/FeatInfo.vue'
 import CompanionsTab from './CompanionsTab.vue'
 import CraftingView from './CraftingView.vue'
 import FamilyTree from '../components/FamilyTree.vue'
@@ -348,6 +349,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         <CharacterSheet v-if="e.type === 'pc'" :pc="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
         <FeatCard v-if="e.type === 'feat'" :e="e" source />
+        <FeatInfo v-if="e.type === 'feat'" :e="e" />
         <SubclassInfo v-if="e.type === 'subclass'" :e="e" />
         <RaceGlance v-if="e.type === 'race'" :e="e" />
         <BackgroundGlance v-if="e.type === 'background'" :e="e" />
@@ -361,7 +363,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
 
         <ClassOverview v-if="e.type === 'class'" :e="e" />
         <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => f.kind !== 'classBasics' && !(bodyParts.placed.has('ranks') && f.kind === 'ranks'))" :key="f.key">
-          <h2>{{ f.label }}</h2>
+          <h2>{{ e.type === 'feat' && f.kind === 'speciesTraits' ? 'On the sheet' : f.label }}</h2>
           <FieldValue :def="f" :value="byKey(e.fields)[f.key]" :entry="e" />
         </section>
 

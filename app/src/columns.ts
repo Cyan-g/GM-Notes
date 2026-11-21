@@ -8,6 +8,7 @@ import { classText, totalLevel } from './model/classes'
 import { listKeyOf } from './model/lists'
 import { sessionNo } from './sessions'
 import { abilityBonusText } from './abilityBonus'
+import { describeRequirements } from './requirements'
 
 export interface Col {
   key: string
@@ -42,6 +43,11 @@ export function attackOrSave(e: Entry): string {
   if (t === 'Saving throw') return e.fields.savingThrow ? `${String(e.fields.savingThrow).slice(0, 3).toUpperCase()} save` : 'Save'
   return t
 }
+const prereqText = (e: Entry) => String(e.fields.prerequisite ?? '') || describeRequirements(e)
+const speedText = (e: Entry) => {
+  const s = e.fields.speeds
+  return s ? [s.walk != null && `${s.walk} ft`, ...(['swim', 'fly', 'climb', 'burrow'] as const).filter(k => s[k]).map(k => `${k} ${s[k]}`)].filter(Boolean).join(', ') : ''
+}
 const concRitual = (e: Entry) => [e.fields.concentration && 'C', e.fields.ritual && 'R'].filter(Boolean).join(' ')
 
 const COMPUTED: Record<string, Omit<Col, 'key'>> = {
@@ -73,6 +79,10 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   '@attackSave': { label: 'Attack / save', value: attackOrSave, sort: e => attackOrSave(e).toLowerCase() || '~', kind: 'text' },
   '@concRitual': { label: 'C/R', value: concRitual, sort: e => concRitual(e) || '~', kind: 'text' },
   '@sessionNo': { label: 'Number', value: e => (Number.isFinite(sessionNo(e)) ? sessionNo(e) : ''), sort: e => sessionNo(e), kind: 'text' },
+  // a feat's prerequisite as written, else what the app checks
+  '@prereq': { label: 'Prerequisite', value: e => prereqText(e), sort: e => prereqText(e).toLowerCase() || '~', kind: 'text' },
+  // a race's walking speed and its others (swim, fly…)
+  '@speed': { label: 'Speed', value: e => speedText(e), sort: e => e.fields.speeds?.walk ?? 1e9, kind: 'text' },
   '@updated': { label: 'Last edited', value: e => new Date(e.updated).toLocaleString(), sort: e => -Date.parse(e.updated), kind: 'text' },
 }
 
@@ -121,6 +131,8 @@ export function facet(key: string, type?: EntryType): Facet {
     }
   }
   if (key === '@attackSave') return { key, label: 'Attack / save', values: rows => [...new Set(rows.map(attackOrSave).filter(Boolean))].sort(), match: (e, v) => attackOrSave(e) === v }
+  // feats a character of a level can take: those needing that level or less (or none)
+  if (key === '@takeable') return { key, label: 'Takeable at level', values: () => Array.from({ length: 20 }, (_, i) => String(i + 1)), match: (e, v) => !e.fields.level || Number(e.fields.level) <= Number(v) }
   if (key === '@type') return { key, label: 'Type', values: rows => [...new Set(rows.map(e => TYPES[e.type].label))].sort(), match: (e, v) => TYPES[e.type].label === v }
   const field = (type && TYPES[type].fields.find(f => f.key === key)) || FIELD_BY_KEY.get(key)
   const label = field?.label ?? key

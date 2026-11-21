@@ -2005,3 +2005,9 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .bg-tools { margin-top: .4rem; }
 .bg-feat { margin-top: .5rem; }
 .warn-text { color: var(--accent); }
+.feat-bonus { display: grid; gap: .4rem; }
+.feat-bonus .seg { justify-self: start; }
+.feat-info { display: flex; flex-wrap: wrap; gap: .6rem 1.5rem; align-items: flex-start; justify-content: space-between; margin: .8rem 0; }
+.feat-info dl { display: grid; grid-template-columns: max-content 1fr; gap: .2rem 1rem; margin: 0; font-size: 14px; }
+.feat-info dt { color: var(--muted); }
+.feat-info dd { margin: 0; }

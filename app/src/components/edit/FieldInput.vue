@@ -2,6 +2,7 @@
 import TraitsInput from './TraitsInput.vue'
 import ClassBasicsInput from './ClassBasicsInput.vue'
 import SpeedsInput from './SpeedsInput.vue'
+import FeatBonusInput from './FeatBonusInput.vue'
 import { classLabel, expectedSubclassLevels, parentRaces, traitsOf } from '../../species'
 import AbilityBonusInput from './AbilityBonusInput.vue'
 import EquipmentInput from './EquipmentInput.vue'
@@ -41,6 +42,12 @@ const value = computed({
   get: () => byKey(props.entry.fields)[props.def.key] as any,
   set: (v: unknown) => {
     const f = byKey(props.entry.fields)
+    // a feat's kind sets the level it needs (Epic Boon 19, General Feat 4) where the level was the old kind's or empty
+    if (props.entry.type === 'feat' && props.def.key === 'category') {
+      const AT: Record<string, number> = { 'Epic Boon': 19, 'General Feat': 4 }
+      const was = AT[String(f.category ?? '')], now = AT[String(v ?? '')]
+      if (f.level == null || f.level === was) { if (now) f.level = now; else delete f.level }
+    }
     if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) delete f[props.def.key]
     else f[props.def.key] = v
     changed(props.entry)
@@ -90,12 +97,13 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
   <EffectsInput v-else-if="def.kind === 'effects'" v-model="value" />
   <ItemSpellsInput v-else-if="def.kind === 'itemSpells'" v-model="value" />
   <ClassBasicsInput v-else-if="def.kind === 'classBasics'" v-model="value" :cls="String(entry.fields.class ?? '')" />
-  <TraitsInput v-else-if="def.kind === 'speciesTraits'" v-model="value" :entry-type="entry.type" :class-name="entry.type === 'class' || entry.type === 'subclass' ? classLabel(entry) : undefined" :expected-levels="entry.type === 'subclass' && entry.fields.class ? expectedSubclassLevels(String(entry.fields.class), entry.id) : undefined" :parent-traits="entry.type === 'race' ? parentRaces(entry).flatMap(r => traitsOf(r).map(t => ({ id: t.id, name: `${t.name} (${r.name})` }))) : undefined" />
+  <TraitsInput v-else-if="def.kind === 'speciesTraits'" v-model="value" :entry-type="entry.type" :class-name="entry.type === 'class' || entry.type === 'subclass' ? classLabel(entry) : undefined" :expected-levels="entry.type === 'subclass' && entry.fields.class ? expectedSubclassLevels(String(entry.fields.class), entry.id) : undefined" :entry-name="entry.name" :parent-traits="entry.type === 'race' ? parentRaces(entry).flatMap(r => traitsOf(r).map(t => ({ id: t.id, name: `${t.name} (${r.name})` }))) : undefined" />
+  <FeatBonusInput v-else-if="def.kind === 'abilityBonus' && entry.type === 'feat'" v-model="value" />
   <AbilityBonusInput v-else-if="def.kind === 'abilityBonus'" v-model="value" />
   <SpeedsInput v-else-if="def.kind === 'speeds'" v-model="value" :inherited="entry.type === 'race' ? (get(entry.fields.parent)?.fields.speeds as Speeds | undefined) : undefined" />
   <ProfChips v-else-if="def.kind === 'skills'" :values="value ?? []" :toggles="SKILL_OPTIONS" @change="value = $event.length ? $event : undefined" />
   <EquipmentInput v-else-if="def.kind === 'equipment'" v-model="value" />
-  <RequirementsInput v-else-if="def.kind === 'requires'" v-model="value" />
+  <RequirementsInput v-else-if="def.kind === 'requires'" v-model="value" :features="entry.type === 'feat'" />
   <RecipeInput v-else-if="def.kind === 'recipe'" v-model="value" :item-value="entry.fields.value" />
   <StockInput v-else-if="def.kind === 'stock'" v-model="value" :markup="(entry.fields.markup) ?? 1" />
   <EncounterInput v-else-if="def.kind === 'combatants'" v-model="value" />

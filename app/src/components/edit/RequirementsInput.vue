@@ -10,6 +10,7 @@ import EntryPicker from './EntryPicker.vue'
 import EntryLink from '../EntryLink.vue'
 
 const model = defineModel<Requirements | undefined>()
+const props = defineProps<{ /** Offer "has feature" (a feat's prerequisites). */ features?: boolean }>()
 const r = computed<Requirements>(() => model.value ?? {})
 function put(patch: Partial<Requirements>) {
   const n: Requirements = { ...r.value, ...patch }
@@ -37,6 +38,11 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
         <button type="button" class="link-btn" title="Remove" @click="put({ scores: scores.filter((_, k) => k !== i) })">×</button>
       </span>
       <button type="button" class="chip-btn" @click="put({ scores: [...scores, { ability: 'str', min: 13 }] })">＋ Score</button>
+      <label v-if="scores.length > 1" class="small effect-check"><input type="checkbox" :checked="!!r.anyScore" @change="put({ anyScore: ($event.target as HTMLInputElement).checked })" /> one of them is enough</label>
+    </div>
+    <div v-if="features" class="req-row">
+      <span class="req-label">Has feature</span>
+      <ProfChips :values="r.features ?? []" :suggest="[]" :create="(x: string) => x" placeholder="e.g. Fighting Style…" @change="v => put({ features: v })" />
     </div>
     <div class="req-row">
       <span class="req-label">Class</span>

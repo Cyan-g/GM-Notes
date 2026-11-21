@@ -108,6 +108,10 @@ export interface Requirements {
   spellcaster?: boolean
   races?: Id[]
   skills?: string[]
+  /** One of the scores is enough (Grappler: Strength or Dexterity 13). */
+  anyScore?: boolean
+  /** Features the character must have, by name (a feat's "Fighting Style feature"). */
+  features?: string[]
   note?: string
 }
 /**

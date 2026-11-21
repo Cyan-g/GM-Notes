@@ -9,11 +9,12 @@ import { classesOf, dieOf, totalLevel } from '../model/classes'
 import { EPIC_BOON_LEVEL, hitDieOf, multiclassOf, rulesOf, subclassLevelOf } from '../classRules'
 import { ABILITY_KEYS, bonusApplied, bonusOpen, type BonusChoice } from '../abilityBonus'
 import { byType, entries, get, listOptions } from '../store'
-import { SKILLS, editSheet, mod, profsToEdit, signed } from '../sheet'
+import { SKILLS, castingAbility, editSheet, mod, profsToEdit, signed } from '../sheet'
 import { itemNamed } from '../wizard'
 import { rule } from '../rules'
 import { gearTotals, scoreWith } from '../gear'
-import { backgroundOf, classEntry, featOfFeature, traitsOf } from '../species'
+import { backgroundOf, classEntry, featOfFeature, speciesTraits, traitsOf } from '../species'
+import { unmet } from '../requirements'
 import { changed } from '../edit'
 import { renderInline } from '../markdown'
 import SpreadPicker from './SpreadPicker.vue'
@@ -55,7 +56,11 @@ const featDue = computed(() => featLevels.value.includes(newLevel.value))
 const boon = computed(() => newLevel.value === EPIC_BOON_LEVEL)
 /** Feats the character already has (only the Ability Score Improvement can be taken again). */
 const taken = computed(() => new Set([get(backgroundOf(props.pc)?.fields.originFeat)?.id, ...(props.s.features ?? []).map(f => featOfFeature(f)?.id)].filter(Boolean) as string[]))
-const isAsi = (f: Entry) => /^ability score improvement$/i.test(f.name.trim())
+/** A feat that can be taken again: marked Repeatable (the Ability Score Improvement always is). */
+const isAsi = (f: Entry) => !!f.fields.repeatable || /^ability score improvement$/i.test(f.name.trim())
+/** The character's features and feats by name, for a feat's "has feature" prerequisite. */
+const featureNames = computed(() => new Set([...speciesTraits(props.pc, props.s).map(a => a.trait.name), ...(props.s.features ?? []).map(x => x.name)].map(n => n.toLowerCase())))
+const hasFeature = (name: string) => [...featureNames.value].some(n => n === name.toLowerCase() || n.startsWith(name.toLowerCase()))
 /** Why a feat can't be taken now: the level it needs, the feats it needs, already taken. */
 function lacks(f: Entry): string {
   const need = Number(f.fields.level) || 0
@@ -63,6 +68,8 @@ function lacks(f: Entry): string {
   const missing = ((f.fields.requires as string[] | undefined) ?? []).filter(id => !taken.value.has(id)).map(id => get(id)?.name ?? id)
   if (missing.length) return `needs ${missing.join(', ')}`
   if (taken.value.has(f.id) && !isAsi(f)) return 'taken'
+  const why = unmet(props.pc, props.s, f, a => scoreNow(a), !!castingAbility(props.pc, props.s), hasFeature)
+  if (why.length) return why.join(', ')
   return ''
 }
 /** The feats on offer, by kind: Epic Boons at 19, General, Origin and Fighting Style feats, and any other. */

@@ -14,9 +14,9 @@ import StepsInput from './StepsInput.vue'
 import TraitChips from '../TraitChips.vue'
 
 const model = defineModel<Trait[] | undefined>()
-const props = defineProps<{ /** The entry's type: a class's or subclass's features are grouped by level. */ entryType?: string; /** Its class, for "Warlock level". */ className?: string; /** A subclass's levels to expect features at (its class's other subclasses'): shown even while empty. */ expectedLevels?: number[]; /** A subrace's: its main races' traits, one of which a trait may replace. */ parentTraits?: { id: string; name: string }[] }>()
+const props = defineProps<{ /** The entry's type: a class's or subclass's features are grouped by level. */ entryType?: string; /** Its class, for "Warlock level". */ className?: string; /** A subclass's levels to expect features at (its class's other subclasses'): shown even while empty. */ expectedLevels?: number[]; /** A subrace's: its main races' traits, one of which a trait may replace. */ parentTraits?: { id: string; name: string }[]; /** The entry's name: a feat's feature starts with it. */ entryName?: string }>()
 const forClass = computed(() => props.entryType === 'class' || props.entryType === 'subclass')
-const word = computed(() => (forClass.value ? 'feature' : 'trait'))
+const word = computed(() => (forClass.value || props.entryType === 'feat' ? 'feature' : 'trait'))
 const levelWord = computed(() => (forClass.value && props.className ? `${props.className} level` : forClass.value ? 'Level' : 'Character level'))
 /** Grouped under level headings: a class's features always, other traits once some come after level 1. */
 const grouped = computed(() => forClass.value || list.value.some(t => (t.level ?? 1) > 1))
@@ -46,6 +46,8 @@ const add = (at?: number) => {
   save([...list.value, { id, name: forClass.value ? 'New feature' : 'New trait', ...(level > 1 ? { level } : {}) }])
   opened.value = id
 }
+/** A feat's first feature: named like the feat (its effects and choices are added to it). */
+const startFromCard = () => { const id = newTraitId(); save([{ id, name: props.entryName! }]); opened.value = id }
 const remove = (i: number) => { if (confirm(`Remove the ${word.value} “${list.value[i].name}”? Characters lose its choices and uses.`)) save(list.value.filter((_, k) => k !== i)) }
 /** Up and down among the cards as shown: a class's only within its level (the level sets its place). */
 const canMove = (pos: number, by: number) => { const j = pos + by; return j >= 0 && j < order.value.length && (!grouped.value || lv(list.value[order.value[j]]) === lv(list.value[order.value[pos]])) }
@@ -271,6 +273,7 @@ const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
       </details>
     </template>
     </template>
-    <button type="button" class="chip-btn" @click="add()">+ {{ forClass ? 'Feature' : 'Trait' }}</button>
+    <button v-if="entryType === 'feat' && !list.length && entryName" type="button" class="chip-btn primary" title="A feature named like the feat, coming with it: add its effects, choices and spells" @click="startFromCard">Start from the card</button>
+    <button type="button" class="chip-btn" @click="add()">+ {{ word === 'feature' ? 'Feature' : 'Trait' }}</button>
   </div>
 </template>

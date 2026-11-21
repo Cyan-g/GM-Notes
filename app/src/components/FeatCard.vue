@@ -8,11 +8,14 @@ import { get } from '../store'
 import { hrefEntry } from '../router'
 import EntryLink from './EntryLink.vue'
 import MarkdownView from './MarkdownView.vue'
+import { describeRequirements } from '../requirements'
 
 const props = defineProps<{ e: Entry; title?: boolean; source?: boolean }>()
 const f = computed(() => props.e.fields)
 const requires = computed(() => ((f.value.requires as Id[] | undefined) ?? []).filter(id => get(id)))
-const hasPrereq = computed(() => f.value.level || requires.value.length || f.value.prerequisite)
+/** Its prerequisites as written, else what the app checks ("STR 13 or DEX 13"). */
+const checked = computed(() => (f.value.prerequisite ? '' : describeRequirements(props.e)))
+const hasPrereq = computed(() => f.value.level || requires.value.length || f.value.prerequisite || checked.value)
 </script>
 
 <template>
@@ -25,8 +28,9 @@ const hasPrereq = computed(() => f.value.level || requires.value.length || f.val
     <p v-if="hasPrereq" class="feat-line"><b>Prerequisite:</b>
       <template v-if="f.level"> Level {{ f.level }}+</template><template v-if="f.level && (requires.length || f.prerequisite)">,</template>
       <template v-for="(id, i) in requires" :key="id"><template v-if="i">, </template> <EntryLink :id="id" /></template><template v-if="requires.length && f.prerequisite">,</template>
-      <template v-if="f.prerequisite"> {{ f.prerequisite }}</template>
+      <template v-if="f.prerequisite"> {{ f.prerequisite }}</template><template v-else-if="checked">{{ f.level || requires.length ? ',' : '' }} {{ checked }}</template>
     </p>
+    <p v-if="f.repeatable" class="feat-line"><b>Repeatable:</b> it can be taken more than once.</p>
     <p v-if="f.abilityIncrease" class="feat-line"><b>Ability score increase:</b> {{ abilityBonusText(f.abilityIncrease) }}</p>
     <MarkdownView v-if="f.summary" class="feat-text" :source="String(f.summary)" />
   </div>

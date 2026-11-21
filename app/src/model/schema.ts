@@ -248,7 +248,11 @@ export const SCHEMA = [
       { key: 'category', label: 'Kind', kind: 'select', options: ['Origin Feat', 'General Feat', 'Fighting Style', 'Epic Boon', 'Other'] },
       { key: 'level', label: 'Level needed', kind: 'number' },
       { key: 'requires', label: 'Needs feats', kind: 'refs', to: ['feat'] },
-      { key: 'prerequisite', label: 'Other prerequisite', kind: 'text' },
+      { key: 'prerequisite', label: 'Prerequisite (as written)', kind: 'text' },
+      // What the app checks before the feat can be taken (level-up greys it out): scores, spellcasting, a feature.
+      { key: 'requirements', label: 'Prerequisites checked', kind: 'requires' },
+      // It can be taken more than once (Ability Score Improvement, Magic Initiate with another spell list).
+      { key: 'repeatable', label: 'Repeatable', kind: 'bool' },
       { key: 'abilityIncrease', label: 'Ability score increase', kind: 'abilityBonus' },
       { key: 'source', label: 'Granted by', kind: 'ref', to: ['organization', 'race', 'background', 'subclass', 'deity', 'place', 'item'] },
       { key: 'summary', label: 'Description', kind: 'longtext' },

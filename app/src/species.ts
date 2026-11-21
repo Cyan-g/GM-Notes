@@ -127,6 +127,11 @@ export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): Active
   const total = totalLevel(pc)
   return [...base, ...featsOf(pc, sheet, base).flatMap(f => build({ from: f, level: total })), ...itemsWithFeatures(sheet).flatMap(i => build({ from: i, level: total }))]
 }
+/** The feats a character has: the background's Origin feat, those on the sheet and those picked in a choice. */
+export function featsOfCharacter(pc: Entry): Entry[] {
+  const s = pc.fields.sheet as CharacterSheet | undefined
+  return featsOf(pc, s, origins(pc).flatMap(o => traitsOf(o.from).map(trait => ({ key: traitKey(o.from, trait), trait, race: o.from, level: o.level, active: (trait.level ?? 1) <= o.level, options: [], picks: stateOf(s).picks?.[traitKey(o.from, trait)] ?? [] } as ActiveTrait))))
+}
 /** Whether an item can be equipped or attuned at all (a flask or a pearl can't: its features count while carried). */
 export const wearable = (item: Entry) => ['Weapon', 'Armor'].includes(String(item.fields.kind ?? '')) || !!item.fields.attunement
   || !!(effectsOf(item).length || spellsOf(item).length || item.fields.charges)

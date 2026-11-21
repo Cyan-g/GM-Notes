@@ -4,7 +4,8 @@
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { formatMoney, playerMode, state } from '../store'
-import { addToInventory, currentPc } from '../sheet'
+import { currentPc } from '../sheet'
+import { addToInventory } from '../sheetData'
 import { carriersOf, shopsSelling } from '../items'
 import EntryLink from './EntryLink.vue'
 

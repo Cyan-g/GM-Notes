@@ -10,12 +10,16 @@ import {
   spellChoices, spellCounts, steps, subclassesOf, wizard,
 } from '../wizard'
 import { itemNamed } from '../lookup'
-import { subclassLevelOf } from '../classRules'
+import { subclassLevelOf, classEntry } from '../classRules'
 import { abilityBonusText } from '../abilityBonus'
 import { DICE } from '../model/classes'
 import { currentPc, setCurrent } from '../sheet'
 import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, ORD, SKILLS, dieSize, mod, signed } from '../model/dnd'
-import { classEntry, choiceOpen, grantOptions, isClassOrigin, scaleAt, setCastAbility, setPicks as setTraitPicks, sourceTag, speciesGrants, speciesSizes, speciesTraits, traitsOf, type ActiveTrait } from '../species'
+import {
+  choiceOpen, grantOptions, isClassOrigin, scaleAt, setCastAbility, setPicks as setTraitPicks, sourceTag, speciesGrants, speciesSizes, speciesTraits,
+  type ActiveTrait,
+} from '../species'
+import { traitsOf } from '../model/traits'
 import { rule } from '../rules'
 import { entries, formatMoney, get, listOptions, playerMode } from '../store'
 import { go, hrefEntry } from '../router'

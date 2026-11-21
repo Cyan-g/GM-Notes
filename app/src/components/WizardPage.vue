@@ -3,7 +3,8 @@
 // its facts (the class table, the species' size and speed) and features or traits, as on its own page.
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
-import { classLabel, traitsOf } from '../species'
+import { classLabel } from '../classRules'
+import { traitsOf } from '../model/traits'
 import { hrefEntry } from '../router'
 import MarkdownView from './MarkdownView.vue'
 import ClassOverview from './ClassOverview.vue'

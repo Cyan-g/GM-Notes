@@ -1,7 +1,9 @@
 // Copying the data folder somewhere else, and going back to one of the app's own backups.
 import { save, state } from './store'
 import type { Storage } from './storage/storage'
+import { BACKUP_DIR } from './backupNames'
 
+/** The date and time in a backup folder's name: "2026-11-21-1405" (not the automatic backups' stampOf). */
 const stamp = () => {
   const d = new Date()
   const p = (n: number) => String(n).padStart(2, '0')
@@ -37,7 +39,7 @@ export async function backupTo(dest: Storage, onProgress: (done: number, total: 
 
 /** The app's automatic backups in data/backups, newest first. */
 export async function listBackups(): Promise<string[]> {
-  return (await state.storage!.list('backups')).filter(n => n.endsWith('.sqlite')).sort().reverse()
+  return (await state.storage!.list(BACKUP_DIR)).filter(n => n.endsWith('.sqlite')).sort().reverse()
 }
 
 /** Replace the database with a backup (the current one is kept as a backup first), then start over with it. */

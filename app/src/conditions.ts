@@ -2,10 +2,10 @@
 // for each, the numbers they change where the sheet has them (exhaustion as the ruleset says, advantage and
 // disadvantage on saves and skills, speed 0), and hints for the rest (attack rolls, attacks against them).
 import type { CharacterSheet, Entry } from './model/types'
-import type { GearTotals } from './gear'
+import type { GearTotals } from './effects'
 import { rule } from './rules'
 import { db, get, state, touch } from './store'
-import { sheetToEdit } from './sheet'
+import { sheetToEdit } from './sheetData'
 import { watch } from 'vue'
 import { ABILITY_KEYS, SKILLS, type Ability } from './model/dnd'
 
@@ -40,7 +40,7 @@ export function exhaustionText(level: number): string {
 }
 
 /**
- * Adds what the sheet's conditions do to the totals (gear.ts): exhaustion's penalties, disadvantage on checks and
+ * Adds what the sheet's conditions do to the totals (effects.ts): exhaustion's penalties, disadvantage on checks and
  * saves, speed 0 or halved, and the attack rolls' advantage or disadvantage (shown with the attacks).
  */
 export function applyConditions(s: CharacterSheet, t: GearTotals) {

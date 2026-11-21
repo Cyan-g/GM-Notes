@@ -5,7 +5,7 @@
 // another of the same kind. In play the sheet only shows what was picked.
 import { computed, nextTick, onMounted, ref } from 'vue'
 import type { CharacterSheet, Entry, TraitGrant } from '../model/types'
-import { editSheet } from '../sheet'
+import { editSheet } from '../sheetData'
 import { state } from '../store'
 import { ui } from '../ui'
 import {

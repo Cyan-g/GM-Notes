@@ -1,11 +1,12 @@
 // What an item asks of whoever uses it (its Requirements field): minimum ability scores, a class (or any
 // spellcaster), a race (or a subrace of it), skill proficiencies. An item that doesn't fit can't be equipped,
 // or attuned if it needs attunement. Heavy armor is the exception: below its Strength it can still be worn,
-// at −10 ft speed (gear.ts).
+// at −10 ft speed (effects.ts).
 import type { CharacterSheet, Entry, Id, Requirements } from './model/types'
 import { get } from './store'
 import { classesOf } from './model/classes'
 import { ABILITY_UPPER } from './model/dnd'
+import { raceChain } from './species'
 
 const ABILITY_SHORT: Record<string, string> = ABILITY_UPPER
 const orList = (l: string[]) => (l.length < 2 ? l.join('') : `${l.slice(0, -1).join(', ')} or ${l[l.length - 1]}`)
@@ -42,12 +43,9 @@ export function describeRequirements(e: Entry): string {
 
 /** Whether a race is one of the given races or a subrace of one. */
 function raceFits(raceId: Id | undefined, races: Id[]): boolean {
-  const seen = new Set<Id>()
-  for (let id = raceId; id && !seen.has(id); id = get(id)?.fields.parent as Id | undefined) {
-    if (races.includes(id)) return true
-    seen.add(id)
-  }
-  return false
+  // the race and each "Subrace of" up the chain, by id: one whose entry is gone still counts (a requirement may name it)
+  const ids = [raceId, ...raceChain(raceId, true).map(r => r.fields.parent as Id | undefined)]
+  return ids.some(id => !!id && races.includes(id))
 }
 
 /**

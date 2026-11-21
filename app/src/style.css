@@ -1327,7 +1327,7 @@ h1 .icon svg.gi { color: var(--accent); }
 /* a long "Mentioned in" list scrolls inside its card */
 .mentions-list { max-height: 18rem; overflow-y: auto; }
 
-/* An item's effects (gear.ts): editor rows, and the sheet's gear marks. */
+/* An item's effects (effects.ts): editor rows, and the sheet's gear marks. */
 .effects-input { display: flex; flex-direction: column; gap: .35rem; align-items: flex-start; }
 .effect-row { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
 .effect-row select, .effect-row input { width: auto; }

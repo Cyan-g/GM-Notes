@@ -4,7 +4,7 @@
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { byType, playerMode, state } from '../store'
-import { editSheet } from '../sheet'
+import { editSheet } from '../sheetData'
 import { membersOf, rankForRenown, renownOf, ranksOf } from '../org'
 import EntryLink from './EntryLink.vue'
 import EntryPicker from './edit/EntryPicker.vue'

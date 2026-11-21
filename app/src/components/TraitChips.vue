@@ -3,7 +3,7 @@
 // uses per rest. Shown on the race's page, the Species card and the trait editor.
 import { computed } from 'vue'
 import type { Trait, TraitOption, TraitSpell } from '../model/types'
-import { describeEffects } from '../gear'
+import { describeEffects } from '../effects'
 import { grantLabel, spellLabel, usesLabel, GRANT_KINDS, HOW_SPECIES } from '../species'
 import EntryLink from './EntryLink.vue'
 

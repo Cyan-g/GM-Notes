@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import TraitList from './TraitList.vue'
-import { classLabel } from '../species'
+import { classLabel } from '../classRules'
 import { abilityBonusText } from '../abilityBonus'
 // Shows one schema field of an entry, read-only.
 import AppIcon from './AppIcon.vue'
@@ -16,7 +16,8 @@ import EncounterTable from './EncounterTable.vue'
 import RanksTable from './RanksTable.vue'
 import { renderInline } from '../markdown'
 import { CRAFTING_RULE, craftingTime } from '../crafting'
-import { describeEffect, howCast } from '../gear'
+import { describeEffect } from '../effects'
+import { howCast } from '../items'
 import type { GearEffect, ItemSpell } from '../model/types'
 
 const props = defineProps<{ def: FieldDef; value: unknown; entry: Entry }>()

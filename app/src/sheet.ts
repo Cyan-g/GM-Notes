@@ -1,18 +1,21 @@
-// A player character's sheet: what's stored on the PC entry (fields.sheet) and the numbers worked out from it
-// with the 5e rules: modifiers, proficiency bonus, saves, skills, armor class, attacks and spellcasting.
+// A player character's sheet: the numbers worked out from what's stored on the PC entry (sheetData.ts) with the 5e
+// rules: modifiers, proficiency bonus, saves, skills, armor class, attacks and spellcasting; and what's done with it
+// (the current character, the Workbench, equipping and dragging inventory lines, rests).
 import { computed, reactive } from 'vue'
 import { restSlots } from './slots'
-import { classesOf, hitDicePools, totalLevel } from './model/classes'
+import { classesOf, totalLevel } from './model/classes'
 import type { CharacterSheet, Crafting, Entry, GearEffect, Id, InventoryLine, Proficiencies, Spellbook } from './model/types'
 import { MARTIAL_WEAPONS, MASTERY_OF, SIMPLE_WEAPONS } from './model/schema'
 import { optionsIn } from './model/lists'
 import { db, get, listOptions, state, touch } from './store'
-import { breakdown, gearTotals, restItems, scoreWith, spellsOf, sum, type RegainRoll } from './gear'
+import { breakdown, gearTotals, scoreWith, sum } from './effects'
+import { isWearable, isWeaponOrArmor, restItems, type RegainRoll } from './items'
 import { unmet } from './requirements'
 import { setConditions } from './conditions'
 import { rule } from './rules'
-import { castingOf } from './classRules'
-import { own, ownerOf, restSpecies, speciesExpertise, speciesGrants, speciesSkills, speciesSpeed, speciesSpeeds, speciesTraits } from './species'
+import { castingOf, hitDicePools } from './classRules'
+import { restSpecies, speciesExpertise, speciesGrants, speciesSkills, speciesSpeed, speciesSpeeds, speciesTraits } from './species'
+import { blankProfs, emptyBook, ownerOf, profsToEdit, sheetOf, sheetOrBlank, sheetToEdit, stackItem } from './sheetData'
 import { SKILLS, mod, profBonus, signed, type Ability } from './model/dnd'
 import { changed } from './edit'
 
@@ -30,26 +33,9 @@ export function hitDiceOf(pc: Entry, s: CharacterSheet): { die: string; total: n
   }
   return pools
 }
-export const blankSheet = (): CharacterSheet => ({
-  abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
-  saves: [], skills: {}, inventory: [], features: [],
-})
-/** A PC's sheet for reading, with anything never filled in at its default. */
-export const sheetOf = (pc: Entry): CharacterSheet | undefined =>
-  pc.fields.sheet ? own({ ...blankSheet(), ...(pc.fields.sheet) }, pc) : undefined
-/** A PC's sheet for reading, blank if never filled in: still theirs, so their species and classes count on it. */
-export const sheetOrBlank = (pc: Entry): CharacterSheet => sheetOf(pc) ?? own(blankSheet(), pc)
-/** A PC's stored sheet for changing: created, or completed, as needed. */
-export function sheetToEdit(pc: Entry): CharacterSheet {
-  const s = (pc.fields.sheet ??= {} as CharacterSheet) as Partial<CharacterSheet>
-  const blank = blankSheet() as unknown as Record<string, unknown>
-  for (const k of ['abilities', 'saves', 'skills', 'inventory', 'features']) if ((s as Record<string, unknown>)[k] == null) (s as Record<string, unknown>)[k] = blank[k]
-  return own(s as CharacterSheet, pc)
-}
 
 // ---------- proficiencies ----------
 
-export const blankProfs = (): Proficiencies => ({ armor: [], weapons: [], tools: [], languages: [] })
 /**
  * A sheet's proficiencies for reading, with empty lists for anything never filled in, plus what the character's
  * species grants (not with `typedOnly`, for editing the typed ones).
@@ -68,12 +54,6 @@ export function profsOf(s?: CharacterSheet, typedOnly = false): Proficiencies {
 /** Proficiency in a skill: 0, 1 (proficient: typed, or from the species or a feature) or 2 (expertise: typed, or picked in a feature). */
 export const skillLevel = (s: CharacterSheet, name: string): number =>
   speciesExpertise(ownerOf(s), s).has(name) ? 2 : Math.max(s.skills[name] ?? 0, speciesSkills(ownerOf(s), s).has(name) ? 1 : 0)
-/** A sheet's stored proficiencies for changing. */
-export function profsToEdit(s: CharacterSheet): Proficiencies {
-  const p = (s.proficiencies ??= blankProfs())
-  for (const k of ['armor', 'weapons', 'tools', 'languages'] as const) p[k] ??= []
-  return p
-}
 
 /** The category of a standard weapon ("Light Crossbow" → Simple), if it is one. */
 export function categoryOf(weapon: string): 'Simple' | 'Martial' | undefined {
@@ -112,8 +92,6 @@ export function setCurrent(id: Id | undefined) {
   touch()
 }
 
-/** A spellbook with nothing in it: no slots at any of the nine levels, no spells. */
-export const emptyBook = (): Spellbook => ({ slots: Array.from({ length: 9 }, () => ({ max: 0, used: 0 })), known: [], prepared: [], always: [] })
 /** The spellbook in use: the given character's, else the current character's, else the world's. */
 export function activeSpellbook(of?: Entry): Spellbook {
   const pc = of ?? currentPc.value
@@ -386,10 +364,11 @@ export function trackerStats(pc: Entry) {
 
 // ---------- inventory: what can be done with a line, and dragging lines around ----------
 
-/** Weapons and armor can be equipped, and anything else used for its effects, spells or charges (a ring, boots, a horn). */
+/** Weapons and armor can be equipped, and anything else used for its effects, spells or charges (a ring, boots, a horn)
+ * unless it needs attunement (it's attuned instead). */
 export const canEquip = (l: InventoryLine) => {
   const e = get(l.item)
-  return ['Weapon', 'Armor'].includes(String(e?.fields.kind ?? '')) || (!e?.fields.attunement && !!(e?.fields.effects?.length || spellsOf(e).length || e?.fields.charges))
+  return !!e && isWearable(e) && (isWeaponOrArmor(e) || !e.fields.attunement)
 }
 /** Attunement: only items marked "Requires attunement" (and anything already attuned, so it can be taken off). */
 export const canAttune = (l: InventoryLine) => !!l.attuned || !!get(l.item)?.fields.attunement
@@ -405,25 +384,6 @@ export function blockedFor(pc: Entry, l: InventoryLine, key: 'equipped' | 'attun
   const why = unmet(pc, s, e, a => score(s, a as Ability), !!castingAbility(pc, s))
   return why.length ? `${e.name} ${why.join(', ')}` : undefined
 }
-
-/** Change a PC's sheet and mark the PC as changed (nothing happens in a tab that doesn't save). */
-export function editSheet(pc: Entry, fn: (s: CharacterSheet) => void) {
-  if (state.readOnly) return
-  fn(sheetToEdit(pc))
-  changed(pc)
-}
-
-/**
- * Put n of an item in a sheet's inventory: onto a line of that item that isn't equipped (an equipped one stays as
- * it is), else as a new line. A negative n takes some off that line instead, and never adds one.
- */
-function stackItem(s: CharacterSheet, id: Id, n: number) {
-  const l = s.inventory.find(x => x.item === id && !x.equipped)
-  if (l) l.qty = (l.qty || 0) + n
-  else if (n > 0) s.inventory.push({ item: id, qty: n })
-}
-/** Give a character n of an item (one by default), stacked as stackItem says. */
-export const addToInventory = (pc: Entry, id: Id, n = 1) => editSheet(pc, s => stackItem(s, id, n))
 
 /** The inventory line being dragged: from the inventory, or out of the equipped or attunement list. */
 export const dragged = reactive<{ pc: Id | null; i: number; from: 'inventory' | 'equipped' | 'attuned' }>({ pc: null, i: -1, from: 'inventory' })

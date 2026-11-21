@@ -1,12 +1,14 @@
 // What the twelve classes of the SRD 5.2.1 (CC BY 4.0) give a new character, for the character creation wizard:
 // saving throws, the skills to pick from, armor, weapon and tool proficiencies, cantrips and prepared spells by level,
 // the levels with a feat (Ability Score Improvement, or an Epic Boon at 19), and starting equipment or gold instead.
-// The hit die, spell slots and casting ability are in model/classes.ts, slots.ts and sheet.ts. A class that isn't
-// here (homebrew, or one the SRD doesn't have) is filled in by hand in the wizard.
-import type { ClassBasics, Copper, Id } from './model/types'
-import { state } from './store'
-import { CLASS_DIE } from './model/classes'
-import type { Ability } from './model/dnd'
+// A class's entry (Archive → Classes) can change any of it ("Class basics"); the hit die and the casting ability come
+// from here too, the spell slots from slots.ts. A class that isn't here (homebrew, or one the SRD doesn't have) is
+// filled in by hand in the wizard, or on its class entry.
+import type { CharacterSheet, ClassBasics, ClassLine, Copper, Entry, Id } from './model/types'
+import { entries, listOptions } from './store'
+import { CLASS_DIE, classesOf, totalLevel } from './model/classes'
+import { dieSize, type Ability } from './model/dnd'
+import { traitsOf } from './model/traits'
 
 /** A thing a class's or background's equipment holds, by name (matched to the world's items when it has them). */
 export interface KitLine { name: string; amount?: number; item?: Id }
@@ -143,10 +145,17 @@ export function rulesOf(cls: string | undefined): ClassRules | undefined {
   }
 }
 
-// ---- the class entry's own basics (its Edit page), over the built-in ones ----
+// ---- the class entry, and its own basics (its Edit page) over the built-in ones ----
+/** The Class entry describing a class of the Classes list, if the world has one. */
+export const classEntry = (cls: string | undefined) => (cls ? entries.value.find(e => e.type === 'class' && e.fields.class === cls) : undefined)
+/** The class a class or subclass entry belongs to, by its list label ("Warlock"). */
+export function classLabel(e: Entry): string {
+  const cls = e.type === 'class' ? String(e.fields.class ?? e.name) : String(e.fields.class ?? '')
+  return listOptions('class').find(o => o.id === cls)?.label ?? cls
+}
 /** What a class's entry sets in "Class basics" (fields.basics), if anything. */
 export function ownBasics(cls: string): ClassBasics | undefined {
-  const e = Object.values(state.db?.entries ?? {}).find(x => x.type === 'class' && x.fields.class === cls)
+  const e = classEntry(cls)
   const b = e?.fields.basics as ClassBasics | undefined
   return b && Object.keys(b).length ? b : undefined
 }
@@ -179,6 +188,25 @@ export const subclassLevelOf = (cls: string | undefined) => (cls ? basicsOf(cls)
 export const multiclassOf = (cls: string): Multiclass | undefined => basicsOf(cls).multiclass
 export const casterOf = (cls: string) => basicsOf(cls).caster ?? 'none'
 export const castingOf = (cls: string): Ability | undefined => basicsOf(cls).casting
+/** A class line's hit die: its own, else its class's. */
+export const dieOf = (l: ClassLine) => l.die || hitDieOf(l.class)
+
+/** Hit dice by die size, biggest first: how many the levels give, how many are spent. */
+export function hitDicePools(pc: Entry, s: CharacterSheet): { die: string; total: number; spent: number }[] {
+  const totals = new Map<string, number>()
+  const c = classesOf(pc)
+  if (c.length) for (const l of c) totals.set(dieOf(l), (totals.get(dieOf(l)) ?? 0) + (Number(l.level) || 0))
+  else totals.set(s.hitDie || 'd8', totalLevel(pc))
+  return [...totals].filter(([, n]) => n > 0).sort((a, b) => dieSize(b[0]) - dieSize(a[0]))
+    .map(([die, total]) => ({ die, total, spent: Math.min(total, s.hitDiceSpent?.[die] ?? 0) }))
+}
+
+/** The levels a subclass of a class is expected to bring features at: where the class's other subclasses do, and the
+ * level the class chooses its subclass at. */
+export function expectedSubclassLevels(cls: string, except?: string): number[] {
+  const other = entries.value.filter(e => e.type === 'subclass' && e.fields.class === cls && e.id !== except)
+  return [...new Set([subclassLevelOf(cls), ...other.flatMap(e => traitsOf(e).map(t => t.level ?? 1))])].sort((a, b) => a - b)
+}
 
 /**
  * Multiclassing (SRD 5.2.1): the scores a class asks for (13 or more in each, or in one of them with `any`), from the new

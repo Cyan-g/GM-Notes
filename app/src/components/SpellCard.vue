@@ -6,7 +6,7 @@ import type { Entry } from '../model/types'
 import { describe } from '../describe'
 import MarkdownView from './MarkdownView.vue'
 import { activeEffectsOf, areaText, growthText, rollText, rollsOf, saveText } from '../spells'
-import { describeEffects } from '../gear'
+import { describeEffects } from '../effects'
 
 const props = defineProps<{ e: Entry }>()
 const rolls = computed(() => rollsOf(props.e))

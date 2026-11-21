@@ -1,12 +1,10 @@
 // A character's classes: each with its level, subclass and hit die. The total level is their sum; a character
 // without classes keeps a plain level. Class ids are the "class" list's options (Archive → Lists); the standard
 // ones are their own names, so the tables below find them even after a rename.
-import type { CharacterSheet, ClassLine, Database, Entry } from './types'
+import type { ClassLine, Database, Entry } from './types'
 import { labelIn, optionsIn, type ListOption } from './lists'
 import { TYPES } from './schema'
 import { CLASS_SVG } from '../icons/classes'
-import { hitDieOf } from '../classRules'
-import { dieSize } from './dnd'
 
 /** The hit die each standard class brings. Another class picks its own (d8 until it does). */
 export const CLASS_DIE: Record<string, string> = {
@@ -27,20 +25,9 @@ export function totalLevel(pc: Entry): number {
   const c = classesOf(pc)
   return clampLevel(c.length ? c.reduce((s, l) => s + (Number(l.level) || 0), 0) : Number(pc.fields.level) || 1)
 }
-export const dieOf = (l: ClassLine) => l.die || hitDieOf(l.class)
 /** The class that defines the character: the highest level one, the first listed on a tie. */
 export function mainClass(pc: Entry): ClassLine | undefined {
   return classesOf(pc).reduce<ClassLine | undefined>((best, l) => (!best || (Number(l.level) || 0) > (Number(best.level) || 0) ? l : best), undefined)
-}
-
-/** Hit dice by die size, biggest first: how many the levels give, how many are spent. */
-export function hitDicePools(pc: Entry, s: CharacterSheet): { die: string; total: number; spent: number }[] {
-  const totals = new Map<string, number>()
-  const c = classesOf(pc)
-  if (c.length) for (const l of c) totals.set(dieOf(l), (totals.get(dieOf(l)) ?? 0) + (Number(l.level) || 0))
-  else totals.set(s.hitDie || 'd8', totalLevel(pc))
-  return [...totals].filter(([, n]) => n > 0).sort((a, b) => dieSize(b[0]) - dieSize(a[0]))
-    .map(([die, total]) => ({ die, total, spent: Math.min(total, s.hitDiceSpent?.[die] ?? 0) }))
 }
 
 /** A subclass name without its class in front ("Warlock - The Dusk Prince" → "The Dusk Prince"). */

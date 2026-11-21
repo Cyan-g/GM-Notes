@@ -64,7 +64,7 @@ export interface RecipeLine { item: Id; amount: number }
 /** One rank of an organization, highest first. `renown` is what it takes; none for a rank that is appointed. */
 export interface RankLine { title: string; renown?: number; station?: string }
 /**
- * One thing an item does to whoever wears, wields or attunes it (see gear.ts). `value` is added, or with `set` an
+ * One thing an item does to whoever wears, wields or attunes it (see effects.ts). `value` is added, or with `set` an
  * ability score is raised to it (Gauntlets of Ogre Power: STR 19), or with `force` it becomes that score even when
  * lower (a cursed ring: INT 6). `ability`, `skill`, `type` (a damage type, for resistance or extra damage) and
  * `text` (a feature) say what it applies to. `mode`: advantage or disadvantage (on a skill or a save, with an optional
@@ -115,7 +115,7 @@ export interface Requirements {
   note?: string
 }
 /**
- * A spell an item lets its user cast while it's worn, wielded or attuned (gear.ts): for `cost` of the item's charges,
+ * A spell an item lets its user cast while it's worn, wielded or attuned (items.ts): for `cost` of the item's charges,
  * once per short or long rest or per day, at will, or `prepared` (added to the prepared spells, cast with the
  * character's own slots). `level`: cast at that level.
  */

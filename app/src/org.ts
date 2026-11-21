@@ -2,7 +2,7 @@
 // and the organizations at a place (its seat, or present there).
 import type { Entry, Id, RankLine } from './model/types'
 import { byType, get, relationsWith } from './store'
-import { sheetOf } from './sheet'
+import { sheetOf } from './sheetData'
 
 /** Roles that lead an organization ("Queen", "High Priest", "Captain"…). The one list every page goes by. */
 export const LEADER = /\b(leader|head|chief|chieftain|duke|duchess|king|queen|abbess|abbot|master|grandmaster|captain|high[- ]?priest(ess)?|archbishop|archmage|vizier|matriarch|patriarch|lord|lady|commander|general|elder|sage|saint)\b/i

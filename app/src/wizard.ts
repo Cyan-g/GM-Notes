@@ -10,8 +10,9 @@ import { bonusApplied, bonusOpen, type BonusChoice } from './abilityBonus'
 import { ABILITY_KEYS, dieSize, mod, spellLevel, type Ability } from './model/dnd'
 import { EPIC_BOON_LEVEL, basicsOf, hitDieOf, rulesOf, subclassLevelOf, type Kit, type KitLine } from './classRules'
 import { ruleSlots } from './slots'
-import { blankSheet, emptyBook } from './sheet'
-import { choiceOpen, classSpellsFrom, isClassOrigin, own, speciesGrants, speciesTraits, PROFS_TRAIT } from './species'
+import { blankSheet, emptyBook, own } from './sheetData'
+import { choiceOpen, classSpellsFrom, isClassOrigin, raceChain, speciesGrants, speciesTraits } from './species'
+import { PROFS_TRAIT } from './model/traits'
 import { entries, get } from './store'
 import { rule } from './rules'
 import { changed, createEntry } from './edit'
@@ -101,7 +102,7 @@ export function draftPc(d: Draft, sheet?: CharacterSheet): Entry {
 export function bonusOf(d: Draft): AbilityBonus | undefined {
   if (d.bonusFrom === 'custom') return undefined
   if (d.bonusFrom === 'background') return get(d.background)?.fields.abilityIncrease
-  for (let r = get(d.race); r; r = get(r.fields.parent as Id | undefined)) if (r.fields.abilityIncrease) return r.fields.abilityIncrease
+  for (const r of raceChain(d.race, true)) if (r.fields.abilityIncrease) return r.fields.abilityIncrease
   return undefined
 }
 /** What the chosen bonus adds. */
@@ -209,8 +210,7 @@ export function kitsOf(d: Draft): { items: KitLine[]; money: Copper } {
  */
 export function languageRule(d: Draft): { picks: number; given: { id: string; from: string }[]; speciesLists: boolean } {
   const pc = draftPc(d)
-  const lineage: Entry[] = []
-  for (let r = get(d.race); r && r.type === 'race' && !lineage.includes(r); r = get(r.fields.parent as string | undefined)) lineage.push(r)
+  const lineage = raceChain(d.race)
   const listed = lineage.flatMap(r => ((r.fields.languages as string[] | undefined) ?? []).filter(l => l.trim()))
   const speciesLists = listed.length > 0
   // "one extra language", "two languages of your choice": picks, not languages
@@ -278,11 +278,7 @@ export const species = () => entries.value.filter(e => e.type === 'race' && !get
 /** A race's subraces, by name. */
 export const subracesOf = (id: Id | undefined) => (id ? entries.value.filter(e => e.type === 'race' && e.fields.parent === id).sort((a, b) => a.name.localeCompare(b.name)) : [])
 /** The main race of a race (itself if it has none). */
-export function mainRace(id: Id | undefined): Entry | undefined {
-  let r = get(id)
-  for (let i = 0; r && get(r.fields.parent as Id | undefined) && i < 10; i++) r = get(r.fields.parent as Id | undefined)
-  return r
-}
+export const mainRace = (id: Id | undefined): Entry | undefined => raceChain(id, true).at(-1)
 
 // ---------- making it ----------
 

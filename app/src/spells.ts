@@ -1,6 +1,6 @@
 // What a spell rolls and does (its `rolls`, `conditions` and `active` fields): a roll in words at the caster's level
 // and the slot it's cast with ("2d10 fire", "2d4 + 3 healing"), how it grows, and the spells a character has switched
-// on, whose "while active" effects their sheet counts (gear.ts) until a long rest.
+// on, whose "while active" effects their sheet counts (effects.ts) until a long rest.
 import type { CharacterSheet, Entry, GearEffect, Id, SpellArea, SpellRoll } from './model/types'
 import { get } from './store'
 import { ORD, signed, spellLevel } from './model/dnd'

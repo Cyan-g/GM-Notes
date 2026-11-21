@@ -1,9 +1,9 @@
 <script setup lang="ts">
-// The spells an item lets its user cast (gear.ts), as a table: the spell, how it's cast, what it costs in charges
+// The spells an item lets its user cast (items.ts), as a table: the spell, how it's cast, what it costs in charges
 // and the level it's cast at (blank: its own).
 import { computed } from 'vue'
 import type { ItemSpell } from '../../model/types'
-import { howCast } from '../../gear'
+import { howCast } from '../../items'
 import EntryPicker from './EntryPicker.vue'
 
 const model = defineModel<ItemSpell[] | undefined>()

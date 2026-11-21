@@ -11,15 +11,18 @@ import ConditionIcon from './ConditionIcon.vue'
 import { computed, onBeforeUnmount, ref } from 'vue'
 import type { CharacterSheet, ClassLine, Entry, Proficiencies } from '../model/types'
 import { byType, get, listOptions, setList, state } from '../store'
-import { CLASS_DIE, DICE, classText, classesOf, dieOf } from '../model/classes'
+import { CLASS_DIE, DICE, classText, classesOf } from '../model/classes'
+import { dieOf } from '../classRules'
 import { changed } from '../edit'
 import { hrefEntry, hrefTab } from '../router'
 import {
-  armorClass, attacks, canAttune, canEquip, castingAbility, hitDiceOf, initiative, levelOf, maxHpOf,
-  passivePerception, profsOf, profsToEdit, saveBonus, sheetOrBlank, sheetToEdit, skillBonus, skillLevel, speedOf, baseSpeed, otherSpeeds, longRest, shortRest,
+  armorClass, attacks, canAttune, canEquip, castingAbility, hitDiceOf, initiative, levelOf, maxHpOf, passivePerception, profsOf, saveBonus,
+  skillBonus, skillLevel, speedOf, baseSpeed, otherSpeeds, longRest, shortRest,
 } from '../sheet'
+import { profsToEdit, sheetOrBlank, sheetToEdit } from '../sheetData'
 import { ABILITIES, SKILLS, concentrationDc, dieSize, mod, profBonus, signed, type Ability } from '../model/dnd'
-import { advOf, breakdown, chargesLeft, gearTotals, scoreBreakdown, scoreWith, setCharges, sum, type Part, type RegainRoll } from '../gear'
+import { advOf, breakdown, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../effects'
+import { chargesLeft, setCharges, type RegainRoll } from '../items'
 import ProfChips from './ProfChips.vue'
 import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
@@ -48,7 +51,7 @@ const prof = computed(() => profBonus(level.value))
 const ac = computed(() => armorClass(s.value))
 const atks = computed(() => attacks(s.value, prof.value))
 const cast = computed(() => castingAbility(props.pc, s.value))
-// ---- what the active gear changes (gear.ts): the numbers below include it, a ✦ marks them, hovering says why ----
+// ---- what the active gear changes (effects.ts): the numbers below include it, a ✦ marks them, hovering says why ----
 const gt = computed(() => gearTotals(s.value))
 /** Senses, resistances, immunities and feature lines from gear (the species' and features' are listed with them). */
 const fromGear = computed(() => {

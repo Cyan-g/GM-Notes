@@ -2,7 +2,7 @@
 // has the Dwarf's traits and its own). A trait can carry effects like gear (darkvision, resistances, advantage on
 // saves, max HP per level…), grant proficiencies and languages, give spells, have uses that come back on a rest,
 // and ask the player to choose (skills, a language, or one of several options such as an elven lineage). Traits count
-// from their level on. The sheet's totals (gear.ts) add the effects; the picks and spent uses live on the sheet.
+// from their level on. The sheet's totals (effects.ts) add the effects; the picks and spent uses live on the sheet.
 // A character's background counts the same way: its skills and tool are a "Proficiencies" trait (several tools: the
 // player picks one), then its own features. Any granted skill, tool, language, weapon or armor can be swapped by the
 // player for another of the same kind (an overlap with the class's skills, a DM's ruling).
@@ -10,52 +10,32 @@
 // uses that can grow by level (Rage), scaling values (Sneak Attack), and picks (Fighting Style, Expertise, Metamagic).
 import type { CharacterSheet, Entry, GearEffect, Id, SpeciesState, Speeds, Trait, TraitChoice, TraitGrant, TraitOption, TraitSpell } from './model/types'
 import { classesOf, totalLevel, withoutClass } from './model/classes'
-import { subclassLevelOf } from './classRules'
+import { classEntry, classLabel } from './classRules'
 import { entries, get, listOptions, state } from './store'
-import { score, sheetOf } from './sheet'
+import { sheetOf } from './sheetData'
 import { SKILLS, mod, ord, profBonus, type Ability } from './model/dnd'
-import { effectsOf, inUse, spellsOf } from './gear'
+import { inUse, isWearable } from './items'
 import { entryNamed } from './lookup'
-
-
-// ---- whose sheet is this? (the totals only get a sheet; sheet.ts registers each sheet it hands out) ----
-const OWNER = new WeakMap<object, Entry>()
-/** Remember which character a sheet object belongs to. */
-export function own<T extends object>(s: T, pc: Entry): T { OWNER.set(s, pc); return s }
-/** The character a sheet belongs to, if known. */
-export const ownerOf = (s: object | undefined) => (s ? OWNER.get(s) : undefined)
+import { traitsOf } from './model/traits'
 
 /** A trait's key on a character: the race it comes from and its id. */
 export const traitKey = (race: Entry, t: Trait) => `${race.id}.${t.id}`
-const ownTraits = (e: Entry | undefined): Trait[] =>
-  Array.isArray(e?.fields.speciesTraits) ? e!.fields.speciesTraits!.filter(t => t && typeof t === 'object') : []
-/** The id of a background's proficiencies trait (its skills and tool). */
-export const PROFS_TRAIT = 'proficiencies'
-/** A race's traits; a background's, after one made from its skills and tool. */
-export function traitsOf(e: Entry | undefined): Trait[] {
-  if (e?.type !== 'background') return ownTraits(e)
-  const skills = (e.fields.skillProfs ?? []).filter(Boolean), tools = (e.fields.toolProfs ?? []).filter(Boolean)
-  const t: Trait = { id: PROFS_TRAIT, name: 'Proficiencies' }
-  // several tools: the player picks one (one kind of gaming set), unless the background gives them all
-  const all = tools.length === 1 || !!e.fields.toolsAll
-  const grants: TraitGrant[] = [...skills.map(id => ({ kind: 'skill' as const, id })), ...(all ? tools.map(id => ({ kind: 'tool' as const, id })) : [])]
-  if (grants.length) t.grants = grants
-  if (!all) t.choice = { kind: 'tool', count: 1, among: tools }
-  return grants.length || t.choice ? [t, ...ownTraits(e)] : ownTraits(e)
-}
 
-/** The character's race and the races it's a subrace of, the main race first. */
-export function lineage(pc: Entry | undefined): Entry[] {
+/**
+ * A race and the races it's a subrace of, nearest first: from the entry `id` up its "Subrace of", until an entry
+ * that's missing or already passed (a loop in the data). Only races count, unless `anyType` (a "Subrace of" that
+ * isn't a race, which the data check reports, is then followed too).
+ */
+export function raceChain(id: Id | undefined, anyType = false): Entry[] {
   const out: Entry[] = []
-  let r = get(pc?.fields.race as Id | undefined)
-  while (r && r.type === 'race' && !out.includes(r)) { out.unshift(r); r = get(r.fields.parent as Id | undefined) }
+  for (let r = get(id); r && (anyType || r.type === 'race') && !out.includes(r); r = get(r.fields.parent as Id | undefined)) out.push(r)
   return out
 }
+/** The character's race and the races it's a subrace of, the main race first. */
+export const lineage = (pc: Entry | undefined): Entry[] => raceChain(pc?.fields.race as Id | undefined).reverse()
 
 /** The character's background, if it has one. */
 export const backgroundOf = (pc: Entry | undefined) => { const b = get(pc?.fields.background as Id | undefined); return b?.type === 'background' ? b : undefined }
-/** The Class entry describing a class of the Classes list, if the world has one. */
-export const classEntry = (cls: string | undefined) => (cls ? entries.value.find(e => e.type === 'class' && e.fields.class === cls) : undefined)
 /**
  * Where a character's traits come from, each with the level that counts for it: the races of its lineage and its
  * background (the character's level), then each class and its subclass (the level in that class).
@@ -132,15 +112,12 @@ export function featsOfCharacter(pc: Entry): Entry[] {
   const s = pc.fields.sheet as CharacterSheet | undefined
   return featsOf(pc, s, origins(pc).flatMap(o => traitsOf(o.from).map(trait => ({ key: traitKey(o.from, trait), trait, race: o.from, level: o.level, active: (trait.level ?? 1) <= o.level, options: [], picks: stateOf(s).picks?.[traitKey(o.from, trait)] ?? [] } as ActiveTrait))))
 }
-/** Whether an item can be equipped or attuned at all (a flask or a pearl can't: its features count while carried). */
-export const wearable = (item: Entry) => ['Weapon', 'Armor'].includes(String(item.fields.kind ?? '')) || !!item.fields.attunement
-  || !!(effectsOf(item).length || spellsOf(item).length || item.fields.charges)
 /** The items whose features count, each once: those in use, and those carried that can't be equipped or attuned. */
 function itemsWithFeatures(s: CharacterSheet | undefined): Entry[] {
   const out = new Map<string, Entry>()
   for (const l of s?.inventory ?? []) {
     const item = get(l.item)
-    if (item?.type === 'item' && traitsOf(item).length && (inUse(l, item) || !wearable(item))) out.set(item.id, item)
+    if (item?.type === 'item' && traitsOf(item).length && (inUse(l, item) || !isWearable(item))) out.set(item.id, item)
   }
   return [...out.values()]
 }
@@ -164,22 +141,11 @@ export function subraceOption(c: TraitChoice, subrace: string, parent: string): 
   const own = (c.options ?? []).filter(o => names.some(n => o.name.toLowerCase() === n || o.name.toLowerCase().startsWith(n + ' ')))
   return own.length === 1 ? own[0] : undefined
 }
-/** The levels a subclass of a class is expected to bring features at: where the class's other subclasses do, and the
- * level the class chooses its subclass at. */
-export function expectedSubclassLevels(cls: string, except?: string): number[] {
-  const other = entries.value.filter(e => e.type === 'subclass' && e.fields.class === cls && e.id !== except)
-  return [...new Set([subclassLevelOf(cls), ...other.flatMap(e => traitsOf(e).map(t => t.level ?? 1))])].sort((a, b) => a - b)
-}
 /** A subrace's main races, nearest first (High Elf: Elf), for its "replaces" choice and the "From Elf" sections. */
 export function parentRaces(e: Entry): Entry[] {
-  const out: Entry[] = []
-  for (let r = get(e.fields.parent as string | undefined); r && r.type === 'race' && !out.includes(r) && r.id !== e.id; r = get(r.fields.parent as string | undefined)) out.push(r)
-  return out
-}
-/** The class a class or subclass entry belongs to, by its list label ("Warlock"). */
-export function classLabel(e: Entry): string {
-  const cls = e.type === 'class' ? String(e.fields.class ?? e.name) : String(e.fields.class ?? '')
-  return listOptions('class').find(o => o.id === cls)?.label ?? cls
+  const up = raceChain(e.fields.parent as Id | undefined), self = up.findIndex(r => r.id === e.id)
+  // a loop back to the race itself ends the list there
+  return self < 0 ? up : up.slice(0, self)
 }
 /** When a class or subclass feature comes: "Warlock Lv 14"; other sources have no level. */
 export function levelTag(a: ActiveTrait): string {
@@ -301,8 +267,10 @@ export function speciesSize(pc: Entry | undefined): string | undefined {
 /** A count by level: the last step reached, else the base. */
 export const byLevel = (steps: [number, number][] | undefined, level: number, base: number) =>
   steps?.length ? steps.filter(([at]) => level >= at).at(-1)?.[1] ?? 0 : base
-/** How many uses a trait has at the level that counts for it; 0 when it has none. */
-export function usesMax(pc: Entry, a: ActiveTrait, s?: CharacterSheet): number {
+/** An ability score on a sheet, as the sheet counts it (sheet.ts's `score`, with gear): what a trait's uses count from. */
+export type ScoreOf = (s: CharacterSheet, a: Ability) => number
+/** How many uses a trait has at the level that counts for it; 0 when it has none. `score` gives the ability scores. */
+export function usesMax(pc: Entry, a: ActiveTrait, s: CharacterSheet | undefined, score: ScoreOf): number {
   const u = a.trait.uses
   if (!u) return 0
   let n: number
@@ -315,15 +283,15 @@ export function usesMax(pc: Entry, a: ActiveTrait, s?: CharacterSheet): number {
   n = byLevel(u.steps, a.level, n)
   return n * (u.times ?? 1)
 }
-export const usesLeft = (pc: Entry, s: CharacterSheet | undefined, a: ActiveTrait) =>
-  Math.max(0, usesMax(pc, a, s) - (stateOf(s).used?.[a.key] ?? 0))
+export const usesLeft = (pc: Entry, s: CharacterSheet | undefined, a: ActiveTrait, score: ScoreOf) =>
+  Math.max(0, usesMax(pc, a, s, score) - (stateOf(s).used?.[a.key] ?? 0))
 /** A scaling value at the trait's level ("+2", "3d6"), if it has one. */
 export const scaleAt = (a: ActiveTrait) => a.trait.scale?.steps.filter(([at]) => a.level >= at).at(-1)?.[1]
 function edit(s: CharacterSheet): SpeciesState { return (s.species ??= {}) }
-/** Spend one use (n = −1 gives one back). */
-export function spendUse(s: CharacterSheet, pc: Entry, a: ActiveTrait, n = 1) {
+/** Spend n uses (1, or −1 to give one back). */
+export function spendUse(s: CharacterSheet, pc: Entry, a: ActiveTrait, n: number, score: ScoreOf) {
   const st = edit(s), used = { ...(st.used ?? {}) }
-  used[a.key] = Math.max(0, Math.min(usesMax(pc, a, s), (used[a.key] ?? 0) + n))
+  used[a.key] = Math.max(0, Math.min(usesMax(pc, a, s, score), (used[a.key] ?? 0) + n))
   if (!used[a.key]) delete used[a.key]
   st.used = used
 }

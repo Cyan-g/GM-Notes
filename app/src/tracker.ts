@@ -3,7 +3,8 @@ import type { Combatant, Entry, Id, Tracker } from './model/types'
 import { byType, db, get, touch } from './store'
 import { combatantsFrom, newCombatantId, playerCombatant, statsOf } from './encounter'
 import { concentrationDc, mod } from './model/dnd'
-import { armorClass, initiative, maxHpOf, sheetOf, sheetToEdit } from './sheet'
+import { armorClass, initiative, maxHpOf } from './sheet'
+import { sheetOf, sheetToEdit } from './sheetData'
 import { changed } from './edit'
 
 export function tracker(): Tracker {

@@ -2,7 +2,8 @@
 import type { Combatant, EncounterLine, Entry, Statblock } from './model/types'
 import { get } from './store'
 import { withSrd } from './srd'
-import { sheetOf, trackerStats } from './sheet'
+import { trackerStats } from './sheet'
+import { sheetOf } from './sheetData'
 import { mod } from './model/dnd'
 
 const XP: Record<string, number> = {

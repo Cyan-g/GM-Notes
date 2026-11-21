@@ -7,16 +7,18 @@
 // pips (or − / ＋ for a pool), scaling values stay on the line. Choices are made on the Edit page, not here.
 import { computed } from 'vue'
 import type { CharacterSheet, Entry, Feature, TraitOption } from '../model/types'
-import { editSheet } from '../sheet'
+import { editSheet } from '../sheetData'
+import { score } from '../sheet'
 import { get, state } from '../store'
 import { hrefEntry } from '../router'
 import { MASTERY_OF } from '../model/schema'
 import { optionsIn } from '../model/lists'
 import { ui } from '../ui'
 import {
-  backgroundOf, choiceCandidates, choiceOpen, featOfFeature, isOn, levelTag, picksLeft, sourceTag, toggleOn, isClassOrigin, scaleAt, shownInPlay, speciesTraits, spendUse, traitsOf, usesLeft, usesMax,
-  type ActiveTrait,
+  backgroundOf, choiceCandidates, choiceOpen, featOfFeature, isOn, levelTag, picksLeft, sourceTag, toggleOn, isClassOrigin, scaleAt, shownInPlay,
+  speciesTraits, spendUse, usesLeft, usesMax, type ActiveTrait,
 } from '../species'
+import { traitsOf } from '../model/traits'
 import EntryLink from './EntryLink.vue'
 import ConditionIcon from './ConditionIcon.vue'
 import MarkdownView from './MarkdownView.vue'
@@ -53,9 +55,9 @@ const originFeat = computed(() => {
 /** The sheet's feature lines, but for feats whose features are listed. */
 const ownFeatures = computed(() => props.s.features.filter(f => f.name.trim() && !live(featOfFeature(f))))
 const flip = (a: ActiveTrait) => { if (!ro.value) editSheet(props.pc, x => toggleOn(x, a.key)) }
-const use = (a: ActiveTrait, n: number) => { if (!ro.value) editSheet(props.pc, x => spendUse(x, props.pc, a, n)) }
-const max = (a: ActiveTrait) => usesMax(props.pc, a, props.s)
-const left = (a: ActiveTrait) => usesLeft(props.pc, props.s, a)
+const use = (a: ActiveTrait, n: number) => { if (!ro.value) editSheet(props.pc, x => spendUse(x, props.pc, a, n, score)) }
+const max = (a: ActiveTrait) => usesMax(props.pc, a, props.s, score)
+const left = (a: ActiveTrait) => usesLeft(props.pc, props.s, a, score)
 /** The source tag: the class (with its level) or subclass, the race, the background. */
 const tag = sourceTag
 /** Weapons to master and other plain picks, by name. */

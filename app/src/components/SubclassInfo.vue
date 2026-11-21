@@ -4,8 +4,8 @@
 // come before the class can choose a subclass, and "Copy as new subclass" to start a homebrew one from it.
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
-import { classEntry, classLabel, traitsOf } from '../species'
-import { ownBasics, subclassLevelOf } from '../classRules'
+import { traitsOf } from '../model/traits'
+import { ownBasics, subclassLevelOf, classEntry, classLabel } from '../classRules'
 import { listOptions, playerMode, state } from '../store'
 import { changed, createEntry } from '../edit'
 import { go, hrefEntry } from '../router'

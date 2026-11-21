@@ -243,11 +243,11 @@ export const SCHEMA = [
       { key: 'slot', label: 'Slot', kind: 'select', options: ['Head', 'Chest', 'Cloak', 'Gloves', 'Boots', 'Shield'], when: A, group: 'Armor' },
       // Heavy armor's (and some medium armor's) disadvantage on Stealth while worn.
       { key: 'stealthDis', label: 'Stealth disadvantage', kind: 'bool', when: A, group: 'Armor' },
-      // What it does to whoever wears, wields or attunes it (gear.ts); not for consumables and ingredients.
+      // What it does to whoever wears, wields or attunes it (items.ts, effects.ts); not for consumables and ingredients.
       // Who can use it (requirements.ts): checked when it's equipped, or attuned if it needs attunement.
       { key: 'requirements', label: 'Requirements', kind: 'requires', when: GEAR },
       { key: 'effects', label: 'Effects', kind: 'effects', when: GEAR },
-      // Spells it lets its user cast, and the charges they cost (gear.ts).
+      // Spells it lets its user cast, and the charges they cost (items.ts).
       { key: 'charges', label: 'Charges', kind: 'number', when: GEAR },
       { key: 'recharge', label: 'Regains', kind: 'text', when: GEAR },
       // How many charges come back, and when (the sheet gives a number back on that rest, or asks for the dice roll).
@@ -288,7 +288,7 @@ export const SCHEMA = [
       { key: 'rolls', label: 'Damage & healing', kind: 'spellRolls' },
       // Conditions it can cause.
       { key: 'conditions', label: 'Conditions', kind: 'list', options: CONDITIONS },
-      // What it does to a character while it lasts, counted on their sheet when they switch it on (gear.ts).
+      // What it does to a character while it lasts, counted on their sheet when they switch it on (effects.ts).
       { key: 'active', label: 'While active', kind: 'effects' },
     ],
   },

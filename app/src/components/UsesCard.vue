@@ -4,17 +4,18 @@
 // table doesn't have to scroll to the features to tick one off. Rests give them back.
 import { computed } from 'vue'
 import type { CharacterSheet, Entry } from '../model/types'
-import { editSheet } from '../sheet'
+import { editSheet } from '../sheetData'
+import { score } from '../sheet'
 import { state } from '../store'
 import { sourceTag, speciesTraits, spendUse, usesLeft, usesMax, type ActiveTrait } from '../species'
-import { chargesLeft, itemsInUse, regainText, setCharges } from '../gear'
+import { chargesLeft, itemsInUse, regainText, setCharges } from '../items'
 
 const props = defineProps<{ pc: Entry; s: CharacterSheet }>()
 const ro = computed(() => !!state.readOnly)
-const rows = computed(() => speciesTraits(props.pc, props.s).filter(a => a.active && usesMax(props.pc, a, props.s) > 0))
-const max = (a: ActiveTrait) => usesMax(props.pc, a, props.s)
-const left = (a: ActiveTrait) => usesLeft(props.pc, props.s, a)
-const use = (a: ActiveTrait, n: number) => { if (!ro.value) editSheet(props.pc, x => spendUse(x, props.pc, a, n)) }
+const rows = computed(() => speciesTraits(props.pc, props.s).filter(a => a.active && usesMax(props.pc, a, props.s, score) > 0))
+const max = (a: ActiveTrait) => usesMax(props.pc, a, props.s, score)
+const left = (a: ActiveTrait) => usesLeft(props.pc, props.s, a, score)
+const use = (a: ActiveTrait, n: number) => { if (!ro.value) editSheet(props.pc, x => spendUse(x, props.pc, a, n, score)) }
 /** The charges of the items in use (a staff, a wand), spent and given back here as on the Inventory tab. */
 const charged = computed(() => itemsInUse(props.s).map(({ l, i, item }) => ({ i, name: item.name, max: Number(item.fields.charges) || 0, left: chargesLeft(l, item) ?? 0, recharge: regainText(item) || undefined })).filter(x => x.max > 0))
 const charge = (i: number, n: number) => { if (!ro.value) editSheet(props.pc, x => setCharges(x, i, n)) }

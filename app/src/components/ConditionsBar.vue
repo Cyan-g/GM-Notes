@@ -4,7 +4,7 @@
 // one does. The sheet's numbers already count what they change (conditions.ts); the lines say the rest.
 import { computed } from 'vue'
 import type { CharacterSheet, Entry } from '../model/types'
-import { editSheet } from '../sheet'
+import { editSheet } from '../sheetData'
 import { state } from '../store'
 import { rule } from '../rules'
 import { CONDITION_RULES, exhaustionText, setConditions } from '../conditions'

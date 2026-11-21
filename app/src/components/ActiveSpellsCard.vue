@@ -4,11 +4,11 @@
 // count them; a long rest ends them all.
 import { computed } from 'vue'
 import type { CharacterSheet, Entry } from '../model/types'
-import { editSheet } from '../sheet'
+import { editSheet } from '../sheetData'
 import { get, state } from '../store'
 import { endConcentration } from '../conditions'
 import { activeEffectsOf, activeSpells, toggleActive } from '../spells'
-import { describeEffects } from '../gear'
+import { describeEffects } from '../effects'
 import { isOn, speciesTraits, toggleOn, withScale } from '../species'
 import EntryLink from './EntryLink.vue'
 

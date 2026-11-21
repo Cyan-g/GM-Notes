@@ -6,11 +6,12 @@ import { computed, ref } from 'vue'
 import { optionLabel } from '../store'
 import type { Entry, Id, Spellbook } from '../model/types'
 import { db, get, touch } from '../store'
-import { activeSpellbook, currentPc, editSheet, levelOf as charLevel, longRest, score, sheetOf, spellStats } from '../sheet'
+import { activeSpellbook, currentPc, levelOf as charLevel, longRest, score, spellStats } from '../sheet'
+import { editSheet, sheetOf } from '../sheetData'
 import { ORD, mod, spellLevel, type Ability } from '../model/dnd'
 import { activeEffectsOf, isActive, rollsLine, toggleActive } from '../spells'
 import { endConcentration, startConcentration } from '../conditions'
-import { castFromItem, grantedSpells, restItems, unuse, type GrantedSpell } from '../gear'
+import { castFromItem, grantedSpells, restItems, unuse, type GrantedSpell } from '../items'
 import { classSpellsFrom, restSpecies, speciesSpells, useSpeciesSpell, type SpeciesSpell } from '../species'
 import { classesOf } from '../model/classes'
 import { restSlots, setSlotCount, slotFor, slotRows, useSlot, type SlotRow } from '../slots'
@@ -75,7 +76,7 @@ const canCast = (e: Entry) => {
   const lvl = Number(e.fields.level)
   return lvl > 0 && !!slotFor(rows.value, lvl)
 }
-// ---- spells from the items the character uses (gear.ts): cast for charges, once per rest, at will, or prepared ----
+// ---- spells from the items the character uses (items.ts): cast for charges, once per rest, at will, or prepared ----
 const granted = computed(() => (owner.value ? grantedSpells(sheetOf(owner.value)) : []))
 /** Spells from the character's species (species.ts): at will, once per rest, or always prepared. */
 // spells on the class list or in the book for free aren't cast from the feature: they're learned or prepared as usual

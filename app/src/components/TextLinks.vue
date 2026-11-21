@@ -1,11 +1,11 @@
 <script setup lang="ts">
 // What an entry's text names but its relations (or, for an organization, its places) don't have yet, each a click
-// away from being a real link that shows on both pages. Nothing is linked without that click (deity.ts).
+// away from being a real link that shows on both pages. Nothing is linked without that click (textLinks.ts).
 import { computed } from 'vue'
 import type { Entry, Id } from '../model/types'
 import { playerMode, state } from '../store'
 import { addRelation, changed } from '../edit'
-import { linkSuggestions, type LinkAction } from '../deity'
+import { linkSuggestions, type LinkAction } from '../textLinks'
 import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ e: Entry }>()

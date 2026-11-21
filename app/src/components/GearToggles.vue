@@ -4,7 +4,8 @@
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { state } from '../store'
-import { blockedFor, canAttune, canEquip, editSheet, sheetOf } from '../sheet'
+import { blockedFor, canAttune, canEquip } from '../sheet'
+import { editSheet, sheetOf } from '../sheetData'
 
 const props = defineProps<{ pc: Entry; i: number }>()
 const ro = computed(() => !!state.readOnly)

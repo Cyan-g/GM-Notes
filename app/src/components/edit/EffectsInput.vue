@@ -1,8 +1,8 @@
 <script setup lang="ts">
-// An item's effects (gear.ts): one row each, what it changes, the number and what it applies to.
+// An item's effects (effects.ts): one row each, what it changes, the number and what it applies to.
 import { computed } from 'vue'
 import type { GearEffect } from '../../model/types'
-import { EFFECT_KINDS, SENSES, describeEffect, type EffectNeed } from '../../gear'
+import { EFFECT_KINDS, SENSES, describeEffect, type EffectNeed } from '../../effects'
 import { ABILITIES, ABILITY_KEYS, CONDITIONS, SKILLS } from '../../model/dnd'
 import { TYPES } from '../../model/schema'
 import { fieldOptions } from '../../store'

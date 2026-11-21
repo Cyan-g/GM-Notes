@@ -6,10 +6,12 @@ import AppIcon from './AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Entry, InventoryLine } from '../model/types'
 import { get, state } from '../store'
-import { blockedFor, canAttune, canEquip, draggedLine, dragged, editSheet, endDrag, proficientWith, sheetOf, startDrag } from '../sheet'
+import { blockedFor, canAttune, canEquip, draggedLine, dragged, endDrag, proficientWith, startDrag } from '../sheet'
+import { editSheet, sheetOf } from '../sheetData'
 import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
-import { chargesLeft, describeEffect, effectsOf, itemsInUse, regainText, setCharges, spellsOf } from '../gear'
+import { chargesLeft, effectsOf, itemsInUse, regainText, setCharges, spellsOf } from '../items'
+import { describeEffect } from '../effects'
 
 const props = defineProps<{ pc: Entry }>()
 const ATTUNE_SLOTS = 3
@@ -20,7 +22,7 @@ const worn = computed(() => lines.value.filter(x => x.l.equipped && x.e!.fields.
 const wielded = computed(() => lines.value.filter(x => x.l.equipped && x.e!.fields.kind === 'Weapon'))
 /** Other things worn for their effects: a cloak, boots, a ring that needs no attunement. */
 const other = computed(() => lines.value.filter(x => x.l.equipped && !['Armor', 'Weapon'].includes(String(x.e!.fields.kind))))
-/** What each item in use does right now (gear.ts), with its charges. */
+/** What each item in use does right now (items.ts, effects.ts), with its charges. */
 const active = computed(() => itemsInUse(sheetOf(props.pc))
   .map(({ l, i, item }) => ({
     i, id: item.id, name: item.name, max: Number(item.fields.charges) || 0, left: chargesLeft(l, item), recharge: regainText(item) || undefined,

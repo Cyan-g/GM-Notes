@@ -2,7 +2,7 @@
 // background, ability scores (standard array, point buy or typed, plus the species', the background's or a custom
 // bonus), proficiencies, feats, hit points, equipment, spells, looks and story. Class rules come from classRules.ts
 // for the SRD classes; any other class is filled in by hand. Nothing is stored until the draft is made.
-import { reactive } from 'vue'
+import { reactive, shallowRef } from 'vue'
 import type {
   Abilities, AbilityBonus, CharacterSheet, ClassLine, Copper, Entry, Feature, Id, InventoryLine, SpeciesState, Spellbook,
 } from './model/types'
@@ -17,6 +17,8 @@ import { entries, get } from './store'
 import { rule } from './rules'
 import { changed, createEntry } from './edit'
 import { itemNamed } from './lookup'
+import { norm } from './model/text'
+import { upgradeEntries } from './migrations'
 
 
 export type ScoreMethod = 'array' | 'pointbuy' | 'typed'
@@ -166,6 +168,42 @@ export const casts = (d: Draft) => {
 
 // ---------- equipment ----------
 
+// The SRD's weapons, armor and gear (the seed's items), for kit lines the world has no item for: a world started from
+// an older seed, or a player's world that only has what the DM shares. Loaded once, when the wizard needs them.
+const srdGear = shallowRef<Map<string, Entry> | null>(null)
+let gearLoading: Promise<void> | null = null
+export function loadSrdGear(): Promise<void> {
+  gearLoading ??= import('./seed/world.json').then(m => {
+    const seed = m.default as unknown as { dataVersion: number; entries: Entry[] }
+    const items = upgradeEntries(seed.entries.filter(e => e.type === 'item').map(e => JSON.parse(JSON.stringify(e)) as Entry), seed.dataVersion).entries
+    srdGear.value = new Map(items.map(e => [norm(e.name), e]))
+  })
+  return gearLoading
+}
+/** The SRD item a kit line names ("Arrows" finds "Arrow"), if the app has one. */
+export const srdItemNamed = (name: string) => srdGear.value?.get(norm(name)) ?? srdGear.value?.get(norm(name).replace(/s$/, ''))
+/** A kit line for a pick the player makes ("Musical Instrument (one you chose)"), when the pick wasn't made. */
+const UNCHOSEN = /one you chose|of your choice|chosen above/i
+/**
+ * Where a kit line's item comes from: the world's item, the SRD's (added to the world when the character is made), a
+ * new item with just its name, or nowhere (a pick the player didn't make).
+ */
+export function kitLineSource(l: KitLine): 'world' | 'srd' | 'new' | 'none' {
+  if (l.item ?? itemNamed(l.name)) return 'world'
+  if (UNCHOSEN.test(l.name)) return 'none'
+  return srdItemNamed(l.name) ? 'srd' : 'new'
+}
+/** Kit lines the world has no item for get one: the SRD's, else a plain item with the line's name. */
+function addKitItems(d: Draft) {
+  for (const l of kitsOf(d).items) {
+    const from = kitLineSource(l)
+    if (from === 'world' || from === 'none') continue
+    const srd = from === 'srd' ? srdItemNamed(l.name)! : undefined
+    const e = createEntry('item', srd?.name ?? l.name, srd ? JSON.parse(JSON.stringify(srd.fields)) : { kind: 'Adventuring Gear' })
+    if (srd?.body) { e.body = srd.body; changed(e) }
+  }
+}
+
 /** The background's equipment as a kit. */
 export function backgroundKit(d: Draft): Kit | undefined {
   const eq = get(d.background)?.fields.equipment
@@ -254,7 +292,8 @@ export function steps(d: Draft): Step[] {
     if (!f?.feat) return [`a feat at level ${level}`]
     return bonusOpen(get(f.feat)?.fields.abilityIncrease, f.choice) ? [`the scores of ${get(f.feat)?.name}`] : []
   }) })
-  s.push({ id: 'hp', label: 'Hit points', open: [] })
+  // Level 1 takes the die's maximum: nothing to choose (the summary shows it); later levels may take a typed roll.
+  if (d.level > 1) s.push({ id: 'hp', label: 'Hit points', open: [] })
   s.push({ id: 'gear', label: 'Equipment', open: [] })
   if (d.cls && casts(d)) {
     const c = spellCounts(d)
@@ -296,7 +335,7 @@ function draftSheet(d: Draft): CharacterSheet {
     if (id) toolIds.push(id); else other.push(t)
   }
   s.proficiencies = { armor: r ? [...r.armor] : [...d.ownArmor], weapons: r ? [...r.weapons] : [...d.ownWeapons], tools: toolIds, languages: [...d.languages], ...(other.length ? { other: other.join(', ') } : {}) }
-  // Only the world's items go in: a name it has no item for is left out (the Equipment step says which).
+  // The world's items (makeCharacter adds the ones it lacks first); a pick that wasn't made is left out.
   const kits = kitsOf(d)
   const inventory: InventoryLine[] = []
   for (const l of kits.items) {
@@ -333,8 +372,10 @@ function draftSheet(d: Draft): CharacterSheet {
   return s
 }
 
-/** Make the character; returns it. */
-export function makeCharacter(d: Draft): Entry {
+/** Make the character, adding the kit's items the world doesn't have yet; returns it. */
+export async function makeCharacter(d: Draft): Promise<Entry> {
+  await loadSrdGear()
+  addKitItems(d)
   const looks = Object.fromEntries(Object.entries(d.looks).filter(([, v]) => v.trim()).map(([k, v]) => [k, v.trim()]))
   const fields: Record<string, unknown> = {
     ...(d.player.trim() ? { player: d.player.trim() } : {}),

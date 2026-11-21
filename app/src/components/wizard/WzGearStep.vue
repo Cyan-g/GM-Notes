@@ -1,8 +1,9 @@
 <script setup lang="ts">
 // The wizard's equipment step: the class's starting kit options, the background's items or gold, and what goes into
-// the inventory (what the world has no item for is left out, and said so).
-import { computed } from 'vue'
-import { backgroundGold, backgroundKit, classKitsOf, wizard } from '../../wizard'
+// the inventory. What the world has no item for comes from the SRD's gear (or is made as a plain item) when the
+// character is made, and the step says so.
+import { computed, onMounted } from 'vue'
+import { backgroundGold, backgroundKit, classKitsOf, kitLineSource, loadSrdGear, wizard } from '../../wizard'
 import { itemNamed } from '../../lookup'
 import { formatMoney } from '../../store'
 import { useDraft } from '../../composables/useDraft'
@@ -10,8 +11,12 @@ import EntryLink from '../EntryLink.vue'
 
 const { d, classPage, taken } = useDraft()
 const kits = computed(() => classKitsOf(d.value.cls))
-/** What the kits name but the world has no item for: left out of the inventory. */
-const missing = computed(() => taken.value.items.filter(l => !(l.item ?? itemNamed(l.name)?.id)).map(l => l.name))
+onMounted(loadSrdGear)
+/** The kit lines by where their item comes from. */
+const linesFrom = (from: ReturnType<typeof kitLineSource>) => taken.value.items.filter(l => kitLineSource(l) === from).map(l => `${l.amount ? l.amount + ' × ' : ''}${l.name}`)
+const fromSrd = computed(() => linesFrom('srd'))
+const asNew = computed(() => linesFrom('new'))
+const unchosen = computed(() => linesFrom('none'))
 const bgKit = computed(() => backgroundKit(d.value))
 const bgGold = computed(() => backgroundGold(d.value))
 </script>
@@ -35,5 +40,7 @@ const bgGold = computed(() => backgroundGold(d.value))
   <h3>Goes into the inventory</h3>
   <p class="small"><template v-for="(l, i) in taken.items.filter(x => x.item ?? itemNamed(x.name))" :key="i"><template v-if="i">, </template>{{ l.amount ? l.amount + ' × ' : '' }}<EntryLink :id="(l.item ?? itemNamed(l.name)!.id)" /></template>
     <template v-if="taken.money">{{ taken.items.some(x => x.item ?? itemNamed(x.name)) ? '; ' : '' }}{{ formatMoney(taken.money) }}</template></p>
-  <p v-if="missing.length" class="small warn-text">Not in this world, so left out: {{ missing.join(', ') }}. Your DM can add them to the {{ classPage?.name ?? 'class' }}'s starting equipment, or you can add something else on the sheet.</p>
+  <p v-if="fromSrd.length" class="small">Added to this world from the SRD when the character is made: {{ fromSrd.join(', ') }}.</p>
+  <p v-if="asNew.length" class="small">Not in this world or the SRD, so made as new items with just their name (fill them in on their pages): {{ asNew.join(', ') }}.</p>
+  <p v-if="unchosen.length" class="small warn-text">Left out, as nothing was picked for it: {{ unchosen.join(', ') }}. Pick it under Proficiencies, or add it on the sheet.</p>
 </template>

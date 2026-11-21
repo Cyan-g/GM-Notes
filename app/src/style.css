@@ -2312,3 +2312,81 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .theme-sample-row { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .6rem; margin-top: .2rem; }
 .pips-inline { display: inline-flex; gap: .1rem; }
 .theme-sample .small-btn { font-size: 13px; padding: .3em .8em; margin-left: auto; }
+
+/* ---------- Runecarved: an optional style (Theme menu), as if cut in stone; only the theme's own colours ---------- */
+/* Chamfered corners (painted in the colour under the box, so nothing inside is clipped), engraved fields, a notched
+   HP bar, hexagonal charges and gems, pointed chips and a carved slash for a tick. */
+:root.fl-runecarved {
+  --rc-edge: color-mix(in srgb, var(--ink) 24%, var(--panel));
+  --rc-cut: color-mix(in srgb, var(--panel) 55%, var(--bg));
+  --rc-gem: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 12'%3E%3Cpath d='M4 0L8 3.5V8.5L4 12L0 8.5V3.5Z'/%3E%3C/svg%3E");
+}
+:where(:root.fl-runecarved) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .char-sheet > .feature-choices) {
+  position: relative; border-radius: 0; border-color: var(--rc-edge);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 7%, transparent), var(--shadow);
+}
+:where(:root.fl-runecarved) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .char-sheet > .feature-choices)::before {
+  content: ''; position: absolute; inset: -1px; pointer-events: none; background: linear-gradient(135deg, var(--rc-under, var(--bg)) 9px, var(--rc-edge) 9px 10px, transparent 10px) top left / 13px 13px no-repeat, linear-gradient(225deg, var(--rc-under, var(--bg)) 9px, var(--rc-edge) 9px 10px, transparent 10px) top right / 13px 13px no-repeat, linear-gradient(45deg, var(--rc-under, var(--bg)) 9px, var(--rc-edge) 9px 10px, transparent 10px) bottom left / 13px 13px no-repeat, linear-gradient(315deg, var(--rc-under, var(--bg)) 9px, var(--rc-edge) 9px 10px, transparent 10px) bottom right / 13px 13px no-repeat;
+}
+:where(:root.fl-runecarved) :where(.cs-stat, .cs-ability, .tool, .slot-row) { position: relative; border-radius: 0; border-color: var(--rc-edge); }
+:where(:root.fl-runecarved) :where(.cs-stat, .cs-ability, .tool, .slot-row)::before {
+  content: ''; position: absolute; inset: -1px; pointer-events: none; background: linear-gradient(135deg, var(--rc-under, var(--bg)) 5px, var(--rc-edge) 5px 6px, transparent 6px) top left / 9px 9px no-repeat, linear-gradient(225deg, var(--rc-under, var(--bg)) 5px, var(--rc-edge) 5px 6px, transparent 6px) top right / 9px 9px no-repeat, linear-gradient(45deg, var(--rc-under, var(--bg)) 5px, var(--rc-edge) 5px 6px, transparent 6px) bottom left / 9px 9px no-repeat, linear-gradient(315deg, var(--rc-under, var(--bg)) 5px, var(--rc-edge) 5px 6px, transparent 6px) bottom right / 9px 9px no-repeat;
+}
+/* boxes that sit on a card rather than on the page */
+:root.fl-runecarved :is(.card, .modal, .cs-hp, .theme-sample) :is(.tool, .slot-row, .card) { --rc-under: var(--panel); }
+:where(:root.fl-runecarved) :where(.modal, .table-wrap, .feat-card, .trait-option-card, .theme-panel) { border-radius: 2px; border-color: var(--rc-edge); }
+/* headings: a rule with a gem in the middle */
+:root.fl-runecarved :is(.md h1, .md h2, .entry-main h2) { border-bottom: none; padding-bottom: 0; letter-spacing: .06em; }
+:root.fl-runecarved :is(.md h1, .md h2, .entry-main h2)::after, :root.fl-runecarved .md hr {
+  content: ''; display: block; height: 12px; margin-top: .3rem; border: none; background: var(--accent);
+  -webkit-mask: var(--rc-gem) center / 8px 12px no-repeat, linear-gradient(90deg, #000 calc(50% - 8px), transparent calc(50% - 7px), transparent calc(50% + 7px), #000 calc(50% + 8px)) center / 100% 1px no-repeat;
+          mask: var(--rc-gem) center / 8px 12px no-repeat, linear-gradient(90deg, #000 calc(50% - 8px), transparent calc(50% - 7px), transparent calc(50% + 7px), #000 calc(50% + 8px)) center / 100% 1px no-repeat;
+}
+:root.fl-runecarved :is(.md h1, .md h2, .entry-main h2)::after { opacity: .85; }
+:root.fl-runecarved .md hr { margin: 1.5rem 0; }
+/* fields: engraved into the panel, one corner cut */
+:where(:root.fl-runecarved) :is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file]), select, textarea) {
+  border-color: transparent; border-radius: 0; background: var(--rc-cut);
+  box-shadow: inset 0 2px 3px color-mix(in srgb, var(--bg) 70%, transparent), inset 0 -1px 0 var(--rc-edge);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+:where(:root.fl-runecarved) :is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file]), select, textarea):focus { outline: none; box-shadow: inset 0 2px 3px color-mix(in srgb, var(--bg) 70%, transparent), inset 0 -2px 0 var(--accent); }
+/* HP bars: ten notches */
+:root.fl-runecarved .hp-bar, :root.fl-runecarved .cs-hp-bar { position: relative; border-radius: 0; border-color: var(--rc-edge); background: var(--rc-cut); }
+:root.fl-runecarved .cs-hp-bar { height: 8px; }
+:root.fl-runecarved .hp-fill, :root.fl-runecarved .cs-hp-bar i { background: var(--accent); }
+:root.fl-runecarved .hp-bar.bloodied .hp-fill { background: color-mix(in srgb, var(--accent) 60%, var(--rc-cut)); }
+:root.fl-runecarved .hp-bar.down .hp-fill { background: var(--muted); }
+:root.fl-runecarved .hp-bar::after, :root.fl-runecarved .cs-hp-bar::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), var(--panel) calc(10% - 2px) 10%);
+}
+/* tabs: a bar with slanted ends under the open one */
+:root.fl-runecarved .tabs { border-bottom-color: var(--rc-edge); }
+:root.fl-runecarved .tabs a { border-radius: 0; }
+:root.fl-runecarved .tabs a.on { position: relative; border-bottom-color: transparent; }
+:root.fl-runecarved .tabs a.on::after { content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 3px; background: var(--accent); clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 100%, 0 100%); }
+/* chips and badges: pointed ends */
+:where(:root.fl-runecarved) :where(.chip, .badge, .chip-btn, .chip-toggle, .tag-ritual) { border-radius: 0; clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0 50%); padding-left: .8em; padding-right: .8em; }
+/* charges and slots: hexagons, death saves too */
+:root.fl-runecarved .pip { transform: none; border: none; border-radius: 0; width: 15px; height: 17px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: color-mix(in srgb, var(--accent) 22%, var(--rc-cut)); }
+:root.fl-runecarved .pip.on { background: var(--accent); }
+:root.fl-runecarved .pip:hover { box-shadow: none; filter: brightness(1.15); }
+:root.fl-runecarved .ds-box { border-radius: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); border: none; background: color-mix(in srgb, currentColor 25%, transparent); }
+:root.fl-runecarved .ds-box.on { background: currentColor; }
+/* checkboxes: an engraved square, ticked with a carved slash */
+:where(:root.fl-runecarved) input[type=checkbox]:not(.settings-switch input) {
+  appearance: none; -webkit-appearance: none; display: inline-grid; place-content: center; flex: none;
+  width: 14px; height: 14px; margin: 0 .2em; padding: 0; vertical-align: -2px; cursor: pointer; border: none; border-radius: 0;
+  background: var(--rc-cut); box-shadow: inset 0 0 0 1px var(--rc-edge), inset 0 2px 2px color-mix(in srgb, var(--bg) 70%, transparent);
+}
+:where(:root.fl-runecarved) input[type=checkbox]:not(.settings-switch input)::after {
+  content: ''; width: 10px; height: 2.5px; background: var(--accent); transform: rotate(-35deg) scale(0); transition: transform .12s;
+}
+:where(:root.fl-runecarved) input[type=checkbox]:not(.settings-switch input):checked::after { transform: rotate(-35deg) scale(1); }
+:where(:root.fl-runecarved) input[type=checkbox]:not(.settings-switch input):indeterminate::after { transform: scale(.7); }
+:where(:root.fl-runecarved) input[type=checkbox]:not(.settings-switch input):focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 1px; }
+:where(:root.fl-runecarved) input[type=checkbox]:disabled { opacity: .5; cursor: default; }
+:where(:root.fl-runecarved) input[type=radio] { accent-color: var(--accent); }
+/* buttons: square corners to match */
+:where(:root.fl-runecarved) :where(button, a.button):not(.pip, .ds-box, .chip-btn, .chip-toggle, .x, .link-btn) { border-radius: 2px; }

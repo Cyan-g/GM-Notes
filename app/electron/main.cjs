@@ -330,6 +330,37 @@ ipcMain.handle('worlds:move', (_e, dir) => {
   try { fs.renameSync(dir, old) } catch { /* in use: it stays as it is; the app uses the copy now */ }
   return to
 })
+// ---- copying entries to another world: the copy waits in its folder (incoming/) until that world opens ----
+/** A known world's folder other than the open one (only those can be read or copied to). */
+function otherWorld(dir) {
+  if (!dir || !(config.worlds ?? []).some(x => same(x.dir, dir)) || (config.dataDir && same(config.dataDir, dir))) throw new Error('That isn\'t one of your other worlds.')
+  if (!WorldDb.exists(dir)) throw new Error('There is no world in that folder any more.')
+  return dir
+}
+/** Another world's entries, just enough to tell what it has (id, type, name, other names). */
+ipcMain.handle('worlds:entries', (_e, dir) => {
+  const w = new WorldDb(otherWorld(dir), { readOnly: true })
+  try { return Object.values(w.load().data.entries).map(e => ({ id: e.id, type: e.type, name: e.name, aliases: e.aliases ?? [] })) } finally { w.close() }
+})
+/** Put a copy (an export file's text) into another world; it's imported when that world opens. */
+ipcMain.handle('worlds:copy-to', (_e, dir, text) => {
+  const inbox = path.join(otherWorld(dir), 'incoming')
+  fs.mkdirSync(inbox, { recursive: true })
+  const name = `copy-${new Date().toISOString().replace(/[:.]/g, '-')}.dndesk.json`
+  fs.writeFileSync(path.join(inbox, name), String(text ?? ''), 'utf8')
+  return true
+})
+/** The copies waiting for the open world, taken out of its folder (oldest first). */
+ipcMain.handle('worlds:take-copies', () => {
+  const inbox = config.dataDir && path.join(config.dataDir, 'incoming')
+  if (!inbox || !fs.existsSync(inbox)) return []
+  return fs.readdirSync(inbox).filter(f => f.endsWith('.dndesk.json')).sort().map(f => {
+    const p = path.join(inbox, f)
+    const text = fs.readFileSync(p, 'utf8')
+    fs.rmSync(p)
+    return { name: f, text }
+  })
+})
 /** Open another world (the pages reload afterwards). */
 ipcMain.handle('worlds:switch', (_e, dir) => {
   if (!dir || !WorldDb.exists(dir)) throw new Error('There is no world in that folder any more.')

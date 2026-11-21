@@ -10,6 +10,7 @@ import { DesktopStorage, desktop, folderName } from '../storage/desktop'
 import { HttpStorage } from '../storage/storage'
 import { DesktopBackend, DevBackend } from '../storage/backend'
 import { startSharing, syncStatus } from '../sync'
+import { takeCopies } from '../copyToWorld'
 import { PENDING_JOIN, PENDING_NEW_WORLD } from '../worlds'
 import WorldList from './WorldList.vue'
 
@@ -78,7 +79,7 @@ onMounted(async () => {
   // a joined world takes the 5e start in player mode; a new one asks for its start on the start screen
   if (pending && phase.value === 'new-world') { worldName.value = pending; if (joining) await startWorld() }
   // A world that follows a shared one: up to date on start, then every few minutes; a DM's: hosting, if they asked.
-  else if (phase.value === 'ready') await startSharing()
+  else if (phase.value === 'ready') { await startSharing(); await takeCopies() }
   if (joining && syncStatus.note) syncStatus.note = `Joined. ${syncStatus.note}`
 })
 

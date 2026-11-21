@@ -22,6 +22,8 @@ import AppIcon from './AppIcon.vue'
 import EntryIcon from './EntryIcon.vue'
 import EntryLink from './EntryLink.vue'
 import ExportDialog from './ExportDialog.vue'
+import CopyDialog from './CopyDialog.vue'
+import { desktop } from '../storage/desktop'
 import HistoryDialog from './HistoryDialog.vue'
 import DataImage from './DataImage.vue'
 import AttitudeBadge from './AttitudeBadge.vue'
@@ -40,6 +42,8 @@ function removeIt() {
   go('#/')
 }
 const exporting = ref(false)
+/** Copying it to another of your worlds (desktop app). */
+const copying = ref(false)
 const showHistory = ref(false)
 /** "Dead since 86 AC", by the name. */
 const status = computed(() => (props.e.type === 'npc' ? statusText(props.e) : ''))
@@ -56,12 +60,14 @@ const facts = computed(() => factsOf(props.e))
       <button class="export-btn" title="Earlier versions of this entry" @click="showHistory = true"><AppIcon ui="history" /> History</button>
       <button v-if="printable(e)" class="export-btn" title="Print this as a card (PDF, poker size)" @click="printCards(e.name, [{ label: 'This one', ids: [e.id] }])"><AppIcon ui="cards" /> Card</button>
       <button v-if="canExport(e)" class="export-btn" title="Save as a file to share (someone else can import it)" @click="exporting = true"><AppIcon ui="exportFile" /> Export</button>
+      <button v-if="desktop && canExport(e)" class="export-btn" title="Copy it, with what it uses, to another of your worlds" @click="copying = true"><AppIcon ui="share" /> Copy to…</button>
       <a v-if="!shared" class="button edit-btn" :href="hrefEntry(e.id, true)" title="Edit (E)">✎ Edit</a>
       <span v-else class="badge shared-badge" :title="by?.title"><AppIcon ui="download" /> {{ by?.label }}</span>
       <span v-if="player?.gone" class="badge" title="Its player unlinked it from your campaign or deleted it; this is the last version they sent">no longer shared</span>
       <button v-if="player && e.type === 'pc'" class="export-btn danger" title="Remove this character from your world" @click="removeIt">Remove</button>
     </div>
     <ExportDialog v-if="canExport(e)" v-model="exporting" :id="e.id" />
+    <CopyDialog v-if="copying" v-model="copying" :id="e.id" />
     <HistoryDialog v-if="showHistory" :entry="e" @close="showHistory = false" />
     <!-- an item's picture is on its card -->
     <DataImage v-if="e.image && e.type !== 'pc' && e.type !== 'item'" :path="e.image" :alt="e.name" class="portrait head-portrait" />

@@ -38,6 +38,9 @@ contextBridge.exposeInMainWorld('dndesk', {
     newId: title => ipcRenderer.invoke('worlds:new-id', title),
     moved: title => ipcRenderer.invoke('worlds:moved', title),
     move: dir => ipcRenderer.invoke('worlds:move', dir),
+    entries: dir => ipcRenderer.invoke('worlds:entries', dir),
+    copyTo: (dir, text) => ipcRenderer.invoke('worlds:copy-to', dir, text),
+    takeCopies: () => ipcRenderer.invoke('worlds:take-copies'),
   },
   live: {
     hostStatus: () => ipcRenderer.invoke('live:host-status'),

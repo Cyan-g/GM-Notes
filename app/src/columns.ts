@@ -9,6 +9,7 @@ import { listKeyOf } from './model/lists'
 import { sessionNo } from './sessions'
 import { abilityBonusText } from './abilityBonus'
 import { describeRequirements } from './requirements'
+import { withSrd } from './srd'
 
 export interface Col {
   key: string
@@ -58,7 +59,7 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   '@members': { label: 'Members', value: e => current(e, 'member', false).length, sort: e => -current(e, 'member', false).length, kind: 'text' },
   '@classes': { label: 'Classes', value: e => classText(e, state.db?.meta, id => get(id)?.name), sort: e => classText(e, state.db?.meta).toLowerCase() || '~', kind: 'text' },
   '@level': { label: 'Level', value: e => (e.type === 'pc' ? totalLevel(e) : ''), sort: e => (e.type === 'pc' ? -totalLevel(e) : 0), kind: 'text' },
-  '@cr': { label: 'CR', value: e => (e.fields.statblock)?.cr, sort: e => crNum((e.fields.statblock)?.cr), kind: 'text' },
+  '@cr': { label: 'CR', value: e => withSrd(e.fields.statblock)?.cr, sort: e => crNum(withSrd(e.fields.statblock)?.cr), kind: 'text' },
   '@recipeCost': { label: 'Ingredients', value: e => recipeCost(e), sort: e => recipeCost(e) ?? -1, kind: 'money' },
   '@margin': {
     label: 'Profit', kind: 'money',

@@ -196,7 +196,7 @@ export interface StockLine { item: Id; price?: Copper; stock?: number }
 
 export interface Abilities { str: number; dex: number; con: number; int: number; wis: number; cha: number }
 
-export interface Feature { name: string; text: string }
+export interface Feature { name: string; text: string; /** A statblock action that's an attack: its line is written from this. */ attack?: StatAttack }
 
 /** A player character's sheet (a PC entry's `sheet` field). Everything that follows from the rules is worked out, not stored. */
 export interface CharacterSheet {
@@ -415,6 +415,32 @@ export interface Statblock {
   bonusActions?: Feature[]
   reactions?: Feature[]
   legendary?: Feature[]
+  /** Damage vulnerabilities ("Cold"). */
+  vulnerabilities?: string
+  /** Its spellcasting (creatures.ts): the ability, and the spells by how often, as world spells. */
+  spellcasting?: { ability: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'; lists: { label: string; spells: Id[] }[]; noMaterial?: boolean }
+  /** Legendary actions per round, and in its lair; Legendary Resistance per day (and in its lair). */
+  legendaryUses?: number
+  legendaryLair?: number
+  legendaryResistance?: number
+  legendaryResistanceLair?: number
+  /** Lair actions (initiative 20). */
+  lair?: Feature[]
+}
+/** An action that's an attack: the line written from it (creatures.ts) with the creature's ability and proficiency. */
+export interface StatAttack {
+  kind: 'melee' | 'ranged' | 'both'
+  ability: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
+  reach?: number
+  range?: string
+  dice: string
+  type: string
+  /** More damage, e.g. "7 (2d6) Fire damage" written after "plus". */
+  plus?: string
+  /** What else a hit does ("If the target is a creature, it has the Prone condition."). */
+  extra?: string
+  /** A bonus to hit and damage (a magic weapon). */
+  bonus?: number
 }
 
 // ---------- calendar ----------
@@ -494,6 +520,8 @@ export interface Combatant {
   concChecks?: number[]
   /** Death saving throws of a party member at 0 HP. */
   deathSaves?: { ok: number; fail: number }
+  /** Legendary actions used since the start of its last turn. */
+  legendaryUsed?: number
   note?: string
 }
 

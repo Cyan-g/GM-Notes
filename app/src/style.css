@@ -2069,3 +2069,22 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .upcast h3 { margin: 0 0 .3rem; font-size: 1rem; }
 .upcast table { width: auto; min-width: 18rem; }
 .spell-rolls > .chip-btn { justify-self: start; }
+.sb-feat .sb-md { display: inline; }
+.sb-feat .sb-md > p:first-child { display: inline; }
+.sb-feat .sb-md > p { margin: .3rem 0 0; }
+.sb-intro { font-style: italic; }
+/* the creature editor: checks, attack helper, spellcasting, legendary counts */
+.cf-problems { display: grid; gap: .3rem; }
+.cf-problem { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.cf-attack { display: flex; flex-wrap: wrap; gap: .35rem .7rem; align-items: center; margin: .3rem 0; }
+.cf-attack select { width: auto; }
+.cf-attack .effect-text { flex: 1 1 18rem; }
+.cf-range { width: 5rem !important; }
+.cf-attack-line { margin: .1rem 0 .4rem; font-style: italic; }
+.cf-feat-head .chip-btn.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
+.cf-legendary { flex-wrap: wrap; gap: .4rem 1rem; margin-bottom: .5rem; }
+.cf-splist { flex-wrap: wrap; gap: .35rem; margin: .35rem 0; }
+.cf-sclabel { width: 8rem !important; }
+.cc-legendary { display: flex; flex-wrap: wrap; gap: .3rem .5rem; align-items: center; margin-top: .4rem; color: var(--accent); }
+.cf-start .cf-row { flex-wrap: wrap; gap: .5rem; align-items: center; }
+.cf-srd-input { flex: 1; min-width: 14rem; }

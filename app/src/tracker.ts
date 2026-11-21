@@ -149,6 +149,8 @@ export function nextTurn(step = 1) {
     if (!skipped(t.combatants[turn])) break
   }
   t.turn = turn
+  // a creature regains its legendary actions at the start of its turn
+  if (step > 0) delete t.combatants[turn].legendaryUsed
   touch()
 }
 

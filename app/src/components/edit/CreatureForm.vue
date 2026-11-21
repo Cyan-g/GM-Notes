@@ -1,13 +1,18 @@
 <script setup lang="ts">
 // A creature's statblock as a form: buttons and boxes instead of statblock text. The free-text parts of the
 // stored statblock ("30 ft., fly 30 ft. (hover)", "perception +5") are read into fields and written back the same way.
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { loadSrdMonsters, srdMonster, srdMonsterNames, withSrd } from '../../srd'
 import { fieldOptions, optionLabel } from '../../store'
 import type { Abilities, Entry, Feature, Statblock } from '../../model/types'
 import { TYPES } from '../../model/schema'
 import { changed } from '../../edit'
 import { xpFor } from '../../encounter'
 import TokenField from './TokenField.vue'
+import EntryPicker from './EntryPicker.vue'
+import EntryLink from '../EntryLink.vue'
+import { attackText, statProblems } from '../../creatures'
+import type { StatAttack } from '../../model/types'
 
 const props = defineProps<{ entry: Entry }>()
 const sb = computed<Statblock>(() => (props.entry.fields.statblock) ?? {})
@@ -159,7 +164,7 @@ const LANGS = ['Common', 'Dwarvish', 'Elvish', 'Giant', 'Gnomish', 'Goblin', 'Ha
 const NONMAGICAL = 'bludgeoning, piercing, and slashing from nonmagical attacks'
 
 // ---- features: traits, actions, … one tab each ----
-const FEATS: [keyof Statblock, string][] = [['traits', 'Traits'], ['actions', 'Actions'], ['bonusActions', 'Bonus actions'], ['reactions', 'Reactions'], ['legendary', 'Legendary actions']]
+const FEATS: [keyof Statblock, string][] = [['traits', 'Traits'], ['actions', 'Actions'], ['bonusActions', 'Bonus actions'], ['reactions', 'Reactions'], ['legendary', 'Legendary actions'], ['lair', 'Lair actions']]
 const feats = (k: keyof Statblock) => (sb.value[k] as Feature[] | undefined) ?? []
 const tab = ref<keyof Statblock>(feats('traits').length || !feats('actions').length ? 'traits' : 'actions')
 function setFeat(i: number, patch: Partial<Feature>) { set(tab.value, feats(tab.value).map((f, j) => (j === i ? { ...f, ...patch } : f)) as any) }
@@ -172,13 +177,89 @@ function moveFeat(i: number, d: number) {
   ;[list[i], list[j]] = [list[j], list[i]]
   set(tab.value, list as any)
 }
-const ATTACK = 'Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 5 (1d6 + 2) slashing damage.'
+const ATTACK = 'Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Slashing damage.'
+
+// ---- an action that's an attack: its line written from these ----
+const ATTACK_TABS: (keyof Statblock)[] = ['actions', 'bonusActions', 'reactions', 'legendary', 'lair']
+function toggleAttack(i: number) {
+  const f = feats(tab.value)[i]
+  if (f.attack) { setFeat(i, { attack: undefined, text: attackText(sb.value, f.attack) }); return }
+  const a: StatAttack = { kind: 'melee', ability: modOf('dex') > modOf('str') ? 'dex' : 'str', reach: 5, dice: '1d6', type: 'Slashing' }
+  setFeat(i, { attack: a, text: attackText(sb.value, a) })
+}
+function setAttack(i: number, p: Partial<StatAttack>) {
+  const a = { ...feats(tab.value)[i].attack!, ...p } as StatAttack
+  for (const k of ['plus', 'extra', 'range', 'bonus'] as const) if (!a[k]) delete a[k]
+  setFeat(i, { attack: a, text: attackText(sb.value, a) })
+}
+const DMG_TYPES = DAMAGE
+
+// ---- an SRD monster to start from ----
+const useSrd = ref(!!sb.value.srd)
+const srdBase = computed(() => srdMonster(sb.value.srd))
+/** The SRD monster's value for a field, shown greyed while the form leaves it empty. */
+const ph = computed(() => srdBase.value?.statblock ?? {} as Statblock)
+function copySrd() {
+  const base = srdBase.value
+  if (!base) return
+  const next = JSON.parse(JSON.stringify(withSrd(sb.value))) as Statblock
+  delete next.srd
+  props.entry.fields.statblock = next
+  const t = (base.statblock.creatureType ?? '').replace(/\s*\(.*\)$/, '')
+  if (t && !props.entry.fields.creatureType) props.entry.fields.creatureType = t
+  useSrd.value = false
+  changed(props.entry)
+}
+onMounted(() => { void loadSrdMonsters() })
+
+// ---- what imported text left behind ----
+const problems = computed(() => statProblems(sb.value))
+function fixProblem(apply: (x: Statblock) => Statblock) {
+  const next = apply({ ...sb.value })
+  props.entry.fields.statblock = next
+  changed(props.entry)
+}
+
+// ---- spellcasting: the ability and the spells by how often ----
+const SC_LABELS = ['At Will', '1/Day Each', '2/Day Each', '3/Day Each', 'Cantrips', '1st level', '2nd level', '3rd level']
+const sc = computed(() => sb.value.spellcasting)
+function setSc(p: Partial<NonNullable<Statblock['spellcasting']>> | null) {
+  if (p === null) return set('spellcasting', undefined)
+  set('spellcasting', { ability: 'cha', lists: [{ label: 'At Will', spells: [] }], ...(sc.value ?? {}), ...p })
+}
+function setList(i: number, p: Partial<{ label: string; spells: string[] }>) { setSc({ lists: sc.value!.lists.map((l, k) => (k === i ? { ...l, ...p } : l)) }) }
+const addList = () => setSc({ lists: [...(sc.value?.lists ?? []), { label: '1/Day Each', spells: [] }] })
+const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) => k !== i) })
 function grow(ev: Event) { const t = ev.target as HTMLTextAreaElement; t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px' }
 const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 2 + 'px' }) }
 </script>
 
 <template>
   <div class="creature-form">
+    <!-- what imported text left behind, each with a fix -->
+    <section v-if="problems.length" class="card cf-card lu-warn cf-problems">
+      <b class="small">Check these</b>
+      <div v-for="p in problems" :key="p.key" class="cf-problem small">{{ p.text }} <button type="button" class="chip-btn" @click="fixProblem(p.apply)">{{ p.fix }}</button></div>
+    </section>
+    <!-- an SRD monster to start from: its stats under the ones set here -->
+    <section class="card cf-card cf-start">
+      <div class="cf-row">
+        <span class="sf-label">Start from</span>
+        <div class="seg">
+          <button type="button" :class="{ on: !useSrd }" @click="useSrd = false; set('srd', undefined)">its own stats</button>
+          <button type="button" :class="{ on: useSrd }" @click="useSrd = true">an SRD monster</button>
+        </div>
+      </div>
+      <template v-if="useSrd">
+        <div class="cf-row">
+          <input class="cf-srd-input" :value="sb.srd ?? ''" list="cf-srd-names" :placeholder="`Search the SRD's ${srdMonsterNames.length || 330} monsters…`" @change="set('srd', val($event).trim() || undefined)" />
+          <datalist id="cf-srd-names"><option v-for="n in srdMonsterNames" :key="n" :value="n" /></datalist>
+          <button v-if="srdBase" type="button" class="chip-btn" title="Write its stats into the form (with what's set here on top), to change them; the creature then has its own stats" @click="copySrd">Copy its stats in</button>
+        </div>
+        <p v-if="srdBase" class="muted small">{{ srdBase.name }}<template v-if="srdBase.name.toLowerCase() !== (sb.srd ?? '').toLowerCase()"> (for “{{ sb.srd }}”)</template>: {{ srdBase.statblock.size }} {{ srdBase.statblock.creatureType }}, CR {{ srdBase.statblock.cr }}. Its stats show on the right, greyed in the form; anything you fill in replaces them.</p>
+        <p v-else-if="sb.srd" class="small warn-text">“{{ sb.srd }}” isn't one of the SRD's monsters: pick one from the list.</p>
+      </template>
+    </section>
     <!-- who it is -->
     <section class="card cf-card">
       <div class="cf-grid">
@@ -198,7 +279,7 @@ const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() =
           <input :value="typeParts.tags" placeholder="e.g. shapechanger" @change="setType(typeValue, val($event))" />
         </label>
         <label class="sf-field"><span class="sf-label">Alignment</span>
-          <input :value="sb.alignment ?? ''" list="cf-align" placeholder="e.g. neutral evil" @change="set('alignment', val($event).trim() || undefined)" />
+          <input :value="sb.alignment ?? ''" list="cf-align" :placeholder="ph.alignment ?? 'e.g. neutral evil'" @change="set('alignment', val($event).trim() || undefined)" />
           <datalist id="cf-align"><option v-for="a in ALIGNMENTS" :key="a" :value="a" /></datalist>
         </label>
         <label class="sf-field"><span class="sf-label">Challenge</span>
@@ -219,14 +300,14 @@ const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() =
       <div class="cf-grid">
         <label class="sf-field"><span class="sf-label">Armour class</span>
           <span class="cf-row">
-            <input type="number" class="cf-num big" :value="sb.ac ?? ''" @change="set('ac', num(val($event)))" />
+            <input type="number" class="cf-num big" :value="sb.ac ?? ''" :placeholder="ph.ac != null ? String(ph.ac) : ''" @change="set('ac', num(val($event)))" />
             <input :value="sb.acNote ?? ''" placeholder="natural armor" @change="set('acNote', val($event).trim() || undefined)" />
           </span>
         </label>
         <label class="sf-field"><span class="sf-label">Hit points</span>
           <span class="cf-row">
-            <input type="number" class="cf-num big" :value="sb.hp ?? ''" @change="set('hp', num(val($event)))" />
-            <input :value="sb.hitDice ?? ''" placeholder="hit dice, e.g. 4d8 + 4" @change="set('hitDice', val($event).trim() || undefined)" />
+            <input type="number" class="cf-num big" :value="sb.hp ?? ''" :placeholder="ph.hp != null ? String(ph.hp) : ''" @change="set('hp', num(val($event)))" />
+            <input :value="sb.hitDice ?? ''" :placeholder="ph.hitDice ?? 'hit dice, e.g. 4d8 + 4'" @change="set('hitDice', val($event).trim() || undefined)" />
             <button v-if="hitDiceAvg != null && hitDiceAvg !== sb.hp" type="button" class="chip-btn" title="Use the average of the hit dice" @click="set('hp', hitDiceAvg)">= {{ hitDiceAvg }}</button>
           </span>
         </label>
@@ -248,7 +329,7 @@ const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() =
       <div class="cf-abilities">
         <label v-for="a in ABIL" :key="a" class="cf-ability" :title="ABIL_NAMES[a]">
           <b>{{ a.toUpperCase() }}</b>
-          <input type="number" min="1" max="30" :value="sb.abilities?.[a] ?? ''" placeholder="10" @change="setAbility(a, val($event))" />
+          <input type="number" min="1" max="30" :value="sb.abilities?.[a] ?? ''" :placeholder="String(ph.abilities?.[a] ?? 10)" @change="setAbility(a, val($event))" />
           <span class="cf-mod">{{ signed(modOf(a)) }}</span>
           <button type="button" class="cf-save" :class="{ on: !!saveOf(a) }" :title="saveOf(a) ? 'Proficient in this saving throw (click to remove)' : 'Add a saving throw proficiency'" @click.prevent="toggleSave(a)">save</button>
           <input v-if="saveOf(a)" type="number" class="cf-save-n" :value="saveOf(a)!.n ?? ''" title="Saving throw bonus" @click.prevent @change="setSaveBonus(a, val($event))" />
@@ -265,8 +346,6 @@ const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() =
             <input v-if="skillOn(s)" type="number" :value="skillOn(s)!.n ?? ''" :placeholder="signed(skillSuggest(s))" @change="setSkillBonus(s, val($event))" />
           </span>
         </div>
-        <p v-if="otherSkills.length" class="muted small">Also in the skills text: <b>{{ otherSkills.map(b => b.name + (b.n != null ? ' ' + signed(b.n) : '')).join(', ') }}</b>
-          <button type="button" class="link-btn" title="Remove these from the skills" @click="set('skills', writeBonuses(skills.filter(b => !otherSkills.includes(b))))">remove</button></p>
       </div>
 
       <div class="cf-grid">
@@ -291,6 +370,9 @@ const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() =
 
     <!-- damage and conditions -->
     <section class="card cf-card">
+      <div class="sf-field"><span class="sf-label">Damage vulnerabilities</span>
+        <TokenField :model-value="sb.vulnerabilities" :options="DAMAGE" @update:model-value="v => set('vulnerabilities', v)" />
+      </div>
       <div class="sf-field"><span class="sf-label">Damage resistances</span>
         <TokenField :model-value="sb.resistances" :options="DAMAGE" :suggestions="[NONMAGICAL]" @update:model-value="v => set('resistances', v)" />
       </div>
@@ -307,21 +389,63 @@ const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() =
       <nav class="tabs cf-tabs">
         <a v-for="[k, label] in FEATS" :key="k" href="#" :class="{ on: tab === k }" @click.prevent="tab = k">{{ label }} <span class="muted small">{{ feats(k).length || '' }}</span></a>
       </nav>
+      <div v-if="tab === 'legendary'" class="cf-row cf-legendary small">
+        <label>Uses per round <input type="number" min="0" class="effect-value" :value="sb.legendaryUses ?? ''" placeholder="3" @change="set('legendaryUses', num(val($event)))" /></label>
+        <label>in its lair <input type="number" min="0" class="effect-value" :value="sb.legendaryLair ?? ''" placeholder="—" @change="set('legendaryLair', num(val($event)))" /></label>
+        <label title="Legendary Resistance: fails a save, succeeds instead">Legendary Resistance /day <input type="number" min="0" class="effect-value" :value="sb.legendaryResistance ?? ''" placeholder="—" @change="set('legendaryResistance', num(val($event)))" /></label>
+        <label>in its lair <input type="number" min="0" class="effect-value" :value="sb.legendaryResistanceLair ?? ''" placeholder="—" @change="set('legendaryResistanceLair', num(val($event)))" /></label>
+      </div>
+      <p v-if="tab === 'lair'" class="muted small">On initiative count 20 (losing ties) it takes one of these.</p>
       <div v-for="(f, i) in feats(tab)" :key="tab + i" class="cf-feat">
         <div class="cf-feat-head">
           <input class="cf-feat-name" :value="f.name" placeholder="Name" @change="setFeat(i, { name: val($event) })" />
           <button type="button" class="link-btn" title="Move up" :disabled="i === 0" @click="moveFeat(i, -1)">↑</button>
           <button type="button" class="link-btn" title="Move down" :disabled="i === feats(tab).length - 1" @click="moveFeat(i, 1)">↓</button>
+          <button v-if="ATTACK_TABS.includes(tab)" type="button" class="chip-btn" :class="{ on: !!f.attack }" :title="f.attack ? 'Back to free text (keeps the line as written now)' : 'Write the attack line from its ability, dice and the proficiency bonus'" @click="toggleAttack(i)">⚔ Attack</button>
           <button type="button" class="x" title="Remove" @click="removeFeat(i)">×</button>
         </div>
-        <textarea v-grow :value="f.text" rows="2" :placeholder="tab === 'actions' ? ATTACK : 'What it does'" @input="grow" @change="setFeat(i, { text: val($event) })" />
+        <template v-if="f.attack">
+          <div class="cf-attack small">
+            <div class="seg">
+              <button v-for="k in (['melee', 'ranged', 'both'] as const)" :key="k" type="button" :class="{ on: f.attack.kind === k }" @click="setAttack(i, { kind: k })">{{ k === 'both' ? 'Melee or ranged' : k[0].toUpperCase() + k.slice(1) }}</button>
+            </div>
+            <label>with <select :value="f.attack.ability" @change="setAttack(i, { ability: val($event) as StatAttack['ability'] })"><option v-for="a in ABIL" :key="a" :value="a">{{ a.toUpperCase() }} ({{ signed(modOf(a)) }})</option></select></label>
+            <label v-if="f.attack.kind !== 'ranged'">reach <input type="number" min="5" step="5" class="effect-value" :value="f.attack.reach ?? 5" @change="setAttack(i, { reach: num(val($event)) ?? 5 })" /> ft</label>
+            <label v-if="f.attack.kind !== 'melee'">range <input class="effect-value cf-range" :value="f.attack.range ?? ''" placeholder="30/120" @change="setAttack(i, { range: val($event).trim() })" /> ft</label>
+            <label>damage <input class="effect-value cf-range" :value="f.attack.dice" placeholder="1d6" @change="setAttack(i, { dice: val($event).trim() || '1d6' })" /></label>
+            <select :value="f.attack.type" aria-label="Damage type" @change="setAttack(i, { type: val($event) })"><option v-for="t in DMG_TYPES" :key="t" :value="t">{{ t }}</option></select>
+            <label title="A magic weapon's bonus to hit and damage">bonus <input type="number" class="effect-value" :value="f.attack.bonus ?? ''" placeholder="0" @change="setAttack(i, { bonus: num(val($event)) })" /></label>
+            <input class="effect-text" :value="f.attack.plus ?? ''" placeholder="plus… e.g. 7 (2d6) Fire damage" @change="setAttack(i, { plus: val($event).trim() })" />
+            <input class="effect-text" :value="f.attack.extra ?? ''" placeholder="and then… e.g. If the target is Large or smaller, it has the Prone condition." @change="setAttack(i, { extra: val($event).trim() })" />
+          </div>
+          <p class="muted small cf-attack-line">{{ attackText(sb, f.attack) }}</p>
+        </template>
+        <textarea v-else v-grow :value="f.text" rows="2" :placeholder="tab === 'actions' ? ATTACK : 'What it does'" @input="grow" @change="setFeat(i, { text: val($event) })" />
       </div>
       <p v-if="!feats(tab).length" class="muted small">None yet.</p>
       <button type="button" class="chip-btn" @click="addFeat">＋ Add {{ FEATS.find(x => x[0] === tab)![1].toLowerCase().replace(/s$/, '') }}</button>
     </section>
 
-    <label class="sf-field cf-srd"><span class="sf-label">SRD monster <span class="muted">(take the stats from the SRD instead of writing them out)</span></span>
-      <input :value="sb.srd ?? ''" placeholder="e.g. Sahuagin" @change="set('srd', val($event).trim() || undefined)" />
-    </label>
+    <!-- spellcasting: the spells as the world's spells, the DC and attack worked out -->
+    <section class="card cf-card">
+      <div class="cf-row"><b class="sf-label">Spellcasting</b>
+        <button v-if="!sc" type="button" class="chip-btn" @click="setSc({})">＋ Spellcasting</button>
+        <template v-else>
+          <label class="small">with <select :value="sc.ability" @change="setSc({ ability: val($event) as any })"><option v-for="a in ABIL" :key="a" :value="a">{{ ABIL_NAMES[a] }}</option></select></label>
+          <span class="muted small">save DC {{ 8 + prof + modOf(sc.ability) }}, {{ signed(prof + modOf(sc.ability)) }} to hit</span>
+          <label class="small"><input type="checkbox" :checked="!!sc.noMaterial" @change="setSc({ noMaterial: ($event.target as HTMLInputElement).checked || undefined })" /> no Material components</label>
+          <button type="button" class="link-btn small" title="Remove its spellcasting" @click="setSc(null)">remove</button>
+        </template>
+      </div>
+      <div v-for="(l, i) in sc?.lists ?? []" :key="i" class="cf-row cf-splist">
+        <input class="effect-value cf-sclabel" :value="l.label" list="cf-sclabels" @change="setList(i, { label: val($event).trim() || 'At Will' })" />
+        <span v-for="id in l.spells" :key="id" class="chip"><EntryLink :id="id" /><button type="button" class="link-btn" title="Remove" @click="setList(i, { spells: l.spells.filter(x => x !== id) })">×</button></span>
+        <EntryPicker add :types="['spell']" :exclude="l.spells" placeholder="+ spell…" @pick="id => setList(i, { spells: [...l.spells, id] })" />
+        <button type="button" class="link-btn" title="Remove this list" @click="removeList(i)">×</button>
+      </div>
+      <datalist id="cf-sclabels"><option v-for="x in SC_LABELS" :key="x" :value="x" /></datalist>
+      <button v-if="sc" type="button" class="chip-btn" @click="addList">＋ List</button>
+    </section>
+
   </div>
 </template>

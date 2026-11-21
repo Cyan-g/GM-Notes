@@ -11,6 +11,7 @@ import BackgroundEdit from '../components/edit/BackgroundEdit.vue'
 import { changed, deleteEntry } from '../edit'
 import { go, hrefEntry, hrefList } from '../router'
 import FieldInput from '../components/edit/FieldInput.vue'
+import { statsOf } from '../encounter'
 import SubclassInfo from '../components/SubclassInfo.vue'
 import FeatPrereqs from '../components/edit/FeatPrereqs.vue'
 import ListInput from '../components/edit/ListInput.vue'
@@ -201,7 +202,7 @@ function remove() {
 
       <!-- Sheets (spells) have nothing for the side: no picture, no relations. -->
       <aside v-if="creature" class="entry-side cf-preview">
-        <StatblockView v-if="e.fields.statblock" :sb="e.fields.statblock" :name="e.name" />
+        <StatblockView v-if="statsOf(e)" :sb="statsOf(e)!" :name="e.name" />
         <p v-else class="muted small">The statblock shows up here as you fill it in.</p>
       </aside>
       <aside v-else-if="!noSide" class="entry-side">

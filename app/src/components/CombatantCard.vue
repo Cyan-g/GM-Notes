@@ -5,8 +5,8 @@
 import AppIcon from './AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Combatant } from '../model/types'
-import { touch } from '../store'
-import { CONDITIONS } from '../encounter'
+import { get, touch } from '../store'
+import { CONDITIONS, statsOf } from '../encounter'
 import ConditionIcon from './ConditionIcon.vue'
 import DeathSaves from './DeathSaves.vue'
 import { applyHp, deathSavesOf, isParty, removeCombatant, fighterStats, setDeathSaves } from '../tracker'
@@ -73,6 +73,9 @@ function concDone(i: number, kept: boolean) {
 // ---- death saves ----
 const dying = computed(() => isParty(c.value) && state.value === 'down')
 const ds = computed(() => deathSavesOf(c.value))
+/** A creature's legendary actions per round (its statblock; in its lair, the lair count isn't assumed). */
+const legendary = computed(() => (c.value.isPlayer ? 0 : statsOf(get(c.value.entry))?.legendaryUses ?? 0))
+function useLegendary(n: number) { const used = c.value.legendaryUsed ?? 0; c.value.legendaryUsed = used >= n ? n - 1 : n; if (!c.value.legendaryUsed) delete c.value.legendaryUsed; touch() }
 
 /** Clicking into a box selects its number, so typing replaces it. */
 const selectAll = (ev: FocusEvent) => (ev.target as HTMLInputElement).select()
@@ -114,6 +117,11 @@ function switchSide() { c.value.side = isParty(c.value) ? 'enemy' : 'party'; tou
       <button type="button" class="hp-btn tmp" title="Temporary HP" @click.stop="hp('t')"><AppIcon ui="shield" /></button>
     </div>
 
+    <div v-if="legendary" class="cc-legendary small" @click.stop>
+      <span class="muted">Legendary actions</span>
+      <button v-for="n in legendary" :key="n" type="button" class="ds-box" :class="{ on: (c.legendaryUsed ?? 0) >= n }" :aria-label="`${n} used`" :title="(c.legendaryUsed ?? 0) >= n ? 'Used (click to take back)' : 'Use one'" @click="useLegendary(n)" />
+      <span class="muted">{{ legendary - (c.legendaryUsed ?? 0) }} left · back at the start of its turn</span>
+    </div>
     <DeathSaves v-if="dying" :saves="ds" @set="d => { setDeathSaves(c, d); touch() }" @nat20="applyHp(c, '=1')" />
 
     <div v-for="(dc, i) in c.concChecks ?? []" :key="'cc' + i" class="conc-check" @click.stop>

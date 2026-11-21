@@ -19,6 +19,7 @@ import RaceGlance from '../components/RaceGlance.vue'
 import BackgroundGlance from '../components/BackgroundGlance.vue'
 import FeatInfo from '../components/FeatInfo.vue'
 import UpcastTable from '../components/UpcastTable.vue'
+import { statsOf } from '../encounter'
 import CompanionsTab from './CompanionsTab.vue'
 import CraftingView from './CraftingView.vue'
 import FamilyTree from '../components/FamilyTree.vue'
@@ -154,7 +155,7 @@ function setPart(p: { from?: number; to?: number }, md: string) {
   changed(x)
 }
 const scrollSpell = computed(() => (e.value?.type === 'item' && e.value.fields.kind === 'Scroll' ? get(e.value.fields.spell) : undefined))
-const statblock = computed(() => e.value?.fields.statblock)
+const statblock = computed(() => statsOf(e.value))
 
 const crumbs = computed(() => {
   const x = e.value

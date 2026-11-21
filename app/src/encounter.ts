@@ -1,6 +1,7 @@
 // Encounter maths: XP by challenge rating, and turning encounter lines into tracker combatants.
 import type { Combatant, EncounterLine, Entry, Statblock } from './model/types'
 import { get } from './store'
+import { withSrd } from './srd'
 import { sheetOf, trackerStats } from './sheet'
 
 const XP: Record<string, number> = {
@@ -10,7 +11,8 @@ const XP: Record<string, number> = {
   '26': 90000, '27': 105000, '28': 120000, '29': 135000, '30': 155000,
 }
 export const xpFor = (cr?: string) => (cr ? XP[cr.trim()] : undefined)
-export const statsOf = (e?: Entry) => e?.fields.statblock
+/** A creature's statblock: its own, on top of its SRD monster's when it names one. */
+export const statsOf = (e?: Entry) => withSrd(e?.fields.statblock)
 export const mod = (score?: number) => (score == null ? 0 : Math.floor((score - 10) / 2))
 
 export function lineInfo(l: EncounterLine) {

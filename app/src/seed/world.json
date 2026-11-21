@@ -1,6 +1,6 @@
 {
  "about": "What every new world starts with. Made by `npm run seed` from the DM's world; don't edit by hand.",
- "dataVersion": 29,
+ "dataVersion": 30,
  "meta": {
   "calendar": {
    "name": "Calendar",
@@ -195,64 +195,6 @@
     {
      "id": "Wizard",
      "label": "Wizard"
-    }
-   ],
-   "creature.creatureType": [
-    {
-     "id": "Aberration",
-     "label": "Aberration"
-    },
-    {
-     "id": "Beast",
-     "label": "Beast"
-    },
-    {
-     "id": "Celestial",
-     "label": "Celestial"
-    },
-    {
-     "id": "Construct",
-     "label": "Construct"
-    },
-    {
-     "id": "Dragon",
-     "label": "Dragon"
-    },
-    {
-     "id": "Elemental",
-     "label": "Elemental"
-    },
-    {
-     "id": "Fey",
-     "label": "Fey"
-    },
-    {
-     "id": "Fiend",
-     "label": "Fiend"
-    },
-    {
-     "id": "Giant",
-     "label": "Giant"
-    },
-    {
-     "id": "Humanoid",
-     "label": "Humanoid"
-    },
-    {
-     "id": "Monstrosity",
-     "label": "Monstrosity"
-    },
-    {
-     "id": "Ooze",
-     "label": "Ooze"
-    },
-    {
-     "id": "Plant",
-     "label": "Plant"
-    },
-    {
-     "id": "Undead",
-     "label": "Undead"
     }
    ],
    "deity.rank": [
@@ -905,7 +847,7 @@
      "label": "Plane"
     }
    ],
-   "race.creatureType": [
+   "creature.creatureType": [
     {
      "id": "Aberration",
      "label": "Aberration"

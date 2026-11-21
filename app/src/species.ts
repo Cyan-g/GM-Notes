@@ -446,7 +446,8 @@ export function grantOptions(kind: TraitGrant['kind']): { id: string; label: str
     case 'armor': return listOptions('item.armorType').filter(o => o.id !== 'Clothing')
     case 'weapon': return [...listOptions('item.weaponCategory'), ...listOptions('item.baseWeapon')]
     case 'language': return listOptions('language')
-    case 'tool': return Object.values(state.db?.entries ?? {}).filter(e => e.type === 'item' && e.fields.kind === 'Tool')
+    // tools, and musical instruments (tools a character can be proficient with too: a Bard's, Musician's)
+    case 'tool': return Object.values(state.db?.entries ?? {}).filter(e => e.type === 'item' && (e.fields.kind === 'Tool' || e.fields.kind === 'Instrument'))
       .map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label))
   }
 }
@@ -466,15 +467,18 @@ export function choiceCandidates(c: TraitChoice): { id: string; label: string }[
 /** The world's spells a spell choice can take: of its level, on one of its classes' lists (any, if none), rituals if asked. */
 export function spellsMatching(f: TraitChoice['spell']): Entry[] {
   const classes = f?.classes ?? []
+  const schools = f?.schools ?? []
   return entries.value.filter(e => e.type === 'spell' && (!f?.level || e.fields.level === f.level)
-    && (!classes.length || (e.fields.classes ?? []).some(x => classes.includes(x))) && (!f?.ritual || !!e.fields.ritual))
+    && (!classes.length || (e.fields.classes ?? []).some(x => classes.includes(x))) && (!f?.ritual || !!e.fields.ritual)
+    && (!schools.length || schools.includes(String(e.fields.school ?? ''))))
     .sort((a, b) => a.name.localeCompare(b.name))
 }
-/** A spell choice's spells in words: "Wizard cantrip", "level 1 ritual spell". */
+/** A spell choice's spells in words: "Wizard cantrip", "level 1 ritual spell", "level 1 Divination or Enchantment spell". */
 export function spellChoiceWords(c: TraitChoice, plural: boolean): string {
   const f = c.spell, s = plural ? 's' : ''
-  const kind = f?.level === 'Cantrip' ? `cantrip${s}` : `${f?.level ? `level ${f.level} ` : ''}${f?.ritual ? 'ritual ' : ''}spell${s}`
-  return `${f?.classes?.length ? f.classes.join(' or ') + ' ' : ''}${kind}${f?.classes?.length ? '' : ' from any class'}`
+  const schools = f?.schools?.length ? `${f.schools.join(' or ')} ` : ''
+  const kind = f?.level === 'Cantrip' ? `${schools}cantrip${s}` : `${f?.level ? `level ${f.level} ` : ''}${f?.ritual ? 'ritual ' : ''}${schools}spell${s}`
+  return `${f?.classes?.length ? f.classes.join(' or ') + ' ' : ''}${kind}${f?.classes?.length || schools ? '' : ' from any class'}`
 }
 /** What a choice picks, in words: "skill" / "skills", "Wizard cantrip". */
 export const choiceWords = (c: TraitChoice, n: number) => (c.kind === 'spell' ? spellChoiceWords(c, n !== 1) : CHOICE_WORDS[c.kind][n === 1 ? 0 : 1])

@@ -335,7 +335,7 @@ export interface TraitChoice {
   /** What it's called when it comes with an option ("Cantrips"); the option's name goes before it. */
   label?: string
   /** For a spell choice: which spells (any class's list, if `classes` is empty), and how the picked ones are cast. */
-  spell?: { classes?: string[]; level?: string; ritual?: boolean; how: TraitSpell['how']; ability?: TraitSpell['ability'] }
+  spell?: { classes?: string[]; level?: string; ritual?: boolean; /** Only spells of these schools (Fey Touched: Divination or Enchantment). */ schools?: string[]; how: TraitSpell['how']; ability?: TraitSpell['ability'] }
   count?: number
   /** The count from a character level on, replacing `count` ([[2, 2], [9, 4]]: two from level 2, four from 9). */
   steps?: [number, number][]

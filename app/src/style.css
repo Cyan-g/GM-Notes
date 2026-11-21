@@ -1673,6 +1673,10 @@ button.live-tag { cursor: pointer; }
 .sp-opt-more > summary { cursor: pointer; color: var(--link); }
 .sp-pick-selects { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .3rem; }
 .sp-pick-selects select { width: auto; }
+/* the lists' Known to players column: narrow, centred, the header's box switches every row shown */
+.grid .known-col { width: 1%; text-align: center; white-space: nowrap; }
+.grid .known-col label { display: inline-flex; gap: .3rem; align-items: center; font: inherit; }
+.grid .known-col input { width: auto; margin: 0; }
 /* weapons to master: what each picked weapon's mastery does, and the list of all of them */
 .sp-masteries { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; gap: .2rem; }
 .sp-mastery-list { margin-top: .4rem; }

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-// A sortable, filterable table of entries.
+// A sortable, filterable table of entries. For the DM, a "Known" column switches entries between known to players
+// and DM only, one by one or every row shown at once (asking first when that's many).
 import { printable } from '../cards'
 import AppIcon from './AppIcon.vue'
 import { activeSpellbook, currentPc } from '../sheet'
-import { get, state as store, touch } from '../store'
+import { get, playerMode, state as store, touch } from '../store'
 import SpellModal from './SpellModal.vue'
 import { computed, ref, watch } from 'vue'
 import type { Entry, EntryType } from '../model/types'
@@ -13,7 +14,9 @@ import { TYPES, byKey, typeWord } from '../model/schema'
 import { newEntry, printCards } from '../ui'
 import EntryLink from './EntryLink.vue'
 import FieldValue from './FieldValue.vue'
-import { isEmpty } from '../edit'
+import { changed, isEmpty } from '../edit'
+import { canExport } from '../transfer'
+import { isShared } from '../sync'
 
 const props = withDefaults(defineProps<{
   rows: Entry[]
@@ -133,6 +136,28 @@ function addToBook(id: string) {
   const b = activeSpellbook()
   if (!b.known.includes(id)) { b.known.push(id); touch() }
 }
+// ---- known to players or DM only: entries that can be shared (not characters, sessions, encounters, nor what came
+// from elsewhere and is read-only here) ----
+const shareable = (e: Entry) => e.type !== 'pc' && canExport(e) && !isShared(e)
+const knownCol = computed(() => !playerMode.value && !store.readOnly && props.rows.some(shareable))
+const shownShareable = computed(() => shown.value.filter(shareable))
+const allKnown = computed(() => shownShareable.value.length > 0 && shownShareable.value.every(e => e.visibility === 'known'))
+const someKnown = computed(() => shownShareable.value.some(e => e.visibility === 'known'))
+function setKnown(e: Entry, known: boolean) {
+  const v = known ? 'known' : 'secret'
+  if (e.visibility !== v) { e.visibility = v; changed(e) }
+}
+/** The header's box: every row shown known to players, or all DM only. */
+function setAllKnown(known: boolean, ev: Event) {
+  const list = shownShareable.value.filter(e => e.visibility !== (known ? 'known' : 'secret'))
+  const one = new Set(list.map(e => e.type)).size === 1 ? TYPES[list[0].type] : undefined
+  const what = list.length === 1 ? `1 ${one ? typeWord(one.type) : 'entry'}` : `${list.length} ${one ? one.plural.toLowerCase() : 'entries'}`
+  if (list.length > 20 && !confirm(known ? `Make ${what} known to players? They go to the players with your next send.` : `Make ${what} DM only? Players lose them with your next send.`)) {
+    (ev.target as HTMLInputElement).checked = !known
+    return
+  }
+  for (const e of list) setKnown(e, known)
+}
 defineExpose({ count: computed(() => shown.value.length) })
 </script>
 
@@ -164,11 +189,14 @@ defineExpose({ count: computed(() => shown.value.length) })
             <th class="sortable" title="Sort by name" @click="sortBy('name')">Name{{ arrow('name') }}</th>
             <th v-for="c in columns" :key="c.key" class="sortable" :class="['col-' + c.key.replace('@', ''), { num: c.kind === 'money' || c.field?.kind === 'money' }]" :title="c.key === '@concRitual' ? 'Concentration · Ritual' : `Sort by ${c.label.toLowerCase()}`" @click="sortBy(c.key)">{{ c.label }}{{ arrow(c.key) }}</th>
             <th v-if="spells" class="book-col" />
+            <th v-if="knownCol" class="known-col" :title="allKnown ? 'All shown are known to players; untick to make them DM only' : 'Tick to make every row shown known to players'">
+              <label><input type="checkbox" :checked="allKnown" :indeterminate="someKnown && !allKnown" :aria-label="'Known to players: every row shown'" @change="setAllKnown(($event.target as HTMLInputElement).checked, $event)" /> Known</label>
+            </th>
           </tr>
         </thead>
         <tbody>
           <template v-for="g in grouped ?? [{ label: '', rows: [] }]" :key="g.label">
-          <tr v-if="grouped" class="group-row"><td :colspan="columns.length + 1 + (spells ? 1 : 0)">{{ g.label || `No ${groupCols.find(c => c.key === groupBy)?.label.toLowerCase()}` }} <span class="muted small">{{ g.rows.length }}</span></td></tr>
+          <tr v-if="grouped" class="group-row"><td :colspan="columns.length + 1 + (spells ? 1 : 0) + (knownCol ? 1 : 0)">{{ g.label || `No ${groupCols.find(c => c.key === groupBy)?.label.toLowerCase()}` }} <span class="muted small">{{ g.rows.length }}</span></td></tr>
           <tr v-for="{ e, depth, kids } in (grouped ? g.rows.map(e => ({ e, depth: 0, kids: 0 })) : tableRows)" :key="e.id" :class="{ 'tree-child': depth }">
             <td class="name" :style="tree ? { paddingLeft: `${0.6 + depth * 1.3}rem` } : undefined" @click.capture="open($event, e)"><button v-if="tree" type="button" class="tree-toggle" :class="{ none: !kids }" :disabled="!kids"
                 :title="kids ? (collapsed.has(e.id) ? `Show its ${kids}` : 'Hide them') : ''" @click.stop="toggleTree(e.id)">{{ kids ? (collapsed.has(e.id) ? '▸' : '▾') : '' }}</button><EntryLink :id="e.id" :icon="e.type === 'pc'" /><span v-if="e.id === currentPc?.id" class="current-mark" title="The current character"><AppIcon ui="star" /> current</span></td>
@@ -184,6 +212,9 @@ defineExpose({ count: computed(() => shown.value.length) })
                 <span v-if="inBook(e.id)" class="muted small" :title="`In ${bookName}`">in book</span>
                 <button v-else class="chip-btn" :title="`Add to ${bookName}`" @click="addToBook(e.id)">＋ Book</button>
               </template>
+            </td>
+            <td v-if="knownCol" class="known-col">
+              <input v-if="shareable(e)" type="checkbox" :checked="e.visibility === 'known'" :title="e.visibility === 'known' ? 'Known to players' : 'DM only'" :aria-label="`${e.name}: known to players`" @change="setKnown(e, ($event.target as HTMLInputElement).checked)" />
             </td>
           </tr>
           </template>

@@ -2011,3 +2011,25 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .feat-info dl { display: grid; grid-template-columns: max-content 1fr; gap: .2rem 1rem; margin: 0; font-size: 14px; }
 .feat-info dt { color: var(--muted); }
 .feat-info dd { margin: 0; }
+/* a feat's prerequisites, step by step */
+.feat-prereqs { display: grid; gap: .5rem; border: 1px solid var(--line); border-radius: 8px; padding: .5rem .7rem; }
+.fp-switch { display: inline-flex; gap: .4rem; align-items: center; }
+.fp-mode { justify-self: start; }
+.fp-text { display: grid; gap: .2rem; font-size: 13px; }
+.fp-row { display: grid; grid-template-columns: 9rem 1fr auto; gap: .5rem; align-items: center; padding: .3rem 0; border-top: 1px dashed var(--line); }
+.fp-label { font-size: 13px; font-weight: 600; }
+.fp-value { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; min-width: 0; }
+.fp-value select { width: auto; }
+.fp-add { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
+@media (max-width: 600px) { .fp-row { grid-template-columns: 1fr auto; } .fp-label { grid-column: 1 / -1; } }
+/* a feat's form: what it is, then what it gives (left) and what it needs (right) */
+.feat-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .9rem 1.5rem; }
+.ff-top { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem 1.5rem; }
+.ff-top .sheet-field > select { max-width: 22rem; }
+.ff-col { display: grid; gap: .6rem; align-content: start; padding: .6rem .8rem; border-radius: 10px; border: 1px solid var(--line); }
+.ff-col > h4 { margin: 0; font-size: .95rem; }
+.ff-gives { border-left: 3px solid var(--flash-up); }
+.ff-needs { border-left: 3px solid var(--accent); }
+.ff-needs .feat-prereqs { border: none; padding: 0; }
+.ff-repeat { font-size: 13px; }
+@media (max-width: 760px) { .feat-form, .ff-top { grid-template-columns: 1fr; } }

@@ -46,7 +46,8 @@ const value = computed({
     if (props.entry.type === 'feat' && props.def.key === 'category') {
       const AT: Record<string, number> = { 'Epic Boon': 19, 'General Feat': 4 }
       const was = AT[String(f.category ?? '')], now = AT[String(v ?? '')]
-      if (f.level == null || f.level === was) { if (now) f.level = now; else delete f.level }
+      const writtenOnly = !!f.prerequisite && f.level == null && !(f.requires as string[] | undefined)?.length && !f.requirements
+      if (!writtenOnly && (f.level == null || f.level === was)) { if (now) f.level = now; else delete f.level }
     }
     if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) delete f[props.def.key]
     else f[props.def.key] = v

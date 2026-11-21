@@ -12,6 +12,7 @@ import { changed, deleteEntry } from '../edit'
 import { go, hrefEntry, hrefList } from '../router'
 import FieldInput from '../components/edit/FieldInput.vue'
 import SubclassInfo from '../components/SubclassInfo.vue'
+import FeatPrereqs from '../components/edit/FeatPrereqs.vue'
 import ListInput from '../components/edit/ListInput.vue'
 import BodyEditor from '../components/edit/BodyEditor.vue'
 import CharacterSheet from '../components/CharacterSheet.vue'
@@ -62,8 +63,11 @@ const showDesc = computed(() => !(e.value?.type === 'item' && e.value.fields.kin
 // (notes written under the statblock stay reachable, folded, if there are any).
 const creature = computed(() => e.value?.type === 'creature')
 const sheet = computed(() => !!e.value && SHEET_TYPES.includes(e.value.type))
-const sheetFields = computed(() => (def.value?.fields ?? []).filter(f => f.key !== 'summary' && !BIG.includes(f.kind) && shown(f)))
+// a feat's prerequisites are one block of their own (FeatPrereqs)
+const FEAT_PREREQ = ['level', 'requires', 'prerequisite', 'requirements']
+const sheetFields = computed(() => (def.value?.fields ?? []).filter(f => f.key !== 'summary' && !BIG.includes(f.kind) && shown(f) && !(e.value?.type === 'feat' && FEAT_PREREQ.includes(f.key))))
 // Yes/no fields share one row of toggle buttons.
+const fieldOf = (k: string) => def.value?.fields.find(f => f.key === k)
 const sheetBools = computed(() => sheetFields.value.filter(f => f.kind === 'bool'))
 function toggleBool(key: string) {
   const x = e.value!
@@ -131,6 +135,22 @@ function remove() {
           <section class="card sheet-form">
             <SpellForm v-if="e.type === 'spell'" :entry="e" />
             <ItemForm v-else-if="e.type === 'item'" :entry="e" />
+            <!-- a feat: what it is on top; what it gives on the left, what it takes to get it on the right -->
+            <div v-else-if="e.type === 'feat'" class="feat-form">
+              <div class="ff-top">
+                <label v-for="k in ['category', 'source']" :key="k" class="sheet-field"><span>{{ fieldOf(k)!.label }}</span><FieldInput :id="`f-${k}`" :def="fieldOf(k)!" :entry="e" /></label>
+              </div>
+              <div class="ff-col ff-gives">
+                <h4>What it gives</h4>
+                <div class="sheet-field"><span>Ability score increase</span><FieldInput :def="fieldOf('abilityIncrease')!" :entry="e" /></div>
+                <p class="muted small">Its effects, choices and spells: <b>Features</b>, below the card.</p>
+              </div>
+              <div class="ff-col ff-needs">
+                <h4>What it needs</h4>
+                <FeatPrereqs :e="e" />
+                <label class="fp-switch ff-repeat" title="It can be taken more than once (another version each time, where its text says so)"><input type="checkbox" :checked="!!e.fields.repeatable" @change="toggleBool('repeatable')" /> Can be taken more than once (repeatable)</label>
+              </div>
+            </div>
             <div v-else class="sheet-grid">
               <!-- Short fields in two columns, then the yes/no toggles, then the full-width ones. -->
               <label v-for="f in sheetFields.filter(x => !['bool', 'list', 'longtext'].includes(x.kind))" :key="f.key" class="sheet-field" :class="'k-' + f.kind">

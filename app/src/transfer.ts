@@ -448,7 +448,8 @@ export async function readImport(file: File, opts: ImportOptions = {}): Promise<
   const relations: ImportPlan['relations'] = { add: [], change: [] }
   for (const r of Array.isArray(b.relations) ? b.relations : []) {
     if (!isObj(r) || typeof r.a !== 'string' || typeof r.b !== 'string' || !(r.kind in RELATION_KINDS)) continue
-    const a = map.get(r.a), bb = map.get(r.b)
+    // an end that isn't in the file may be an entry this world has (a player's character's relation to what the DM shared)
+    const a = map.get(r.a) ?? (d.entries[r.a] ? r.a : undefined), bb = map.get(r.b) ?? (d.entries[r.b] ? r.b : undefined)
     if (!a || !bb) continue
     const to: Omit<Relation, 'id'> = { a, b: bb, kind: r.kind, visibility: r.visibility === 'known' ? 'known' : 'secret' }
     for (const k of ['role', 'note'] as const) if (typeof r[k] === 'string' && r[k]) to[k] = r[k]

@@ -14,6 +14,8 @@ export interface ThemeSettings {
   font?: string
   /** Text font id: body text, menus, tabs and tables. */
   textFont?: string
+  /** Decorative style: frames, heading rules, fields and HP bars (drawn in the theme's colours); plain when unset. */
+  flourish?: string
 }
 export interface Preset { id: string; name: string; note: string; dark: boolean; colors: ThemeColors }
 
@@ -59,6 +61,12 @@ export const TEXT_FONTS = [
   { id: 'alegreya', name: 'Alegreya', css: `"Alegreya", ${SERIF}` },
   { id: 'crimson-pro', name: 'Crimson Pro', css: `"Crimson Pro", ${SERIF}` },
   { id: 'lora', name: 'Lora', css: `"Lora", ${SERIF}` },
+]
+
+/** Decorative styles: how frames, heading rules, fields and HP bars are drawn. */
+export const FLOURISHES = [
+  { id: 'plain', name: 'Plain', note: 'Clean lines' },
+  { id: 'illuminated', name: 'Illuminated', note: 'Gilded rules and scrolled corners' },
 ]
 
 export const COLOR_LABELS: Record<keyof ThemeColors, string> = {
@@ -129,6 +137,7 @@ export function applyTheme() {
   root.style.setProperty('--serif', font.css)
   const text = TEXT_FONTS.find(f => f.id === s.textFont) ?? TEXT_FONTS[0]
   root.style.setProperty('--sans', text.css)
+  for (const f of FLOURISHES) root.classList.toggle(`fl-${f.id}`, (s.flourish ?? 'plain') === f.id && f.id !== 'plain')
   // The browser's own UI (address bar on phones) follows the background.
   let meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null
   if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.append(meta) }

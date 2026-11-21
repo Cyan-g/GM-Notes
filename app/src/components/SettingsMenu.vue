@@ -8,7 +8,7 @@ import { playerMode, setMode, state } from '../store'
 import { daysSince } from '../backup'
 import { pickImport, ui } from '../ui'
 import { go } from '../router'
-import { COLOR_LABELS, FONTS, PRESETS, TEXT_FONTS, effectiveColors, setColor, setTheme, settings, type Preset, type ThemeColors } from '../theme'
+import { COLOR_LABELS, FLOURISHES, FONTS, PRESETS, TEXT_FONTS, effectiveColors, setColor, setTheme, settings, type Preset, type ThemeColors } from '../theme'
 
 /** Closed, the short menu, or the theme panel. */
 const open = ref<null | 'menu' | 'theme'>(null)
@@ -86,6 +86,10 @@ onUnmounted(() => { document.removeEventListener('pointerdown', outside); window
         </label>
       </div>
 
+      <h4>Style</h4>
+      <div class="font-row">
+        <button v-for="f in FLOURISHES" :key="f.id" :class="{ on: (s.flourish ?? 'plain') === f.id }" :title="f.note" @click="setTheme({ flourish: f.id === 'plain' ? undefined : f.id })">{{ f.name }}</button>
+      </div>
       <h4>Heading font</h4>
       <div class="font-row">
         <button v-for="f in FONTS" :key="f.id" :class="{ on: (s.font ?? 'book') === f.id }" :style="{ fontFamily: f.css }" @click="setTheme({ font: f.id })">{{ f.name }}</button>

@@ -39,7 +39,11 @@ const senses = computed(() => {
   for (const t of allTraits.value) for (const f of t.effects ?? []) if (f.on === 'sense') { const k = f.sense ?? 'Darkvision'; best.set(k, Math.max(best.get(k) ?? 0, Number(f.value) || 0)) }
   return [...best].map(([k, v]) => `${k} ${v} ft`).join(', ')
 })
-const languages = computed(() => pick(x => (x.fields.languages as string[] | undefined)?.length ? fieldLabel(def('languages'), x.fields.languages) : undefined))
+/** Its languages and how many more the player picks: "Common, Elvish, 1 more of your choice". */
+const languages = computed(() => pick(x => {
+  const l = (x.fields.languages as string[] | undefined) ?? [], n = Number(x.fields.languageChoices) || 0
+  return l.length || n ? [l.length ? fieldLabel(def('languages'), l) : '', n ? `${n} more of your choice` : ''].filter(Boolean).join(', ') : undefined
+}))
 const bonus = computed(() => pick(x => (x.fields.abilityIncrease ? abilityBonusText(x.fields.abilityIncrease) : undefined)))
 const traitCount = computed(() => allTraits.value.length)
 const lineages = computed(() => allTraits.value.filter(t => t.choice?.kind === 'option' && (t.choice.count ?? 1) === 1).map(t => `${t.name} (${t.choice!.options?.length ?? 0})`))

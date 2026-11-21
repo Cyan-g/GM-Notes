@@ -8,7 +8,7 @@ import { fieldLabel, formatMoney, get, state } from '../store'
 import { optionsIn } from '../model/lists'
 import { renderInline } from '../markdown'
 import { describeEffect } from '../effects'
-import { effectsOf, howCast, regainText, spellsOf, worksWhileOf } from '../items'
+import { armorClassText, effectsOf, howCast, regainText, spellsOf, worksWhileOf } from '../items'
 import EntryLink from './EntryLink.vue'
 import DataImage from './DataImage.vue'
 import TraitList from './TraitList.vue'
@@ -24,7 +24,7 @@ const rows = computed(() => ([
   ['Category', [L('weaponCategory'), L('baseWeapon')].filter(Boolean).join(' · ')],
   ['Range', f.value.range],
   ['Armor type', L('armorType')],
-  ['Armor class', f.value.armorClass],
+  ['Armor class', armorClassText(props.e)],
   ['Slot', L('slot')],
   [f.value.attunement ? 'Attunement by' : 'Requires', describeRequirements(props.e)],
   ['Charges', f.value.charges ? [f.value.charges, regainText(props.e) && `regains ${regainText(props.e)}`].filter(Boolean).join(', ') : ''],

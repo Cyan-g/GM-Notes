@@ -8,7 +8,7 @@ import type { Entry, Regain } from '../../model/types'
 import { TYPES, MASTERY_OF, byKey, type FieldDef } from '../../model/schema'
 import { changed, setField, toggleField } from '../../edit'
 import { formatMoney } from '../../store'
-import { worksWhileOf } from '../../items'
+import { parseRegain, worksWhileOf } from '../../items'
 import { itemNamed } from '../../lookup'
 import { useParts } from '../../composables/useParts'
 import FieldInput from './FieldInput.vue'
@@ -59,6 +59,9 @@ const wide = (l: FieldDef[]) => l.filter(d => WIDE.includes(d.kind))
 const bools = (l: FieldDef[]) => l.filter(d => d.kind === 'bool')
 const toggleBool = (key: string) => toggleField(props.entry, key)
 const setText = (k: string, v: string) => setField(props.entry, k, v.trim())
+const setNumber = (k: string, v: string) => setField(props.entry, k, v.trim() === '' || Number.isNaN(Number(v)) ? undefined : Number(v))
+/** What the armor type adds to the AC number. */
+const acHint = computed(() => ({ Light: '+ Dex', Medium: '+ Dex (max 2)', Heavy: 'no Dex', Shield: 'added to AC' } as Record<string, string>)[String(f.value.armorType ?? '')] ?? '')
 
 // ---- rarity: the usual price (2024 rules; consumables half) ----
 const PRICE: Record<string, number> = { Common: 100, Uncommon: 400, Rare: 4000, 'Very rare': 40000, Legendary: 200000 }
@@ -103,12 +106,7 @@ function setRegain(p: Partial<Regain>) {
 }
 function setCharges(v: string) { const n = Number(v); if (n > 0) f.value.charges = n; else delete f.value.charges; changed(props.entry) }
 /** The written "regains" read as an amount and a time ("1d6 + 1 at dawn"), when it reads as one. */
-const parsed = computed<Regain | undefined>(() => {
-  const m = String(f.value.recharge ?? '').trim().match(/^(?:regains?\s+)?(all|\d+(?:d\d+)?(?:\s*[+-]\s*\d+)?)\s*(?:charges?\s*)?(?:daily\s+)?(at dawn|at sunrise|each morning|every morning|daily|on a long rest|after a long rest|on a short rest|after a short rest)?$/i)
-  if (!m) return undefined
-  const w = (m[2] ?? '').toLowerCase()
-  return { amount: m[1].replace(/\s+/g, ''), when: w.includes('dawn') ? 'dawn' : w.includes('long') ? 'long' : w.includes('short') ? 'short' : 'dawn' }
-})
+const parsed = computed<Regain | undefined>(() => parseRegain(String(f.value.recharge ?? '')))
 /** Spells cast for charges, while the item has none. */
 const needsCharges = computed(() => ((f.value.spells as { how: string }[] | undefined) ?? []).some(x => x.how === 'charges'))
 function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete f.value.recharge; changed(props.entry) } }
@@ -145,7 +143,7 @@ function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete
             <small v-if="!f.mastery && baseMastery" class="muted">{{ baseMastery }} (from {{ f.baseWeapon }})</small></label>
         </template>
         <template v-if="g === 'Armor'">
-          <label v-if="realArmor" class="sheet-field"><span>Armor class</span><input :value="String(f.armorClass ?? '')" placeholder="e.g. 14 + Dex (max 2)" @change="setText('armorClass', val($event))" /></label>
+          <label v-if="realArmor" class="sheet-field"><span>Armor class</span><input type="number" min="0" :value="f.armorClass ?? ''" :placeholder="f.armorType === 'Shield' ? 'e.g. 2' : 'e.g. 14'" @change="setNumber('armorClass', val($event))" /><small v-if="acHint" class="muted">{{ acHint }}</small></label>
           <label v-if="f.armorType === 'Heavy'" class="sheet-field"><span>Strength needed</span><input type="number" min="0" max="30" :value="strNeeded ?? ''" placeholder="e.g. 15" @change="setStr(val($event))" /><small class="muted">worn without it: −10 ft speed</small></label>
         </template>
       </div>

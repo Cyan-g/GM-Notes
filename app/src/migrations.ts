@@ -1,14 +1,14 @@
 // Bringing data saved by an earlier version of the app up to date, one step per data version (store.ts runs them when
 // a world is opened or started from the seed). The steps are frozen: each must keep converting old data exactly as it
 // did when it was written, so a step is changed only to fix it, never to follow a later change elsewhere in the app.
-import type { ClassLine, Database, Entry, GearEffect, Id, Speeds, Trait } from './model/types'
+import type { ClassLine, Database, Entry, GearEffect, Id, Regain, Speeds, Trait } from './model/types'
 import { SCHEMA, MARTIAL_WEAPONS, SIMPLE_WEAPONS, byKey } from './model/schema'
 import { listKeyOf, optionsIn, type ListOption } from './model/lists'
 import { cleanBonus, parseAbilityBonus } from './abilityBonus'
 import { CLASS_DIE, classFinder, parseClassText } from './model/classes'
 
 /** The newest data version this build understands (the last step in upgrade()). Newer data opens read-only. */
-export const DATA_VERSION = 30
+export const DATA_VERSION = 31
 /** The oldest data version this build can still open; older data is refused instead of guessed at. */
 export const OLDEST_VERSION = 20
 
@@ -32,7 +32,82 @@ export function upgrade(d: Database): boolean {
   // 29: classes, a new entry type with features (and subclasses got features); nothing to convert.
   if ((d.version ?? 1) < 29) { d.version = 29; changed = true }
   if ((d.version ?? 1) < 30) { upgradeTo30(d); d.version = 30; changed = true }
+  if ((d.version ?? 1) < 31) { upgradeTo31(d); d.version = 31; changed = true }
   return changed
+}
+
+/**
+ * Entries from a file or a publish made at an older data version, upgraded like a world: the steps run on them with
+ * the file's lists (some steps add options or entries). Returns the entries (with any the steps made) and the lists.
+ */
+export function upgradeEntries(entries: Entry[], version: number, lists?: Record<string, ListOption[]>): { entries: Entry[]; lists?: Record<string, ListOption[]> } {
+  if (version >= DATA_VERSION) return { entries, lists }
+  const d = { version, meta: { lists }, entries: Object.fromEntries(entries.map(e => [e.id, e])), relations: [] } as unknown as Database
+  upgrade(d)
+  return { entries: Object.values(d.entries), lists: d.meta.lists }
+}
+
+/**
+ * 31: numbers and list picks instead of text the app had to read.
+ * - Armor's AC is a number; its armor type says what Dex adds (light: all, medium: up to 2, heavy: none; a shield's
+ *   number is what it adds). "14 + Dex (max 2)" → 14 (medium), "+2" → 2 (shield). Text that doesn't read as an AC goes
+ *   to the item's description.
+ * - An item's written "Regains" that reads as an amount and a time ("1d6 + 1 at dawn") becomes the structured one.
+ * - The speed typed on a character sheet is a number of feet.
+ * - A race's languages are options of the language list; "one extra language" became the number of languages of
+ *   the player's choice.
+ */
+function upgradeTo31(d: Database) {
+  const lists: Record<string, ListOption[]> = { ...d.meta.lists }
+  const language = (name: string): string => {
+    const l = (lists.language ??= optionsIn(d.meta, 'language').map(o => ({ ...o })))
+    const n = name.trim()
+    const o = l.find(x => x.id.toLowerCase() === n.toLowerCase() || x.label.toLowerCase() === n.toLowerCase())
+    if (o) return o.id
+    l.push({ id: n, label: n })
+    return n
+  }
+  const WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4 }
+  for (const e of Object.values(d.entries)) {
+    const f = e.fields as Record<string, unknown>
+    if (e.type === 'item' && typeof f.armorClass === 'string') {
+      const text = f.armorClass.trim(), low = text.toLowerCase()
+      const plus = low.match(/^\+\s*(\d+)$/)
+      const body = low.match(/^(\d+)\s*(\+\s*dex(?:terity)?(?:\s*(?:modifier\s*)?\(\s*max\.?\s*(\d+)\s*\))?)?$/)
+      if (plus) { f.armorClass = Number(plus[1]); f.armorType ??= 'Shield' }
+      else if (body) { f.armorClass = Number(body[1]); f.armorType ??= body[2] ? (body[3] ? 'Medium' : 'Light') : 'Heavy' }
+      else {
+        delete f.armorClass
+        if (text) f.summary = [String(f.summary ?? '').trim(), `Armor class: ${text}`].filter(Boolean).join('\n\n')
+      }
+    }
+    if (e.type === 'item' && typeof f.recharge === 'string' && !f.regain) {
+      const m = f.recharge.trim().match(/^(?:regains?\s+)?(all|\d+(?:d\d+)?(?:\s*[+-]\s*\d+)?)\s*(?:charges?\s*)?(?:daily\s+)?(at dawn|at sunrise|each morning|every morning|daily|on a long rest|after a long rest|on a short rest|after a short rest)?$/i)
+      if (m) {
+        const w = (m[2] ?? '').toLowerCase()
+        f.regain = { amount: m[1].replace(/\s+/g, ''), when: w.includes('long') ? 'long' : w.includes('short') ? 'short' : 'dawn' } satisfies Regain
+        delete f.recharge
+      }
+    }
+    const sheet = f.sheet as { speed?: unknown } | undefined
+    if (sheet && typeof sheet.speed === 'string') {
+      const n = sheet.speed.match(/\d+/)
+      if (n) sheet.speed = Number(n[0]); else delete sheet.speed
+    }
+    if (e.type === 'race' && Array.isArray(f.languages)) {
+      let choices = 0
+      const ids: string[] = []
+      for (const l of f.languages as unknown[]) {
+        if (typeof l !== 'string' || !l.trim()) continue
+        const c = l.trim().toLowerCase().match(/^(one|two|three|four|\d+)\s+(?:extra\s+|more\s+|other\s+|additional\s+)?languages?\b/)
+        if (c) choices += WORDS[c[1]] ?? Number(c[1])
+        else { const id = language(l); if (!ids.includes(id)) ids.push(id) }
+      }
+      if (ids.length) f.languages = ids; else delete f.languages
+      if (choices) f.languageChoices = choices
+    }
+  }
+  if (Object.keys(lists).length) d.meta.lists = lists
 }
 
 /**

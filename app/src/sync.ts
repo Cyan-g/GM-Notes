@@ -12,7 +12,7 @@ import type { Entry, Follow, Id, Relation } from './model/types'
 import { LISTS, type ListOption } from './model/lists'
 import { mapRefs } from './model/refs'
 import { backupNow, db, listOptions, save, state, touch } from './store'
-import { DATA_VERSION } from './migrations'
+import { DATA_VERSION, upgradeEntries } from './migrations'
 import type { RulesMeta } from './rules'
 import { desktop, type HostStatus, type PlayerStatus } from './storage/desktop'
 import { clone, dataPaths, outgoingEntries, planExport, stable } from './transfer'
@@ -150,6 +150,12 @@ export async function syncNow(): Promise<SyncResult | null> {
   if (d.follow && pub.worldId !== d.follow.worldId) throw new Error(`The shared folder holds “${pub.title}”, not the world this one follows.`)
   if (pub.dataVersion > DATA_VERSION) throw new Error(`“${pub.title}” was published by a newer GM Notes (data version ${pub.dataVersion}). Update GM Notes to get it.`)
   if (d.follow?.published === pub.published) return null
+  // Published by an older version: its entries are brought up to date, as the DM's world will be.
+  if (pub.dataVersion < DATA_VERSION) {
+    const u = upgradeEntries(pub.entries, pub.dataVersion, pub.options)
+    pub.entries = u.entries
+    if (u.lists) pub.options = u.lists
+  }
 
   await backupNow()
   const old = d.follow ?? { worldId: pub.worldId, title: pub.title, ids: [], relations: [], files: {} } as Follow

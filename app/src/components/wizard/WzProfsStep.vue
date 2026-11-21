@@ -62,5 +62,5 @@ const toggleIn = (key: 'ownSaves' | 'ownArmor' | 'ownWeapons', v: string) => {
   <p v-if="langRule.given.length" class="small"><span class="muted">Known from the species, background and class:</span> {{ langRule.given.map(g => `${listOptions('language').find(o => o.id === g.id)?.label ?? g.id} (${g.from})`).join(', ') }}</p>
   <ProfChips v-if="langRule.picks" :values="picked" :suggest="languages.filter(o => o.id !== 'Common' && !langRule.given.some(g => g.id === o.id))" :create="(x: string) => x"
              :placeholder="picked.length < langRule.picks ? 'Add a language…' : 'Remove one to pick another'" @change="setLanguages" />
-  <p v-else class="muted small">{{ langRule.speciesLists ? 'The species says which languages it speaks; any extra comes from its traits\' choices above.' : 'No languages to pick.' }}</p>
+  <p v-else class="muted small">{{ langRule.speciesLists ? 'The species says which languages it speaks, with none of the player\'s choice.' : 'No languages to pick.' }}</p>
 </template>

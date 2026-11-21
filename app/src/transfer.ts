@@ -25,6 +25,7 @@ import { RELATION_KINDS, TYPES } from './model/schema'
 import { mapRefs, refsOf } from './model/refs'
 import { checkEntry, checkField } from './validate'
 import { hasSecrets, stripSecrets } from './model/text'
+import { DATA_VERSION, OLDEST_VERSION, upgradeEntries } from './migrations'
 
 export const FORMAT = 'dndesk-export'
 const VERSION = 2
@@ -39,6 +40,8 @@ type WorldPart = Pick<Database['meta'], 'calendar' | 'eventCategories' | 'today'
 interface Bundle {
   format: typeof FORMAT
   version: 1 | 2
+  /** The data version of the entries (files from before data version 31 don't say: they're taken as 30). */
+  dataVersion?: number
   exported: string
   /** The world it came from, for the import preview. */
   from: string
@@ -175,7 +178,7 @@ export async function buildExport(plan: ExportPlan): Promise<{ blob: Blob; name:
   await stage(progress.title || 'Exporting', 'Writing the file')
   const meta = db().meta
   const bundle: Bundle = {
-    format: FORMAT, version: VERSION, exported: new Date().toISOString(), from: meta.title,
+    format: FORMAT, version: VERSION, dataVersion: DATA_VERSION, exported: new Date().toISOString(), from: meta.title,
     main: plan.start?.id,
     entries,
     relations: plan.relations.map(r => clone(r)),
@@ -256,9 +259,18 @@ export async function readImport(file: File): Promise<ImportPlan> {
   try { b = JSON.parse(await file.text()) } catch { throw new Error(`${file.name} isn't a file this app can read.`) }
   if (b?.format !== FORMAT || !Array.isArray(b.entries)) throw new Error(`${file.name} isn't an exported file. Use a file made with Export on an entry's page, or with Settings → Export the world.`)
   if (b.version > VERSION) throw new Error(`${file.name} was made by a newer version of the app. Update this one first.`)
+  const fileVersion = typeof b.dataVersion === 'number' ? b.dataVersion : 30
+  if (fileVersion > DATA_VERSION) throw new Error(`${file.name} was made by a newer version of the app (data version ${fileVersion}). Update this one first.`)
+  if (fileVersion < OLDEST_VERSION) throw new Error(`${file.name} is from a version of the app too old to read.`)
   const d = db()
   const warnings: string[] = []
-  const known = b.entries.filter(e => isObj(e) && typeof e.id === 'string' && typeof e.name === 'string' && isObj(e.fields) && TYPES[e.type])
+  let known = b.entries.filter(e => isObj(e) && typeof e.id === 'string' && typeof e.name === 'string' && isObj(e.fields) && TYPES[e.type])
+  // Entries saved by an older version are brought up to date first, as a world would be.
+  if (fileVersion < DATA_VERSION) {
+    const u = upgradeEntries(clone(known), fileVersion, isObj(b.options) ? clone(b.options) : undefined)
+    known = u.entries.filter(e => TYPES[e.type])
+    if (u.lists) b.options = u.lists
+  }
   const ok = known.filter(canExport)
   if (known.length > ok.length) warnings.push(`${known.length - ok.length} campaign(s), session(s), encounter(s) or creature(s), which aren't shared`)
   if (b.main && !ok.some(e => e.id === b.main)) throw new Error(`${file.name} doesn't hold the entry it was exported from.`)

@@ -9,7 +9,7 @@ import { MARTIAL_WEAPONS, MASTERY_OF, SIMPLE_WEAPONS } from './model/schema'
 import { optionsIn } from './model/lists'
 import { db, get, listOptions, state, touch } from './store'
 import { breakdown, gearTotals, scoreWith, sum } from './effects'
-import { isWearable, isWeaponOrArmor, restItems, type RegainRoll } from './items'
+import { dexCap, isShield, isWearable, isWeaponOrArmor, restItems, type RegainRoll } from './items'
 import { unmet } from './requirements'
 import { setConditions } from './conditions'
 import { rule } from './rules'
@@ -180,21 +180,18 @@ export function otherSpeeds(s: CharacterSheet): string {
   const sp = speciesSpeeds(ownerOf(s))
   return (['swim', 'fly', 'climb', 'burrow'] as const).filter(k => sp[k]).map(k => `${k} ${sp[k]} ft${k === 'fly' && sp.hover ? ' (hover)' : ''}`).join(', ')
 }
-/** The speed before gear: typed on the sheet, else the species' ("25 ft"), else nothing (30 ft is assumed). */
-export function baseSpeed(s: CharacterSheet): string | undefined {
-  if (s.speed) return s.speed
-  const n = speciesSpeed(ownerOf(s))
-  return n ? `${n} ft` : undefined
+/** The walking speed before gear, in feet: typed on the sheet, else the species', else nothing (30 is assumed). */
+export function baseSpeed(s: CharacterSheet): number | undefined {
+  return s.speed ?? (speciesSpeed(ownerOf(s)) || undefined)
 }
-/** Speed with gear: the number in the base speed ("30 ft") plus any bonus; the text as typed when there's none. */
+/** Speed with gear, in words ("30 ft"): the base speed plus any bonus, stopped or halved by conditions. */
 export function speedOf(s: CharacterSheet): string | undefined {
   const t = gearTotals(s), add = sum(t.speed), base = baseSpeed(s)
   // a condition (Grappled, Restrained…) or exhaustion stops the character, or halves their speed
   if (t.speedZero) return '0 ft'
-  const m = String(base ?? '30 ft').match(/(\d+)/)
-  if (!add && !t.speedHalf) return base
-  const n = Math.max(0, Number(m?.[1] ?? 30) + add)
-  return m ? String(base ?? '30 ft').replace(m[1], String(t.speedHalf ? Math.floor(n / 2) : n)) : base
+  if (!add && !t.speedHalf) return base != null ? `${base} ft` : undefined
+  const n = Math.max(0, (base ?? 30) + add)
+  return `${t.speedHalf ? Math.floor(n / 2) : n} ft`
 }
 export const passivePerception = (s: CharacterSheet, prof: number) => 10 + skillBonus(s, 'Perception', prof)
 
@@ -241,7 +238,7 @@ export function spellStats(pc: Entry, ability?: Ability): { attack: number; dc: 
 const equipped = (s: CharacterSheet) => s.inventory.filter(l => l.equipped).map(l => get(l.item)).filter((e): e is Entry => !!e)
 
 /**
- * Armor class from what's worn: body armor ("14 + dex(max 2)", "16") and shields ("+2"), plus the AC effects of the
+ * Armor class from what's worn: body armor (its AC plus Dex as its armor type allows) and shields (what they add), plus the AC effects of the
  * active gear (a +1 shield, a Ring of Protection). Without body armor it's 10 + DEX. A number typed on the sheet wins.
  */
 export function armorClass(s: CharacterSheet): { ac: number; from: string; untrained: string[] } {
@@ -254,14 +251,13 @@ export function armorClass(s: CharacterSheet): { ac: number; from: string; untra
   let base = 10 + dex, from = 'unarmored', extra = 0, armored = false, shield = false
   const parts: string[] = []
   for (const e of equipped(s)) {
-    const text = String(e.fields.armorClass ?? '').toLowerCase()
-    const body = text.match(/^\s*(\d+)\s*(\+\s*dex(?:\s*\(\s*max\s*(\d+)\s*\))?)?/)
-    const plus = text.match(/^\s*\+\s*(\d+)/)
-    if (e.fields.kind === 'Armor' && body) {
-      base = Number(body[1]) + (body[2] ? (body[3] ? Math.min(dex, Number(body[3])) : dex) : 0)
-      from = `${base} ${e.name}`
-      armored = true
-    } else if (e.fields.kind === 'Armor' && plus) { extra += Number(plus[1]); parts.push(`+${plus[1]} ${e.name}`); shield = true }
+    const n = e.fields.armorClass
+    if (e.fields.kind !== 'Armor' || typeof n !== 'number') continue
+    if (isShield(e)) { extra += n; parts.push(`+${n} ${e.name}`); shield = true; continue }
+    const cap = dexCap(e)
+    base = n + (cap === undefined ? 0 : cap === null ? dex : Math.min(dex, cap))
+    from = `${base} ${e.name}`
+    armored = true
   }
   // Without armor, the best AC formula a feature or spell gives (Unarmored Defense, Mage Armor, natural armor).
   if (!armored) {

@@ -36,7 +36,7 @@ export const DASHBOARDS: Dashboard[] = [
   {
     id: 'armory', title: 'Armory', icon: '⚔️', uiIcon: 'weapons', views: [
       { name: 'Weapons', filter: kind('Weapon'), cols: ['weaponCategory', 'subtype', 'damage', 'damageType', 'properties', 'magical', 'value'], facets: ['weaponCategory', 'damageType', 'magical'], sort: { key: 'subtype', dir: 1 }, creates: 'item' },
-      { name: 'Armor', filter: kind('Armor'), cols: ['armorType', 'slot', 'subtype', 'armorClass', 'magical', 'value', 'summary'], facets: ['armorType', 'slot', 'magical'], sort: { key: 'slot', dir: 1 }, creates: 'item' },
+      { name: 'Armor', filter: kind('Armor'), cols: ['armorType', 'slot', 'subtype', '@armorClass', 'magical', 'value', 'summary'], facets: ['armorType', 'slot', 'magical'], sort: { key: 'slot', dir: 1 }, creates: 'item' },
       { name: 'Tools', filter: kind('Tool'), cols: ['tool', 'value', 'weight', 'summary'], facets: ['tool'], sort: { key: 'tool', dir: 1 }, creates: 'item' },
       { name: 'Other items', filter: e => e.type === 'item' && !['Weapon', 'Armor', 'Tool', 'Ingredient', 'Potion', 'Poison', 'Scroll'].includes(String(e.fields.kind ?? '')), cols: ['kind', 'subtype', 'magical', 'value', 'summary'], facets: ['kind', 'magical'], sort: { key: 'kind', dir: 1 }, creates: 'item' },
       { name: 'Everything by value', filter: is('item'), cols: ['kind', 'subtype', 'value'], facets: ['kind'], sort: { key: 'value', dir: -1 } },

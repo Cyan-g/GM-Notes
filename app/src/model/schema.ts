@@ -168,7 +168,9 @@ export const SCHEMA = [
       { key: 'speeds', label: 'Speed', kind: 'speeds' },
       // What the race may add to ability scores; not added on its own (abilityBonus.ts).
       { key: 'abilityIncrease', label: 'Ability scores', kind: 'abilityBonus' },
-      { key: 'languages', label: 'Languages', kind: 'list' },
+      // Languages of the language list (data version 31; names before), and how many more the player picks.
+      { key: 'languages', label: 'Languages', kind: 'list', options: [], list: 'language' },
+      { key: 'languageChoices', label: 'Languages of choice', kind: 'number' },
       // What the species gives a character (species.ts): effects, proficiencies, spells, uses, choices.
       { key: 'speciesTraits', label: 'Traits', kind: 'speciesTraits' },
     ],
@@ -239,7 +241,9 @@ export const SCHEMA = [
       { key: 'mastery', label: 'Mastery', kind: 'select', options: MASTERIES, list: 'weaponMastery', when: W, group: 'Weapon' },
       { key: 'traits', label: 'Properties', kind: 'list', options: [], list: 'ingredientProperty', when: ING, group: 'Ingredient' },
       { key: 'armorType', label: 'Armor type', kind: 'select', options: ARMOR_TYPES, fixed: ARMOR_TYPES, when: A, group: 'Armor' },
-      { key: 'armorClass', label: 'Armor class', kind: 'text', when: A, group: 'Armor' },
+      // A number (data version 31; text before): body armor's base AC, to which the armor type adds Dex (light: all,
+      // medium: up to 2, heavy: none), or what a shield adds.
+      { key: 'armorClass', label: 'Armor class', kind: 'number', when: A, group: 'Armor' },
       { key: 'slot', label: 'Slot', kind: 'select', options: ['Head', 'Chest', 'Cloak', 'Gloves', 'Boots', 'Shield'], when: A, group: 'Armor' },
       // Heavy armor's (and some medium armor's) disadvantage on Stealth while worn.
       { key: 'stealthDis', label: 'Stealth disadvantage', kind: 'bool', when: A, group: 'Armor' },

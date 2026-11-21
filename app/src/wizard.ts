@@ -205,19 +205,17 @@ export function kitsOf(d: Draft): { items: KitLine[]; money: Copper } {
 
 /**
  * The languages a player picks freely. The 2024 rules: Common and two more of their choice. A species that lists its
- * own languages (as older rules do: "Common, Elvish") gives those instead, and any extra comes from its traits'
- * choices. Languages the species, background or class give (Druidic, Thieves' Cant) are known anyway.
+ * own languages (as older rules do: "Common, Elvish") gives those instead, plus the languages of choice it names
+ * ("one extra language"). Languages the species, background or class give (Druidic, Thieves' Cant) are known anyway.
  */
 export function languageRule(d: Draft): { picks: number; given: { id: string; from: string }[]; speciesLists: boolean } {
   const pc = draftPc(d)
   const lineage = raceChain(d.race)
-  const listed = lineage.flatMap(r => ((r.fields.languages as string[] | undefined) ?? []).filter(l => l.trim()))
-  const speciesLists = listed.length > 0
-  // "one extra language", "two languages of your choice": picks, not languages
-  const WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4 }
-  const choice = (l: string) => l.trim().toLowerCase().match(/^(one|two|three|four|\d+)\s+(?:extra\s+|more\s+|other\s+|additional\s+)?languages?\b/)
-  const extra = listed.reduce((n, l) => { const m = choice(l); return n + (m ? WORDS[m[1]] ?? Number(m[1]) : 0) }, 0)
-  const given = speciesGrants(pc).filter(g => g.kind === 'language' && !choice(String(g.id))).map(g => ({ id: g.id, from: g.from }))
+  const listed = lineage.flatMap(r => (r.fields.languages as string[] | undefined) ?? [])
+  // the languages of the player's choice ("one extra language")
+  const extra = lineage.reduce((n, r) => n + (Number(r.fields.languageChoices) || 0), 0)
+  const speciesLists = listed.length > 0 || extra > 0
+  const given = speciesGrants(pc).filter(g => g.kind === 'language').map(g => ({ id: g.id, from: g.from }))
   return { picks: speciesLists ? extra : 2, given, speciesLists }
 }
 /** The languages picked freely (Common, a given language or more than the rule allows don't count). */

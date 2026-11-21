@@ -218,7 +218,8 @@ export interface CharacterSheet {
   hitDie?: string
   /** Hit dice spent, by die ("d8": 2). */
   hitDiceSpent?: Record<string, number>
-  speed?: string
+  /** Walking speed in feet typed by hand, instead of the species' (text before data version 31). */
+  speed?: number
   /** Armor class typed by hand, instead of the one worked out from what's worn. */
   acOverride?: number
   /** Extra AC from anything else (a ring, a feature). */

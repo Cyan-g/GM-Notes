@@ -82,6 +82,10 @@ function edit(fn: (s: CharacterSheet) => void) {
 }
 const num = (ev: Event) => { const v = (ev.target as HTMLInputElement).value.trim(); return v === '' ? undefined : Number(v) }
 const text = (ev: Event) => (ev.target as HTMLInputElement).value.trim() || undefined
+/** Feet typed as "35" or "35 ft"; nothing typed (or no number) is none. */
+const feet = (ev: Event) => { const m = (ev.target as HTMLInputElement).value.match(/\d+/); return m ? Number(m[0]) : undefined }
+/** The typed speed as shown: "35 ft". */
+const ft = (n: number | undefined) => (n != null ? `${n} ft` : '')
 function setLevel(ev: Event) {
   if (locked.value) return
   const v = num(ev)
@@ -275,7 +279,7 @@ onBeforeUnmount(() => {
           <small v-if="avgHp && s.maxHp !== avgHp" class="muted" :title="avgText">average {{ avgHp }} <button type="button" class="link-btn" @click="edit(x => x.maxHp = avgHp)">use it</button></small>
         </div>
         <label><span>AC</span><input type="number" :value="s.acOverride ?? ''" :placeholder="`auto (${ac.ac})`" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></label>
-        <label><span>Speed</span><input :value="s.speed ?? ''" :placeholder="baseSpeed(s) ?? '30 ft'" @change="edit(x => x.speed = text($event))" /></label>
+        <label><span>Speed</span><input :value="ft(s.speed)" :placeholder="ft(baseSpeed(s) ?? 30)" @change="edit(x => x.speed = feet($event))" /></label>
         <label v-if="sizes.length > 1" title="The species lets the player pick its size"><span>Size</span><select :value="s.size && sizes.includes(s.size) ? s.size : sizes[0]" @change="edit(x => x.size = ($event.target as HTMLSelectElement).value === sizes[0] ? undefined : ($event.target as HTMLSelectElement).value)"><option v-for="z in sizes" :key="z" :value="z">{{ z }}</option></select></label>
       </div>
     </div>
@@ -285,7 +289,7 @@ onBeforeUnmount(() => {
       <div class="cs-stat"><span>Proficiency</span><b v-flash="prof">{{ signed(prof) }}</b></div>
       <div class="cs-stat cs-ac tip" :class="{ warn: ac.untrained.length }" :data-tip="ac.from + (ac.untrained.length ? ` — not proficient with ${ac.untrained.join(', ')}: disadvantage on STR and DEX rolls, no spellcasting` : '')"><span>Armor class<template v-if="ac.untrained.length"> <AppIcon ui="warning" /></template></span><b v-flash="ac.ac" :class="{ 'gear-mod': gt.ac.length }">{{ ac.ac }}</b>
         <input v-if="build" class="cs-mini" type="number" :value="s.acOverride ?? ''" placeholder="auto" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></div>
-      <label class="cs-stat" :class="{ tip: gt.speed.length }" :data-tip="breakdown(`${baseSpeed(s) ?? '30 ft'} without gear`, gt.speed)"><span :class="{ 'gear-mod': gt.speed.length }">Speed</span><input v-flash="locked ? speedOf(s) : s.speed" :value="(locked ? speedOf(s) : s.speed) ?? ''" :placeholder="baseSpeed(s) ?? '30 ft'" :disabled="locked" @change="edit(x => x.speed = text($event))" /><small v-if="otherSpeeds(s)" class="muted cs-speeds">{{ otherSpeeds(s) }}</small></label>
+      <label class="cs-stat" :class="{ tip: gt.speed.length }" :data-tip="breakdown(`${ft(baseSpeed(s) ?? 30)} without gear`, gt.speed)"><span :class="{ 'gear-mod': gt.speed.length }">Speed</span><input v-flash="locked ? speedOf(s) : s.speed" :value="(locked ? speedOf(s) : ft(s.speed)) ?? ''" :placeholder="ft(baseSpeed(s) ?? 30)" :disabled="locked" @change="edit(x => x.speed = feet($event))" /><small v-if="otherSpeeds(s)" class="muted cs-speeds">{{ otherSpeeds(s) }}</small></label>
       <label v-if="build && sizes.length > 1" class="cs-stat" title="The species lets the player pick its size"><span>Size</span><select :value="s.size && sizes.includes(s.size) ? s.size : sizes[0]" @change="edit(x => x.size = ($event.target as HTMLSelectElement).value === sizes[0] ? undefined : ($event.target as HTMLSelectElement).value)"><option v-for="z in sizes" :key="z" :value="z">{{ z }}</option></select></label>
       <label v-if="rule('experience') === 'xp'" class="cs-stat cs-xp" :title="xpNext ? `Level ${level + 1} at ${xpNext.toLocaleString()} XP` : 'Highest level'"><span>XP</span><input v-flash="s.xp ?? 0" type="number" min="0" :value="s.xp ?? ''" placeholder="0" :disabled="ro" @change="edit(x => x.xp = num($event) || undefined)" /><small v-if="xpNext" class="muted">/ {{ xpNext.toLocaleString() }}</small></label>
       <button v-if="!build && !ro && level < 20" class="cs-stat cs-lvlup" :class="{ ready: rule('experience') === 'xp' && xpNext && (s.xp ?? 0) >= xpNext }" title="Level up: class, hit points, new features, feat and spells" @click="leveling = true"><span>Level up</span><b>↑</b></button>

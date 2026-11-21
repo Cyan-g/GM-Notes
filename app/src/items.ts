@@ -1,6 +1,6 @@
 // Items: what they do while in use (their effects, spells and charges, and when they count), what's carried and its
 // weight, where an item is (the characters carrying it, the shops selling it) and what a shop asks for it.
-import type { CharacterSheet, Entry, GearEffect, InventoryLine, ItemSpell, StockLine } from './model/types'
+import type { CharacterSheet, Entry, GearEffect, InventoryLine, ItemSpell, Regain, StockLine } from './model/types'
 import { byType, get } from './store'
 import { ord } from './model/dnd'
 
@@ -108,6 +108,28 @@ export function setCharges(s: CharacterSheet, i: number, n: number) {
   if (!l || !max) return
   const v = Math.max(0, Math.min(max, Math.round(n)))
   if (v === max) delete l.charges; else l.charges = v
+}
+/** What Dex adds to body armor's AC, by its armor type: all of it (light), up to 2 (medium), nothing (heavy). */
+export function dexCap(item: Entry): number | null | undefined {
+  const t = item.fields.armorType
+  return t === 'Light' ? null : t === 'Medium' ? 2 : t === 'Heavy' ? undefined : null
+}
+/** Whether an armor item is a shield (its AC is what it adds). */
+export const isShield = (item: Entry) => item.fields.kind === 'Armor' && item.fields.armorType === 'Shield'
+/** An armor item's AC in words: "14 + Dex (max 2)", "16", "+2" (a shield); empty without one. */
+export function armorClassText(item: Entry): string {
+  const n = item.fields.armorClass
+  if (typeof n !== 'number') return ''
+  if (isShield(item)) return `+${n}`
+  const cap = dexCap(item)
+  return cap === undefined ? String(n) : `${n} + Dex${cap != null ? ` (max ${cap})` : ''}`
+}
+/** A written "Regains" read as an amount and a time ("1d6 + 1 at dawn"), when it reads as one. */
+export function parseRegain(text: string): Regain | undefined {
+  const m = text.trim().match(/^(?:regains?\s+)?(all|\d+(?:d\d+)?(?:\s*[+-]\s*\d+)?)\s*(?:charges?\s*)?(?:daily\s+)?(at dawn|at sunrise|each morning|every morning|daily|on a long rest|after a long rest|on a short rest|after a short rest)?$/i)
+  if (!m) return undefined
+  const w = (m[2] ?? '').toLowerCase()
+  return { amount: m[1].replace(/\s+/g, ''), when: w.includes('long') ? 'long' : w.includes('short') ? 'short' : 'dawn' }
 }
 /** How an item's charges come back, in words: "1d6 + 1 at dawn" (its Regains), else as written. */
 export function regainText(item: Entry | undefined): string {

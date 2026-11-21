@@ -14,7 +14,7 @@ import { statusText } from './npc'
 import { partyLine } from './sheet'
 import { leadersOf } from './org'
 import { ORD, crNum, spellLevel } from './model/dnd'
-import { carriersOf, shopsSelling } from './items'
+import { armorClassText, carriersOf, shopsSelling } from './items'
 import { attackOrSave } from './spells'
 
 export interface Col {
@@ -87,6 +87,8 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   '@prereq': { label: 'Prerequisite', value: e => prereqText(e), sort: e => prereqText(e).toLowerCase() || '~', kind: 'text' },
   // a race's walking speed and its others (swim, fly…)
   '@speed': { label: 'Speed', value: e => speedText(e), sort: e => e.fields.speeds?.walk ?? 1e9, kind: 'text' },
+  // armor's AC as it works: "14 + Dex (max 2)", "+2" (a shield)
+  '@armorClass': { label: 'Armor class', value: e => armorClassText(e), sort: e => Number(e.fields.armorClass ?? 1e9), kind: 'text' },
   // a character at a glance (sheet.ts partyLine): what the DM looks up at the table
   '@ac': { label: 'AC', value: e => (e.type === 'pc' ? partyLine(e).ac : ''), sort: e => (e.type === 'pc' ? -partyLine(e).ac : 0), kind: 'text' },
   '@maxHp': { label: 'Max HP', value: e => (e.type === 'pc' ? partyLine(e).maxHp ?? '' : ''), sort: e => (e.type === 'pc' ? -(partyLine(e).maxHp ?? 0) : 0), kind: 'text' },

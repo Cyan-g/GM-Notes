@@ -731,7 +731,7 @@
    "fields": {
     "kind": "Armor",
     "armorType": "Light",
-    "armorClass": "11 + Dex",
+    "armorClass": 11,
     "slot": "Chest",
     "stealthDis": true,
     "weight": 8,
@@ -743,7 +743,7 @@
    "fields": {
     "kind": "Armor",
     "armorType": "Light",
-    "armorClass": "11 + Dex",
+    "armorClass": 11,
     "slot": "Chest",
     "weight": 10,
     "value": 1000
@@ -754,7 +754,7 @@
    "fields": {
     "kind": "Armor",
     "armorType": "Light",
-    "armorClass": "12 + Dex",
+    "armorClass": 12,
     "slot": "Chest",
     "weight": 13,
     "value": 4500
@@ -765,7 +765,7 @@
    "fields": {
     "kind": "Armor",
     "armorType": "Medium",
-    "armorClass": "12 + Dex (max 2)",
+    "armorClass": 12,
     "slot": "Chest",
     "weight": 12,
     "value": 1000
@@ -776,7 +776,7 @@
    "fields": {
     "kind": "Armor",
     "armorType": "Medium",
-    "armorClass": "13 + Dex (max 2)",
+    "armorClass": 13,
     "slot": "Chest",
     "weight": 20,
     "value": 5000
@@ -787,7 +787,7 @@
    "fields": {
     "kind": "Armor",
     "armorType": "Medium",
-    "armorClass": "14 + Dex (max 2)",
+    "armorClass": 14,
     "slot": "Chest",
     "stealthDis": true,
     "weight": 45,
@@ -799,7 +799,7 @@
    "fields": {
     "kind": "Armor",
     "armorType": "Medium",
-    "armorClass": "14 + Dex (max 2)",
+    "armorClass": 14,
     "slot": "Chest",
     "weight": 20,
     "value": 40000
@@ -810,7 +810,7 @@
    "fields": {
     "kind": "Armor",
     "armorType": "Medium",
-    "armorClass": "15 + Dex (max 2)",
+    "armorClass": 15,
     "slot": "Chest",
     "stealthDis": true,
     "weight": 40,
@@ -822,7 +822,7 @@
    "fields": {
     "kind": "Armor",
     "armorType": "Heavy",
-    "armorClass": "14",
+    "armorClass": 14,
     "slot": "Chest",
     "stealthDis": true,
     "weight": 40,
@@ -834,7 +834,7 @@
    "fields": {
     "kind": "Armor",
     "armorType": "Heavy",
-    "armorClass": "16",
+    "armorClass": 16,
     "slot": "Chest",
     "stealthDis": true,
     "weight": 55,
@@ -854,7 +854,7 @@
    "fields": {
     "kind": "Armor",
     "armorType": "Heavy",
-    "armorClass": "17",
+    "armorClass": 17,
     "slot": "Chest",
     "stealthDis": true,
     "weight": 60,
@@ -874,7 +874,7 @@
    "fields": {
     "kind": "Armor",
     "armorType": "Heavy",
-    "armorClass": "18",
+    "armorClass": 18,
     "slot": "Chest",
     "stealthDis": true,
     "weight": 65,
@@ -894,7 +894,7 @@
    "fields": {
     "kind": "Armor",
     "armorType": "Shield",
-    "armorClass": "+2",
+    "armorClass": 2,
     "slot": "Shield",
     "weight": 6,
     "value": 1000

@@ -5,7 +5,7 @@ import { TYPES, byKey } from './model/schema'
 import { db, fieldLabel, get, optionLabel, state, touch } from './store'
 import { describe } from './describe'
 import { describeEffect } from './effects'
-import { effectsOf, howCast, regainText, spellsOf, worksWhileOf } from './items'
+import { armorClassText, effectsOf, howCast, regainText, spellsOf, worksWhileOf } from './items'
 import { describeRequirements } from './requirements'
 import { areaText, attackOrSave } from './spells'
 import { stripSecrets } from './model/text'
@@ -128,7 +128,7 @@ function itemCard(e: Entry): Card {
     facts: ([
       ['Damage', [f.damage, f.damageType?.length && L('damageType').replace(/, /g, ' or ').toLowerCase()].filter(Boolean).join(' ')],
       ['Range', String(f.range ?? '')],
-      ['Armor class', String(f.armorClass ?? '')],
+      ['Armor class', armorClassText(e)],
       [f.attunement ? 'Attunement by' : 'Requires', describeRequirements(e)],
       ['Charges', f.charges ? [f.charges, regainText(e) && `regains ${regainText(e)}`].filter(Boolean).join(', ') : ''],
     ] as [string, string][]).filter(([, v]) => v),

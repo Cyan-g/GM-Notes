@@ -3,7 +3,8 @@
 // alternative set of picks), a cap and a note. Stored only; nothing is added to a sheet on its own.
 import { computed } from 'vue'
 import type { AbilityBonus, AbilityPick } from '../../model/types'
-import { ABILITY_KEYS, ABILITY_SHORT, abilityBonusText, cleanBonus } from '../../abilityBonus'
+import { abilityBonusText, cleanBonus } from '../../abilityBonus'
+import { ABILITY_KEYS, ABILITY_SHORT } from '../../model/dnd'
 
 const model = defineModel<AbilityBonus | undefined>()
 const b = computed<AbilityBonus>(() => model.value ?? {})

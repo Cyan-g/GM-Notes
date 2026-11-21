@@ -2,6 +2,7 @@
 // Edits a 5e statblock. Basic numbers are always visible; the rest folds open.
 import { computed } from 'vue'
 import type { Abilities, Feature, Statblock } from '../../model/types'
+import { ABILITY_KEYS, mod, signed, type Ability } from '../../model/dnd'
 
 const props = defineProps<{ modelValue?: Statblock }>()
 const emit = defineEmits<{ 'update:modelValue': [Statblock | undefined] }>()
@@ -15,9 +16,8 @@ function set<K extends keyof Statblock>(key: K, v: Statblock[K] | undefined) {
 }
 const num = (raw: string) => (raw === '' ? undefined : Number(raw))
 
-const ABIL: (keyof Abilities)[] = ['str', 'dex', 'con', 'int', 'wis', 'cha']
-const mod = (v?: number) => { if (v == null) return ''; const m = Math.floor((v - 10) / 2); return `${m >= 0 ? '+' : ''}${m}` }
-function setAbility(k: keyof Abilities, raw: string) {
+const modText = (v?: number) => (v == null ? '' : signed(mod(v), '-'))
+function setAbility(k: Ability, raw: string) {
   const a: Abilities = { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10, ...(sb.value.abilities ?? {}) }
   a[k] = raw === '' ? 10 : Number(raw)
   set('abilities', a)
@@ -46,10 +46,10 @@ const hasMore = computed(() => TEXTS.some(([k]) => sb.value[k]) || FEATS.some(([
       <label>HP <input type="number" class="short" :value="sb.hp ?? ''" @change="set('hp', num(($event.target as HTMLInputElement).value))" /></label>
     </div>
     <div class="sb-edit-abil">
-      <label v-for="a in ABIL" :key="a">
+      <label v-for="a in ABILITY_KEYS" :key="a">
         <b>{{ a.toUpperCase() }}</b>
         <input type="number" :value="sb.abilities?.[a] ?? ''" placeholder="10" @change="setAbility(a, ($event.target as HTMLInputElement).value)" />
-        <span class="muted small">{{ mod(sb.abilities?.[a]) }}</span>
+        <span class="muted small">{{ modText(sb.abilities?.[a]) }}</span>
       </label>
     </div>
     <details :open="hasMore">

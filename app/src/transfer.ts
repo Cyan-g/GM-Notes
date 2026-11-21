@@ -24,6 +24,7 @@ import { addRelation, newId } from './edit'
 import { RELATION_KINDS, TYPES } from './model/schema'
 import { mapRefs, refsOf } from './model/refs'
 import { checkEntry, checkField } from './validate'
+import { hasSecrets, stripSecrets } from './model/text'
 
 export const FORMAT = 'dndesk-export'
 const VERSION = 2
@@ -59,9 +60,8 @@ interface Bundle {
 
 const DATA_PATH = /\]\(<?((?:images|files)\/[^)>]+)>?\)/g
 const SAFE_PATH = /^(images|files)\/[^/]+$/
-const stripSecrets = (body: string) => body.replace(/^:::secret\s*\n[\s\S]*?\n:::\s*$/gm, '').replace(/\n{3,}/g, '\n\n').trim()
-const hasSecrets = (body: string) => /^:::secret/m.test(body)
-const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v))
+/** A deep copy of plain data (through JSON). */
+export const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v))
 const norm = (s: string) => s.trim().toLowerCase()
 const isObj = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v)
 /** JSON with sorted keys, to tell whether two things are the same. */
@@ -150,7 +150,7 @@ export function outgoingEntries(plan: ExportPlan): { entries: Entry[]; names: Re
   const names: Record<Id, string> = {}
   const entries = plan.entries.map(e => {
     const c = clone(e)
-    if (!plan.opts.dmText && hasSecrets(c.body)) c.body = stripSecrets(c.body)
+    if (!plan.opts.dmText && hasSecrets(c.body)) c.body = stripSecrets(c.body).replace(/\n{3,}/g, '\n\n').trim()
     // so are the DM-only fields (an NPC's or organization's secret, and how it stands with the party)
     if (!plan.opts.dmText) for (const k of dmOnlyKeys(c.type)) delete (c.fields as Record<string, unknown>)[k]
     // stats based on a creature that doesn't go along: its stats written out, so the copy is complete

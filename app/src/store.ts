@@ -1,6 +1,6 @@
 // The loaded world plus lookups the pages need, and saving it (only what changed) with backups.
 import { reactive, computed, shallowRef } from 'vue'
-import type { ClassLine, Database, Entry, EntryType, GearEffect, Id, Relation, Speeds, Trait, WorldDate } from './model/types'
+import type { ClassLine, Database, Entry, EntryType, GearEffect, Id, Relation, RelationKind, Speeds, Trait, WorldDate } from './model/types'
 import type { Storage } from './storage/storage'
 import type { Backend, Changes } from './storage/backend'
 import { SCHEMA, RELATION_KINDS, MARTIAL_WEAPONS, SIMPLE_WEAPONS, byKey, type FieldDef } from './model/schema'
@@ -622,6 +622,19 @@ export const relationsOf = computed(() => {
   }
   return m
 })
+
+/** Which way a relation runs from an entry: `out` where it's the first end (a), `in` where it's the second (b). */
+export type RelationDir = 'out' | 'in' | 'both'
+/**
+ * An entry's relations of a kind (any kind without one) running the given way; with `current`, only those true
+ * today in the world (isCurrent).
+ */
+export function relationsWith(id: Id, kind?: RelationKind, dir: RelationDir = 'both', opts: { current?: boolean } = {}): Relation[] {
+  return (relationsOf.value.get(id) ?? []).filter(r => (!kind || r.kind === kind) && (dir === 'both' || (dir === 'out' ? r.a === id : r.b === id)) && (!opts.current || isCurrent(r)))
+}
+/** The entries at the other end of those relations (see relationsWith), in the relations' order. */
+export const relatedIds = (id: Id, kind?: RelationKind, dir: RelationDir = 'both', opts: { current?: boolean } = {}): Id[] =>
+  relationsWith(id, kind, dir, opts).map(r => (r.a === id ? r.b : r.a))
 
 /** Entries whose `parent` field points at this one (sub-places, sub-organizations). */
 export const childrenOf = computed(() => {

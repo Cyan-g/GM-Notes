@@ -3,12 +3,12 @@
 // folded away), how many live in the places inside it, and for a shop or tavern its keeper and prices.
 import { computed } from 'vue'
 import type { Entry, Id } from '../model/types'
-import { byType, get, isCurrent, playerMode, relationsOf } from '../store'
+import { byType, get, playerMode, relatedIds } from '../store'
 import { statusText } from '../npc'
 import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ e: Entry }>()
-const residentsOf = (id: Id) => (relationsOf.value.get(id) ?? []).filter(r => r.kind === 'lives-in' && r.b === id && isCurrent(r)).map(r => get(r.a)).filter((x): x is Entry => !!x)
+const residentsOf = (id: Id) => relatedIds(id, 'lives-in', 'in', { current: true }).map(get).filter((x): x is Entry => !!x)
 const gone = (x: Entry) => /^(dead|missing)$/i.test(String(x.fields.status ?? '').trim())
 const residents = computed(() => residentsOf(props.e.id).sort((a, b) => a.name.localeCompare(b.name)))
 const living = computed(() => residents.value.filter(x => !gone(x)))

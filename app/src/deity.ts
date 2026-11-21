@@ -2,7 +2,8 @@
 // holidays that are their holy days, the subclasses they're patrons of, and what their text names but doesn't link
 // yet (an order under "Orders & Followers", a friend under "Relations"), offered as one-click links.
 import type { Entry, RelationKind } from './model/types'
-import { byType, db, get, relationsOf } from './store'
+import { byType, db, get, relatedIds } from './store'
+import { entryNamed } from './lookup'
 
 export const ALIGNMENTS = ['lawful good', 'neutral good', 'chaotic good', 'lawful neutral', 'neutral', 'chaotic neutral', 'lawful evil', 'neutral evil', 'chaotic evil', 'unaligned']
 
@@ -12,10 +13,7 @@ export function domainSubclass(domain: string): Entry | undefined {
   return (byType.value.get('subclass') ?? []).find(s => { const m = s.name.toLowerCase(); return m === `${n} domain` || m === n && String(s.fields.class ?? '').toLowerCase() === 'cleric' })
 }
 /** A place of that name (a realm or a plane written as text). */
-export const placeNamed = (name?: string) => {
-  const n = (name ?? '').trim().toLowerCase()
-  return n ? (byType.value.get('place') ?? []).find(p => p.name.toLowerCase() === n || p.aliases.some(a => a.toLowerCase() === n)) : undefined
-}
+export const placeNamed = (name?: string) => entryNamed('place', name, { aliases: true })
 /** The calendar's holidays, for picking holy days. */
 export const holidays = () => db().meta.calendar.holidays ?? []
 /** The deities a holiday is a holy day of. */
@@ -45,7 +43,7 @@ const PEOPLE_ISH = ['npc', 'pc', 'creature']
  * a person ("member").
  */
 export function linkSuggestions(d: Entry): LinkSuggestion[] {
-  const related = new Set((relationsOf.value.get(d.id) ?? []).map(r => (r.a === d.id ? r.b : r.a)))
+  const related = new Set(relatedIds(d.id))
   const out: LinkSuggestion[] = []
   const seen = new Set<string>([d.id])
   const fresh = (id: string) => { const x = get(id); if (!x || related.has(id) || seen.has(id)) return undefined; return x }

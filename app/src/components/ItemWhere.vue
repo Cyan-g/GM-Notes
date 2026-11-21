@@ -2,31 +2,18 @@
 // Where an item is: the characters carrying it (how many, worn or attuned) and the shops selling it (at what price,
 // how many left). "Give to …" hands one to the current character for free: loot handed out at the table.
 import { computed } from 'vue'
-import type { Entry, StockLine } from '../model/types'
-import { byType, formatMoney, playerMode, state } from '../store'
-import { currentPc, editSheet } from '../sheet'
+import type { Entry } from '../model/types'
+import { formatMoney, playerMode, state } from '../store'
+import { addToInventory, currentPc } from '../sheet'
+import { carriersOf, shopsSelling } from '../items'
 import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ item: Entry }>()
-const carriers = computed(() => (byType.value.get('pc') ?? []).map(p => {
-  const lines = (p.fields.sheet?.inventory ?? []).filter(l => l.item === props.item.id && l.qty > 0)
-  return { p, qty: lines.reduce((n, l) => n + l.qty, 0), attuned: lines.some(l => l.attuned), equipped: lines.some(l => l.equipped) }
-}).filter(x => x.qty))
-const shops = computed(() => (byType.value.get('place') ?? []).flatMap(s => {
-  const l = ((s.fields.stock as StockLine[] | undefined) ?? []).find(x => x.item === props.item.id)
-  if (!l) return []
-  const base = props.item.fields.value as number | undefined, markup = (s.fields.markup as number | undefined) ?? 1
-  return [{ s, price: l.price ?? (base != null ? Math.round(base * markup) : undefined), stock: l.stock }]
-}))
+const carriers = computed(() => carriersOf(props.item))
+const shops = computed(() => shopsSelling(props.item))
 const giver = computed(() => (state.readOnly || playerMode.value ? undefined : currentPc.value))
 function give() {
-  const pc = giver.value
-  if (!pc) return
-  editSheet(pc, s => {
-    const line = s.inventory.find(l => l.item === props.item.id && !l.equipped)
-    if (line) line.qty = (line.qty || 0) + 1
-    else s.inventory.push({ item: props.item.id, qty: 1 })
-  })
+  if (giver.value) addToInventory(giver.value, props.item.id)
 }
 </script>
 

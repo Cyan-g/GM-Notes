@@ -1,33 +1,19 @@
 // Creatures' statblocks: what the app writes from their numbers — an attack's line from its ability and proficiency,
 // the Spellcasting action from its spell lists, the legendary actions' opening line, the speed line — and the checks
 // that point out what imported text left behind (an unknown condition, saves in the skills, stray periods).
-import type { Abilities, Feature, StatAttack, Statblock } from './model/types'
+import type { Feature, StatAttack, Statblock } from './model/types'
+import { ABILITY_NAME, CONDITIONS, crProf, diceAverage, mod, signed, type Ability } from './model/dnd'
 
-type Ability = keyof Abilities
-const ABILITY_NAME: Record<Ability, string> = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' }
-const signed = (n: number) => `${n >= 0 ? '+' : '−'}${Math.abs(n)}`
-
-/** Proficiency bonus by challenge rating. */
-export function crProf(cr?: string): number {
-  const n = !cr ? 0 : cr.includes('/') ? 0 : Number(cr) || 0
-  return 2 + Math.floor(Math.max(0, n - 1) / 4)
-}
-export const modOf = (sb: Statblock, a: Ability) => Math.floor(((sb.abilities?.[a] ?? 10) - 10) / 2)
-/** The average of dice ("3d6" → 10). */
-export function diceAverage(dice: string): number {
-  return dice.replace(/\s/g, '').split('+').reduce((n, part) => {
-    const m = part.match(/^(\d*)d(\d+)$/i)
-    return n + (m ? Math.floor((Number(m[1] || 1) * (Number(m[2]) + 1)) / 2) : Number(part) || 0)
-  }, 0)
-}
+/** A creature's modifier for an ability (10 when its score isn't filled in). */
+export const modOf = (sb: Statblock, a: Ability) => mod(sb.abilities?.[a] ?? 10)
 
 /** An attack's line, 2024 style: "Melee Attack Roll: +4, reach 5 ft. Hit: 12 (3d6 + 2) Necrotic damage." */
 export function attackText(sb: Statblock, a: StatAttack): string {
-  const mod = modOf(sb, a.ability) + (a.bonus ?? 0), hit = mod + crProf(sb.cr) + 0
+  const n = modOf(sb, a.ability) + (a.bonus ?? 0), hit = n + crProf(sb.cr) + 0
   const kind = a.kind === 'melee' ? 'Melee Attack Roll' : a.kind === 'ranged' ? 'Ranged Attack Roll' : 'Melee or Ranged Attack Roll'
   const where = [a.kind !== 'ranged' && `reach ${a.reach ?? 5} ft.`, a.kind !== 'melee' && `range ${a.range || '30/120'} ft.`].filter(Boolean).join(' or ')
-  const avg = Math.max(1, diceAverage(a.dice) + mod)
-  const dmg = `${avg} (${a.dice}${mod ? ` ${mod > 0 ? '+' : '−'} ${Math.abs(mod)}` : ''}) ${a.type} damage`
+  const avg = Math.max(1, diceAverage(a.dice) + n)
+  const dmg = `${avg} (${a.dice}${n ? ` ${signed(n, '−', ' ')}` : ''}) ${a.type} damage`
   return `${kind}: ${signed(hit)}, ${where} Hit: ${dmg}${a.plus ? ` plus ${a.plus}` : ''}.${a.extra ? ' ' + a.extra.trim() : ''}`
 }
 /** A feature's text as shown: an attack's written from its numbers, else as typed. */
@@ -69,19 +55,18 @@ export function speedText(speed?: string): string {
 }
 
 // ---- what imported text left behind ----
-const CONDS = ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious']
 const ABILITY_WORDS: Record<string, Ability> = { strength: 'str', dexterity: 'dex', constitution: 'con', intelligence: 'int', wisdom: 'wis', charisma: 'cha', str: 'str', dex: 'dex', con: 'con', int: 'int', wis: 'wis', cha: 'cha' }
 export interface StatProblem { key: string; text: string; fix: string; apply: (sb: Statblock) => Statblock }
 /** The closest condition to a misspelt one ("Grapple4d" → Grappled), if one is close. */
 function closestCondition(w: string): string | undefined {
   const s = w.toLowerCase().replace(/[^a-z]/g, '')
-  return CONDS.find(c => c.toLowerCase().startsWith(s.slice(0, 5)) && s.length >= 5)
+  return CONDITIONS.find(c => c.toLowerCase().startsWith(s.slice(0, 5)) && s.length >= 5)
 }
 export function statProblems(sb: Statblock): StatProblem[] {
   const out: StatProblem[] = []
   // condition immunities that aren't conditions
   for (const w of (sb.conditionImmunities ?? '').split(/\s*[,;]\s*/).filter(Boolean)) {
-    if (CONDS.some(c => c.toLowerCase() === w.toLowerCase())) continue
+    if (CONDITIONS.some(c => c.toLowerCase() === w.toLowerCase())) continue
     const c = closestCondition(w)
     out.push({
       key: 'cond-' + w, text: `“${w}” in the condition immunities isn't a condition.`, fix: c ? `Make it ${c}` : 'Remove it',

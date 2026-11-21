@@ -12,8 +12,9 @@ import {
   choiceOpen, grantOptions, hasChoices, isClassOrigin, picksLeft, setCastAbility, setPicks, setSwap, sourceTag, speciesTraits, swappableSpells,
   traitGrants, GRANT_KINDS, type ActiveTrait,
 } from '../species'
-import { ABILITY_NAME } from '../abilityBonus'
+import { ABILITY_NAME } from '../model/dnd'
 import TraitChoicePicker from './TraitChoicePicker.vue'
+import { inputValue as val } from '../dom'
 
 const props = defineProps<{ pc: Entry; s: CharacterSheet }>()
 const ro = computed(() => !!state.readOnly)
@@ -31,7 +32,6 @@ function swapOptions(g: TraitGrant & { was?: string }) {
 const swap = (key: string, id: string, original: string) => editSheet(props.pc, x => setSwap(x, key, id, original))
 const pick = (a: ActiveTrait, picks: string[]) => editSheet(props.pc, x => setPicks(x, a.key, picks))
 const cast = (a: ActiveTrait, ability: string) => editSheet(props.pc, x => setCastAbility(x, a.key, ability as Parameters<typeof setCastAbility>[2]))
-const val = (ev: Event) => (ev.target as HTMLSelectElement).value
 const kindName = (k: string) => GRANT_KINDS.find(x => x.id === k)?.label ?? k
 const nameOf = (g: TraitGrant) => grantOptions(g.kind).find(o => o.id === g.id)?.label ?? g.id
 /** What a trait gives, in words: "Investigation, Insight" (a swapped one by what it gives now). */

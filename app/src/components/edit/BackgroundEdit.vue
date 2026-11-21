@@ -6,7 +6,8 @@
 import { computed, ref } from 'vue'
 import type { AbilityBonus, Entry } from '../../model/types'
 import { TYPES } from '../../model/schema'
-import { ABILITY_KEYS, ABILITY_SHORT, type BonusChoice } from '../../abilityBonus'
+import type { BonusChoice } from '../../abilityBonus'
+import { ABILITY_KEYS, ABILITY_SHORT, type Ability } from '../../model/dnd'
 import { get } from '../../store'
 import { changed } from '../../edit'
 import { traitsOf } from '../../species'
@@ -14,7 +15,6 @@ import FieldInput from './FieldInput.vue'
 import SpreadPicker from '../SpreadPicker.vue'
 import FeatCard from '../FeatCard.vue'
 
-type Ability = (typeof ABILITY_KEYS)[number]
 const props = defineProps<{ e: Entry }>()
 const def = (k: string) => TYPES.background.fields.find(f => f.key === k)!
 const bonus = computed(() => props.e.fields.abilityIncrease)

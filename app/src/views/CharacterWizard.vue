@@ -6,13 +6,15 @@ import { computed, ref, watch } from 'vue'
 import type { Entry, Id } from '../model/types'
 import {
   POINTS, POINT_COST, STANDARD_ARRAY, backgroundGold, backgroundKit, backgrounds, bonusAdds, bonusOf, casts, dieOfDraft,
-  classKitsOf, draftPc, languageRule, pickedLanguages, featLevels, finalScores, hpOf, itemNamed, kitsOf, makeCharacter, pointsSpent, resetWizard, rules, species, subracesOf, mainRace,
+  classKitsOf, draftPc, languageRule, pickedLanguages, featLevels, finalScores, hpOf, kitsOf, makeCharacter, pointsSpent, resetWizard, rules, species, subracesOf, mainRace,
   spellChoices, spellCounts, steps, subclassesOf, wizard,
 } from '../wizard'
+import { itemNamed } from '../lookup'
 import { subclassLevelOf } from '../classRules'
-import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, abilityBonusText } from '../abilityBonus'
+import { abilityBonusText } from '../abilityBonus'
 import { DICE } from '../model/classes'
-import { SKILLS, mod, signed, currentPc, setCurrent } from '../sheet'
+import { currentPc, setCurrent } from '../sheet'
+import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, ORD, SKILLS, dieSize, mod, signed } from '../model/dnd'
 import { classEntry, choiceOpen, grantOptions, isClassOrigin, scaleAt, setCastAbility, setPicks as setTraitPicks, sourceTag, speciesGrants, speciesSizes, speciesTraits, traitsOf, type ActiveTrait } from '../species'
 import { rule } from '../rules'
 import { entries, formatMoney, get, listOptions, playerMode } from '../store'
@@ -27,6 +29,7 @@ import TraitChips from '../components/TraitChips.vue'
 import TraitChoicePicker from '../components/TraitChoicePicker.vue'
 import MarkdownView from '../components/MarkdownView.vue'
 import WizardPage from '../components/WizardPage.vue'
+import { inputValue as val } from '../dom'
 
 const d = computed(() => wizard.d)
 const all = computed(() => steps(d.value))
@@ -34,7 +37,6 @@ const step = computed(() => all.value.find(s => s.id === wizard.step) ?? all.val
 const at = computed(() => all.value.findIndex(s => s.id === step.value.id))
 const move = (by: number) => { const s = all.value[at.value + by]; if (s) { wizard.step = s.id; window.scrollTo(0, 0) } }
 const openCount = computed(() => all.value.reduce((n, s) => n + s.open.length, 0))
-const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value
 const num = (ev: Event) => Number(val(ev)) || 0
 
 // ---- class ----
@@ -157,8 +159,8 @@ function setFeatChoice(level: number, choice: { alt?: boolean; picks: (keyof typ
 }
 
 // ---- hit points ----
-const dieSize = computed(() => Number(dieOfDraft(d.value).replace(/\D/g, '')) || 8)
-const setRoll = (i: number, v: string) => { const l = [...d.value.hpRolls]; l[i] = v === '' ? undefined : Math.max(1, Math.min(dieSize.value, Number(v) || 1)); wizard.d.hpRolls = l }
+const hitDie = computed(() => dieSize(dieOfDraft(d.value)) || 8)
+const setRoll = (i: number, v: string) => { const l = [...d.value.hpRolls]; l[i] = v === '' ? undefined : Math.max(1, Math.min(hitDie.value, Number(v) || 1)); wizard.d.hpRolls = l }
 
 // ---- equipment ----
 const kits = computed(() => classKitsOf(d.value.cls))
@@ -196,7 +198,6 @@ function create() {
   go(hrefEntry(e.id))
 }
 function startOver() { if (confirm('Clear everything chosen so far?')) resetWizard() }
-const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 </script>
 
 <template>
@@ -422,9 +423,9 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
           <p class="small">{{ dieOfDraft(d) }} per level, with the Constitution modifier ({{ signed(mod(scores.con)) }}) each level. Level 1 takes the die's maximum; later levels the average unless you type a roll.</p>
           <table class="wz-scores">
             <tbody>
-              <tr><th>Level 1</th><td>{{ dieSize }}</td></tr>
+              <tr><th>Level 1</th><td>{{ hitDie }}</td></tr>
               <tr v-for="l in d.level - 1" :key="l"><th>Level {{ l + 1 }}</th>
-                <td><input type="number" min="1" :max="dieSize" class="wz-small" :value="d.hpRolls[l - 1] ?? ''" :placeholder="String(dieSize / 2 + 1)" @change="setRoll(l - 1, val($event))" /></td></tr>
+                <td><input type="number" min="1" :max="hitDie" class="wz-small" :value="d.hpRolls[l - 1] ?? ''" :placeholder="String(hitDie / 2 + 1)" @change="setRoll(l - 1, val($event))" /></td></tr>
             </tbody>
           </table>
           <p><b>Hit points: <span v-flash="hpOf(d)">{{ hpOf(d) }}</span></b> <span class="muted small">(the species' or gear's extra HP comes on top on the sheet)</span></p>

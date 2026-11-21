@@ -7,7 +7,7 @@ import type { Equipment, EquipmentLine } from '../../model/types'
 import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from '../../model/schema'
 import { createEntry, changed } from '../../edit'
 import { get } from '../../store'
-import { itemNamed } from '../../wizard'
+import { itemNamed } from '../../lookup'
 import EntryPicker from './EntryPicker.vue'
 import MoneyInput from './MoneyInput.vue'
 

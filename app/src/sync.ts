@@ -13,7 +13,7 @@ import { LISTS, type ListOption } from './model/lists'
 import { mapRefs } from './model/refs'
 import { DATA_VERSION, backupNow, db, listOptions, save, state, touch } from './store'
 import { desktop, type HostStatus, type PlayerStatus } from './storage/desktop'
-import { dataPaths, outgoingEntries, planExport, stable } from './transfer'
+import { clone, dataPaths, outgoingEntries, planExport, stable } from './transfer'
 
 export const PUBLISH_FORMAT = 'dndesk-publish'
 /** Entry types players can keep their own notes on (people and places). */
@@ -37,7 +37,6 @@ export interface Published {
   files: Record<string, string>
 }
 
-const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v))
 const decode = (b: Uint8Array | null) => (b ? new TextDecoder().decode(b) : null)
 const extOf = (p: string) => { const m = p.match(/\.[a-z0-9]{1,6}$/i); return m ? m[0].toLowerCase() : '' }
 async function hashOf(blob: Blob) {

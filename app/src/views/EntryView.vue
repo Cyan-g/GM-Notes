@@ -29,7 +29,7 @@ import MapView from '../components/MapView.vue'
 import SubTree from '../components/SubTree.vue'
 import Sunburst from '../components/Sunburst.vue'
 import { newEntry, ui, printCards } from '../ui'
-import { changed, createEntry, isFavourite, toggleFavourite } from '../edit'
+import { changed, createEntry, isEmpty, isFavourite, toggleFavourite } from '../edit'
 import type { Pin } from '../model/types'
 import EntryLink from '../components/EntryLink.vue'
 import ExportDialog from '../components/ExportDialog.vue'
@@ -68,6 +68,8 @@ import PlaceCards from '../components/PlaceCards.vue'
 import PartyHere from '../components/PartyHere.vue'
 import OutlineCard from '../components/OutlineCard.vue'
 import ItemWhere from '../components/ItemWhere.vue'
+import { featsGrantedBy } from '../lookup'
+import { carriersOf, shopsSelling } from '../items'
 
 const props = defineProps<{ id: string; tab?: EntryTab }>()
 const e = computed(() => get(props.id))
@@ -82,7 +84,6 @@ const onOverview = computed(() => !onFamily.value && !onInv.value && !onBook.val
 const def = computed(() => e.value ? TYPES[e.value.type] : undefined)
 const today = computed(() => db().meta.today)
 
-const empty = (v: unknown) => v == null || v === '' || (Array.isArray(v) && !v.length)
 const shown = (f: FieldDef, x: Entry) => !f.when || f.when.is.includes(String(byKey(x.fields)[f.when.field] ?? ''))
 
 const NPC_ELSEWHERE = ['race', 'gender', 'age', 'occupation', 'attitude', 'status', 'statusSince']
@@ -109,7 +110,7 @@ const groups = computed(() => {
     if (x.type === 'campaign' && f.key === 'partyAt') continue
     // an organization's attitude is by its name, its aims and offers in their own cards
     if (x.type === 'organization' && ['attitude', 'goals', 'secret', 'teaches'].includes(f.key)) continue
-    if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'creature' && f.key === 'creatureType') || (x.type === 'session' && ['campaign', 'number', 'date', 'playedOn', 'players'].includes(f.key)) || f.key === 'parent' || (x.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || (x.type === 'race' && ['size', 'otherSizes', 'creatureType', 'speeds', 'abilityIncrease', 'languages'].includes(f.key)) || (x.type === 'background' && ['abilityIncrease', 'originFeat', 'originFeatNote', 'skillProfs', 'toolProfs', 'toolsAll', 'equipment'].includes(f.key)) || f.key === 'map' || f.key === 'pins' || f.kind === 'mapData' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
+    if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'creature' && f.key === 'creatureType') || (x.type === 'session' && ['campaign', 'number', 'date', 'playedOn', 'players'].includes(f.key)) || f.key === 'parent' || (x.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || (x.type === 'race' && ['size', 'otherSizes', 'creatureType', 'speeds', 'abilityIncrease', 'languages'].includes(f.key)) || (x.type === 'background' && ['abilityIncrease', 'originFeat', 'originFeatNote', 'skillProfs', 'toolProfs', 'toolsAll', 'equipment'].includes(f.key)) || f.key === 'map' || f.key === 'pins' || f.kind === 'mapData' || !shown(f, x) || isEmpty(byKey(x.fields)[f.key])) continue
     const g = f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
     out.get(g)!.push({ def: f, value: byKey(x.fields)[f.key] })
@@ -119,7 +120,7 @@ const groups = computed(() => {
 const bigFields = computed(() => {
   const x = e.value
   if (!x || !def.value) return []
-  return def.value.fields.filter(f => ['recipe', 'stock', 'combatants', 'ranks', 'speciesTraits'].includes(f.kind) && shown(f, x) && !empty(byKey(x.fields)[f.key]))
+  return def.value.fields.filter(f => ['recipe', 'stock', 'combatants', 'ranks', 'speciesTraits'].includes(f.kind) && shown(f, x) && !isEmpty(byKey(x.fields)[f.key]))
 })
 /** On a subrace's page: the traits of the races it's a subrace of, which its characters have too (nearest first). */
 const inherited = computed(() => {
@@ -131,7 +132,7 @@ const inherited = computed(() => {
 /** The main races' traits this subrace (or a race between) replaces with its own. */
 const replacedHere = computed(() => new Set([e.value, ...inherited.value].flatMap(x => (x ? traitsOf(x).map(t => t.replaces).filter(Boolean) : [])) as string[]))
 /** The feats an entry grants (an organization's fighting styles and the like). */
-const grantedFeats = computed(() => (e.value ? (byType.value.get('feat') ?? []).filter(f => f.fields.source === e.value!.id).sort((a, b) => a.name.localeCompare(b.name)) : []))
+const grantedFeats = computed(() => (e.value ? featsGrantedBy(e.value.id) : []))
 const ranksDef = computed(() => def.value?.fields.find(f => f.kind === 'ranks'))
 /**
  * The text cut where data belongs inside it: an organization's ranks at the end of its "Structure" section
@@ -149,7 +150,7 @@ const bodyParts = computed(() => {
     return end < 0 ? lines.length : end
   }
   const cuts: { at: number; insert: 'ranks' | 'feats' }[] = []
-  if (x.type === 'organization' && !empty(x.fields.ranks)) {
+  if (x.type === 'organization' && !isEmpty(x.fields.ranks)) {
     const h = heading('structure')
     if (h >= 0) {
       const end = sectionEnd(h)
@@ -276,7 +277,7 @@ function copyItem() {
   changed(n)
   go(hrefEntry(n.id) + '/edit')
 }
-const carriedBy = computed(() => (e.value?.type === 'item' ? (byType.value.get('pc') ?? []).filter(p => p.fields.sheet?.inventory?.some(l => l.item === e.value!.id && l.qty > 0)) : []))
+const carriedBy = computed(() => (e.value?.type === 'item' ? carriersOf(e.value).map(x => x.p) : []))
 const mentions = computed(() => {
   const x = e.value
   if (!x) return []
@@ -300,8 +301,7 @@ const subraceName = (n: Entry) => (n.fields.race === e.value?.id ? '' : get(n.fi
 const hasSubraceMembers = computed(() => raceMembers.value.some(n => subraceName(n)))
 const usedIn = computed(() => e.value?.type === 'item'
   ? entries.value.filter(n => ((n.fields.recipe as { item: string }[]) ?? []).some(l => l.item === e.value!.id)) : [])
-const soldAt = computed(() => e.value?.type === 'item'
-  ? entries.value.filter(n => ((n.fields.stock as { item: string }[]) ?? []).some(l => l.item === e.value!.id)) : [])
+const soldAt = computed(() => (e.value?.type === 'item' ? shopsSelling(e.value).map(x => x.s) : []))
 /** A new session of this campaign, numbered after the last one. */
 function newSession() {
   newEntry('session', { campaign: e.value!.id, number: nextSessionNo(e.value!.id) })

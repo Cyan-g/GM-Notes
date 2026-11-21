@@ -6,7 +6,7 @@ import type { Equipment, EquipmentLine } from '../../model/types'
 import EntryPicker from './EntryPicker.vue'
 import MoneyInput from './MoneyInput.vue'
 import EntryLink from '../EntryLink.vue'
-import { itemNamed } from '../../wizard'
+import { itemNamed } from '../../lookup'
 
 const model = defineModel<Equipment | undefined>()
 const eq = computed<Equipment>(() => model.value ?? {})

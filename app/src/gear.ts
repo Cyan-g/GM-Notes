@@ -1,17 +1,16 @@
 // What a character's gear does to them: each item can carry effects (AC +1, STR set to 19, resistance to fire…).
 // An item's effects count while it's worn or wielded, or, for an item that requires attunement, while attuned.
 // The sheet's numbers add them up, and every total can say where it comes from (shown on hover).
-import type { Abilities, CharacterSheet, Entry, GearEffect, Id, InventoryLine, ItemSpell } from './model/types'
+import type { CharacterSheet, Entry, GearEffect, Id, InventoryLine, ItemSpell } from './model/types'
 import { get } from './store'
 import { isHeavyStrength, requirementsOf } from './requirements'
 import { ownerOf, speciesEffects, speciesSize } from './species'
 import { rule } from './rules'
 import { applyConditions } from './conditions'
-import { SKILLS } from './sheet'
+import { ABILITY_UPPER, SKILLS, mod, ord, profBonus, signed, type Ability } from './model/dnd'
 import { activeEffectsOf, activeSpells } from './spells'
 import { totalLevel } from './model/classes'
 
-type Ability = keyof Abilities
 /** One contribution to a number: what it comes from and how much. */
 export interface Part { label: string; n: number; when?: GearEffect['when'] }
 
@@ -48,10 +47,9 @@ export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: Effect
 ]
 export const SENSES = ['Darkvision', 'Blindsight', 'Tremorsense', 'Truesight']
 const MODE: Record<string, string> = { adv: 'Advantage', dis: 'Disadvantage' }
-const ABILITY_SHORT: Record<string, string> = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' }
+const ABILITY_SHORT: Record<string, string> = ABILITY_UPPER
 /** An effect's limit, in words. */
 const WHEN: Record<string, string> = { melee: ' (melee)', ranged: ' (ranged)', finesseOrRanged: ' (finesse or ranged)', armored: ' (in armor)' }
-const signed = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`)
 
 /**
  * A list of effects in a few words each, with the same advantage on every saving throw said once ("Advantage on
@@ -160,11 +158,10 @@ export const chargesLeft = (l: InventoryLine, item: Entry | undefined) => {
   const max = Number(item?.fields.charges) || 0
   return max ? Math.max(0, Math.min(max, l.charges ?? max)) : undefined
 }
-const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 /** How a spell is cast from its item, in a few words: "2 charges", "1/long rest", "at will", "prepared"; plus its level. */
 export function howCast(x: ItemSpell): string {
   const how = { charges: `${x.cost ?? 1} charge${(x.cost ?? 1) === 1 ? '' : 's'}`, short: '1/short rest', long: '1/long rest', day: '1/day', atWill: 'at will', prepared: 'prepared' }[x.how] ?? x.how
-  return x.level ? `${how}, at ${ORD[x.level] ?? x.level + 'th'} level` : how
+  return x.level ? `${how}, at ${ord(x.level)} level` : how
 }
 /** One spell the character can cast from an item in use, with whether it can be cast now. */
 export interface GrantedSpell { i: number; k: number; item: Entry; line: InventoryLine; spell: ItemSpell; ready: boolean; status: string }
@@ -326,7 +323,7 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
         case 'spellAttack': t.spellAttack.push(p); break
         case 'spellDC': t.spellDC.push(p); break
         case 'speed': t.speed.push(p); break
-        case 'initiative': t.initiative.push(f.pb ? { label: name, n: n + 2 + Math.floor((Math.max(1, level) - 1) / 4) } : p); break
+        case 'initiative': t.initiative.push(f.pb ? { label: name, n: n + profBonus(level) } : p); break
         case 'maxHp': t.maxHp.push(p); break
         case 'hitDice': t.hitDice.push({ label: name, n, ...(f.ability ? { ability: f.ability } : {}) }); break
         case 'maxHpLevel': t.maxHp.push({ label: `${name} (${n} × level ${level})`, n: n * level }); break
@@ -352,7 +349,7 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
       }
     }
   }
-  for (const { part, ability } of plusMod) part.n += Math.max(1, Math.floor((scoreWith(s!, ability, t) - 10) / 2))
+  for (const { part, ability } of plusMod) part.n += Math.max(1, mod(scoreWith(s!, ability, t)))
   // the character's conditions (and exhaustion, as the ruleset says)
   if (s) applyConditions(s, t)
   // the active ruleset: variant encumbrance slows the character and, heavily encumbered, gives disadvantage

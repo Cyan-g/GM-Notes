@@ -5,7 +5,7 @@
 // attunement (requirements.ts); heavy armor's Strength only slows (it's set with the armor).
 import { computed, ref } from 'vue'
 import type { Entry, Requirements } from '../../model/types'
-import { ABILITIES, SKILLS } from '../../sheet'
+import { ABILITIES, SKILLS } from '../../model/dnd'
 import { listOptions } from '../../store'
 import { changed } from '../../edit'
 import { describeRequirements } from '../../requirements'

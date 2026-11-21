@@ -7,10 +7,7 @@ import { rule } from './rules'
 import { db, get, state, touch } from './store'
 import { sheetToEdit } from './sheet'
 import { watch } from 'vue'
-
-type Ability = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
-const ALL: Ability[] = ['str', 'dex', 'con', 'int', 'wis', 'cha']
-const SKILLS = ['Acrobatics', 'Animal Handling', 'Arcana', 'Athletics', 'Deception', 'History', 'Insight', 'Intimidation', 'Investigation', 'Medicine', 'Nature', 'Perception', 'Performance', 'Persuasion', 'Religion', 'Sleight of Hand', 'Stealth', 'Survival']
+import { ABILITY_KEYS, SKILLS, type Ability } from './model/dnd'
 
 /** What each condition does, in a sentence (our own words), and what the sheet does with it. */
 export const CONDITION_RULES: Record<string, { text: string; attack?: 'adv' | 'dis'; checks?: 'dis'; saves?: { abilities: Ability[]; mode: 'dis' | 'fail' }; speed0?: boolean; against?: 'adv' | 'dis' }> = {
@@ -31,8 +28,6 @@ export const CONDITION_RULES: Record<string, { text: string; attack?: 'adv' | 'd
   Unconscious: { text: 'Incapacitated and prone, drops what it holds; fails STR and DEX saves; attacks against it have advantage, hits within 5 feet are critical.', speed0: true, saves: { abilities: ['str', 'dex'], mode: 'fail' }, against: 'adv' },
   Concentrating: { text: 'Keeping a spell going: taking damage calls for a CON save (DC 10 or half the damage); incapacitation ends it.' },
 }
-/** The conditions a sheet can have, in order. */
-export const SHEET_CONDITIONS = Object.keys(CONDITION_RULES)
 
 /** What the 2014 exhaustion levels do, from level 1 up. */
 const EXHAUSTION_2014 = ['Disadvantage on ability checks', 'Speed halved', 'Disadvantage on attack rolls and saving throws', 'Hit point maximum halved', 'Speed 0', 'Death']
@@ -53,7 +48,7 @@ export function applyConditions(s: CharacterSheet, t: GearTotals) {
   for (const c of list) {
     const r = CONDITION_RULES[c]
     if (!r) continue
-    if (r.checks === 'dis') for (const sk of SKILLS) (t.skillAdv[sk] ??= []).push({ mode: 'dis', from: c })
+    if (r.checks === 'dis') for (const { name: sk } of SKILLS) (t.skillAdv[sk] ??= []).push({ mode: 'dis', from: c })
     if (r.saves) for (const a of r.saves.abilities) (t.saveAdv[a] ??= []).push({ mode: 'dis', from: c, ...(r.saves.mode === 'fail' ? { note: '(fails it)' } : {}) })
     if (r.speed0) t.speedZero ??= c
     if (r.attack) (t.attackMode ??= []).push({ mode: r.attack, from: c })
@@ -62,15 +57,15 @@ export function applyConditions(s: CharacterSheet, t: GearTotals) {
   if (!level) return
   const from = `Exhaustion ${level}`
   if (rule('exhaustion') === '2014') {
-    if (level >= 1) for (const sk of SKILLS) (t.skillAdv[sk] ??= []).push({ mode: 'dis', from })
+    if (level >= 1) for (const { name: sk } of SKILLS) (t.skillAdv[sk] ??= []).push({ mode: 'dis', from })
     if (level >= 2) t.speedHalf ??= from
-    if (level >= 3) { for (const a of ALL) (t.saveAdv[a] ??= []).push({ mode: 'dis', from }); (t.attackMode ??= []).push({ mode: 'dis', from }) }
+    if (level >= 3) { for (const a of ABILITY_KEYS) (t.saveAdv[a] ??= []).push({ mode: 'dis', from }); (t.attackMode ??= []).push({ mode: 'dis', from }) }
     if (level >= 4) t.maxHpHalf = from
     if (level >= 5) t.speedZero ??= from
     return
   }
   const p = { label: from, n: -2 * level }
-  for (const sk of SKILLS) (t.skill[sk] ??= []).push(p)
+  for (const { name: sk } of SKILLS) (t.skill[sk] ??= []).push(p)
   t.saves.push(p); t.attackAll.push(p); t.spellAttack.push(p); t.initiative.push(p)
   t.speed.push({ label: from, n: -5 * level })
 }
@@ -121,8 +116,6 @@ export function endConcentration(pc: Entry, s: CharacterSheet) {
   setConditions(pc, s, (s.conditions ?? []).filter(x => x !== 'Concentrating'))
   dropConcentration(s)
 }
-/** The CON save DC to keep concentrating after taking damage. */
-export const concentrationDc = (dmg: number) => Math.max(10, Math.floor(dmg / 2))
 
 // ---- hit points: what dropping to 0 and coming back do ----
 /**

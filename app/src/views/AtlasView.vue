@@ -4,7 +4,8 @@
 import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Entry, Pin, WorldDate } from '../model/types'
-import { byType, db, formatDate, isCurrent, placePath, relationsOf } from '../store'
+import { byType, db, formatDate, placePath } from '../store'
+import { membersOf } from '../org'
 import { hrefEntry, hrefMap } from '../router'
 import { addDays, dayNumber } from '../calendar'
 import Sunburst from '../components/Sunburst.vue'
@@ -55,7 +56,7 @@ const inDays = (n: number) => (n === 0 ? 'today' : n === 1 ? 'tomorrow' : `in ${
 const partyPlaces = computed(() => (byType.value.get('campaign') ?? []).some(c => c.fields.partyAt && c.fields.status !== 'Finished'))
 const factions = computed(() => (byType.value.get('organization') ?? [])
   .filter(o => !o.fields.parent)
-  .map(o => ({ o, members: (relationsOf.value.get(o.id) ?? []).filter(r => r.kind === 'member' && r.b === o.id && isCurrent(r)).length }))
+  .map(o => ({ o, members: membersOf(o).length }))
   .sort((a, b) => b.members - a.members || a.o.name.localeCompare(b.o.name)))
 const seat = (o: Entry) => o.fields.seat
 </script>

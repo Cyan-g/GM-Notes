@@ -3,6 +3,7 @@
 // on, whose "while active" effects their sheet counts (gear.ts) until a long rest.
 import type { CharacterSheet, Entry, GearEffect, Id, SpellArea, SpellRoll } from './model/types'
 import { get } from './store'
+import { ORD, signed, spellLevel } from './model/dnd'
 
 /** A spell's rolls. */
 export const rollsOf = (e: Entry | undefined): SpellRoll[] => (Array.isArray(e?.fields.rolls) ? e!.fields.rolls! : [])
@@ -21,8 +22,14 @@ export function areaText(a: SpellArea | undefined): string {
     default: return `${n}-foot Cube`
   }
 }
-/** A spell's level as a number (a cantrip is 0). */
-export const spellLevel = (e: Entry) => (e.fields.level === 'Cantrip' ? 0 : Number(e.fields.level) || 0)
+/** A spell's saving throw in three letters: "DEX save"; '' for a spell without one. */
+export const saveText = (e: Entry) => (e.fields.savingThrow ? `${String(e.fields.savingThrow).slice(0, 3).toUpperCase()} save` : '')
+/** "DEX save", "Attack", or the spell's type ("Utility", "Healing"). */
+export function attackOrSave(e: Entry): string {
+  const t = String(e.fields.spellType ?? '')
+  if (t === 'Saving throw') return saveText(e) || 'Save'
+  return t
+}
 /** How many times a cantrip's dice count at a character level: 1, then 2 at 5, 3 at 11, 4 at 17. */
 export const cantripTier = (level: number) => (level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1)
 const DICE = /^(\d*)d(\d+)(.*)$/
@@ -39,7 +46,6 @@ function plus(dice: string, add: string, n: number): string {
   if (a && b && !a[3].trim() && !b[3].trim() && a[2] === b[2]) return `${(Number(a[1]) || 1) + (Number(b[1]) || 1) * n}d${a[2]}`
   return `${dice} + ${times(add, n)}`
 }
-const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 /**
  * A roll in words: its dice at the character's level (a cantrip's) and slot level (cast higher), the spellcasting
  * modifier if it adds one (its value when known), and what it is: "2d10 fire", "2d4 + 3 healing", "1d6 temp HP".
@@ -48,7 +54,7 @@ export function rollText(e: Entry, r: SpellRoll, o: { level?: number; slot?: num
   let dice = r.dice
   if (r.cantrip && o.level) dice = times(dice, cantripTier(o.level))
   if (r.slot && o.slot && o.slot > spellLevel(e)) dice = plus(dice, r.slot, o.slot - spellLevel(e))
-  const m = r.mod ? (o.mod != null ? ` ${o.mod < 0 ? '−' : '+'} ${Math.abs(o.mod)}` : ' + mod') : ''
+  const m = r.mod ? (o.mod != null ? ` ${signed(o.mod, '−', ' ')}` : ' + mod') : ''
   const what = r.kind === 'healing' ? ' healing' : r.kind === 'tempHp' ? ' temp HP' : r.type ? ` ${r.type.toLowerCase()}` : ' damage'
   return `${dice}${m}${what}`
 }

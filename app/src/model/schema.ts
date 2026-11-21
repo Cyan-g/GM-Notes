@@ -3,6 +3,7 @@
 import type {
   Abilities, AbilityBonus, CharacterSheet, ClassBasics, Equipment, Regain, SpellArea, Speeds, ClassLine, Copper, GearEffect, ItemSpell, SpellRoll, Trait, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
 } from './types'
+import { CONDITIONS } from './dnd'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
@@ -286,7 +287,7 @@ export const SCHEMA = [
       // What it rolls (spells.ts): damage, healing, temporary hit points, with how it grows; shown in the Spellbook.
       { key: 'rolls', label: 'Damage & healing', kind: 'spellRolls' },
       // Conditions it can cause.
-      { key: 'conditions', label: 'Conditions', kind: 'list', options: ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious'] },
+      { key: 'conditions', label: 'Conditions', kind: 'list', options: CONDITIONS },
       // What it does to a character while it lasts, counted on their sheet when they switch it on (gear.ts).
       { key: 'active', label: 'While active', kind: 'effects' },
     ],

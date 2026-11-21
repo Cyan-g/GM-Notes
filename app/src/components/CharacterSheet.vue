@@ -15,9 +15,10 @@ import { CLASS_DIE, DICE, classText, classesOf, dieOf } from '../model/classes'
 import { changed } from '../edit'
 import { hrefEntry, hrefTab } from '../router'
 import {
-  ABILITIES, SKILLS, armorClass, attacks, canAttune, canEquip, castingAbility, hitDiceOf, initiative, levelOf, maxHpOf, mod,
-  passivePerception, profBonus, profsOf, profsToEdit, saveBonus, sheetOrBlank, sheetToEdit, signed, skillBonus, skillLevel, speedOf, baseSpeed, otherSpeeds, longRest, shortRest, type Ability,
+  armorClass, attacks, canAttune, canEquip, castingAbility, hitDiceOf, initiative, levelOf, maxHpOf,
+  passivePerception, profsOf, profsToEdit, saveBonus, sheetOrBlank, sheetToEdit, skillBonus, skillLevel, speedOf, baseSpeed, otherSpeeds, longRest, shortRest,
 } from '../sheet'
+import { ABILITIES, SKILLS, concentrationDc, dieSize, mod, profBonus, signed, type Ability } from '../model/dnd'
 import { advOf, breakdown, chargesLeft, gearTotals, scoreBreakdown, scoreWith, setCharges, sum, type Part, type RegainRoll } from '../gear'
 import ProfChips from './ProfChips.vue'
 import ItemModal from './ItemModal.vue'
@@ -31,7 +32,7 @@ import ActiveSpellsCard from './ActiveSpellsCard.vue'
 import ConditionsBar from './ConditionsBar.vue'
 import DeathSaves from './DeathSaves.vue'
 import LevelUpModal from './LevelUpModal.vue'
-import { concentrationDc, endConcentration, hpChanged } from '../conditions'
+import { endConcentration, hpChanged } from '../conditions'
 import { picksLeft, speciesEffects, speciesGrants, speciesSizes, speciesTraits } from '../species'
 import { ui } from '../ui'
 
@@ -203,12 +204,11 @@ const leveling = ref(false)
 const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
 
 // ---- building: the hit points the dice give on average (the player may have rolled instead; their call) ----
-const dieSize = (d: string) => Number(d.replace(/\D/g, '')) || 8
 const avgHp = computed(() => {
   const con = mod(scoreOf('con'))
   const lines = classes.value.length ? classes.value.map(l => ({ die: dieOf(l), n: Number(l.level) || 0 })) : [{ die: s.value.hitDie || 'd8', n: level.value }]
   let total = 0, first = true
-  for (const l of lines) for (let k = 0; k < l.n; k++) { total += Math.max(1, (first ? dieSize(l.die) : dieSize(l.die) / 2 + 1) + con); first = false }
+  for (const l of lines) for (let k = 0; k < l.n; k++) { total += Math.max(1, (first ? (dieSize(l.die) || 8) : (dieSize(l.die) || 8) / 2 + 1) + con); first = false }
   return total || undefined
 })
 const avgText = computed(() => {

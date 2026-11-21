@@ -1,7 +1,7 @@
 // Organizations: who leads them, the rank a renown earns and the next one up, a character's standing with each,
 // and the organizations at a place (its seat, or present there).
 import type { Entry, Id, RankLine } from './model/types'
-import { byType, get, isCurrent, relationsOf } from './store'
+import { byType, get, relationsWith } from './store'
 import { sheetOf } from './sheet'
 
 /** Roles that lead an organization ("Queen", "High Priest", "Captain"…). The one list every page goes by. */
@@ -9,7 +9,7 @@ export const LEADER = /\b(leader|head|chief|chieftain|duke|duchess|king|queen|ab
 
 export const ranksOf = (org: Entry) => ((org.fields.ranks as RankLine[] | undefined) ?? []).filter(r => r.title.trim())
 /** The current members (their "member of" links). */
-export const membersOf = (org: Entry) => (relationsOf.value.get(org.id) ?? []).filter(r => r.kind === 'member' && r.b === org.id && isCurrent(r))
+export const membersOf = (org: Entry) => relationsWith(org.id, 'member', 'in', { current: true })
 /** Whether a member's role leads the organization: a leader's role, or its top rank's title. */
 export function leads(org: Entry, role?: string): boolean {
   const r = role?.trim().toLowerCase()
@@ -36,8 +36,7 @@ export const renownOf = (pc: Entry, org: Id): number | undefined => sheetOf(pc)?
 export function standingOf(pc: Entry): { org: Entry; renown?: number; role?: string }[] {
   const out = new Map<Id, { org: Entry; renown?: number; role?: string }>()
   for (const [id, n] of Object.entries(sheetOf(pc)?.renown ?? {})) { const o = get(id); if (o) out.set(id, { org: o, renown: n }) }
-  for (const r of relationsOf.value.get(pc.id) ?? []) {
-    if (r.kind !== 'member' || r.a !== pc.id || !isCurrent(r)) continue
+  for (const r of relationsWith(pc.id, 'member', 'out', { current: true })) {
     const o = get(r.b)
     if (o) out.set(o.id, { ...(out.get(o.id) ?? { org: o }), role: r.role })
   }

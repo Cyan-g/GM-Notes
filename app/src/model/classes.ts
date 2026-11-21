@@ -6,6 +6,7 @@ import { labelIn, optionsIn, type ListOption } from './lists'
 import { TYPES } from './schema'
 import { CLASS_SVG } from '../icons/classes'
 import { hitDieOf } from '../classRules'
+import { dieSize } from './dnd'
 
 /** The hit die each standard class brings. Another class picks its own (d8 until it does). */
 export const CLASS_DIE: Record<string, string> = {
@@ -38,8 +39,7 @@ export function hitDicePools(pc: Entry, s: CharacterSheet): { die: string; total
   const c = classesOf(pc)
   if (c.length) for (const l of c) totals.set(dieOf(l), (totals.get(dieOf(l)) ?? 0) + (Number(l.level) || 0))
   else totals.set(s.hitDie || 'd8', totalLevel(pc))
-  const size = (d: string) => Number(d.replace(/\D/g, '')) || 0
-  return [...totals].filter(([, n]) => n > 0).sort((a, b) => size(b[0]) - size(a[0]))
+  return [...totals].filter(([, n]) => n > 0).sort((a, b) => dieSize(b[0]) - dieSize(a[0]))
     .map(([die, total]) => ({ die, total, spent: Math.min(total, s.hitDiceSpent?.[die] ?? 0) }))
 }
 

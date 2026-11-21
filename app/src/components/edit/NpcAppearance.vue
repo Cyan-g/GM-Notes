@@ -3,22 +3,17 @@
 // says (black hair, golden eyes) is offered while typing. An age can be a word or worked out from a birth date.
 import { computed, ref } from 'vue'
 import type { Entry } from '../../model/types'
-import { TYPES, byKey } from '../../model/schema'
-import { changed } from '../../edit'
+import { TYPES } from '../../model/schema'
+import { setField } from '../../edit'
 import { AGES, ageOf, usedValues } from '../../npc'
 import { formatDate } from '../../store'
 import FieldInput from './FieldInput.vue'
 import DateInput from './DateInput.vue'
+import { inputValue as val } from '../../dom'
 
 const props = defineProps<{ entry: Entry }>()
 const f = computed(() => props.entry.fields)
-function set(key: string, v: unknown) {
-  const r = byKey(f.value)
-  if (v == null || v === '') delete r[key]
-  else r[key] = v
-  changed(props.entry)
-}
-const val = (ev: Event) => (ev.target as HTMLInputElement).value
+const set = (key: string, v: unknown) => setField(props.entry, key, v)
 const raceDef = TYPES.npc.fields.find(x => x.key === 'race')!
 
 const LOOKS = ['hair', 'eyes', 'skin', 'clothing'] as const

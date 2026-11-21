@@ -3,7 +3,7 @@
 import { computed, reactive } from 'vue'
 import { restSlots } from './slots'
 import { classesOf, hitDicePools, totalLevel } from './model/classes'
-import type { Abilities, CharacterSheet, Crafting, Entry, GearEffect, Id, InventoryLine, Proficiencies, Spellbook } from './model/types'
+import type { CharacterSheet, Crafting, Entry, GearEffect, Id, InventoryLine, Proficiencies, Spellbook } from './model/types'
 import { MARTIAL_WEAPONS, MASTERY_OF, SIMPLE_WEAPONS } from './model/schema'
 import { optionsIn } from './model/lists'
 import { db, get, listOptions, state, touch } from './store'
@@ -13,21 +13,8 @@ import { setConditions } from './conditions'
 import { rule } from './rules'
 import { castingOf } from './classRules'
 import { own, ownerOf, restSpecies, speciesExpertise, speciesGrants, speciesSkills, speciesSpeed, speciesSpeeds, speciesTraits } from './species'
-
-export type Ability = keyof Abilities
-export const ABILITIES: { key: Ability; label: string; short: string }[] = [
-  { key: 'str', label: 'Strength', short: 'STR' }, { key: 'dex', label: 'Dexterity', short: 'DEX' },
-  { key: 'con', label: 'Constitution', short: 'CON' }, { key: 'int', label: 'Intelligence', short: 'INT' },
-  { key: 'wis', label: 'Wisdom', short: 'WIS' }, { key: 'cha', label: 'Charisma', short: 'CHA' },
-]
-export const SKILLS: { name: string; ability: Ability }[] = [
-  { name: 'Acrobatics', ability: 'dex' }, { name: 'Animal Handling', ability: 'wis' }, { name: 'Arcana', ability: 'int' },
-  { name: 'Athletics', ability: 'str' }, { name: 'Deception', ability: 'cha' }, { name: 'History', ability: 'int' },
-  { name: 'Insight', ability: 'wis' }, { name: 'Intimidation', ability: 'cha' }, { name: 'Investigation', ability: 'int' },
-  { name: 'Medicine', ability: 'wis' }, { name: 'Nature', ability: 'int' }, { name: 'Perception', ability: 'wis' },
-  { name: 'Performance', ability: 'cha' }, { name: 'Persuasion', ability: 'cha' }, { name: 'Religion', ability: 'int' },
-  { name: 'Sleight of Hand', ability: 'dex' }, { name: 'Stealth', ability: 'dex' }, { name: 'Survival', ability: 'wis' },
-]
+import { SKILLS, mod, profBonus, signed, type Ability } from './model/dnd'
+import { changed } from './edit'
 
 /**
  * A character's Hit Dice by die: their classes' (hitDicePools), plus what their features and gear add (Hemomancy:
@@ -125,8 +112,8 @@ export function setCurrent(id: Id | undefined) {
   touch()
 }
 
-const ORD = 9
-const emptyBook = (): Spellbook => ({ slots: Array.from({ length: ORD }, () => ({ max: 0, used: 0 })), known: [], prepared: [], always: [] })
+/** A spellbook with nothing in it: no slots at any of the nine levels, no spells. */
+export const emptyBook = (): Spellbook => ({ slots: Array.from({ length: 9 }, () => ({ max: 0, used: 0 })), known: [], prepared: [], always: [] })
 /** The spellbook in use: the given character's, else the current character's, else the world's. */
 export function activeSpellbook(of?: Entry): Spellbook {
   const pc = of ?? currentPc.value
@@ -175,24 +162,21 @@ export function activeBench(of?: Entry): Bench {
   const raw = pc.fields.sheet
   const inv = raw?.inventory ?? []
   const wanted = (w: 'pouch' | 'made', id: Id) => (w === 'pouch') === isIngredient(id)
-  const edit = (fn: (s: CharacterSheet) => void) => { const s = sheetToEdit(pc); fn(s); s.inventory = s.inventory.filter(l => !l.item || l.qty > 0); pc.updated = new Date().toISOString(); touch() }
+  const edit = (fn: (s: CharacterSheet) => void) => { const s = sheetToEdit(pc); fn(s); s.inventory = s.inventory.filter(l => !l.item || l.qty > 0); changed(pc) }
   const crafting = () => (sheetToEdit(pc).crafting ??= { known: [] })
   return {
     // The tools are the sheet's tool proficiencies.
     tools: raw?.proficiencies?.tools ?? [], known: raw?.crafting?.known ?? [],
     // The pouch is the ingredients in the inventory; "crafted" is everything else made from a recipe.
     list: w => inv.filter(l => l.item && wanted(w, l.item) && (w === 'pouch' || (get(l.item)?.fields.recipe)?.length)).map(l => ({ item: l.item!, qty: l.qty })),
-    add(_w, id, n) { edit(s => { const l = s.inventory.find(x => x.item === id); if (l) l.qty += n; else if (n > 0) s.inventory.push({ item: id, qty: n }) }) },
+    add(_w, id, n) { edit(s => stackItem(s, id, n)) },
     set(_w, id, qty) { edit(s => { const l = s.inventory.find(x => x.item === id); if (l) l.qty = qty }) },
-    setTools(t) { profsToEdit(sheetToEdit(pc)).tools = t; pc.updated = new Date().toISOString(); touch() },
+    setTools(t) { profsToEdit(sheetToEdit(pc)).tools = t; changed(pc) },
     setKnown(k) { crafting().known = k; touch() },
   }
 }
 
-export const mod = (score?: number) => (score == null ? 0 : Math.floor((score - 10) / 2))
-export const signed = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`)
 export const levelOf = (pc: Entry) => totalLevel(pc)
-export const profBonus = (level: number) => 2 + Math.floor((level - 1) / 4)
 
 /** An ability score with the active gear (set by a belt, raised by a tome…). */
 export const score = (s: CharacterSheet, a: Ability) => scoreWith(s, a, gearTotals(s))
@@ -312,9 +296,9 @@ export function armorClass(s: CharacterSheet): { ac: number; from: string; untra
   if (from === 'unarmored') from = `${base} unarmored (10 + DEX)`
   for (const p of t.ac) {
     if (p.when === 'armored' && !armored) continue
-    extra += p.n; parts.push(`${p.n >= 0 ? '+' : '−'}${Math.abs(p.n)} ${p.label}`)
+    extra += p.n; parts.push(`${signed(p.n)} ${p.label}`)
   }
-  if (s.acBonus) parts.push(`${s.acBonus >= 0 ? '+' : '−'}${Math.abs(s.acBonus)} typed bonus`)
+  if (s.acBonus) parts.push(`${signed(s.acBonus)} typed bonus`)
   let ac = base + extra + (s.acBonus ?? 0)
   // A lowest AC (Barkskin) when the rest comes to less.
   for (const p of t.acMin) if (p.n > ac) { ac = p.n; parts.push(`at least ${p.n} from ${p.label}`) }
@@ -347,7 +331,7 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
   const isRanged = (e: Entry) => propsOf(e).includes('ammunition') || /bow|crossbow|sling|blowgun|dart/i.test(`${e.name} ${e.fields.subtype ?? ''}`)
   /** Whether a bonus limited to melee, ranged, or finesse-or-ranged attacks counts for this one. */
   const fits = (when: GearEffect['when'], ranged: boolean, finesse: boolean) => !when || (when === 'melee' && !ranged) || (when === 'ranged' && ranged) || (when === 'finesseOrRanged' && (finesse || ranged))
-  const plus = (n: number) => (n ? ' ' + signed(n).replace('−', '− ').replace('+', '+ ') : '')
+  const plus = (n: number) => (n ? ' ' + signed(n, '−', ' ') : '')
   const weapons = equipped(s).filter(e => e.fields.kind === 'Weapon')
   const nick = weapons.some(x => mastered.has(String(x.fields.baseWeapon)) && masteryOf(x) === 'Nick')
   function line(e: Entry, offhand = false): Attack {
@@ -393,9 +377,6 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
   return out
 }
 
-/** Total weight carried, in lb. */
-export const carried = (s: CharacterSheet) => s.inventory.reduce((t, l) => t + (Number(get(l.item)?.fields.weight) || 0) * (l.qty || 0), 0)
-
 /** What the initiative tracker takes from a PC: AC, HP and the DEX for initiative. */
 export function trackerStats(pc: Entry) {
   const s = sheetOf(pc)
@@ -429,9 +410,20 @@ export function blockedFor(pc: Entry, l: InventoryLine, key: 'equipped' | 'attun
 export function editSheet(pc: Entry, fn: (s: CharacterSheet) => void) {
   if (state.readOnly) return
   fn(sheetToEdit(pc))
-  pc.updated = new Date().toISOString()
-  touch()
+  changed(pc)
 }
+
+/**
+ * Put n of an item in a sheet's inventory: onto a line of that item that isn't equipped (an equipped one stays as
+ * it is), else as a new line. A negative n takes some off that line instead, and never adds one.
+ */
+function stackItem(s: CharacterSheet, id: Id, n: number) {
+  const l = s.inventory.find(x => x.item === id && !x.equipped)
+  if (l) l.qty = (l.qty || 0) + n
+  else if (n > 0) s.inventory.push({ item: id, qty: n })
+}
+/** Give a character n of an item (one by default), stacked as stackItem says. */
+export const addToInventory = (pc: Entry, id: Id, n = 1) => editSheet(pc, s => stackItem(s, id, n))
 
 /** The inventory line being dragged: from the inventory, or out of the equipped or attunement list. */
 export const dragged = reactive<{ pc: Id | null; i: number; from: 'inventory' | 'equipped' | 'attuned' }>({ pc: null, i: -1, from: 'inventory' })
@@ -451,8 +443,7 @@ export function shortRest(pc: Entry): RegainRoll[] {
   restSlots(s.spellbook, 'short')
   const rolls = restItems(s, 'short')
   restSpecies(s, pc, 'short')
-  pc.updated = new Date().toISOString()
-  touch()
+  changed(pc)
   return rolls
 }
 
@@ -486,7 +477,6 @@ export function longRest(pc: Entry): RegainRoll[] {
     if (!m[p.die]) delete m[p.die]
   }
   if (Object.keys(m).length) s.hitDiceSpent = m; else delete s.hitDiceSpent
-  pc.updated = new Date().toISOString()
-  touch()
+  changed(pc)
   return rolls
 }

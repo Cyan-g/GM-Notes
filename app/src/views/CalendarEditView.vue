@@ -11,9 +11,9 @@ import { SCHEMA, byKey } from '../model/schema'
 import { db, entries, formatDate, listOptions, state, touch } from '../store'
 import { ERA_START, dayNumber, eraShort, monthDays, moonPhase, PHASE_NAMES } from '../calendar'
 import { go, hrefEntry } from '../router'
+import { clone } from '../transfer'
 
 type Category = Database['meta']['eventCategories'][number]
-const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v))
 const ro = computed(() => !!state.readOnly)
 const today = computed(() => db().meta.today)
 const old = db().meta.calendar

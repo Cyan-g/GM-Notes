@@ -8,14 +8,15 @@
 // player for another of the same kind (an overlap with the class's skills, a DM's ruling).
 // A character's classes and subclasses count the same way too: their Features, each from a level in that class, with
 // uses that can grow by level (Rage), scaling values (Sneak Attack), and picks (Fighting Style, Expertise, Metamagic).
-import type { Abilities, CharacterSheet, Entry, GearEffect, Id, SpeciesState, Speeds, Trait, TraitChoice, TraitGrant, TraitOption, TraitSpell } from './model/types'
+import type { CharacterSheet, Entry, GearEffect, Id, SpeciesState, Speeds, Trait, TraitChoice, TraitGrant, TraitOption, TraitSpell } from './model/types'
 import { classesOf, totalLevel, withoutClass } from './model/classes'
 import { subclassLevelOf } from './classRules'
 import { entries, get, listOptions, state } from './store'
-import { SKILLS, mod, score, sheetOf } from './sheet'
+import { score, sheetOf } from './sheet'
+import { SKILLS, mod, ord, profBonus, type Ability } from './model/dnd'
 import { effectsOf, inUse, spellsOf } from './gear'
+import { entryNamed } from './lookup'
 
-type Ability = keyof Abilities
 
 // ---- whose sheet is this? (the totals only get a sheet; sheet.ts registers each sheet it hands out) ----
 const OWNER = new WeakMap<object, Entry>()
@@ -73,7 +74,6 @@ export function origins(pc: Entry | undefined): { from: Entry; level: number }[]
 /** Whether an origin is a class or subclass (its traits are class features). */
 export const isClassOrigin = (e: Entry) => e.type === 'class' || e.type === 'subclass'
 
-const pb = (level: number) => 2 + Math.floor((Math.max(1, level) - 1) / 4)
 export const stateOf = (s: CharacterSheet | undefined): SpeciesState => s?.species ?? {}
 
 export interface ActiveTrait {
@@ -145,10 +145,7 @@ function itemsWithFeatures(s: CharacterSheet | undefined): Entry[] {
   return [...out.values()]
 }
 /** The feat entry a feature line on the sheet is ("Magic Initiate (Cleric)" is Magic Initiate), if any. */
-export function featOfFeature(f: { name: string }): Entry | undefined {
-  const n = f.name.trim().toLowerCase()
-  return entries.value.filter(e => e.type === 'feat' && (n === e.name.toLowerCase() || n.startsWith(e.name.toLowerCase() + ' ('))).sort((a, b) => b.name.length - a.name.length)[0]
-}
+export const featOfFeature = (f: { name: string }): Entry | undefined => entryNamed('feat', f.name, { qualified: true })
 /** The character's feats, each once: the background's Origin feat, the sheet's feature lines that are feats, and picked feats. */
 function featsOf(pc: Entry, s: CharacterSheet | undefined, traits: ActiveTrait[]): Entry[] {
   const ids = [
@@ -309,11 +306,11 @@ export function usesMax(pc: Entry, a: ActiveTrait, s?: CharacterSheet): number {
   const u = a.trait.uses
   if (!u) return 0
   let n: number
-  if (u.count === 'pb') n = pb(totalLevel(pc))
+  if (u.count === 'pb') n = profBonus(totalLevel(pc))
   else if (u.count === 'level') n = a.level
   else if (typeof u.count === 'string') {
     const sh = s ?? sheetOf(pc)
-    n = Math.max(1, sh ? mod(score(sh, u.count as keyof Abilities)) : 1)
+    n = Math.max(1, sh ? mod(score(sh, u.count as Ability)) : 1)
   } else n = Math.max(0, Number(u.count) || 0)
   n = byLevel(u.steps, a.level, n)
   return n * (u.times ?? 1)
@@ -379,7 +376,6 @@ export function setCastAbility(s: CharacterSheet, key: string, ability: Ability 
 }
 
 // ---- spells ----
-const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 export const HOW_SPECIES: Record<TraitSpell['how'], string> = { atWill: 'at will', short: '1/short rest', long: '1/long rest', prepared: 'always prepared', list: 'on the spell list', book: 'in the spellbook' }
 export interface SpeciesSpell { key: string; spell: TraitSpell; from: string; ready: boolean; status: string; level: number }
 /** The spells the species gives at the character's level, with whether a once-per-rest one can be cast now. */
@@ -459,7 +455,7 @@ export function usesLabel(t: Trait): string {
   const n = u.steps?.length ? u.steps.map(x => x[1]).join('–') : u.count === 'pb' ? 'PB' : u.count === 'level' ? 'level' : typeof u.count === 'string' ? `${u.count.toUpperCase()} mod` : String(u.count)
   return `${u.times ? `${u.times} × ` : ''}${n}/${u.recharge} rest${u.shortBack ? ` (${u.shortBack} back on a short)` : ''}`
 }
-export const spellLabel = (x: TraitSpell) => `${get(x.spell)?.name ?? '?'} (${HOW_SPECIES[x.how]}${(x.from ?? 1) > 1 ? `, from ${ORD[x.from!] ?? x.from + 'th'} level` : ''})`
+export const spellLabel = (x: TraitSpell) => `${get(x.spell)?.name ?? '?'} (${HOW_SPECIES[x.how]}${(x.from ?? 1) > 1 ? `, from ${ord(x.from!)} level` : ''})`
 /** A new id for a trait or an option. */
 export const newTraitId = () => Math.random().toString(36).slice(2, 8)
 

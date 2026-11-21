@@ -5,10 +5,10 @@ import { featureText, legendaryIntro, legendaryResistanceFeature, spellcastingFe
 import MarkdownView from './MarkdownView.vue'
 import { renderInline } from '../markdown'
 import ConditionIcon from './ConditionIcon.vue'
+import { ABILITY_KEYS, mod, signed } from '../model/dnd'
 
 const props = defineProps<{ sb: Statblock; name: string }>()
-const ABIL = ['str', 'dex', 'con', 'int', 'wis', 'cha'] as const
-const mod = (v: number) => { const m = Math.floor((v - 10) / 2); return `${m >= 0 ? '+' : ''}${m}` }
+const modText = (v: number) => signed(mod(v), '-')
 const lines = computed(() => {
   const s = props.sb
   return ([
@@ -28,7 +28,7 @@ const sections = computed(() => {
 })
 const onlyAbilities = computed(() => Object.keys(props.sb).every(k => ['abilities', 'hp', 'ac'].includes(k)))
 /** Nothing filled in: every score still 10 and no HP or AC. Shown as nothing rather than as real numbers. */
-const blank = computed(() => onlyAbilities.value && props.sb.hp == null && props.sb.ac == null && (!props.sb.abilities || ABIL.every(a => Number(props.sb.abilities![a]) === 10)))
+const blank = computed(() => onlyAbilities.value && props.sb.hp == null && props.sb.ac == null && (!props.sb.abilities || ABILITY_KEYS.every(a => Number(props.sb.abilities![a]) === 10)))
 </script>
 
 <template>
@@ -47,7 +47,7 @@ const blank = computed(() => onlyAbilities.value && props.sb.hp == null && props
     <template v-if="sb.abilities">
       <hr v-if="!onlyAbilities" />
       <div class="sb-abilities">
-        <div v-for="a in ABIL" :key="a"><b>{{ a.toUpperCase() }}</b><span>{{ sb.abilities[a] }} ({{ mod(sb.abilities[a]) }})</span></div>
+        <div v-for="a in ABILITY_KEYS" :key="a"><b>{{ a.toUpperCase() }}</b><span>{{ sb.abilities[a] }} ({{ modText(sb.abilities[a]) }})</span></div>
       </div>
     </template>
     <template v-if="lines.length">

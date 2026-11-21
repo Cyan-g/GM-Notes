@@ -4,11 +4,12 @@
 import { computed } from 'vue'
 import type { TraitGrant, TraitOption, TraitSpell } from '../../model/types'
 import { GRANT_KINDS, HOW_SPECIES, grantOptions } from '../../species'
-import { ABILITY_NAME } from '../../abilityBonus'
+import { ABILITY_NAME } from '../../model/dnd'
 import { listOptions } from '../../store'
 import EffectsInput from './EffectsInput.vue'
 import EntryPicker from './EntryPicker.vue'
 import SpellLevelsInput from './SpellLevelsInput.vue'
+import { inputValue as val } from '../../dom'
 
 const model = defineModel<TraitOption>({ required: true })
 const props = defineProps<{
@@ -58,7 +59,6 @@ function setSpell(i: number, patch: Partial<TraitSpell>) {
 }
 const addSpell = (spell: string) => put({ spells: [...spells.value, { spell, how: 'long' }] })
 const removeSpell = (i: number) => put({ spells: spells.value.filter((_, k) => k !== i) })
-const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value
 </script>
 
 <template>

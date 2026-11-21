@@ -5,8 +5,9 @@
 import type { CharacterSheet, Entry, Id, Requirements } from './model/types'
 import { get } from './store'
 import { classesOf } from './model/classes'
+import { ABILITY_UPPER } from './model/dnd'
 
-const ABILITY_SHORT: Record<string, string> = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' }
+const ABILITY_SHORT: Record<string, string> = ABILITY_UPPER
 const orList = (l: string[]) => (l.length < 2 ? l.join('') : `${l.slice(0, -1).join(', ')} or ${l[l.length - 1]}`)
 
 /** An item's requirements, or undefined without any. */

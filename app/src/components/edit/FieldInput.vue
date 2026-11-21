@@ -6,7 +6,7 @@ import FeatBonusInput from './FeatBonusInput.vue'
 import { classLabel, expectedSubclassLevels, parentRaces, traitsOf } from '../../species'
 import AbilityBonusInput from './AbilityBonusInput.vue'
 import EquipmentInput from './EquipmentInput.vue'
-import { SKILLS } from '../../sheet'
+import { SKILLS } from '../../model/dnd'
 // Edits one schema field of an entry in place.
 import ChoiceListInput from './ChoiceListInput.vue'
 import { computed } from 'vue'
@@ -15,7 +15,7 @@ import { listKeyOf } from '../../model/lists'
 import { byType, fieldOptions, get } from '../../store'
 import ProfChips from '../ProfChips.vue'
 import type { Entry, Speeds } from '../../model/types'
-import { changed } from '../../edit'
+import { setField } from '../../edit'
 import EntryPicker from './EntryPicker.vue'
 import DateInput from './DateInput.vue'
 import ListInput from './ListInput.vue'
@@ -50,9 +50,7 @@ const value = computed({
       const writtenOnly = !!f.prerequisite && f.level == null && !(f.requires as string[] | undefined)?.length && !f.requirements
       if (!writtenOnly && (f.level == null || f.level === was)) { if (now) f.level = now; else delete f.level }
     }
-    if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) delete f[props.def.key]
-    else f[props.def.key] = v
-    changed(props.entry)
+    setField(props.entry, props.def.key, v)
   },
 })
 /** The field's list (Archive → Lists): ids stored, labels shown. A value no longer in the list stays pickable. */

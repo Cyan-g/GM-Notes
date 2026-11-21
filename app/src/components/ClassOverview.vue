@@ -8,7 +8,7 @@ import { basicsOf, ownBasics } from '../classRules'
 import { classSlotsAt } from '../slots'
 import { byType, get, playerMode, state } from '../store'
 import { traitsOf } from '../species'
-import { ABILITY_SHORT } from '../abilityBonus'
+import { ABILITY_SHORT, ORD, profBonus } from '../model/dnd'
 import { newBlankEntry } from '../ui'
 import EntryLink from './EntryLink.vue'
 
@@ -34,7 +34,6 @@ const basicsLine = computed(() => [
 
 // ---- the progression table ----
 const LEVELS = Array.from({ length: 20 }, (_, i) => i + 1)
-const pb = (l: number) => 2 + Math.floor((l - 1) / 4)
 const at = <T,>(steps: [number, T][], l: number) => steps.filter(([x]) => x <= l).at(-1)?.[1]
 /** Columns for what grows by level: choices with counts by level (Invocations), scaling values (Rage Damage), uses. */
 const growing = computed(() => traits.value.flatMap((t: Trait) => [
@@ -51,7 +50,6 @@ const slotLevels = computed(() => {
   return Array.from({ length: top }, (_, i) => i)
 })
 const features = (l: number) => traits.value.filter(t => (t.level ?? 1) === l).map(t => t.name)
-const ORD = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 const canAdd = computed(() => !state.readOnly && !playerMode.value)
 </script>
 
@@ -68,15 +66,15 @@ const canAdd = computed(() => !state.readOnly && !playerMode.value)
             <th v-for="g in growing" :key="g.key">{{ g.label }}</th>
             <template v-if="casts"><th v-if="b.cantrips">Cantrips</th><th v-if="b.prepared">Prepared</th></template>
             <template v-if="pact"><th>Slots</th><th>Slot level</th></template>
-            <th v-for="i in slotLevels" :key="i">{{ ORD[i] }}</th>
+            <th v-for="i in slotLevels" :key="i">{{ ORD[i + 1] }}</th>
           </tr></thead>
           <tbody>
             <tr v-for="l in LEVELS" :key="l">
-              <td>{{ l }}</td><td>+{{ pb(l) }}</td>
+              <td>{{ l }}</td><td>+{{ profBonus(l) }}</td>
               <td class="ct-feat">{{ features(l).join(', ') }}<span v-if="subLevels.has(l)" class="muted">{{ features(l).length ? ', ' : '' }}subclass feature</span><span v-if="!features(l).length && !subLevels.has(l)" class="muted">—</span></td>
               <td v-for="g in growing" :key="g.key">{{ g.value(l) }}</td>
               <template v-if="casts"><td v-if="b.cantrips">{{ b.cantrips[l - 1] ?? '' }}</td><td v-if="b.prepared">{{ b.prepared[l - 1] ?? '' }}</td></template>
-              <template v-if="pact"><td>{{ classSlotsAt('pact', l).pact!.count }}</td><td>{{ ORD[classSlotsAt('pact', l).pact!.level - 1] }}</td></template>
+              <template v-if="pact"><td>{{ classSlotsAt('pact', l).pact!.count }}</td><td>{{ ORD[classSlotsAt('pact', l).pact!.level] }}</td></template>
               <td v-for="i in slotLevels" :key="i">{{ classSlotsAt(b.caster!, l).slots[i] || '—' }}</td>
             </tr>
           </tbody>

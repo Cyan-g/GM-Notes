@@ -3,10 +3,10 @@
 // 4th…), or a cantrip's at character levels 1, 5, 11 and 17. Shown only when a roll grows.
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
-import { rollText, rollsOf, spellLevel } from '../spells'
+import { rollText, rollsOf } from '../spells'
+import { ORD, spellLevel } from '../model/dnd'
 
 const props = defineProps<{ e: Entry }>()
-const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 const rolls = computed(() => rollsOf(props.e))
 const lvl = computed(() => spellLevel(props.e))
 const cantrip = computed(() => lvl.value === 0 && rolls.value.some(r => r.cantrip))

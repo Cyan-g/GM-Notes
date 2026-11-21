@@ -13,6 +13,7 @@ import { TYPES, byKey, typeWord } from '../model/schema'
 import { newEntry, printCards } from '../ui'
 import EntryLink from './EntryLink.vue'
 import FieldValue from './FieldValue.vue'
+import { isEmpty } from '../edit'
 
 const props = withDefaults(defineProps<{
   rows: Entry[]
@@ -30,7 +31,7 @@ const props = withDefaults(defineProps<{
 }>(), { facets: () => [], sort: () => ({ key: 'name', dir: 1 as const }) })
 
 /** The columns, leaving out any with nothing in any row (a Player nobody filled in). */
-const columns = computed(() => props.cols.map(k => column(k, props.type)).filter(c => !props.rows.length || props.rows.some(e => !empty(c.value(e)))))
+const columns = computed(() => props.cols.map(k => column(k, props.type)).filter(c => !props.rows.length || props.rows.some(e => !isEmpty(c.value(e)))))
 const facetDefs = computed(() => props.facets.map(k => facet(k, props.type)).map(f => ({ f, values: f.values(props.rows) })).filter(x => x.values.length > 1))
 
 const q = ref('')
@@ -110,7 +111,6 @@ function sortBy(k: string) {
   else { sortKey.value = k; sortDir.value = 1 }
 }
 const arrow = (k: string) => (sortKey.value === k ? (sortDir.value > 0 ? ' ▲' : ' ▼') : '')
-const empty = (v: unknown) => v == null || v === '' || (Array.isArray(v) && !v.length)
 
 // ---- every shown spell or item as a printed card, in the order shown (the filters pick) ----
 const cardRows = computed(() => shown.value.filter(printable))
@@ -173,7 +173,7 @@ defineExpose({ count: computed(() => shown.value.length) })
             <td class="name" :style="tree ? { paddingLeft: `${0.6 + depth * 1.3}rem` } : undefined" @click.capture="open($event, e)"><button v-if="tree" type="button" class="tree-toggle" :class="{ none: !kids }" :disabled="!kids"
                 :title="kids ? (collapsed.has(e.id) ? `Show its ${kids}` : 'Hide them') : ''" @click.stop="toggleTree(e.id)">{{ kids ? (collapsed.has(e.id) ? '▸' : '▾') : '' }}</button><EntryLink :id="e.id" :icon="e.type === 'pc'" /><span v-if="e.id === currentPc?.id" class="current-mark" title="The current character"><AppIcon ui="star" /> current</span></td>
             <td v-for="c in columns" :key="c.key" :class="['col-' + c.key.replace('@', ''), { num: c.kind === 'money' || c.field?.kind === 'money', clip: c.field?.kind === 'longtext' }]">
-              <template v-if="empty(c.value(e))" />
+              <template v-if="isEmpty(c.value(e))" />
               <FieldValue v-else-if="c.field" :def="c.field" :value="c.value(e)" :entry="e" />
               <span v-else-if="c.kind === 'ids'" class="chips"><EntryLink v-for="id in (c.value(e) as string[])" :key="id" :id="id" class="chip" /></span>
               <template v-else-if="c.kind === 'money'">{{ formatMoney(c.value(e)) }}</template>

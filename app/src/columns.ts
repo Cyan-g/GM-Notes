@@ -1,9 +1,9 @@
 // Table columns and filters by key, shared by type lists and dashboards.
 // A key is a schema field ("level", "value") or a computed value starting with "@".
-import type { AbilityBonus, Entry, EntryType, RecipeLine, Statblock, WorldDate } from './model/types'
-import { craftingMinutes, craftingTime } from './crafting'
+import type { AbilityBonus, Entry, EntryType, RecipeLine, RelationKind, Statblock, WorldDate } from './model/types'
+import { craftingMinutes, craftingTime, recipeCost } from './crafting'
 import { SCHEMA, TYPES, byKey, type FieldDef } from './model/schema'
-import { dateKey, entries, fieldLabel, fieldOptions, get, isCurrent, relationsOf, state } from './store'
+import { dateKey, entries, fieldLabel, fieldOptions, get, relatedIds, state } from './store'
 import { classText, totalLevel } from './model/classes'
 import { listKeyOf } from './model/lists'
 import { sessionNo } from './sessions'
@@ -13,6 +13,9 @@ import { statsOf } from './encounter'
 import { statusText } from './npc'
 import { partyLine } from './sheet'
 import { leadersOf } from './org'
+import { ORD, crNum, spellLevel } from './model/dnd'
+import { carriersOf, shopsSelling } from './items'
+import { attackOrSave } from './spells'
 
 export interface Col {
   key: string
@@ -28,30 +31,14 @@ export interface Col {
 const FIELD_BY_KEY = new Map<string, FieldDef>()
 for (const t of SCHEMA) for (const f of t.fields) if (!FIELD_BY_KEY.has(f.key)) FIELD_BY_KEY.set(f.key, f)
 
-const current = (e: Entry, kind: string, mine: boolean) =>
-  (relationsOf.value.get(e.id) ?? []).filter(r => r.kind === kind && (mine ? r.a === e.id : r.b === e.id) && isCurrent(r)).map(r => (mine ? r.b : r.a))
+const current = (e: Entry, kind: RelationKind, mine: boolean) => relatedIds(e.id, kind, mine ? 'out' : 'in', { current: true })
 
-export const recipeCost = (e: Entry) => {
-  const lines = e.fields.recipe
-  if (!lines?.length) return undefined
-  return lines.reduce((s, l) => s + ((get(l.item)?.fields.value) ?? 0) * l.amount, 0)
-}
 const usedIn = (e: Entry) => entries.value.filter(n => ((n.fields.recipe) ?? []).some(l => l.item === e.id)).length
-const crNum = (cr?: string) => { if (!cr) return 999; const [a, b] = cr.split('/').map(Number); return b ? a / b : a }
 const nameOf = (id?: string) => get(id)?.name ?? '~'
 /** Who carries an item and where it's sold (characters first). */
-const whereItem = (e: Entry) => [
-  ...entries.value.filter(p => p.type === 'pc' && (p.fields.sheet?.inventory ?? []).some(l => l.item === e.id && l.qty > 0)),
-  ...entries.value.filter(p => p.type === 'place' && ((p.fields.stock as { item: string }[] | undefined) ?? []).some(l => l.item === e.id)),
-].map(x => x.id)
-const ORD = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
-const spellLevel = (e: Entry) => (e.fields.level === 'Cantrip' ? 0 : Number(e.fields.level) || -1)
-/** "DEX save", "Attack", or the spell's type ("Utility", "Healing"). */
-export function attackOrSave(e: Entry): string {
-  const t = String(e.fields.spellType ?? '')
-  if (t === 'Saving throw') return e.fields.savingThrow ? `${String(e.fields.savingThrow).slice(0, 3).toUpperCase()} save` : 'Save'
-  return t
-}
+const whereItem = (e: Entry) => [...carriersOf(e).map(x => x.p.id), ...shopsSelling(e).map(x => x.s.id)]
+/** A spell's level as a number, −1 without one (so it sorts last and shows blank). */
+const levelOf = (e: Entry) => spellLevel(e, -1)
 const prereqText = (e: Entry) => String(e.fields.prerequisite ?? '') || describeRequirements(e)
 const speedText = (e: Entry) => {
   const s = e.fields.speeds
@@ -75,7 +62,7 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   '@members': { label: 'Members', value: e => current(e, 'member', false).length, sort: e => -current(e, 'member', false).length, kind: 'text' },
   '@classes': { label: 'Classes', value: e => classText(e, state.db?.meta, id => get(id)?.name), sort: e => classText(e, state.db?.meta).toLowerCase() || '~', kind: 'text' },
   '@level': { label: 'Level', value: e => (e.type === 'pc' ? totalLevel(e) : ''), sort: e => (e.type === 'pc' ? -totalLevel(e) : 0), kind: 'text' },
-  '@cr': { label: 'CR', value: e => statsOf(e)?.cr, sort: e => crNum(statsOf(e)?.cr), kind: 'text' },
+  '@cr': { label: 'CR', value: e => statsOf(e)?.cr, sort: e => { const cr = statsOf(e)?.cr; return cr ? crNum(cr) : 999 }, kind: 'text' },
   '@recipeCost': { label: 'Ingredients', value: e => recipeCost(e), sort: e => recipeCost(e) ?? -1, kind: 'money' },
   '@margin': {
     label: 'Profit', kind: 'money',
@@ -90,8 +77,8 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   '@usedIn': { label: 'Used in', value: e => usedIn(e) || '', sort: e => -usedIn(e), kind: 'text' },
   '@spellLevel': {
     label: 'Level', kind: 'text',
-    value: e => { const l = spellLevel(e); return l < 0 ? '' : l ? ORD[l - 1] : 'Cantrip' },
-    sort: e => (spellLevel(e) < 0 ? 99 : spellLevel(e)),
+    value: e => { const l = levelOf(e); return l < 0 ? '' : l ? ORD[l] : 'Cantrip' },
+    sort: e => (levelOf(e) < 0 ? 99 : levelOf(e)),
   },
   '@attackSave': { label: 'Attack / save', value: attackOrSave, sort: e => attackOrSave(e).toLowerCase() || '~', kind: 'text' },
   '@concRitual': { label: 'C/R', value: concRitual, sort: e => concRitual(e) || '~', kind: 'text' },

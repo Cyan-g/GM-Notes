@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import type { Entry, Id, Relation, WorldDate } from './model/types'
 import { RELATION_KINDS } from './model/schema'
-import { db, entries, get, placePath, relationsOf, state } from './store'
+import { db, entries, get, placePath, relatedIds, state } from './store'
 
 export type ItemKind = 'event' | 'relation' | 'session' | 'writing'
 
@@ -36,7 +36,7 @@ const eventLike = (e: Entry): TItem | null => {
   if (!date) return null
   // A session is on the timeline when ticked (older worlds marked it with the tag "timeline").
   if (e.type === 'session' && !f.onTimeline && !e.tags.includes('timeline')) return null
-  const involved = (relationsOf.value.get(e.id) ?? []).filter(r => r.kind === 'involved').map(r => (r.a === e.id ? r.b : r.a))
+  const involved = relatedIds(e.id, 'involved')
   const places = [...((f.places as Id[]) ?? [])]
   if (e.type === 'writing' && f.author) involved.push(f.author as Id)
   return {

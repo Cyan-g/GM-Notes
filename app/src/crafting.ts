@@ -1,6 +1,16 @@
 // Crafting time, by the rule in the kit notes: brewing takes 1 hour per 50 gp of the item's value
-// (and does not count as resting).
+// (and does not count as resting); and what a recipe's ingredients cost.
+import type { Entry } from './model/types'
+import { get } from './store'
+
 const CP_PER_HOUR = 50 * 100
+
+/** What a recipe's ingredients are worth together, in copper; undefined for an item without a recipe. */
+export const recipeCost = (e: Entry) => {
+  const lines = e.fields.recipe
+  if (!lines?.length) return undefined
+  return lines.reduce((s, l) => s + ((get(l.item)?.fields.value) ?? 0) * l.amount, 0)
+}
 
 /** Minutes to craft an item worth `valueCp` copper; undefined without a value.
  *  At least one minute; anything over an hour is rounded to whole hours. */

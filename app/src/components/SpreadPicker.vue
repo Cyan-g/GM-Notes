@@ -3,10 +3,10 @@
 // bonus allows (Ability Score Improvement: +2 to one or +1 to two), never past its maximum. Fills in a BonusChoice
 // once every point is placed, so the rest of the app reads it like any other pick.
 import { computed, ref, watch } from 'vue'
-import type { Abilities, AbilityBonus } from '../model/types'
-import { ABILITY_KEYS, ABILITY_SHORT, bonusApplied, pickable, type BonusChoice } from '../abilityBonus'
+import type { AbilityBonus } from '../model/types'
+import { bonusApplied, pickable, type BonusChoice } from '../abilityBonus'
+import { ABILITY_KEYS, ABILITY_SHORT, type Ability } from '../model/dnd'
 
-type Ability = keyof Abilities
 const props = defineProps<{ bonus: AbilityBonus; scores: Record<Ability, number> }>()
 const choice = defineModel<BonusChoice>({ required: true })
 

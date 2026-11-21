@@ -6,9 +6,9 @@ import { computed, ref } from 'vue'
 import { optionLabel } from '../store'
 import type { CharacterSheet, Entry } from '../model/types'
 import { formatMoney, get, state } from '../store'
-import { canAttune, canEquip, carried, draggedLine, dragged, editSheet, endDrag, sheetOrBlank, startDrag } from '../sheet'
+import { addToInventory, canAttune, canEquip, draggedLine, dragged, editSheet, endDrag, sheetOrBlank, startDrag } from '../sheet'
 import EntryPicker from './edit/EntryPicker.vue'
-import { gearTotals, loadOf } from '../gear'
+import { gearTotals, loadOf, weightOf } from '../gear'
 import MoneyInput from './edit/MoneyInput.vue'
 import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
@@ -20,7 +20,7 @@ const edit = (fn: (s: CharacterSheet) => void) => editSheet(props.pc, fn)
 const num = (ev: Event) => { const v = (ev.target as HTMLInputElement).value.trim(); return v === '' ? undefined : Number(v) }
 const text = (ev: Event) => (ev.target as HTMLInputElement).value.trim() || undefined
 
-const weight = computed(() => carried(s.value))
+const weight = computed(() => weightOf(s.value))
 /** The Carrying capacity rule's view (rules.ts): carried against capacity, while the rule is on. */
 const load = computed(() => loadOf(s.value, gearTotals(s.value)))
 const round = (n: number) => Math.round(n * 10) / 10
@@ -32,9 +32,7 @@ const lines = computed(() => s.value.inventory.map((l, i) => ({ l, i, e: get(l.i
 const gear = computed(() => lines.value.filter(x => x.e?.fields.kind !== 'Ingredient' && !x.l.equipped && !x.l.attuned))
 const pouch = computed(() => lines.value.filter(x => x.e?.fields.kind === 'Ingredient'))
 
-function addItem(id: string) {
-  edit(x => { const have = x.inventory.find(l => l.item === id); if (have) have.qty += 1; else x.inventory.push({ item: id, qty: 1 }) })
-}
+const addItem = (id: string) => addToInventory(props.pc, id)
 const addNamed = () => edit(x => { x.inventory.push({ name: 'New thing', qty: 1 }) })
 
 // ---- the pop-up ----

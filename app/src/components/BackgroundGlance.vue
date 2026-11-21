@@ -6,7 +6,7 @@ import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { entries, formatMoney, get } from '../store'
 import { abilityBonusText } from '../abilityBonus'
-import { itemNamed } from '../wizard'
+import { itemNamed } from '../lookup'
 import EntryLink from './EntryLink.vue'
 import FeatCard from './FeatCard.vue'
 

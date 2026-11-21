@@ -6,27 +6,29 @@ import { loadSrdMonsters, srdMonster, srdMonsterNames, withSrd } from '../../srd
 import { fieldOptions, get, optionLabel } from '../../store'
 import type { Abilities, Entry, Feature, Statblock } from '../../model/types'
 import { TYPES } from '../../model/schema'
-import { changed } from '../../edit'
+import { changed, isEmpty } from '../../edit'
 import { statsOf, xpFor } from '../../encounter'
 import TokenField from './TokenField.vue'
 import EntryPicker from './EntryPicker.vue'
 import EntryLink from '../EntryLink.vue'
 import { attackText, statProblems } from '../../creatures'
+import { ABILITY_KEYS, ABILITY_NAME, CONDITIONS, SKILLS as SKILL_LIST, crProf, mod, signed, type Ability } from '../../model/dnd'
 import type { StatAttack } from '../../model/types'
+import { inputValue as val } from '../../dom'
+import { grow, vGrow } from '../../directives/grow'
 
 const props = defineProps<{ entry: Entry }>()
 const sb = computed<Statblock>(() => (props.entry.fields.statblock) ?? {})
 
 function set<K extends keyof Statblock>(key: K, v: Statblock[K] | undefined) {
   const next: Statblock = { ...sb.value }
-  if (v === undefined || v === '' || (typeof v === 'number' && Number.isNaN(v)) || (Array.isArray(v) && !v.length)) delete next[key]
+  if (isEmpty(v)) delete next[key]
   else next[key] = v
   if (Object.keys(next).length) props.entry.fields.statblock = next
   else delete props.entry.fields.statblock
   changed(props.entry)
 }
 const num = (raw: string) => (raw.trim() === '' ? undefined : Number(raw))
-const val = (ev: Event) => (ev.target as HTMLInputElement).value
 
 // ---- identity: size, type (+ tags in brackets), alignment ----
 const SIZES = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']
@@ -53,15 +55,13 @@ const ALIGNMENTS = ['lawful good', 'neutral good', 'chaotic good', 'lawful neutr
 
 // ---- challenge ----
 const CRS = ['0', '1/8', '1/4', '1/2', ...Array.from({ length: 30 }, (_, i) => String(i + 1))]
-const crNum = computed(() => { const c = sb.value.cr ?? ''; return c.includes('/') ? 0 : Number(c) || 0 })
-const prof = computed(() => 2 + Math.floor(Math.max(0, crNum.value - 1) / 4))
+const prof = computed(() => crProf(sb.value.cr))
 
 // ---- abilities ----
-const ABIL: (keyof Abilities)[] = ['str', 'dex', 'con', 'int', 'wis', 'cha']
-const ABIL_NAMES: Record<keyof Abilities, string> = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' }
-const modOf = (k: keyof Abilities) => Math.floor(((sb.value.abilities?.[k] ?? 10) - 10) / 2)
-const signed = (n: number) => `${n >= 0 ? '+' : ''}${n}`
-function setAbility(k: keyof Abilities, raw: string) {
+const modOf = (k: Ability) => mod(sb.value.abilities?.[k] ?? 10)
+/** "+2", "-1": with a plain hyphen, since the statblock text is read back as numbers. */
+const signedText = (n: number) => signed(n, '-')
+function setAbility(k: Ability, raw: string) {
   const a: Abilities = { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10, ...(sb.value.abilities ?? {}) }
   a[k] = raw === '' ? 10 : Number(raw)
   set('abilities', a)
@@ -74,17 +74,13 @@ const hitDiceAvg = computed(() => {
 })
 
 // ---- "name +N" lists: skills and saving throws ----
-const SKILLS: Record<string, keyof Abilities> = {
-  Acrobatics: 'dex', 'Animal Handling': 'wis', Arcana: 'int', Athletics: 'str', Deception: 'cha', History: 'int', Insight: 'wis',
-  Intimidation: 'cha', Investigation: 'int', Medicine: 'wis', Nature: 'int', Perception: 'wis', Performance: 'cha',
-  Persuasion: 'cha', Religion: 'int', 'Sleight of Hand': 'dex', Stealth: 'dex', Survival: 'wis',
-}
+const SKILLS: Record<string, Ability> = Object.fromEntries(SKILL_LIST.map(s => [s.name, s.ability]))
 type Bonus = { name: string; n: number | null }
 const parseBonuses = (s?: string): Bonus[] => (s ?? '').split(',').map(t => t.trim()).filter(Boolean).map(t => {
   const m = t.match(/^(.*?)\s*([+-]\s*\d+)$/)
   return m ? { name: m[1], n: Number(m[2].replace(/\s/g, '')) } : { name: t, n: null }
 })
-const writeBonuses = (list: Bonus[]) => list.filter(b => b.name.trim()).map(b => (b.n == null ? b.name.trim() : `${b.name.trim()} ${signed(b.n)}`)).join(', ') || undefined
+const writeBonuses = (list: Bonus[]) => list.filter(b => b.name.trim()).map(b => (b.n == null ? b.name.trim() : `${b.name.trim()} ${signedText(b.n)}`)).join(', ') || undefined
 const skills = computed(() => parseBonuses(sb.value.skills))
 const skillOn = (s: string) => skills.value.find(b => b.name.toLowerCase() === s.toLowerCase())
 const skillSuggest = (s: string) => modOf(SKILLS[s]) + prof.value
@@ -96,14 +92,14 @@ function setSkillBonus(s: string, raw: string) { set('skills', writeBonuses(skil
 const otherSkills = computed(() => skills.value.filter(b => !Object.keys(SKILLS).some(s => s.toLowerCase() === b.name.toLowerCase())))
 
 const saves = computed(() => parseBonuses(sb.value.saves))
-const saveOf = (k: keyof Abilities) => saves.value.find(b => b.name.toLowerCase().startsWith(k))
-function toggleSave(k: keyof Abilities) {
+const saveOf = (k: Ability) => saves.value.find(b => b.name.toLowerCase().startsWith(k))
+function toggleSave(k: Ability) {
   const label = k[0].toUpperCase() + k.slice(1)
   const next = saveOf(k) ? saves.value.filter(b => b !== saveOf(k)) : [...saves.value, { name: label, n: modOf(k) + prof.value }]
-  next.sort((a, b) => ABIL.findIndex(x => a.name.toLowerCase().startsWith(x)) - ABIL.findIndex(x => b.name.toLowerCase().startsWith(x)))
+  next.sort((a, b) => ABILITY_KEYS.findIndex(x => a.name.toLowerCase().startsWith(x)) - ABILITY_KEYS.findIndex(x => b.name.toLowerCase().startsWith(x)))
   set('saves', writeBonuses(next))
 }
-function setSaveBonus(k: keyof Abilities, raw: string) { set('saves', writeBonuses(saves.value.map(b => (b === saveOf(k) ? { ...b, n: num(raw) ?? null } : b)))) }
+function setSaveBonus(k: Ability, raw: string) { set('saves', writeBonuses(saves.value.map(b => (b === saveOf(k) ? { ...b, n: num(raw) ?? null } : b)))) }
 
 // ---- distances: speed and senses ("30 ft., fly 30 ft. (hover)", "darkvision 60 ft., passive Perception 15") ----
 type Dist = { n?: number; note?: string }
@@ -162,7 +158,6 @@ function setRest(which: 'speed' | 'senses', v?: string) {
 
 // ---- damage and conditions ----
 const DAMAGE = ['Acid', 'Bludgeoning', 'Cold', 'Fire', 'Force', 'Lightning', 'Necrotic', 'Piercing', 'Poison', 'Psychic', 'Radiant', 'Slashing', 'Thunder']
-const CONDS = ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious']
 const LANGS = ['Common', 'Dwarvish', 'Elvish', 'Giant', 'Gnomish', 'Goblin', 'Halfling', 'Orc', 'Abyssal', 'Celestial', 'Draconic', 'Deep Speech', 'Infernal', 'Primordial', 'Sylvan', 'Undercommon', 'telepathy 60 ft.', "understands Common but can't speak"]
 const NONMAGICAL = 'bludgeoning, piercing, and slashing from nonmagical attacks'
 
@@ -245,8 +240,6 @@ function setSc(p: Partial<NonNullable<Statblock['spellcasting']>> | null) {
 function setList(i: number, p: Partial<{ label: string; spells: string[] }>) { setSc({ lists: sc.value!.lists.map((l, k) => (k === i ? { ...l, ...p } : l)) }) }
 const addList = () => setSc({ lists: [...(sc.value?.lists ?? []), { label: '1/Day Each', spells: [] }] })
 const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) => k !== i) })
-function grow(ev: Event) { const t = ev.target as HTMLTextAreaElement; t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px' }
-const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 2 + 'px' }) }
 </script>
 
 <template>
@@ -312,7 +305,7 @@ const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() =
               <option v-for="c in CRS" :key="c" :value="c">{{ c }}</option>
               <option v-if="sb.cr && !CRS.includes(sb.cr)" :value="sb.cr">{{ sb.cr }}</option>
             </select>
-            <span class="muted small">{{ xpFor(sb.cr) != null ? xpFor(sb.cr)!.toLocaleString() + ' XP · ' : '' }}proficiency {{ signed(prof) }}</span>
+            <span class="muted small">{{ xpFor(sb.cr) != null ? xpFor(sb.cr)!.toLocaleString() + ' XP · ' : '' }}proficiency {{ signedText(prof) }}</span>
           </span>
         </label>
       </div>
@@ -350,10 +343,10 @@ const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() =
     <!-- abilities -->
     <section class="card cf-card">
       <div class="cf-abilities">
-        <label v-for="a in ABIL" :key="a" class="cf-ability" :title="ABIL_NAMES[a]">
+        <label v-for="a in ABILITY_KEYS" :key="a" class="cf-ability" :title="ABILITY_NAME[a]">
           <b>{{ a.toUpperCase() }}</b>
           <input type="number" min="1" max="30" :value="sb.abilities?.[a] ?? ''" :placeholder="String(ph.abilities?.[a] ?? 10)" @change="setAbility(a, val($event))" />
-          <span class="cf-mod">{{ signed(modOf(a)) }}</span>
+          <span class="cf-mod">{{ signedText(modOf(a)) }}</span>
           <button type="button" class="cf-save" :class="{ on: !!saveOf(a) }" :title="saveOf(a) ? 'Proficient in this saving throw (click to remove)' : 'Add a saving throw proficiency'" @click.prevent="toggleSave(a)">save</button>
           <input v-if="saveOf(a)" type="number" class="cf-save-n" :value="saveOf(a)!.n ?? ''" title="Saving throw bonus" @click.prevent @change="setSaveBonus(a, val($event))" />
         </label>
@@ -366,7 +359,7 @@ const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() =
         <div class="cf-skills">
           <span v-for="(ab, s) in SKILLS" :key="s" class="cf-skill" :class="{ on: !!skillOn(s) }">
             <button type="button" class="token-opt" :class="{ on: !!skillOn(s) }" :title="`${s} (${ab.toUpperCase()})`" @click="toggleSkill(s)">{{ s }}</button>
-            <input v-if="skillOn(s)" type="number" :value="skillOn(s)!.n ?? ''" :placeholder="signed(skillSuggest(s))" @change="setSkillBonus(s, val($event))" />
+            <input v-if="skillOn(s)" type="number" :value="skillOn(s)!.n ?? ''" :placeholder="signedText(skillSuggest(s))" @change="setSkillBonus(s, val($event))" />
           </span>
         </div>
       </div>
@@ -403,7 +396,7 @@ const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() =
         <TokenField :model-value="sb.immunities" :options="DAMAGE" :suggestions="[NONMAGICAL]" @update:model-value="v => set('immunities', v)" />
       </div>
       <div class="sf-field"><span class="sf-label">Condition immunities</span>
-        <TokenField :model-value="sb.conditionImmunities" :options="CONDS" @update:model-value="v => set('conditionImmunities', v)" />
+        <TokenField :model-value="sb.conditionImmunities" :options="CONDITIONS" @update:model-value="v => set('conditionImmunities', v)" />
       </div>
     </section>
 
@@ -432,7 +425,7 @@ const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() =
             <div class="seg">
               <button v-for="k in (['melee', 'ranged', 'both'] as const)" :key="k" type="button" :class="{ on: f.attack.kind === k }" @click="setAttack(i, { kind: k })">{{ k === 'both' ? 'Melee or ranged' : k[0].toUpperCase() + k.slice(1) }}</button>
             </div>
-            <label>with <select :value="f.attack.ability" @change="setAttack(i, { ability: val($event) as StatAttack['ability'] })"><option v-for="a in ABIL" :key="a" :value="a">{{ a.toUpperCase() }} ({{ signed(modOf(a)) }})</option></select></label>
+            <label>with <select :value="f.attack.ability" @change="setAttack(i, { ability: val($event) as StatAttack['ability'] })"><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ a.toUpperCase() }} ({{ signedText(modOf(a)) }})</option></select></label>
             <label v-if="f.attack.kind !== 'ranged'">reach <input type="number" min="5" step="5" class="effect-value" :value="f.attack.reach ?? 5" @change="setAttack(i, { reach: num(val($event)) ?? 5 })" /> ft</label>
             <label v-if="f.attack.kind !== 'melee'">range <input class="effect-value cf-range" :value="f.attack.range ?? ''" placeholder="30/120" @change="setAttack(i, { range: val($event).trim() })" /> ft</label>
             <label>damage <input class="effect-value cf-range" :value="f.attack.dice" placeholder="1d6" @change="setAttack(i, { dice: val($event).trim() || '1d6' })" /></label>
@@ -443,7 +436,7 @@ const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() =
           </div>
           <p class="muted small cf-attack-line">{{ attackText(sb, f.attack) }}</p>
         </template>
-        <textarea v-else v-grow :value="f.text" rows="2" :placeholder="tab === 'actions' ? ATTACK : 'What it does'" @input="grow" @change="setFeat(i, { text: val($event) })" />
+        <textarea v-else v-grow :value="f.text" rows="2" :placeholder="tab === 'actions' ? ATTACK : 'What it does'" @input="grow($event.target as HTMLTextAreaElement)" @change="setFeat(i, { text: val($event) })" />
       </div>
       <p v-if="!feats(tab).length" class="muted small">None yet.</p>
       <button type="button" class="chip-btn" @click="addFeat">＋ Add {{ FEATS.find(x => x[0] === tab)![1].toLowerCase().replace(/s$/, '') }}</button>
@@ -454,8 +447,8 @@ const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() =
       <div class="cf-row"><b class="sf-label">Spellcasting</b>
         <button v-if="!sc" type="button" class="chip-btn" @click="setSc({})">＋ Spellcasting</button>
         <template v-else>
-          <label class="small">with <select :value="sc.ability" @change="setSc({ ability: val($event) as any })"><option v-for="a in ABIL" :key="a" :value="a">{{ ABIL_NAMES[a] }}</option></select></label>
-          <span class="muted small">save DC {{ 8 + prof + modOf(sc.ability) }}, {{ signed(prof + modOf(sc.ability)) }} to hit</span>
+          <label class="small">with <select :value="sc.ability" @change="setSc({ ability: val($event) as any })"><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ ABILITY_NAME[a] }}</option></select></label>
+          <span class="muted small">save DC {{ 8 + prof + modOf(sc.ability) }}, {{ signedText(prof + modOf(sc.ability)) }} to hit</span>
           <label class="small"><input type="checkbox" :checked="!!sc.noMaterial" @change="setSc({ noMaterial: ($event.target as HTMLInputElement).checked || undefined })" /> no Material components</label>
           <button type="button" class="link-btn small" title="Remove its spellcasting" @click="setSc(null)">remove</button>
         </template>

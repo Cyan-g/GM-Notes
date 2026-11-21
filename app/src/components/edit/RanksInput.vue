@@ -2,6 +2,7 @@
 // An organization's ranks as rows, highest first: title, renown needed, and what the rank means.
 import { computed } from 'vue'
 import type { RankLine } from '../../model/types'
+import { inputValue as val } from '../../dom'
 
 const props = defineProps<{ modelValue?: RankLine[] }>()
 const emit = defineEmits<{ 'update:modelValue': [RankLine[]] }>()
@@ -25,7 +26,6 @@ function move(i: number, d: number) {
 }
 // New ranks go at the bottom: the lowest rank, usually with the least renown.
 const add = () => emit('update:modelValue', [...ranks.value, { title: '', renown: 0 }])
-const val = (ev: Event) => (ev.target as HTMLInputElement).value
 </script>
 
 <template>

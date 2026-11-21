@@ -3,6 +3,7 @@
 import type { Entry, EntryType, WorldDate } from './model/types'
 import { byKey } from './model/schema'
 import { byType, db, formatDate } from './store'
+import { yearsBetween } from './calendar'
 
 /** The usual statuses; any other word can be typed too. No status counts as alive. */
 export const STATUSES = ['Alive', 'Dead', 'Undead', 'Missing', 'Imprisoned', 'Unknown']
@@ -10,11 +11,6 @@ export const STATUSES = ['Alive', 'Dead', 'Undead', 'Missing', 'Imprisoned', 'Un
 export const AGES = ['child', 'young', 'adult', 'middle-aged', 'old', 'ancient']
 export const ATTITUDES = ['Friendly', 'Indifferent', 'Hostile'] as const
 
-/** Whole years from one date to another (a birthday not reached yet that year doesn't count). */
-export function yearsBetween(a: WorldDate, b: WorldDate): number {
-  const before = (b.month ?? 1) < (a.month ?? 1) || ((b.month ?? 1) === (a.month ?? 1) && (b.day ?? 1) < (a.day ?? 1))
-  return b.year - a.year - (a.month && b.month && before ? 1 : 0)
-}
 const isDead = (e: Entry) => String(e.fields.status ?? '').toLowerCase() === 'dead'
 /** The age from the birth date: on the world's date, or at death for the dead whose death has a date. */
 export function ageOf(e: Entry): { years: number; atDeath: boolean } | undefined {

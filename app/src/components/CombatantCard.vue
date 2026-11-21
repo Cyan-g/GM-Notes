@@ -6,7 +6,8 @@ import AppIcon from './AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Combatant } from '../model/types'
 import { get, touch } from '../store'
-import { CONDITIONS, statsOf } from '../encounter'
+import { statsOf } from '../encounter'
+import { TRACKER_CONDITIONS, signed } from '../model/dnd'
 import ConditionIcon from './ConditionIcon.vue'
 import DeathSaves from './DeathSaves.vue'
 import { applyHp, deathSavesOf, isParty, removeCombatant, fighterStats, setDeathSaves } from '../tracker'
@@ -15,7 +16,6 @@ const props = defineProps<{ c: Combatant; current: boolean; selected: boolean }>
 const emit = defineEmits<{ select: []; stats: [] }>()
 const c = computed(() => props.c)
 const st = computed(() => fighterStats(c.value))
-const signed = (n: number) => (n >= 0 ? '+' : '') + n
 
 // ---- HP ----
 const max = computed(() => st.value.maxHp ?? 0)
@@ -38,7 +38,7 @@ function setNum(key: 'init' | 'ac' | 'maxHp', raw: string) {
 }
 
 // ---- conditions: the ones in effect as chips, more from the menu ----
-const missing = computed(() => CONDITIONS.filter(x => !c.value.conditions.includes(x)))
+const missing = computed(() => TRACKER_CONDITIONS.filter(x => !c.value.conditions.includes(x)))
 function add(ev: Event) {
   const sel = ev.target as HTMLSelectElement
   if (sel.value) { c.value.conditions = [...c.value.conditions, sel.value]; touch() }
@@ -89,8 +89,8 @@ function switchSide() { c.value.side = isParty(c.value) ? 'enemy' : 'party'; tou
       <button type="button" class="fighter-name link-btn" title="Show the statblock" @click.stop="emit('stats')">{{ c.name }}</button>
       <span v-if="c.isPlayer" class="badge">PC</span>
       <span class="spacer" />
-      <label class="fighter-stat" :title="`Initiative: d20 ${signed(st.initMod)}`"><span>Init</span>
-        <input type="number" :value="c.init ?? ''" :placeholder="`d20${signed(st.initMod)}`" :class="{ unset: c.init == null }" @click.stop @focus="selectAll" @change="setNum('init', ($event.target as HTMLInputElement).value)" />
+      <label class="fighter-stat" :title="`Initiative: d20 ${signed(st.initMod, '-')}`"><span>Init</span>
+        <input type="number" :value="c.init ?? ''" :placeholder="`d20${signed(st.initMod, '-')}`" :class="{ unset: c.init == null }" @click.stop @focus="selectAll" @change="setNum('init', ($event.target as HTMLInputElement).value)" />
       </label>
       <label class="fighter-stat shield" :title="sheetNote || 'Armour class'"><span>AC</span>
         <b v-if="st.acFromSheet" class="fighter-ac">{{ st.ac }}</b>

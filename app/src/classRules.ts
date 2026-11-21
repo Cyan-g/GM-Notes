@@ -3,11 +3,11 @@
 // the levels with a feat (Ability Score Improvement, or an Epic Boon at 19), and starting equipment or gold instead.
 // The hit die, spell slots and casting ability are in model/classes.ts, slots.ts and sheet.ts. A class that isn't
 // here (homebrew, or one the SRD doesn't have) is filled in by hand in the wizard.
-import type { Abilities, ClassBasics, Copper, Id } from './model/types'
+import type { ClassBasics, Copper, Id } from './model/types'
 import { state } from './store'
 import { CLASS_DIE } from './model/classes'
+import type { Ability } from './model/dnd'
 
-type Ability = keyof Abilities
 /** A thing a class's or background's equipment holds, by name (matched to the world's items when it has them). */
 export interface KitLine { name: string; amount?: number; item?: Id }
 /** One equipment option: items and coins. */

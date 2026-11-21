@@ -6,12 +6,13 @@
 import { computed, ref } from 'vue'
 import type { Entry, Regain } from '../../model/types'
 import { TYPES, MASTERY_OF, byKey, type FieldDef } from '../../model/schema'
-import { changed } from '../../edit'
+import { changed, setField, toggleField } from '../../edit'
 import { formatMoney } from '../../store'
 import { worksWhileOf } from '../../gear'
-import { itemNamed } from '../../wizard'
+import { itemNamed } from '../../lookup'
 import FieldInput from './FieldInput.vue'
 import ItemNeeds from './ItemNeeds.vue'
+import { inputValue as val } from '../../dom'
 
 const props = defineProps<{ entry: Entry }>()
 const f = computed(() => byKey(props.entry.fields))
@@ -57,11 +58,8 @@ const WIDE = ['list', 'longtext', 'effects', 'itemSpells', 'requires', 'speciesT
 const short = (l: FieldDef[]) => l.filter(d => !WIDE.includes(d.kind) && d.kind !== 'bool')
 const wide = (l: FieldDef[]) => l.filter(d => WIDE.includes(d.kind))
 const bools = (l: FieldDef[]) => l.filter(d => d.kind === 'bool')
-function toggleBool(key: string) {
-  if (f.value[key]) delete f.value[key]; else f.value[key] = true
-  changed(props.entry)
-}
-const setText = (k: string, v: string) => { if (v.trim()) f.value[k] = v.trim(); else delete f.value[k]; changed(props.entry) }
+const toggleBool = (key: string) => toggleField(props.entry, key)
+const setText = (k: string, v: string) => setField(props.entry, k, v.trim())
 
 // ---- rarity: the usual price (2024 rules; consumables half) ----
 const PRICE: Record<string, number> = { Common: 100, Uncommon: 400, Rare: 4000, 'Very rare': 40000, Legendary: 200000 }
@@ -115,7 +113,6 @@ const parsed = computed<Regain | undefined>(() => {
 /** Spells cast for charges, while the item has none. */
 const needsCharges = computed(() => ((f.value.spells as { how: string }[] | undefined) ?? []).some(x => x.how === 'charges'))
 function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete f.value.recharge; changed(props.entry) } }
-const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement).value
 </script>
 
 <template>

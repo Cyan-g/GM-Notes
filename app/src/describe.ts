@@ -5,12 +5,13 @@ import { fieldLabel, formatDate, get, state } from './store'
 import { classText, totalLevel } from './model/classes'
 import { abilityBonusText } from './abilityBonus'
 import { ageText } from './npc'
+import { ord } from './model/dnd'
+import { stripSecrets } from './model/text'
 
 const name = (id: unknown) => get(id as string)?.name
 /** A choice field's value as its option's label (see model/lists.ts). */
 const L = (e: Entry, key: string) => fieldLabel(TYPES[e.type].fields.find(x => x.key === key), byKey(e.fields)[key]) || undefined
 const join = (...parts: unknown[]) => parts.filter(p => p != null && p !== '' && p !== false).join(' · ')
-const ord = (n: string) => ({ '1': '1st', '2': '2nd', '3': '3rd' } as Record<string, string>)[n] ?? `${n}th`
 
 /** `parent: false` leaves out where the entry sits (the entry page shows that in its breadcrumbs). */
 export function describe(e: Entry, { parent = true } = {}): string {
@@ -47,8 +48,7 @@ export function excerpt(e: Entry, max = 260): string {
   const f = e.fields
   const own = f.summary ?? f.effect
   if (own) return cut(own, max)
-  const para = e.body
-    .replace(/:::secret[\s\S]*?:::/g, '')
+  const para = stripSecrets(e.body)
     .replace(/^#{1,6}\s.*$/gm, '')
     .split(/\n\s*\n/)
     .map(p => p.trim())

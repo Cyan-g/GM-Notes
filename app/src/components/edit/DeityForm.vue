@@ -4,28 +4,23 @@
 import { computed, ref } from 'vue'
 import type { Entry } from '../../model/types'
 import { TYPES, byKey } from '../../model/schema'
-import { changed } from '../../edit'
+import { isEmpty, setField } from '../../edit'
 import { ALIGNMENTS, holidays } from '../../deity'
 import FieldInput from './FieldInput.vue'
 import ListInput from './ListInput.vue'
 import ImageInput from './ImageInput.vue'
 import ProfChips from '../ProfChips.vue'
+import { inputValue as val } from '../../dom'
 
 const props = defineProps<{ entry: Entry }>()
 const f = computed(() => props.entry.fields)
 const def = (k: string) => TYPES.deity.fields.find(x => x.key === k)!
-function set(key: string, v: unknown) {
-  const r = byKey(f.value)
-  if (v == null || v === '' || (Array.isArray(v) && !v.length)) delete r[key]
-  else r[key] = v
-  changed(props.entry)
-}
-const val = (ev: Event) => (ev.target as HTMLInputElement).value
+const set = (key: string, v: unknown) => setField(props.entry, key, v)
 
 // ---- the parts shown once added ----
 const MORE = ['realm', 'plane', 'worshippers', 'symbol', 'holyDays', 'patronOf'] as const
 type More = typeof MORE[number]
-const has = (k: More) => { const v = byKey(f.value)[k]; return Array.isArray(v) ? v.length > 0 : v != null && v !== '' || (k === 'symbol' && !!f.value.symbolImage) }
+const has = (k: More) => !isEmpty(byKey(f.value)[k]) || (k === 'symbol' && !!f.value.symbolImage)
 const opened = ref(new Set<More>())
 const shown = computed(() => MORE.filter(k => has(k) || opened.value.has(k)))
 const addable = computed(() => MORE.filter(k => !shown.value.includes(k)))

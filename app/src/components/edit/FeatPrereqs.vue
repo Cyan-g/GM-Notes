@@ -5,7 +5,7 @@
 import { computed, ref } from 'vue'
 import type { Entry, Requirements } from '../../model/types'
 import { TYPES } from '../../model/schema'
-import { ABILITIES, SKILLS } from '../../sheet'
+import { ABILITIES, SKILLS } from '../../model/dnd'
 import { listOptions } from '../../store'
 import { changed } from '../../edit'
 import { describeRequirements } from '../../requirements'

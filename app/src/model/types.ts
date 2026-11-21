@@ -77,7 +77,7 @@ export interface GearEffect {
   value?: number
   set?: boolean
   force?: boolean
-  ability?: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
+  ability?: Ability
   skill?: string
   type?: string
   text?: string
@@ -90,7 +90,7 @@ export interface GearEffect {
   sense?: string
   condition?: string
   /** AC formula (`acBase`): the ability modifiers added to `value` (Unarmored Defense: DEX and CON). */
-  abilities?: ('str' | 'dex' | 'con' | 'int' | 'wis' | 'cha')[]
+  abilities?: Ability[]
   /** AC formula: not with a shield (a monk's Unarmored Defense). */
   noShield?: boolean
   /** Attack, damage, extra damage or AC: only for melee or ranged attacks, finesse-or-ranged ones, or while wearing armor. */
@@ -103,7 +103,7 @@ export interface GearEffect {
  * spellcaster), a race or a subrace of it, skill proficiencies, and a note for anything else.
  */
 export interface Requirements {
-  scores?: { ability: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'; min: number }[]
+  scores?: { ability: Ability; min: number }[]
   classes?: string[]
   spellcaster?: boolean
   races?: Id[]
@@ -159,8 +159,8 @@ export interface ClassBasics {
   hitDie?: string
   /** Its spell slots: full, half or third caster, a warlock's pact magic, an artificer's, or none. */
   caster?: 'full' | 'half' | 'third' | 'pact' | 'artificer' | 'none'
-  casting?: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
-  saves?: ('str' | 'dex' | 'con' | 'int' | 'wis' | 'cha')[]
+  casting?: Ability
+  saves?: Ability[]
   skills?: { count: number; from: string[] }
   armor?: string[]
   weapons?: string[]
@@ -174,7 +174,7 @@ export interface ClassBasics {
   equipment?: Equipment[]
   featLevels?: number[]
   subclassLevel?: number
-  multiclass?: { primary: ('str' | 'dex' | 'con' | 'int' | 'wis' | 'cha')[]; any?: boolean; armor: string[]; weapons: string[]; tools: string[]; skills?: number; instruments?: number }
+  multiclass?: { primary: Ability[]; any?: boolean; armor: string[]; weapons: string[]; tools: string[]; skills?: number; instruments?: number }
 }
 
 /** One line of an encounter: a creature entry (or just a name) and how many. */
@@ -197,6 +197,8 @@ export interface MapRoute { id: string; name: string; points: { x: number; y: nu
 export interface StockLine { item: Id; price?: Copper; stock?: number }
 
 export interface Abilities { str: number; dex: number; con: number; int: number; wis: number; cha: number }
+/** One of the six abilities, by its key. */
+export type Ability = keyof Abilities
 
 export interface Feature { name: string; text: string; /** A statblock action that's an attack: its line is written from this. */ attack?: StatAttack }
 
@@ -206,7 +208,7 @@ export interface CharacterSheet {
   /** Renown with organizations (by id), as the DM hands it out: member or not. */
   renown?: Record<Id, number>
   /** Saving throws the character is proficient in. */
-  saves: (keyof Abilities)[]
+  saves: Ability[]
   /** 1 = proficient, 2 = expertise. */
   skills: Record<string, 1 | 2>
   hp?: number
@@ -224,7 +226,7 @@ export interface CharacterSheet {
   initBonus?: number
   inspiration?: boolean
   /** The casting ability, if not the one the class uses. */
-  spellAbility?: keyof Abilities
+  spellAbility?: Ability
   inventory: InventoryLine[]
   money?: Copper
   features: Feature[]
@@ -266,13 +268,13 @@ export interface SpeciesState {
   /** Granted proficiencies and spells the player swapped for another of the same kind: their key → the id taken instead. */
   swaps?: Record<string, string>
   /** The casting ability picked for a trait's spells (its castWith): trait key → ability. */
-  abilities?: Record<string, 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'>
+  abilities?: Record<string, Ability>
 }
 
 // ---------- ability score bonuses (races' and feats' abilityIncrease; abilityBonus.ts) ----------
 
 /** +`amount` to `count` different scores (default 1), from `among` (default any); never one a fixed bonus or another pick already raised. */
-export interface AbilityPick { amount: number; count?: number; among?: (keyof Abilities)[] }
+export interface AbilityPick { amount: number; count?: number; among?: Ability[] }
 /**
  * What a race or feat may add to ability scores. Kept as data, never added to a sheet on its own (the character
  * creation wizard offers it). `orPick` is an alternative to `pick` ("+2 to one score or +1 to two"); `max` caps the
@@ -304,7 +306,7 @@ export interface TraitSpell {
   how: 'atWill' | 'short' | 'long' | 'prepared' | 'list' | 'book'
   from?: number
   /** The ability it's cast with, if the trait says (attack and DC are shown with it); else the trait's `castWith`. */
-  ability?: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
+  ability?: Ability
   /** The player may swap it for another spell of these classes' lists (any) and this level (the spell's own). */
   swap?: { classes?: string[]; level?: string }
 }
@@ -354,7 +356,7 @@ export interface Trait extends TraitOption {
    * ability modifier (at least 1); `times` multiplies it (Lay on Hands: 5 × level), `steps` gives the count by level.
    * A long-rest use can give `shortBack` back on a short rest (Rage: one).
    */
-  uses?: { count: number | 'pb' | 'level' | 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'; recharge: 'short' | 'long'; times?: number; steps?: [number, number][]; shortBack?: number }
+  uses?: { count: number | 'pb' | 'level' | Ability; recharge: 'short' | 'long'; times?: number; steps?: [number, number][]; shortBack?: number }
   scale?: TraitScale
   /**
    * Whether it's listed on the sheet in play: by default only when there's something to use or read there (uses, a
@@ -371,7 +373,7 @@ export interface Trait extends TraitOption {
    * The ability its spells (and its picked option's) are cast with, where a spell doesn't name one: the player's pick
    * `among` these, or the one picked for another trait of the same entry (`sameAs`, that trait's id).
    */
-  castWith?: { among?: ('str' | 'dex' | 'con' | 'int' | 'wis' | 'cha')[]; sameAs?: string }
+  castWith?: { among?: Ability[]; sameAs?: string }
 }
 /**
  * What a character is proficient with, by reference: option ids from the lists items use (armor types, weapon
@@ -424,7 +426,7 @@ export interface Statblock {
   /** Damage vulnerabilities ("Cold"). */
   vulnerabilities?: string
   /** Its spellcasting (creatures.ts): the ability, and the spells by how often, as world spells. */
-  spellcasting?: { ability: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'; lists: { label: string; spells: Id[] }[]; noMaterial?: boolean }
+  spellcasting?: { ability: Ability; lists: { label: string; spells: Id[] }[]; noMaterial?: boolean }
   /** Legendary actions per round, and in its lair; Legendary Resistance per day (and in its lair). */
   legendaryUses?: number
   legendaryLair?: number
@@ -436,7 +438,7 @@ export interface Statblock {
 /** An action that's an attack: the line written from it (creatures.ts) with the creature's ability and proficiency. */
 export interface StatAttack {
   kind: 'melee' | 'ranged' | 'both'
-  ability: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
+  ability: Ability
   reach?: number
   range?: string
   dice: string

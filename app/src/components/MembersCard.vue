@@ -2,7 +2,7 @@
 // Members of an organization as of a chosen year: who was in, who had left, who came later.
 import { computed, ref } from 'vue'
 import type { Entry, Relation } from '../model/types'
-import { db, formatDate, get, playerMode, relationsOf, state } from '../store'
+import { db, formatDate, get, playerMode, relationsWith, state } from '../store'
 import { addRelation, relationChanged } from '../edit'
 import { ranksOf } from '../org'
 import EntryLink from './EntryLink.vue'
@@ -11,7 +11,7 @@ import EntryPicker from './edit/EntryPicker.vue'
 const props = defineProps<{ org: Entry }>()
 const year = ref<number>(db().meta.today.year)
 
-const members = computed(() => (relationsOf.value.get(props.org.id) ?? []).filter(r => r.kind === 'member' && r.b === props.org.id))
+const members = computed(() => relationsWith(props.org.id, 'member', 'in'))
 const split = computed(() => {
   const y = year.value
   const now: Relation[] = [], before: Relation[] = [], later: Relation[] = []

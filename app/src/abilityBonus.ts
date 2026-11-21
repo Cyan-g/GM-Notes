@@ -2,22 +2,18 @@
 // makes ("+1 to one score", "+1 Strength or Dexterity"), an alternative set of picks, and a cap on the raised score.
 // Kept as data only: nothing here changes a character sheet. The character creation wizard will offer it.
 import type { Abilities, AbilityBonus, AbilityPick } from './model/types'
+import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, signed, type Ability } from './model/dnd'
 
-type Ability = keyof Abilities
-export const ABILITY_KEYS: Ability[] = ['str', 'dex', 'con', 'int', 'wis', 'cha']
-export const ABILITY_SHORT: Record<Ability, string> = { str: 'Str', dex: 'Dex', con: 'Con', int: 'Int', wis: 'Wis', cha: 'Cha' }
-export const ABILITY_NAME: Record<Ability, string> = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' }
 const WORDS = ['', 'one', 'two', 'three', 'four', 'five', 'six']
-const sign = (n: number) => (n < 0 ? `−${-n}` : `+${n}`)
 const orList = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} or ${xs[xs.length - 1]}` : xs[0] ?? '')
 
 function pickText(p: AbilityPick, other: boolean): string {
   const n = p.count ?? 1
   if (p.among?.length) {
-    if (n === 1) return `${sign(p.amount)} ${orList(p.among.map(a => ABILITY_NAME[a]))}`
-    return `${sign(p.amount)} to ${WORDS[n] ?? n} of ${p.among.map(a => ABILITY_SHORT[a]).join(', ')}`
+    if (n === 1) return `${signed(p.amount)} ${orList(p.among.map(a => ABILITY_NAME[a]))}`
+    return `${signed(p.amount)} to ${WORDS[n] ?? n} of ${p.among.map(a => ABILITY_SHORT[a]).join(', ')}`
   }
-  return `${sign(p.amount)} to ${WORDS[n] ?? n} ${other ? 'other ' : ''}score${n === 1 ? '' : 's'}`
+  return `${signed(p.amount)} to ${WORDS[n] ?? n} ${other ? 'other ' : ''}score${n === 1 ? '' : 's'}`
 }
 const picksText = (ps: AbilityPick[], fixed: boolean) => ps.map((p, i) => pickText(p, fixed || i > 0)).join(', ')
 
@@ -26,14 +22,14 @@ export function abilityBonusText(b: AbilityBonus | undefined): string {
   if (!b) return ''
   const fixed = ABILITY_KEYS.filter(a => b.fixed?.[a]).sort((x, y) => b.fixed![y]! - b.fixed![x]!)
   const all = fixed.length === 6 && fixed.every(a => b.fixed![a] === b.fixed!.str)
-  const parts = [all ? `${sign(b.fixed!.str!)} to all scores` : fixed.map(a => `${sign(b.fixed![a]!)} ${ABILITY_SHORT[a]}`).join(', ')]
+  const parts = [all ? `${signed(b.fixed!.str!)} to all scores` : fixed.map(a => `${signed(b.fixed![a]!)} ${ABILITY_SHORT[a]}`).join(', ')]
   // Every pick from the same few scores (a 2024 background): "Str, Dex or Con: +2 to one, +1 to another or +1 to all three".
   const picks = [...(b.pick ?? []), ...(b.orPick ?? [])], among = picks[0]?.among
   const same = !fixed.length && picks.length > 1 && among && among.length > 1 && picks.every(p => p.among?.join() === among.join())
   if (same) {
     const plain = (ps: AbilityPick[]) => ps.map((p, i) => {
       const n = p.count ?? 1
-      return `${sign(p.amount)} ${n === among.length ? `to all ${WORDS[n] ?? n}` : n > 1 ? `to ${WORDS[n] ?? n}` : i ? 'to another' : 'to one'}`
+      return `${signed(p.amount)} ${n === among.length ? `to all ${WORDS[n] ?? n}` : n > 1 ? `to ${WORDS[n] ?? n}` : i ? 'to another' : 'to one'}`
     }).join(', ')
     const one = plain(b.pick ?? []), two = plain(b.orPick ?? [])
     parts.push(`${orList(among.map(a => ABILITY_SHORT[a]))}: ${two ? `${one} or ${two}` : one}`)

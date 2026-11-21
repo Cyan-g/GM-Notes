@@ -5,28 +5,21 @@
 import { computed } from 'vue'
 import type { Entry, StockLine } from '../model/types'
 import { changed } from '../edit'
-import { formatMoney, get, playerMode, state } from '../store'
-import { currentPc, editSheet, sheetOf } from '../sheet'
+import { formatMoney, playerMode, state } from '../store'
+import { addToInventory, currentPc, editSheet, sheetOf } from '../sheet'
+import { shopPrice } from '../items'
 import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ shop: Entry; lines: StockLine[] }>()
-const markup = computed(() => (props.shop.fields.markup as number | undefined) ?? 1)
-const rows = computed(() => props.lines.map((l, i) => {
-  const base = get(l.item)?.fields.value as number | undefined
-  return { ...l, i, price: l.price ?? (base != null ? Math.round(base * markup.value) : undefined) }
-}))
+const rows = computed(() => props.lines.map((l, i) => ({ ...l, i, price: shopPrice(props.shop, l) })))
 const buyer = computed(() => (state.readOnly ? undefined : currentPc.value))
 const purse = computed(() => (buyer.value ? sheetOf(buyer.value)?.money ?? 0 : 0))
 const canSell = (r: { price?: number; stock?: number }) => !!buyer.value && r.price != null && r.stock !== 0 && purse.value >= r.price
 function sell(r: { item: string; price?: number; i: number; stock?: number }) {
   const pc = buyer.value
   if (!pc || r.price == null) return
-  editSheet(pc, s => {
-    s.money = (s.money ?? 0) - r.price!
-    const line = s.inventory.find(l => l.item === r.item && !l.equipped)
-    if (line) line.qty = (line.qty || 0) + 1
-    else s.inventory.push({ item: r.item, qty: 1 })
-  })
+  editSheet(pc, s => { s.money = (s.money ?? 0) - r.price! })
+  addToInventory(pc, r.item)
   const stock = props.shop.fields.stock as StockLine[] | undefined
   const l = stock?.[r.i]
   if (l && l.stock != null) { l.stock = Math.max(0, l.stock - 1); changed(props.shop) }

@@ -1,20 +1,14 @@
 // Family trees from the parent / spouse / sibling relations: who belongs to someone's tree, which generation
 // everyone is in, and where each person sits so lines cross as little as possible. Generations run top to bottom.
-import type { Id } from './model/types'
-import { get, relationsOf } from './store'
+import type { Id, RelationKind } from './model/types'
+import { get, relatedIds, type RelationDir } from './store'
 
 export interface Kin { parents: Id[]; children: Id[]; spouses: Id[]; siblings: Id[] }
 
 export function kinOf(id: Id): Kin {
-  const k: Kin = { parents: [], children: [], spouses: [], siblings: [] }
-  for (const r of relationsOf.value.get(id) ?? []) {
-    const other = r.a === id ? r.b : r.a
-    if (!get(other) || other === id) continue
-    if (r.kind === 'parent') (r.a === id ? k.children : k.parents).push(other)
-    else if (r.kind === 'spouse') k.spouses.push(other)
-    else if (r.kind === 'sibling') k.siblings.push(other)
-  }
-  return k
+  // someone else who is still there (a relation to oneself, or to a deleted entry, doesn't count)
+  const kin = (kind: RelationKind, dir: RelationDir) => relatedIds(id, kind, dir).filter(other => other !== id && !!get(other))
+  return { parents: kin('parent', 'in'), children: kin('parent', 'out'), spouses: kin('spouse', 'both'), siblings: kin('sibling', 'both') }
 }
 
 /** How many family relations someone has, for the tab label. */

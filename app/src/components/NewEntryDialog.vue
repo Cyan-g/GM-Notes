@@ -10,6 +10,7 @@ import { get, playerMode } from '../store'
 import { carryOver } from '../checklist'
 import { sessionNo, sessionsOf } from '../sessions'
 import { search } from '../search'
+import { norm as normName } from '../model/text'
 import { go, hrefEntry, route } from '../router'
 
 const open = defineModel<boolean>({ required: true })
@@ -46,7 +47,7 @@ const inPlace = ref(true)
 const placeText = computed(() => (type.value === 'place' ? 'Located in' : type.value === 'npc' ? 'Lives in' : type.value === 'organization' ? 'Seat in' : ''))
 
 // ---- names that exist already ----
-const norm = (s: string) => s.toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
+const norm = (s: string) => normName(s, ' ')
 const similar = computed(() => {
   const n = name.value.trim()
   if (n.length < 3) return []

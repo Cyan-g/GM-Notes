@@ -2,6 +2,7 @@
 import MarkdownIt from 'markdown-it'
 import { get, playerMode, state } from './store'
 import { hrefEntry } from './router'
+import { SECRET_BLOCK } from './model/text'
 
 const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
 
@@ -102,7 +103,7 @@ function dropEmptyHeadings(lines: string[], keepEnd = false): string[] {
 /** Turn callout boxes ("> [!tip] Title", foldable with + or -) and :::secret blocks into HTML before parsing. */
 function preprocess(src: string, keepEnd = false): string {
   // Player mode never shows DM-only text.
-  src = src.replace(/^:::secret\s*\n([\s\S]*?)\n:::\s*$/gm, (_, inner) => playerMode.value ? '' : `<div class="secret"><span class="secret-tag">DM only</span>\n\n${inner}\n\n</div>`)
+  src = src.replace(SECRET_BLOCK, (_, inner) => playerMode.value ? '' : `<div class="secret"><span class="secret-tag">DM only</span>\n\n${inner}\n\n</div>`)
   // "- 24. August 892" is a date, not a list numbered from 24
   const months = state.db?.meta.calendar?.months.map(m => m.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) ?? []
   if (months.length) src = src.replace(new RegExp(`^(\\s*(?:[-*+]\\s+)?)(\\d+)\\.(?=[ \\t]+(?:${months.join('|')})\\b)`, 'gm'), '$1$2\\.')

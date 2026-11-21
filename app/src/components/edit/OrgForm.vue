@@ -4,34 +4,28 @@
 import { computed, ref } from 'vue'
 import type { Entry } from '../../model/types'
 import { TYPES, byKey } from '../../model/schema'
-import { changed } from '../../edit'
+import { isEmpty, setField } from '../../edit'
 import { playerMode } from '../../store'
 import { ATTITUDES } from '../../npc'
 import FieldInput from './FieldInput.vue'
+import { inputValue as val } from '../../dom'
+import { grow, vGrow } from '../../directives/grow'
 
 const props = defineProps<{ entry: Entry }>()
 const f = computed(() => props.entry.fields)
 const def = (k: string) => TYPES.organization.fields.find(x => x.key === k)!
-function set(key: string, v: unknown) {
-  const r = byKey(f.value)
-  if (v == null || v === '' || (Array.isArray(v) && !v.length)) delete r[key]
-  else r[key] = v
-  changed(props.entry)
-}
-const val = (ev: Event) => (ev.target as HTMLInputElement).value
+const set = (key: string, v: unknown) => setField(props.entry, key, v)
 
 const PARTS = ['presence', 'goals', 'secret', 'teaches'] as const
 type Part = typeof PARTS[number]
 const HINT: Partial<Record<Part, string>> = { goals: 'What they are after right now', secret: 'What the players must not find out (never shown to them)' }
-const has = (k: Part) => { const v = byKey(f.value)[k]; return Array.isArray(v) ? v.length > 0 : v != null && v !== '' }
+const has = (k: Part) => !isEmpty(byKey(f.value)[k])
 const opened = ref(new Set<Part>())
 const shown = computed(() => PARTS.filter(k => has(k) || opened.value.has(k)))
 // a secret is the DM's: not offered in a player's own world
 const addable = computed(() => PARTS.filter(k => !shown.value.includes(k) && !(k === 'secret' && playerMode.value)))
 function open(k: Part) { opened.value = new Set([...opened.value, k]) }
 function close(k: Part) { const s = new Set(opened.value); s.delete(k); opened.value = s; set(k, undefined) }
-const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() => grow(el)) }
-function grow(el: HTMLTextAreaElement) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 2 + 'px' }
 </script>
 
 <template>

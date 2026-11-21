@@ -1,9 +1,8 @@
 // Changing the database: every change goes through here so it gets timestamped and saved.
 import type { Entry, EntryType, Id, Relation, RelationKind } from './model/types'
 import { db, get, playerMode, state, touch } from './store'
-
-const slug = (s: string) => s.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-  .replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'entry'
+import { slug } from './model/text'
+import { byKey } from './model/schema'
 
 export function newId(name: string): Id {
   const base = slug(name)
@@ -17,6 +16,18 @@ export function changed(e: Entry) {
   e.updated = new Date().toISOString()
   touch()
 }
+
+/** A value that counts as not filled in: undefined, null, '', an empty list, false or NaN. Fields never store one. */
+export const isEmpty = (v: unknown) => v == null || v === '' || v === false || (typeof v === 'number' && Number.isNaN(v)) || (Array.isArray(v) && !v.length)
+/** Set a field of an entry, or remove it when the value is empty (isEmpty), and mark the entry as changed. */
+export function setField(e: Entry, key: string, v: unknown) {
+  const f = byKey(e.fields)
+  if (isEmpty(v)) delete f[key]
+  else f[key] = v
+  changed(e)
+}
+/** Turn a yes/no field on or off (off is no field at all). */
+export const toggleField = (e: Entry, key: string) => setField(e, key, !byKey(e.fields)[key])
 
 export function createEntry(type: EntryType, name: string, fields: Record<string, unknown> = {}): Entry {
   const now = new Date().toISOString()

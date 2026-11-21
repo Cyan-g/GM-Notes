@@ -9,6 +9,7 @@ import { weekday } from '../calendar'
 import { newEntry } from '../ui'
 import EntryLink from './EntryLink.vue'
 import { sessionsOf } from '../sessions'
+import { stripSecrets } from '../model/text'
 
 const props = defineProps<{ e: Entry }>()
 
@@ -33,7 +34,7 @@ const pager = computed(() => {
 const ORDER: EntryType[] = ['pc', 'npc', 'creature', 'place', 'organization', 'deity', 'item', 'spell']
 const linked = computed(() => {
   // player mode never shows DM-only text, so nor what it links to
-  const body = playerMode.value ? props.e.body.replace(/^:::secret\s*\n[\s\S]*?\n:::\s*$/gm, '') : props.e.body
+  const body = playerMode.value ? stripSecrets(props.e.body) : props.e.body
   const seen = new Set<string>([props.e.id, String(props.e.fields.campaign ?? '')])
   const groups = new Map<EntryType, Entry[]>()
   for (const [, raw] of body.matchAll(/\[\[([^\]|#]+)/g)) {

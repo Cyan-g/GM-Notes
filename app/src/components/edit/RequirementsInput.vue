@@ -3,7 +3,7 @@
 // proficiencies and a note. Empty parts are left out, and nothing at all clears the field.
 import { computed } from 'vue'
 import type { Requirements } from '../../model/types'
-import { ABILITIES, SKILLS } from '../../sheet'
+import { ABILITIES, SKILLS } from '../../model/dnd'
 import { listOptions } from '../../store'
 import ProfChips from '../ProfChips.vue'
 import EntryPicker from './EntryPicker.vue'

@@ -5,9 +5,10 @@
 import { computed, ref } from 'vue'
 import type { TraitSpell } from '../../model/types'
 import { HOW_SPECIES } from '../../species'
-import { ABILITY_NAME } from '../../abilityBonus'
+import { ABILITY_NAME } from '../../model/dnd'
 import EntryPicker from './EntryPicker.vue'
 import EntryLink from '../EntryLink.vue'
+import { inputValue as val } from '../../dom'
 
 const props = defineProps<{ traitLevel: number; levelWord: string }>()
 const model = defineModel<TraitSpell[] | undefined>()
@@ -33,7 +34,6 @@ function addAt(level: number, id: string) {
 }
 const newLevel = ref<number | null>(null)
 const nextLevel = computed(() => newLevel.value ?? Math.min(20, (rows.value.at(-1)?.[0] ?? props.traitLevel - 2) + 2))
-const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement).value
 </script>
 
 <template>

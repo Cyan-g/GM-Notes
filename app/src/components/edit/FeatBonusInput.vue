@@ -3,11 +3,11 @@
 // up to 30), set here in one row; anything else in the full editor. A preview shows the player's + buttons.
 import { computed, ref } from 'vue'
 import type { AbilityBonus } from '../../model/types'
-import { ABILITY_KEYS, ABILITY_SHORT, type BonusChoice } from '../../abilityBonus'
+import type { BonusChoice } from '../../abilityBonus'
+import { ABILITY_KEYS, ABILITY_SHORT, type Ability } from '../../model/dnd'
 import AbilityBonusInput from './AbilityBonusInput.vue'
 import SpreadPicker from '../SpreadPicker.vue'
 
-type Ability = (typeof ABILITY_KEYS)[number]
 const model = defineModel<AbilityBonus | undefined>()
 /** "+1 to one of these": its abilities (empty: any), if the increase is that. */
 const simple = computed<Ability[] | undefined>(() => {

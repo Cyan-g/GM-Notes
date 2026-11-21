@@ -3,6 +3,7 @@ import type { Combatant, EncounterLine, Entry, Statblock } from './model/types'
 import { get } from './store'
 import { withSrd } from './srd'
 import { sheetOf, trackerStats } from './sheet'
+import { mod } from './model/dnd'
 
 const XP: Record<string, number> = {
   '0': 10, '1/8': 25, '1/4': 50, '1/2': 100, '1': 200, '2': 450, '3': 700, '4': 1100, '5': 1800, '6': 2300, '7': 2900,
@@ -20,7 +21,6 @@ export function statsOf(e?: Entry, depth = 0): Statblock | undefined {
   const own = Object.fromEntries(Object.entries(sb!).filter(([k, v]) => k !== 'base' && v != null && v !== '' && !(Array.isArray(v) && !v.length)))
   return { ...base, ...own }
 }
-export const mod = (score?: number) => (score == null ? 0 : Math.floor((score - 10) / 2))
 
 export function lineInfo(l: EncounterLine) {
   const e = get(l.creature)
@@ -59,5 +59,3 @@ export function playerCombatant(pc: Entry): Combatant {
   const t = trackerStats(pc)
   return { id: newCombatantId(), name: pc.name, entry: pc.id, isPlayer: true, init: null, initMod: t?.initMod ?? 0, hp: t?.hp, maxHp: t?.maxHp, ac: t?.ac, conditions: [...(sheetOf(pc)?.conditions ?? [])] }
 }
-
-export const CONDITIONS = ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious', 'Concentrating']

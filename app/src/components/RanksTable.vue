@@ -3,13 +3,13 @@
 // (a member whose role is the rank's title, e.g. "Archmage").
 import { computed } from 'vue'
 import type { Entry, RankLine } from '../model/types'
-import { isCurrent, relationsOf } from '../store'
+import { membersOf } from '../org'
 import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ ranks: RankLine[]; org: Entry }>()
 const norm = (s?: string) => (s ?? '').trim().toLowerCase()
 const holders = computed(() => {
-  const current = (relationsOf.value.get(props.org.id) ?? []).filter(r => r.kind === 'member' && r.b === props.org.id && isCurrent(r))
+  const current = membersOf(props.org)
   return props.ranks.map(k => current.filter(r => norm(r.role) === norm(k.title)).map(r => r.a))
 })
 const anyHolders = computed(() => holders.value.some(h => h.length))

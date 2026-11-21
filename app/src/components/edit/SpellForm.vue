@@ -6,8 +6,8 @@
 import { computed, ref } from 'vue'
 import { fieldOptions } from '../../store'
 import type { Entry, SpellArea } from '../../model/types'
-import { TYPES, byKey, type FieldKey } from '../../model/schema'
-import { changed } from '../../edit'
+import { TYPES, type FieldKey } from '../../model/schema'
+import { setField, toggleField } from '../../edit'
 import { CONDITION_RULES } from '../../conditions'
 import { areaText } from '../../spells'
 import SpellRollsInput from './SpellRollsInput.vue'
@@ -19,13 +19,8 @@ const f = computed(() => props.entry.fields)
 /** A field's options from the world's lists (ids stored, labels shown). */
 const opts = (key: string) => fieldOptions(TYPES.spell.fields.find(x => x.key === key))
 
-function set(key: FieldKey, value: unknown) {
-  const raw = byKey(f.value)
-  if (value === undefined || value === '' || value === false || (Array.isArray(value) && !value.length)) delete raw[key]
-  else raw[key] = value
-  changed(props.entry)
-}
-const toggle = (key: FieldKey) => set(key, !f.value[key])
+const set = (key: FieldKey, value: unknown) => setField(props.entry, key, value)
+const toggle = (key: FieldKey) => toggleField(props.entry, key)
 function toggleIn(key: FieldKey, v: string) {
   const list = (f.value[key] ?? []) as string[]
   set(key, list.includes(v) ? list.filter(x => x !== v) : [...list, v])

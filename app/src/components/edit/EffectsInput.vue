@@ -3,10 +3,10 @@
 import { computed } from 'vue'
 import type { GearEffect } from '../../model/types'
 import { EFFECT_KINDS, SENSES, describeEffect, type EffectNeed } from '../../gear'
-import { ABILITIES, SKILLS } from '../../sheet'
+import { ABILITIES, ABILITY_KEYS, CONDITIONS, SKILLS } from '../../model/dnd'
 import { TYPES } from '../../model/schema'
 import { fieldOptions } from '../../store'
-import { CONDITIONS } from '../../encounter'
+import { inputValue as val } from '../../dom'
 
 const model = defineModel<GearEffect[] | undefined>()
 /** On a feature (not gear): an effect can take its number or dice from the feature's scaling value. */
@@ -15,7 +15,7 @@ const list = computed(() => model.value ?? [])
 const kindOf = (f: GearEffect) => EFFECT_KINDS.find(k => k.on === f.on)
 const needs = (f: GearEffect, n: EffectNeed) => !!kindOf(f)?.needs?.includes(n)
 const damageTypes = computed(() => fieldOptions(TYPES.item.fields.find(x => x.key === 'damageType')))
-const conditions = CONDITIONS.filter(c => c !== 'Concentrating')
+const conditions = CONDITIONS
 
 /** What each kind of input fills in when it first shows. */
 const FIELD_OF: Record<EffectNeed, keyof GearEffect> = {
@@ -41,13 +41,12 @@ function put(i: number, patch: Partial<GearEffect>) {
 function setMode(i: number, m: string) {
   put(i, { set: m === 'set' || undefined, force: m === 'force' || undefined, value: m === 'add' ? 1 : m === 'set' ? 19 : 8 })
 }
-const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement).value
 const add = () => (model.value = [...list.value, { on: 'ac', value: 1 }])
 type Ab = NonNullable<GearEffect['abilities']>[number]
 function toggleAbility(i: number, a: Ab) {
   const s = new Set(list.value[i].abilities ?? [])
   if (s.has(a)) s.delete(a); else s.add(a)
-  put(i, { abilities: s.size ? (['str', 'dex', 'con', 'int', 'wis', 'cha'] as Ab[]).filter(x => s.has(x)) : undefined })
+  put(i, { abilities: s.size ? ABILITY_KEYS.filter(x => s.has(x)) : undefined })
 }
 const remove = (i: number) => { const l = [...list.value]; l.splice(i, 1); model.value = l.length ? l : undefined }
 </script>

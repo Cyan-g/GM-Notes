@@ -1,8 +1,10 @@
 // The initiative tracker's state is saved with the world, so a fight survives closing the app.
 import type { Combatant, Entry, Id, Tracker } from './model/types'
 import { byType, db, get, touch } from './store'
-import { combatantsFrom, mod, newCombatantId, playerCombatant, statsOf } from './encounter'
+import { combatantsFrom, newCombatantId, playerCombatant, statsOf } from './encounter'
+import { concentrationDc, mod } from './model/dnd'
 import { armorClass, initiative, maxHpOf, sheetOf, sheetToEdit } from './sheet'
+import { changed } from './edit'
 
 export function tracker(): Tracker {
   const d = db()
@@ -52,7 +54,7 @@ export function setHp(c: Combatant, hp: number | undefined, temp: number | undef
     const s = sheetToEdit(pc)
     s.hp = hp
     s.tempHp = temp || undefined
-    pc.updated = new Date().toISOString()
+    changed(pc)
   } else {
     c.hp = hp
     c.tempHp = temp || undefined
@@ -163,9 +165,6 @@ export function nextTurn(step = 1) {
   touch()
 }
 
-/** The DC of the Constitution save to keep concentrating after taking this much damage. */
-export const concentrationDc = (dmg: number) => Math.max(10, Math.floor(dmg / 2))
-
 /**
  * "-7" damages, "+5" heals, "=20" sets, "t5" gives temporary HP. Damage takes temporary HP first, asks for a
  * concentration save from someone concentrating, and is a failed death save for a party member already at 0.
@@ -213,7 +212,7 @@ export function setDeathSaves(c: Combatant, d: { ok: number; fail: number } | un
     if (!keep && !sheetOf(pc)?.deathSaves) return
     const s = sheetToEdit(pc)
     if (keep) s.deathSaves = keep; else delete s.deathSaves
-    pc.updated = new Date().toISOString()
+    changed(pc)
   } else if (keep) c.deathSaves = keep
   else delete c.deathSaves
 }

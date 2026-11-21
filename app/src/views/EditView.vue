@@ -8,7 +8,8 @@ import { TYPES, byKey, type FieldDef } from '../model/schema'
 import { backlinks, byType, fieldLabel, get, playerMode, relationsOf, state } from '../store'
 import RaceBonusEdit from '../components/edit/RaceBonusEdit.vue'
 import BackgroundEdit from '../components/edit/BackgroundEdit.vue'
-import { changed, deleteEntry } from '../edit'
+import { changed, deleteEntry, setField, toggleField } from '../edit'
+import { hasSecrets } from '../model/text'
 import { go, hrefEntry, hrefList } from '../router'
 import FieldInput from '../components/edit/FieldInput.vue'
 import { statsOf } from '../encounter'
@@ -86,14 +87,8 @@ const sheet = computed(() => !!e.value && SHEET_TYPES.includes(e.value.type))
 // A field's definition by its key, for the feat form's fields.
 const fieldOf = (k: string) => def.value?.fields.find(f => f.key === k)
 /** Turn a yes/no field on or off (a feat's "repeatable"). */
-function toggleBool(key: string) {
-  const x = e.value!
-  const f = byKey(x.fields)
-  if (f[key]) delete f[key]
-  else f[key] = true
-  changed(x)
-}
-function setSummary(v: string) { if (v.trim()) e.value!.fields.summary = v; else delete e.value!.fields.summary; changed(e.value!) }
+const toggleBool = (key: string) => toggleField(e.value!, key)
+const setSummary = (v: string) => setField(e.value!, 'summary', v.trim() ? v : undefined)
 const bigFields = computed(() => (def.value?.fields ?? []).filter(f => BIG.includes(f.kind) && shown(f)))
 
 function setName(v: string) { if (v.trim()) { e.value!.name = v.trim(); changed(e.value!) } }
@@ -215,7 +210,7 @@ function remove() {
           <div v-if="sectioned" class="npc-add body-sections">
             <span class="muted small">Add a section:</span>
             <button v-for="h in sections" :key="h" type="button" class="chip-btn" @click="addSection(h)">＋ {{ h }}</button>
-            <button v-if="!playerMode && !/^:::secret/m.test(e.body)" type="button" class="chip-btn" title="A part of the text players never see" @click="addSecretBlock">＋ DM-only part</button>
+            <button v-if="!playerMode && !hasSecrets(e.body)" type="button" class="chip-btn" title="A part of the text players never see" @click="addSecretBlock">＋ DM-only part</button>
           </div>
         </section>
         <NpcStats v-if="npc" :entry="e" />

@@ -1,9 +1,9 @@
 import type { Entry } from './model/types'
 import { entries, playerMode } from './store'
+import { norm as normName, stripSecrets } from './model/text'
 
 /** Lower case, no accents, no apostrophes ("Mariner's" = "mariners"), other punctuation as spaces. */
-const norm = (s: string) => s.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-  .replace(/['\u2019\u2018`\u00b4]/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
+const norm = (s: string) => normName(s, ' ')
 const words = (s: string) => s.split(' ').filter(Boolean)
 
 /** At most one letter added, dropped, changed or two swapped ("aldn" ~ "alden", "lighthosue" ~ "lighthouse"). */
@@ -51,7 +51,7 @@ export interface TextHit { e: Entry; before: string; hit: string; after: string 
 
 /** The text an entry shows, as plain text: in player mode without DM-only blocks; links as their labels. */
 function plainBody(e: Entry): string {
-  const body = playerMode.value ? e.body.replace(/^:::secret\s*\n[\s\S]*?\n:::\s*$/gm, '') : e.body
+  const body = playerMode.value ? stripSecrets(e.body) : e.body
   return body
     .replace(/\[\[([^\]|]+?)\\?\|([^\]]+)\]\]/g, '$2').replace(/\[\[([^\]]+)\]\]/g, (_, id: string) => id.replace(/-/g, ' '))
     .replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')

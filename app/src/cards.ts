@@ -4,10 +4,10 @@ import type { Entry, Id } from './model/types'
 import { TYPES, byKey } from './model/schema'
 import { db, fieldLabel, get, optionLabel, state, touch } from './store'
 import { describe } from './describe'
-import { attackOrSave } from './columns'
 import { describeEffect, effectsOf, howCast, regainText, spellsOf, worksWhileOf } from './gear'
 import { describeRequirements } from './requirements'
-import { areaText } from './spells'
+import { areaText, attackOrSave } from './spells'
+import { stripSecrets } from './model/text'
 
 // ---- how the cards look, kept with the world ----
 export interface CardStyle {
@@ -74,11 +74,10 @@ export interface Card {
 export const CARD_TYPES = ['spell', 'item'] as const
 export const printable = (e: Entry | undefined) => !!e && (CARD_TYPES as readonly string[]).includes(e.type)
 
-const SECRET = /^:::secret\s*\n[\s\S]*?\n:::\s*$/gm
 const SOURCE = /\n*\*Source: System Reference Document ([\d.]+) \(CC BY 4\.0\)\.\*\s*$/
 /** A text's paragraphs, without DM-only blocks and the SRD source line (the card has its own credit). */
 function paragraphs(text: unknown): { paras: string[]; credit: string } {
-  let t = String(text ?? '').replace(SECRET, '').trim()
+  let t = stripSecrets(String(text ?? '')).trim()
   const m = t.match(SOURCE)
   if (m) t = t.slice(0, m.index).trim()
   // a table, a list or a stat block stays in one piece; everything else splits at blank lines

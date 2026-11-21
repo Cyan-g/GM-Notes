@@ -3,14 +3,15 @@
 // and the feats it grants (feats whose source is this organization).
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
-import { byType, playerMode } from '../store'
+import { playerMode } from '../store'
+import { featsGrantedBy } from '../lookup'
 import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ e: Entry }>()
 const goals = computed(() => String(props.e.fields.goals ?? '').trim())
 const secret = computed(() => (playerMode.value ? '' : String(props.e.fields.secret ?? '').trim()))
 const teaches = computed(() => (props.e.fields.teaches as string[] | undefined) ?? [])
-const feats = computed(() => (byType.value.get('feat') ?? []).filter(f => f.fields.source === props.e.id).sort((a, b) => a.name.localeCompare(b.name)))
+const feats = computed(() => featsGrantedBy(props.e.id))
 const offers = computed(() => [...teaches.value, ...feats.value.map(f => f.id).filter(id => !teaches.value.includes(id))])
 </script>
 

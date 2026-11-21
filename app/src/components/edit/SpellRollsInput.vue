@@ -7,11 +7,12 @@ import { computed } from 'vue'
 import type { Entry, SpellRoll } from '../../model/types'
 import { DAMAGE } from '../../model/schema'
 import { growthText, rollText } from '../../spells'
+import { ORD } from '../../model/dnd'
+import { inputValue as val } from '../../dom'
 
 const model = defineModel<SpellRoll[] | undefined>()
 const props = defineProps<{ cantrip?: boolean; /** The spell (for its level, in the growth and preview). */ spell: Entry }>()
 const list = computed(() => model.value ?? [])
-const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 const lvl = computed(() => Number(props.spell.fields.level) || 0)
 function put(i: number, p: Partial<SpellRoll>) {
   const l = list.value.map(x => ({ ...x }))
@@ -23,7 +24,6 @@ function put(i: number, p: Partial<SpellRoll>) {
 }
 const add = () => { model.value = [...list.value, { kind: 'damage', dice: '1d6', ...(props.cantrip ? { cantrip: true } : {}) }] }
 const remove = (i: number) => { const l = list.value.filter((_, k) => k !== i); model.value = l.length ? l : undefined }
-const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement).value
 /** How the roll reads, with how it grows: "8d6 fire · +1d6 per slot level above 3rd · half on a save". */
 const preview = (r: SpellRoll) => [rollText(props.spell, r), growthText(props.spell, r), r.note].filter(Boolean).join(' · ')
 </script>

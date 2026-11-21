@@ -9,11 +9,10 @@ import { builtInBasics } from '../../classRules'
 import { DICE } from '../../model/classes'
 import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from '../../model/schema'
 import { entries, get } from '../../store'
-import { itemNamed } from '../../wizard'
+import { itemNamed } from '../../lookup'
 import ProfChips from '../ProfChips.vue'
 import ClassKitsInput from './ClassKitsInput.vue'
-import { SKILLS } from '../../sheet'
-import { ABILITY_KEYS, ABILITY_SHORT } from '../../abilityBonus'
+import { SKILLS, ABILITY_KEYS, ABILITY_SHORT } from '../../model/dnd'
 
 type Key = keyof ClassBasics
 const props = defineProps<{ cls: string }>()

@@ -6,12 +6,12 @@ import TypeIcon from '../components/TypeIcon.vue'
 import { computed, ref } from 'vue'
 import { optionLabel, listOptions } from '../store'
 import type { Entry, Id, RankLine } from '../model/types'
-import { byType, childrenOf, isCurrent, placePath, relationsOf } from '../store'
+import { byType, childrenOf, placePath } from '../store'
 import { hrefDashboard, hrefEntry, hrefList } from '../router'
 import { TYPES } from '../model/schema'
 import { newEntry } from '../ui'
 import EntryLink from '../components/EntryLink.vue'
-import { leadersOf, leads } from '../org'
+import { leadersOf, leads, membersOf } from '../org'
 
 const orgs = computed(() => byType.value.get('organization') ?? [])
 const npcs = computed(() => byType.value.get('npc') ?? [])
@@ -26,7 +26,7 @@ const shown = computed(() => orgs.value.filter(o =>
   && (!q.value.trim() || [o.name, ...o.aliases].some(n => n.toLowerCase().includes(q.value.trim().toLowerCase())))))
 
 // ---- per organization ----
-const members = (o: Entry) => (relationsOf.value.get(o.id) ?? []).filter(r => r.kind === 'member' && r.b === o.id && isCurrent(r))
+const members = (o: Entry) => membersOf(o)
 const ranks = (o: Entry) => (o.fields.ranks) ?? []
 /** Who leads it (org.ts, as the entry's page and the list say): the holder of the top rank, else a member whose role leads. */
 function leader(o: Entry): { id: Id; role?: string } | undefined {

@@ -6,7 +6,8 @@ import { computed, ref } from 'vue'
 import { optionLabel } from '../store'
 import type { Entry, Id, Spellbook } from '../model/types'
 import { db, get, touch } from '../store'
-import { activeSpellbook, currentPc, editSheet, levelOf as charLevel, longRest, mod, score, sheetOf, spellStats, type Ability } from '../sheet'
+import { activeSpellbook, currentPc, editSheet, levelOf as charLevel, longRest, score, sheetOf, spellStats } from '../sheet'
+import { ORD, mod, spellLevel, type Ability } from '../model/dnd'
 import { activeEffectsOf, isActive, rollsLine, toggleActive } from '../spells'
 import { endConcentration, startConcentration } from '../conditions'
 import { castFromItem, grantedSpells, restItems, unuse, type GrantedSpell } from '../gear'
@@ -23,7 +24,6 @@ import EntryPicker from '../components/edit/EntryPicker.vue'
 /** On a character's page (their tab) it's theirs; on its own page, the current character's or the world's. */
 const props = defineProps<{ pc?: PcEntry }>()
 const owner = computed(() => props.pc ?? currentPc.value)
-const ORD = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 
 // The current character's spellbook, or the world's when no character is current.
 const book = computed<Spellbook>(() => activeSpellbook(props.pc))
@@ -126,9 +126,8 @@ function toggleAlways(id: Id) {
 }
 
 // ---- lists ----
-const levelOf = (e: Entry) => (e.fields.level === 'Cantrip' ? 0 : Number(e.fields.level) || 0)
 const spells = (ids: Id[]) => ids.map(id => get(id)).filter((e): e is Entry => !!e)
-  .sort((a, b) => levelOf(a) - levelOf(b) || a.name.localeCompare(b.name))
+  .sort((a, b) => spellLevel(a) - spellLevel(b) || a.name.localeCompare(b.name))
 const knownList = computed(() => spells([...book.value.known, ...[...freeKnown.value.keys()].filter(id => !book.value.known.includes(id))]))
 const preparedList = computed(() => spells([...book.value.always, ...book.value.prepared]))
 /** What the spell rolls, at the caster's level and with their spellcasting modifier (a trait's spell: its own ability). */
@@ -203,7 +202,7 @@ function openSpell(ev: MouseEvent, id: Id) {
   ev.preventDefault()
   shown.value = id
 }
-const levelLabel = (e: Entry) => (levelOf(e) ? ORD[levelOf(e) - 1] : 'Cantrip')
+const levelLabel = (e: Entry) => (spellLevel(e) ? ORD[spellLevel(e)] : 'Cantrip')
 /** The known spells matching the search box. */
 const knownQ = ref('')
 const knownShown = computed(() => { const q = knownQ.value.trim().toLowerCase(); return q ? knownList.value.filter(e => e.name.toLowerCase().includes(q)) : knownList.value })
@@ -244,7 +243,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
         <h3>Spell slots <button class="link-btn" @click="editSlots = !editSlots">{{ editSlots ? 'Done' : 'Edit' }}</button></h3>
         <div class="slot-cols">
         <div v-for="s in shownSlots" :key="s.key" class="slot-row" :class="{ pact: s.kind === 'pact' }">
-          <span class="slot-lvl" :title="s.kind === 'pact' ? 'Warlock pact slots: all of this level, back on a short rest' : undefined"><small v-if="s.kind === 'pact'" class="slot-kind">Pact</small>{{ ORD[s.level - 1] }}</span>
+          <span class="slot-lvl" :title="s.kind === 'pact' ? 'Warlock pact slots: all of this level, back on a short rest' : undefined"><small v-if="s.kind === 'pact'" class="slot-kind">Pact</small>{{ ORD[s.level] }}</span>
           <span class="pips">
             <button v-for="p in s.max" :key="p" class="pip" :class="{ on: p - 1 < s.max - s.used }"
                     :title="p - 1 < s.max - s.used ? 'Spend this slot' : 'Get this slot back'" @click="pip(s, p - 1)" />
@@ -257,7 +256,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
           <span v-else-if="s.rule != null" class="slot-own" :title="`Typed in; the class levels give ${s.rule}`">✎</span>
         </div>
         <div v-for="a in arcana" :key="a.key" class="slot-row arcanum">
-          <span class="slot-lvl" title="Mystic Arcanum: one casting of a spell of this level per long rest"><small class="slot-kind">Arcanum</small>{{ ORD[a.level - 1] }}</span>
+          <span class="slot-lvl" title="Mystic Arcanum: one casting of a spell of this level per long rest"><small class="slot-kind">Arcanum</small>{{ ORD[a.level] }}</span>
           <span class="pips"><button class="pip" :class="{ on: !a.used }" :title="a.used ? 'Get it back' : 'Use it'" @click="pip(a, 0)" /></span>
           <span v-flash="1 - a.used" class="slot-left">{{ 1 - a.used }} / 1</span>
         </div>
@@ -319,7 +318,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
               <td class="sbk-check">{{ check(e) }}<div v-if="rolls(e)" class="sbk-rolls">{{ rolls(e) }}</div></td>
               <td>{{ [e.fields.concentration && 'C', e.fields.ritual && 'R'].filter(Boolean).join(' ') }}</td>
               <td class="sbk-actions">
-                <button v-if="levelOf(e)" class="chip-btn" :disabled="!canCast(e)" :title="canCast(e) ? 'Spend a slot of this level (or the next free higher one)' : 'No slot left for this level'" @click="cast(e)">Cast</button>
+                <button v-if="spellLevel(e)" class="chip-btn" :disabled="!canCast(e)" :title="canCast(e) ? 'Spend a slot of this level (or the next free higher one)' : 'No slot left for this level'" @click="cast(e)">Cast</button>
                 <button v-if="caster && e.fields.concentration && !switchable(e)" class="chip-btn sbk-on" :class="{ on: concentrating(e) }" :aria-pressed="concentrating(e)" :title="concentrating(e) ? 'Concentrating on it. Click to end it' : 'Concentrate on it: any other concentration spell ends'" @click="toggleConc(e)">{{ concentrating(e) ? 'Concentrating' : 'Concentrate' }}</button>
                 <button v-if="switchable(e)" class="chip-btn sbk-on" :class="{ on: on(e) }" :aria-pressed="on(e)" :title="on(e) ? 'Active: the sheet counts its effects. Click to end it' : 'Switch it on: the sheet counts its effects until you end it or take a long rest'" @click="toggleOn(e)">{{ on(e) ? 'Active' : 'On' }}</button>
               </td>
@@ -382,7 +381,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
       <template #actions>
         <button v-if="!isPrepared(shown)" class="chip-btn" @click="prepare(shown!)">Prepare</button>
         <template v-else>
-          <button v-if="shownEntry && levelOf(shownEntry)" class="chip-btn" :disabled="!canCast(shownEntry)" @click="cast(shownEntry)">Cast</button>
+          <button v-if="shownEntry && spellLevel(shownEntry)" class="chip-btn" :disabled="!canCast(shownEntry)" @click="cast(shownEntry)">Cast</button>
           <button class="chip-btn" @click="unprepare(shown!)">Unprepare</button>
         </template>
       </template>

@@ -7,11 +7,12 @@ import { computed, ref } from 'vue'
 import type { Trait, TraitChoice, TraitOption } from '../../model/types'
 import { choiceWords, newTraitId } from '../../species'
 import { listOptions } from '../../store'
-import { ABILITY_KEYS, ABILITY_NAME } from '../../abilityBonus'
+import { ABILITY_KEYS, ABILITY_NAME } from '../../model/dnd'
 import TraitOptionFields from './TraitOptionFields.vue'
 import ChoiceFields from './ChoiceFields.vue'
 import StepsInput from './StepsInput.vue'
 import TraitChips from '../TraitChips.vue'
+import { inputValue as val } from '../../dom'
 
 const model = defineModel<Trait[] | undefined>()
 const props = defineProps<{ /** The entry's type: a class's or subclass's features are grouped by level. */ entryType?: string; /** Its class, for "Warlock level". */ className?: string; /** A subclass's levels to expect features at (its class's other subclasses'): shown even while empty. */ expectedLevels?: number[]; /** A subrace's: its main races' traits, one of which a trait may replace. */ parentTraits?: { id: string; name: string }[]; /** The entry's name: a feat's feature starts with it. */ entryName?: string }>()
@@ -63,7 +64,7 @@ function setUses(i: number, on: boolean) { patch(i, { uses: on ? { count: 1, rec
 type Uses = NonNullable<Trait['uses']>
 const COUNT_KINDS: { id: string; label: string }[] = [
   { id: 'n', label: 'a number' }, { id: 'pb', label: 'proficiency bonus' }, { id: 'level', label: 'class level' },
-  ...(['str', 'dex', 'con', 'int', 'wis', 'cha'] as const).map(a => ({ id: a, label: `${a.toUpperCase()} modifier` })),
+  ...ABILITY_KEYS.map(a => ({ id: a, label: `${a.toUpperCase()} modifier` })),
 ]
 const countKind = (u: Uses) => (typeof u.count === 'number' ? 'n' : u.count)
 const setUse = (i: number, p: Partial<Uses>) => {
@@ -138,7 +139,6 @@ function toggleList(i: number, id: string) {
   if (l.has(id)) l.delete(id); else l.add(id)
   patch(i, { spellLists: l.size ? [...l] : undefined })
 }
-const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement).value
 const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
 </script>
 

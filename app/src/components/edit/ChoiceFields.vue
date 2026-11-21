@@ -6,8 +6,9 @@ import { computed } from 'vue'
 import type { TraitChoice, TraitSpell } from '../../model/types'
 import { choiceCandidates, HOW_SPECIES } from '../../species'
 import { listOptions } from '../../store'
-import { ABILITY_NAME } from '../../abilityBonus'
+import { ABILITY_NAME } from '../../model/dnd'
 import StepsInput from './StepsInput.vue'
+import { inputValue as val } from '../../dom'
 
 const model = defineModel<TraitChoice>({ required: true })
 const props = defineProps<{ withLabel?: boolean }>()
@@ -37,7 +38,6 @@ function toggleAmong(id: string) {
   put({ among: [...among] })
 }
 const LEVELS = ['Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement).value
 </script>
 
 <template>

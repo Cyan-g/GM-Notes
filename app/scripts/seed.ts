@@ -20,6 +20,7 @@ import { LISTS, optionsIn } from '../src/model/lists'
 import { mapRefs } from '../src/model/refs'
 import { defaultCalendar } from '../src/calendar'
 import { cleanBonus, parseAbilityBonus } from '../src/abilityBonus'
+import { norm, slug, stripSecrets } from '../src/model/text'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const { WorldDb } = createRequire(import.meta.url)('../electron/db.cjs')
@@ -45,10 +46,8 @@ const d = w.load().data as Database
 
 // Every SRD 5.2.1 spell and feat (scripts/srd-5.2.1.json, CC BY 4.0). A world's own entry of the same name that kept
 // its own text (it was there before the SRD import) is replaced by the SRD's, keeping the world's id and spell type.
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
 const SRD = JSON.parse(readFileSync(resolve(here, 'srd-5.2.1.json'), 'utf8')) as { type: EntryType; name: string; fields: Entry['fields'] }[]
 const byName = new Map(Object.values(d.entries).map(e => [`${e.type}:${norm(e.name)}`, e]))
-const slug = (n: string) => n.toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 const fromFile: Entry[] = SRD.flatMap(s => {
   const own = byName.get(`${s.type}:${norm(s.name)}`)
   if (own && fromSrd(own)) return []
@@ -155,8 +154,7 @@ const ids = new Set(picked.map(e => e.id))
 
 const entries = picked.map(e => {
   const c: Entry = JSON.parse(JSON.stringify(e))
-  c.body = c.body
-    .replace(/^:::secret\s*\n[\s\S]*?\n:::\s*$/gm, '')
+  c.body = stripSecrets(c.body)
     .replace(/!\[[^\]]*\]\(<?(?:images|files)\/[^)>]*>?\)/g, '')
     .replace(/\[([^\]]*)\]\(<?(?:images|files)\/[^)>]*>?\)/g, '$1')
     .replace(/\n{3,}/g, '\n\n').trim()

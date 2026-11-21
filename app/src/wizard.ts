@@ -6,16 +6,17 @@ import { reactive } from 'vue'
 import type {
   Abilities, AbilityBonus, CharacterSheet, ClassLine, Copper, Entry, Feature, Id, InventoryLine, SpeciesState, Spellbook,
 } from './model/types'
-import { ABILITY_KEYS, bonusApplied, bonusOpen, type BonusChoice } from './abilityBonus'
+import { bonusApplied, bonusOpen, type BonusChoice } from './abilityBonus'
+import { ABILITY_KEYS, dieSize, mod, spellLevel, type Ability } from './model/dnd'
 import { EPIC_BOON_LEVEL, basicsOf, hitDieOf, rulesOf, subclassLevelOf, type Kit, type KitLine } from './classRules'
 import { ruleSlots } from './slots'
-import { blankSheet, mod } from './sheet'
+import { blankSheet, emptyBook } from './sheet'
 import { choiceOpen, classSpellsFrom, isClassOrigin, own, speciesGrants, speciesTraits, PROFS_TRAIT } from './species'
 import { entries, get } from './store'
 import { rule } from './rules'
 import { changed, createEntry } from './edit'
+import { itemNamed } from './lookup'
 
-type Ability = keyof Abilities
 
 export type ScoreMethod = 'array' | 'pointbuy' | 'typed'
 export const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8]
@@ -83,7 +84,6 @@ export function resetWizard() { wizard.d = newDraft(); wizard.step = 'class' }
 
 export const rules = (d: Draft) => rulesOf(d.cls)
 export const dieOfDraft = (d: Draft) => d.die || (d.cls ? hitDieOf(d.cls) : 'd8')
-const dieSize = (die: string) => Number(die.replace(/\D/g, '')) || 8
 
 /** The draft as a character entry that isn't stored, for the species' choices and the spell slots. */
 export function draftPc(d: Draft, sheet?: CharacterSheet): Entry {
@@ -131,7 +131,7 @@ export const pointsSpent = (d: Draft) => ABILITY_KEYS.reduce((n, a) => n + (POIN
 
 /** Hit points: the die's maximum at level 1, then each level's roll (or the average), all with the CON modifier. */
 export function hpOf(d: Draft): number {
-  const die = dieSize(dieOfDraft(d)), con = mod(finalScores(d).con)
+  const die = dieSize(dieOfDraft(d)) || 8, con = mod(finalScores(d).con)
   let hp = die + con
   for (let l = 2; l <= d.level; l++) hp += Math.max(1, (d.hpRolls[l - 2] ?? die / 2 + 1) + con)
   return Math.max(1, hp)
@@ -148,7 +148,7 @@ export function spellChoices(d: Draft): { cantrips: Entry[]; spells: Entry[]; ma
   const extra = new Set([...classSpellsFrom(pc, 'list', d.cls), ...classSpellsFrom(pc, 'book', d.cls)].map(x => x.spell))
   const ofClass = entries.value.filter(e => e.type === 'spell' && ((e.fields.classes ?? []).some(c => lists.has(c)) || extra.has(e.id)))
     .sort((a, b) => a.name.localeCompare(b.name))
-  const lvl = (e: Entry) => (e.fields.level === 'Cantrip' ? 0 : Number(e.fields.level) || 0)
+  const lvl = (e: Entry) => spellLevel(e)
   return { cantrips: ofClass.filter(e => lvl(e) === 0), spells: ofClass.filter(e => lvl(e) >= 1 && lvl(e) <= maxLevel), maxLevel }
 }
 /** How many cantrips and prepared spells (and spellbook spells) the class has at its level; undefined: no limit known. */
@@ -165,12 +165,6 @@ export const casts = (d: Draft) => {
 
 // ---------- equipment ----------
 
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
-/** A world item for a name ("Arrows" finds "Arrow"), if there is one. */
-export function itemNamed(name: string): Entry | undefined {
-  const n = norm(name), single = n.replace(/s$/, '')
-  return entries.value.find(e => e.type === 'item' && (norm(e.name) === n || norm(e.name) === single))
-}
 /** The background's equipment as a kit. */
 export function backgroundKit(d: Draft): Kit | undefined {
   const eq = get(d.background)?.fields.equipment
@@ -335,7 +329,7 @@ function draftSheet(d: Draft): CharacterSheet {
   if (Object.keys(d.species).length) s.species = JSON.parse(JSON.stringify(d.species))
   if (casts(d) || d.cantrips.length || d.spells.length) {
     const book: Spellbook = {
-      slots: Array.from({ length: 9 }, () => ({ max: 0, used: 0 })),
+      ...emptyBook(),
       known: [...new Set([...d.cantrips, ...d.spells, ...d.book])], prepared: [...d.spells], always: [...d.cantrips],
     }
     const c = spellCounts(d)

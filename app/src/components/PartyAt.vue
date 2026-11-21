@@ -2,14 +2,14 @@
 // Where each campaign's party is (set on a place's page), with the people and shops there a click away.
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
-import { byType, get, isCurrent, relationsOf } from '../store'
+import { byType, get, relationsWith } from '../store'
 import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ campaign?: Entry }>()
 const list = computed(() => (props.campaign ? [props.campaign] : (byType.value.get('campaign') ?? []).filter(c => c.fields.status !== 'Finished'))
   .map(c => ({ c, place: get(c.fields.partyAt as string | undefined) }))
   .filter((x): x is { c: Entry; place: Entry } => !!x.place))
-const residents = (p: Entry) => (relationsOf.value.get(p.id) ?? []).filter(r => r.kind === 'lives-in' && r.b === p.id && isCurrent(r)).length
+const residents = (p: Entry) => relationsWith(p.id, 'lives-in', 'in', { current: true }).length
 const shops = (p: Entry) => (byType.value.get('place') ?? []).filter(s => s.fields.parent === p.id && ['Shop', 'Tavern'].includes(String(s.fields.placeType ?? '')))
 </script>
 

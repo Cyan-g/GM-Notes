@@ -5,7 +5,7 @@ import { optionLabel } from '../store'
 import type { Entry } from '../model/types'
 import { describe } from '../describe'
 import MarkdownView from './MarkdownView.vue'
-import { activeEffectsOf, areaText, growthText, rollText, rollsOf } from '../spells'
+import { activeEffectsOf, areaText, growthText, rollText, rollsOf, saveText } from '../spells'
 import { describeEffects } from '../gear'
 
 const props = defineProps<{ e: Entry }>()
@@ -23,7 +23,7 @@ const grid = computed(() => ([
 
 <template>
   <div class="spell-card">
-    <div class="sc-line">{{ describe(e) }}<template v-if="f.spellType"> · {{ optionLabel('spell.spellType', f.spellType) }}</template><template v-if="f.savingThrow"> · {{ optionLabel('ability', f.savingThrow) }} save</template></div>
+    <div class="sc-line">{{ describe(e) }}<template v-if="f.spellType"> · {{ optionLabel('spell.spellType', f.spellType) }}</template><template v-if="f.savingThrow"> · {{ saveText(e) }}</template></div>
     <div class="sc-grid">
       <div v-for="[k, v] in grid" :key="k"><b>{{ k }}</b><span>{{ v || '—' }}</span></div>
     </div>

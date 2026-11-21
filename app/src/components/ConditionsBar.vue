@@ -7,13 +7,14 @@ import type { CharacterSheet, Entry } from '../model/types'
 import { editSheet } from '../sheet'
 import { state } from '../store'
 import { rule } from '../rules'
-import { CONDITION_RULES, SHEET_CONDITIONS, exhaustionText, setConditions } from '../conditions'
+import { CONDITION_RULES, exhaustionText, setConditions } from '../conditions'
+import { TRACKER_CONDITIONS } from '../model/dnd'
 import ConditionIcon from './ConditionIcon.vue'
 
 const props = defineProps<{ pc: Entry; s: CharacterSheet }>()
 const ro = computed(() => !!state.readOnly)
 const list = computed(() => props.s.conditions ?? [])
-const missing = computed(() => SHEET_CONDITIONS.filter(x => !list.value.includes(x)))
+const missing = computed(() => TRACKER_CONDITIONS.filter(x => !list.value.includes(x)))
 const level = computed(() => Math.max(1, Math.min(6, props.s.exhaustion ?? 1)))
 
 function set(next: string[], exhaustion?: number) { if (!ro.value) editSheet(props.pc, x => setConditions(props.pc, x, next, exhaustion)) }

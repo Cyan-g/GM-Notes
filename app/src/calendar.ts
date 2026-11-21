@@ -98,3 +98,9 @@ export function moonMark(cal: Calendar, d: WorldDate): { phase: number; name: st
   }
   return null
 }
+
+/** Whole years from one date to another (a birthday not reached yet that year doesn't count). */
+export function yearsBetween(a: WorldDate, b: WorldDate): number {
+  const before = (b.month ?? 1) < (a.month ?? 1) || ((b.month ?? 1) === (a.month ?? 1) && (b.day ?? 1) < (a.day ?? 1))
+  return b.year - a.year - (a.month && b.month && before ? 1 : 0)
+}

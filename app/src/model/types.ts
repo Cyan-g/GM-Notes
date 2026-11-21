@@ -231,6 +231,8 @@ export interface CharacterSheet {
   inventory: InventoryLine[]
   money?: Copper
   features: Feature[]
+  /** The Origin feat, when not the background's: another feat's id, or null for none (a DM's ruling, or a choice). */
+  originFeat?: Id | null
   /** Armor, weapons, tools and languages (see Proficiencies). */
   proficiencies?: Proficiencies
   /** The character's own spellbook (the Spellbook page shows it while they're the current character). */

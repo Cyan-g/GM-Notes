@@ -662,6 +662,8 @@ input.init { width: 4em; }
 .slot-max { width: 4em; text-align: center; padding: .2em; }
 .sbk-list { margin-bottom: 1rem; overflow-x: auto; }
 .sbk-list table { margin-bottom: .6rem; }
+/* a spell's name and its range stay on one line (the table scrolls sideways when narrow) */
+.sbk-list .grid td:first-child, .sbk-list .grid td.sbk-range { white-space: nowrap; }
 .sbk-check { white-space: nowrap; color: var(--ink); font-weight: 500; }
 .sbk-actions { white-space: nowrap; text-align: right; }
 .sbk-actions .chip-btn { font-size: 12px; padding: .15em .7em; }
@@ -1154,6 +1156,11 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .pc-notes h4 { display: flex; align-items: baseline; gap: .6rem; margin: 0 0 .5rem; font: 600 1rem var(--serif); font-variant: small-caps; letter-spacing: .04em; color: var(--accent); }
 .cs-feature-list dd { margin: .1rem 0 0; white-space: pre-line; font-size: 14px; color: var(--ink-2); }
 .cs-skill.on { color: var(--ink); }
+/* while editing: the Origin feat, the background's or another */
+.cs-origin { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; margin: .2rem 0 .6rem; font-size: 13px; }
+.cs-origin select { width: auto; max-width: 100%; }
+/* while editing: a skill the background, species, class or a feat gives (always proficient) */
+.cs-skill.given .cs-dot { color: var(--muted); }
 .cs-skill.on .cs-dot { color: var(--accent); }
 .cs-skill b { text-align: right; }
 .cs-side textarea { width: 100%; }

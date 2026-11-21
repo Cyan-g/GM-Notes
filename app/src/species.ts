@@ -87,7 +87,7 @@ export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): Active
     const key = traitKey(race, trait)
     // a lineage the subrace stands for (a High Elf has the High Elf lineage) is picked unless the player picked another
     const auto = subrace && race !== subrace && lin.includes(race) && trait.choice?.kind === 'option' ? subraceOption(trait.choice, subrace.name, race.name)
-      : race.type === 'feat' && trait.choice?.kind === 'option' && bg?.fields.originFeat === race.id && bg.fields.originFeatNote
+      : race.type === 'feat' && trait.choice?.kind === 'option' && sheet?.originFeat === undefined && bg?.fields.originFeat === race.id && bg.fields.originFeatNote
         ? trait.choice.options?.find(o => o.name.toLowerCase() === String(bg.fields.originFeatNote).trim().toLowerCase()) : undefined
     const picks = st.picks?.[key]?.length ? st.picks[key] : auto ? [auto.id] : []
     const options = trait.choice?.kind === 'option'
@@ -125,10 +125,17 @@ function itemsWithFeatures(s: CharacterSheet | undefined): Entry[] {
 }
 /** The feat entry a feature line on the sheet is ("Magic Initiate (Cleric)" is Magic Initiate), if any. */
 export const featOfFeature = (f: { name: string }): Entry | undefined => entryNamed('feat', f.name, { qualified: true })
-/** The character's feats, each once: the background's Origin feat, the sheet's feature lines that are feats, and picked feats. */
+/** The character's Origin feat: the one the sheet names (or none), else the background's. */
+export function originFeatOf(pc: Entry | undefined, s?: CharacterSheet): Entry | undefined {
+  const own = (s ?? (pc?.fields.sheet as CharacterSheet | undefined))?.originFeat
+  if (own === null) return undefined
+  const f = get(own ?? backgroundOf(pc)?.fields.originFeat)
+  return f?.type === 'feat' ? f : undefined
+}
+/** The character's feats, each once: the Origin feat, the sheet's feature lines that are feats, and picked feats. */
 function featsOf(pc: Entry, s: CharacterSheet | undefined, traits: ActiveTrait[]): Entry[] {
   const ids = [
-    get(backgroundOf(pc)?.fields.originFeat)?.id,
+    originFeatOf(pc, s)?.id,
     ...(s?.features ?? []).map(f => featOfFeature(f)?.id),
     ...traits.filter(a => a.active && a.trait.choice?.kind === 'feat').flatMap(a => a.picks),
   ]

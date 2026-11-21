@@ -10,7 +10,7 @@ import { useReadOnly } from '../composables/useReadOnly'
 import AppIcon from './AppIcon.vue'
 import ConditionIcon from './ConditionIcon.vue'
 import { computed, onBeforeUnmount, ref } from 'vue'
-import type { CharacterSheet, ClassLine, Entry, Proficiencies } from '../model/types'
+import type { CharacterSheet, ClassLine, Entry, Id, Proficiencies } from '../model/types'
 import { byType, get, listOptions, setList, state } from '../store'
 import { CLASS_DIE, DICE, classText, classesOf } from '../model/classes'
 import { dieOf } from '../classRules'
@@ -37,7 +37,7 @@ import ConditionsBar from './ConditionsBar.vue'
 import DeathSaves from './DeathSaves.vue'
 import LevelUpModal from './LevelUpModal.vue'
 import { endConcentration, hpChanged } from '../conditions'
-import { picksLeft, speciesEffects, speciesGrants, speciesSizes, speciesTraits } from '../species'
+import { featOfFeature, originFeatOf, picksLeft, speciesEffects, speciesExpertise, speciesGrants, speciesSizes, speciesTraits } from '../species'
 import { ui } from '../ui'
 
 const props = defineProps<{ pc: Entry; build?: boolean }>()
@@ -133,13 +133,39 @@ function setLeft(die: string, total: number, v: number | undefined) {
 }
 
 const toggleSave = (a: Ability) => build.value && edit(x => { x.saves = x.saves.includes(a) ? x.saves.filter(y => y !== a) : [...x.saves, a] })
-/** Skill proficiency cycles: none → proficient → expertise → none. */
+/**
+ * Skill proficiency cycles: none → proficient → expertise → none. A skill the background, species, class or a feat
+ * gives can't be taken away here: a click only switches expertise on it.
+ */
 const cycleSkill = (name: string) => build.value && edit(x => {
   const v = x.skills[name]
+  if (grantedSkill(name)) { if (v === 2) delete x.skills[name]; else x.skills[name] = 2; return }
   if (!v) x.skills[name] = 1; else if (v === 1) x.skills[name] = 2; else delete x.skills[name]
 })
+/** Where a skill the character has anyway comes from (background, species, class, feat), if it does. */
+const grantedSkill = (name: string) => given.value.find(g => g.kind === 'skill' && g.id === name)?.from
+/** How a skill shows while editing: what's typed, at least proficient when it's granted, expertise from a feature. */
+const buildLevel = (name: string) => (speciesExpertise(props.pc, s.value).has(name) ? 2 : Math.max(s.value.skills[name] ?? 0, grantedSkill(name) ? 1 : 0))
+const skillTitle = (name: string) => {
+  const from = grantedSkill(name)
+  if (from) return `Proficient from ${from}: always. Click for expertise${s.value.skills[name] === 2 ? ' (on)' : ''}`
+  return 'Click: proficient, expertise, none'
+}
 const skillsOf = (a: Ability) => SKILLS.filter(sk => sk.ability === a)
-const skillMark = (name: string) => ({ 1: '●', 2: '◉' } as Record<number, string>)[(build.value ? s.value.skills[name] : skillLevel(s.value, name)) ?? 0] ?? '○'
+// ---- the Origin feat: the background's unless the sheet names another, or none ----
+const background = computed(() => get(props.pc.fields.background as Id | undefined))
+const bgFeat = computed(() => get(background.value?.fields.originFeat as Id | undefined))
+const originFeats = computed(() => (byType.value.get('feat') ?? []).filter(e => e.fields.category === 'Origin Feat' && e.id !== bgFeat.value?.id).sort((a, b) => a.name.localeCompare(b.name)))
+const originValue = computed(() => (s.value.originFeat === null ? 'none' : s.value.originFeat ?? ''))
+function setOrigin(v: string) {
+  const before = originFeatOf(props.pc, s.value)?.id
+  edit(x => {
+    if (v === '') delete x.originFeat; else x.originFeat = v === 'none' ? null : v
+    // a feature line that was the old Origin feat (the wizard writes one) goes with it
+    if (before) x.features = x.features.filter(f => featOfFeature(f)?.id !== before)
+  })
+}
+const skillMark = (name: string) => ({ 1: '●', 2: '◉' } as Record<number, string>)[(build.value ? buildLevel(name) : skillLevel(s.value, name)) ?? 0] ?? '○'
 
 /** Damage or healing typed into the HP box: "-7" or "+5"; temp HP soaks damage first. */
 function hit(ev: Event) {
@@ -370,7 +396,7 @@ onBeforeUnmount(() => {
             <span class="cs-dot">{{ s.saves.includes(a.key) ? '●' : '○' }}</span><b v-flash="saveBonus(s, a.key, prof)" :class="{ 'gear-mod': saveParts(a.key).length, tip: saveParts(a.key).length }" :data-tip="tipOf(saveBonus(s, a.key, prof), saveParts(a.key))">{{ signed(saveBonus(s, a.key, prof)) }}</b><span>Saving throw</span><i v-if="saveAdv(a.key).tip" class="cs-adv tip" :class="saveAdv(a.key).mode" :data-tip="saveAdv(a.key).tip">{{ saveAdv(a.key).mode ?? '±' }}</i>
           </button>
           <div class="cs-skills">
-            <button v-for="sk in skillsOf(a.key)" :key="sk.name" class="cs-skill" :class="{ on: s.skills[sk.name] }" :disabled="locked" :title="build ? 'Click: proficient, expertise, none' : SKILL_LEVEL[s.skills[sk.name] ?? 0] ?? ''" @click="cycleSkill(sk.name)">
+            <button v-for="sk in skillsOf(a.key)" :key="sk.name" class="cs-skill" :class="{ on: build ? buildLevel(sk.name) : s.skills[sk.name], given: build && grantedSkill(sk.name) }" :disabled="locked" :title="build ? skillTitle(sk.name) : SKILL_LEVEL[s.skills[sk.name] ?? 0] ?? ''" @click="cycleSkill(sk.name)">
               <span class="cs-dot">{{ skillMark(sk.name) }}</span><b v-flash="skillBonus(s, sk.name, prof)" :class="{ 'gear-mod': gt.skill[sk.name]?.length, tip: gt.skill[sk.name]?.length }" :data-tip="tipOf(skillBonus(s, sk.name, prof), gt.skill[sk.name] ?? [])">{{ signed(skillBonus(s, sk.name, prof)) }}</b><span>{{ sk.name }}</span><i v-if="skillAdv(sk.name).tip" class="cs-adv tip" :class="skillAdv(sk.name).mode" :data-tip="skillAdv(sk.name).tip">{{ skillAdv(sk.name).mode ?? '±' }}</i>
             </button>
             <p v-if="!skillsOf(a.key).length" class="cs-noskill">no skills</p>
@@ -420,6 +446,14 @@ onBeforeUnmount(() => {
       <h4>Features &amp; traits <button v-if="build" class="link-btn" @click="addFeature">＋ Add</button>
         <a v-if="!build && openChoices && !ro" class="sp-open small" :href="hrefEntry(pc.id, true)" :title="`${openChoices} pick${openChoices === 1 ? '' : 's'} still to make, on the Edit page`" @click="ui.scrollTo = 'choices'">{{ openChoices }} to pick ✎</a></h4>
       <template v-if="build">
+        <label v-if="background || s.originFeat !== undefined" class="cs-origin"><span>Origin feat</span>
+          <select :value="originValue" @change="setOrigin(($event.target as HTMLSelectElement).value)">
+            <option value="">{{ bgFeat ? `${bgFeat.name}${background?.fields.originFeatNote ? ` (${background.fields.originFeatNote})` : ''}: from ${background?.name}` : `none from ${background?.name ?? 'the background'}` }}</option>
+            <option v-for="f in originFeats" :key="f.id" :value="f.id">{{ f.name }} instead</option>
+            <option value="none">None</option>
+          </select>
+          <small class="muted">{{ originValue === '' ? 'The background\'s; pick another if the DM allows it' : originValue === 'none' ? 'No Origin feat' : 'Instead of the background\'s' }}</small>
+        </label>
         <div v-for="(f, i) in s.features" :key="i" class="cs-feature">
           <input :value="f.name" placeholder="Name, e.g. Bardic Inspiration (d6)" @change="edit(x => x.features[i].name = ($event.target as HTMLInputElement).value)" />
           <textarea rows="2" :value="f.text" placeholder="What it does" @change="edit(x => x.features[i].text = ($event.target as HTMLTextAreaElement).value)" />

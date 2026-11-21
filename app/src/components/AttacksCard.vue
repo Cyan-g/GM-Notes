@@ -69,7 +69,8 @@ const none = (k: 'armor' | 'weapons' | 'tools' | 'languages') => !profs.value[k]
               <span v-if="a.tag" class="muted small"> · {{ a.tag }}</span>
             </td>
             <td><b v-flash="a.toHit" :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td>
-            <td><span v-flash="a.damage">{{ a.damage }}</span> <span class="muted small">{{ a.type }}</span></td>
+            <td><span v-flash="a.damage" class="atk-dmg">{{ a.damage }}</span> <span class="muted small">{{ a.type }}</span>
+              <span v-for="(x, j) in a.extras ?? []" :key="j" class="atk-extra small">{{ x }}</span></td>
           </tr>
           <!-- cantrips that attack or force a save, at the character's level -->
           <tr v-for="c in cantrips" :key="'c' + c.id" class="atk-cantrip">

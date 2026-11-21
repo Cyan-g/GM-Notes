@@ -10,7 +10,7 @@ import { ABILITY_KEYS, bonusApplied, bonusOpen, type BonusChoice } from './abili
 import { EPIC_BOON_LEVEL, basicsOf, hitDieOf, rulesOf, subclassLevelOf, type Kit, type KitLine } from './classRules'
 import { ruleSlots } from './slots'
 import { blankSheet, mod } from './sheet'
-import { choiceOpen, classSpellsFrom, isClassOrigin, own, speciesTraits, PROFS_TRAIT } from './species'
+import { choiceOpen, classSpellsFrom, isClassOrigin, own, speciesGrants, speciesTraits, PROFS_TRAIT } from './species'
 import { entries, get } from './store'
 import { rule } from './rules'
 import { changed, createEntry } from './edit'
@@ -206,6 +206,32 @@ export function kitsOf(d: Draft): { items: KitLine[]; money: Copper } {
   return { items: [...(cls?.items ?? []), ...(bg?.items ?? [])], money: (cls?.money ?? 0) + (bg?.money ?? 0) }
 }
 
+// ---------- languages ----------
+
+/**
+ * The languages a player picks freely. The 2024 rules: Common and two more of their choice. A species that lists its
+ * own languages (as older rules do: "Common, Elvish") gives those instead, and any extra comes from its traits'
+ * choices. Languages the species, background or class give (Druidic, Thieves' Cant) are known anyway.
+ */
+export function languageRule(d: Draft): { picks: number; given: { id: string; from: string }[]; speciesLists: boolean } {
+  const pc = draftPc(d)
+  const lineage: Entry[] = []
+  for (let r = get(d.race); r && r.type === 'race' && !lineage.includes(r); r = get(r.fields.parent as string | undefined)) lineage.push(r)
+  const listed = lineage.flatMap(r => ((r.fields.languages as string[] | undefined) ?? []).filter(l => l.trim()))
+  const speciesLists = listed.length > 0
+  // "one extra language", "two languages of your choice": picks, not languages
+  const WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4 }
+  const choice = (l: string) => l.trim().toLowerCase().match(/^(one|two|three|four|\d+)\s+(?:extra\s+|more\s+|other\s+|additional\s+)?languages?\b/)
+  const extra = listed.reduce((n, l) => { const m = choice(l); return n + (m ? WORDS[m[1]] ?? Number(m[1]) : 0) }, 0)
+  const given = speciesGrants(pc).filter(g => g.kind === 'language' && !choice(String(g.id))).map(g => ({ id: g.id, from: g.from }))
+  return { picks: speciesLists ? extra : 2, given, speciesLists }
+}
+/** The languages picked freely (Common, a given language or more than the rule allows don't count). */
+export const pickedLanguages = (d: Draft) => {
+  const given = new Set(languageRule(d).given.map(g => g.id))
+  return d.languages.filter(l => l !== 'Common' && !given.has(l))
+}
+
 // ---------- what's still open ----------
 
 export interface Step { id: string; label: string; open: string[] }
@@ -227,6 +253,7 @@ export function steps(d: Draft): Step[] {
     d.skills.length < skillCount ? `${skillCount - d.skills.length} skill${skillCount - d.skills.length === 1 ? '' : 's'}` : '',
     r?.toolChoice && d.tools.length < r.toolChoice.count ? `${r.toolChoice.count - d.tools.length} ${r.toolChoice.what}` : '',
     !r && d.cls && d.ownSaves.length < 2 ? 'two saving throws' : '',
+    pickedLanguages(d).length < languageRule(d).picks ? `${languageRule(d).picks - pickedLanguages(d).length} language${languageRule(d).picks - pickedLanguages(d).length === 1 ? '' : 's'}` : '',
   ].filter(Boolean) as string[] })
   const classFeatures = speciesTraits(pc).filter(a => isClassOrigin(a.race) && a.active)
   if (classFeatures.length) s.push({ id: 'features', label: 'Class features', open: classFeatures.filter(choiceOpen).map(a => a.trait.name) })

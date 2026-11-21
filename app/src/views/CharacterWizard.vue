@@ -6,7 +6,7 @@ import { computed, ref, watch } from 'vue'
 import type { Entry, Id } from '../model/types'
 import {
   POINTS, POINT_COST, STANDARD_ARRAY, backgroundGold, backgroundKit, backgrounds, bonusAdds, bonusOf, casts, dieOfDraft,
-  classKitsOf, draftPc, featLevels, finalScores, hpOf, itemNamed, kitsOf, makeCharacter, pointsSpent, resetWizard, rules, species, subracesOf, mainRace,
+  classKitsOf, draftPc, languageRule, pickedLanguages, featLevels, finalScores, hpOf, itemNamed, kitsOf, makeCharacter, pointsSpent, resetWizard, rules, species, subracesOf, mainRace,
   spellChoices, spellCounts, steps, subclassesOf, wizard,
 } from '../wizard'
 import { subclassLevelOf } from '../classRules'
@@ -128,6 +128,13 @@ function toggleSkill(k: string) {
 }
 const toolItems = computed(() => entries.value.filter(e => e.type === 'item' && ['Tool', 'Instrument'].includes(String(e.fields.kind))).map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label)))
 const languages = computed(() => listOptions('language'))
+const langRule = computed(() => languageRule(d.value))
+const picked = computed(() => pickedLanguages(d.value))
+/** Common, plus the languages picked, no more than the rule allows. */
+function setLanguages(v: string[]) {
+  const given = new Set(langRule.value.given.map(g => g.id))
+  wizard.d.languages = ['Common', ...v.filter(l => l !== 'Common' && !given.has(l)).slice(0, langRule.value.picks)]
+}
 const armorTypes = computed(() => listOptions('item.armorType').filter(o => o.id !== 'Clothing'))
 const toggleIn = (key: 'ownSaves' | 'ownArmor' | 'ownWeapons', v: string) => {
   const l = wizard.d[key] as string[]
@@ -371,8 +378,11 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
             <h3>{{ r.toolChoice.count }} {{ r.toolChoice.what }} <span class="muted small">{{ d.tools.length }} of {{ r.toolChoice.count }}</span></h3>
             <ProfChips :values="d.tools" :suggest="toolItems" :create="(x: string) => x" placeholder="Add one, or type a name…" @change="v => wizard.d.tools = v.slice(0, r!.toolChoice!.count)" />
           </template>
-          <h3>Languages</h3>
-          <ProfChips :values="d.languages" :suggest="languages" :create="(x: string) => x" placeholder="Add a language…" @change="v => wizard.d.languages = v" />
+          <h3>Languages <span v-if="langRule.picks" class="muted small">{{ langRule.speciesLists ? '' : 'Common and ' }}{{ picked.length }} of {{ langRule.picks }} to pick</span></h3>
+          <p v-if="langRule.given.length" class="small"><span class="muted">Known from the species, background and class:</span> {{ langRule.given.map(g => `${listOptions('language').find(o => o.id === g.id)?.label ?? g.id} (${g.from})`).join(', ') }}</p>
+          <ProfChips v-if="langRule.picks" :values="picked" :suggest="languages.filter(o => o.id !== 'Common' && !langRule.given.some(g => g.id === o.id))" :create="(x: string) => x"
+                     :placeholder="picked.length < langRule.picks ? 'Add a language…' : 'Remove one to pick another'" @change="setLanguages" />
+          <p v-else class="muted small">{{ langRule.speciesLists ? 'The species says which languages it speaks; any extra comes from its traits\' choices above.' : 'No languages to pick.' }}</p>
         </template>
 
         <!-- class features -->

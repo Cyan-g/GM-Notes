@@ -2236,3 +2236,6 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .ck-foot { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
 .ck-foot > .picker { flex: 1 1 12rem; }
 .ck-foot label { display: flex; align-items: center; gap: .3rem; }
+/* an attack's extra damage (Sneak Attack), a line of its own under the damage */
+.cs-attacks .atk-dmg { white-space: nowrap; }
+.cs-attacks .atk-extra { display: block; color: var(--muted); white-space: nowrap; }

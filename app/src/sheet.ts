@@ -321,7 +321,7 @@ export function armorClass(s: CharacterSheet): { ac: number; from: string; untra
   return { ac, from: [from, ...parts].join(' · '), untrained }
 }
 
-export interface Attack { id: Id; name: string; toHit: number; damage: string; type?: string; note?: string; untrained?: boolean
+export interface Attack { id: Id; name: string; toHit: number; damage: string; /** Extra damage (Sneak Attack), a line each. */ extras?: string[]; type?: string; note?: string; untrained?: boolean
   /** What gear adds to hit and to damage, for the tooltip. */
   gear?: string
   /** The weapon's mastery, when the character masters it, with its rule. */
@@ -365,12 +365,13 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
     const untrainedFor = proficientWith(s, e) !== true
     // Typed extra damage: "+ 2 necrotic", "+ 1d6 radiant", "+ 3d6 (once per turn)"; the proficient-only kind needs the proficiency.
     const extras = [...(t.extraOf[e.id] ?? []), ...t.extraAll].filter(x => (!x.proficient || !untrainedFor) && fits(x.when, ranged, finesse))
-    const extraText = extras.map(x => ` + ${x.dice}${x.type ? ' ' + x.type.toLowerCase() : ''}${x.note ? ` (${x.note})` : ''}`).join('')
+    // each on a line of its own under the damage: "+ 3d6 · Sneak Attack (once per turn)"
+    const extraLines = extras.map(x => `+ ${x.dice}${x.type ? ' ' + x.type.toLowerCase() : ''}${x.from ? ` · ${x.from}` : ''}${x.note ? ` (${x.note})` : ''}`)
     const gear = [breakdown('To hit', hitParts), breakdown('Damage', dmgParts)].filter(Boolean).join('\n') || undefined
     const ms = masteryOf(e)
     const mastery = ms && mastered.has(String(e.fields.baseWeapon ?? '')) ? { name: ms, rule: ruleOf(ms) } : undefined
     return {
-      id: e.id, name: e.name, toHit: m + (untrained ? 0 : prof) + sum(hitParts), damage: damage + extraText, type: (e.fields.damageType)?.join('/'), note: e.fields.range,
+      id: e.id, name: e.name, toHit: m + (untrained ? 0 : prof) + sum(hitParts), damage, ...(extraLines.length ? { extras: extraLines } : {}), type: (e.fields.damageType)?.join('/'), note: e.fields.range,
       untrained, gear, ...(mastery ? { mastery } : {}), ...(offhand ? { tag: nick ? 'off-hand (Nick)' : 'off-hand, bonus action' } : {}),
     }
   }

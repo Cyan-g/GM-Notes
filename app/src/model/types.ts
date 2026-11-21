@@ -197,6 +197,10 @@ export interface CharacterSheet {
   conditions?: string[]
   /** Their exhaustion level (1–6) while they have Exhaustion. */
   exhaustion?: number
+  /** Death saving throws while at 0 HP (the combat tracker shows the same ones). */
+  deathSaves?: { ok: number; fail: number }
+  /** The spell the character concentrates on (with the Concentrating condition); a second one ends it. */
+  concentrating?: Id
   /** Creatures linked to the character (a familiar, a steed, a summon), each with its own name and hit points. */
   companions?: Companion[]
   /** Spells switched on, whose "while active" effects count on the sheet (Bless, Shield of Faith); a long rest ends them. */

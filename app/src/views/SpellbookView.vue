@@ -8,6 +8,7 @@ import type { Entry, Id, Spellbook } from '../model/types'
 import { db, get, touch } from '../store'
 import { activeSpellbook, currentPc, editSheet, levelOf as charLevel, longRest, mod, score, sheetOf, spellStats, type Ability } from '../sheet'
 import { activeEffectsOf, isActive, rollsLine, toggleActive } from '../spells'
+import { endConcentration, startConcentration } from '../conditions'
 import { castFromItem, grantedSpells, restItems, unuse, type GrantedSpell } from '../gear'
 import { classSpellsFrom, restSpecies, speciesSpells, useSpeciesSpell, type SpeciesSpell } from '../species'
 import { classesOf } from '../model/classes'
@@ -140,7 +141,23 @@ function rolls(e: Entry | undefined, ability?: Ability) {
 /** Spells with effects while active can be switched on for the current character (their sheet counts them). */
 const switchable = (e: Entry | undefined) => !!caster.value && activeEffectsOf(e).length > 0
 const on = (e: Entry) => isActive(caster.value ? sheetOf(caster.value) : undefined, e.id)
-const toggleOn = (e: Entry) => { if (caster.value) editSheet(caster.value, s => toggleActive(s, e.id)) }
+/** Switching a concentration spell on starts concentrating on it (ending the one before); off ends it. */
+const toggleOn = (e: Entry) => {
+  const pc = caster.value
+  if (!pc) return
+  editSheet(pc, s => {
+    toggleActive(s, e.id)
+    if (!e.fields.concentration) return
+    if (isActive(s, e.id)) startConcentration(pc, s, e.id)
+    else if (s.concentrating === e.id) endConcentration(pc, s)
+  })
+}
+/** Concentration spells without effects (Hold Person, Web): concentrate on them, or stop. */
+const concentrating = (e: Entry) => !!caster.value && sheetOf(caster.value)?.concentrating === e.id
+const toggleConc = (e: Entry) => {
+  const pc = caster.value
+  if (pc) editSheet(pc, s => (s.concentrating === e.id ? endConcentration(pc, s) : startConcentration(pc, s, e.id)))
+}
 /** What the spell asks for, with this caster's numbers filled in. */
 function check(e: Entry, ability?: Ability) {
   const f = e.fields
@@ -303,6 +320,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
               <td>{{ [e.fields.concentration && 'C', e.fields.ritual && 'R'].filter(Boolean).join(' ') }}</td>
               <td class="sbk-actions">
                 <button v-if="levelOf(e)" class="chip-btn" :disabled="!canCast(e)" :title="canCast(e) ? 'Spend a slot of this level (or the next free higher one)' : 'No slot left for this level'" @click="cast(e)">Cast</button>
+                <button v-if="caster && e.fields.concentration && !switchable(e)" class="chip-btn sbk-on" :class="{ on: concentrating(e) }" :aria-pressed="concentrating(e)" :title="concentrating(e) ? 'Concentrating on it. Click to end it' : 'Concentrate on it: any other concentration spell ends'" @click="toggleConc(e)">{{ concentrating(e) ? 'Concentrating' : 'Concentrate' }}</button>
                 <button v-if="switchable(e)" class="chip-btn sbk-on" :class="{ on: on(e) }" :aria-pressed="on(e)" :title="on(e) ? 'Active: the sheet counts its effects. Click to end it' : 'Switch it on: the sheet counts its effects until you end it or take a long rest'" @click="toggleOn(e)">{{ on(e) ? 'Active' : 'On' }}</button>
               </td>
             </tr>

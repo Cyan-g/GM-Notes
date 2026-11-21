@@ -448,6 +448,10 @@ export function longRest(pc: Entry) {
   restItems(s, 'long')
   restSpecies(s, pc, 'long')
   delete s.activeSpells
+  // spells end, concentration with them; a long rest also ends death saves (they're back up with full HP)
+  if (s.concentrating || s.conditions?.includes('Concentrating')) setConditions(pc, s, (s.conditions ?? []).filter(x => x !== 'Concentrating'))
+  delete s.deathSaves
+  if (s.conditions?.includes('Unconscious')) setConditions(pc, s, s.conditions.filter(x => x !== 'Unconscious'))
   // a long rest takes one level of exhaustion away
   if (s.conditions?.includes('Exhaustion')) {
     const lv = (s.exhaustion ?? 1) - 1

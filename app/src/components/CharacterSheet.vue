@@ -29,6 +29,9 @@ import UsesCard from './UsesCard.vue'
 import { rule } from '../rules'
 import ActiveSpellsCard from './ActiveSpellsCard.vue'
 import ConditionsBar from './ConditionsBar.vue'
+import DeathSaves from './DeathSaves.vue'
+import LevelUpModal from './LevelUpModal.vue'
+import { concentrationDc, endConcentration, hpChanged } from '../conditions'
 import { picksLeft, speciesEffects, speciesTraits } from '../species'
 import { ui } from '../ui'
 
@@ -133,16 +136,33 @@ function hit(ev: Event) {
   input.value = ''
   if (!n) return
   edit(x => {
-    let hp = x.hp ?? maxHp.value ?? 0
+    const before = x.hp ?? maxHp.value ?? 0
+    let hp = before
     if (n < 0) {
       let dmg = -n
       const soak = Math.min(x.tempHp ?? 0, dmg)
       if (soak) { x.tempHp = (x.tempHp ?? 0) - soak || undefined; dmg -= soak }
       hp = Math.max(0, hp - dmg)
+      // still standing and concentrating: a CON save to keep it
+      if ((hp > 0 || !maxHp.value) && x.conditions?.includes('Concentrating')) concDc.value = concentrationDc(-n)
     } else hp = maxHp.value != null ? Math.min(maxHp.value, hp + n) : hp + n
     x.hp = hp
+    if (maxHp.value) hpChanged(props.pc, x, before, hp, n < 0)
   })
 }
+/** Typed straight into the current HP box. */
+function setHpNow(ev: Event) {
+  edit(x => {
+    const before = x.hp ?? maxHp.value ?? 0
+    x.hp = num(ev)
+    if (maxHp.value) hpChanged(props.pc, x, before, x.hp ?? maxHp.value, (x.hp ?? before) < before)
+  })
+}
+/** The CON save the last damage asks for while concentrating (gone once answered). */
+const concDc = ref<number | null>(null)
+const concDone = (kept: boolean) => { if (!kept) edit(x => endConcentration(props.pc, x)); concDc.value = null }
+const dying = computed(() => !build.value && !!maxHp.value && (s.value.hp ?? maxHp.value) <= 0)
+const setSaves = (d: { ok: number; fail: number }) => edit(x => { if (d.ok || d.fail) x.deathSaves = d; else delete x.deathSaves })
 const rest = () => { if (!ro.value) longRest(props.pc) }
 const short = () => { if (!ro.value) shortRest(props.pc) }
 
@@ -171,6 +191,7 @@ const castLabel = computed(() => (s.value.spellAbility ? s.value.spellAbility.to
 /** Experience needed for each level (1…20), the same in 2014 and 2024. */
 const XP_AT = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
 const xpNext = computed(() => XP_AT[level.value])
+const leveling = ref(false)
 const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
 </script>
 
@@ -202,6 +223,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
     <div class="cs-top" :class="{ 'with-portrait': !build, 'no-portrait': !build && !pc.image }">
     <PcPortrait v-if="!build" :pc="pc" />
     <div class="cs-top-right">
+    <LevelUpModal v-if="leveling" :pc="pc" :s="s" @close="leveling = false" />
     <!-- the character's conditions (shared with the combat tracker), with what they do -->
     <ConditionsBar v-if="!build" :pc="pc" :s="s" />
     <!-- the strip at the top: the numbers looked at most -->
@@ -213,6 +235,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         <input v-if="build" class="cs-mini" type="number" :value="s.acOverride ?? ''" placeholder="auto" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></div>
       <label class="cs-stat" :class="{ tip: gt.speed.length }" :data-tip="breakdown(`${baseSpeed(s) ?? '30 ft'} without gear`, gt.speed)"><span :class="{ 'gear-mod': gt.speed.length }">Speed</span><input v-flash="locked ? speedOf(s) : s.speed" :value="(locked ? speedOf(s) : s.speed) ?? ''" :placeholder="baseSpeed(s) ?? '30 ft'" :disabled="locked" @change="edit(x => x.speed = text($event))" /></label>
       <label v-if="rule('experience') === 'xp'" class="cs-stat cs-xp" :title="xpNext ? `Level ${level + 1} at ${xpNext.toLocaleString()} XP` : 'Highest level'"><span>XP</span><input v-flash="s.xp ?? 0" type="number" min="0" :value="s.xp ?? ''" placeholder="0" :disabled="ro" @change="edit(x => x.xp = num($event) || undefined)" /><small v-if="xpNext" class="muted">/ {{ xpNext.toLocaleString() }}</small></label>
+      <button v-if="!build && !ro && level < 20" class="cs-stat cs-lvlup" :class="{ ready: rule('experience') === 'xp' && xpNext && (s.xp ?? 0) >= xpNext }" title="Level up: class, hit points, new features, feat and spells" @click="leveling = true"><span>Level up</span><b>↑</b></button>
       <button v-if="!build" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" title="Inspiration" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>Inspiration</span><b><AppIcon ui="star" :class="{ off: !(s.inspiration) }" /></b></button>
     </div>
 
@@ -222,7 +245,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         <span class="cs-label">{{ build ? 'Maximum hit points' : 'Hit points' }}</span>
         <div class="cs-hp-row">
           <template v-if="!build">
-            <input v-flash="s.hp ?? maxHp" class="cs-hp-now" type="number" :value="s.hp ?? maxHp ?? ''" placeholder="now" :disabled="ro" title="Current HP" @change="edit(x => x.hp = num($event))" />
+            <input v-flash="s.hp ?? maxHp" class="cs-hp-now" type="number" :value="s.hp ?? maxHp ?? ''" placeholder="now" :disabled="ro" title="Current HP" @change="setHpNow" />
             <span class="muted">/</span>
           </template>
           <span :class="{ tip: gt.maxHp.length && !build, 'gear-mod': gt.maxHp.length && !build }" :data-tip="build ? undefined : breakdown(`${s.maxHp ?? 0} without gear`, gt.maxHp)"><input v-flash="build ? s.maxHp : maxHp" type="number" :value="(build ? s.maxHp : maxHp) ?? ''" :placeholder="'max'" :disabled="locked" title="Maximum HP" @change="edit(x => x.maxHp = num($event))" /></span>
@@ -234,6 +257,12 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         <div v-if="maxHp && !build" class="cs-hp-bar"><i :style="{ width: Math.min(100, Math.round(100 * (s.hp ?? maxHp) / maxHp)) + '%' }" /></div>
       </div>
       <label v-if="!build" class="cs-hp-change"><span class="cs-label">Damage / heal</span><input placeholder="−7 or +5" :disabled="ro" @keydown.enter="hit" @change="hit" /></label>
+      <DeathSaves v-if="dying" :saves="s.deathSaves ?? { ok: 0, fail: 0 }" :ro="ro" @set="setSaves" @nat20="edit(x => { const b = x.hp ?? 0; x.hp = 1; hpChanged(pc, x, b, 1, false) })" />
+      <div v-if="concDc != null && s.conditions?.includes('Concentrating')" class="cs-conc-check">
+        <span>Concentration: <b>CON save DC {{ concDc }}</b></span>
+        <button type="button" class="chip-btn" @click="concDone(true)">Kept</button>
+        <button type="button" class="chip-btn" @click="concDone(false)">Lost</button>
+      </div>
     </div>
     <div class="cs-hp cs-dice">
       <div class="cs-hitdice">

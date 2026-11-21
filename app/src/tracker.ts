@@ -57,7 +57,7 @@ export function setHp(c: Combatant, hp: number | undefined, temp: number | undef
     c.hp = hp
     c.tempHp = temp || undefined
   }
-  if ((hp ?? 0) > 0) delete c.deathSaves
+  if ((hp ?? 0) > 0) setDeathSaves(c, undefined)
   touch()
 }
 const isDown = (c: Combatant) => { const s = fighterStats(c); return s.hp != null && s.hp <= 0 && !!s.maxHp }
@@ -184,10 +184,27 @@ export function applyHp(c: Combatant, input: string) {
 
 /** A death saving throw: three successes and the character is stable, three failures and they die. */
 export function addDeathSave(c: Combatant, ok: boolean, by = 1) {
-  const d = c.deathSaves ?? { ok: 0, fail: 0 }
+  const d = { ...deathSavesOf(c) }
   if (ok) d.ok = Math.min(3, d.ok + by); else d.fail = Math.min(3, d.fail + by)
-  c.deathSaves = d
+  setDeathSaves(c, d)
   touch()
+}
+/** A combatant's death saves: their sheet's for a character whose HP is on it (one set of boxes), else their own. */
+export function deathSavesOf(c: Combatant): { ok: number; fail: number } {
+  const pc = sheetPc(c)
+  const own = pc && fighterStats(c).hpFromSheet ? sheetOf(pc)?.deathSaves : c.deathSaves
+  return own ?? { ok: 0, fail: 0 }
+}
+export function setDeathSaves(c: Combatant, d: { ok: number; fail: number } | undefined) {
+  const pc = sheetPc(c)
+  const keep = d && (d.ok || d.fail) ? d : undefined
+  if (pc && fighterStats(c).hpFromSheet) {
+    if (!keep && !sheetOf(pc)?.deathSaves) return
+    const s = sheetToEdit(pc)
+    if (keep) s.deathSaves = keep; else delete s.deathSaves
+    pc.updated = new Date().toISOString()
+  } else if (keep) c.deathSaves = keep
+  else delete c.deathSaves
 }
 
 /** End the fight: monsters go. Player characters stay; those without a sheet's HP get their full HP back. */

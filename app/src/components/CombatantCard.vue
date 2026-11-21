@@ -8,7 +8,8 @@ import type { Combatant } from '../model/types'
 import { touch } from '../store'
 import { CONDITIONS } from '../encounter'
 import ConditionIcon from './ConditionIcon.vue'
-import { applyHp, isParty, removeCombatant, fighterStats } from '../tracker'
+import DeathSaves from './DeathSaves.vue'
+import { applyHp, deathSavesOf, isParty, removeCombatant, fighterStats, setDeathSaves } from '../tracker'
 
 const props = defineProps<{ c: Combatant; current: boolean; selected: boolean }>()
 const emit = defineEmits<{ select: []; stats: [] }>()
@@ -71,15 +72,7 @@ function concDone(i: number, kept: boolean) {
 
 // ---- death saves ----
 const dying = computed(() => isParty(c.value) && state.value === 'down')
-const ds = computed(() => c.value.deathSaves ?? { ok: 0, fail: 0 })
-const fate = computed(() => (ds.value.fail >= 3 ? 'Dead' : ds.value.ok >= 3 ? 'Stable' : ''))
-/** Clicking a box fills the row up to it; clicking the last filled box empties it. */
-function setSaves(kind: 'ok' | 'fail', n: number) {
-  const d = { ...ds.value }
-  d[kind] = d[kind] === n ? n - 1 : n
-  c.value.deathSaves = d
-  touch()
-}
+const ds = computed(() => deathSavesOf(c.value))
 
 /** Clicking into a box selects its number, so typing replaces it. */
 const selectAll = (ev: FocusEvent) => (ev.target as HTMLInputElement).select()
@@ -121,17 +114,7 @@ function switchSide() { c.value.side = isParty(c.value) ? 'enemy' : 'party'; tou
       <button type="button" class="hp-btn tmp" title="Temporary HP" @click.stop="hp('t')"><AppIcon ui="shield" /></button>
     </div>
 
-    <div v-if="dying" class="death-saves" @click.stop>
-      <span class="ds-label">Death saves</span>
-      <span class="ds-row ok" title="Successes">✓
-        <button v-for="n in 3" :key="n" type="button" class="ds-box" :class="{ on: ds.ok >= n }" :aria-label="`${n} successes`" @click="setSaves('ok', n)" />
-      </span>
-      <span class="ds-row fail" title="Failures (damage at 0 HP adds one)">✕
-        <button v-for="n in 3" :key="n" type="button" class="ds-box" :class="{ on: ds.fail >= n }" :aria-label="`${n} failures`" @click="setSaves('fail', n)" />
-      </span>
-      <b v-if="fate" class="ds-fate" :class="fate.toLowerCase()">{{ fate }}</b>
-      <button v-else type="button" class="link-btn small" title="A natural 20: back on their feet with 1 HP" @click="applyHp(c, '=1')">Nat 20</button>
-    </div>
+    <DeathSaves v-if="dying" :saves="ds" @set="d => { setDeathSaves(c, d); touch() }" @nat20="applyHp(c, '=1')" />
 
     <div v-for="(dc, i) in c.concChecks ?? []" :key="'cc' + i" class="conc-check" @click.stop>
       <span><ConditionIcon name="Concentrating" /> Concentration: <b>CON save DC {{ dc }}</b></span>

@@ -80,6 +80,7 @@ export function applyConditions(s: CharacterSheet, t: GearTotals) {
 export function setConditions(pc: Entry, s: CharacterSheet, list: string[], exhaustion?: number) {
   s.conditions = list.length ? [...list] : undefined
   if (!s.conditions) delete s.conditions
+  if (!list.includes('Concentrating')) dropConcentration(s)
   if (exhaustion != null) { if (list.includes('Exhaustion')) s.exhaustion = exhaustion; else delete s.exhaustion }
   for (const c of state.db?.tracker?.combatants ?? []) if (c.entry === pc.id && c.conditions.join() !== list.join()) c.conditions = [...list]
 }
@@ -94,7 +95,51 @@ watch(() => (state.db?.tracker?.combatants ?? []).filter(c => c.entry && c.isPla
     s.conditions = c.conditions.length ? [...c.conditions] : undefined
     if (!s.conditions) delete s.conditions
     if (!c.conditions.includes('Exhaustion')) delete s.exhaustion
+    if (!c.conditions.includes('Concentrating')) dropConcentration(s)
     changed = true
   }
   if (changed) { db(); touch() }
 })
+
+// ---- concentration ----
+/** The concentration spell ends: it's no longer switched on either. */
+function dropConcentration(s: CharacterSheet) {
+  const id = s.concentrating
+  if (!id) return
+  delete s.concentrating
+  if (s.activeSpells?.includes(id)) { s.activeSpells = s.activeSpells.filter(x => x !== id); if (!s.activeSpells.length) delete s.activeSpells }
+}
+/** Start concentrating on a spell: the one before it ends, and the character has the Concentrating condition. */
+export function startConcentration(pc: Entry, s: CharacterSheet, id: string) {
+  if (s.concentrating && s.concentrating !== id) dropConcentration(s)
+  const list = s.conditions ?? []
+  if (!list.includes('Concentrating')) setConditions(pc, s, [...list, 'Concentrating'])
+  s.concentrating = id
+}
+/** Stop concentrating (the spell ends). */
+export function endConcentration(pc: Entry, s: CharacterSheet) {
+  setConditions(pc, s, (s.conditions ?? []).filter(x => x !== 'Concentrating'))
+  dropConcentration(s)
+}
+/** The CON save DC to keep concentrating after taking damage. */
+export const concentrationDc = (dmg: number) => Math.max(10, Math.floor(dmg / 2))
+
+// ---- hit points: what dropping to 0 and coming back do ----
+/**
+ * After a character's HP changed on their sheet: dropping to 0 knocks them unconscious and ends concentration;
+ * damage while at 0 is a failed death save; back above 0 they wake up and the death saves end.
+ */
+export function hpChanged(pc: Entry, s: CharacterSheet, before: number, after: number, damaged: boolean) {
+  let list = s.conditions ?? []
+  if (after <= 0 && before > 0) {
+    if (s.concentrating || list.includes('Concentrating')) { dropConcentration(s); list = list.filter(x => x !== 'Concentrating') }
+    if (!list.includes('Unconscious')) list = [...list, 'Unconscious']
+    setConditions(pc, s, list)
+  } else if (after <= 0 && damaged) {
+    const d = s.deathSaves ?? { ok: 0, fail: 0 }
+    s.deathSaves = { ok: d.ok, fail: Math.min(3, d.fail + 1) }
+  } else if (after > 0) {
+    delete s.deathSaves
+    if (before <= 0 && list.includes('Unconscious')) setConditions(pc, s, list.filter(x => x !== 'Unconscious'))
+  }
+}

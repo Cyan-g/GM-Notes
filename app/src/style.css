@@ -1873,3 +1873,18 @@ button.live-tag { cursor: pointer; }
 select option, select optgroup { background: var(--panel); color: var(--ink); }
 /* the rest buttons beside the Hit Dice */
 .cs-rests { display: flex; gap: .4rem; flex-wrap: wrap; }
+/* the level-up button and dialog */
+.cs-lvlup { cursor: pointer; }
+.cs-lvlup.ready { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
+.cs-lvlup.ready b { color: var(--accent); }
+.levelup section { margin-bottom: .8rem; }
+.levelup h3 { margin: 0 0 .3rem; font-size: 1rem; }
+.lu-hp { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; align-items: center; }
+.lu-hp label { display: inline-flex; gap: .35rem; align-items: center; }
+.lu-roll { width: 4rem; }
+.lu-gain { color: var(--accent); }
+.lu-feats { margin: 0; padding-left: 1.1rem; display: grid; gap: .3rem; }
+.lu-text { color: var(--ink-2, var(--muted)); }
+.lu-foot { display: flex; gap: .5rem; align-items: center; border-top: 1px solid var(--line); padding-top: .6rem; }
+.lu-foot .spacer { flex: 1; }
+.cs-conc-check { display: flex; gap: .4rem; align-items: center; flex-basis: 100%; font-size: 13px; }

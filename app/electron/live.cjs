@@ -5,7 +5,9 @@
 // from <userData>/live/<world id>/ in the publish format (world.json + files/<hash>), and a UDP socket on 47100 that
 // answers players looking for sessions. Connected players hold an event stream open; "Send now" tells them a new
 // version is there, and their app fetches it like it reads the Drive folder. Every request but /hello needs the
-// world's code; five wrong codes from one address lock it out for five minutes. Nothing a player sends is stored.
+// world's code; five wrong codes from one address lock it out for five minutes. The one thing a player sends is their
+// characters linked to a shared campaign (POST /character, up to 30 MB): handed to the DM's window, which keeps them
+// read-only (playerCharacters.ts); nothing is written here.
 //
 // Player: a world that follows a DM world may also know its live session (address, port, code). The app finds the DM
 // again by the world ID when its address changed, keeps the event stream open while the DM hosts, and reads the
@@ -21,6 +23,8 @@ const PORT = 47100
 const HELLO = 'gm-notes-live?'
 const FILE = /^files\/[0-9a-f]{32}(\.[a-z0-9]{1,6})?$/
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+/** The most a player's characters may weigh, pictures included. */
+const MAX_CHARACTERS = 30 * 1024 * 1024
 
 /** A new code like K7QM-4XPT (no 0/O, 1/I). */
 function newCode() {
@@ -101,6 +105,23 @@ function createLive(hooks) {
       if (p) res.write(`event: published\ndata: ${p}\n\n`)
       req.on('close', () => { h.clients.delete(c); tellHost() })
       tellHost()
+      return
+    }
+    if (rel === 'character' && req.method === 'POST') {
+      const parts = []
+      let size = 0
+      req.on('data', d => {
+        size += d.length
+        if (size > MAX_CHARACTERS) { json(res, 413, { error: 'Too big.' }); req.destroy() } else parts.push(d)
+      })
+      req.on('end', () => {
+        if (size > MAX_CHARACTERS) return
+        let msg
+        try { msg = JSON.parse(Buffer.concat(parts).toString('utf8')) } catch { return json(res, 400, { error: 'Not JSON.' }) }
+        if (!msg || typeof msg !== 'object' || typeof msg.player !== 'string' || !Array.isArray(msg.characters)) return json(res, 400, { error: 'Not characters.' })
+        hooks.send('live:character', msg)
+        json(res, 202, { ok: true })
+      })
       return
     }
     if (rel === 'world.json' || FILE.test(rel)) {
@@ -212,6 +233,24 @@ function createLive(hooks) {
   }
   const errorOf = r => { try { return JSON.parse(r.body.toString()).error } catch { return `The DM's app answered ${r.status}.` } }
 
+  /** Send the player's characters (JSON text) to the DM's live session; { ok } or { error }. */
+  function sendCharacters(text) {
+    if (!follow || playerState.state !== 'connected') return Promise.resolve({ error: 'Not connected to the DM.' })
+    const body = Buffer.from(String(text), 'utf8')
+    return new Promise(resolve => {
+      const req = http.request({ host: follow.host, port: follow.port, path: '/character', method: 'POST', timeout: 30_000,
+        headers: { 'x-gm-code': follow.code, 'content-type': 'application/json', 'content-length': body.length } }, res => {
+        const parts = []
+        res.on('data', d => parts.push(d))
+        res.on('end', () => { const r = { status: res.statusCode ?? 0, body: Buffer.concat(parts) }; resolve(r.status === 202 ? { ok: true } : { error: errorOf(r) }) })
+        res.on('error', e => resolve({ error: e.message }))
+      })
+      req.on('timeout', () => req.destroy(new Error("The DM's app didn't answer.")))
+      req.on('error', e => resolve({ error: e.message }))
+      req.end(body)
+    })
+  }
+
   /** "192.168.1.20" or "192.168.1.20:47100" → a target. */
   function parseAddress(text) {
     const m = String(text ?? '').trim().match(/^([\w.-]+)(?::(\d{2,5}))?$/)
@@ -310,7 +349,7 @@ function createLive(hooks) {
 
   return {
     newCode, startHost, stopHost, hostStatus, sent, changeCode,
-    discover, check, parseAddress, followLive, stopPlayer, read,
+    discover, check, parseAddress, followLive, stopPlayer, read, sendCharacters,
     playerStatus: () => playerState,
     stopAll() { stopHost(); stopPlayer() },
   }

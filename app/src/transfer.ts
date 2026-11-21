@@ -30,14 +30,17 @@ import { DATA_VERSION, OLDEST_VERSION, upgradeEntries } from './migrations'
 export const FORMAT = 'dndesk-export'
 const VERSION = 2
 
-/** Never shared: what the DM runs the game with. Creatures known to players are shared (a player's companions). */
-export const NEVER: readonly EntryType[] = ['campaign', 'session', 'encounter']
+/**
+ * Never shared: what the DM runs the game with. Campaigns known to players are shared (players link their characters
+ * to them), and so are creatures known to players (a player's companions).
+ */
+export const NEVER: readonly EntryType[] = ['session', 'encounter']
 export const canExport = (e: Entry) => !NEVER.includes(e.type)
 
 /** The parts of the world's settings that travel with the world. */
 type WorldPart = Pick<Database['meta'], 'calendar' | 'eventCategories' | 'today'>
 
-interface Bundle {
+export interface Bundle {
   format: typeof FORMAT
   version: 1 | 2
   /** The data version of the entries (files from before data version 31 don't say: they're taken as 30). */
@@ -96,6 +99,8 @@ export interface ExportOptions {
   textLinks: boolean
   /** Types to leave out. */
   skip: EntryType[]
+  /** Entries to leave out, whatever their type (what came from elsewhere and is there already). */
+  exclude?: (e: Entry) => boolean
 }
 
 export interface ExportPlan {
@@ -117,7 +122,7 @@ export function planExport(start: Id | null, opts: ExportOptions): ExportPlan | 
   if (start && (!first || !canExport(first))) return null
   const d = db()
   const travels = (e: Entry | undefined, skip: readonly EntryType[], hidden: boolean): e is Entry =>
-    !!e && (e.id === start || (canExport(e) && !skip.includes(e.type) && (hidden || e.visibility === 'known')))
+    !!e && (e.id === start || (canExport(e) && !skip.includes(e.type) && !opts.exclude?.(e) && (hidden || e.visibility === 'known')))
   const collect = (skip: readonly EntryType[], hidden = opts.hidden): Entry[] => {
     if (!first) return Object.values(d.entries).filter(e => travels(e, skip, hidden))
     const all = new Map<Id, Entry>([[first.id, first]])
@@ -166,6 +171,13 @@ export function outgoingEntries(plan: ExportPlan): { entries: Entry[]; names: Re
 }
 
 export async function buildExport(plan: ExportPlan): Promise<{ blob: Blob; name: string }> {
+  const bundle = await bundleOf(plan)
+  const base = plan.start ? plan.start.name : `${db().meta.title || 'World'} (world)`
+  return { blob: new Blob([JSON.stringify(bundle, null, 1)], { type: 'application/json' }), name: `${base.replace(/[\\/:*?"<>|]+/g, '')}.dndesk.json` }
+}
+
+/** What an export file holds: the plan's entries as they leave, their pictures and files, the lists they use. */
+export async function bundleOf(plan: ExportPlan): Promise<Bundle> {
   const { entries, names } = outgoingEntries(plan)
   const files: Record<string, string> = {}
   const paths = [...new Set(entries.flatMap(dataPaths))]
@@ -188,8 +200,7 @@ export async function buildExport(plan: ExportPlan): Promise<{ blob: Blob; name:
     dmText: plan.opts.dmText,
     world: plan.start ? undefined : clone({ calendar: meta.calendar, eventCategories: meta.eventCategories, today: meta.today }),
   }
-  const base = plan.start ? plan.start.name : `${meta.title || 'World'} (world)`
-  return { blob: new Blob([JSON.stringify(bundle, null, 1)], { type: 'application/json' }), name: `${base.replace(/[\\/:*?"<>|]+/g, '')}.dndesk.json` }
+  return bundle
 }
 
 /** The options of every list the entries pick from (fields and sheet proficiencies), with their labels. */
@@ -253,7 +264,15 @@ export interface ImportPlan {
 /** Which list an unknown proficiency goes to. */
 const PROF_LIST = { armor: 'item.armorType', weapons: 'item.baseWeapon', languages: 'language' } as const
 
-export async function readImport(file: File): Promise<ImportPlan> {
+export interface ImportOptions {
+  /**
+   * Where an entry of the file goes: an entry here to update (its id), a new one (null), or as usual (undefined:
+   * the same id, else the same type and name).
+   */
+  claim?: (e: Entry) => Id | null | undefined
+}
+
+export async function readImport(file: File, opts: ImportOptions = {}): Promise<ImportPlan> {
   let b: Bundle
   await stage(progress.title || 'Importing', 'Reading the file')
   try { b = JSON.parse(await file.text()) } catch { throw new Error(`${file.name} isn't a file this app can read.`) }
@@ -289,9 +308,15 @@ export async function readImport(file: File): Promise<ImportPlan> {
   const here = new Map<Id, Entry>()
   const claimed = new Set<Id>()
   const claim = (e: Entry, h: Entry) => { map.set(e.id, h.id); here.set(e.id, h); claimed.add(h.id) }
-  for (const e of ok) { const h = d.entries[e.id]; if (h && h.type === e.type && !claimed.has(h.id)) claim(e, h) }
+  const fresh = new Set<Id>()
   for (const e of ok) {
-    if (map.has(e.id)) continue
+    const c = opts.claim?.(e)
+    if (c === null) fresh.add(e.id)
+    else if (c && d.entries[c]?.type === e.type && !claimed.has(c)) claim(e, d.entries[c])
+  }
+  for (const e of ok) { const h = d.entries[e.id]; if (!map.has(e.id) && !fresh.has(e.id) && h && h.type === e.type && !claimed.has(h.id)) claim(e, h) }
+  for (const e of ok) {
+    if (map.has(e.id) || fresh.has(e.id)) continue
     const same = Object.values(d.entries).filter(h => h.type === e.type && !claimed.has(h.id))
     const h = same.find(h => norm(h.name) === norm(e.name)) ?? same.find(h => h.aliases.some(a => norm(a) === norm(e.name)))
     if (h) claim(e, h)

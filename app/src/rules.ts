@@ -80,6 +80,16 @@ export const RULES: RuleDef[] = [
     ],
     default: 'all', keywords: 'rest hit dice healing recovery',
   },
+  {
+    id: 'inspiration', group: 'Play', label: 'Heroic Inspiration',
+    text: 'Whether characters can have inspiration (a star on their sheet the DM hands out), and what spending it does.',
+    options: [
+      { id: 'heroic', label: 'Heroic Inspiration (2024)', text: 'Spend it to reroll any one die right after rolling it, and use the new roll. A character has it or not; gaining it again, they can give it to a character who lacks it.' },
+      { id: 'classic', label: 'Inspiration (2014)', text: 'Spend it for advantage on one attack roll, saving throw or ability check.' },
+      { id: 'off', label: 'Not used', text: 'No inspiration: the star leaves the sheet.' },
+    ],
+    default: 'heroic', keywords: 'inspiration heroic reroll advantage reward star',
+  },
 ]
 export const ruleDef = (id: string) => RULES.find(r => r.id === id)
 

@@ -5,6 +5,7 @@
 // proficiencies, spells or numbers the sheet already shows is left out. Picked options (invocations, Metamagic) and
 // feats (a Fighting Style) are lines of their own. Each line names its source as a tag and folds its text away; use
 // pips (or − / ＋ for a pool), scaling values stay on the line. Choices are made on the Edit page, not here.
+import { useReadOnly } from '../composables/useReadOnly'
 import { computed } from 'vue'
 import type { CharacterSheet, Entry, Feature, TraitOption } from '../model/types'
 import { editSheet } from '../sheetData'
@@ -26,7 +27,8 @@ import TraitChips from './TraitChips.vue'
 
 interface GearLine { text: string; from: string }
 const props = defineProps<{ pc: Entry; s: CharacterSheet; gear: { senses: { sense: string; range: number; from: string }[]; resistances: { type: string; from: string }[]; immunities: { condition: string; from: string }[]; damageImmunities: { type: string; from: string }[]; features: GearLine[] } }>()
-const ro = computed(() => !!state.readOnly)
+/** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
+const ro = useReadOnly()
 const all = computed(() => speciesTraits(props.pc, props.s))
 /** A trait whose picks are what's used (invocations, a Fighting Style feat): once picked, its picks are listed instead. */
 const replacedByPicks = (a: ActiveTrait) => !a.trait.uses && !a.trait.scale && a.trait.onSheet !== 'show'

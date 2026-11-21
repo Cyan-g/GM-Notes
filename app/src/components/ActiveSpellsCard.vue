@@ -2,6 +2,7 @@
 // On the play sheet, beside hit points and uses: the spells switched on in the Spellbook (Bless, Shield of Faith) and
 // the features switched on in the features list (Rage), each with what it does and ✕ to end it. The sheet's numbers
 // count them; a long rest ends them all.
+import { useReadOnly } from '../composables/useReadOnly'
 import { computed } from 'vue'
 import type { CharacterSheet, Entry } from '../model/types'
 import { editSheet } from '../sheetData'
@@ -13,7 +14,8 @@ import { isOn, speciesTraits, toggleOn, withScale } from '../species'
 import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ pc: Entry; s: CharacterSheet }>()
-const ro = computed(() => !!state.readOnly)
+/** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
+const ro = useReadOnly()
 const list = computed(() => activeSpells(props.s))
 const features = computed(() => speciesTraits(props.pc, props.s).filter(a => a.active && a.trait.toggle && isOn(a, props.s)))
 const endFeature = (key: string) => { if (!ro.value) editSheet(props.pc, x => toggleOn(x, key)) }

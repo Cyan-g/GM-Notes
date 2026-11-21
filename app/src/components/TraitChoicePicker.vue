@@ -3,10 +3,13 @@
 // Metamagic, a lineage) and feats (a Fighting Style) show as the picks made and a Choose button; the list to tick opens
 // in a dialog, each option with its text, a prerequisite level it names and a filter. Skills, languages, tools, spells
 // and weapons are dropdowns right here. A count says how many are picked. Used on the Edit page and in the wizard.
+// Weapons to master show their mastery in the dropdown, what each picked one's mastery does, and while picks are
+// left, what every mastery does (the Lists page's notes).
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { TraitOption } from '../model/types'
 import { choiceCandidates, choiceCount, choiceWords, type ActiveTrait } from '../species'
-import { get } from '../store'
+import { get, listOptions } from '../store'
+import { MASTERY_OF } from '../model/schema'
 import MarkdownView from './MarkdownView.vue'
 import EntryLink from './EntryLink.vue'
 import TraitChips from './TraitChips.vue'
@@ -26,6 +29,24 @@ function set(slot: number, id: string) {
   picks[slot] = id
   emit('pick', picks.filter(Boolean))
 }
+
+// ---- weapons to master: each with its mastery and what it does ----
+const mastery = computed(() => c.value.kind === 'mastery')
+const ruleOf = (m: string) => listOptions('weaponMastery').find(o => o.id === m)?.note
+/** The weapon's name with its mastery: "Longsword (Sap)". */
+const weaponLabel = (o: { id: string; label: string }) => (mastery.value && MASTERY_OF[o.id] ? `${o.label} (${MASTERY_OF[o.id]})` : o.label)
+/** The picked weapons with their mastery and its rule. */
+const mastered = computed(() => (mastery.value ? props.a.picks.filter(Boolean).map(id => {
+  const m = MASTERY_OF[id]
+  return { id, label: options.value.find(o => o.id === id)?.label ?? id, mastery: m, rule: m ? ruleOf(m) : undefined }
+}) : []))
+/** Every mastery the weapons on offer have, with its rule and the weapons that have it. */
+const allMasteries = computed(() => {
+  if (!mastery.value) return []
+  const by = new Map<string, string[]>()
+  for (const o of options.value) { const m = MASTERY_OF[o.id]; if (m) by.set(m, [...(by.get(m) ?? []), o.label]) }
+  return [...by].sort(([a], [b]) => a.localeCompare(b)).map(([name, weapons]) => ({ name, rule: ruleOf(name), weapons }))
+})
 
 // ---- a list to tick (options and feats) ----
 const listed = computed(() => c.value.kind === 'option' || c.value.kind === 'feat')
@@ -119,9 +140,20 @@ function toggle(id: string) {
     <div v-if="!listed" class="sp-pick-selects">
       <select v-for="k in n" :key="k" :value="a.picks[k - 1] ?? ''" :disabled="disabled" :aria-label="`${a.trait.name}: pick ${k}`" @change="set(k - 1, ($event.target as HTMLSelectElement).value)">
         <option value="">—</option>
-        <option v-for="o in options" :key="o.id" :value="o.id" :disabled="a.picks.includes(o.id) && a.picks[k - 1] !== o.id">{{ o.label }}</option>
+        <option v-for="o in options" :key="o.id" :value="o.id" :disabled="a.picks.includes(o.id) && a.picks[k - 1] !== o.id">{{ weaponLabel(o) }}</option>
       </select>
       <template v-if="c.kind === 'spell'"><EntryLink v-for="id in a.picks" :key="id" :id="id" /></template>
     </div>
+    <template v-if="mastery">
+      <ul v-if="mastered.length" class="sp-masteries small">
+        <li v-for="w in mastered" :key="w.id"><b>{{ w.label }}</b><template v-if="w.mastery"> · <b>{{ w.mastery }}</b><span v-if="w.rule" class="muted">: {{ w.rule }}</span></template></li>
+      </ul>
+      <details v-if="allMasteries.length" class="sp-mastery-list small" :open="!full && !disabled">
+        <summary>What each mastery does</summary>
+        <dl>
+          <template v-for="m in allMasteries" :key="m.name"><dt>{{ m.name }}</dt><dd><span v-if="m.rule">{{ m.rule }}</span> <span class="muted">({{ m.weapons.join(', ') }})</span></dd></template>
+        </dl>
+      </details>
+    </template>
   </div>
 </template>

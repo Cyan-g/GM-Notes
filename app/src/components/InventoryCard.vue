@@ -2,6 +2,7 @@
 // A character's inventory: gear, the ingredient pouch (what the Workbench crafts with) and money.
 // Items open in a pop-up; they can be dragged onto the Equipped card, and dropping one back here unequips it.
 // `side`: the narrow version beside the sheet (player mode), with equip and attune left to the pop-up and dragging.
+import { useReadOnly } from '../composables/useReadOnly'
 import { computed, ref } from 'vue'
 import { optionLabel } from '../store'
 import type { CharacterSheet, Entry } from '../model/types'
@@ -16,7 +17,8 @@ import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
 
 const props = defineProps<{ pc: Entry; side?: boolean }>()
-const ro = computed(() => !!state.readOnly)
+/** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
+const ro = useReadOnly()
 const s = computed<CharacterSheet>(() => sheetOrBlank(props.pc))
 const edit = (fn: (s: CharacterSheet) => void) => editSheet(props.pc, fn)
 const num = (ev: Event) => { const v = (ev.target as HTMLInputElement).value.trim(); return v === '' ? undefined : Number(v) }

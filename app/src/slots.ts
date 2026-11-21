@@ -43,13 +43,14 @@ export function ruleSlots(pc: Entry): RuleSlots | undefined {
     return { kind: 'none' as const, n }
   })
   const casters = kinds.filter(k => k.kind !== 'none' && k.kind !== 'warlock')
-  // One class: half and third casters round up from their first casting level; with several, they round down.
+  // The 2024 rules (SRD 5.2.1): paladins and rangers cast from level 1, their levels halved and rounded up, alone or
+  // with other classes. Third casters cast from level 3 alone (rounded up), and with other classes count a third of
+  // their levels, rounded down.
   const single = casters.length === 1
   const level = casters.reduce((sum, k) => sum + (
     k.kind === 'full' ? k.n
-      : k.kind === 'artificer' ? Math.ceil(k.n / 2)
-        : k.kind === 'half' ? (single ? (k.n >= 2 ? Math.ceil(k.n / 2) : 0) : Math.floor(k.n / 2))
-          : (single ? (k.n >= 3 ? Math.ceil(k.n / 3) : 0) : Math.floor(k.n / 3))
+      : k.kind === 'artificer' || k.kind === 'half' ? Math.ceil(k.n / 2)
+        : (single ? (k.n >= 3 ? Math.ceil(k.n / 3) : 0) : Math.floor(k.n / 3))
   ), 0)
   const slots = Array.from({ length: 9 }, (_, i) => TABLE[Math.min(20, level)]?.[i] ?? 0)
   const w = kinds.find(k => k.kind === 'warlock')?.n ?? 0

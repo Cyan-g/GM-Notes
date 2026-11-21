@@ -2,7 +2,8 @@
 // The character creation wizard (wizard.ts): step by step from class and level to a finished character with sheet,
 // spellbook and inventory. Steps can be visited in any order; each says what it still needs, and the summary makes the
 // character. Uses what the world has: its classes, species, backgrounds, feats, spells and items. Each step is its
-// own component (components/wizard); this is the frame around them.
+// own component (components/wizard); this is the frame around them. Back and Next sit at the top of the step and stay
+// there while it scrolls; Next lights up once the step has nothing open.
 import { computed, ref, watch } from 'vue'
 import { resetWizard, steps, wizard } from '../wizard'
 import { subclassLevelOf } from '../classRules'
@@ -49,7 +50,14 @@ function startOver() { if (confirm('Clear everything chosen so far?')) resetWiza
       </nav>
 
       <section class="card wizard-body">
-        <h2>{{ step.label }}</h2>
+        <div class="wizard-head">
+          <h2>{{ step.label }}</h2>
+          <span class="wz-nav">
+            <button type="button" :disabled="!at" @click="move(-1)">← Back</button>
+            <button v-if="at < all.length - 1" type="button" :class="{ primary: !step.open.length }"
+                    :title="step.open.length ? `Still to choose here: ${step.open.join(', ')} (you can come back to it)` : undefined" @click="move(1)">Next: {{ all[at + 1].label }} →</button>
+          </span>
+        </div>
         <p v-if="step.open.length" class="wz-open small">Still to choose: {{ step.open.join(', ') }}</p>
 
         <WzClassStep v-if="step.id === 'class'" />
@@ -64,10 +72,6 @@ function startOver() { if (confirm('Clear everything chosen so far?')) resetWiza
         <WzStoryStep v-else-if="step.id === 'details'" />
         <WzSummaryStep v-else-if="step.id === 'summary'" :open="all.flatMap(s => s.open)" />
 
-        <footer class="wizard-foot">
-          <button type="button" :disabled="!at" @click="move(-1)">← Back</button>
-          <button v-if="at < all.length - 1" type="button" class="primary" @click="move(1)">Next: {{ all[at + 1].label }} →</button>
-        </footer>
       </section>
     </div>
   </div>

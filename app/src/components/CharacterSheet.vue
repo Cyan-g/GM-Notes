@@ -6,6 +6,7 @@
 // On the Edit page (`build`) it also opens what's set when building the character: classes and their levels
 // (multiclassing), max HP, AC, speed, scores, proficiencies, spellcasting and features.
 // Hit dice come from the classes, one pool per die size, each spent on its own.
+import { useReadOnly } from '../composables/useReadOnly'
 import AppIcon from './AppIcon.vue'
 import ConditionIcon from './ConditionIcon.vue'
 import { computed, onBeforeUnmount, ref } from 'vue'
@@ -40,7 +41,8 @@ import { picksLeft, speciesEffects, speciesGrants, speciesSizes, speciesTraits }
 import { ui } from '../ui'
 
 const props = defineProps<{ pc: Entry; build?: boolean }>()
-const ro = computed(() => !!state.readOnly)
+/** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
+const ro = useReadOnly()
 /** Build-time parts are locked unless the sheet is being edited. */
 const build = computed(() => !!props.build && !ro.value)
 const locked = computed(() => !build.value)
@@ -82,6 +84,8 @@ function edit(fn: (s: CharacterSheet) => void) {
 }
 const num = (ev: Event) => { const v = (ev.target as HTMLInputElement).value.trim(); return v === '' ? undefined : Number(v) }
 const text = (ev: Event) => (ev.target as HTMLInputElement).value.trim() || undefined
+/** What inspiration does under the world's rules (Ruleset), for the star's tooltip. */
+const inspirationTip = computed(() => (rule('inspiration') === 'classic' ? 'Inspiration: spend it for advantage on one attack roll, saving throw or ability check' : 'Heroic Inspiration: spend it to reroll any one die right after rolling it'))
 /** Feet typed as "35" or "35 ft"; nothing typed (or no number) is none. */
 const feet = (ev: Event) => { const m = (ev.target as HTMLInputElement).value.match(/\d+/); return m ? Number(m[0]) : undefined }
 /** The typed speed as shown: "35 ft". */
@@ -293,7 +297,7 @@ onBeforeUnmount(() => {
       <label v-if="build && sizes.length > 1" class="cs-stat" title="The species lets the player pick its size"><span>Size</span><select :value="s.size && sizes.includes(s.size) ? s.size : sizes[0]" @change="edit(x => x.size = ($event.target as HTMLSelectElement).value === sizes[0] ? undefined : ($event.target as HTMLSelectElement).value)"><option v-for="z in sizes" :key="z" :value="z">{{ z }}</option></select></label>
       <label v-if="rule('experience') === 'xp'" class="cs-stat cs-xp" :title="xpNext ? `Level ${level + 1} at ${xpNext.toLocaleString()} XP` : 'Highest level'"><span>XP</span><input v-flash="s.xp ?? 0" type="number" min="0" :value="s.xp ?? ''" placeholder="0" :disabled="ro" @change="edit(x => x.xp = num($event) || undefined)" /><small v-if="xpNext" class="muted">/ {{ xpNext.toLocaleString() }}</small></label>
       <button v-if="!build && !ro && level < 20" class="cs-stat cs-lvlup" :class="{ ready: rule('experience') === 'xp' && xpNext && (s.xp ?? 0) >= xpNext }" title="Level up: class, hit points, new features, feat and spells" @click="leveling = true"><span>Level up</span><b>↑</b></button>
-      <button v-if="!build" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" title="Inspiration" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>Inspiration</span><b><AppIcon ui="star" :class="{ off: !(s.inspiration) }" /></b></button>
+      <button v-if="!build && rule('inspiration') !== 'off'" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" :title="inspirationTip" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>{{ rule('inspiration') === 'heroic' ? 'Heroic Inspiration' : 'Inspiration' }}</span><b><AppIcon ui="star" :class="{ off: !(s.inspiration) }" /></b></button>
     </div>
 
     <div v-if="!build" class="cs-hp-cards">

@@ -542,6 +542,18 @@ export interface Tracker {
   combatants: Combatant[]
 }
 
+/** What one player sent the DM: their characters and the entries those use, kept here read-only. */
+export interface PlayerShare {
+  /** The name the player's app gives (their current character, else the computer's name). */
+  who: string
+  /** When their characters last arrived. */
+  received: string
+  /** Their characters: their id → the entry here; `gone` once they no longer share it (unlinked or deleted). */
+  characters: Record<Id, { id: Id; gone?: boolean }>
+  /** Every entry of theirs here (the characters and what they use): their id → the entry here. */
+  entries: Record<Id, Id>
+}
+
 export interface Database {
   /** Data format version; upgrade() in store.ts brings older files up to date. */
   version: number
@@ -568,6 +580,8 @@ export interface Database {
     lastPublished?: string
     /** The DM's sharing choices (sync.ts): host the live session whenever the world opens, send changes as they're made. */
     sharing?: { hostOnOpen?: boolean; autoSend?: boolean }
+    /** Characters players sent from their worlds (playerCharacters.ts), by the player's world id. */
+    fromPlayers?: Record<string, PlayerShare>
     /** Paces and vehicles added for travel on maps (travel.ts); the 5e ones are built in. */
     travelModes?: import('../travel').TravelMode[]
     /** Colour theme and heading font (see theme.ts). */

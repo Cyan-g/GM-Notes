@@ -8,7 +8,7 @@
 //   the publish for the session (and the shared folder, if the world has one) and tells the connected players, whose
 //   app reads it from the DM instead of the folder while connected. The DM can host whenever the world opens, and
 //   have changes sent on their own a few seconds after they're made.
-import { reactive, watch } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import type { Database, Entry, Follow, Id, Relation } from './model/types'
 import { LISTS, type ListOption } from './model/lists'
 import { mapRefs } from './model/refs'
@@ -89,7 +89,8 @@ export type PublishTarget = 'publish' | 'live'
  */
 export async function planPublish(since: PublishTarget = 'publish'): Promise<PublishPlan> {
   if (!state.worldId) throw new Error('This world has no ID yet; reopen it in the desktop app.')
-  const plan = planExport(null, { dmText: false, hidden: false, textLinks: false, skip: ['pc'] })!
+  // what players sent (their characters and their own things) stays with the DM
+  const plan = planExport(null, { dmText: false, hidden: false, textLinks: false, skip: ['pc'], exclude: e => playerIndex.value.has(e.id) })!
   const { entries, names } = outgoingEntries(plan)
   const ids = new Set(entries.map(e => e.id))
   const files: Record<string, string> = {}
@@ -150,9 +151,28 @@ export async function publish(p: PublishPlan, progress?: (done: number, total: n
 
 // ---------- a player's side ----------
 
-/** The entries shared by the followed world (read-only here). */
+/** The DM's world: the entries players sent (playerCharacters.ts), with whose they are and whether still shared. */
+const playerIndex = computed(() => {
+  const m = new Map<Id, { player: string; who: string; gone: boolean }>()
+  for (const [player, p] of Object.entries(state.db?.meta.fromPlayers ?? {})) {
+    const gone = new Set(Object.values(p.characters).filter(c => c.gone).map(c => c.id))
+    for (const id of Object.values(p.entries)) m.set(id, { player, who: p.who, gone: gone.has(id) })
+  }
+  return m
+})
+/** Whose an entry is that a player sent (their character, or something it uses), if it is one. */
+export const fromPlayer = (e: Entry | undefined) => (e ? playerIndex.value.get(e.id) : undefined)
+/** Read-only here: shared by the followed world (a player's), or sent by a player (the DM's). */
 export function isShared(e: Entry | undefined): boolean {
-  return !!e && !!state.db?.follow?.ids.includes(e.id)
+  return !!e && (!!state.db?.follow?.ids.includes(e.id) || playerIndex.value.has(e.id))
+}
+/** Who an entry that's read-only here comes from, in words: "your DM's Kirandreth", "Celeste's player". */
+export function sharedBy(e: Entry | undefined): { label: string; title: string } | undefined {
+  if (!e) return undefined
+  const p = playerIndex.value.get(e.id)
+  if (p) return { label: `from ${p.who}`, title: `Sent by ${p.who}'s app while they're connected to your live session; read-only here${p.gone ? '. They no longer share it' : ''}` }
+  if (state.db?.follow?.ids.includes(e.id)) return { label: `from ${state.db.follow.title}`, title: `Shared by your DM from ${state.db.follow.title}; updated from there` }
+  return undefined
 }
 
 export interface SyncResult { added: number; changed: number; removed: number; title: string }
@@ -302,7 +322,7 @@ if (desktop?.live) {
   desktop.live.onPublished(p => { if (state.db?.follow?.published !== p) checkShared() })
 }
 /** The name the DM sees for this player: their current character, or the world's title. */
-const whoAmI = () => {
+export const whoAmI = () => {
   const id = state.db?.meta.currentCharacter
   return (id && state.db?.entries[id]?.name) || ''
 }

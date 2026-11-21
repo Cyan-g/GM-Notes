@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import TypeIcon from '../components/TypeIcon.vue'
-import { isShared } from '../sync'
+import { isShared, sharedBy } from '../sync'
 // Edit mode for one entry. Every change saves itself a moment later.
 import { computed } from 'vue'
 import type { EntryType, Statblock } from '../model/types'
@@ -133,7 +133,7 @@ function remove() {
 
 <template>
   <article v-if="e && def && isShared(e)" class="entry">
-    <p class="muted">“{{ e.name }}” is shared by your DM from {{ state.db?.follow?.title }}, so it's updated from there and can't be edited here. <a :href="hrefEntry(e.id)">Back to it</a></p>
+    <p class="muted">“{{ e.name }}” comes {{ sharedBy(e)?.label }}, so it's updated from there and can't be edited here. <a :href="hrefEntry(e.id)">Back to it</a></p>
   </article>
   <article v-else-if="e && def" class="entry editing">
     <div class="edit-bar">

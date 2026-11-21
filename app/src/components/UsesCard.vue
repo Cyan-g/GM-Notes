@@ -2,6 +2,7 @@
 // On the play sheet, beside hit points and hit dice: every limited use the character has from their classes, species,
 // background and feats (Second Wind, Rage, Breath Weapon…), one row each with its pips (or − / ＋ for a pool), so the
 // table doesn't have to scroll to the features to tick one off. Rests give them back.
+import { useReadOnly } from '../composables/useReadOnly'
 import { computed } from 'vue'
 import type { CharacterSheet, Entry } from '../model/types'
 import { editSheet } from '../sheetData'
@@ -11,7 +12,8 @@ import { sourceTag, speciesTraits, spendUse, usesLeft, usesMax, type ActiveTrait
 import { chargesLeft, itemsInUse, regainText, setCharges } from '../items'
 
 const props = defineProps<{ pc: Entry; s: CharacterSheet }>()
-const ro = computed(() => !!state.readOnly)
+/** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
+const ro = useReadOnly()
 const rows = computed(() => speciesTraits(props.pc, props.s).filter(a => a.active && usesMax(props.pc, a, props.s, score) > 0))
 const max = (a: ActiveTrait) => usesMax(props.pc, a, props.s, score)
 const left = (a: ActiveTrait) => usesLeft(props.pc, props.s, a, score)

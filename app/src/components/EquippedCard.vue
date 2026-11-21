@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // A character's side card: what they wear and wield, and their three attunement slots.
 // Each item has a button to take it off (or end the attunement); it also opens in a pop-up.
+import { useReadOnly } from '../composables/useReadOnly'
 import { printCards } from '../ui'
 import AppIcon from './AppIcon.vue'
 import { computed, ref } from 'vue'
@@ -15,7 +16,8 @@ import { describeEffect } from '../effects'
 
 const props = defineProps<{ pc: Entry }>()
 const ATTUNE_SLOTS = 3
-const ro = computed(() => !!state.readOnly)
+/** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
+const ro = useReadOnly()
 const lines = computed(() => (sheetOf(props.pc)?.inventory ?? []).map((l, i) => ({ l, i, e: get(l.item) })).filter(x => !!x.e))
 const label = (x: { e?: Entry }) => (x.e!.fields.kind === 'Armor' ? String(x.e!.fields.slot ?? 'Armor') : String(x.e!.fields.kind ?? ''))
 const worn = computed(() => lines.value.filter(x => x.l.equipped && x.e!.fields.kind === 'Armor'))

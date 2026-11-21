@@ -3,6 +3,7 @@
 // feats ask for (Fighting Style, Expertise, invocations, a lineage, skills, a casting ability…), the open ones first,
 // with how many picks are left. Proficiencies a feature gives are listed as given, with a fold to swap them for
 // another of the same kind. In play the sheet only shows what was picked.
+import { useReadOnly } from '../composables/useReadOnly'
 import { computed, nextTick, onMounted, ref } from 'vue'
 import type { CharacterSheet, Entry, TraitGrant } from '../model/types'
 import { editSheet } from '../sheetData'
@@ -17,7 +18,8 @@ import TraitChoicePicker from './TraitChoicePicker.vue'
 import { inputValue as val } from '../dom'
 
 const props = defineProps<{ pc: Entry; s: CharacterSheet }>()
-const ro = computed(() => !!state.readOnly)
+/** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
+const ro = useReadOnly()
 /** Class features by level, then the rest; the ones still waiting for a pick first. */
 const list = computed(() => {
   const act = speciesTraits(props.pc, props.s).filter(a => a.active && hasChoices(a))

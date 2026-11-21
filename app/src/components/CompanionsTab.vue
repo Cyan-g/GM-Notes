@@ -2,6 +2,7 @@
 // A character's Companions tab: creatures linked to them (a familiar, a steed, a summoned beast), each with its own
 // name and hit points, and its statblock from the creature entry. Only creatures the players may see can be picked;
 // the same creature can be linked more than once (two wolves).
+import { useReadOnly } from '../composables/useReadOnly'
 import { computed, ref } from 'vue'
 import type { Companion, Entry } from '../model/types'
 import { byType, get, state } from '../store'
@@ -11,7 +12,8 @@ import Statblock from './Statblock.vue'
 import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ pc: Entry }>()
-const ro = computed(() => !!state.readOnly)
+/** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
+const ro = useReadOnly()
 const list = computed(() => sheetOrBlank(props.pc).companions ?? [])
 /** The creatures that can be linked: not DM-only, by name. */
 const creatures = computed(() => (byType.value.get('creature') ?? []).filter(c => c.visibility !== 'secret').sort((a, b) => a.name.localeCompare(b.name)))

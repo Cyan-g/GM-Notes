@@ -2,14 +2,15 @@
 // uses for a field (hair colours, occupations), offered while typing so the same thing is written the same way.
 import type { Entry, EntryType, WorldDate } from './model/types'
 import { byKey } from './model/schema'
-import { byType, db, formatDate } from './store'
+import { byType, db, formatDate, playerMode } from './store'
 import { yearsBetween } from './calendar'
 
 /** The usual statuses; any other word can be typed too. No status counts as alive. */
 export const STATUSES = ['Alive', 'Dead', 'Undead', 'Missing', 'Imprisoned', 'Unknown']
 /** Quick picks for an age written as a word. */
 export const AGES = ['child', 'young', 'adult', 'middle-aged', 'old', 'ancient']
-export const ATTITUDES = ['Friendly', 'Indifferent', 'Hostile'] as const
+/** An NPC's or organization's secret as shown: nothing in a player's own world, where it is never shown. */
+export const secretText = (v: unknown) => (playerMode.value ? '' : String(v ?? '').trim())
 
 const isDead = (e: Entry) => String(e.fields.status ?? '').toLowerCase() === 'dead'
 /** The age from the birth date: on the world's date, or at death for the dead whose death has a date. */

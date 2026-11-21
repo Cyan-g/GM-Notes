@@ -7,8 +7,8 @@ import type { Companion, Entry } from '../model/types'
 import { byType, get, state } from '../store'
 import { editSheet, sheetOrBlank } from '../sheetData'
 import { statsOf } from '../encounter'
-import Statblock from '../components/Statblock.vue'
-import EntryLink from '../components/EntryLink.vue'
+import Statblock from './Statblock.vue'
+import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ pc: Entry }>()
 const ro = computed(() => !!state.readOnly)

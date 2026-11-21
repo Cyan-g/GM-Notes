@@ -1,19 +1,16 @@
 <script setup lang="ts">
-import { printable } from '../cards'
 import AppIcon from '../components/AppIcon.vue'
 import TypeIcon from '../components/TypeIcon.vue'
-import EntryIcon from '../components/EntryIcon.vue'
 import { NOTE_TYPES, isShared } from '../sync'
 import PlayerNotes from '../components/PlayerNotes.vue'
-import { currentPc, setCurrent } from '../sheet'
-import { computed, ref, watch } from 'vue'
-import type { Entry, Relation, Statblock, WorldDate } from '../model/types'
-import { TYPES, RELATION_KINDS, byKey, type FieldDef } from '../model/schema'
-import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, hiddenFromPlayers, placePath, playerMode, relationsOf, entries, state } from '../store'
-import { leads } from '../org'
-import { go, hrefEntry, hrefFamily, hrefList, hrefMap, hrefTab, type EntryTab } from '../router'
+import { computed } from 'vue'
+import type { Entry } from '../model/types'
+import { TYPES, byKey, type FieldDef } from '../model/schema'
+import { childrenOf, get, placePath, playerMode, entries, state } from '../store'
+import { go, hrefEntry, hrefFamily, hrefList, hrefTab, type EntryTab } from '../router'
+import type { UiIcon } from '../icons/ui'
 import SpellbookView from './SpellbookView.vue'
-import InventoryTab from './InventoryTab.vue'
+import InventoryTab from '../components/InventoryTab.vue'
 import ClassOverview from '../components/ClassOverview.vue'
 import SubclassInfo from '../components/SubclassInfo.vue'
 import RaceGlance from '../components/RaceGlance.vue'
@@ -21,27 +18,27 @@ import BackgroundGlance from '../components/BackgroundGlance.vue'
 import FeatInfo from '../components/FeatInfo.vue'
 import UpcastTable from '../components/UpcastTable.vue'
 import { statsOf } from '../encounter'
-import CompanionsTab from './CompanionsTab.vue'
+import CompanionsTab from '../components/CompanionsTab.vue'
 import CraftingView from './CraftingView.vue'
 import FamilyTree from '../components/FamilyTree.vue'
 import { familySize } from '../family'
 import MapView from '../components/MapView.vue'
 import SubTree from '../components/SubTree.vue'
 import Sunburst from '../components/Sunburst.vue'
-import { newEntry, ui, printCards } from '../ui'
-import { changed, createEntry, isEmpty, isFavourite, toggleFavourite } from '../edit'
-import type { Pin } from '../model/types'
+import { ui } from '../ui'
+import { changed, createEntry, isEmpty } from '../edit'
 import EntryLink from '../components/EntryLink.vue'
-import ExportDialog from '../components/ExportDialog.vue'
-import HistoryDialog from '../components/HistoryDialog.vue'
-import { canExport } from '../transfer'
+import EntryHeader from '../components/EntryHeader.vue'
 import MarkdownView from '../components/MarkdownView.vue'
 import FieldValue from '../components/FieldValue.vue'
+import FieldGroupCard from '../components/FieldGroupCard.vue'
 import StatblockView from '../components/Statblock.vue'
 import MembersCard from '../components/MembersCard.vue'
 import SessionSide from '../components/SessionSide.vue'
-import { nextSessionNo, sessionsOf } from '../sessions'
-import DataImage from '../components/DataImage.vue'
+import CampaignSessions from '../components/CampaignSessions.vue'
+import RaceMembers from '../components/RaceMembers.vue'
+import RelationCards from '../components/RelationCards.vue'
+import AddToTracker from '../components/AddToTracker.vue'
 import ItemCard from '../components/ItemCard.vue'
 import SpellCard from '../components/SpellCard.vue'
 import CharacterSheet from '../components/CharacterSheet.vue'
@@ -50,7 +47,6 @@ import AttacksCard from '../components/AttacksCard.vue'
 import FeatCard from '../components/FeatCard.vue'
 import TraitList from '../components/TraitList.vue'
 import { traitsOf } from '../model/traits'
-import { describe } from '../describe'
 import TimelineChart from '../components/TimelineChart.vue'
 import TimelineList from '../components/TimelineList.vue'
 import { allItems, filterItems } from '../timeline'
@@ -58,8 +54,6 @@ import SubraceCards from '../components/SubraceCards.vue'
 import NpcRoleplay from '../components/NpcRoleplay.vue'
 import DeityGlance from '../components/DeityGlance.vue'
 import TextLinks from '../components/TextLinks.vue'
-import { statusText } from '../npc'
-import { addEntryToTracker } from '../tracker'
 import OrgCards from '../components/OrgCards.vue'
 import PartyRenown from '../components/PartyRenown.vue'
 import StandingCard from '../components/StandingCard.vue'
@@ -67,9 +61,8 @@ import OrgsHere from '../components/OrgsHere.vue'
 import PlaceCards from '../components/PlaceCards.vue'
 import PartyHere from '../components/PartyHere.vue'
 import OutlineCard from '../components/OutlineCard.vue'
-import ItemWhere from '../components/ItemWhere.vue'
 import { featsGrantedBy } from '../lookup'
-import { carriersOf, shopsSelling } from '../items'
+import { bodyParts as cutBody, setBodyPart, type BodyPart } from '../bodyParts'
 
 const props = defineProps<{ id: string; tab?: EntryTab }>()
 const e = computed(() => get(props.id))
@@ -82,17 +75,25 @@ const onBench = computed(() => e.value?.type === 'pc' && props.tab === 'crafting
 const onPals = computed(() => e.value?.type === 'pc' && props.tab === 'companions')
 const onOverview = computed(() => !onFamily.value && !onInv.value && !onBook.value && !onBench.value && !onPals.value)
 const def = computed(() => e.value ? TYPES[e.value.type] : undefined)
-const today = computed(() => db().meta.today)
+/** The tabs after Overview: a player character's gear, spells and crafting first; the family tree last. */
+const tabs = computed(() => {
+  const x = e.value
+  if (!x) return []
+  const family = { href: hrefFamily(x.id), on: onFamily.value, icon: 'family' as UiIcon, label: 'Family tree', count: familySize(x.id) }
+  if (x.type !== 'pc') return [family]
+  const s = x.fields.sheet
+  return [
+    { href: hrefTab(x.id, 'inventory'), on: onInv.value, icon: 'otherItems' as UiIcon, label: 'Inventory', count: s?.inventory?.length },
+    { href: hrefTab(x.id, 'spellbook'), on: onBook.value, icon: 'spellbook' as UiIcon, label: 'Spellbook', count: s?.spellbook?.prepared?.length },
+    { href: hrefTab(x.id, 'crafting'), on: onBench.value, icon: 'workbench' as UiIcon, label: 'Workbench', count: s?.crafting?.known?.length },
+    { href: hrefTab(x.id, 'companions'), on: onPals.value, icon: 'link' as UiIcon, label: 'Companions', count: s?.companions?.length },
+    family,
+  ]
+})
 
 const shown = (f: FieldDef, x: Entry) => !f.when || f.when.is.includes(String(byKey(x.fields)[f.when.field] ?? ''))
 
 const NPC_ELSEWHERE = ['race', 'gender', 'age', 'occupation', 'attitude', 'status', 'statusSince']
-/** "Dead since 86 AC", by the name. */
-const status = computed(() => (e.value?.type === 'npc' ? statusText(e.value) : ''))
-const attitude = computed(() => ((e.value?.type === 'npc' || e.value?.type === 'organization') && !playerMode.value ? String(e.value.fields.attitude ?? '') : ''))
-const added = ref(0)
-function toTracker() { addEntryToTracker(e.value!.id); added.value++ }
-watch(() => props.id, () => { added.value = 0 })
 /** Simple fields grouped for the side card; big ones (statblock, recipe, stock) go elsewhere. */
 const groups = computed(() => {
   const x = e.value
@@ -134,57 +135,11 @@ const replacedHere = computed(() => new Set([e.value, ...inherited.value].flatMa
 /** The feats an entry grants (an organization's fighting styles and the like). */
 const grantedFeats = computed(() => (e.value ? featsGrantedBy(e.value.id) : []))
 const ranksDef = computed(() => def.value?.fields.find(f => f.kind === 'ranks'))
-/**
- * The text cut where data belongs inside it: an organization's ranks at the end of its "Structure" section
- * (before another table there), and granted feats right under a "Feats" heading. What has no heading to go
- * under is shown after the text instead.
- */
-const bodyParts = computed(() => {
-  const x = e.value
-  if (!x) return { parts: [] as { md?: string; from?: number; to?: number; insert?: 'ranks' | 'feats' }[], placed: new Set<string>() }
-  const lines = x.body.split('\n')
-  const heading = (name: string) => lines.findIndex(l => new RegExp(`^#{1,6}\\s+${name}\\s*$`, 'i').test(l.trim()))
-  const sectionEnd = (h: number) => {
-    const level = lines[h].trim().match(/^#+/)![0].length
-    const end = lines.findIndex((l, i) => i > h && /^#{1,6}\s/.test(l.trim()) && l.trim().match(/^#+/)![0].length <= level)
-    return end < 0 ? lines.length : end
-  }
-  const cuts: { at: number; insert: 'ranks' | 'feats' }[] = []
-  if (x.type === 'organization' && !isEmpty(x.fields.ranks)) {
-    const h = heading('structure')
-    if (h >= 0) {
-      const end = sectionEnd(h)
-      const table = lines.findIndex((l, i) => i > h && i < end && l.trim().startsWith('|'))
-      cuts.push({ at: table > 0 ? table : end, insert: 'ranks' })
-    }
-  }
-  if (grantedFeats.value.length) {
-    const h = heading('feats?')
-    if (h >= 0) cuts.push({ at: h + 1, insert: 'feats' })
-  }
-  cuts.sort((p, q) => p.at - q.at)
-  const parts: { md?: string; from?: number; to?: number; insert?: 'ranks' | 'feats' }[] = []
-  let from = 0
-  for (const c of cuts) {
-    const md = lines.slice(from, c.at).join('\n')
-    if (md.trim()) parts.push({ md, from, to: c.at })
-    parts.push({ insert: c.insert })
-    from = c.at
-  }
-  const rest = lines.slice(from).join('\n')
-  if (rest.trim()) parts.push({ md: rest, from, to: lines.length })
-  return { parts, placed: new Set(cuts.map(c => c.insert)) }
-})
+/** The text cut where its ranks and granted feats go (bodyParts.ts). */
+const bodyParts = computed(() => (e.value ? cutBody(e.value, grantedFeats.value.length > 0) : { parts: [] as BodyPart[], placed: new Set<string>() }))
 /** Checklist boxes in the text can be ticked in read mode, except on a read-only or a shared entry (players tick their own notes). */
 const canTick = computed(() => !state.readOnly && !shared.value)
-/** A ticked box: its part of the text, changed, goes back in its place. */
-function setPart(p: { from?: number; to?: number }, md: string) {
-  const x = e.value
-  if (!x || p.from == null || p.to == null) return
-  const lines = x.body.split('\n')
-  x.body = [...lines.slice(0, p.from), md, ...lines.slice(p.to)].join('\n')
-  changed(x)
-}
+const setPart = (p: BodyPart, md: string) => { if (e.value) setBodyPart(e.value, p, md) }
 const scrollSpell = computed(() => (e.value?.type === 'item' && e.value.fields.kind === 'Scroll' ? get(e.value.fields.spell) : undefined))
 const statblock = computed(() => statsOf(e.value))
 
@@ -198,64 +153,6 @@ const crumbs = computed(() => {
   return chain
 })
 
-const range = (from?: WorldDate, to?: WorldDate) => {
-  if (!from && !to) return ''
-  return `${from ? formatDate(from) : '?'} – ${to ? formatDate(to) : 'now'}`
-}
-const ended = (r: Relation) => r.to && dateKey(r.to) < dateKey(today.value)
-
-/** Relations grouped by how they read from this entry's side. */
-const relGroups = computed(() => {
-  const x = e.value
-  if (!x) return []
-  const out = new Map<string, { other: string; r: Relation }[]>()
-  for (const r of relationsOf.value.get(x.id) ?? []) {
-    const k = RELATION_KINDS[r.kind]
-    const mine = r.a === x.id
-    const label = mine ? k.forward : k.reverse
-    if (x.type === 'organization' && r.kind === 'member' && !mine) continue // shown in MembersCard
-    if (x.type === 'place' && r.kind === 'lives-in' && !mine) continue // shown in the Residents card (PlaceCards)
-    if (inFacts.value.has(r.id)) continue // shown under the name
-    if (!out.has(label)) out.set(label, [])
-    out.get(label)!.push({ other: mine ? r.b : r.a, r })
-  }
-  for (const list of out.values()) list.sort((p, q) => Number(!!ended(p.r)) - Number(!!ended(q.r)) || (get(p.other)?.name ?? '').localeCompare(get(q.other)?.name ?? ''))
-  return [...out]
-})
-
-/** Maps that have a pin for this entry. */
-const onMaps = computed(() => {
-  const x = e.value
-  if (!x) return []
-  return entries.value.flatMap(p => ((p.fields.pins) ?? []).filter(pin => pin.entry === x.id).map(pin => ({ place: p, pin })))
-})
-
-// A place's kind shows as its badge, so a place has no lead line of its own.
-// Places show their kind as the badge; items and spells show their line inside their card.
-const lead = computed(() => (e.value && !['place', 'item', 'spell', 'feat'].includes(e.value.type) ? describe(e.value, { parent: false }) : ''))
-
-/** The few facts that belong right under the name: affiliations, home, rulers, leaders (as org.ts tells them). */
-const facts = computed(() => {
-  const x = e.value
-  if (!x) return []
-  const rs = (relationsOf.value.get(x.id) ?? []).filter(r => !ended(r))
-  const out: { label: string; items: { id: string; note?: string; rel: string }[] }[] = []
-  const add = (label: string, items: { id: string; note?: string; rel: string }[]) => { if (items.length) out.push({ label, items }) }
-  if (x.type === 'npc' || x.type === 'pc') {
-    add('Member of', rs.filter(r => r.kind === 'member' && r.a === x.id).map(r => ({ id: r.b, note: r.role, rel: r.id })))
-    add('Lives in', rs.filter(r => r.kind === 'lives-in' && r.a === x.id).map(r => ({ id: r.b, rel: r.id })))
-    add('Rules', rs.filter(r => r.kind === 'rules' && r.a === x.id).map(r => ({ id: r.b, rel: r.id })))
-    add('Worships', rs.filter(r => r.kind === 'worships' && r.a === x.id).map(r => ({ id: r.b, rel: r.id })))
-  } else if (x.type === 'organization') {
-    add('Led by', rs.filter(r => r.kind === 'member' && r.b === x.id && leads(x, r.role)).map(r => ({ id: r.a, note: r.role, rel: r.id })))
-  } else if (x.type === 'place') {
-    add('Ruled by', rs.filter(r => r.kind === 'rules' && r.b === x.id).map(r => ({ id: r.a, note: r.role, rel: r.id })))
-  }
-  return out
-})
-/** The relations already in the facts line, left out of the side cards (ended ones still show there). */
-const inFacts = computed(() => new Set(facts.value.flatMap(f => f.items.map(i => i.rel))))
-
 /** Timeline items involving this entry (not the entry itself when it's an event). */
 const history = computed(() => {
   const x = e.value
@@ -267,8 +164,6 @@ const children = computed(() => (e.value ? childrenOf.value.get(e.value.id) ?? [
 
 /** Shared by the DM's world this one follows: read-only here. */
 const shared = computed(() => isShared(e.value))
-/** The characters with this spell in their spellbook, or this item in their inventory. */
-const knownBy = computed(() => (e.value?.type === 'spell' ? (byType.value.get('pc') ?? []).filter(p => p.fields.sheet?.spellbook?.known?.includes(e.value!.id)) : []))
 /** A new item like this one, to make a variant of it (opened in its editor). */
 function copyItem() {
   const x = e.value!
@@ -277,39 +172,6 @@ function copyItem() {
   changed(n)
   go(hrefEntry(n.id) + '/edit')
 }
-const carriedBy = computed(() => (e.value?.type === 'item' ? carriersOf(e.value).map(x => x.p) : []))
-const mentions = computed(() => {
-  const x = e.value
-  if (!x) return []
-  const related = new Set((relationsOf.value.get(x.id) ?? []).flatMap(r => [r.a, r.b]))
-  // Leave out what another card already lists.
-  const kids = new Set([...children.value, ...usedIn.value, ...soldAt.value, ...raceMembers.value, ...knownBy.value, ...carriedBy.value].map(c => c.id))
-  return [...(backlinks.value.get(x.id) ?? [])].map(get).filter((m): m is Entry => !!m && !related.has(m.id) && !kids.has(m.id) && !hiddenFromPlayers(m))
-    .sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name))
-})
-
-// ---- type-specific lists ----
-/** Everyone of this race or of one of its subraces (any depth). */
-const raceMembers = computed(() => {
-  if (e.value?.type !== 'race') return []
-  const ids = new Set<string>([e.value.id])
-  for (let grew = true; grew;) { grew = false; for (const r of byType.value.get('race') ?? []) if (!ids.has(r.id) && !!r.fields.parent && ids.has(r.fields.parent)) { ids.add(r.id); grew = true } }
-  return entries.value.filter(n => (n.type === 'npc' || n.type === 'pc') && !!n.fields.race && ids.has(n.fields.race))
-    .sort((a, b) => subraceName(a).localeCompare(subraceName(b)) || a.name.localeCompare(b.name))
-})
-const subraceName = (n: Entry) => (n.fields.race === e.value?.id ? '' : get(n.fields.race)?.name ?? '')
-const hasSubraceMembers = computed(() => raceMembers.value.some(n => subraceName(n)))
-const usedIn = computed(() => e.value?.type === 'item'
-  ? entries.value.filter(n => ((n.fields.recipe as { item: string }[]) ?? []).some(l => l.item === e.value!.id)) : [])
-const soldAt = computed(() => (e.value?.type === 'item' ? shopsSelling(e.value).map(x => x.s) : []))
-/** A new session of this campaign, numbered after the last one. */
-function newSession() {
-  newEntry('session', { campaign: e.value!.id, number: nextSessionNo(e.value!.id) })
-}
-const exporting = ref(false)
-const showHistory = ref(false)
-const sessions = computed(() => e.value?.type === 'campaign'
-  ? sessionsOf(e.value.id) : [])
 const campaignNotes = computed(() => e.value?.type === 'campaign'
   ? entries.value.filter(n => (n.type === 'note' && n.fields.campaign === e.value!.id) || (n.type === 'pc' && ((n.fields.campaigns) ?? []).includes(e.value!.id))) : [])
 </script>
@@ -320,56 +182,12 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
       <a class="crumb-root" :href="hrefList(e.type)"><TypeIcon :type="e.type" /> {{ def.plural }}</a>
       <template v-for="c in crumbs" :key="c.id"><span class="sep">›</span><EntryLink :id="c.id" /></template>
     </nav>
-    <header class="entry-head" :class="{ 'has-portrait': e.image && e.type !== 'pc' && e.type !== 'item' }">
-      <div class="head-actions">
-        <button class="fav-btn" :class="{ on: isFavourite(e.id) }" :title="isFavourite(e.id) ? 'Remove from favourites (F)' : 'Add to favourites (F)'" :aria-pressed="isFavourite(e.id)" @click="toggleFavourite(e.id)"><AppIcon ui="star" :class="{ off: !(isFavourite(e.id)) }" /></button>
-        <button class="export-btn" title="Earlier versions of this entry" @click="showHistory = true"><AppIcon ui="history" /> History</button>
-        <button v-if="printable(e)" class="export-btn" title="Print this as a card (PDF, poker size)" @click="printCards(e.name, [{ label: 'This one', ids: [e.id] }])"><AppIcon ui="cards" /> Card</button>
-        <button v-if="canExport(e)" class="export-btn" title="Save as a file to share (someone else can import it)" @click="exporting = true"><AppIcon ui="exportFile" /> Export</button>
-        <a v-if="!shared" class="button edit-btn" :href="hrefEntry(e.id, true)" title="Edit (E)">✎ Edit</a>
-        <span v-else class="badge shared-badge" :title="`Shared by your DM from ${state.db?.follow?.title}; updated from there`"><AppIcon ui="download" /> from {{ state.db?.follow?.title }}</span>
-      </div>
-      <ExportDialog v-if="canExport(e)" v-model="exporting" :id="e.id" />
-      <HistoryDialog v-if="showHistory" :entry="e" @close="showHistory = false" />
-      <!-- an item's picture is on its card -->
-      <DataImage v-if="e.image && e.type !== 'pc' && e.type !== 'item'" :path="e.image" :alt="e.name" class="portrait head-portrait" />
-      <div class="head-text">
-      <div class="title-line">
-        <h1><span class="icon"><EntryIcon :e="e" /></span>{{ e.name }}</h1>
-        <div class="sub">
-          <span class="badge">{{ (e.type === 'place' && e.fields.placeType) || (e.type === 'item' && e.fields.kind) || def.label }}</span>
-          <!-- A character: whether the Spellbook, Workbench and Character menu use them. -->
-          <button v-if="e.type === 'pc'" class="chip-toggle current-toggle" :class="{ on: currentPc?.id === e.id }" :disabled="!!state.readOnly"
-                  :title="currentPc?.id === e.id ? 'The Spellbook, Workbench and Character menu use this character' : 'Use this character in the Spellbook, Workbench and Character menu'"
-                  @click="setCurrent(currentPc?.id === e.id ? undefined : e.id)"><AppIcon ui="star" :class="{ off: !(currentPc?.id === e.id) }" /> {{ currentPc?.id === e.id ? 'Current character' : 'Make current' }}</button>
-          <span v-if="status" class="badge npc-status-badge" :class="'st-' + String(e.fields.status).toLowerCase()">{{ status }}</span>
-          <span v-if="attitude" class="badge" :class="'att-' + attitude.toLowerCase()" title="How they stand with the party">{{ attitude }}</span>
-          <span v-if="e.visibility === 'secret' && !playerMode && e.type !== 'pc'" class="badge dm-only" title="Players don't know this entry yet">DM only</span>
-          <span v-if="e.aliases.length" class="aliases">also: {{ e.aliases.join(' · ') }}</span>
-        </div>
-      </div>
-      <p v-if="lead" class="lead">{{ lead }}</p>
-      <div v-if="facts.length" class="facts">
-        <span v-for="f in facts" :key="f.label" class="fact">
-          <span class="fact-label">{{ f.label }}</span>
-          <template v-for="(it, i) in f.items" :key="it.id"><template v-if="i">, </template><EntryLink :id="it.id" /><span v-if="it.note" class="role"> ({{ it.note }})</span></template>
-        </span>
-      </div>
-      </div>
-    </header>
+    <EntryHeader :e="e" />
 
     <MapView v-if="e.fields.map" :place="e" banner />
     <nav v-if="hasFamily" class="tabs entry-tabs">
       <a :href="hrefEntry(e.id)" :class="{ on: onOverview }">Overview</a>
-      <!-- a player character's gear, spells and crafting first; the family tree last -->
-      <a v-if="e.type !== 'pc'" :href="hrefFamily(e.id)" :class="{ on: onFamily }"><AppIcon ui="family" /> Family tree <span v-if="familySize(e.id)" class="muted small">{{ familySize(e.id) }}</span></a>
-      <template v-if="e.type === 'pc'">
-        <a :href="hrefTab(e.id, 'inventory')" :class="{ on: onInv }"><AppIcon ui="otherItems" /> Inventory <span v-if="e.fields.sheet?.inventory?.length" class="muted small">{{ e.fields.sheet.inventory.length }}</span></a>
-        <a :href="hrefTab(e.id, 'spellbook')" :class="{ on: onBook }"><AppIcon ui="spellbook" /> Spellbook <span v-if="e.fields.sheet?.spellbook?.prepared?.length" class="muted small">{{ e.fields.sheet.spellbook.prepared.length }}</span></a>
-        <a :href="hrefTab(e.id, 'crafting')" :class="{ on: onBench }"><AppIcon ui="workbench" /> Workbench <span v-if="e.fields.sheet?.crafting?.known?.length" class="muted small">{{ e.fields.sheet.crafting.known.length }}</span></a>
-        <a :href="hrefTab(e.id, 'companions')" :class="{ on: onPals }"><AppIcon ui="link" /> Companions <span v-if="e.fields.sheet?.companions?.length" class="muted small">{{ e.fields.sheet.companions.length }}</span></a>
-        <a :href="hrefFamily(e.id)" :class="{ on: onFamily }"><AppIcon ui="family" /> Family tree <span v-if="familySize(e.id)" class="muted small">{{ familySize(e.id) }}</span></a>
-      </template>
+      <a v-for="t in tabs" :key="t.label" :href="t.href" :class="{ on: t.on }"><AppIcon :ui="t.icon" /> {{ t.label }} <span v-if="t.count" class="muted small">{{ t.count }}</span></a>
     </nav>
     <FamilyTree v-if="onFamily" :id="e.id" />
     <InventoryTab v-else-if="onInv" :pc="e" />
@@ -394,10 +212,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         <div v-if="e.type === 'spell' && !state.readOnly && !playerMode" class="copy-row"><button type="button" class="chip-btn" title="A new spell with the same stats, rolls and text, to make a variant of it" @click="copyItem">Copy as new spell</button></div>
         <CharacterSheet v-if="e.type === 'pc'" :pc="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
-        <div v-if="statblock && e.type === 'creature' && !state.readOnly && !playerMode" class="copy-row">
-          <button type="button" class="chip-btn" title="Add to the initiative tracker as an enemy" @click="toTracker">⚔ Add to tracker</button>
-          <span v-if="added" class="muted small">Added{{ added > 1 ? ` (${added})` : '' }} · <a href="#/tracker">open the tracker</a></span>
-        </div>
+        <AddToTracker v-if="statblock && e.type === 'creature' && !state.readOnly && !playerMode" :id="e.id" />
         <FeatCard v-if="e.type === 'feat'" :e="e" source />
         <FeatInfo v-if="e.type === 'feat'" :e="e" />
         <SubclassInfo v-if="e.type === 'subclass'" :e="e" />
@@ -429,19 +244,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
           <div class="feat-list"><FeatCard v-for="f in grantedFeats" :key="f.id" :e="f" title /></div>
         </section>
 
-        <section v-if="e.type === 'campaign'">
-          <h2>Sessions</h2>
-          <details v-if="sessions.length > 10" class="older-sessions">
-            <summary>Show the {{ sessions.length - 10 }} earlier sessions</summary>
-            <ol class="plain">
-              <li v-for="s in sessions.slice(0, -10)" :key="s.id"><EntryLink :id="s.id" /> <span class="muted">{{ formatDate(s.fields.date) }}</span></li>
-            </ol>
-          </details>
-          <ol v-if="sessions.length" class="plain">
-            <li v-for="s in sessions.slice(-10)" :key="s.id"><EntryLink :id="s.id" /> <span class="muted">{{ formatDate(s.fields.date) }}</span></li>
-          </ol>
-          <button class="new-session" @click="newSession">+ New session</button>
-        </section>
+        <CampaignSessions v-if="e.type === 'campaign'" :campaign="e" />
         <section v-if="campaignNotes.length">
           <h2>Characters & notes</h2>
           <ul class="plain"><li v-for="n in campaignNotes" :key="n.id"><EntryLink :id="n.id" icon /></li></ul>
@@ -453,13 +256,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
           <TimelineList :items="history" />
         </section>
 
-        <section v-if="raceMembers.length">
-          <h2>{{ e.name }} characters</h2>
-          <table class="mini">
-            <thead><tr><th>Name</th><th v-if="hasSubraceMembers">Subrace</th></tr></thead>
-            <tbody><tr v-for="n in raceMembers" :key="n.id"><td><EntryLink :id="n.id" icon /></td><td v-if="hasSubraceMembers"><EntryLink v-if="subraceName(n)" :id="n.fields.race" /></td></tr></tbody>
-          </table>
-        </section>
+        <RaceMembers v-if="e.type === 'race'" :race="e" />
       </div>
 
       <aside class="entry-side">
@@ -478,24 +275,12 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
           <Sunburst v-else :id="e.id" :key="'sb-' + e.id" />
         </div>
 
-
-        <div v-for="[g, fs] in e.type === 'pc' ? [] : groups" :key="g" class="card">
-          <h3>{{ g }}</h3>
-          <dl>
-            <template v-for="f in fs" :key="f.def.key">
-              <dt>{{ f.def.label }}</dt>
-              <dd><FieldValue :def="f.def" :value="f.value" :entry="e" /></dd>
-            </template>
-          </dl>
-        </div>
+        <FieldGroupCard v-for="[g, fs] in e.type === 'pc' ? [] : groups" :key="g" :title="g" :fields="fs" :entry="e" />
 
         <NpcRoleplay v-if="e.type === 'npc'" :e="e" />
         <TextLinks v-if="e.type === 'deity' || e.type === 'organization'" :e="e" />
         <StatblockView v-if="statblock && e.type !== 'creature'" :sb="statblock" :name="e.name" />
-        <div v-if="statblock && e.type === 'npc' && !state.readOnly && !playerMode" class="copy-row">
-          <button type="button" class="chip-btn" title="Add to the initiative tracker as an enemy" @click="toTracker">⚔ Add to tracker</button>
-          <span v-if="added" class="muted small">Added{{ added > 1 ? ` (${added})` : '' }} · <a href="#/tracker">open the tracker</a></span>
-        </div>
+        <AddToTracker v-if="statblock && e.type === 'npc' && !state.readOnly && !playerMode" :id="e.id" />
 
         <MembersCard v-if="e.type === 'organization'" :org="e" />
         <PartyRenown v-if="e.type === 'organization' && !playerMode" :org="e" />
@@ -506,50 +291,11 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         <AttacksCard v-if="e.type === 'pc'" :pc="e" />
         <StandingCard v-if="e.type === 'pc'" :pc="e" />
         <!-- A character's details and appearance come after what they carry. -->
-        <div v-for="[g, fs] in e.type === 'pc' ? groups : []" :key="'pc-' + g" class="card">
-          <h3>{{ g }}</h3>
-          <dl>
-            <template v-for="f in fs" :key="f.def.key">
-              <dt>{{ f.def.label }}</dt>
-              <dd><FieldValue :def="f.def" :value="f.value" :entry="e" /></dd>
-            </template>
-          </dl>
-        </div>
+        <FieldGroupCard v-for="[g, fs] in e.type === 'pc' ? groups : []" :key="'pc-' + g" :title="g" :fields="fs" :entry="e" />
 
-        <div v-for="[label, list] in ['pc', 'spell', 'feat'].includes(e.type) ? [] : relGroups" :key="label" class="card">
-          <h3>{{ label[0].toUpperCase() + label.slice(1) }}</h3>
-          <ul class="rel rel-scroll">
-            <li v-for="{ other, r } in list" :key="r.id" :class="{ ended: ended(r) }">
-              <EntryLink :id="other" icon />
-              <span v-if="r.role" class="role">{{ r.role }}</span>
-              <span v-if="r.from || r.to" class="when">{{ range(r.from, r.to) }}</span>
-            </li>
-          </ul>
-        </div>
-
-
-        <div v-if="usedIn.length" class="card">
-          <h3>Used in</h3>
-          <ul class="rel"><li v-for="c in usedIn" :key="c.id"><EntryLink :id="c.id" icon /></li></ul>
-        </div>
-        <ItemWhere v-if="e.type === 'item'" :item="e" />
-
-        <div v-if="onMaps.length" class="card">
-          <h3>On the map</h3>
-          <ul class="rel"><li v-for="m in onMaps" :key="m.place.id + m.pin.id"><a :href="hrefMap(m.place.id, m.pin.id)"><AppIcon ui="map" /> {{ m.place.name }}</a></li></ul>
-        </div>
-
-        <div v-if="knownBy.length" class="card">
-          <h3>Known by</h3>
-          <ul class="plain"><li v-for="p in knownBy" :key="p.id"><EntryLink :id="p.id" icon /></li></ul>
-        </div>
-        <!-- an item's carriers and shops are in ItemWhere -->
+        <RelationCards :e="e" />
         <!-- a player character's notes beside the sheet, where other pages list what mentions them -->
         <PcNotes v-if="e.type === 'pc'" :pc="e" />
-        <div v-else-if="mentions.length" class="card">
-          <h3>Mentioned in <span class="muted small">{{ mentions.length }}</span></h3>
-          <ul class="rel mentions-list"><li v-for="m in mentions" :key="m.id"><EntryLink :id="m.id" icon /></li></ul>
-        </div>
       </aside>
     </div>
   </article>

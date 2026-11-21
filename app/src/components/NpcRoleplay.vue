@@ -3,14 +3,15 @@
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { TYPES } from '../model/schema'
-import { playerMode } from '../store'
+import { secretText } from '../npc'
+import SecretNote from './SecretNote.vue'
 
 const props = defineProps<{ e: Entry }>()
 const LINES = ['voice', 'wants', 'ideals', 'bonds', 'flaws'] as const
 const label = (k: string) => TYPES.npc.fields.find(x => x.key === k)!.label
 const traits = computed(() => (props.e.fields.personality as string[] | undefined) ?? [])
 const lines = computed(() => LINES.filter(k => String(props.e.fields[k] ?? '').trim()))
-const secret = computed(() => (playerMode.value ? '' : String(props.e.fields.secret ?? '').trim()))
+const secret = computed(() => secretText(props.e.fields.secret))
 const any = computed(() => traits.value.length || lines.value.length || secret.value)
 </script>
 
@@ -24,6 +25,6 @@ const any = computed(() => traits.value.length || lines.value.length || secret.v
         <dd>{{ e.fields[k] }}</dd>
       </template>
     </dl>
-    <div v-if="secret" class="secret npc-secret-view"><span class="secret-tag">DM only</span> <b>Secret:</b> {{ secret }}</div>
+    <SecretNote :text="e.fields.secret" />
   </div>
 </template>

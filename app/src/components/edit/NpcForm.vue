@@ -1,14 +1,18 @@
 <script setup lang="ts">
 // An NPC's who-they-are line (occupation, attitude to the party, status) and how to play them. The roleplay parts
 // show once added: an NPC with only a name isn't a page of empty boxes.
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import type { Entry } from '../../model/types'
 import { TYPES } from '../../model/schema'
 import { isEmpty, setField } from '../../edit'
 import { playerMode } from '../../store'
-import { ATTITUDES, STATUSES, usedValues } from '../../npc'
+import { STATUSES, usedValues } from '../../npc'
+import { useParts } from '../../composables/useParts'
 import DateInput from './DateInput.vue'
 import ListInput from './ListInput.vue'
+import AttitudePicker from './AttitudePicker.vue'
+import PartRow from './PartRow.vue'
+import AddPartsBar from './AddPartsBar.vue'
 import { inputValue as val } from '../../dom'
 import { grow, vGrow } from '../../directives/grow'
 
@@ -29,13 +33,11 @@ const HINT: Record<Part, string> = {
   personality: 'Add a trait…', ideals: 'What they believe in', bonds: 'Who or what they care about', flaws: 'Their weakness',
   voice: 'How they talk and move: an accent, a habit, a catchphrase', wants: 'What they are after right now', secret: 'What the players must not find out (never shown to them)',
 }
-const has = (k: Part) => !isEmpty(f.value[k])
-const opened = ref(new Set<Part>())
-const shown = computed(() => PARTS.filter(k => has(k) || opened.value.has(k)))
-// a secret is the DM's: not offered in a player's own world
-const addable = computed(() => PARTS.filter(k => !shown.value.includes(k) && !(k === 'secret' && playerMode.value)))
-function open(k: Part) { opened.value = new Set([...opened.value, k]) }
-function close(k: Part) { const s = new Set(opened.value); s.delete(k); opened.value = s; set(k, undefined) }
+const { shown, addable, open, close } = useParts(PARTS, k => !isEmpty(f.value[k]), {
+  // a secret is the DM's: not offered in a player's own world
+  hidden: k => k === 'secret' && playerMode.value,
+  onClose: k => set(k, undefined),
+})
 </script>
 
 <template>
@@ -46,9 +48,7 @@ function close(k: Part) { const s = new Set(opened.value); s.delete(k); opened.v
         <datalist id="npc-occupations"><option v-for="o in occupations" :key="o" :value="o" /></datalist>
       </label>
       <div class="sf-field"><span class="sf-label" title="How they stand with the party">Attitude</span>
-        <div class="seg">
-          <button v-for="a in ATTITUDES" :key="a" type="button" :class="['att-' + a.toLowerCase(), { on: f.attitude === a }]" @click="set('attitude', f.attitude === a ? undefined : a)">{{ a }}</button>
-        </div>
+        <AttitudePicker type="npc" :model-value="f.attitude" @update:model-value="v => set('attitude', v)" />
       </div>
       <label class="sf-field npc-status"><span class="sf-label">Status</span>
         <input :value="f.status ?? ''" list="npc-statuses" placeholder="Alive" title="Pick one or type your own" @change="set('status', val($event).trim())" />
@@ -60,16 +60,11 @@ function close(k: Part) { const s = new Set(opened.value); s.delete(k); opened.v
     </div>
 
     <div class="npc-roleplay">
-      <div v-for="k in shown" :key="k" class="npc-part" :class="{ 'npc-secret': k === 'secret' }">
-        <span class="sf-label">{{ label(k) }}<span v-if="k === 'secret'" class="badge dm-only">DM only</span></span>
+      <PartRow v-for="k in shown" :key="k" :label="label(k)" :dm-only="k === 'secret'" @remove="close(k)">
         <ListInput v-if="k === 'personality'" :model-value="f.personality ?? []" :options="traits" :placeholder="HINT[k]" @update:model-value="v => set('personality', v)" />
         <textarea v-else v-grow rows="1" :value="f[k] ?? ''" :placeholder="HINT[k]" @input="grow($event.target as HTMLTextAreaElement)" @change="set(k, val($event).trim())" />
-        <button type="button" class="x" :title="`Remove ${label(k).toLowerCase()}`" @click="close(k)">×</button>
-      </div>
-      <div v-if="addable.length" class="npc-add">
-        <span v-if="!shown.length" class="muted small">How to play them:</span>
-        <button v-for="k in addable" :key="k" type="button" class="chip-btn" @click="open(k)">＋ {{ label(k) }}</button>
-      </div>
+      </PartRow>
+      <AddPartsBar class="npc-add" :parts="addable" :label="label" :lead="shown.length ? undefined : 'How to play them:'" @add="open" />
     </div>
   </section>
 </template>

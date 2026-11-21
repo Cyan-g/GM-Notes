@@ -3,15 +3,17 @@
 // weapon's showing its base weapon's damage, properties and mastery as defaults, armor's AC only for real armor.
 // Below, side by side: what it gives (when it works, then its effects, spells & charges and features, each with
 // what it's for; empty ones fold into + buttons) and what it needs (attunement, and who can use it, step by step).
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import type { Entry, Regain } from '../../model/types'
 import { TYPES, MASTERY_OF, byKey, type FieldDef } from '../../model/schema'
 import { changed, setField, toggleField } from '../../edit'
 import { formatMoney } from '../../store'
 import { worksWhileOf } from '../../items'
 import { itemNamed } from '../../lookup'
+import { useParts } from '../../composables/useParts'
 import FieldInput from './FieldInput.vue'
 import ItemNeeds from './ItemNeeds.vue'
+import AddPartsBar from './AddPartsBar.vue'
 import { inputValue as val } from '../../dom'
 
 const props = defineProps<{ entry: Entry }>()
@@ -29,21 +31,18 @@ const GIVES = [
 const GIVE_KEYS = GIVES.flatMap(x => x.keys)
 /** The fields each "needs"/"gives" part takes, and the basics that move to the right (attunement). */
 const NEED_KEYS = ['requirements', 'attunement']
-const partFields = (id: string) => fields.value.filter(d => GIVES.find(x => x.id === id)!.keys.includes(d.key))
+const give = (id: string) => GIVES.find(x => x.id === id)!
+const partFields = (id: string) => fields.value.filter(d => give(id).keys.includes(d.key))
 const has = (id: string) => partFields(id).some(d => { const v = f.value[d.key]; return v != null && v !== '' && !(Array.isArray(v) && !v.length) })
-const opened = ref(new Set<string>())
-const gives = computed(() => GIVES.filter(x => partFields(x.id).length))
-const visible = computed(() => gives.value.filter(x => has(x.id) || opened.value.has(x.id)))
-const addable = computed(() => gives.value.filter(x => !visible.value.includes(x)))
-function open(id: string) { opened.value = new Set([...opened.value, id]) }
-function close(id: string) {
-  if (has(id)) {
-    if (!confirm(`Remove this item's ${GIVES.find(x => x.id === id)!.label.toLowerCase()}?`)) return
+const { shown: shownIds, addable, open, close } = useParts(() => GIVES.filter(x => partFields(x.id).length).map(x => x.id), has, {
+  confirmClose: id => `Remove this item's ${give(id).label.toLowerCase()}?`,
+  onClose: id => {
+    if (!has(id)) return
     for (const d of partFields(id)) delete f.value[d.key]
     changed(props.entry)
-  }
-  const s = new Set(opened.value); s.delete(id); opened.value = s
-}
+  },
+})
+const visible = computed(() => shownIds.value.map(give))
 const isGear = computed(() => !!fieldOf('effects'))
 
 // ---- the basics and the kind's own stats ----
@@ -189,9 +188,7 @@ function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete
             <div v-for="d in wide(partFields(x.id))" :key="d.key" class="if-wide"><FieldInput :def="d" :entry="entry" /></div>
           </template>
         </section>
-        <div v-if="addable.length" class="if-add">
-          <button v-for="x in addable" :key="x.id" type="button" class="chip-btn" :title="x.hint" @click="open(x.id)">＋ {{ x.label }}</button>
-        </div>
+        <AddPartsBar class="if-add" :parts="addable" :label="id => give(id).label" :title="id => give(id).hint" @add="open" />
       </div>
       <div class="ff-col ff-needs">
         <h4>What it needs</h4>

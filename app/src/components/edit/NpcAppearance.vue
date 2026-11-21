@@ -7,8 +7,11 @@ import { TYPES } from '../../model/schema'
 import { setField } from '../../edit'
 import { AGES, ageOf, usedValues } from '../../npc'
 import { formatDate } from '../../store'
+import { useParts } from '../../composables/useParts'
 import FieldInput from './FieldInput.vue'
 import DateInput from './DateInput.vue'
+import PartRow from './PartRow.vue'
+import AddPartsBar from './AddPartsBar.vue'
 import { inputValue as val } from '../../dom'
 
 const props = defineProps<{ entry: Entry }>()
@@ -17,13 +20,8 @@ const set = (key: string, v: unknown) => setField(props.entry, key, v)
 const raceDef = TYPES.npc.fields.find(x => x.key === 'race')!
 
 const LOOKS = ['hair', 'eyes', 'skin', 'clothing'] as const
-type Look = typeof LOOKS[number]
 const label = (k: string) => TYPES.npc.fields.find(x => x.key === k)!.label
-const opened = ref(new Set<string>())
-const shownLooks = computed(() => LOOKS.filter(k => f.value[k] || opened.value.has(k)))
-const addable = computed(() => LOOKS.filter(k => !shownLooks.value.includes(k)))
-function open(k: string) { opened.value = new Set([...opened.value, k]) }
-function close(k: Look) { const s = new Set(opened.value); s.delete(k); opened.value = s; set(k, undefined) }
+const { shown: shownLooks, addable, open, close } = useParts(LOOKS, k => !!f.value[k], { onClose: k => set(k, undefined) })
 const suggestions = (k: string) => usedValues(k)
 
 const bornOpen = ref(false)
@@ -52,14 +50,10 @@ const age = computed(() => ageOf(props.entry))
       <button v-else-if="!showBorn" type="button" class="link-btn small" title="Give a birth date instead, and the age follows the world's date" @click="bornOpen = true">＋ birth date</button>
     </div>
 
-    <template v-for="k in shownLooks" :key="k">
-      <label :for="`f-${k}`">{{ label(k) }}</label>
-      <div class="npc-look"><input :id="`f-${k}`" :value="f[k] ?? ''" :list="`npc-dl-${k}`" @change="set(k, val($event).trim())" />
-        <datalist :id="`npc-dl-${k}`"><option v-for="v in suggestions(k)" :key="v" :value="v" /></datalist>
-        <button type="button" class="x" :title="`Remove ${label(k).toLowerCase()}`" @click="close(k)">×</button></div>
-    </template>
-    <div v-if="addable.length" class="full npc-add">
-      <button v-for="k in addable" :key="k" type="button" class="chip-btn" @click="open(k)">＋ {{ label(k) }}</button>
-    </div>
+    <PartRow v-for="k in shownLooks" :key="k" :label="label(k)" :label-for="`f-${k}`" @remove="close(k)">
+      <input :id="`f-${k}`" :value="f[k] ?? ''" :list="`npc-dl-${k}`" @change="set(k, val($event).trim())" />
+      <datalist :id="`npc-dl-${k}`"><option v-for="v in suggestions(k)" :key="v" :value="v" /></datalist>
+    </PartRow>
+    <AddPartsBar class="full npc-add" :parts="addable" :label="label" @add="open" />
   </div>
 </template>

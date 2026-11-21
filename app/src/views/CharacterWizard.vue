@@ -1,206 +1,34 @@
 <script setup lang="ts">
 // The character creation wizard (wizard.ts): step by step from class and level to a finished character with sheet,
 // spellbook and inventory. Steps can be visited in any order; each says what it still needs, and the summary makes the
-// character. Uses what the world has: its classes, species, backgrounds, feats, spells and items.
+// character. Uses what the world has: its classes, species, backgrounds, feats, spells and items. Each step is its
+// own component (components/wizard); this is the frame around them.
 import { computed, ref, watch } from 'vue'
-import type { Entry, Id } from '../model/types'
-import {
-  POINTS, POINT_COST, STANDARD_ARRAY, backgroundGold, backgroundKit, backgrounds, bonusAdds, bonusOf, casts, dieOfDraft,
-  classKitsOf, draftPc, languageRule, pickedLanguages, featLevels, finalScores, hpOf, kitsOf, makeCharacter, pointsSpent, resetWizard, rules, species, subracesOf, mainRace,
-  spellChoices, spellCounts, steps, subclassesOf, wizard,
-} from '../wizard'
-import { itemNamed } from '../lookup'
-import { subclassLevelOf, classEntry } from '../classRules'
-import { abilityBonusText } from '../abilityBonus'
-import { DICE } from '../model/classes'
-import { currentPc, setCurrent } from '../sheet'
-import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, ORD, SKILLS, dieSize, mod, signed } from '../model/dnd'
-import {
-  choiceOpen, grantOptions, isClassOrigin, scaleAt, setCastAbility, setPicks as setTraitPicks, sourceTag, speciesGrants, speciesSizes, speciesTraits,
-  type ActiveTrait,
-} from '../species'
-import { traitsOf } from '../model/traits'
-import { rule } from '../rules'
-import { entries, formatMoney, get, listOptions, playerMode } from '../store'
-import { go, hrefEntry } from '../router'
+import { resetWizard, steps, wizard } from '../wizard'
+import { subclassLevelOf } from '../classRules'
 import { newBlankEntry } from '../ui'
-import { renderInline } from '../markdown'
 import AppIcon from '../components/AppIcon.vue'
-import EntryLink from '../components/EntryLink.vue'
-import SpreadPicker from '../components/SpreadPicker.vue'
-import ProfChips from '../components/ProfChips.vue'
-import TraitChips from '../components/TraitChips.vue'
-import TraitChoicePicker from '../components/TraitChoicePicker.vue'
-import MarkdownView from '../components/MarkdownView.vue'
-import WizardPage from '../components/WizardPage.vue'
-import { inputValue as val } from '../dom'
+import WzClassStep from '../components/wizard/WzClassStep.vue'
+import WzOriginStep from '../components/wizard/WzOriginStep.vue'
+import WzScoresStep from '../components/wizard/WzScoresStep.vue'
+import WzProfsStep from '../components/wizard/WzProfsStep.vue'
+import WzFeaturesStep from '../components/wizard/WzFeaturesStep.vue'
+import WzFeatsStep from '../components/wizard/WzFeatsStep.vue'
+import WzHpStep from '../components/wizard/WzHpStep.vue'
+import WzGearStep from '../components/wizard/WzGearStep.vue'
+import WzSpellsStep from '../components/wizard/WzSpellsStep.vue'
+import WzStoryStep from '../components/wizard/WzStoryStep.vue'
+import WzSummaryStep from '../components/wizard/WzSummaryStep.vue'
 
 const d = computed(() => wizard.d)
 const all = computed(() => steps(d.value))
 const step = computed(() => all.value.find(s => s.id === wizard.step) ?? all.value[0])
 const at = computed(() => all.value.findIndex(s => s.id === step.value.id))
 const move = (by: number) => { const s = all.value[at.value + by]; if (s) { wizard.step = s.id; window.scrollTo(0, 0) } }
-const openCount = computed(() => all.value.reduce((n, s) => n + s.open.length, 0))
-const num = (ev: Event) => Number(val(ev)) || 0
-
-// ---- class ----
-const classes = computed(() => listOptions('class'))
-const r = computed(() => rules(d.value))
-const subclasses = computed(() => (d.value.cls ? subclassesOf(d.value.cls) : []))
-/** A subclass's tagline: its description's first paragraph when it's set in italics (the SRD's). */
-const tagline = (s: Entry) => (s.fields.tagline as string | undefined) || String(s.body ?? '').split(/\n\s*\n/)[0].trim().match(/^\*([^*]+)\*$/)?.[1]
-/** A subclass's features: up to the chosen level, and later ones. */
-const subFeatures = (s: Entry) => {
-  const all = traitsOf(s)
-  return { now: all.filter(t => (t.level ?? 1) <= d.value.level), later: all.filter(t => (t.level ?? 1) > d.value.level) }
-}
-function setClass(cls: string) {
-  Object.assign(wizard.d, { cls, subclass: undefined, skills: [], tools: [], cantrips: [], spells: [], book: [], classKit: 0 })
-}
+// A level below the subclass's level has no subclass.
 watch(() => d.value.level, () => { if (d.value.level < subclassLevelOf(d.value.cls)) wizard.d.subclass = undefined })
-
-// ---- species and background ----
-const raceList = computed(() => species())
-/** The main race picked, and its subraces (the character gets the subrace once one is picked). */
-const main = computed(() => mainRace(d.value.race))
-const subs = computed(() => subracesOf(main.value?.id))
-/** The class entry picked, for its page under the choices. */
-const classPage = computed(() => classEntry(d.value.cls))
-/** The subrace picked (when the species has subraces). */
-const subPicked = computed(() => (d.value.race && d.value.race !== main.value?.id ? get(d.value.race) : undefined))
-/** A subrace's traits besides those it replaces. */
-const ownTraits = (x: Entry) => traitsOf(x).filter(t => !t.replaces).length
-/** A species' short line on its tile: its size and walking speed, and how many subraces it has. */
-function raceLine(x: Entry): string {
-  const sp = x.fields.speeds as { walk?: number } | undefined
-  return [x.fields.size, sp?.walk != null && `${sp.walk} ft`, subracesOf(x.id).length && `${subracesOf(x.id).length} subraces`].filter(Boolean).join(' · ')
-}
-const sizes = computed(() => speciesSizes(pc.value))
-const bgList = computed(() => backgrounds())
-const pc = computed(() => draftPc(d.value))
-const choices = computed(() => speciesTraits(pc.value).filter(a => !isClassOrigin(a.race) && a.active && (a.trait.choice || a.trait.castWith?.among?.length)))
-/** The class's and subclass's features at the chosen level, by where they come from. */
-const classFeatures = computed(() => speciesTraits(pc.value).filter(a => isClassOrigin(a.race) && a.active))
-const featureGroups = computed(() => [...new Map(classFeatures.value.map(a => [a.race.id, a.race])).values()].map(r => ({ r, list: classFeatures.value.filter(a => a.race.id === r.id) })))
-/** A feature that's only levelling bookkeeping (the Spellcasting rules, "Warlock Subclass"): folded into one line. */
-const bookkeeping = (a: ActiveTrait) => a.trait.onSheet === 'hide' && !a.trait.choice
-const pickFeature = (a: ActiveTrait, picks: string[]) => { const holder = { species: { ...wizard.d.species } } as Parameters<typeof setTraitPicks>[0]; setTraitPicks(holder, a.key, picks); wizard.d.species = holder.species! }
-function setPicks(a: ActiveTrait, picks: string[]) {
-  const all = { ...(wizard.d.species.picks ?? {}) }
-  if (picks.filter(Boolean).length) all[a.key] = picks.filter(Boolean); else delete all[a.key]
-  wizard.d.species = { ...wizard.d.species, picks: all }
-}
-/** Pick the ability a trait's spells are cast with (Elven Lineage: Int, Wis or Cha). */
-const setCast = (a: ActiveTrait, ab: string) => { const holder = { species: { ...wizard.d.species } } as Parameters<typeof setCastAbility>[0]; setCastAbility(holder, a.key, ab as Parameters<typeof setCastAbility>[2]); wizard.d.species = holder.species! }
-
-// ---- ability scores ----
-const bonus = computed(() => bonusOf(d.value))
-const adds = computed(() => bonusAdds(d.value))
-const scores = computed(() => finalScores(d.value))
-function setMethod(m: typeof wizard.d.method) {
-  wizard.d.method = m
-  wizard.d.base = m === 'pointbuy' ? Object.fromEntries(ABILITY_KEYS.map(a => [a, 8])) : m === 'typed' ? Object.fromEntries(ABILITY_KEYS.map(a => [a, 10])) : {}
-}
-const arrayLeft = (a: string) => STANDARD_ARRAY.filter((n, i) => {
-  const usedBy = ABILITY_KEYS.filter(k => d.value.base[k] === n && k !== a).length
-  return STANDARD_ARRAY.slice(0, i).filter(x => x === n).length >= usedBy
-})
-const setBase = (a: string, n: number | undefined) => { wizard.d.base = { ...wizard.d.base, [a]: n } }
-const buy = (a: keyof typeof ABILITY_NAME, by: number) => {
-  const n = (d.value.base[a] ?? 8) + by
-  if (n < 8 || n > 15) return
-  if (by > 0 && pointsSpent(d.value) - (POINT_COST[d.value.base[a] ?? 8] ?? 0) + POINT_COST[n] > POINTS) return
-  setBase(a, n)
-}
-const speciesBonusText = computed(() => {
-  for (let x = get(d.value.race); x; x = get(x.fields.parent as Id | undefined)) if (x.fields.abilityIncrease) return abilityBonusText(x.fields.abilityIncrease)
-  return ''
-})
-const setBonusFrom = (f: typeof wizard.d.bonusFrom) => { wizard.d.bonusFrom = f; wizard.d.bonusChoice = { picks: [] } }
-/** The scores the + buttons start from: the base ones for the background's or species' bonus; for a feat, the scores
- * with the bonus and the feats taken before its level. */
-const baseScores = computed(() => Object.fromEntries(ABILITY_KEYS.map(a => [a, d.value.base[a] ?? 10])) as Record<(typeof ABILITY_KEYS)[number], number>)
-const scoresBefore = (level: number) => finalScores({ ...d.value, feats: d.value.feats.filter(f => f.level < level) }) as Record<(typeof ABILITY_KEYS)[number], number>
-const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20, (d.value.base[a] ?? 10) + (adds.value[a] ?? 0))
-
-// ---- proficiencies ----
-const granted = computed(() => speciesGrants(pc.value))
-const grantedSkills = computed(() => new Map(granted.value.filter(g => g.kind === 'skill').map(g => [g.id, g.from])))
-const skillFrom = computed(() => (r.value?.skills.from.length ? r.value.skills.from : SKILLS.map(s => s.name)))
-const skillCount = computed(() => (r.value ? r.value.skills.count : d.value.ownSkillCount))
-function toggleSkill(k: string) {
-  const l = d.value.skills
-  wizard.d.skills = l.includes(k) ? l.filter(x => x !== k) : l.length < skillCount.value ? [...l, k] : l
-}
-const toolItems = computed(() => entries.value.filter(e => e.type === 'item' && ['Tool', 'Instrument'].includes(String(e.fields.kind))).map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label)))
-const languages = computed(() => listOptions('language'))
-const langRule = computed(() => languageRule(d.value))
-const picked = computed(() => pickedLanguages(d.value))
-/** Common, plus the languages picked, no more than the rule allows. */
-function setLanguages(v: string[]) {
-  const given = new Set(langRule.value.given.map(g => g.id))
-  wizard.d.languages = ['Common', ...v.filter(l => l !== 'Common' && !given.has(l)).slice(0, langRule.value.picks)]
-}
-const armorTypes = computed(() => listOptions('item.armorType').filter(o => o.id !== 'Clothing'))
-const toggleIn = (key: 'ownSaves' | 'ownArmor' | 'ownWeapons', v: string) => {
-  const l = wizard.d[key] as string[]
-  ;(wizard.d[key] as string[]) = l.includes(v) ? l.filter(x => x !== v) : [...l, v]
-}
-
-// ---- feats ----
-const feats = computed(() => entries.value.filter(e => e.type === 'feat').sort((a, b) => a.name.localeCompare(b.name)))
-const featsFor = (boon: boolean) => {
-  const want = boon ? 'Epic Boon' : 'General Feat'
-  const of = feats.value.filter(f => f.fields.category === want)
-  return of.length ? of : feats.value.filter(f => f.fields.category !== 'Origin Feat')
-}
-const featAt = (level: number) => d.value.feats.find(f => f.level === level)
-function setFeat(level: number, feat: string) {
-  wizard.d.feats = [...d.value.feats.filter(f => f.level !== level), ...(feat ? [{ level, feat, choice: { picks: [] } }] : [])]
-}
-function setFeatChoice(level: number, choice: { alt?: boolean; picks: (keyof typeof ABILITY_NAME)[][] }) {
-  wizard.d.feats = d.value.feats.map(f => (f.level === level ? { ...f, choice } : f))
-}
-
-// ---- hit points ----
-const hitDie = computed(() => dieSize(dieOfDraft(d.value)) || 8)
-const setRoll = (i: number, v: string) => { const l = [...d.value.hpRolls]; l[i] = v === '' ? undefined : Math.max(1, Math.min(hitDie.value, Number(v) || 1)); wizard.d.hpRolls = l }
-
-// ---- equipment ----
-const kits = computed(() => classKitsOf(d.value.cls))
-/** What the kits name but the world has no item for: left out of the inventory. */
-const missing = computed(() => taken.value.items.filter(l => !(l.item ?? itemNamed(l.name)?.id)).map(l => l.name))
-const bgKit = computed(() => backgroundKit(d.value))
-const bgGold = computed(() => backgroundGold(d.value))
-const taken = computed(() => kitsOf(d.value))
-
-// ---- spells ----
-const sc = computed(() => spellChoices(d.value))
-const counts = computed(() => spellCounts(d.value))
+/** The Spells step's name filter. */
 const spellFilter = ref('')
-const shown = (list: Entry[]) => { const q = spellFilter.value.trim().toLowerCase(); return q ? list.filter(e => e.name.toLowerCase().includes(q)) : list }
-const byLevel = computed(() => {
-  const m = new Map<string, Entry[]>()
-  for (const e of shown(sc.value.spells)) { const k = String(e.fields.level); if (!m.has(k)) m.set(k, []); m.get(k)!.push(e) }
-  return [...m].sort((a, b) => Number(a[0]) - Number(b[0]))
-})
-function toggleSpell(key: 'cantrips' | 'spells' | 'book', id: Id, max?: number) {
-  const l = d.value[key]
-  if (l.includes(id)) { wizard.d[key] = l.filter(x => x !== id); return }
-  if (max != null && l.length >= max) return
-  if (key === 'spells') wizard.d.book = d.value.book.filter(x => x !== id)
-  wizard.d[key] = [...l, id]
-}
-const bookMax = computed(() => (counts.value.book != null ? Math.max(0, counts.value.book - d.value.spells.length) : undefined))
-
-// ---- make it ----
-function create() {
-  if (openCount.value && !confirm(`${openCount.value} thing${openCount.value === 1 ? ' is' : 's are'} still open. Make the character anyway?`)) return
-  const e = makeCharacter(wizard.d)
-  if (!currentPc.value) setCurrent(e.id)
-  resetWizard()
-  go(hrefEntry(e.id))
-}
 function startOver() { if (confirm('Clear everything chosen so far?')) resetWizard() }
 </script>
 
@@ -224,292 +52,17 @@ function startOver() { if (confirm('Clear everything chosen so far?')) resetWiza
         <h2>{{ step.label }}</h2>
         <p v-if="step.open.length" class="wz-open small">Still to choose: {{ step.open.join(', ') }}</p>
 
-        <!-- class and level -->
-        <template v-if="step.id === 'class'">
-          <div class="wz-tiles">
-            <button v-for="c in classes" :key="c.id" type="button" class="wz-tile" :class="{ on: d.cls === c.id }" @click="setClass(c.id)">
-              <b>{{ c.label }}</b><small class="muted">{{ rules({ ...d, cls: c.id }) ? `${dieOfDraft({ ...d, cls: c.id, die: undefined })} · ${rules({ ...d, cls: c.id })!.saves.map(a => ABILITY_SHORT[a]).join(' ')}` : 'filled in by hand' }}</small>
-            </button>
-          </div>
-          <div class="wz-row">
-            <label>Level <input type="number" min="1" max="20" :value="d.level" @change="wizard.d.level = Math.min(20, Math.max(1, num($event) || 1))" /></label>
-            <label v-if="d.cls && !r">Hit die
-              <select :value="dieOfDraft(d)" @change="wizard.d.die = val($event)"><option v-for="x in DICE" :key="x" :value="x">{{ x }}</option></select>
-            </label>
-          </div>
-          <template v-if="d.cls && d.level >= subclassLevelOf(d.cls)">
-            <h3 class="wz-sub">Subclass</h3>
-            <p v-if="!subclasses.length" class="muted small">The world has no subclasses of this class yet.</p>
-            <div class="wz-tiles wz-subclasses">
-              <button v-for="s in subclasses" :key="s.id" type="button" class="wz-tile" :class="{ on: d.subclass === s.id }" :aria-pressed="d.subclass === s.id"
-                      @click="wizard.d.subclass = d.subclass === s.id ? undefined : s.id">
-                <b>{{ s.name }}</b>
-                <small v-if="tagline(s)" class="muted"><i>{{ tagline(s) }}</i></small>
-                <span v-if="subFeatures(s).now.length" class="chips">
-                  <span v-for="t in subFeatures(s).now" :key="t.id" class="chip" :title="(t.text ?? '').slice(0, 300)">{{ t.name }} <small class="muted">{{ t.level ?? subclassLevelOf(d.cls) }}</small></span>
-                </span>
-                <small v-else class="muted">No features in this world yet.</small>
-                <small v-if="subFeatures(s).later.length" class="muted">Later: {{ subFeatures(s).later.map(t => `${t.name} (${t.level})`).join(', ') }}</small>
-              </button>
-            </div>
-          </template>
-          <!-- the class's page, for its lore, table and features -->
-          <WizardPage v-if="classPage" :e="classPage" :title="`About the ${classPage.name}`" />
-        </template>
-
-        <!-- species and background -->
-        <template v-else-if="step.id === 'origin'">
-          <h3 class="wz-sub">Species</h3>
-          <div class="wz-tiles">
-            <button v-for="x in raceList" :key="x.id" type="button" class="wz-tile" :class="{ on: main?.id === x.id }" :aria-pressed="main?.id === x.id" @click="wizard.d.race = x.id">
-              <b>{{ x.name }}</b><small class="muted">{{ raceLine(x) }}</small>
-            </button>
-          </div>
-          <!-- a species with subraces: the subrace is its own choice, and needed -->
-          <div v-if="subs.length" class="wz-subraces" :class="{ open: !subPicked }">
-            <h3 class="wz-sub">{{ main?.name }}: pick a subrace <span v-if="!subPicked" class="wz-need small">needed</span></h3>
-            <p class="muted small">Each {{ main?.name }} is one of these; the subrace adds its own traits to the {{ main?.name }}'s.</p>
-            <div class="wz-tiles">
-              <button v-for="x in subs" :key="x.id" type="button" class="wz-tile" :class="{ on: d.race === x.id }" :aria-pressed="d.race === x.id" @click="wizard.d.race = d.race === x.id ? main?.id : x.id">
-                <b>{{ x.name }}</b><small class="muted">{{ ownTraits(x) ? `${ownTraits(x)} trait${ownTraits(x) === 1 ? '' : 's'} of its own` : 'no traits of its own' }}</small>
-              </button>
-            </div>
-          </div>
-          <div class="wz-row">
-            <label v-if="sizes.length > 1">Size
-              <select :value="d.size && sizes.includes(d.size) ? d.size : sizes[0]" @change="wizard.d.size = val($event)">
-                <option v-for="z in sizes" :key="z" :value="z">{{ z }}</option>
-              </select>
-            </label>
-            <label>Background
-              <select :value="d.background ?? ''" @change="wizard.d.background = val($event) || undefined">
-                <option value="">{{ bgList.length ? 'Choose…' : 'none in this world' }}</option>
-                <option v-for="x in bgList" :key="x.id" :value="x.id">{{ x.name }}</option>
-              </select>
-            </label>
-          </div>
-          <!-- the species' page (and the subrace's), for its lore and traits -->
-          <WizardPage v-if="main" :e="main" :title="`About the ${main.name}`" />
-          <WizardPage v-if="subPicked" :e="subPicked" :title="`The ${subPicked.name}`" />
-          <p v-if="d.background" class="small">
-            <EntryLink :id="d.background" />: <template v-if="get(d.background)?.fields.originFeat">Origin feat <EntryLink :id="String(get(d.background)?.fields.originFeat)" /><template v-if="get(d.background)?.fields.originFeatNote"> ({{ get(d.background)?.fields.originFeatNote }})</template>; </template>
-            skills {{ (get(d.background)?.fields.skillProfs ?? []).join(', ') || '—' }}
-          </p>
-          <div v-for="a in choices" :key="a.key" class="wz-choice" :class="{ open: choiceOpen(a) }">
-            <b>{{ a.trait.name }}</b> <span class="feat-tag" :class="'tag-' + a.race.type">{{ sourceTag(a) }}</span>
-            <details v-if="(a.trait.text ?? '').length > 220" class="small wz-rules"><summary>Rules</summary><MarkdownView :source="a.trait.text!" /></details>
-            <p v-else-if="a.trait.text" class="small md" v-html="renderInline(a.trait.text)" />
-            <TraitChoicePicker v-if="a.trait.choice" :a="a" @pick="p => setPicks(a, p)" />
-            <label v-if="a.trait.castWith?.among?.length" class="small wz-cast">Casts its spells with
-              <select :value="a.cast ?? ''" @change="setCast(a, val($event))">
-                <option value="">Choose…</option>
-                <option v-for="ab in a.trait.castWith.among" :key="ab" :value="ab">{{ ABILITY_NAME[ab] }}</option>
-              </select>
-            </label>
-          </div>
-        </template>
-
-        <!-- ability scores -->
-        <template v-else-if="step.id === 'scores'">
-          <div class="seg">
-            <button type="button" :class="{ on: d.method === 'array' }" @click="setMethod('array')">Standard array</button>
-            <button type="button" :class="{ on: d.method === 'pointbuy' }" @click="setMethod('pointbuy')">Point buy</button>
-            <button type="button" :class="{ on: d.method === 'typed' }" @click="setMethod('typed')">Typed in</button>
-          </div>
-          <p v-if="d.method === 'array'" class="muted small">Give each of 15, 14, 13, 12, 10 and 8 to one score.</p>
-          <p v-else-if="d.method === 'pointbuy'" class="small" :class="{ 'wz-bad': pointsSpent(d) > POINTS }">{{ POINTS - pointsSpent(d) }} of {{ POINTS }} points left (scores 8 to 15; 14 costs 7, 15 costs 9).</p>
-          <table class="wz-scores">
-            <thead><tr><th /><th>Base</th><th>Bonus</th><th v-if="featLevels(d).length">Feats</th><th>Score</th><th>Mod</th></tr></thead>
-            <tbody>
-              <tr v-for="a in ABILITY_KEYS" :key="a">
-                <th>{{ ABILITY_NAME[a] }}</th>
-                <td>
-                  <select v-if="d.method === 'array'" :value="d.base[a] ?? ''" @change="setBase(a, val($event) ? Number(val($event)) : undefined)">
-                    <option value="">—</option>
-                    <option v-for="n in [...new Set(arrayLeft(a))]" :key="n" :value="n">{{ n }}</option>
-                  </select>
-                  <span v-else-if="d.method === 'pointbuy'" class="wz-buy">
-                    <button type="button" class="chip-btn" @click="buy(a, -1)">−</button><b>{{ d.base[a] ?? 8 }}</b><button type="button" class="chip-btn" @click="buy(a, 1)">＋</button>
-                  </span>
-                  <input v-else type="number" min="1" max="30" :value="d.base[a] ?? ''" @change="setBase(a, num($event) || undefined)" />
-                </td>
-                <td>
-                  <input v-if="d.bonusFrom === 'custom'" type="number" min="-5" max="5" class="wz-small" :value="d.custom[a] ?? ''" placeholder="0" @change="wizard.d.custom = { ...d.custom, [a]: num($event) || undefined }" />
-                  <template v-else>{{ adds[a] ? signed(adds[a]!) : '' }}</template>
-                </td>
-                <td v-if="featLevels(d).length">{{ featAdds(a) ? signed(featAdds(a)) : '' }}</td>
-                <td><b v-flash="scores[a]">{{ scores[a] }}</b></td>
-                <td>{{ signed(mod(scores[a])) }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <h3>Ability score bonus</h3>
-          <div class="seg">
-            <button v-if="rule('abilityIncrease') !== 'species'" type="button" :class="{ on: d.bonusFrom === 'background' }" @click="setBonusFrom('background')">Background's</button>
-            <button v-if="rule('abilityIncrease') !== 'background'" type="button" :class="{ on: d.bonusFrom === 'species' }" @click="setBonusFrom('species')">Species'</button>
-            <button type="button" :class="{ on: d.bonusFrom === 'custom' }" @click="setBonusFrom('custom')">Custom</button>
-          </div>
-          <p class="muted small">
-            <template v-if="d.bonusFrom === 'background'">{{ d.background ? abilityBonusText(get(d.background)?.fields.abilityIncrease) || 'This background gives none.' : 'Choose a background first.' }}</template>
-            <template v-else-if="d.bonusFrom === 'species'">{{ d.race ? speciesBonusText || 'This species gives none.' : 'Choose a species first.' }}</template>
-            <template v-else>Type the bonus for each score in the table.</template>
-          </p>
-          <SpreadPicker v-if="bonus && d.bonusFrom !== 'custom'" :key="d.bonusFrom + (d.bonusFrom === 'background' ? d.background : d.race)" v-model="wizard.d.bonusChoice" :bonus="bonus" :scores="baseScores" />
-        </template>
-
-        <!-- proficiencies -->
-        <template v-else-if="step.id === 'profs'">
-          <template v-if="r">
-            <p class="small"><b>From the class:</b> saves {{ r.saves.map(a => ABILITY_NAME[a]).join(' and ') }};
-              armor {{ r.armor.join(', ') || 'none' }}; weapons {{ r.weapons.join(', ') }}<template v-if="r.tools.length">; {{ r.tools.join(', ') }}</template>.</p>
-          </template>
-          <template v-else-if="d.cls">
-            <div class="wz-row"><span>Saving throws</span>
-              <span class="seg"><button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: d.ownSaves.includes(a) }" @click="toggleIn('ownSaves', a)">{{ ABILITY_SHORT[a] }}</button></span></div>
-            <div class="wz-row"><span>Armor</span>
-              <span class="seg"><button v-for="o in armorTypes" :key="o.id" type="button" :class="{ on: d.ownArmor.includes(o.id) }" @click="toggleIn('ownArmor', o.id)">{{ o.label }}</button></span></div>
-            <div class="wz-row"><span>Weapons</span>
-              <span class="seg"><button v-for="w in ['Simple', 'Martial']" :key="w" type="button" :class="{ on: d.ownWeapons.includes(w) }" @click="toggleIn('ownWeapons', w)">{{ w }}</button></span></div>
-            <div class="wz-row"><label>Skills to pick <input type="number" min="0" max="8" class="wz-small" :value="d.ownSkillCount" @change="wizard.d.ownSkillCount = num($event)" /></label></div>
-          </template>
-          <p v-if="granted.length" class="small"><b>From the species and background:</b>
-            <template v-for="(g, i) in granted" :key="i"><template v-if="i">, </template>{{ grantOptions(g.kind).find(o => o.id === g.id)?.label ?? g.id }} <span class="muted">({{ g.from }})</span></template></p>
-          <h3>Skills <span class="muted small">{{ d.skills.length }} of {{ skillCount }}</span></h3>
-          <div class="wz-skills">
-            <button v-for="k in skillFrom" :key="k" type="button" class="chip-btn" :class="{ on: d.skills.includes(k) }" :disabled="grantedSkills.has(k) && !d.skills.includes(k)"
-                    :title="grantedSkills.has(k) ? `Already from ${grantedSkills.get(k)}` : ''" @click="toggleSkill(k)">{{ k }}</button>
-          </div>
-          <template v-if="r?.toolChoice">
-            <h3>{{ r.toolChoice.count }} {{ r.toolChoice.what }} <span class="muted small">{{ d.tools.length }} of {{ r.toolChoice.count }}</span></h3>
-            <ProfChips :values="d.tools" :suggest="toolItems" :create="(x: string) => x" placeholder="Add one, or type a name…" @change="v => wizard.d.tools = v.slice(0, r!.toolChoice!.count)" />
-          </template>
-          <h3>Languages <span v-if="langRule.picks" class="muted small">{{ langRule.speciesLists ? '' : 'Common and ' }}{{ picked.length }} of {{ langRule.picks }} to pick</span></h3>
-          <p v-if="langRule.given.length" class="small"><span class="muted">Known from the species, background and class:</span> {{ langRule.given.map(g => `${listOptions('language').find(o => o.id === g.id)?.label ?? g.id} (${g.from})`).join(', ') }}</p>
-          <ProfChips v-if="langRule.picks" :values="picked" :suggest="languages.filter(o => o.id !== 'Common' && !langRule.given.some(g => g.id === o.id))" :create="(x: string) => x"
-                     :placeholder="picked.length < langRule.picks ? 'Add a language…' : 'Remove one to pick another'" @change="setLanguages" />
-          <p v-else class="muted small">{{ langRule.speciesLists ? 'The species says which languages it speaks; any extra comes from its traits\' choices above.' : 'No languages to pick.' }}</p>
-        </template>
-
-        <!-- class features -->
-        <template v-else-if="step.id === 'features'">
-          <p class="muted small">What the class{{ d.subclass ? ' and subclass give' : ' gives' }} at level {{ d.level }}; the sheet keeps them up to date as the character levels up. Make the choices here or later on the sheet.</p>
-          <template v-for="g in featureGroups" :key="g.r.id">
-            <h3><EntryLink :id="g.r.id" /></h3>
-            <div v-for="a in g.list.filter(x => !bookkeeping(x))" :key="a.key" class="wz-feature" :class="{ open: choiceOpen(a) }">
-              <details>
-                <summary><b>{{ a.trait.name }}</b> <span class="muted small">level {{ a.trait.level ?? 1 }}</span>
-                  <span v-if="scaleAt(a)" class="chip">{{ a.trait.scale!.label }} {{ scaleAt(a) }}</span></summary>
-                <MarkdownView v-if="a.trait.text" class="small" :source="a.trait.text" />
-              </details>
-              <TraitChoicePicker v-if="a.trait.choice" :a="a" @pick="p => pickFeature(a, p)" />
-            </div>
-            <p v-if="g.list.some(bookkeeping)" class="muted small">Also at this level (worked out by the sheet and the Spellbook): {{ g.list.filter(bookkeeping).map(a => a.trait.name).join(', ') }}.</p>
-          </template>
-        </template>
-
-        <!-- feats -->
-        <template v-else-if="step.id === 'feats'">
-          <p class="muted small">A feat at each of these levels; an Ability Score Improvement is a feat too.</p>
-          <div v-for="f in featLevels(d)" :key="f.level" class="wz-choice" :class="{ open: !featAt(f.level)?.feat }">
-            <b>Level {{ f.level }}</b> <span class="muted small">{{ f.boon ? 'Epic Boon' : 'feat' }}</span>
-            <select :value="featAt(f.level)?.feat ?? ''" @change="setFeat(f.level, val($event))">
-              <option value="">Choose…</option>
-              <option v-for="x in featsFor(f.boon)" :key="x.id" :value="x.id">{{ x.name }}</option>
-            </select>
-            <template v-if="get(featAt(f.level)?.feat)?.fields.abilityIncrease">
-              <SpreadPicker :key="featAt(f.level)!.feat" :bonus="get(featAt(f.level)!.feat)!.fields.abilityIncrease!" :scores="scoresBefore(f.level)" :model-value="featAt(f.level)!.choice" @update:model-value="c => setFeatChoice(f.level, c)" />
-            </template>
-          </div>
-        </template>
-
-        <!-- hit points -->
-        <template v-else-if="step.id === 'hp'">
-          <p class="small">{{ dieOfDraft(d) }} per level, with the Constitution modifier ({{ signed(mod(scores.con)) }}) each level. Level 1 takes the die's maximum; later levels the average unless you type a roll.</p>
-          <table class="wz-scores">
-            <tbody>
-              <tr><th>Level 1</th><td>{{ hitDie }}</td></tr>
-              <tr v-for="l in d.level - 1" :key="l"><th>Level {{ l + 1 }}</th>
-                <td><input type="number" min="1" :max="hitDie" class="wz-small" :value="d.hpRolls[l - 1] ?? ''" :placeholder="String(hitDie / 2 + 1)" @change="setRoll(l - 1, val($event))" /></td></tr>
-            </tbody>
-          </table>
-          <p><b>Hit points: <span v-flash="hpOf(d)">{{ hpOf(d) }}</span></b> <span class="muted small">(the species' or gear's extra HP comes on top on the sheet)</span></p>
-        </template>
-
-        <!-- equipment -->
-        <template v-else-if="step.id === 'gear'">
-          <template v-if="kits.length">
-            <h3>From the class</h3>
-            <label v-for="(k, i) in kits" :key="i" class="wz-kit">
-              <input type="radio" :checked="d.classKit === i" @change="wizard.d.classKit = i" />
-              <span><b>{{ String.fromCharCode(65 + i) }}</b> {{ k.items.map(l => `${l.amount ? l.amount + ' × ' : ''}${l.name}`).join(', ') }}<template v-if="k.items.length && k.money"> and </template>{{ k.money ? formatMoney(k.money) : '' }}</span>
-            </label>
-          </template>
-          <p v-else-if="d.cls" class="muted small">This class has no starting equipment here; add it on the sheet.</p>
-          <template v-if="bgKit || bgGold">
-            <h3>From the background</h3>
-            <label v-if="bgKit" class="wz-kit"><input type="radio" :checked="d.bgKit === 'items'" @change="wizard.d.bgKit = 'items'" />
-              <span><b>A</b> {{ bgKit.items.map(l => `${l.amount ? l.amount + ' × ' : ''}${l.name}`).join(', ') }}<template v-if="bgKit.money"> and {{ formatMoney(bgKit.money) }}</template></span></label>
-            <label v-if="bgGold" class="wz-kit"><input type="radio" :checked="d.bgKit === 'money'" @change="wizard.d.bgKit = 'money'" />
-              <span><b>B</b> {{ formatMoney(bgGold) }}</span></label>
-          </template>
-          <h3>Goes into the inventory</h3>
-          <p class="small"><template v-for="(l, i) in taken.items.filter(x => x.item ?? itemNamed(x.name))" :key="i"><template v-if="i">, </template>{{ l.amount ? l.amount + ' × ' : '' }}<EntryLink :id="(l.item ?? itemNamed(l.name)!.id)" /></template>
-            <template v-if="taken.money">{{ taken.items.some(x => x.item ?? itemNamed(x.name)) ? '; ' : '' }}{{ formatMoney(taken.money) }}</template></p>
-          <p v-if="missing.length" class="small warn-text">Not in this world, so left out: {{ missing.join(', ') }}. Your DM can add them to the {{ classPage?.name ?? 'class' }}'s starting equipment, or you can add something else on the sheet.</p>
-        </template>
-
-        <!-- spells -->
-        <template v-else-if="step.id === 'spells'">
-          <p class="small">
-            <template v-if="counts.cantrips != null">{{ d.cantrips.length }} of {{ counts.cantrips }} cantrips · {{ d.spells.length }} of {{ counts.prepared }} prepared spells</template>
-            <template v-else>{{ d.cantrips.length }} cantrips · {{ d.spells.length }} spells (no limit known for this class)</template>
-            <template v-if="sc.maxLevel"> · up to {{ ORD[sc.maxLevel] }} level</template>
-            <template v-if="counts.book != null"> · spellbook {{ d.spells.length + d.book.length }} of {{ counts.book }}</template>
-          </p>
-          <input v-model="spellFilter" class="wz-filter" placeholder="Filter by name…" />
-          <template v-if="sc.cantrips.length && counts.cantrips !== 0">
-            <h3>Cantrips</h3>
-            <div class="wz-skills">
-              <button v-for="e in shown(sc.cantrips)" :key="e.id" type="button" class="chip-btn" :class="{ on: d.cantrips.includes(e.id) }" @click="toggleSpell('cantrips', e.id, counts.cantrips)">{{ e.name }}</button>
-            </div>
-          </template>
-          <template v-for="[lvl, list] in byLevel" :key="lvl">
-            <h3>{{ ORD[Number(lvl)] }} level</h3>
-            <div class="wz-skills">
-              <span v-for="e in list" :key="e.id" class="wz-spell">
-                <button type="button" class="chip-btn" :class="{ on: d.spells.includes(e.id) }" :title="'Prepared'" @click="toggleSpell('spells', e.id, counts.prepared)">{{ e.name }}</button>
-                <button v-if="counts.book != null && !d.spells.includes(e.id)" type="button" class="chip-btn wz-book" :class="{ on: d.book.includes(e.id) }" title="In the spellbook, not prepared" @click="toggleSpell('book', e.id, bookMax)">📖</button>
-              </span>
-            </div>
-          </template>
-          <p v-if="!sc.cantrips.length && !sc.spells.length" class="muted small">The world has no spells for this class (a spell's Classes field lists who can cast it).</p>
-        </template>
-
-        <!-- name and story -->
-        <template v-else-if="step.id === 'details'">
-          <div class="wz-form">
-            <label>Name <input :value="d.name" placeholder="The character's name" @input="wizard.d.name = val($event)" /></label>
-            <label v-if="!playerMode">Player <input :value="d.player" @input="wizard.d.player = val($event)" /></label>
-            <label v-for="(v, k) in d.looks" :key="k">{{ k.charAt(0).toUpperCase() + k.slice(1) }} <input :value="v" @input="wizard.d.looks = { ...d.looks, [k]: val($event) }" /></label>
-          </div>
-          <label class="wz-story">Story <textarea rows="6" :value="d.story" placeholder="Where they come from, what they want… (Markdown)" @input="wizard.d.story = val($event)" /></label>
-        </template>
-
-        <!-- summary -->
-        <template v-else-if="step.id === 'summary'">
-          <p class="wz-sum-head"><b>{{ d.name || 'Unnamed' }}</b>, level {{ d.level }} {{ classes.find(c => c.id === d.cls)?.label ?? 'no class' }}<template v-if="d.subclass"> ({{ get(d.subclass)?.name }})</template>
-            <template v-if="d.race"> · {{ get(d.race)?.name }}</template><template v-if="d.background"> · {{ get(d.background)?.name }}</template></p>
-          <div class="wz-sum-scores">
-            <span v-for="a in ABILITY_KEYS" :key="a" class="wz-score"><small>{{ ABILITY_SHORT[a].toUpperCase() }}</small><b>{{ scores[a] }}</b><small>{{ signed(mod(scores[a])) }}</small></span>
-          </div>
-          <p class="small"><b>HP</b> {{ hpOf(d) }} · <b>Hit dice</b> {{ d.level }}{{ dieOfDraft(d) }} · <b>Saves</b> {{ (r ? r.saves : d.ownSaves).map(a => ABILITY_SHORT[a]).join(', ') || '—' }}</p>
-          <p class="small"><b>Skills</b> {{ [...d.skills, ...grantedSkills.keys()].sort().join(', ') || '—' }}</p>
-          <p class="small"><b>Feats</b> {{ [get(get(d.background)?.fields.originFeat)?.name, ...d.feats.filter(f => featLevels(d).some(x => x.level === f.level)).map(f => get(f.feat)?.name)].filter(Boolean).join(', ') || '—' }}</p>
-          <p class="small"><b>Equipment</b> {{ taken.items.map(l => (l.amount ? l.amount + ' × ' : '') + l.name).join(', ') || '—' }}<template v-if="taken.money">; {{ formatMoney(taken.money) }}</template></p>
-          <p v-if="casts(d)" class="small"><b>Spells</b> {{ [...d.cantrips, ...d.spells].map(id => get(id)?.name).join(', ') || '—' }}</p>
-          <p v-if="openCount" class="wz-open small">Still open: {{ all.flatMap(s => s.open).join(', ') }}</p>
-          <button type="button" class="primary wz-make" @click="create">Make the character</button>
-        </template>
+        <WzClassStep v-if="step.id === 'class'" />
+        <WzOriginStep v-else-if="step.id === 'origin'" />
+        <WzScoresStep v-else-if="step.id === 'scores'" />
+        <WzProfsStep v-else-if="step.id === 'profs'" />
+        <WzFeaturesStep v-else-if="step.id === 'features'" />
+        <WzFeatsStep v-else-if="step.id === 'feats'" />
+        <WzHpStep v-else-if="step.id === 'hp'" />
+        <WzGearStep v-else-if="step.id === 'gear'" />
+        <WzSpellsStep v-else-if="step.id === 'spells'" v-model:filter="spellFilter" />
+        <WzStoryStep v-else-if="step.id === 'details'" />
+        <WzSummaryStep v-else-if="step.id === 'summary'" :open="all.flatMap(s => s.open)" />
 
         <footer class="wizard-foot">
           <button type="button" :disabled="!at" @click="move(-1)">← Back</button>

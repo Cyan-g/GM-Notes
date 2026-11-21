@@ -8,18 +8,18 @@ import { TYPES, byKey, type FieldDef } from '../model/schema'
 import { backlinks, byType, fieldLabel, get, playerMode, relationsOf, state } from '../store'
 import RaceBonusEdit from '../components/edit/RaceBonusEdit.vue'
 import BackgroundEdit from '../components/edit/BackgroundEdit.vue'
-import { changed, deleteEntry, setField, toggleField } from '../edit'
+import { changed, deleteEntry, setField } from '../edit'
 import { hasSecrets } from '../model/text'
 import { go, hrefEntry, hrefList } from '../router'
 import FieldInput from '../components/edit/FieldInput.vue'
 import { statsOf } from '../encounter'
 import SubclassInfo from '../components/SubclassInfo.vue'
-import FeatPrereqs from '../components/edit/FeatPrereqs.vue'
 import ListInput from '../components/edit/ListInput.vue'
 import BodyEditor from '../components/edit/BodyEditor.vue'
 import CharacterSheet from '../components/CharacterSheet.vue'
 import SpellForm from '../components/edit/SpellForm.vue'
 import ItemForm from '../components/edit/ItemForm.vue'
+import FeatForm from '../components/edit/FeatForm.vue'
 import CreatureForm from '../components/edit/CreatureForm.vue'
 import StatblockView from '../components/Statblock.vue'
 import RelationsEditor from '../components/edit/RelationsEditor.vue'
@@ -31,6 +31,7 @@ import NpcAppearance from '../components/edit/NpcAppearance.vue'
 import DeityForm from '../components/edit/DeityForm.vue'
 import OrgForm from '../components/edit/OrgForm.vue'
 import SubPlaces from '../components/edit/SubPlaces.vue'
+import DmOnlyBadge from '../components/DmOnlyBadge.vue'
 
 const props = defineProps<{ id: string }>()
 const e = computed(() => get(props.id))
@@ -84,10 +85,6 @@ const showDesc = computed(() => !(e.value?.type === 'item' && e.value.fields.kin
 // (notes written under the statblock stay reachable, folded, if there are any).
 const creature = computed(() => e.value?.type === 'creature')
 const sheet = computed(() => !!e.value && SHEET_TYPES.includes(e.value.type))
-// A field's definition by its key, for the feat form's fields.
-const fieldOf = (k: string) => def.value?.fields.find(f => f.key === k)
-/** Turn a yes/no field on or off (a feat's "repeatable"). */
-const toggleBool = (key: string) => toggleField(e.value!, key)
 const setSummary = (v: string) => setField(e.value!, 'summary', v.trim() ? v : undefined)
 const bigFields = computed(() => (def.value?.fields ?? []).filter(f => BIG.includes(f.kind) && shown(f)))
 
@@ -154,7 +151,7 @@ function remove() {
         <!-- whether players know of it: the DM's choice, for what can be shared (not a player's own world or a character) -->
         <label v-if="!playerMode && e.type !== 'pc'" class="toggle" :title="e.visibility === 'secret' ? 'Players don\'t know about this yet' : 'Players know this exists'">
           <input type="checkbox" :checked="e.visibility === 'known'" @change="toggleSecret" />
-          <span>Known to players</span><span v-if="e.visibility !== 'known'" class="badge dm-only">DM only</span>
+          <span>Known to players</span><DmOnlyBadge v-if="e.visibility !== 'known'" />
         </label>
         <label class="grow"><span>Also known as</span><ListInput :model-value="e.aliases" placeholder="Add alias…" @update:model-value="v => setList('aliases', v)" /></label>
       </div>
@@ -169,22 +166,7 @@ function remove() {
           <section class="card sheet-form">
             <SpellForm v-if="e.type === 'spell'" :entry="e" />
             <ItemForm v-else-if="e.type === 'item'" :entry="e" />
-            <!-- a feat: what it is on top; what it gives on the left, what it takes to get it on the right -->
-            <div v-else-if="e.type === 'feat'" class="feat-form">
-              <div class="ff-top">
-                <label v-for="k in ['category', 'source']" :key="k" class="sheet-field"><span>{{ fieldOf(k)!.label }}</span><FieldInput :id="`f-${k}`" :def="fieldOf(k)!" :entry="e" /></label>
-              </div>
-              <div class="ff-col ff-gives">
-                <h4>What it gives</h4>
-                <div class="sheet-field"><span>Ability score increase</span><FieldInput :def="fieldOf('abilityIncrease')!" :entry="e" /></div>
-                <p class="muted small">Its effects, choices and spells: <b>Features</b>, below the card.</p>
-              </div>
-              <div class="ff-col ff-needs">
-                <h4>What it needs</h4>
-                <FeatPrereqs :e="e" />
-                <label class="fp-switch ff-repeat" title="It can be taken more than once (another version each time, where its text says so)"><input type="checkbox" :checked="!!e.fields.repeatable" @change="toggleBool('repeatable')" /> Can be taken more than once (repeatable)</label>
-              </div>
-            </div>
+            <FeatForm v-else-if="e.type === 'feat'" :entry="e" />
             <!-- The description closes the card, the way it ends a spell or item card. -->
             <div v-if="showDesc" class="sheet-desc">
               <span class="sf-label" title="What it says: shown on its card, in pop-ups and printed cards">Card text</span>

@@ -3,9 +3,10 @@
 // folded away), how many live in the places inside it, and for a shop or tavern its keeper and prices.
 import { computed } from 'vue'
 import type { Entry, Id } from '../model/types'
-import { byType, get, playerMode, relatedIds } from '../store'
+import { byType, get, relatedIds } from '../store'
 import { statusText } from '../npc'
 import EntryLink from './EntryLink.vue'
+import AttitudeBadge from './AttitudeBadge.vue'
 
 const props = defineProps<{ e: Entry }>()
 const residentsOf = (id: Id) => relatedIds(id, 'lives-in', 'in', { current: true }).map(get).filter((x): x is Entry => !!x)
@@ -25,7 +26,6 @@ const inside = computed(() => {
   return n
 })
 const note = (x: Entry) => [x.fields.occupation, statusText(x)].filter(Boolean).join(' · ')
-const attitude = (x: Entry) => (playerMode.value ? '' : String(x.fields.attitude ?? ''))
 const shop = computed(() => ['Shop', 'Tavern'].includes(String(props.e.fields.placeType ?? '')))
 const markup = computed(() => props.e.fields.markup as number | undefined)
 </script>
@@ -43,7 +43,7 @@ const markup = computed(() => props.e.fields.markup as number | undefined)
     <ul class="rel rel-scroll">
       <li v-for="x in living" :key="x.id"><EntryLink :id="x.id" icon />
         <span v-if="note(x)" class="role">{{ note(x) }}</span>
-        <span v-if="attitude(x)" class="badge small" :class="'att-' + attitude(x).toLowerCase()">{{ attitude(x) }}</span></li>
+        <AttitudeBadge :e="x" class="small" /></li>
     </ul>
     <details v-if="away.length">
       <summary class="muted small">Dead or missing ({{ away.length }})</summary>

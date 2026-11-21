@@ -11,7 +11,7 @@
 import type { CharacterSheet, Entry, GearEffect, Id, SpeciesState, Speeds, Trait, TraitChoice, TraitGrant, TraitOption, TraitSpell } from './model/types'
 import { classesOf, totalLevel, withoutClass } from './model/classes'
 import { classEntry, classLabel } from './classRules'
-import { entries, get, listOptions, state } from './store'
+import { byType, entries, get, listOptions, state } from './store'
 import { sheetOf } from './sheetData'
 import { SKILLS, mod, ord, profBonus, type Ability } from './model/dnd'
 import { inUse, isWearable } from './items'
@@ -146,6 +146,15 @@ export function parentRaces(e: Entry): Entry[] {
   const up = raceChain(e.fields.parent as Id | undefined), self = up.findIndex(r => r.id === e.id)
   // a loop back to the race itself ends the list there
   return self < 0 ? up : up.slice(0, self)
+}
+/** The subrace a member of a race belongs to (its name), or nothing for a member of the race itself. */
+export const subraceNameIn = (race: Entry, n: Entry) => (n.fields.race === race.id ? '' : get(n.fields.race)?.name ?? '')
+/** Everyone (NPCs and characters) of a race or of one of its subraces at any depth, by subrace, then by name. */
+export function raceMembers(race: Entry): Entry[] {
+  const ids = new Set<string>([race.id])
+  for (let grew = true; grew;) { grew = false; for (const r of byType.value.get('race') ?? []) if (!ids.has(r.id) && !!r.fields.parent && ids.has(r.fields.parent)) { ids.add(r.id); grew = true } }
+  return entries.value.filter(n => (n.type === 'npc' || n.type === 'pc') && !!n.fields.race && ids.has(n.fields.race))
+    .sort((a, b) => subraceNameIn(race, a).localeCompare(subraceNameIn(race, b)) || a.name.localeCompare(b.name))
 }
 /** When a class or subclass feature comes: "Warlock Lv 14"; other sources have no level. */
 export function levelTag(a: ActiveTrait): string {

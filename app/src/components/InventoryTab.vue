@@ -3,8 +3,8 @@
 // ingredient pouch and their money (the Inventory card). Items drag between the two. The play sheet keeps what gear
 // adds (counted in its numbers) and the items' charges (in its Uses card).
 import type { Entry } from '../model/types'
-import EquippedCard from '../components/EquippedCard.vue'
-import InventoryCard from '../components/InventoryCard.vue'
+import EquippedCard from './EquippedCard.vue'
+import InventoryCard from './InventoryCard.vue'
 
 defineProps<{ pc: Entry }>()
 </script>

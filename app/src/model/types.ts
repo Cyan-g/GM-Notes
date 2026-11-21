@@ -74,6 +74,10 @@ export interface RankLine { title: string; renown?: number; station?: string }
 export interface GearEffect {
   on: 'ac' | 'ability' | 'saves' | 'save' | 'attack' | 'damage' | 'spellAttack' | 'spellDC' | 'skill' | 'speed' | 'initiative' | 'maxHp' | 'maxHpLevel' | 'resistance' | 'damageImmunity' | 'hitDice' | 'feature'
     | 'skillAdv' | 'saveAdv' | 'extraDamage' | 'sense' | 'immunity' | 'acBase' | 'acMin' | 'unarmed' | 'offhandMod'
+    // Medium Armor Master (Dex up to `value` in medium armor with DEX 16+), a speed equal to the walking one (Athlete's
+    // climb), any one-handed melee weapon for the off-hand attack (Dual Wielder), the butt-end attack (Polearm
+    // Master), advantage on death saves (Durable), and save proficiency in the ability the feat raised (Resilient)
+    | 'mediumArmorDex' | 'speedType' | 'offhandAny' | 'poleStrike' | 'deathSaveAdv' | 'saveFromIncrease'
   value?: number
   set?: boolean
   force?: boolean
@@ -88,13 +92,20 @@ export interface GearEffect {
   /** Initiative: plus the proficiency bonus (Alert). */
   pb?: boolean
   sense?: string
+  /** `speedType`: the kind of speed, equal to the walking speed. */
+  speedType?: 'climb' | 'swim' | 'fly' | 'burrow'
+  /** `unarmed`: the die while holding no weapon or shield (Unarmed Fighting: d8 instead of d6). */
+  emptyDice?: string
   condition?: string
   /** AC formula (`acBase`): the ability modifiers added to `value` (Unarmored Defense: DEX and CON). */
   abilities?: Ability[]
   /** AC formula: not with a shield (a monk's Unarmored Defense). */
   noShield?: boolean
-  /** Attack, damage, extra damage or AC: only for melee or ranged attacks, finesse-or-ranged ones, or while wearing armor. */
-  when?: 'melee' | 'ranged' | 'finesseOrRanged' | 'armored'
+  /**
+   * Attack, damage, extra damage or AC: only for melee or ranged attacks, finesse-or-ranged ones, weapons with the Heavy
+   * property, a melee weapon in one hand and no other weapon (Dueling), thrown weapons (when thrown), or in armor.
+   */
+  when?: 'melee' | 'ranged' | 'finesseOrRanged' | 'heavy' | 'oneHanded' | 'thrown' | 'armored'
   /** A feature's effect whose number or dice is the feature's scaling value (Rage Damage, Sneak Attack, Martial Arts). */
   fromScale?: boolean
 }
@@ -294,7 +305,8 @@ export interface AbilityBonus {
 // ---------- backgrounds (background entries; species.ts applies their proficiencies and features) ----------
 
 /** One thing a background's starting equipment has: an item from the world, or just its name; `amount` defaults to 1. */
-export interface EquipmentLine { item?: Id; name?: string; amount?: number }
+/** `among`: the player picks one of these items for the line (Wayfarer's gaming set of their choice). */
+export interface EquipmentLine { item?: Id; name?: string; amount?: number; among?: Id[] }
 /** A background's starting equipment: the items and coins, or `instead` coins in their place. Kept for the creation wizard. */
 export interface Equipment { items?: EquipmentLine[]; money?: Copper; instead?: Copper }
 
@@ -339,6 +351,8 @@ export interface TraitChoice {
   /** For a spell choice: which spells (any class's list, if `classes` is empty), and how the picked ones are cast. */
   spell?: { classes?: string[]; level?: string; ritual?: boolean; /** Only spells of these schools (Fey Touched: Divination or Enchantment). */ schools?: string[]; how: TraitSpell['how']; ability?: TraitSpell['ability'] }
   count?: number
+  /** A skill choice: a picked skill the character is already proficient in becomes Expertise (Keen Mind, Observant). */
+  orExpertise?: boolean
   /** The count from a character level on, replacing `count` ([[2, 2], [9, 4]]: two from level 2, four from 9). */
   steps?: [number, number][]
   among?: string[]

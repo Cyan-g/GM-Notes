@@ -4,6 +4,7 @@ import { byType, db, get, touch } from './store'
 import { combatantsFrom, newCombatantId, playerCombatant, statsOf } from './encounter'
 import { concentrationDc, mod } from './model/dnd'
 import { armorClass, initiative, maxHpOf } from './sheet'
+import { concentrationAdv, deathSaveAdv, gearTotals } from './effects'
 import { sheetOf, sheetToEdit } from './sheetData'
 import { changed } from './edit'
 import { isShared } from './sync'
@@ -20,6 +21,13 @@ const d20 = () => 1 + Math.floor(Math.random() * 20)
 
 /** The character whose sheet a combatant's numbers come from. */
 const sheetPc = (c: Combatant) => (c.isPlayer && c.entry ? get(c.entry) : undefined)
+/** A party member's advantage on Concentration saves (War Caster) and death saves (Durable), from their sheet. */
+export function saveRollNotes(c: Combatant): { conc?: string; death?: string } {
+  const pc = sheetPc(c), s = pc && sheetOf(pc)
+  if (!s) return {}
+  const t = gearTotals(s)
+  return { conc: concentrationAdv(t), death: deathSaveAdv(t) }
+}
 
 export interface FighterStats {
   hp?: number; maxHp?: number; tempHp?: number; ac?: number; initMod: number

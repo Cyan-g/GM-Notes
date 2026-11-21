@@ -47,6 +47,7 @@ const LEVELS = ['Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9']
     <summary class="small">{{ model.steps?.length ? 'changes by level' : 'same at every level (change by level…)' }}</summary>
     <StepsInput numeric label="How many" :model-value="model.steps" @update:model-value="v => put({ steps: v as [number, number][] | undefined })" />
   </details>
+  <label v-if="model.kind === 'skill'" class="small" title="A picked skill the character is already proficient in becomes Expertise (Keen Mind, Observant)"><input type="checkbox" :checked="!!model.orExpertise" @change="put({ orExpertise: ($event.target as HTMLInputElement).checked || undefined })" /> or Expertise if proficient</label>
   <label v-if="model.kind === 'feat'" class="small">kind <input class="steps-label" :value="model.category ?? ''" placeholder="e.g. Fighting Style" @change="put({ category: val($event).trim() || undefined })" /></label>
   <template v-if="model.kind === 'spell'">
     <select :value="spell.level ?? ''" aria-label="Spell level" @change="putSpell({ level: val($event) || undefined })">

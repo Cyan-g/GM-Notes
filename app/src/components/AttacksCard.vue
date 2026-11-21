@@ -63,7 +63,7 @@ const none = (k: 'armor' | 'weapons' | 'tools' | 'languages') => !profs.value[k]
         <h3>Attacks</h3>
         <p v-for="m in rollMode" :key="m.mode" class="small cs-roll-mode" :class="m.mode">{{ m.mode === 'adv' ? 'Advantage' : 'Disadvantage' }} on attack rolls ({{ m.from }})</p>
         <table v-if="atks.length" class="cs-attacks">
-          <tr v-for="(a, i) in atks" :key="a.id + i" :class="{ 'atk-sub': a.noItem || a.tag?.startsWith('off-hand') }">
+          <tr v-for="(a, i) in atks" :key="a.id + i" :class="{ 'atk-sub': a.noItem || a.tag?.startsWith('off-hand') || a.tag?.startsWith('bonus action') }">
             <td>
               <span v-if="a.noItem" class="cs-item-plain">{{ a.name }}</span>
               <button v-else class="link-btn cs-item" @click="shown = a.id">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> <AppIcon ui="warning" /></span>

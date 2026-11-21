@@ -5,7 +5,8 @@
 import { computed, onMounted } from 'vue'
 import { backgroundGold, backgroundKit, classKitsOf, kitLineSource, loadSrdGear, wizard } from '../../wizard'
 import { itemNamed } from '../../lookup'
-import { formatMoney } from '../../store'
+import { formatMoney, get } from '../../store'
+import { inputValue as val } from '../../dom'
 import { useDraft } from '../../composables/useDraft'
 import EntryLink from '../EntryLink.vue'
 
@@ -19,6 +20,10 @@ const asNew = computed(() => linesFrom('new'))
 const unchosen = computed(() => linesFrom('none'))
 const bgKit = computed(() => backgroundKit(d.value))
 const bgGold = computed(() => backgroundGold(d.value))
+/** The background kit's lines the player picks an item for (Wayfarer: a gaming set of their choice). */
+const picks = computed(() => (get(d.value.background)?.fields.equipment?.items ?? []).map((l, i) => ({ l, i })).filter(x => x.l.among?.length))
+const pickName = (id: string) => get(id)?.name ?? id
+function setPick(i: number, id: string) { wizard.d.kitPicks = { ...(wizard.d.kitPicks ?? {}), [i]: id } }
 </script>
 
 <template>
@@ -36,6 +41,13 @@ const bgGold = computed(() => backgroundGold(d.value))
       <span><b>A</b> {{ bgKit.items.map(l => `${l.amount ? l.amount + ' × ' : ''}${l.name}`).join(', ') }}<template v-if="bgKit.money"> and {{ formatMoney(bgKit.money) }}</template></span></label>
     <label v-if="bgGold" class="wz-kit"><input type="radio" :checked="d.bgKit === 'money'" @change="wizard.d.bgKit = 'money'" />
       <span><b>B</b> {{ formatMoney(bgGold) }}</span></label>
+    <p v-for="p in d.bgKit === 'items' ? picks : []" :key="p.i" class="small wz-kit-pick">
+      <label>{{ p.l.name || 'Pick one' }}:
+        <select :value="d.kitPicks?.[p.i] ?? ''" @change="setPick(p.i, val($event))">
+          <option value="" disabled>Pick one…</option>
+          <option v-for="id in p.l.among" :key="id" :value="id">{{ pickName(id) }}</option>
+        </select></label>
+    </p>
   </template>
   <h3>Goes into the inventory</h3>
   <p class="small"><template v-for="(l, i) in taken.items.filter(x => x.item ?? itemNamed(x.name))" :key="i"><template v-if="i">, </template>{{ l.amount ? l.amount + ' × ' : '' }}<EntryLink :id="(l.item ?? itemNamed(l.name)!.id)" /></template>

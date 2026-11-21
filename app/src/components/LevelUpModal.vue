@@ -15,7 +15,7 @@ import { SKILLS, mod, signed, ABILITY_KEYS } from '../model/dnd'
 import { itemNamed } from '../lookup'
 import { rule } from '../rules'
 import { gearTotals, scoreWith } from '../effects'
-import { backgroundOf, featOfFeature, speciesTraits } from '../species'
+import { backgroundOf, featGivesSave, featOfFeature, speciesTraits } from '../species'
 import { traitsOf } from '../model/traits'
 import { unmet } from '../requirements'
 import { changed } from '../edit'
@@ -170,6 +170,8 @@ function apply() {
     if (takeFeat) {
       const f = takeFeat
       for (const a of ABILITY_KEYS) if (add[a]) s.abilities[a] = Math.min(epic ? 30 : 20, (s.abilities[a] ?? 10) + add[a]!)
+      // Resilient: proficiency in the raised ability's saves
+      if (featGivesSave(f)) for (const a of ABILITY_KEYS) if (add[a] && !s.saves.includes(a)) s.saves.push(a)
       if (!/^ability score improvement$/i.test(f.name.trim())) s.features = [...(s.features ?? []), { name: f.name, text: String(f.fields.summary ?? '').trim() }]
     }
     // a new class's proficiencies (multiclassing)

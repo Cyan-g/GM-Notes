@@ -124,6 +124,9 @@ function itemsWithFeatures(s: CharacterSheet | undefined): Entry[] {
   return [...out.values()]
 }
 /** The feat entry a feature line on the sheet is ("Magic Initiate (Cleric)" is Magic Initiate), if any. */
+/** Whether a feat makes the character proficient in the saves of the abilities it raises (Resilient). */
+export const featGivesSave = (f: Entry | undefined) =>
+  !!f && traitsOf(f).some(t => t.effects?.some(x => x.on === 'saveFromIncrease'))
 export const featOfFeature = (f: { name: string }): Entry | undefined => entryNamed('feat', f.name, { qualified: true })
 /** The character's Origin feat: the one the sheet names (or none), else the background's. */
 export function originFeatOf(pc: Entry | undefined, s?: CharacterSheet): Entry | undefined {
@@ -256,9 +259,21 @@ export function speciesGrants(pc: Entry | undefined, s?: CharacterSheet): (Trait
 /** The skills a species makes the character proficient in. */
 export const speciesSkills = (pc: Entry | undefined, s?: CharacterSheet) =>
   new Set(speciesGrants(pc, s).filter(g => g.kind === 'skill').map(g => g.id))
-/** The skills a feature gives Expertise in (picked in an Expertise choice). */
-export const speciesExpertise = (pc: Entry | undefined, s?: CharacterSheet) =>
-  new Set(active(pc, s).filter(a => a.trait.choice?.kind === 'expertise').flatMap(a => a.picks))
+/**
+ * The skills a feature gives Expertise in: picked in an Expertise choice, or a skill pick "or Expertise" (Keen Mind,
+ * Observant) for a skill the character is proficient in already (on the sheet, or given by something else).
+ */
+export function speciesExpertise(pc: Entry | undefined, s?: CharacterSheet): Set<string> {
+  const act = active(pc, s)
+  const out = new Set(act.filter(a => a.trait.choice?.kind === 'expertise').flatMap(a => a.picks))
+  const either = act.filter(a => a.trait.choice?.kind === 'skill' && a.trait.choice.orExpertise)
+  if (!either.length) return out
+  const grants = speciesGrants(pc, s).filter(g => g.kind === 'skill')
+  for (const a of either) for (const id of a.picks) {
+    if ((s?.skills[id] ?? 0) >= 1 || grants.filter(g => g.id === id).length > 1) out.add(id)
+  }
+  return out
+}
 
 /** The species' speed in feet (the subrace's, else the main race's), if one says. */
 export function speciesSpeed(pc: Entry | undefined): number | undefined {

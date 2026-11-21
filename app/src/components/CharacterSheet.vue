@@ -22,7 +22,7 @@ import {
 } from '../sheet'
 import { profsToEdit, sheetOrBlank, sheetToEdit } from '../sheetData'
 import { ABILITIES, SKILLS, concentrationDc, dieSize, mod, profBonus, signed, type Ability } from '../model/dnd'
-import { advOf, breakdown, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../effects'
+import { advOf, breakdown, concentrationAdv, deathSaveAdv, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../effects'
 import { chargesLeft, setCharges, type RegainRoll } from '../items'
 import ProfChips from './ProfChips.vue'
 import ItemModal from './ItemModal.vue'
@@ -344,9 +344,9 @@ onBeforeUnmount(() => {
         <div v-if="maxHp && !build" class="cs-hp-bar"><i :style="{ width: Math.min(100, Math.round(100 * (s.hp ?? maxHp) / maxHp)) + '%' }" /></div>
       </div>
       <label v-if="!build" class="cs-hp-change"><span class="cs-label">Damage / heal</span><input placeholder="−7 or +5" :disabled="ro" @keydown.enter="hit" @change="hit" /></label>
-      <DeathSaves v-if="dying" :saves="s.deathSaves ?? { ok: 0, fail: 0 }" :ro="ro" @set="setSaves" @nat20="edit(x => { const b = x.hp ?? 0; x.hp = 1; hpChanged(pc, x, b, 1, false) })" />
+      <DeathSaves v-if="dying" :saves="s.deathSaves ?? { ok: 0, fail: 0 }" :adv="deathSaveAdv(gt)" :ro="ro" @set="setSaves" @nat20="edit(x => { const b = x.hp ?? 0; x.hp = 1; hpChanged(pc, x, b, 1, false) })" />
       <div v-if="concDc != null && s.conditions?.includes('Concentrating')" class="cs-conc-check">
-        <span>Concentration: <b>CON save DC {{ concDc }}</b></span>
+        <span>Concentration: <b>CON save DC {{ concDc }}</b><template v-if="concentrationAdv(gt)">, {{ concentrationAdv(gt) }}</template></span>
         <button type="button" class="chip-btn" @click="concDone(true)">Kept</button>
         <button type="button" class="chip-btn" @click="concDone(false)">Lost</button>
       </div>

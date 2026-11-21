@@ -108,10 +108,11 @@ export const SCHEMA = [
       { key: 'campaigns', label: 'Campaigns', kind: 'refs', to: ['campaign'] },
       // Its skills, tool and features count on the sheet (species.ts); the player can swap any of them.
       { key: 'background', label: 'Background', kind: 'ref', to: ['background'] },
-      // The same appearance as an NPC's.
+      // The same appearance as an NPC's (edited with NpcAppearance).
       { key: 'race', label: 'Race', kind: 'ref', to: ['race'], group: 'Appearance' },
       { key: 'gender', label: 'Gender', kind: 'text', group: 'Appearance' },
       { key: 'age', label: 'Age', kind: 'text', group: 'Appearance' },
+      { key: 'born', label: 'Born', kind: 'date', group: 'Appearance' },
       { key: 'hair', label: 'Hair', kind: 'text', group: 'Appearance' },
       { key: 'eyes', label: 'Eyes', kind: 'text', group: 'Appearance' },
       { key: 'skin', label: 'Skin', kind: 'text', group: 'Appearance' },

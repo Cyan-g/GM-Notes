@@ -17,6 +17,8 @@ const props = defineProps<{
   create?: (label: string) => string
   placeholder?: string
   disabled?: boolean
+  /** What the character has anyway (from the species, classes, feats): shown greyed with where from, not removable. */
+  given?: { id: string; from: string }[]
 }>()
 const emit = defineEmits<{ change: [values: string[]] }>()
 const listId = `prof-${Math.random().toString(36).slice(2, 8)}`
@@ -24,6 +26,9 @@ const typed = ref('')
 const all = computed(() => [...(props.toggles ?? []), ...(props.suggest ?? [])])
 const labelOf = (id: string) => all.value.find(o => o.id === id)?.label ?? id
 const has = (id: string) => props.values.includes(id)
+const givenBy = (id: string) => props.given?.filter(g => g.id === id).map(g => g.from).join(', ') ?? ''
+/** Given ones not typed and not a toggle: greyed chips. */
+const givenExtras = computed(() => [...new Set((props.given ?? []).map(g => g.id))].filter(id => !has(id) && !props.toggles?.some(t => t.id === id)))
 const extras = computed(() => props.values.filter(v => !props.toggles?.some(t => t.id === v)))
 /** Disabled, only the toggles that are on show. */
 const shownToggles = computed(() => (props.disabled ? props.toggles?.filter(t => has(t.id)) : props.toggles) ?? [])
@@ -47,13 +52,14 @@ function add() {
   <div class="prof-row" :class="{ bare: !label }">
     <span v-if="label" class="prof-label">{{ label }}</span>
     <div class="prof-chips">
-      <button v-for="t in shownToggles" :key="t.id" type="button" class="chip-toggle" :class="{ on: has(t.id) }" :disabled="disabled" @click="toggle(t.id)">{{ t.label }}</button>
+      <button v-for="t in shownToggles" :key="t.id" type="button" class="chip-toggle" :class="{ on: has(t.id), given: !has(t.id) && !!givenBy(t.id) }" :disabled="disabled || (!has(t.id) && !!givenBy(t.id))" :title="!has(t.id) && givenBy(t.id) ? `From ${givenBy(t.id)}` : undefined" @click="toggle(t.id)">{{ t.label }}</button>
+      <span v-for="v in givenExtras" :key="'g-' + v" class="chip prof-chip given" :title="`From ${givenBy(v)}`">{{ labelOf(v) }}</span>
       <span v-for="v in extras" :key="v" class="chip prof-chip">{{ labelOf(v) }}<button v-if="!disabled" type="button" class="link-btn" :title="`Remove ${labelOf(v)}`" @click="remove(v)">×</button></span>
       <template v-if="!disabled && (create || offered.length)">
         <input v-model="typed" class="prof-add" :list="listId" :placeholder="placeholder ?? 'Add…'" @keydown.enter.prevent="add" @change="add" />
         <datalist :id="listId"><option v-for="o in offered" :key="o.id" :value="o.label" /></datalist>
       </template>
-      <span v-if="disabled && !values.length" class="muted small">none</span>
+      <span v-if="disabled && !values.length && !givenExtras.length" class="muted small">none</span>
     </div>
   </div>
 </template>

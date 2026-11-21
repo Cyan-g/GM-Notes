@@ -50,11 +50,14 @@ const groups = computed(() => {
   const out = new Map<string, FieldDef[]>()
   // an NPC's fields are in its own form (NpcForm, NpcAppearance, NpcStats)
   if (npc.value) return []
+  // a character's appearance is its own card too (NpcAppearance)
+  const pcLooks = e.value?.type === 'pc'
   for (const f of def.value?.fields ?? []) {
     // a subclass's class and tagline are at the top of its main column (SubclassInfo)
     // a race's ability score increase has its own section in the main column
     if (BIG.includes(f.kind) || (e.value?.type === 'race' && f.key === 'abilityIncrease') || (e.value?.type === 'background' && BG_MAIN.includes(f.key)) || (e.value?.type === 'pc' && f.key === 'level') || (e.value?.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || !shown(f) || f.key === 'pins' || f.key === 'map' || f.kind === 'mapData') continue
     const g = f.kind === 'statblock' ? 'Stats' : f.group ?? 'Details'
+    if (pcLooks && g === 'Appearance') continue
     if (!out.has(g)) out.set(g, [])
     out.get(g)!.push(f)
   }
@@ -248,7 +251,7 @@ function remove() {
           <h3>Picture</h3>
           <ImageInput :model-value="e.image" :hint="e.name" @update:model-value="setImage" />
         </div>
-        <div v-if="npc" class="card">
+        <div v-if="npc || e.type === 'pc'" class="card">
           <h3>Appearance</h3>
           <NpcAppearance :entry="e" />
         </div>

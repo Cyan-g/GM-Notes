@@ -11,6 +11,7 @@ import { abilityBonusText } from './abilityBonus'
 import { describeRequirements } from './requirements'
 import { statsOf } from './encounter'
 import { statusText } from './npc'
+import { partyLine } from './sheet'
 
 export interface Col {
   key: string
@@ -85,6 +86,16 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   '@prereq': { label: 'Prerequisite', value: e => prereqText(e), sort: e => prereqText(e).toLowerCase() || '~', kind: 'text' },
   // a race's walking speed and its others (swim, fly…)
   '@speed': { label: 'Speed', value: e => speedText(e), sort: e => e.fields.speeds?.walk ?? 1e9, kind: 'text' },
+  // a character at a glance (sheet.ts partyLine): what the DM looks up at the table
+  '@ac': { label: 'AC', value: e => (e.type === 'pc' ? partyLine(e).ac : ''), sort: e => (e.type === 'pc' ? -partyLine(e).ac : 0), kind: 'text' },
+  '@maxHp': { label: 'Max HP', value: e => (e.type === 'pc' ? partyLine(e).maxHp ?? '' : ''), sort: e => (e.type === 'pc' ? -(partyLine(e).maxHp ?? 0) : 0), kind: 'text' },
+  '@passives': {
+    label: 'Passive Perc. / Ins. / Inv.', kind: 'text',
+    value: e => { if (e.type !== 'pc') return ''; const p = partyLine(e); return `${p.perception} / ${p.insight} / ${p.investigation}` },
+    sort: e => (e.type === 'pc' ? -partyLine(e).perception : 0),
+  },
+  '@spellDc': { label: 'Spell DC', value: e => (e.type === 'pc' ? partyLine(e).spellDc ?? '' : ''), sort: e => (e.type === 'pc' ? -(partyLine(e).spellDc ?? 0) : 0), kind: 'text' },
+  '@languages': { label: 'Languages', value: e => (e.type === 'pc' ? partyLine(e).languages.join(', ') : ''), sort: e => (e.type === 'pc' ? partyLine(e).languages.length : 0), kind: 'text' },
   // an NPC's status with its date ("Dead since 86 AC"); the living show nothing
   '@status': { label: 'Status', value: e => statusText(e), sort: e => statusText(e).toLowerCase() || '~', kind: 'text' },
   '@updated': { label: 'Last edited', value: e => new Date(e.updated).toLocaleString(), sort: e => -Date.parse(e.updated), kind: 'text' },

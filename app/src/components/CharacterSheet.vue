@@ -8,7 +8,7 @@
 // Hit dice come from the classes, one pool per die size, each spent on its own.
 import AppIcon from './AppIcon.vue'
 import ConditionIcon from './ConditionIcon.vue'
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import type { CharacterSheet, ClassLine, Entry, Proficiencies } from '../model/types'
 import { byType, get, listOptions, setList, state } from '../store'
 import { CLASS_DIE, DICE, classText, classesOf, dieOf } from '../model/classes'
@@ -32,7 +32,7 @@ import ConditionsBar from './ConditionsBar.vue'
 import DeathSaves from './DeathSaves.vue'
 import LevelUpModal from './LevelUpModal.vue'
 import { concentrationDc, endConcentration, hpChanged } from '../conditions'
-import { picksLeft, speciesEffects, speciesSizes, speciesTraits } from '../species'
+import { picksLeft, speciesEffects, speciesGrants, speciesSizes, speciesTraits } from '../species'
 import { ui } from '../ui'
 
 const props = defineProps<{ pc: Entry; build?: boolean }>()
@@ -201,6 +201,30 @@ const xpNext = computed(() => XP_AT[level.value])
 const sizes = computed(() => speciesSizes(props.pc))
 const leveling = ref(false)
 const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
+
+// ---- building: the hit points the dice give on average (the player may have rolled instead; their call) ----
+const dieSize = (d: string) => Number(d.replace(/\D/g, '')) || 8
+const avgHp = computed(() => {
+  const con = mod(scoreOf('con'))
+  const lines = classes.value.length ? classes.value.map(l => ({ die: dieOf(l), n: Number(l.level) || 0 })) : [{ die: s.value.hitDie || 'd8', n: level.value }]
+  let total = 0, first = true
+  for (const l of lines) for (let k = 0; k < l.n; k++) { total += Math.max(1, (first ? dieSize(l.die) : dieSize(l.die) / 2 + 1) + con); first = false }
+  return total || undefined
+})
+const avgText = computed(() => {
+  const con = mod(scoreOf('con')), first = classes.value[0] ? dieOf(classes.value[0]) : s.value.hitDie || 'd8'
+  return `${first} in full at level 1, the average after, ${signed(con)} CON each level`
+})
+// what the classes, species, background and feats give, shown greyed beside what's typed
+const given = computed(() => speciesGrants(props.pc, s.value))
+const givenOf = (k: 'armor' | 'weapon' | 'tool' | 'language') => given.value.filter(g => g.kind === k).map(g => ({ id: g.id, from: g.from }))
+const otherOpen = ref(false)
+// a feature added and left without a name or text goes when the editing ends
+onBeforeUnmount(() => {
+  if (!build.value) return
+  const empty = (f: { name: string; text: string }) => !f.name.trim() && !f.text.trim()
+  if (s.value.features?.some(empty)) edit(x => { x.features = x.features.filter(f => !empty(f)) })
+})
 </script>
 
 <template>
@@ -235,7 +259,24 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
     <!-- the character's conditions (shared with the combat tracker), with what they do -->
     <ConditionsBar v-if="!build" :pc="pc" :s="s" />
     <!-- the strip at the top: the numbers looked at most -->
-    <div class="cs-strip">
+    <!-- building: what the sheet works out, in one line; below it, what's set by hand -->
+    <div v-if="build" class="cs-build">
+      <p class="cs-summary small">
+        <span>Level <b>{{ level }}</b></span><span>Proficiency <b>{{ signed(prof) }}</b></span><span>AC <b>{{ ac.ac }}</b></span><span>Speed <b>{{ speedOf(s) ?? '30 ft' }}</b></span><span>Initiative <b>{{ signed(initTotal) }}</b></span><span>Passive Perception <b>{{ passivePerception(s, prof) }}</b></span><span v-if="cast">Spell save DC <b>{{ spellDC }}</b></span>
+      </p>
+      <div class="cs-set">
+        <label v-if="!classes.length"><span>Level</span><input type="number" min="1" max="20" :value="pc.fields.level ?? ''" placeholder="1" @change="setLevel" /></label>
+        <label v-if="!classes.length"><span>Hit die</span><select :value="s.hitDie || 'd8'" @change="edit(x => x.hitDie = ($event.target as HTMLSelectElement).value)"><option v-for="d in DICE" :key="d" :value="d">{{ d }}</option></select></label>
+        <div class="cs-set-hp">
+          <label><span>Max HP</span><input type="number" :value="s.maxHp ?? ''" :placeholder="avgHp ? String(avgHp) : 'max'" title="Maximum HP" @change="edit(x => x.maxHp = num($event))" /></label>
+          <small v-if="avgHp && s.maxHp !== avgHp" class="muted" :title="avgText">average {{ avgHp }} <button type="button" class="link-btn" @click="edit(x => x.maxHp = avgHp)">use it</button></small>
+        </div>
+        <label><span>AC</span><input type="number" :value="s.acOverride ?? ''" :placeholder="`auto (${ac.ac})`" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></label>
+        <label><span>Speed</span><input :value="s.speed ?? ''" :placeholder="baseSpeed(s) ?? '30 ft'" @change="edit(x => x.speed = text($event))" /></label>
+        <label v-if="sizes.length > 1" title="The species lets the player pick its size"><span>Size</span><select :value="s.size && sizes.includes(s.size) ? s.size : sizes[0]" @change="edit(x => x.size = ($event.target as HTMLSelectElement).value === sizes[0] ? undefined : ($event.target as HTMLSelectElement).value)"><option v-for="z in sizes" :key="z" :value="z">{{ z }}</option></select></label>
+      </div>
+    </div>
+    <div v-else class="cs-strip">
       <label v-if="!classes.length" class="cs-stat"><span>Level</span><input type="number" min="1" max="20" :value="pc.fields.level ?? ''" placeholder="1" :disabled="locked" @change="setLevel" /></label>
       <div v-else class="cs-stat" :title="classLabel"><span>Level</span><b v-flash.neutral="level">{{ level }}</b></div>
       <div class="cs-stat"><span>Proficiency</span><b v-flash="prof">{{ signed(prof) }}</b></div>
@@ -248,7 +289,7 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <button v-if="!build" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" title="Inspiration" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>Inspiration</span><b><AppIcon ui="star" :class="{ off: !(s.inspiration) }" /></b></button>
     </div>
 
-    <div class="cs-hp-cards">
+    <div v-if="!build" class="cs-hp-cards">
     <div class="cs-hp">
       <div class="cs-hp-main">
         <span class="cs-label">{{ build ? 'Maximum hit points' : 'Hit points' }}</span>
@@ -332,14 +373,6 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       <!-- attacks, spellcasting, proficiencies -->
       <section class="cs-side">
         <template v-if="build">
-        <h4>Attacks</h4>
-        <table v-if="atks.length" class="cs-attacks">
-          <tr v-for="a in atks" :key="a.id"><td><span v-if="a.noItem" class="cs-item-plain">{{ a.name }}</span><button v-else class="link-btn cs-item" @click="showItem(a.id)">{{ a.name }}</button><span v-if="a.untrained" class="cs-untrained" title="Not proficient with this weapon: no proficiency bonus to hit"> <AppIcon ui="warning" /></span></td><td><b v-flash="a.toHit" :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td><td><span v-flash="a.damage">{{ a.damage }}</span> <span class="muted small">{{ a.type }}</span></td></tr>
-        </table>
-        <p v-else class="muted small">Equip a weapon in the inventory to see its attack here.</p>
-        </template>
-
-        <template v-if="build">
         <h4>Spellcasting</h4>
         <div class="cs-cast">
           <select v-if="build" :value="s.spellAbility ?? ''" @change="edit(x => x.spellAbility = (($event.target as HTMLSelectElement).value || undefined) as Ability | undefined)">
@@ -355,11 +388,13 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
         <template v-if="build">
         <h4>Proficiencies &amp; languages</h4>
         <div class="cs-profs">
-          <ProfChips label="Armor" :values="profs.armor" :toggles="armorTypes" :disabled="locked" @change="setProfs('armor', $event)" />
-          <ProfChips label="Weapons" :values="profs.weapons" :toggles="listOptions('item.weaponCategory')" :suggest="listOptions('item.baseWeapon')" placeholder="Add a weapon…" :disabled="locked" @change="setProfs('weapons', $event)" />
-          <ProfChips label="Tools" :values="profs.tools" :suggest="tools" placeholder="Add a tool…" :disabled="locked" @change="setProfs('tools', $event)" />
-          <ProfChips label="Languages" :values="profs.languages" :suggest="listOptions('language')" :create="newLanguage" placeholder="Add a language…" :disabled="locked" @change="setProfs('languages', $event)" />
-          <textarea v-if="build" rows="2" :value="profs.other ?? ''" placeholder="Anything else" @change="edit(x => profsToEdit(x).other = text($event))" />
+          <ProfChips label="Armor" :values="profs.armor" :given="givenOf('armor')" :toggles="armorTypes" :disabled="locked" @change="setProfs('armor', $event)" />
+          <ProfChips label="Weapons" :values="profs.weapons" :given="givenOf('weapon')" :toggles="listOptions('item.weaponCategory')" :suggest="listOptions('item.baseWeapon')" placeholder="Add a weapon…" :disabled="locked" @change="setProfs('weapons', $event)" />
+          <ProfChips label="Tools" :values="profs.tools" :given="givenOf('tool')" :suggest="tools" placeholder="Add a tool…" :disabled="locked" @change="setProfs('tools', $event)" />
+          <ProfChips label="Languages" :values="profs.languages" :given="givenOf('language')" :suggest="listOptions('language')" :create="newLanguage" placeholder="Add a language…" :disabled="locked" @change="setProfs('languages', $event)" />
+          <p v-if="given.some(g => g.kind !== 'skill')" class="muted small">Greyed: from the classes, species, background and feats (they come by themselves).</p>
+          <textarea v-if="build && (profs.other || otherOpen)" rows="2" :value="profs.other ?? ''" placeholder="Other proficiencies, e.g. vehicles (land)" @change="edit(x => profsToEdit(x).other = text($event))" />
+          <button v-else-if="build" type="button" class="link-btn small cs-other-add" @click="otherOpen = true">＋ Other proficiencies</button>
           <p v-else-if="profs.other" class="cs-other">{{ profs.other }}</p>
         </div>
         </template>
@@ -382,7 +417,11 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       </template>
       <!-- everything from the classes, species, background, the sheet and the gear, each with its source (species.ts) -->
       <FeatureList v-else :pc="pc" :s="s" :gear="fromGear" />
-      <p v-if="build" class="muted small">Features from the classes, species, background and the feats here come by themselves; add feats (by their name) and anything else here. The choices they ask for are near the top of this page.</p>
+      <details v-if="build" class="cs-auto-feats">
+        <summary class="small">Features that come by themselves <span class="muted">(classes, species, background, feats): no need to add them</span></summary>
+        <FeatureList :pc="pc" :s="s" :gear="fromGear" />
+      </details>
+      <p v-if="build && !s.features.length" class="muted small">＋ Add is for anything else: a boon, a homebrew feature, a feat by its name.</p>
     </section>
 
     <!-- the gear is on the Inventory tab; here its effects count in the numbers, and its charges are in the Uses card -->

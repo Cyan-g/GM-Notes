@@ -2129,3 +2129,23 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .rel-edit > .rel-add { grid-template-columns: minmax(0, 1fr); margin-bottom: .8rem; padding-bottom: .8rem; border-bottom: 1px solid var(--line); }
 table.grid tr.group-row td { background: var(--panel-2); font-family: var(--serif); font-weight: 600; color: var(--accent); padding-top: .5rem; }
 .npc-form + .field-label { margin-top: 1.2rem; }
+/* ---- character editor: worked-out numbers in a line, what's set by hand in a row ---- */
+.cs-hp-row .cs-hp-now::placeholder { font: 400 .9rem var(--sans); }
+.cs-build { display: grid; gap: .6rem; margin-bottom: .8rem; }
+.cs-summary { display: flex; flex-wrap: wrap; gap: .2rem 1.1rem; margin: 0; padding: .5rem .8rem; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; color: var(--muted); }
+.cs-summary b { color: var(--ink); }
+.cs-set { display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: flex-end; }
+.cs-set label { display: flex; flex-direction: column; gap: .2rem; font-size: 12px; color: var(--muted); }
+.cs-set input { width: 6.5rem; }
+.cs-set-hp { display: flex; flex-direction: column; gap: .15rem; }
+.cs-set-hp small { font-size: 12px; }
+.prof-chip.given, .chip-toggle.given { opacity: .55; border-style: dashed; cursor: default; }
+.chip-toggle.given:disabled { opacity: .55; }
+.fc-fold > summary { list-style: none; cursor: pointer; }
+.fc-fold > summary::-webkit-details-marker { display: none; }
+.fc-fold > summary h4::before { content: '▸ '; color: var(--muted); }
+.fc-fold[open] > summary h4::before { content: '▾ '; }
+.sp-picked-line { margin: .2rem 0 0; color: var(--ink-2); }
+.cs-auto-feats { margin: .5rem 0; }
+.cs-auto-feats > summary { cursor: pointer; }
+.cs-other-add { justify-self: start; }

@@ -76,7 +76,9 @@ function toggle(id: string) {
       <button v-if="listed" type="button" class="chip-btn sp-choose" :class="{ primary: !full }" :disabled="disabled && !picked" @click="open = true">{{ disabled ? 'Show' : picked ? 'Change…' : 'Choose…' }}</button>
     </div>
     <!-- options and feats: the picks here, the list in a dialog -->
-    <ul v-if="listed && pickedRows.length" class="sp-picked">
+    <!-- all picked: their names on one line (Change… shows what each does); still picking: each with what it does -->
+    <p v-if="listed && full && pickedRows.length" class="sp-picked-line small">{{ pickedRows.map(r => r.label).join(' · ') }}</p>
+    <ul v-else-if="listed && pickedRows.length" class="sp-picked">
       <li v-for="r in pickedRows" :key="r.id"><b>{{ r.label }}</b> <span v-if="r.text" class="muted small">{{ lead(r.text) }}</span></li>
     </ul>
 

@@ -50,7 +50,9 @@ onMounted(async () => {
 
 <template>
   <section v-if="list.length" ref="root" class="feature-choices">
-    <h4>Choices from classes, species, background and feats <span v-if="left" class="sp-open small">{{ left }} to pick</span><span v-else class="muted small">all made</span></h4>
+    <!-- all made: folded to its heading, opened to change one -->
+    <details class="fc-fold" :open="left > 0">
+    <summary><h4>Choices from classes, species, background and feats <span v-if="left" class="sp-open small">{{ left }} to pick</span><span v-else class="muted small">all {{ list.length }} made · open to change</span></h4></summary>
     <div v-for="a in list" :key="a.key" class="sp-trait" :class="{ 'sp-pending': choiceOpen(a) }">
       <div class="sp-head"><b>{{ a.trait.name }}</b> <span class="feat-tag" :class="'tag-' + a.race.type">{{ sourceTag(a) }}</span>
         <span v-if="picksLeft(a)" class="sp-open small">{{ picksLeft(a) }} to pick</span></div>
@@ -83,5 +85,6 @@ onMounted(async () => {
       </div>
       <TraitChoicePicker v-if="a.trait.choice" :a="a" :disabled="ro" @pick="p => pick(a, p)" />
     </div>
+    </details>
   </section>
 </template>

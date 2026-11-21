@@ -6,7 +6,7 @@ import { classesOf, hitDicePools, totalLevel } from './model/classes'
 import type { Abilities, CharacterSheet, Crafting, Entry, GearEffect, Id, InventoryLine, Proficiencies, Spellbook } from './model/types'
 import { MARTIAL_WEAPONS, MASTERY_OF, SIMPLE_WEAPONS } from './model/schema'
 import { optionsIn } from './model/lists'
-import { db, get, state, touch } from './store'
+import { db, get, listOptions, state, touch } from './store'
 import { breakdown, gearTotals, restItems, scoreWith, spellsOf, sum, type RegainRoll } from './gear'
 import { unmet } from './requirements'
 import { setConditions } from './conditions'
@@ -235,6 +235,22 @@ export function speedOf(s: CharacterSheet): string | undefined {
   return m ? String(base ?? '30 ft').replace(m[1], String(t.speedHalf ? Math.floor(n / 2) : n)) : base
 }
 export const passivePerception = (s: CharacterSheet, prof: number) => 10 + skillBonus(s, 'Perception', prof)
+
+/** A character at a glance, for the DM's party overview: AC, max HP, the passives, spell save DC, languages. */
+export function partyLine(pc: Entry) {
+  const s = sheetOrBlank(pc), prof = profBonus(levelOf(pc)), gt = gearTotals(s)
+  const cast = castingAbility(pc, s)
+  const langs = profsOf(s).languages, names = listOptions('language')
+  return {
+    ac: armorClass(s).ac,
+    maxHp: maxHpOf(s),
+    perception: 10 + skillBonus(s, 'Perception', prof),
+    insight: 10 + skillBonus(s, 'Insight', prof),
+    investigation: 10 + skillBonus(s, 'Investigation', prof),
+    spellDc: cast ? 8 + prof + mod(scoreWith(s, cast, gt)) + sum(gt.spellDC) : undefined,
+    languages: langs.map(id => names.find(o => o.id === id)?.label ?? id),
+  }
+}
 
 /** The ability a character casts with: picked on the sheet, else the one their class uses. */
 export function castingAbility(pc: Entry, s: CharacterSheet): Ability | undefined {

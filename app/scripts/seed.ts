@@ -122,7 +122,7 @@ const backgrounds: Entry[] = BG.backgrounds.map(b => ({
     abilityIncrease: { pick: [{ amount: 2, among: b.abilities }, { amount: 1, among: b.abilities }], orPick: [{ amount: 1, count: 3, among: b.abilities }] },
     originFeat: need(featId, b.feat, 'feat'), ...(b.featNote ? { originFeatNote: b.featNote } : {}),
     skillProfs: b.skills, toolProfs: b.tools.map(t => need(toolIds, t, 'tool')),
-    equipment: { ...b.equipment, items: b.equipment.items.map(l => { const id = itemId(l.name); return id ? { item: id, ...(l.amount ? { amount: l.amount } : {}) } : l }) },
+    equipment: { ...b.equipment, items: b.equipment.items.map(l => { const id = l.name ? itemId(l.name) : undefined; return id ? { item: id, ...(l.amount ? { amount: l.amount } : {}) } : l }) },
   },
   created: stamp, updated: stamp,
 } as Entry))

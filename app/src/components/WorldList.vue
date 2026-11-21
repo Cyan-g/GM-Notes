@@ -69,7 +69,8 @@ async function create() {
       <button type="button" @click="naming = true">＋ New world…</button>
       <button type="button" title="A world your DM publishes in a shared folder (e.g. Google Drive)" @click="scan"><AppIcon ui="download" /> Join a shared world…</button>
       <button type="button" title="Your DM's live session on this network (same Wi-Fi)" @click="joiningLive = true"><AppIcon ui="share" /> Join a live session…</button>
-      <button type="button" @click="openWorldFolder">Open a world folder…</button>
     </div>
+    <!-- worlds live in GM Notes' own folder; one kept elsewhere (a USB stick, a synced folder) is rare -->
+    <p v-if="!naming && !joiningLive && !found" class="muted small world-elsewhere">A world kept somewhere else (a USB stick, a synced folder)? <button type="button" class="link-btn small" @click="openWorldFolder">Open it from its folder…</button></p>
   </div>
 </template>

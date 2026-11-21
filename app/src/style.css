@@ -1894,7 +1894,7 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .lu-pick { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .35rem; }
 .lu-pick select { width: auto; }
 .spread p { margin: .2rem 0 .4rem; }
-.spread-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .4rem; }
+.spread-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .4rem; max-width: 40rem; }
 @media (max-width: 560px) { .spread-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .spread-cell { display: grid; justify-items: center; gap: .15rem; padding: .35rem .2rem; border: 1px solid var(--line); border-radius: 8px; }
 .spread-cell.up { border-color: var(--accent); }

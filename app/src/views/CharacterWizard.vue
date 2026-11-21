@@ -20,7 +20,7 @@ import { newBlankEntry } from '../ui'
 import { renderInline } from '../markdown'
 import AppIcon from '../components/AppIcon.vue'
 import EntryLink from '../components/EntryLink.vue'
-import BonusPicker from '../components/BonusPicker.vue'
+import SpreadPicker from '../components/SpreadPicker.vue'
 import ProfChips from '../components/ProfChips.vue'
 import TraitChips from '../components/TraitChips.vue'
 import TraitChoicePicker from '../components/TraitChoicePicker.vue'
@@ -97,6 +97,10 @@ const speciesBonusText = computed(() => {
   return ''
 })
 const setBonusFrom = (f: typeof wizard.d.bonusFrom) => { wizard.d.bonusFrom = f; wizard.d.bonusChoice = { picks: [] } }
+/** The scores the + buttons start from: the base ones for the background's or species' bonus; for a feat, the scores
+ * with the bonus and the feats taken before its level. */
+const baseScores = computed(() => Object.fromEntries(ABILITY_KEYS.map(a => [a, d.value.base[a] ?? 10])) as Record<(typeof ABILITY_KEYS)[number], number>)
+const scoresBefore = (level: number) => finalScores({ ...d.value, feats: d.value.feats.filter(f => f.level < level) }) as Record<(typeof ABILITY_KEYS)[number], number>
 const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20, (d.value.base[a] ?? 10) + (adds.value[a] ?? 0))
 
 // ---- proficiencies ----
@@ -308,7 +312,7 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
             <template v-else-if="d.bonusFrom === 'species'">{{ d.race ? speciesBonusText || 'This species gives none.' : 'Choose a species first.' }}</template>
             <template v-else>Type the bonus for each score in the table.</template>
           </p>
-          <BonusPicker v-if="bonus && d.bonusFrom !== 'custom'" v-model="wizard.d.bonusChoice" :bonus="bonus" />
+          <SpreadPicker v-if="bonus && d.bonusFrom !== 'custom'" :key="d.bonusFrom + (d.bonusFrom === 'background' ? d.background : d.race)" v-model="wizard.d.bonusChoice" :bonus="bonus" :scores="baseScores" />
         </template>
 
         <!-- proficiencies -->
@@ -368,7 +372,7 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
               <option v-for="x in featsFor(f.boon)" :key="x.id" :value="x.id">{{ x.name }}</option>
             </select>
             <template v-if="get(featAt(f.level)?.feat)?.fields.abilityIncrease">
-              <BonusPicker :bonus="get(featAt(f.level)!.feat)!.fields.abilityIncrease!" :model-value="featAt(f.level)!.choice" @update:model-value="c => setFeatChoice(f.level, c)" />
+              <SpreadPicker :key="featAt(f.level)!.feat" :bonus="get(featAt(f.level)!.feat)!.fields.abilityIncrease!" :scores="scoresBefore(f.level)" :model-value="featAt(f.level)!.choice" @update:model-value="c => setFeatChoice(f.level, c)" />
             </template>
           </div>
         </template>

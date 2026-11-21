@@ -4,14 +4,21 @@
 // once every point is placed, so the rest of the app reads it like any other pick.
 import { computed, ref, watch } from 'vue'
 import type { Abilities, AbilityBonus } from '../model/types'
-import { ABILITY_KEYS, ABILITY_SHORT, pickable, type BonusChoice } from '../abilityBonus'
+import { ABILITY_KEYS, ABILITY_SHORT, bonusApplied, pickable, type BonusChoice } from '../abilityBonus'
 
 type Ability = keyof Abilities
 const props = defineProps<{ bonus: AbilityBonus; scores: Record<Ability, number> }>()
 const choice = defineModel<BonusChoice>({ required: true })
 
 const adds = ref<Partial<Record<Ability, number>>>({})
-watch(() => props.bonus, () => { adds.value = {} })
+/** The points as a choice already made places them (coming back to a step), without the bonus's fixed part. */
+function fromChoice(): Partial<Record<Ability, number>> {
+  const all = bonusApplied(props.bonus, choice.value), out: Partial<Record<Ability, number>> = {}
+  for (const a of ABILITY_KEYS) { const v = (all[a] ?? 0) - (props.bonus.fixed?.[a] ?? 0); if (v > 0) out[a] = v }
+  return out
+}
+adds.value = fromChoice()
+watch(() => props.bonus, () => { adds.value = fromChoice() })
 const cap = computed(() => props.bonus.max ?? 20)
 const fixed = (a: Ability) => props.bonus.fixed?.[a] ?? 0
 

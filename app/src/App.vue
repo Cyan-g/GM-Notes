@@ -40,6 +40,8 @@ import { settleCopy } from './worlds'
 import { go, hrefEntry } from './router'
 import { toggleFavourite } from './edit'
 import { syncTitle } from './title'
+// players' characters at the DM's table: sent by a player's app, received by the DM's (live sessions)
+import './playerCharacters'
 
 syncTitle()
 startFlash()

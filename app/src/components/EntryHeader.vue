@@ -7,9 +7,10 @@ import type { Entry } from '../model/types'
 import { TYPES } from '../model/schema'
 import { playerMode, state } from '../store'
 import { printable } from '../cards'
-import { isShared } from '../sync'
+import { fromPlayer, isShared, sharedBy } from '../sync'
+import { removePlayerCharacter } from '../playerCharacters'
 import { currentPc, setCurrent } from '../sheet'
-import { hrefEntry } from '../router'
+import { go, hrefEntry } from '../router'
 import { printCards } from '../ui'
 import { isFavourite, toggleFavourite } from '../edit'
 import { canExport } from '../transfer'
@@ -28,8 +29,16 @@ import DmOnlyBadge from './DmOnlyBadge.vue'
 
 const props = defineProps<{ e: Entry }>()
 const def = computed(() => TYPES[props.e.type])
-/** Shared by the DM's world this one follows: read-only here. */
+/** Shared by the DM's world this one follows, or sent by a player: read-only here. */
 const shared = computed(() => isShared(props.e))
+const by = computed(() => sharedBy(props.e))
+/** A player's character the DM has (sent from the player's app). */
+const player = computed(() => fromPlayer(props.e))
+function removeIt() {
+  if (!confirm(`Remove ${props.e.name} from your world? ${player.value?.gone ? 'Its player no longer shares it.' : 'While its player shares it, it comes back the next time they\'re connected.'}`)) return
+  removePlayerCharacter(props.e.id)
+  go('#/')
+}
 const exporting = ref(false)
 const showHistory = ref(false)
 /** "Dead since 86 AC", by the name. */
@@ -48,7 +57,9 @@ const facts = computed(() => factsOf(props.e))
       <button v-if="printable(e)" class="export-btn" title="Print this as a card (PDF, poker size)" @click="printCards(e.name, [{ label: 'This one', ids: [e.id] }])"><AppIcon ui="cards" /> Card</button>
       <button v-if="canExport(e)" class="export-btn" title="Save as a file to share (someone else can import it)" @click="exporting = true"><AppIcon ui="exportFile" /> Export</button>
       <a v-if="!shared" class="button edit-btn" :href="hrefEntry(e.id, true)" title="Edit (E)">✎ Edit</a>
-      <span v-else class="badge shared-badge" :title="`Shared by your DM from ${state.db?.follow?.title}; updated from there`"><AppIcon ui="download" /> from {{ state.db?.follow?.title }}</span>
+      <span v-else class="badge shared-badge" :title="by?.title"><AppIcon ui="download" /> {{ by?.label }}</span>
+      <span v-if="player?.gone" class="badge" title="Its player unlinked it from your campaign or deleted it; this is the last version they sent">no longer shared</span>
+      <button v-if="player && e.type === 'pc'" class="export-btn danger" title="Remove this character from your world" @click="removeIt">Remove</button>
     </div>
     <ExportDialog v-if="canExport(e)" v-model="exporting" :id="e.id" />
     <HistoryDialog v-if="showHistory" :entry="e" @close="showHistory = false" />
@@ -60,7 +71,7 @@ const facts = computed(() => factsOf(props.e))
       <div class="sub">
         <span class="badge">{{ (e.type === 'place' && e.fields.placeType) || (e.type === 'item' && e.fields.kind) || def.label }}</span>
         <!-- A character: whether the Spellbook, Workbench and Character menu use them. -->
-        <button v-if="e.type === 'pc'" class="chip-toggle current-toggle" :class="{ on: currentPc?.id === e.id }" :disabled="!!state.readOnly"
+        <button v-if="e.type === 'pc' && !player" class="chip-toggle current-toggle" :class="{ on: currentPc?.id === e.id }" :disabled="!!state.readOnly"
                 :title="currentPc?.id === e.id ? 'The Spellbook, Workbench and Character menu use this character' : 'Use this character in the Spellbook, Workbench and Character menu'"
                 @click="setCurrent(currentPc?.id === e.id ? undefined : e.id)"><AppIcon ui="star" :class="{ off: !(currentPc?.id === e.id) }" /> {{ currentPc?.id === e.id ? 'Current character' : 'Make current' }}</button>
         <span v-if="status" class="badge npc-status-badge" :class="'st-' + String(e.fields.status).toLowerCase()">{{ status }}</span>

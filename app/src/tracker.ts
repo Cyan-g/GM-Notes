@@ -6,6 +6,7 @@ import { concentrationDc, mod } from './model/dnd'
 import { armorClass, initiative, maxHpOf } from './sheet'
 import { sheetOf, sheetToEdit } from './sheetData'
 import { changed } from './edit'
+import { isShared } from './sync'
 
 export function tracker(): Tracker {
   const d = db()
@@ -31,6 +32,8 @@ export function fighterStats(c: Combatant): FighterStats {
   if (!s) return { hp: c.hp, maxHp: c.maxHp, tempHp: c.tempHp, ac: c.ac, initMod: c.initMod, acFromSheet: false, hpFromSheet: false }
   const max = maxHpOf(s)
   const linked = max != null
+  // A player's character sent from their app is read-only here: the fight keeps its own HP, starting from the sheet's.
+  if (isShared(pc)) return { ac: armorClass(s).ac, initMod: initiative(s), acFromSheet: true, hpFromSheet: false, hp: c.hp ?? s.hp ?? max, maxHp: max ?? c.maxHp, tempHp: c.tempHp }
   return {
     ac: armorClass(s).ac, initMod: initiative(s), acFromSheet: true, hpFromSheet: linked,
     hp: linked ? s.hp ?? max : c.hp, maxHp: linked ? max : c.maxHp, tempHp: linked ? s.tempHp : c.tempHp,

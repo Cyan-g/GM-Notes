@@ -4,7 +4,7 @@ import TypeIcon from '../components/TypeIcon.vue'
 import { NOTE_TYPES, isShared } from '../sync'
 import PlayerNotes from '../components/PlayerNotes.vue'
 import { computed } from 'vue'
-import type { Entry } from '../model/types'
+import type { Entry, Id } from '../model/types'
 import { TYPES, byKey, type FieldDef } from '../model/schema'
 import { childrenOf, get, placePath, playerMode, entries, state } from '../store'
 import { go, hrefEntry, hrefFamily, hrefList, hrefTab, type EntryTab } from '../router'
@@ -63,6 +63,9 @@ import PartyHere from '../components/PartyHere.vue'
 import OutlineCard from '../components/OutlineCard.vue'
 import { featsGrantedBy } from '../lookup'
 import { bodyParts as cutBody, setBodyPart, type BodyPart } from '../bodyParts'
+import { provideLocked } from '../composables/useReadOnly'
+import { currentPc } from '../sheet'
+import { characterSend } from '../playerCharacters'
 
 const props = defineProps<{ id: string; tab?: EntryTab }>()
 const e = computed(() => get(props.id))
@@ -164,6 +167,23 @@ const children = computed(() => (e.value ? childrenOf.value.get(e.value.id) ?? [
 
 /** Shared by the DM's world this one follows: read-only here. */
 const shared = computed(() => isShared(e.value))
+// every card on the page (the character sheet's too) is read-only on a shared entry
+provideLocked(shared)
+/** A campaign the DM shares: the player's characters in it, putting the current one in, and taking one out. */
+const campaignsOf = (pc: Entry) => (pc.fields.campaigns as Id[] | undefined) ?? []
+const myInCampaign = computed(() => (e.value?.type === 'campaign' && shared.value ? entries.value.filter(x => x.type === 'pc' && !isShared(x) && campaignsOf(x).includes(e.value!.id)) : []))
+const pcInCampaign = computed(() => !!currentPc.value && campaignsOf(currentPc.value).includes(e.value!.id))
+function joinCampaign() {
+  const pc = currentPc.value
+  if (!pc) return
+  pc.fields.campaigns = [...campaignsOf(pc), e.value!.id]
+  changed(pc)
+}
+function leaveCampaign(pc: Entry) {
+  const rest = campaignsOf(pc).filter(id => id !== e.value!.id)
+  if (rest.length) pc.fields.campaigns = rest; else delete pc.fields.campaigns
+  changed(pc)
+}
 /** A new item like this one, to make a variant of it (opened in its editor). */
 function copyItem() {
   const x = e.value!
@@ -244,6 +264,16 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
           <div class="feat-list"><FeatCard v-for="f in grantedFeats" :key="f.id" :e="f" title /></div>
         </section>
 
+        <section v-if="e.type === 'campaign' && shared" class="campaign-join">
+          <h2>Your characters</h2>
+          <p class="small muted">Characters in this campaign go to your DM while you're connected to their live session: they see them, read-only, and get your changes a few seconds after you make them.
+            <template v-if="characterSend.error"><br /><span class="warn-text">Not sent: {{ characterSend.error }}</span></template></p>
+          <ul v-if="myInCampaign.length" class="plain">
+            <li v-for="pc in myInCampaign" :key="pc.id"><EntryLink :id="pc.id" icon /> <button type="button" class="link-btn small" title="Your DM keeps the last version, marked as no longer shared" @click="leaveCampaign(pc)">Take out</button></li>
+          </ul>
+          <button v-if="currentPc && !pcInCampaign" type="button" class="chip-btn" @click="joinCampaign">＋ Put {{ currentPc.name }} in this campaign</button>
+          <p v-else-if="!currentPc" class="small muted">Make a character first (Character menu), then put it in here.</p>
+        </section>
         <CampaignSessions v-if="e.type === 'campaign'" :campaign="e" />
         <section v-if="campaignNotes.length">
           <h2>Characters & notes</h2>

@@ -6,6 +6,7 @@
 // On the Edit page (`build`) it also opens what's set when building the character: classes and their levels
 // (multiclassing), max HP, AC, speed, scores, proficiencies, spellcasting and features.
 // Hit dice come from the classes, one pool per die size, each spent on its own.
+import { useReadOnly } from '../composables/useReadOnly'
 import AppIcon from './AppIcon.vue'
 import ConditionIcon from './ConditionIcon.vue'
 import { computed, onBeforeUnmount, ref } from 'vue'
@@ -40,7 +41,8 @@ import { picksLeft, speciesEffects, speciesGrants, speciesSizes, speciesTraits }
 import { ui } from '../ui'
 
 const props = defineProps<{ pc: Entry; build?: boolean }>()
-const ro = computed(() => !!state.readOnly)
+/** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
+const ro = useReadOnly()
 /** Build-time parts are locked unless the sheet is being edited. */
 const build = computed(() => !!props.build && !ro.value)
 const locked = computed(() => !build.value)

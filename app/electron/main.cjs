@@ -290,6 +290,7 @@ ipcMain.handle('live:follow', (_e, who) => {
   return live.playerStatus()
 })
 ipcMain.handle('live:player-status', () => live.playerStatus())
+ipcMain.handle('live:send-characters', (_e, text) => live.sendCharacters(String(text ?? '')))
 ipcMain.handle('shared:get', () => followOf(config.dataDir) ?? null)
 
 /** The known worlds, last opened first, with whether their folder still holds a world. */

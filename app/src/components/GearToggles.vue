@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The Equip and Attune buttons for one inventory line. Turning one on is refused (the button greyed out, the
 // reason on hover) when the character doesn't meet the item's requirements (requirements.ts); off always works.
+import { useReadOnly } from '../composables/useReadOnly'
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { state } from '../store'
@@ -8,7 +9,8 @@ import { blockedFor, canAttune, canEquip } from '../sheet'
 import { editSheet, sheetOf } from '../sheetData'
 
 const props = defineProps<{ pc: Entry; i: number }>()
-const ro = computed(() => !!state.readOnly)
+/** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
+const ro = useReadOnly()
 const l = computed(() => sheetOf(props.pc)?.inventory[props.i])
 const blocked = (key: 'equipped' | 'attuned') => (l.value && !l.value[key] ? blockedFor(props.pc, l.value, key) : undefined)
 function toggle(key: 'equipped' | 'attuned') {

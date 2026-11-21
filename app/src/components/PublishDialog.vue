@@ -101,7 +101,7 @@ async function go() {
 
       <p v-if="busy" class="muted">{{ busy }}</p>
       <template v-else-if="plan">
-        <p class="muted small">Shared: every entry marked <b>Known to players</b>, without DM-only text, with the dropdown lists, the calendar, today's date, the ruleset and the travel paces. Never: characters, campaigns, sessions, encounters, or anything <b>DM only</b> (creatures go when known to players, e.g. companions).</p>
+        <p class="muted small">Shared: every entry marked <b>Known to players</b>, without DM-only text, with the dropdown lists, the calendar, today's date, the ruleset and the travel paces. Campaigns go when known to players, so players can put their characters in them; those characters come back to you, read-only, while the players are connected live. Never: characters, sessions, encounters, or anything <b>DM only</b> (creatures go when known to players, e.g. companions).</p>
         <p class="small">{{ plan.pub.entries.length }} entries · {{ plan.pub.relations.length }} connections · {{ plan.blobs.size }} pictures and files</p>
         <p class="publish-types small"><span v-for="t in byType" :key="t.s.type"><TypeIcon :type="t.s.type" /> {{ t.n }} {{ t.n === 1 ? t.s.label : t.s.plural }}</span></p>
         <template v-if="plan.previous">

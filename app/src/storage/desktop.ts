@@ -46,6 +46,10 @@ interface Bridge {
     onHost(cb: (s: HostStatus) => void): void
     onPlayer(cb: (s: PlayerStatus) => void): void
     onPublished(cb: (published: string) => void): void
+    /** A player: send their characters (JSON) to the DM's live session. */
+    sendCharacters(text: string): Promise<{ ok?: true; error?: string }>
+    /** The DM: characters a player sent. */
+    onCharacter(cb: (msg: unknown) => void): void
   }
   worlds: {
     list(): Promise<{ current: string | null; worldsDir: string | null; worlds: import('../worlds').KnownWorld[] }>

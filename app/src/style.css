@@ -2297,3 +2297,18 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 :root.fl-illuminated .tabs { border-bottom-color: var(--gild-soft); }
 :root.fl-illuminated .tabs a.on { position: relative; }
 :root.fl-illuminated .tabs a.on::after { content: ''; position: absolute; left: 50%; bottom: -5px; width: 8px; height: 8px; margin-left: -4px; background: var(--accent); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+
+/* ---------- the theme dialog: the big choices left, fine-tuning and a preview right ---------- */
+.theme-dialog-back { background: rgb(0 0 0 / .18); }
+.modal.theme-dialog { width: min(980px, 100%); }
+.theme-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 1.6rem; }
+@media (max-width: 760px) { .theme-cols { grid-template-columns: 1fr; } }
+.theme-dialog h4 { display: flex; justify-content: space-between; align-items: baseline; font: 600 1rem var(--serif); font-variant: small-caps; letter-spacing: .04em; color: var(--accent); margin: .9rem 0 .45rem; }
+.theme-dialog section > h4:first-child { margin-top: .2rem; }
+.style-pick { grid-template-columns: 1fr; }
+.theme-sample { display: flex; flex-direction: column; gap: .45rem; margin: .2rem 0 .6rem; box-shadow: none; }
+.theme-sample .md h2 { margin: 0; }
+.theme-sample p { margin: 0; }
+.theme-sample-row { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .6rem; margin-top: .2rem; }
+.pips-inline { display: inline-flex; gap: .1rem; }
+.theme-sample .small-btn { font-size: 13px; padding: .3em .8em; margin-left: auto; }

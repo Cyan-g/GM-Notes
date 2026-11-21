@@ -3944,12 +3944,13 @@
      ],
      "max": 20
     },
-    "summary": "Increase one ability score of your choice by 2, or increase two ability scores of your choice by 1. This feat can't increase an ability score above 20.\n\n**Repeatable.** You can take this feat more than once.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*"
+    "summary": "Increase one ability score of your choice by 2, or increase two ability scores of your choice by 1. This feat can't increase an ability score above 20.\n\n**Repeatable.** You can take this feat more than once.\n\n*Source: System Reference Document 5.2.1 (CC BY 4.0).*",
+    "repeatable": true
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-19T18:55:33.578Z"
+   "updated": "2026-11-21T09:12:37.000Z"
   },
   {
    "id": "alert",
@@ -4008,12 +4009,17 @@
        }
       ]
      }
-    ]
+    ],
+    "requirements": {
+     "features": [
+      "Fighting Style"
+     ]
+    }
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-20T22:20:04.000Z"
+   "updated": "2026-11-21T09:12:37.000Z"
   },
   {
    "id": "boon-of-combat-prowess",
@@ -4182,12 +4188,15 @@
       "name": "Free Casting",
       "text": "Whenever you cast a spell with a level 1–4 spell slot, roll 1d4. If the number you roll is the same as the slot's level, the slot isn't expended."
      }
-    ]
+    ],
+    "requirements": {
+     "spellcaster": true
+    }
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-20T16:51:36.000Z"
+   "updated": "2026-11-21T09:12:37.000Z"
   },
   {
    "id": "boon-of-the-night-spirit",
@@ -4286,12 +4295,17 @@
        }
       ]
      }
-    ]
+    ],
+    "requirements": {
+     "features": [
+      "Fighting Style"
+     ]
+    }
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-20T22:20:04.000Z"
+   "updated": "2026-11-21T09:12:37.000Z"
   },
   {
    "id": "grappler",
@@ -4332,12 +4346,25 @@
       "name": "Fast Wrestler",
       "text": "You don't have to spend extra movement to move a creature Grappled by you if the creature is your size or smaller."
      }
-    ]
+    ],
+    "requirements": {
+     "scores": [
+      {
+       "ability": "str",
+       "min": 13
+      },
+      {
+       "ability": "dex",
+       "min": 13
+      }
+     ],
+     "anyScore": true
+    }
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-20T16:51:36.000Z"
+   "updated": "2026-11-21T09:12:37.000Z"
   },
   {
    "id": "great-weapon-fighting",
@@ -4355,12 +4382,17 @@
       "name": "Great Weapon Fighting",
       "text": "When you roll damage for an attack you make with a Melee weapon that you are holding with two hands, you can treat any 1 or 2 on a damage die as a 3. The weapon must have the Two-Handed or Versatile property to gain this benefit."
      }
-    ]
+    ],
+    "requirements": {
+     "features": [
+      "Fighting Style"
+     ]
+    }
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-20T16:51:36.000Z"
+   "updated": "2026-11-21T09:12:37.000Z"
   },
   {
    "id": "magic-initiate",
@@ -4483,12 +4515,13 @@
        ]
       }
      }
-    ]
+    ],
+    "repeatable": true
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-20T16:51:36.000Z"
+   "updated": "2026-11-21T09:12:37.000Z"
   },
   {
    "id": "savage-attacker",
@@ -4531,12 +4564,13 @@
        "count": 3
       }
      }
-    ]
+    ],
+    "repeatable": true
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-20T16:51:36.000Z"
+   "updated": "2026-11-21T09:12:37.000Z"
   },
   {
    "id": "two-weapon-fighting",
@@ -4559,12 +4593,17 @@
        }
       ]
      }
-    ]
+    ],
+    "requirements": {
+     "features": [
+      "Fighting Style"
+     ]
+    }
    },
    "body": "",
    "visibility": "known",
    "created": "2026-11-19T18:55:33.578Z",
-   "updated": "2026-11-20T22:20:04.000Z"
+   "updated": "2026-11-21T09:12:37.000Z"
   },
   {
    "id": "alchemy-kit",

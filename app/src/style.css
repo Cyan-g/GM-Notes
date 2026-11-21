@@ -2262,3 +2262,31 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 }
 :root.fl-illuminated .cs-hp-bar { position: relative; height: 7px; border-radius: 1px; border: 1px solid var(--gild-soft); background: color-mix(in srgb, var(--ink) 8%, var(--panel)); }
 :root.fl-illuminated .cs-hp-bar i { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 70%, var(--panel)), var(--accent)); }
+
+/* Illuminated, the small things: charges and slots set like jewels, plaques for badges and chips, a gilt hairline on
+   the small cards and tiles, and checkboxes with a lozenge for a tick. */
+:root.fl-illuminated .pip { border-width: 1.5px; background: color-mix(in srgb, var(--accent) 8%, transparent); }
+:root.fl-illuminated .pip.on { background: var(--accent); box-shadow: inset 0 0 0 2px var(--panel); }
+:root.fl-illuminated .pip.on:hover { box-shadow: inset 0 0 0 2px var(--panel), 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+:root.fl-illuminated .ds-box.on { box-shadow: inset 0 0 0 2px var(--panel); }
+:where(:root.fl-illuminated) :where(.chip, .badge, .chip-btn, .chip-toggle, .tag-ritual) {
+  border-radius: 4px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+:where(:root.fl-illuminated) :where(.cs-stat, .cs-ability, .tool, .feat-card, .trait-option-card, .slot-row) {
+  border-color: var(--gild-soft); border-radius: 4px;
+  outline: 1px solid color-mix(in srgb, var(--gild-soft) 45%, transparent); outline-offset: -3px;
+}
+:where(:root.fl-illuminated) input[type=checkbox]:not(.settings-switch input) {
+  appearance: none; -webkit-appearance: none; display: inline-grid; place-content: center; flex: none;
+  width: 14px; height: 14px; margin: 0 .2em; padding: 0; vertical-align: -2px; cursor: pointer;
+  border: 1px solid var(--gild-soft); border-radius: 2px; background: color-mix(in srgb, var(--panel) 65%, var(--bg));
+}
+:where(:root.fl-illuminated) input[type=checkbox]:not(.settings-switch input)::after {
+  content: ''; width: 6px; height: 6px; background: var(--on-accent); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); transform: scale(0); transition: transform .12s;
+}
+:where(:root.fl-illuminated) input[type=checkbox]:not(.settings-switch input):checked { background: var(--accent); border-color: var(--accent); }
+:where(:root.fl-illuminated) input[type=checkbox]:not(.settings-switch input):checked::after { transform: scale(1); }
+:where(:root.fl-illuminated) input[type=checkbox]:not(.settings-switch input):indeterminate::after { transform: scale(1); background: var(--accent); }
+:where(:root.fl-illuminated) input[type=checkbox]:not(.settings-switch input):focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 1px; }
+:where(:root.fl-illuminated) input[type=checkbox]:disabled { opacity: .5; cursor: default; }
+:where(:root.fl-illuminated) input[type=radio] { accent-color: var(--accent); }

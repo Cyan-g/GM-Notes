@@ -3,7 +3,7 @@
 import { computed, ref } from 'vue'
 import type { Entry, EntryType, Relation, RelationKind } from '../../model/types'
 import { RELATION_KINDS } from '../../model/schema'
-import { formatDate, get, relationsOf } from '../../store'
+import { formatDate, get, relationsOf, state } from '../../store'
 import { addRelation, relationChanged, removeRelation } from '../../edit'
 import EntryPicker from './EntryPicker.vue'
 import DateInput from './DateInput.vue'
@@ -38,7 +38,16 @@ const open = ref(new Set<string>())
 const toggle = (id: string) => { const s = new Set(open.value); s.has(id) ? s.delete(id) : s.add(id); open.value = s }
 /** For a membership: the organization's rank titles, offered as roles. */
 const rankTitles = (r: Relation) => (r.kind === 'member' ? ((get(r.b)?.fields.ranks as { title: string }[] | undefined) ?? []).map(k => k.title).filter(Boolean) : [])
-const dates = (r: Relation) => (r.from || r.to ? `${r.from ? formatDate(r.from) : '…'} – ${r.to ? formatDate(r.to) : 'now'}` : '')
+/** Roles offered while typing: the ranks, then the roles others have there, then the ones this kind usually has. */
+function rolesFor(r: Relation): string[] {
+  const all = state.db?.relations ?? []
+  const there = all.filter(x => x.kind === r.kind && x.b === r.b && x.id !== r.id).map(x => x.role)
+  const count = new Map<string, number>()
+  for (const x of all) if (x.kind === r.kind && x.role) count.set(x.role, (count.get(x.role) ?? 0) + 1)
+  const usual = [...count].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([v]) => v)
+  return [...new Set([...rankTitles(r), ...there, ...usual].filter((v): v is string => !!v?.trim()))]
+}
+const dates = (r: Relation) => (r.from || r.to ? `${r.from ? formatDate(r.from) : '?'} – ${r.to ? formatDate(r.to) : 'now'}` : '')
 
 function setOption(r: Relation, v: string) {
   const [kind, side] = v.split(':') as [RelationKind, 'a' | 'b']
@@ -61,6 +70,9 @@ function setField(r: Relation, key: 'role' | 'from' | 'to' | 'note', v: any) {
 
 // New relation: choose what it is, then whom.
 const newKind = ref(OPTIONS[0].value)
+/** The usual ones as buttons (a person: where they live, what they belong to, family); the rest in the list. */
+const QUICK = ['lives-in:a', 'member:a', 'parent:b', 'parent:a', 'spouse:a', 'sibling:a', 'ally:a', 'rival:a', 'involved:a']
+const quick = computed(() => QUICK.map(v => OPTIONS.find(o => o.value === v)).filter((o): o is typeof OPTIONS[number] => !!o).slice(0, 7))
 const newOther = computed(() => OPTIONS.find(o => o.value === newKind.value)?.other)
 function add(other: string) {
   const [kind, side] = newKind.value.split(':') as [RelationKind, 'a' | 'b']
@@ -71,6 +83,17 @@ function add(other: string) {
 
 <template>
   <div class="rel-edit">
+    <!-- adding first: what it is (the usual ones as buttons), then whom -->
+    <div class="rel-add">
+      <div class="seg wrap rel-quick">
+        <button v-for="o in quick" :key="o.value" type="button" :class="{ on: newKind === o.value }" @click="newKind = o.value">{{ o.label }}</button>
+        <select :value="quick.some(o => o.value === newKind) ? '' : newKind" title="Other kinds of relation" @change="newKind = ($event.target as HTMLSelectElement).value || newKind">
+          <option value="">more…</option>
+          <option v-for="o in OPTIONS.filter(o => !quick.includes(o))" :key="o.value" :value="o.value">{{ o.label }}</option>
+        </select>
+      </div>
+      <EntryPicker add :exclude="[entry.id]" :types="newOther" :placeholder="`${OPTIONS.find(o => o.value === newKind)?.label ?? 'Add'}: type a name…`" @pick="add" />
+    </div>
     <!-- Grouped like the page reads; each row is the other entry, its role and dates. ⋯ opens the kind and dates. -->
     <div v-if="rels.length" class="rel-rows">
       <section v-for="g in groups" :key="g.label" class="rel-group">
@@ -78,9 +101,9 @@ function add(other: string) {
         <div v-for="r in g.list" :key="r.id" class="rel-row" :class="{ open: open.has(r.id) }">
           <div class="rel-line">
             <EntryPicker class="rel-who" :model-value="otherOf(r)" :exclude="[entry.id]" @update:model-value="v => setOther(r, v)" />
-            <input class="rel-role" :value="r.role ?? ''" :list="rankTitles(r).length ? `ranks-${r.id}` : undefined" :placeholder="rankTitles(r).length ? 'rank' : 'role'" title="Role (optional)" @change="setField(r, 'role', ($event.target as HTMLInputElement).value.trim())" />
-            <datalist v-if="rankTitles(r).length" :id="`ranks-${r.id}`"><option v-for="t in rankTitles(r)" :key="t" :value="t" /></datalist>
-            <button type="button" class="rel-more" :class="{ dated: !!dates(r) }" :title="open.has(r.id) ? 'Hide details' : 'Kind and dates'" @click="toggle(r.id)">{{ dates(r) || '⋯' }}</button>
+            <input class="rel-role" :value="r.role ?? ''" :list="`roles-${r.id}`" :placeholder="rankTitles(r).length ? 'rank' : 'role'" title="Role (optional)" @change="setField(r, 'role', ($event.target as HTMLInputElement).value.trim())" />
+            <datalist :id="`roles-${r.id}`"><option v-for="t in rolesFor(r)" :key="t" :value="t" /></datalist>
+            <button type="button" class="rel-more" :class="{ dated: !!dates(r) }" :title="open.has(r.id) ? 'Hide details' : RELATION_KINDS[r.kind].dated ? 'Kind, and since when' : 'Kind'" @click="toggle(r.id)">{{ dates(r) || (RELATION_KINDS[r.kind].dated ? 'when?' : '⋯') }}</button>
             <button type="button" class="x" title="Remove this relation" @click="removeRelation(r.id)">×</button>
           </div>
           <div v-if="open.has(r.id)" class="rel-details">
@@ -97,12 +120,6 @@ function add(other: string) {
           </div>
         </div>
       </section>
-    </div>
-    <div class="rel-add">
-      <select v-model="newKind" title="What kind of relation">
-        <option v-for="o in OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
-      </select>
-      <EntryPicker add :exclude="[entry.id]" :types="newOther" placeholder="Add: type a name…" @pick="add" />
     </div>
   </div>
 </template>

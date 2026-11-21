@@ -9,7 +9,8 @@ import { listKeyOf } from './model/lists'
 import { sessionNo } from './sessions'
 import { abilityBonusText } from './abilityBonus'
 import { describeRequirements } from './requirements'
-import { withSrd } from './srd'
+import { statsOf } from './encounter'
+import { statusText } from './npc'
 
 export interface Col {
   key: string
@@ -59,7 +60,7 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   '@members': { label: 'Members', value: e => current(e, 'member', false).length, sort: e => -current(e, 'member', false).length, kind: 'text' },
   '@classes': { label: 'Classes', value: e => classText(e, state.db?.meta, id => get(id)?.name), sort: e => classText(e, state.db?.meta).toLowerCase() || '~', kind: 'text' },
   '@level': { label: 'Level', value: e => (e.type === 'pc' ? totalLevel(e) : ''), sort: e => (e.type === 'pc' ? -totalLevel(e) : 0), kind: 'text' },
-  '@cr': { label: 'CR', value: e => withSrd(e.fields.statblock)?.cr, sort: e => crNum(withSrd(e.fields.statblock)?.cr), kind: 'text' },
+  '@cr': { label: 'CR', value: e => statsOf(e)?.cr, sort: e => crNum(statsOf(e)?.cr), kind: 'text' },
   '@recipeCost': { label: 'Ingredients', value: e => recipeCost(e), sort: e => recipeCost(e) ?? -1, kind: 'money' },
   '@margin': {
     label: 'Profit', kind: 'money',
@@ -84,6 +85,8 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   '@prereq': { label: 'Prerequisite', value: e => prereqText(e), sort: e => prereqText(e).toLowerCase() || '~', kind: 'text' },
   // a race's walking speed and its others (swim, fly…)
   '@speed': { label: 'Speed', value: e => speedText(e), sort: e => e.fields.speeds?.walk ?? 1e9, kind: 'text' },
+  // an NPC's status with its date ("Dead since 86 AC"); the living show nothing
+  '@status': { label: 'Status', value: e => statusText(e), sort: e => statusText(e).toLowerCase() || '~', kind: 'text' },
   '@updated': { label: 'Last edited', value: e => new Date(e.updated).toLocaleString(), sort: e => -Date.parse(e.updated), kind: 'text' },
 }
 
@@ -130,6 +133,11 @@ export function facet(key: string, type?: EntryType): Facet {
       values: rows => [...new Set(rows.flatMap(e => current(e, kind, true).map(nameOf)))].sort(),
       match: (e, v) => current(e, kind, true).some(id => nameOf(id) === v),
     }
+  }
+  // by the status alone (Dead, Missing…), the living as Alive
+  if (key === '@status') {
+    const st = (e: Entry) => { const s = String(e.fields.status ?? '').trim(); return s ? s[0].toUpperCase() + s.slice(1) : 'Alive' }
+    return { key, label: 'Status', values: rows => [...new Set(rows.map(st))].sort((a, b) => (a === 'Alive' ? -1 : b === 'Alive' ? 1 : a.localeCompare(b))), match: (e, v) => st(e) === v }
   }
   if (key === '@attackSave') return { key, label: 'Attack / save', values: rows => [...new Set(rows.map(attackOrSave).filter(Boolean))].sort(), match: (e, v) => attackOrSave(e) === v }
   // feats a character of a level can take: those needing that level or less (or none)

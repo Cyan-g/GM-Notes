@@ -11,8 +11,8 @@ const props = defineProps<{ type: EntryType }>()
 const def = computed(() => TYPES[props.type])
 
 // Which columns and filters each type's list shows.
-const COLS: Partial<Record<EntryType, { cols: string[]; facets?: string[]; sort?: { key: string; dir: 1 | -1 }; tree?: string }>> = {
-  npc: { cols: ['race', '@lives-in', '@member'], facets: ['race', '@lives-in', '@member'] },
+const COLS: Partial<Record<EntryType, { cols: string[]; facets?: string[]; sort?: { key: string; dir: 1 | -1 }; tree?: string; groups?: string[] }>> = {
+  npc: { cols: ['occupation', 'race', '@status', 'attitude', '@lives-in', '@member'], facets: ['race', '@status', 'attitude', '@lives-in', '@member'], groups: ['@lives-in', '@member', 'race', '@status'] },
   pc: { cols: ['player', 'race', '@classes', '@level', 'campaigns'] },
   organization: { cols: ['orgType', 'parent', 'seat', '@members'], facets: ['orgType'] },
   place: { cols: ['placeType', 'parent'], facets: ['placeType', 'parent'] },
@@ -43,6 +43,6 @@ const rows = computed(() => byType.value.get(props.type) ?? [])
       <h1><span class="icon"><TypeIcon :type="type" /></span>{{ def.plural }} <span class="count">{{ rows.length }}</span></h1>
       <button class="primary" @click="newEntry(type)">＋ New {{ typeWord(type) }}</button>
     </header>
-    <DataTable :key="type" :rows="rows" :cols="cfg.cols" :facets="cfg.facets" :sort="cfg.sort" :tree="cfg.tree" :type="type" />
+    <DataTable :key="type" :rows="rows" :cols="cfg.cols" :facets="cfg.facets" :sort="cfg.sort" :tree="cfg.tree" :groups="cfg.groups" :type="type" />
   </div>
 </template>

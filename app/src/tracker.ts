@@ -1,7 +1,7 @@
 // The initiative tracker's state is saved with the world, so a fight survives closing the app.
 import type { Combatant, Entry, Id, Tracker } from './model/types'
 import { byType, db, get, touch } from './store'
-import { combatantsFrom, playerCombatant } from './encounter'
+import { combatantsFrom, mod, newCombatantId, playerCombatant, statsOf } from './encounter'
 import { armorClass, initiative, maxHpOf, sheetOf, sheetToEdit } from './sheet'
 
 export function tracker(): Tracker {
@@ -95,6 +95,15 @@ export function addPlayers(pcs: Entry[]) {
 }
 
 export function addCombatant(c: Combatant) { tracker().combatants.push(c); touch() }
+/** A creature or NPC as an enemy, with its statblock's numbers ("Goblin 2" when there's one already); a character as a player. */
+export function addEntryToTracker(id: Id) {
+  const e = get(id)
+  if (!e) return
+  if (e.type === 'pc') { addPlayers([e]); return }
+  const sb = statsOf(e)
+  const same = tracker().combatants.filter(c => c.entry === id).length
+  addCombatant({ id: newCombatantId(), name: same ? `${e.name} ${same + 1}` : e.name, entry: id, isPlayer: false, init: null, initMod: mod(sb?.abilities?.dex), hp: sb?.hp, maxHp: sb?.hp, ac: sb?.ac, conditions: [] })
+}
 
 export function removeCombatant(id: string) {
   const t = tracker()

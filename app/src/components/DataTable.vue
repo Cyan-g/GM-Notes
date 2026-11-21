@@ -3,7 +3,7 @@
 import { printable } from '../cards'
 import AppIcon from './AppIcon.vue'
 import { activeSpellbook, currentPc } from '../sheet'
-import { state as store, touch } from '../store'
+import { get, state as store, touch } from '../store'
 import SpellModal from './SpellModal.vue'
 import { computed, ref, watch } from 'vue'
 import type { Entry, EntryType } from '../model/types'
@@ -25,6 +25,8 @@ const props = withDefaults(defineProps<{
   creates?: EntryType
   /** Show the rows as a tree by this field (a ref to the parent: a subrace's main race); children sort under it. */
   tree?: string
+  /** Columns the rows can be grouped by (a heading row for each place, organization, race…). */
+  groups?: string[]
 }>(), { facets: () => [], sort: () => ({ key: 'name', dir: 1 as const }) })
 
 /** The columns, leaving out any with nothing in any row (a Player nobody filled in). */
@@ -78,6 +80,25 @@ const tableRows = computed(() => {
   for (const e of order) { const p = parentOf(e); if (!p || !keep.has(p)) walk(e, 0) }
   return out
 })
+// ---- grouped: a heading row per value of a column (an NPC in two places shows under the first) ----
+const groupBy = ref('')
+const groupCols = computed(() => (props.groups ?? []).map(k => column(k, props.type)))
+function groupLabel(e: Entry): string {
+  const col = groupCols.value.find(c => c.key === groupBy.value)
+  if (!col) return ''
+  const v = col.value(e)
+  if (col.key === '@status') return String(e.fields.status ?? '').trim() || 'Alive'
+  const first = Array.isArray(v) ? v[0] : v
+  if (first == null || first === '') return ''
+  return col.kind === 'ids' || col.field?.kind === 'ref' ? get(String(first))?.name ?? '' : String(first)
+}
+const grouped = computed(() => {
+  if (!groupBy.value || props.tree) return null
+  const m = new Map<string, Entry[]>()
+  for (const e of shown.value) { const g = groupLabel(e); if (!m.has(g)) m.set(g, []); m.get(g)!.push(e) }
+  // the named groups in order, the rows without one last
+  return [...m].sort((a, b) => (!a[0] ? 1 : !b[0] ? -1 : a[0].localeCompare(b[0]))).map(([label, rows]) => ({ label, rows }))
+})
 function toggleTree(id: string) {
   const s = new Set(collapsed.value)
   if (s.has(id)) s.delete(id); else s.add(id)
@@ -126,6 +147,13 @@ defineExpose({ count: computed(() => shown.value.length) })
           <option v-for="v in values" :key="v" :value="v">{{ v }}</option>
         </select>
       </label>
+      <label v-if="groupCols.length" class="facet">
+        <span>Group by</span>
+        <select v-model="groupBy">
+          <option value="">Nothing</option>
+          <option v-for="c in groupCols" :key="c.key" :value="c.key">{{ c.label }}</option>
+        </select>
+      </label>
       <span class="muted small">{{ shown.length === base.length ? `${shown.length} shown` : `${shown.length} of ${base.length} shown` }}</span>
       <button v-if="cardRows.length" type="button" class="link-btn small" :title="`Print the ${cardRows.length} shown as cards (PDF, poker size, nine a page)`" @click="printShown"><AppIcon ui="cards" /> Print as cards</button>
     </div>
@@ -139,7 +167,9 @@ defineExpose({ count: computed(() => shown.value.length) })
           </tr>
         </thead>
         <tbody>
-          <tr v-for="{ e, depth, kids } in tableRows" :key="e.id" :class="{ 'tree-child': depth }">
+          <template v-for="g in grouped ?? [{ label: '', rows: [] }]" :key="g.label">
+          <tr v-if="grouped" class="group-row"><td :colspan="columns.length + 1 + (spells ? 1 : 0)">{{ g.label || `No ${groupCols.find(c => c.key === groupBy)?.label.toLowerCase()}` }} <span class="muted small">{{ g.rows.length }}</span></td></tr>
+          <tr v-for="{ e, depth, kids } in (grouped ? g.rows.map(e => ({ e, depth: 0, kids: 0 })) : tableRows)" :key="e.id" :class="{ 'tree-child': depth }">
             <td class="name" :style="tree ? { paddingLeft: `${0.6 + depth * 1.3}rem` } : undefined" @click.capture="open($event, e)"><button v-if="tree" type="button" class="tree-toggle" :class="{ none: !kids }" :disabled="!kids"
                 :title="kids ? (collapsed.has(e.id) ? `Show its ${kids}` : 'Hide them') : ''" @click.stop="toggleTree(e.id)">{{ kids ? (collapsed.has(e.id) ? '▸' : '▾') : '' }}</button><EntryLink :id="e.id" :icon="e.type === 'pc'" /><span v-if="e.id === currentPc?.id" class="current-mark" title="The current character"><AppIcon ui="star" /> current</span></td>
             <td v-for="c in columns" :key="c.key" :class="['col-' + c.key.replace('@', ''), { num: c.kind === 'money' || c.field?.kind === 'money', clip: c.field?.kind === 'longtext' }]">
@@ -156,6 +186,7 @@ defineExpose({ count: computed(() => shown.value.length) })
               </template>
             </td>
           </tr>
+          </template>
         </tbody>
       </table>
       <p v-if="!base.length" class="muted pad">No {{ (TYPES[creates ?? type ?? 'note']?.plural ?? 'entries').toLowerCase() }} yet<template v-if="creates ?? type"> — <button class="link-btn" @click="newEntry((creates ?? type)!)">＋ New {{ typeWord((creates ?? type)!) }}</button></template>.</p>

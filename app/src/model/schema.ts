@@ -74,14 +74,28 @@ const CRAFT = { field: 'kind', is: ['Potion', 'Poison', 'Scroll', 'Other'] }
 export const SCHEMA = [
   {
     type: 'npc', label: 'NPC', plural: 'NPCs', icon: '👤', fields: [
+      // Who they are, under the name (NpcForm): what they do, how they stand with the party, alive or not.
+      { key: 'occupation', label: 'Occupation', kind: 'text' },
+      { key: 'attitude', label: 'Attitude', kind: 'select', options: ['Friendly', 'Indifferent', 'Hostile'] },
+      { key: 'status', label: 'Status', kind: 'text' },
+      { key: 'statusSince', label: 'Since', kind: 'date' },
       { key: 'race', label: 'Race', kind: 'ref', to: ['race'], group: 'Appearance' },
       { key: 'gender', label: 'Gender', kind: 'text', group: 'Appearance' },
       { key: 'age', label: 'Age', kind: 'text', group: 'Appearance' },
+      // The age is worked out from it and the world's date.
+      { key: 'born', label: 'Born', kind: 'date', group: 'Appearance' },
       { key: 'hair', label: 'Hair', kind: 'text', group: 'Appearance' },
       { key: 'eyes', label: 'Eyes', kind: 'text', group: 'Appearance' },
       { key: 'skin', label: 'Skin', kind: 'text', group: 'Appearance' },
       { key: 'clothing', label: 'Clothing', kind: 'text', group: 'Appearance' },
-      { key: 'personality', label: 'Personality', kind: 'list', group: 'Personality' },
+      // How to play them; each part is there once added. The secret never reaches the players.
+      { key: 'personality', label: 'Traits', kind: 'list', group: 'Roleplay' },
+      { key: 'ideals', label: 'Ideals', kind: 'longtext', group: 'Roleplay' },
+      { key: 'bonds', label: 'Bonds', kind: 'longtext', group: 'Roleplay' },
+      { key: 'flaws', label: 'Flaws', kind: 'longtext', group: 'Roleplay' },
+      { key: 'voice', label: 'Voice & mannerisms', kind: 'longtext', group: 'Roleplay' },
+      { key: 'wants', label: 'Wants', kind: 'longtext', group: 'Roleplay' },
+      { key: 'secret', label: 'Secret', kind: 'longtext', group: 'Roleplay' },
       { key: 'statblock', label: 'Stats', kind: 'statblock', group: 'Stats' },
     ],
   },

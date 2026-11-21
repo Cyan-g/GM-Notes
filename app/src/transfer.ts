@@ -145,6 +145,8 @@ export function outgoingEntries(plan: ExportPlan): { entries: Entry[]; names: Re
   const entries = plan.entries.map(e => {
     const c = clone(e)
     if (!plan.opts.dmText && hasSecrets(c.body)) c.body = stripSecrets(c.body)
+    // an NPC's secret is DM-only text too
+    if (!plan.opts.dmText) delete (c.fields as Record<string, unknown>).secret
     mapRefs(c, id => { if (!keep(id)) return null; if (!ids.has(id)) names[id] = word(id); return id }, word)
     return c
   })
@@ -387,6 +389,7 @@ export async function readImport(file: File): Promise<ImportPlan> {
       }
       // A file without the DM-only text never wipes it out here.
       if (b.dmText === false && hasSecrets(h.body)) c.body = h.body
+      if (b.dmText === false && h.fields.secret != null) fields.secret = h.fields.secret
       c.created = h.created
     } else c.created = typeof e.created === 'string' ? e.created : now
     c.updated = now

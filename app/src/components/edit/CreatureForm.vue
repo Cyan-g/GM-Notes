@@ -3,11 +3,11 @@
 // stored statblock ("30 ft., fly 30 ft. (hover)", "perception +5") are read into fields and written back the same way.
 import { computed, onMounted, ref } from 'vue'
 import { loadSrdMonsters, srdMonster, srdMonsterNames, withSrd } from '../../srd'
-import { fieldOptions, optionLabel } from '../../store'
+import { fieldOptions, get, optionLabel } from '../../store'
 import type { Abilities, Entry, Feature, Statblock } from '../../model/types'
 import { TYPES } from '../../model/schema'
 import { changed } from '../../edit'
-import { xpFor } from '../../encounter'
+import { statsOf, xpFor } from '../../encounter'
 import TokenField from './TokenField.vue'
 import EntryPicker from './EntryPicker.vue'
 import EntryLink from '../EntryLink.vue'
@@ -41,8 +41,11 @@ const typeValue = computed(() => {
   return TYPE_OPTIONS.value.find(o => o.id.toLowerCase() === t.toLowerCase() || o.label.toLowerCase() === t.toLowerCase())?.id ?? t
 })
 function setType(base: string, tags: string) {
-  if (base) props.entry.fields.creatureType = base
-  else delete props.entry.fields.creatureType
+  // (a creature's type is a field of its own too, for its list's filter)
+  if (props.entry.type === 'creature') {
+    if (base) props.entry.fields.creatureType = base
+    else delete props.entry.fields.creatureType
+  }
   const line = [optionLabel('creature.creatureType', base).toLowerCase(), tags.trim() ? `(${tags.trim()})` : ''].filter(Boolean).join(' ')
   set('creatureType', line || undefined)
 }
@@ -194,20 +197,32 @@ function setAttack(i: number, p: Partial<StatAttack>) {
 }
 const DMG_TYPES = DAMAGE
 
-// ---- an SRD monster to start from ----
-const useSrd = ref(!!sb.value.srd)
+// ---- what to start from: its own stats, one of the world's creatures, or an SRD monster ----
+const source = ref<'own' | 'world' | 'srd'>(sb.value.base ? 'world' : sb.value.srd ? 'srd' : 'own')
+function setSource(s: 'own' | 'world' | 'srd') {
+  source.value = s
+  const next: Statblock = { ...sb.value }
+  if (s !== 'world') delete next.base
+  if (s !== 'srd') delete next.srd
+  if (Object.keys(next).length) props.entry.fields.statblock = next
+  else delete props.entry.fields.statblock
+  changed(props.entry)
+}
 const srdBase = computed(() => srdMonster(sb.value.srd))
-/** The SRD monster's value for a field, shown greyed while the form leaves it empty. */
-const ph = computed(() => srdBase.value?.statblock ?? {} as Statblock)
+const worldBase = computed(() => (sb.value.base ? get(sb.value.base) : undefined))
+const worldStats = computed(() => statsOf(worldBase.value))
+/** What it's based on: a field's value there shows greyed while the form leaves it empty. */
+const ph = computed(() => (sb.value.base ? worldStats.value : srdBase.value?.statblock) ?? {} as Statblock)
 function copySrd() {
-  const base = srdBase.value
+  const base = sb.value.base ? worldStats.value : srdBase.value?.statblock
   if (!base) return
-  const next = JSON.parse(JSON.stringify(withSrd(sb.value))) as Statblock
+  const next = JSON.parse(JSON.stringify(statsOf(props.entry) ?? withSrd(sb.value))) as Statblock
   delete next.srd
+  delete next.base
   props.entry.fields.statblock = next
-  const t = (base.statblock.creatureType ?? '').replace(/\s*\(.*\)$/, '')
-  if (t && !props.entry.fields.creatureType) props.entry.fields.creatureType = t
-  useSrd.value = false
+  const t = (base.creatureType ?? '').replace(/\s*\(.*\)$/, '')
+  if (props.entry.type === 'creature' && t && !props.entry.fields.creatureType) props.entry.fields.creatureType = t
+  source.value = 'own'
   changed(props.entry)
 }
 onMounted(() => { void loadSrdMonsters() })
@@ -246,11 +261,19 @@ const vGrow = { mounted: (el: HTMLTextAreaElement) => requestAnimationFrame(() =
       <div class="cf-row">
         <span class="sf-label">Start from</span>
         <div class="seg">
-          <button type="button" :class="{ on: !useSrd }" @click="useSrd = false; set('srd', undefined)">its own stats</button>
-          <button type="button" :class="{ on: useSrd }" @click="useSrd = true">an SRD monster</button>
+          <button type="button" :class="{ on: source === 'own' }" @click="setSource('own')">its own stats</button>
+          <button type="button" :class="{ on: source === 'world' }" title="One of this world's creatures: its stats, kept up to date, with what you set here on top" @click="setSource('world')">one of your creatures</button>
+          <button type="button" :class="{ on: source === 'srd' }" @click="setSource('srd')">an SRD monster</button>
         </div>
       </div>
-      <template v-if="useSrd">
+      <template v-if="source === 'world'">
+        <div class="cf-row">
+          <EntryPicker class="cf-srd-input" :model-value="sb.base ?? null" :types="['creature']" :exclude="[entry.id]" placeholder="Pick one of your creatures…" @update:model-value="v => set('base', v ?? undefined)" />
+          <button v-if="worldStats" type="button" class="chip-btn" title="Write its stats into the form (with what's set here on top), to change them; the link to it ends" @click="copySrd">Copy its stats in</button>
+        </div>
+        <p v-if="worldBase" class="muted small"><EntryLink :id="worldBase.id" />: {{ [worldStats?.size, worldStats?.creatureType].filter(Boolean).join(' ') }}<template v-if="worldStats?.cr">, CR {{ worldStats.cr }}</template>. Its stats show greyed in the form and stay linked: change {{ worldBase.name }} and this follows. Anything you fill in replaces them.</p>
+      </template>
+      <template v-if="source === 'srd'">
         <div class="cf-row">
           <input class="cf-srd-input" :value="sb.srd ?? ''" list="cf-srd-names" :placeholder="`Search the SRD's ${srdMonsterNames.length || 330} monsters…`" @change="set('srd', val($event).trim() || undefined)" />
           <datalist id="cf-srd-names"><option v-for="n in srdMonsterNames" :key="n" :value="n" /></datalist>

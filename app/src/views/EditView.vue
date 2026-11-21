@@ -5,7 +5,7 @@ import { isShared } from '../sync'
 import { computed } from 'vue'
 import type { EntryType, Statblock } from '../model/types'
 import { TYPES, byKey, type FieldDef } from '../model/schema'
-import { backlinks, fieldLabel, get, relationsOf, state } from '../store'
+import { backlinks, byType, fieldLabel, get, relationsOf, state } from '../store'
 import RaceBonusEdit from '../components/edit/RaceBonusEdit.vue'
 import BackgroundEdit from '../components/edit/BackgroundEdit.vue'
 import { changed, deleteEntry } from '../edit'
@@ -24,6 +24,9 @@ import StatblockView from '../components/Statblock.vue'
 import RelationsEditor from '../components/edit/RelationsEditor.vue'
 import ImageInput from '../components/edit/ImageInput.vue'
 import MapView from '../components/MapView.vue'
+import NpcForm from '../components/edit/NpcForm.vue'
+import NpcStats from '../components/edit/NpcStats.vue'
+import NpcAppearance from '../components/edit/NpcAppearance.vue'
 
 const props = defineProps<{ id: string }>()
 const e = computed(() => get(props.id))
@@ -42,8 +45,11 @@ const BG_MAIN = ['abilityIncrease', 'originFeat', 'originFeatNote', 'skillProfs'
 const shown = (f: FieldDef) => !f.when || f.when.is.includes(String(byKey(e.value!.fields)[f.when.field] ?? ''))
 // A character's sheet is the main column of its Edit page.
 const BIG = ['recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes', 'classBasics', 'speciesTraits']
+const npc = computed(() => e.value?.type === 'npc')
 const groups = computed(() => {
   const out = new Map<string, FieldDef[]>()
+  // an NPC's fields are in its own form (NpcForm, NpcAppearance, NpcStats)
+  if (npc.value) return []
   for (const f of def.value?.fields ?? []) {
     // a subclass's class and tagline are at the top of its main column (SubclassInfo)
     // a race's ability score increase has its own section in the main column
@@ -82,6 +88,26 @@ const bigFields = computed(() => (def.value?.fields ?? []).filter(f => BIG.inclu
 
 function setName(v: string) { if (v.trim()) { e.value!.name = v.trim(); changed(e.value!) } }
 function setBody(v: string) { e.value!.body = v; changed(e.value!) }
+
+// ---- an NPC's text: the headings other NPCs' texts use, one click to start a section ----
+const headingsIn = (body: string) => [...body.matchAll(/^#{1,3}\s*(.+?)\s*$/gm)].map(m => m[1])
+const SECTIONS = ['History', 'Description', 'Hooks']
+const sections = computed(() => {
+  if (!npc.value) return []
+  const n = new Map<string, number>()
+  for (const x of byType.value.get('npc') ?? []) for (const h of new Set(headingsIn(x.body))) n.set(h, (n.get(h) ?? 0) + 1)
+  const used = [...n].filter(([, c]) => c > 2).sort((a, b) => b[1] - a[1]).map(([h]) => h)
+  const mine = new Set(headingsIn(e.value!.body).map(h => h.toLowerCase()))
+  return [...new Set([...used.slice(0, 5), ...SECTIONS])].filter(h => !mine.has(h.toLowerCase()))
+})
+function addSection(h: string) {
+  const b = e.value!.body.replace(/\s+$/, '')
+  setBody(`${b}${b ? '\n\n' : ''}## ${h}\n\n`)
+}
+function addSecretBlock() {
+  const b = e.value!.body.replace(/\s+$/, '')
+  setBody(`${b}${b ? '\n\n' : ''}:::secret\n\n:::\n`)
+}
 function setList(key: 'aliases' | 'tags', v: string[]) { e.value![key] = v; changed(e.value!) }
 function setImage(p?: string) { if (p) e.value!.image = p; else delete e.value!.image; changed(e.value!) }
 function setMap(p?: string) { if (p) e.value!.fields.map = p; else delete e.value!.fields.map; changed(e.value!) }
@@ -186,9 +212,16 @@ function remove() {
           <SubclassInfo v-if="e.type === 'subclass'" :e="e" edit />
           <RaceBonusEdit v-if="e.type === 'race' && abilityDef" :e="e" :def="abilityDef" />
           <BackgroundEdit v-if="e.type === 'background'" :e="e" />
+          <NpcForm v-if="npc" :entry="e" />
           <h4 class="field-label">Text</h4>
-          <BodyEditor :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
+          <BodyEditor :model-value="e.body" :hint="e.name" :compact="npc" @update:model-value="setBody" />
+          <div v-if="npc" class="npc-add body-sections">
+            <span class="muted small">Add a section:</span>
+            <button v-for="h in sections" :key="h" type="button" class="chip-btn" @click="addSection(h)">＋ {{ h }}</button>
+            <button v-if="!/^:::secret/m.test(e.body)" type="button" class="chip-btn" title="A part of the text players never see" @click="addSecretBlock">＋ DM-only part</button>
+          </div>
         </section>
+        <NpcStats v-if="npc" :entry="e" />
         <section v-if="e.type === 'place'">
           <h2>Map</h2>
           <ImageInput :model-value="e.fields.map" :hint="e.name + ' map'" @update:model-value="setMap" />
@@ -214,6 +247,10 @@ function remove() {
         <div class="card">
           <h3>Picture</h3>
           <ImageInput :model-value="e.image" :hint="e.name" @update:model-value="setImage" />
+        </div>
+        <div v-if="npc" class="card">
+          <h3>Appearance</h3>
+          <NpcAppearance :entry="e" />
         </div>
         <div v-for="[g, fs] in sheet ? [] : groups" :key="g" class="card">
           <h3>{{ g }}</h3>

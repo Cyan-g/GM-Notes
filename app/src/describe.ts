@@ -4,6 +4,7 @@ import { TYPES, byKey } from './model/schema'
 import { fieldLabel, formatDate, get, state } from './store'
 import { classText, totalLevel } from './model/classes'
 import { abilityBonusText } from './abilityBonus'
+import { ageText } from './npc'
 
 const name = (id: unknown) => get(id as string)?.name
 /** A choice field's value as its option's label (see model/lists.ts). */
@@ -15,7 +16,7 @@ const ord = (n: string) => ({ '1': '1st', '2': '2nd', '3': '3rd' } as Record<str
 export function describe(e: Entry, { parent = true } = {}): string {
   const f = e.fields
   switch (e.type) {
-    case 'npc': return join(name(f.race), f.gender, f.age)
+    case 'npc': return join(f.occupation, name(f.race), f.gender, ageText(e))
     case 'pc': return join(classText(e, state.db?.meta, id => name(id)) || `level ${totalLevel(e)}`, f.player && `played by ${f.player}`)
     case 'organization': return join(L(e, 'orgType'), parent && f.parent && `part of ${name(f.parent)}`, f.seat && `seat: ${name(f.seat)}`)
     case 'place': return join(L(e, 'placeType'), parent && f.parent && `in ${name(f.parent)}`)

@@ -393,6 +393,8 @@ export interface InventoryLine {
 export interface Statblock {
   /** Name of an SRD monster to take the stats from, when the block isn't written out. */
   srd?: string
+  /** A creature of this world to take the stats from (an NPC based on a Mummy Lord); its own fields go on top. */
+  base?: Id
   size?: string
   creatureType?: string
   alignment?: string

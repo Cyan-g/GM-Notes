@@ -6,7 +6,7 @@ import EntryIcon from '../components/EntryIcon.vue'
 import { NOTE_TYPES, isShared } from '../sync'
 import PlayerNotes from '../components/PlayerNotes.vue'
 import { currentPc, setCurrent } from '../sheet'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { Entry, Relation, Statblock, WorldDate } from '../model/types'
 import { TYPES, RELATION_KINDS, byKey, type FieldDef } from '../model/schema'
 import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, hiddenFromPlayers, placePath, playerMode, relationsOf, entries, state } from '../store'
@@ -54,6 +54,9 @@ import TimelineChart from '../components/TimelineChart.vue'
 import TimelineList from '../components/TimelineList.vue'
 import { allItems, filterItems } from '../timeline'
 import SubraceCards from '../components/SubraceCards.vue'
+import NpcRoleplay from '../components/NpcRoleplay.vue'
+import { statusText } from '../npc'
+import { addEntryToTracker } from '../tracker'
 
 const props = defineProps<{ id: string; tab?: EntryTab }>()
 const e = computed(() => get(props.id))
@@ -71,6 +74,13 @@ const today = computed(() => db().meta.today)
 const empty = (v: unknown) => v == null || v === '' || (Array.isArray(v) && !v.length)
 const shown = (f: FieldDef, x: Entry) => !f.when || f.when.is.includes(String(byKey(x.fields)[f.when.field] ?? ''))
 
+const NPC_ELSEWHERE = ['race', 'gender', 'age', 'occupation', 'attitude', 'status', 'statusSince']
+/** "Dead since 86 AC", by the name. */
+const status = computed(() => (e.value?.type === 'npc' ? statusText(e.value) : ''))
+const attitude = computed(() => (e.value?.type === 'npc' && !playerMode.value ? String(e.value.fields.attitude ?? '') : ''))
+const added = ref(0)
+function toTracker() { addEntryToTracker(e.value!.id); added.value++ }
+watch(() => props.id, () => { added.value = 0 })
 /** Simple fields grouped for the side card; big ones (statblock, recipe, stock) go elsewhere. */
 const groups = computed(() => {
   const x = e.value
@@ -79,6 +89,8 @@ const groups = computed(() => {
   const big = ['statblock', 'recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes', 'classBasics', 'speciesTraits']
   const out = new Map<string, { def: FieldDef; value: unknown }[]>()
   for (const f of def.value.fields) {
+    // an NPC's race, gender and age are in the line under its name; status and attitude by the name; how to play them in their own card
+    if (x.type === 'npc' && (NPC_ELSEWHERE.includes(f.key) || f.group === 'Roleplay')) continue
     if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'creature' && f.key === 'creatureType') || (x.type === 'session' && ['campaign', 'number', 'date', 'playedOn', 'players'].includes(f.key)) || f.key === 'parent' || (x.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || (x.type === 'race' && ['size', 'otherSizes', 'creatureType', 'speeds', 'abilityIncrease', 'languages'].includes(f.key)) || (x.type === 'background' && ['abilityIncrease', 'originFeat', 'originFeatNote', 'skillProfs', 'toolProfs', 'toolsAll', 'equipment'].includes(f.key)) || f.key === 'map' || f.key === 'pins' || f.kind === 'mapData' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
     const g = f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
@@ -311,6 +323,8 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
           <button v-if="e.type === 'pc'" class="chip-toggle current-toggle" :class="{ on: currentPc?.id === e.id }" :disabled="!!state.readOnly"
                   :title="currentPc?.id === e.id ? 'The Spellbook, Workbench and Character menu use this character' : 'Use this character in the Spellbook, Workbench and Character menu'"
                   @click="setCurrent(currentPc?.id === e.id ? undefined : e.id)"><AppIcon ui="star" :class="{ off: !(currentPc?.id === e.id) }" /> {{ currentPc?.id === e.id ? 'Current character' : 'Make current' }}</button>
+          <span v-if="status" class="badge npc-status-badge" :class="'st-' + String(e.fields.status).toLowerCase()">{{ status }}</span>
+          <span v-if="attitude" class="badge" :class="'att-' + attitude.toLowerCase()" title="How they stand with the party">{{ attitude }}</span>
           <span v-if="e.visibility === 'secret'" class="badge dm-only" title="Players don't know this entry yet">DM only</span>
           <span v-if="e.aliases.length" class="aliases">also: {{ e.aliases.join(' · ') }}</span>
         </div>
@@ -361,6 +375,10 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         <div v-if="e.type === 'spell' && !state.readOnly && !playerMode" class="copy-row"><button type="button" class="chip-btn" title="A new spell with the same stats, rolls and text, to make a variant of it" @click="copyItem">Copy as new spell</button></div>
         <CharacterSheet v-if="e.type === 'pc'" :pc="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
+        <div v-if="statblock && e.type === 'creature' && !state.readOnly && !playerMode" class="copy-row">
+          <button type="button" class="chip-btn" title="Add to the initiative tracker as an enemy" @click="toTracker">⚔ Add to tracker</button>
+          <span v-if="added" class="muted small">Added{{ added > 1 ? ` (${added})` : '' }} · <a href="#/tracker">open the tracker</a></span>
+        </div>
         <FeatCard v-if="e.type === 'feat'" :e="e" source />
         <FeatInfo v-if="e.type === 'feat'" :e="e" />
         <SubclassInfo v-if="e.type === 'subclass'" :e="e" />
@@ -449,7 +467,12 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
           </dl>
         </div>
 
+        <NpcRoleplay v-if="e.type === 'npc'" :e="e" />
         <StatblockView v-if="statblock && e.type !== 'creature'" :sb="statblock" :name="e.name" />
+        <div v-if="statblock && e.type === 'npc' && !state.readOnly && !playerMode" class="copy-row">
+          <button type="button" class="chip-btn" title="Add to the initiative tracker as an enemy" @click="toTracker">⚔ Add to tracker</button>
+          <span v-if="added" class="muted small">Added{{ added > 1 ? ` (${added})` : '' }} · <a href="#/tracker">open the tracker</a></span>
+        </div>
 
         <MembersCard v-if="e.type === 'organization'" :org="e" />
         <!-- A character's attacks and proficiencies instead of the relation cards (Equipped and the inventory are under the sheet). -->

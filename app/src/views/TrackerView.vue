@@ -6,7 +6,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Combatant, Id, Statblock } from '../model/types'
 import { byType, get, touch } from '../store'
 import { mod, newCombatantId, statsOf } from '../encounter'
-import { addCombatant, addPlayers, clearTracker, isParty, loadEncounter, nextTurn, partyOf, rollInitiative, sortByInitiative, fighterStats, tracker } from '../tracker'
+import { addCombatant, addEntryToTracker, addPlayers, clearTracker, isParty, loadEncounter, nextTurn, partyOf, rollInitiative, sortByInitiative, fighterStats, tracker } from '../tracker'
 import { hrefEntry } from '../router'
 import EntryLink from '../components/EntryLink.vue'
 import EntryPicker from '../components/edit/EntryPicker.vue'
@@ -28,13 +28,7 @@ function load(id: string | null) {
   selected.value = null
 }
 function addParty() { addPlayers(partyOf(partyCampaign.value || undefined)) }
-function addEntry(id: Id) {
-  const e = get(id)!
-  if (e.type === 'pc') { addPlayers([e]); return }
-  const sb = statsOf(e)
-  const same = t.value.combatants.filter(c => c.entry === id).length
-  addCombatant({ id: newCombatantId(), name: same ? `${e.name} ${same + 1}` : e.name, entry: id, isPlayer: false, init: null, initMod: mod(sb?.abilities?.dex), hp: sb?.hp, maxHp: sb?.hp, ac: sb?.ac, conditions: [] })
-}
+const addEntry = (id: Id) => addEntryToTracker(id)
 const freeName = ref('')
 function addFree() {
   const n = freeName.value.trim()

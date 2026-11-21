@@ -12,7 +12,14 @@ const XP: Record<string, number> = {
 }
 export const xpFor = (cr?: string) => (cr ? XP[cr.trim()] : undefined)
 /** A creature's statblock: its own, on top of its SRD monster's when it names one. */
-export const statsOf = (e?: Entry) => withSrd(e?.fields.statblock)
+export function statsOf(e?: Entry, depth = 0): Statblock | undefined {
+  const sb = e?.fields.statblock as Statblock | undefined
+  // based on a creature of this world: its stats (themselves maybe on an SRD monster), with this one's on top
+  const base = sb?.base && depth < 5 ? statsOf(get(sb.base), depth + 1) : undefined
+  if (!base) return withSrd(sb)
+  const own = Object.fromEntries(Object.entries(sb!).filter(([k, v]) => k !== 'base' && v != null && v !== '' && !(Array.isArray(v) && !v.length)))
+  return { ...base, ...own }
+}
 export const mod = (score?: number) => (score == null ? 0 : Math.floor((score - 10) / 2))
 
 export function lineInfo(l: EncounterLine) {

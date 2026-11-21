@@ -2088,3 +2088,44 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .cc-legendary { display: flex; flex-wrap: wrap; gap: .3rem .5rem; align-items: center; margin-top: .4rem; color: var(--accent); }
 .cf-start .cf-row { flex-wrap: wrap; gap: .5rem; align-items: center; }
 .cf-srd-input { flex: 1; min-width: 14rem; }
+
+
+/* ---- NPCs: who they are, how to play them, stats on demand ---- */
+.npc-form { display: grid; gap: .8rem; }
+.npc-who { display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: flex-end; }
+.npc-who .sf-field { display: flex; flex-direction: column; gap: .2rem; }
+.npc-who .npc-occ { flex: 1 1 14rem; }
+.npc-who .npc-status input { width: 9rem; }
+.npc-roleplay { display: grid; gap: .5rem; }
+.npc-part { display: grid; grid-template-columns: 9rem 1fr auto; gap: .5rem; align-items: start; }
+.npc-part .sf-label { padding-top: .45rem; display: flex; gap: .4rem; align-items: center; }
+.npc-part textarea { resize: none; overflow: hidden; min-height: 2.2rem; }
+.npc-part.npc-secret textarea { background: var(--secret-bg); border: 1px dashed var(--secret-line); }
+.npc-add { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+.npc-add .chip-btn { font-size: 13px; }
+.body-sections { margin-top: .5rem; }
+.seg button.att-friendly.on, .badge.att-friendly { background: #3d7a4a; border-color: #3d7a4a; color: #fff; }
+.seg button.att-hostile.on, .badge.att-hostile { background: #9b2c2c; border-color: #9b2c2c; color: #fff; }
+.seg button.att-indifferent.on, .badge.att-indifferent { background: var(--ink-2); border-color: var(--ink-2); color: var(--bg); }
+.npc-status-badge { border: 1px solid var(--line); }
+.npc-status-badge.st-dead, .npc-status-badge.st-undead { background: #2b2b2b; color: #ddd; border-color: #555; }
+.npc-stats { margin-top: 1rem; }
+.npc-stats-head { display: flex; flex-wrap: wrap; gap: .4rem .8rem; align-items: baseline; }
+.npc-stats-head h3 { margin: 0; }
+.npc-stats-head .spacer { flex: 1; }
+.npc-stats-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem); gap: 1rem; margin-top: .8rem; align-items: start; }
+.npc-stats-preview { position: sticky; top: calc(var(--bar-h, 52px) + 4rem); }
+@media (max-width: 1100px) { .npc-stats-body { grid-template-columns: 1fr; } .npc-stats-preview { position: static; } }
+.npc-looks .npc-look { display: flex; gap: .3rem; align-items: center; }
+.npc-looks .npc-look input { flex: 1; min-width: 0; }
+.npc-born { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; margin-top: .3rem; }
+.npc-play .npc-traits { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .5rem; }
+.npc-play dl { margin: 0; }
+.npc-play dd { white-space: pre-line; }
+.npc-secret-view { margin: .6rem 0 0; font-size: 14px; white-space: pre-line; }
+.rel-quick { margin-bottom: .4rem; }
+.rel-quick button { font-size: 12px; padding: .25em .6em; }
+.rel-quick select { font-size: 12px; padding: .2em .4em; width: auto; }
+.rel-edit > .rel-add { grid-template-columns: minmax(0, 1fr); margin-bottom: .8rem; padding-bottom: .8rem; border-bottom: 1px solid var(--line); }
+table.grid tr.group-row td { background: var(--panel-2); font-family: var(--serif); font-weight: 600; color: var(--accent); padding-top: .5rem; }
+.npc-form + .field-label { margin-top: 1.2rem; }

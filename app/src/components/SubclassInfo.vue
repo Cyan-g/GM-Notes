@@ -10,8 +10,11 @@ import { listOptions, playerMode, state } from '../store'
 import { changed, createEntry } from '../edit'
 import { go, hrefEntry } from '../router'
 import EntryLink from './EntryLink.vue'
+import { patronsOf } from '../deity'
 
 const props = defineProps<{ e: Entry; edit?: boolean }>()
+/** The deities that are this subclass's patron (set on the deity). */
+const patrons = computed(() => patronsOf(props.e.id))
 const cls = computed(() => String(props.e.fields.class ?? ''))
 const label = computed(() => classLabel(props.e))
 const classPage = computed(() => classEntry(cls.value))
@@ -64,6 +67,7 @@ function copy() {
     </div>
     <label v-if="edit" class="si-tagline">Tagline <input :value="String(e.fields.tagline ?? '')" placeholder="e.g. Make a Deal with the Lower Planes" @change="setTagline(($event.target as HTMLInputElement).value)" /></label>
     <p v-else-if="e.fields.tagline" class="si-tag"><i>{{ e.fields.tagline }}</i></p>
+    <p v-if="patrons.length" class="si-patron small"><span class="muted">Patron:</span> <template v-for="(d, i) in patrons" :key="d.id"><template v-if="i">, </template><EntryLink :id="d.id" icon /></template></p>
     <div v-if="early.length && canEdit" class="lu-warn small si-warn">
       <b>{{ early.map(t => t.name).join(', ') }}</b> {{ early.length > 1 ? 'come' : 'comes' }} at {{ label }} level {{ Math.min(...early.map(t => t.level ?? 1)) }}, but {{ label }}s choose a subclass at level {{ at }}: a character only gets {{ early.length > 1 ? 'them' : 'it' }} from level {{ at }}.
       <div class="si-fix">

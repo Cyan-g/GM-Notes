@@ -27,6 +27,7 @@ import MapView from '../components/MapView.vue'
 import NpcForm from '../components/edit/NpcForm.vue'
 import NpcStats from '../components/edit/NpcStats.vue'
 import NpcAppearance from '../components/edit/NpcAppearance.vue'
+import DeityForm from '../components/edit/DeityForm.vue'
 
 const props = defineProps<{ id: string }>()
 const e = computed(() => get(props.id))
@@ -46,10 +47,13 @@ const shown = (f: FieldDef) => !f.when || f.when.is.includes(String(byKey(e.valu
 // A character's sheet is the main column of its Edit page.
 const BIG = ['recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes', 'classBasics', 'speciesTraits']
 const npc = computed(() => e.value?.type === 'npc')
+const deity = computed(() => e.value?.type === 'deity')
+/** Types whose text gets the "Add a section" buttons (the headings the others of the type use) and grows with it. */
+const sectioned = computed(() => npc.value || deity.value)
 const groups = computed(() => {
   const out = new Map<string, FieldDef[]>()
   // an NPC's fields are in its own form (NpcForm, NpcAppearance, NpcStats)
-  if (npc.value) return []
+  if (npc.value || deity.value) return []
   // a character's appearance is its own card too (NpcAppearance)
   const pcLooks = e.value?.type === 'pc'
   for (const f of def.value?.fields ?? []) {
@@ -94,14 +98,15 @@ function setBody(v: string) { e.value!.body = v; changed(e.value!) }
 
 // ---- an NPC's text: the headings other NPCs' texts use, one click to start a section ----
 const headingsIn = (body: string) => [...body.matchAll(/^#{1,3}\s*(.+?)\s*$/gm)].map(m => m[1])
-const SECTIONS = ['History', 'Description', 'Hooks']
+const SECTIONS: Record<string, string[]> = { npc: ['History', 'Description', 'Hooks'], deity: ['Dogma', 'Realm', 'Manifestations', 'Orders & Followers', 'Relations'] }
 const sections = computed(() => {
-  if (!npc.value) return []
+  if (!sectioned.value) return []
+  const t = e.value!.type
   const n = new Map<string, number>()
-  for (const x of byType.value.get('npc') ?? []) for (const h of new Set(headingsIn(x.body))) n.set(h, (n.get(h) ?? 0) + 1)
+  for (const x of byType.value.get(t) ?? []) for (const h of new Set(headingsIn(x.body))) n.set(h, (n.get(h) ?? 0) + 1)
   const used = [...n].filter(([, c]) => c > 2).sort((a, b) => b[1] - a[1]).map(([h]) => h)
   const mine = new Set(headingsIn(e.value!.body).map(h => h.toLowerCase()))
-  return [...new Set([...used.slice(0, 5), ...SECTIONS])].filter(h => !mine.has(h.toLowerCase()))
+  return [...new Set([...used.slice(0, 5), ...(SECTIONS[t] ?? [])])].filter(h => !mine.has(h.toLowerCase()))
 })
 function addSection(h: string) {
   const b = e.value!.body.replace(/\s+$/, '')
@@ -216,9 +221,10 @@ function remove() {
           <RaceBonusEdit v-if="e.type === 'race' && abilityDef" :e="e" :def="abilityDef" />
           <BackgroundEdit v-if="e.type === 'background'" :e="e" />
           <NpcForm v-if="npc" :entry="e" />
+          <DeityForm v-if="deity" :entry="e" />
           <h4 class="field-label">Text</h4>
-          <BodyEditor :model-value="e.body" :hint="e.name" :compact="npc" @update:model-value="setBody" />
-          <div v-if="npc" class="npc-add body-sections">
+          <BodyEditor :model-value="e.body" :hint="e.name" :compact="sectioned" @update:model-value="setBody" />
+          <div v-if="sectioned" class="npc-add body-sections">
             <span class="muted small">Add a section:</span>
             <button v-for="h in sections" :key="h" type="button" class="chip-btn" @click="addSection(h)">＋ {{ h }}</button>
             <button v-if="!/^:::secret/m.test(e.body)" type="button" class="chip-btn" title="A part of the text players never see" @click="addSecretBlock">＋ DM-only part</button>

@@ -11,6 +11,7 @@ import Sunburst from '../components/Sunburst.vue'
 import DataImage from '../components/DataImage.vue'
 import EntryLink from '../components/EntryLink.vue'
 import TimelineView from './TimelineView.vue'
+import { holidayGods } from '../deity'
 
 /** The World menu's dashboard has two tabs: the atlas itself and the timeline. */
 defineProps<{ tab?: 'timeline' }>()
@@ -34,7 +35,9 @@ const upcoming = computed(() => {
   for (const h of c.holidays ?? []) {
     let when: WorldDate = { year: t.year, month: h.month, day: h.day }
     if (dayNumber(c, when) < tn) when = { ...when, year: t.year + 1 }
-    out.push({ when, days: dayNumber(c, when) - tn, label: h.name, kind: 'holiday' })
+    // whose holy day it is, when a deity names it
+    const gods = holidayGods(h.name).map(g => g.name)
+    out.push({ when, days: dayNumber(c, when) - tn, label: gods.length ? `${h.name} (${gods.join(', ')})` : h.name, kind: 'holiday' })
   }
   for (const e of byType.value.get('event') ?? []) {
     const d = e.fields.date

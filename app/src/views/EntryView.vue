@@ -55,6 +55,8 @@ import TimelineList from '../components/TimelineList.vue'
 import { allItems, filterItems } from '../timeline'
 import SubraceCards from '../components/SubraceCards.vue'
 import NpcRoleplay from '../components/NpcRoleplay.vue'
+import DeityGlance from '../components/DeityGlance.vue'
+import DeityLinks from '../components/DeityLinks.vue'
 import { statusText } from '../npc'
 import { addEntryToTracker } from '../tracker'
 
@@ -91,6 +93,8 @@ const groups = computed(() => {
   for (const f of def.value.fields) {
     // an NPC's race, gender and age are in the line under its name; status and attitude by the name; how to play them in their own card
     if (x.type === 'npc' && (NPC_ELSEWHERE.includes(f.key) || f.group === 'Roleplay')) continue
+    // a deity's facts are in its glance card above the text (the rank and epithet under its name)
+    if (x.type === 'deity') continue
     if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'creature' && f.key === 'creatureType') || (x.type === 'session' && ['campaign', 'number', 'date', 'playedOn', 'players'].includes(f.key)) || f.key === 'parent' || (x.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || (x.type === 'race' && ['size', 'otherSizes', 'creatureType', 'speeds', 'abilityIncrease', 'languages'].includes(f.key)) || (x.type === 'background' && ['abilityIncrease', 'originFeat', 'originFeatNote', 'skillProfs', 'toolProfs', 'toolsAll', 'equipment'].includes(f.key)) || f.key === 'map' || f.key === 'pins' || f.kind === 'mapData' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
     const g = f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
@@ -383,9 +387,10 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         <FeatInfo v-if="e.type === 'feat'" :e="e" />
         <SubclassInfo v-if="e.type === 'subclass'" :e="e" />
         <RaceGlance v-if="e.type === 'race'" :e="e" />
+        <DeityGlance v-if="e.type === 'deity'" :e="e" />
         <BackgroundGlance v-if="e.type === 'background'" :e="e" />
         <template v-for="(p, i) in e.type === 'pc' ? [] : bodyParts.parts" :key="i">
-          <MarkdownView v-if="p.md" :source="p.md" :tasks="canTick" @update:source="v => setPart(p, v)" />
+          <MarkdownView v-if="p.md" :source="p.md" :tasks="canTick" :keep-end="i < bodyParts.parts.length - 1" @update:source="v => setPart(p, v)" />
           <FieldValue v-else-if="p.insert === 'ranks' && ranksDef" :def="ranksDef" :value="e.fields.ranks" :entry="e" />
           <div v-else-if="p.insert === 'feats'" class="feat-list"><FeatCard v-for="f in grantedFeats" :key="f.id" :e="f" title /></div>
         </template>
@@ -468,6 +473,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         </div>
 
         <NpcRoleplay v-if="e.type === 'npc'" :e="e" />
+        <DeityLinks v-if="e.type === 'deity'" :e="e" />
         <StatblockView v-if="statblock && e.type !== 'creature'" :sb="statblock" :name="e.name" />
         <div v-if="statblock && e.type === 'npc' && !state.readOnly && !playerMode" class="copy-row">
           <button type="button" class="chip-btn" title="Add to the initiative tracker as an enemy" @click="toTracker">⚔ Add to tracker</button>

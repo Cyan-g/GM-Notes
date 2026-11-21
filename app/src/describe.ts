@@ -26,7 +26,7 @@ export function describe(e: Entry, { parent = true } = {}): string {
       const sb = f.statblock as Statblock | undefined
       return join([sb?.size, L(e, 'creatureType') ?? sb?.creatureType].filter(Boolean).join(' '), sb?.cr && `CR ${sb.cr}`)
     }
-    case 'deity': return join(L(e, 'rank'), (f.domains as string[] | undefined)?.join(', '), f.alignment)
+    case 'deity': return join(L(e, 'rank'), f.epithet, f.alignment)
     case 'feat': return join(L(e, 'category'), f.level && `level ${f.level}+`, name(f.source) && `from ${name(f.source)}`)
     case 'class': case 'subclass': {
       const n = (f.speciesTraits as unknown[] | undefined)?.length

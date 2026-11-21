@@ -2149,3 +2149,18 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .cs-auto-feats { margin: .5rem 0; }
 .cs-auto-feats > summary { cursor: pointer; }
 .cs-other-add { justify-self: start; }
+/* ---- deities: facts in the form and at a glance, links the text names ---- */
+.deity-form { display: grid; gap: .7rem; }
+.deity-form + .field-label { margin-top: 1.2rem; }
+.deity-symbol { display: grid; gap: .4rem; }
+.deity-glance { margin-bottom: 1.2rem; }
+.deity-glance dl { display: grid; grid-template-columns: max-content 1fr; gap: .35rem 1rem; margin: 0; }
+.deity-glance dt { color: var(--muted); font-size: 13px; padding-top: .15rem; }
+.deity-glance dd { margin: 0; }
+.deity-glance .chips { display: inline-flex; flex-wrap: wrap; gap: .3rem; }
+.deity-symbol-view { display: flex; align-items: center; gap: .6rem; }
+.deity-symbol-img { width: 3rem; height: 3rem; object-fit: contain; border-radius: 6px; }
+.deity-link-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .5rem; padding: .35rem 0; border-top: 1px solid var(--line); }
+.deity-link-btns { display: flex; flex-wrap: wrap; gap: .3rem; margin-left: auto; }
+.deity-link-btns .chip-btn { font-size: 12px; }
+.si-patron { margin: .2rem 0 .6rem; }

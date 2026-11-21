@@ -181,10 +181,23 @@ export const SCHEMA = [
   },
   {
     type: 'deity', label: 'Deity', plural: 'Deities', icon: '✨', fields: [
-      { key: 'rank', label: 'Rank', kind: 'select', options: ['Greater deity', 'Lesser deity', 'Demigod', 'Other'], fixed: ['Greater deity', 'Lesser deity'] },
-      { key: 'domains', label: 'Domains', kind: 'list' },
+      // Edited with DeityForm, shown with DeityGlance; the deity list is the pantheon table.
+      { key: 'rank', label: 'Rank', kind: 'select', options: ['Greater deity', 'Lesser deity', 'Demigod', 'Primordial', 'Other'], fixed: ['Greater deity', 'Lesser deity'] },
+      { key: 'epithet', label: 'Epithet', kind: 'text' },
+      // the cleric domains it offers (a domain's subclass is linked where the world has one)
+      { key: 'domains', label: 'Domains', kind: 'list', options: ['Arcana', 'Death', 'Forge', 'Grave', 'Knowledge', 'Life', 'Light', 'Nature', 'Order', 'Peace', 'Tempest', 'Trickery', 'Twilight', 'War'] },
+      { key: 'portfolio', label: 'Portfolio', kind: 'list' },
       { key: 'alignment', label: 'Alignment', kind: 'text' },
+      // where it dwells: its realm (Brightwater) on a plane (the Outlands); linked when a place has the name
+      { key: 'realm', label: 'Realm', kind: 'text' },
+      { key: 'plane', label: 'Home plane', kind: 'text' },
+      { key: 'worshippers', label: 'Typical worshippers', kind: 'text' },
       { key: 'symbol', label: 'Symbol', kind: 'text' },
+      { key: 'symbolImage', label: 'Symbol picture', kind: 'text' },
+      // the calendar's holidays that are its holy days (by name)
+      { key: 'holyDays', label: 'Holy days', kind: 'list' },
+      // the subclasses it is the patron of (a warlock's patron)
+      { key: 'patronOf', label: 'Patron of', kind: 'refs', to: ['subclass'] },
     ],
   },
   {

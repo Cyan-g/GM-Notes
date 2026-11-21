@@ -76,14 +76,34 @@ md.renderer.rules.link_open = (tokens, idx, opts, env, self) => {
   return defaultLink(tokens, idx, opts, env, self)
 }
 
+/**
+ * Headings with nothing under them (the next heading is the same level or higher, or the text ends) aren't shown:
+ * an outline started and not filled in yet. The text keeps them. Code blocks are left alone.
+ */
+function dropEmptyHeadings(lines: string[], keepEnd = false): string[] {
+  const level = (l: string) => l.match(/^(#{1,6})\s/)?.[1].length ?? 0
+  const fence: boolean[] = []
+  let inFence = false
+  for (const l of lines) { if (/^\s*(```|~~~)/.test(l)) inFence = !inFence; fence.push(inFence) }
+  return lines.filter((l, i) => {
+    const n = level(l)
+    if (!n || fence[i]) return true
+    let j = i + 1
+    while (j < lines.length && !lines[j].trim()) j++
+    if (j >= lines.length) return keepEnd
+    const next = fence[j] ? 0 : level(lines[j])
+    return !(next && next <= n)
+  })
+}
+
 /** Turn callout boxes ("> [!tip] Title", foldable with + or -) and :::secret blocks into HTML before parsing. */
-function preprocess(src: string): string {
+function preprocess(src: string, keepEnd = false): string {
   // Player mode never shows DM-only text.
   src = src.replace(/^:::secret\s*\n([\s\S]*?)\n:::\s*$/gm, (_, inner) => playerMode.value ? '' : `<div class="secret"><span class="secret-tag">DM only</span>\n\n${inner}\n\n</div>`)
   // "- 24. August 892" is a date, not a list numbered from 24
   const months = state.db?.meta.calendar?.months.map(m => m.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) ?? []
   if (months.length) src = src.replace(new RegExp(`^(\\s*(?:[-*+]\\s+)?)(\\d+)\\.(?=[ \\t]+(?:${months.join('|')})\\b)`, 'gm'), '$1$2\\.')
-  const lines = src.split('\n')
+  const lines = dropEmptyHeadings(src.split('\n'), keepEnd)
   const out: string[] = []
   for (let i = 0; i < lines.length; i++) {
     const m = lines[i].match(/^>\s*\[!([\w-]+)\]([+-]?)\s*(.*)$/)
@@ -100,5 +120,5 @@ function preprocess(src: string): string {
   return out.join('\n')
 }
 
-export const renderMarkdown = (src: string, opts: { tasks?: boolean } = {}) => md.render(preprocess(src || ''), { tasks: !!opts.tasks })
+export const renderMarkdown = (src: string, opts: { tasks?: boolean; keepEnd?: boolean } = {}) => md.render(preprocess(src || '', !!opts.keepEnd), { tasks: !!opts.tasks })
 export const renderInline = (src: string) => md.renderInline(src || '')

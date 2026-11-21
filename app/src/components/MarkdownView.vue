@@ -5,10 +5,11 @@ import { toggleTask } from '../checklist'
 import { state } from '../store'
 
 /** `tasks`: checklist boxes can be ticked; each tick sends the changed text as `update:source`. */
-const props = defineProps<{ source: string; tasks?: boolean }>()
+/** `keepEnd`: the text goes on below (a card inserted after it), so a heading at its end isn't empty. */
+const props = defineProps<{ source: string; tasks?: boolean; keepEnd?: boolean }>()
 const emit = defineEmits<{ 'update:source': [string] }>()
 const root = ref<HTMLElement>()
-const html = computed(() => renderMarkdown(props.source, { tasks: props.tasks }))
+const html = computed(() => renderMarkdown(props.source, { tasks: props.tasks, keepEnd: props.keepEnd }))
 
 function click(ev: MouseEvent) {
   const box = ev.target as HTMLInputElement

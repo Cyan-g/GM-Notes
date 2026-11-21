@@ -21,7 +21,8 @@ const COLS: Partial<Record<EntryType, { cols: string[]; facets?: string[]; sort?
   background: { cols: ['originFeat', 'skillProfs', 'toolProfs', 'abilityIncrease'] },
   // Subraces under their main race.
   race: { cols: ['size', 'creatureType', '@speed', 'abilityIncrease'], tree: 'parent' },
-  deity: { cols: ['rank', 'alignment'], facets: ['rank'] },
+  // the pantheon: what a deity table in a sourcebook shows
+  deity: { cols: ['epithet', 'rank', 'domains', 'portfolio', 'alignment', 'plane', 'worshippers', 'symbol'], facets: ['rank', 'domains', 'alignment'], groups: ['rank', 'plane'] },
   creature: { cols: ['creatureType', '@cr'], facets: ['creatureType'] },
   item: { cols: ['kind', 'subtype', 'rarity', 'magical', 'value'], facets: ['kind', 'rarity', 'magical'] },
   spell: { cols: ['level', 'school', 'castingTime', 'spellType', 'classes'], facets: ['level', 'school', 'classes'] },

@@ -9,8 +9,11 @@ import { addDays, eraOf, eraShort, monthDays, moonMark, weekday } from '../calen
 import { go } from '../router'
 import { newEntry } from '../ui'
 import EntryLink from '../components/EntryLink.vue'
+import { holidayGods } from '../deity'
 
 const props = defineProps<{ year?: number; month?: number }>()
+/** "Holy day of Waukeen", for a holiday's tooltip. */
+const godsText = (name: string) => { const g = holidayGods(name); return g.length ? `Holy day of ${g.map(x => x.name).join(', ')}` : undefined }
 const cal = computed(() => db().meta.calendar)
 const today = computed(() => db().meta.today)
 const year = computed(() => props.year ?? today.value.year)
@@ -111,7 +114,7 @@ const yearInput = (v: string) => { const y = Number(v); if (v.trim() && !Number.
             <div v-if="!c" class="cal-cell empty" />
             <div v-else class="cal-cell" :class="{ today: same(today, year, month, c.day), sel: selected === c.day }" @click="selected = c.day">
               <div class="cal-day"><span>{{ c.day }}</span><span v-if="c.moon" class="moon" :title="c.moon.name"><MoonPhase :phase="c.moon.phase" /></span></div>
-              <div v-for="h in holidays.filter(h => h.day === c.day)" :key="h.name" class="cal-item holiday">{{ h.name }}</div>
+              <div v-for="h in holidays.filter(h => h.day === c.day)" :key="h.name" class="cal-item holiday" :title="godsText(h.name)">{{ h.name }}</div>
               <a v-for="e in items.byDay.get(c.day) ?? []" :key="e.id" class="cal-item" :href="'#/e/' + e.id" :style="{ '--c': colorOf(e) ?? 'var(--accent-2)' }" @click.stop>{{ e.name }}</a>
             </div>
           </template>
@@ -122,7 +125,7 @@ const yearInput = (v: string) => { const y = Number(v); if (v.trim() && !Number.
         <h3>{{ cal.weekdays[weekday(cal, selDate)] }}, {{ formatDate(selDate) }}</h3>
         <p v-if="moonMark(cal, selDate)" class="muted small"><MoonPhase :phase="moonMark(cal, selDate)!.phase" /> {{ moonMark(cal, selDate)!.name }}</p>
         <ul class="rel">
-          <li v-for="h in holidays.filter(h => h.day === selected)" :key="h.name"><AppIcon ui="holiday" /> {{ h.name }}</li>
+          <li v-for="h in holidays.filter(h => h.day === selected)" :key="h.name"><AppIcon ui="holiday" /> {{ h.name }}<template v-if="holidayGods(h.name).length"> <span class="muted small">· holy day of</span> <template v-for="(g, i) in holidayGods(h.name)" :key="g.id"><template v-if="i">, </template><EntryLink :id="g.id" /></template></template></li>
           <li v-for="e in items.byDay.get(selected!) ?? []" :key="e.id"><EntryLink :id="e.id" icon /></li>
         </ul>
         <p v-if="!(items.byDay.get(selected!)?.length) && !holidays.some(h => h.day === selected)" class="muted small">Nothing on this day.</p>

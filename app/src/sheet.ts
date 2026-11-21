@@ -10,6 +10,7 @@ import { db, get, state, touch } from './store'
 import { breakdown, gearTotals, restItems, scoreWith, spellsOf, sum } from './gear'
 import { unmet } from './requirements'
 import { setConditions } from './conditions'
+import { rule } from './rules'
 import { own, ownerOf, restSpecies, speciesExpertise, speciesGrants, speciesSkills, speciesSpeed, speciesTraits } from './species'
 
 export type Ability = keyof Abilities
@@ -428,6 +429,17 @@ export const draggedLine = (pc: Entry) => (dragged.pc === pc.id ? sheetOf(pc)?.i
  * A character's long rest: full HP, no temporary HP, every spell slot back, and half the level in hit dice (at least
  * one), biggest dice first.
  */
+/** A short rest: what recharges on one comes back (features, pact slots, item spells). Hit Dice are the player's to
+ * spend and roll; they count them down on the sheet. */
+export function shortRest(pc: Entry) {
+  const s = sheetToEdit(pc)
+  restSlots(s.spellbook, 'short')
+  restItems(s, 'short')
+  restSpecies(s, pc, 'short')
+  pc.updated = new Date().toISOString()
+  touch()
+}
+
 export function longRest(pc: Entry) {
   const s = sheetToEdit(pc)
   s.hp = maxHpOf(s)
@@ -441,7 +453,8 @@ export function longRest(pc: Entry) {
     const lv = (s.exhaustion ?? 1) - 1
     setConditions(pc, s, lv > 0 ? s.conditions : s.conditions.filter(x => x !== 'Exhaustion'), lv > 0 ? lv : 0)
   }
-  let back = Math.max(1, Math.floor(totalLevel(pc) / 2))
+  // Hit Dice back: all of them (2024) or half the character's level (2014), as the ruleset says
+  let back = rule('hitDiceLongRest') === 'half' ? Math.max(1, Math.floor(totalLevel(pc) / 2)) : Infinity
   const m = { ...(s.hitDiceSpent ?? {}) }
   for (const p of hitDiceOf(pc, s)) {
     const n = Math.min(back, p.spent)

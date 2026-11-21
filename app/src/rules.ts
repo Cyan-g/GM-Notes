@@ -51,6 +51,15 @@ export const RULES: RuleDef[] = [
     ],
     default: '2024', keywords: 'tired condition levels',
   },
+  {
+    id: 'hitDiceLongRest', group: 'Resting', label: 'Hit Dice on a long rest',
+    text: 'How many spent Hit Dice a long rest gives back.',
+    options: [
+      { id: 'all', label: 'All of them (2024)', text: 'Every spent Hit Die comes back.' },
+      { id: 'half', label: 'Half the level (2014)', text: 'Up to half the character’s level in Hit Dice (at least one) comes back.' },
+    ],
+    default: 'all', keywords: 'rest hit dice healing recovery',
+  },
 ]
 export const ruleDef = (id: string) => RULES.find(r => r.id === id)
 

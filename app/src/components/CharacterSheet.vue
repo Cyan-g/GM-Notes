@@ -16,7 +16,7 @@ import { changed } from '../edit'
 import { hrefEntry, hrefTab } from '../router'
 import {
   ABILITIES, SKILLS, armorClass, attacks, canAttune, canEquip, castingAbility, hitDiceOf, initiative, levelOf, maxHpOf, mod,
-  passivePerception, profBonus, profsOf, profsToEdit, saveBonus, sheetOrBlank, sheetToEdit, signed, skillBonus, skillLevel, speedOf, baseSpeed, longRest, type Ability,
+  passivePerception, profBonus, profsOf, profsToEdit, saveBonus, sheetOrBlank, sheetToEdit, signed, skillBonus, skillLevel, speedOf, baseSpeed, longRest, shortRest, type Ability,
 } from '../sheet'
 import { advOf, breakdown, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../gear'
 import ProfChips from './ProfChips.vue'
@@ -144,6 +144,7 @@ function hit(ev: Event) {
   })
 }
 const rest = () => { if (!ro.value) longRest(props.pc) }
+const short = () => { if (!ro.value) shortRest(props.pc) }
 
 // ---- items in the attack lines open in a pop-up ----
 const shown = ref<number | null>(null)
@@ -249,7 +250,10 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
           <b v-else class="cs-die-label">{{ p.die }}</b>
         </div>
       </div>
-      <button v-if="!build" class="cs-rest" :disabled="ro" title="Full HP, no temp HP, every spell slot and half your hit dice back" @click="rest">Long rest</button>
+      <div v-if="!build" class="cs-rests">
+        <button class="cs-rest" :disabled="ro" title="Features, pact slots and item spells that recharge on a short rest come back. Spend Hit Dice by counting them down here" @click="short">Short rest</button>
+        <button class="cs-rest" :disabled="ro" :title="`Full HP, no temp HP, every spell slot, ${rule('hitDiceLongRest') === 'half' ? 'half your' : 'all'} Hit Dice and one exhaustion level back`" @click="rest">Long rest</button>
+      </div>
     </div>
     <!-- in play: the limited uses of features, to tick off without scrolling -->
     <UsesCard v-if="!build" :pc="pc" :s="s" />

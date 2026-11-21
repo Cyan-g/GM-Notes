@@ -17,7 +17,7 @@ import { activeGear, itemsInUse, weightOf } from './items'
 export interface Part { label: string; n: number; when?: GearEffect['when'] }
 
 /** What an effect needs besides a number, in the editor. */
-export type EffectNeed = 'ability' | 'skill' | 'type' | 'text' | 'mode' | 'note' | 'dice' | 'proficient' | 'sense' | 'condition' | 'pb' | 'plusAbility' | 'abilities' | 'noShield' | 'when'
+export type EffectNeed = 'ability' | 'skill' | 'type' | 'text' | 'mode' | 'note' | 'dice' | 'proficient' | 'sense' | 'condition' | 'pb' | 'plusAbility' | 'abilities' | 'noShield' | 'when' | 'speedType' | 'emptyDice'
 /** What an effect can change, for the editor and the item card. */
 export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: EffectNeed[]; canSet?: boolean; noValue?: boolean }[] = [
   { on: 'ac', label: 'Armor class', needs: ['when'] },
@@ -28,10 +28,16 @@ export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: Effect
   { on: 'save', label: 'One saving throw', needs: ['ability'] },
   { on: 'saveAdv', label: 'Save: advantage / disadvantage', needs: ['ability', 'mode', 'note'], noValue: true },
   { on: 'attack', label: 'Attack rolls', needs: ['when'] },
-  { on: 'damage', label: 'Damage rolls', needs: ['when'] },
+  { on: 'damage', label: 'Damage rolls', needs: ['when', 'pb'] },
   { on: 'extraDamage', label: 'Extra damage (typed)', needs: ['dice', 'type', 'proficient', 'when', 'note'], noValue: true },
-  { on: 'unarmed', label: 'Unarmed strike', needs: ['dice', 'proficient'], noValue: true },
+  { on: 'unarmed', label: 'Unarmed strike', needs: ['dice', 'proficient', 'emptyDice'], noValue: true },
   { on: 'offhandMod', label: 'Off-hand attack adds its modifier', noValue: true },
+  { on: 'offhandAny', label: 'Off-hand attack with any one-handed melee weapon', noValue: true },
+  { on: 'poleStrike', label: 'Butt-end attack (d4, bonus action)', noValue: true },
+  { on: 'mediumArmorDex', label: 'Medium armor: Dex up to (with DEX 16+)' },
+  { on: 'speedType', label: 'A speed equal to the walking speed', needs: ['speedType'], noValue: true },
+  { on: 'deathSaveAdv', label: 'Advantage on death saves', noValue: true },
+  { on: 'saveFromIncrease', label: 'Save proficiency in the ability raised', noValue: true },
   { on: 'spellAttack', label: 'Spell attack' },
   { on: 'spellDC', label: 'Spell save DC' },
   { on: 'skill', label: 'A skill', needs: ['skill', 'plusAbility'] },
@@ -51,7 +57,7 @@ export const SENSES = ['Darkvision', 'Blindsight', 'Tremorsense', 'Truesight']
 const MODE: Record<string, string> = { adv: 'Advantage', dis: 'Disadvantage' }
 const ABILITY_SHORT: Record<string, string> = ABILITY_UPPER
 /** An effect's limit, in words. */
-const WHEN: Record<string, string> = { melee: ' (melee)', ranged: ' (ranged)', finesseOrRanged: ' (finesse or ranged)', armored: ' (in armor)' }
+const WHEN: Record<string, string> = { melee: ' (melee)', ranged: ' (ranged)', finesseOrRanged: ' (finesse or ranged)', heavy: ' (Heavy weapons)', oneHanded: ' (one melee weapon in one hand)', thrown: ' (when thrown)', armored: ' (in armor)' }
 
 /**
  * A list of effects in a few words each, with the same advantage on every saving throw said once ("Advantage on
@@ -96,13 +102,19 @@ export function describeEffect(f: GearEffect): string {
     case 'ac': return `${signed(v)} AC${WHEN[f.when ?? ''] ?? ''}`
     case 'acBase': return `AC ${v} + ${(f.abilities ?? []).map(a => ABILITY_SHORT[a]).join(' + ') || '—'} without armor${f.noShield ? ' or shield' : ''}`
     case 'acMin': return `AC at least ${v}`
-    case 'unarmed': return `Unarmed strike: ${f.dice || (f.fromScale ? 'the scaling die' : '1')}${f.proficient ? ', with STR or DEX' : ''}`
+    case 'unarmed': return `Unarmed strike: ${f.dice || (f.fromScale ? 'the scaling die' : '1')}${f.emptyDice ? ` (${f.emptyDice} with no weapon or shield)` : ''}${f.proficient ? ', with STR or DEX' : ''}`
     case 'offhandMod': return 'Off-hand attack adds the ability modifier'
+    case 'offhandAny': return 'Off-hand attack with any one-handed melee weapon'
+    case 'poleStrike': return 'Butt-end attack: d4 bludgeoning, bonus action'
+    case 'mediumArmorDex': return `Medium armor: up to +${v || 3} Dex to AC with DEX 16+`
+    case 'speedType': return `${(f.speedType ?? 'climb')[0].toUpperCase()}${(f.speedType ?? 'climb').slice(1)} speed equal to the walking speed`
+    case 'deathSaveAdv': return 'Advantage on death saves'
+    case 'saveFromIncrease': return 'Saving throw proficiency in the ability it raises'
     case 'ability': return f.force ? `${ABILITY_SHORT[f.ability ?? ''] ?? '?'} becomes ${v}` : f.set ? `${ABILITY_SHORT[f.ability ?? ''] ?? '?'} ${v}` : `${signed(v)} ${ABILITY_SHORT[f.ability ?? ''] ?? '?'}`
     case 'saves': return `${signed(v)} to saving throws`
     case 'save': return `${signed(v)} to ${ABILITY_SHORT[f.ability ?? ''] ?? '?'} saves`
     case 'attack': return `${signed(v)} to hit${WHEN[f.when ?? ''] ?? ''}`
-    case 'damage': return `${f.fromScale && f.value == null ? '+ scaling value' : signed(v)} damage${WHEN[f.when ?? ''] ?? ''}`
+    case 'damage': return `${f.fromScale && f.value == null ? '+ scaling value' : f.pb ? `${v ? signed(v) + ' and ' : '+'}proficiency bonus` : signed(v)} damage${WHEN[f.when ?? ''] ?? ''}`
     case 'spellAttack': return `${signed(v)} spell attack`
     case 'spellDC': return `${signed(v)} spell save DC`
     case 'skill': return f.ability ? `${v ? signed(v) + ' and ' : '+'}${ABILITY_SHORT[f.ability]} modifier (at least 1) to ${f.skill ?? 'a skill'}` : `${signed(v)} ${f.skill ?? 'skill'}`
@@ -137,8 +149,15 @@ export interface GearTotals {
   acBase: { label: string; n: number; abilities: Ability[]; noShield?: boolean }[]
   acMin: Part[]
   /** The unarmed strike's damage dice and whether it may use DEX (Martial Arts); the off-hand attack adding its modifier. */
-  unarmed?: { dice: string; dex: boolean; from: string }
+  unarmed?: { dice: string; dex: boolean; from: string; emptyDice?: string }
   offhandMod?: string
+  /** Any one-handed melee weapon for the off-hand attack; the butt-end attack; advantage on death saves (by what gives it). */
+  offhandAny?: string
+  poleStrike?: string
+  deathSaveAdv?: string
+  /** Medium armor's highest Dex bonus with DEX 16+, and speeds equal to the walking one (climb, swim…). */
+  mediumArmorDex?: { n: number; from: string }
+  speedTypes: { type: string; from: string }[]
   /** What the character's conditions do beyond the parts above (conditions.ts): speed 0 or halved, hit point maximum
    * halved, and advantage or disadvantage on attack rolls (shown with the attacks). */
   speedZero?: string
@@ -174,10 +193,20 @@ export interface GearTotals {
  * Everything the active gear and the character's species traits (species.ts) add up to. A weapon's attack and damage
  * bonuses count for that weapon only.
  */
+/**
+ * Advantage or disadvantage on a Concentration save (War Caster) and on death saves (Durable), in words, from a sheet's
+ * totals: "advantage (War Caster)"; undefined when nothing changes the roll.
+ */
+export function concentrationAdv(t: GearTotals): string | undefined {
+  const l = (t.saveAdv.con ?? []).filter(x => !x.note || /concentrat/i.test(x.note))
+  return l.length ? l.map(x => `${x.mode === 'dis' ? 'disadvantage' : 'advantage'} (${x.from})`).join(', ') : undefined
+}
+export const deathSaveAdv = (t: GearTotals): string | undefined => (t.deathSaveAdv ? `advantage (${t.deathSaveAdv})` : undefined)
+
 export function gearTotals(s: CharacterSheet | undefined): GearTotals {
   const t: GearTotals = {
     setAbility: {}, forceAbility: {}, addAbility: {}, save: {}, saves: [], skill: {}, ac: [], acBase: [], acMin: [], speed: [], initiative: [], hitDice: [], maxHp: [], spellAttack: [], spellDC: [],
-    attackAll: [], damageAll: [], attackOf: {}, damageOf: {}, resistances: [], features: [],
+    attackAll: [], damageAll: [], attackOf: {}, damageOf: {}, resistances: [], features: [], speedTypes: [],
     skillAdv: {}, saveAdv: {}, extraOf: {}, extraAll: [], senses: [], immunities: [], damageImmunities: [],
   }
   const pc = ownerOf(s)
@@ -198,8 +227,13 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
         case 'ac': t.ac.push(p); break
         case 'acBase': t.acBase.push({ label: name, n, abilities: f.abilities ?? [], ...(f.noShield ? { noShield: true } : {}) }); break
         case 'acMin': t.acMin.push(p); break
-        case 'unarmed': if (!t.unarmed || (f.dice ?? '') > t.unarmed.dice) t.unarmed = { dice: f.dice || '1', dex: !!f.proficient, from: name }; break
+        case 'unarmed': if (!t.unarmed || (f.dice ?? '') > t.unarmed.dice) t.unarmed = { dice: f.dice || '1', dex: !!f.proficient, from: name, ...(f.emptyDice ? { emptyDice: f.emptyDice } : {}) }; break
         case 'offhandMod': t.offhandMod = name; break
+        case 'offhandAny': t.offhandAny = name; break
+        case 'poleStrike': t.poleStrike = name; break
+        case 'deathSaveAdv': t.deathSaveAdv = name; break
+        case 'mediumArmorDex': if (!t.mediumArmorDex || n > t.mediumArmorDex.n) t.mediumArmorDex = { n: n || 3, from: name }; break
+        case 'speedType': t.speedTypes.push({ type: f.speedType ?? 'climb', from: name }); break
         case 'ability':
           if (!f.ability) break
           if (f.force) { if (!t.forceAbility[f.ability] || n < t.forceAbility[f.ability]!.n) t.forceAbility[f.ability] = p }
@@ -210,7 +244,7 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
         case 'save': if (f.ability) (t.save[f.ability] ??= []).push(p); break
         case 'skill': if (f.skill) { (t.skill[f.skill] ??= []).push(p); if (f.ability) plusMod.push({ part: p, ability: f.ability }) } break
         case 'attack': if (isWeapon) (t.attackOf[item.id] ??= []).push(p); else t.attackAll.push(p); break
-        case 'damage': if (isWeapon) (t.damageOf[item.id] ??= []).push(p); else t.damageAll.push(p); break
+        case 'damage': { const d = f.pb ? { ...p, n: n + profBonus(level) } : p; if (isWeapon) (t.damageOf[item.id] ??= []).push(d); else t.damageAll.push(d); break }
         case 'spellAttack': t.spellAttack.push(p); break
         case 'spellDC': t.spellDC.push(p); break
         case 'speed': t.speed.push(p); break

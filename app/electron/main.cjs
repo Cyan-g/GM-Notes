@@ -194,10 +194,17 @@ function identify(w, title) {
 
 const followOf = dir => (dir ? Object.entries(config.follow ?? {}).find(([d]) => same(d, dir))?.[1] : undefined)
 /** The shared folder this world publishes to, if one was chosen. */
-// ---------- cards: the page's print layout as a PDF, saved where the user says, then opened ----------
+// ---------- cards: the page's print layout as a PDF (made first, so the window can show it working), then saved
+// where the user says and opened ----------
+let cardsPdf = null
+ipcMain.handle('cards:make-pdf', async (e, pageSize) => {
+  cardsPdf = await e.sender.printToPDF({ pageSize: pageSize === 'Letter' ? 'Letter' : 'A4', printBackground: true, preferCSSPageSize: false, margins: { marginType: 'none' } })
+  return cardsPdf.length
+})
 ipcMain.handle('cards:pdf', async (e, pageSize, name) => {
   const win = BrowserWindow.fromWebContents(e.sender)
-  const pdf = await e.sender.printToPDF({ pageSize: pageSize === 'Letter' ? 'Letter' : 'A4', printBackground: true, preferCSSPageSize: false, margins: { marginType: 'none' } })
+  const pdf = cardsPdf ?? await e.sender.printToPDF({ pageSize: pageSize === 'Letter' ? 'Letter' : 'A4', printBackground: true, preferCSSPageSize: false, margins: { marginType: 'none' } })
+  cardsPdf = null
   const safe = String(name || 'Cards').replace(/[\\/:*?"<>|]+/g, '').trim() || 'Cards'
   const r = await dialog.showSaveDialog(win, { title: 'Save the cards', defaultPath: path.join(app.getPath('documents'), `${safe}.pdf`), filters: [{ name: 'PDF', extensions: ['pdf'] }] })
   if (r.canceled || !r.filePath) return null
@@ -329,6 +336,37 @@ ipcMain.handle('worlds:move', (_e, dir) => {
   for (let n = 2; fs.existsSync(old); n++) old = `${dir} (moved to GM Notes ${n})`
   try { fs.renameSync(dir, old) } catch { /* in use: it stays as it is; the app uses the copy now */ }
   return to
+})
+// ---- copying entries to another world: the copy waits in its folder (incoming/) until that world opens ----
+/** A known world's folder other than the open one (only those can be read or copied to). */
+function otherWorld(dir) {
+  if (!dir || !(config.worlds ?? []).some(x => same(x.dir, dir)) || (config.dataDir && same(config.dataDir, dir))) throw new Error('That isn\'t one of your other worlds.')
+  if (!WorldDb.exists(dir)) throw new Error('There is no world in that folder any more.')
+  return dir
+}
+/** Another world's entries, just enough to tell what it has (id, type, name, other names). */
+ipcMain.handle('worlds:entries', (_e, dir) => {
+  const w = new WorldDb(otherWorld(dir), { readOnly: true })
+  try { return Object.values(w.load().data.entries).map(e => ({ id: e.id, type: e.type, name: e.name, aliases: e.aliases ?? [] })) } finally { w.close() }
+})
+/** Put a copy (an export file's text) into another world; it's imported when that world opens. */
+ipcMain.handle('worlds:copy-to', (_e, dir, text) => {
+  const inbox = path.join(otherWorld(dir), 'incoming')
+  fs.mkdirSync(inbox, { recursive: true })
+  const name = `copy-${new Date().toISOString().replace(/[:.]/g, '-')}.dndesk.json`
+  fs.writeFileSync(path.join(inbox, name), String(text ?? ''), 'utf8')
+  return true
+})
+/** The copies waiting for the open world, taken out of its folder (oldest first). */
+ipcMain.handle('worlds:take-copies', () => {
+  const inbox = config.dataDir && path.join(config.dataDir, 'incoming')
+  if (!inbox || !fs.existsSync(inbox)) return []
+  return fs.readdirSync(inbox).filter(f => f.endsWith('.dndesk.json')).sort().map(f => {
+    const p = path.join(inbox, f)
+    const text = fs.readFileSync(p, 'utf8')
+    fs.rmSync(p)
+    return { name: f, text }
+  })
 })
 /** Open another world (the pages reload afterwards). */
 ipcMain.handle('worlds:switch', (_e, dir) => {

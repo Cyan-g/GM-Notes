@@ -14,6 +14,7 @@ import { LISTS, type ListOption } from './model/lists'
 import { mapRefs } from './model/refs'
 import { backupNow, db, listOptions, save, state, touch } from './store'
 import { DATA_VERSION, upgradeEntries } from './migrations'
+import { finish, stage, tick } from './progress'
 import type { RulesMeta } from './rules'
 import type { TravelMode } from './travel'
 import { desktop, type HostStatus, type PlayerStatus } from './storage/desktop'
@@ -250,12 +251,18 @@ export async function syncNow(): Promise<SyncResult | null> {
     ...pub.relations.map(clone),
   ]
 
-  // Pictures and files that are new or changed.
-  for (const [p, file] of Object.entries(pub.files)) {
-    if (old.files[p] === file && await state.storage!.readBlob(p)) continue
-    const b = await desktop.read('shared', `files/${file}`)
-    if (b) await state.storage!.writeBlob(p, new Blob([b as BlobPart]))
-  }
+  // Pictures and files that are new or changed (with a bar when there are several).
+  const toFetch: [string, string][] = []
+  for (const [p, file] of Object.entries(pub.files)) if (old.files[p] !== file || !await state.storage!.readBlob(p)) toFetch.push([p, file])
+  if (toFetch.length > 3) await stage(`Updating from ${pub.title}`, 'Pictures and files', toFetch.length)
+  try {
+    let n = 0
+    for (const [p, file] of toFetch) {
+      const b = await desktop.read('shared', `files/${file}`)
+      if (b) await state.storage!.writeBlob(p, new Blob([b as BlobPart]))
+      if (toFetch.length > 3) await tick(++n)
+    }
+  } finally { if (toFetch.length > 3) finish() }
 
   // Lists: the DM's, plus options the player added themselves. Calendar, categories, today, the ruleset and the travel
   // paces: the DM's (a publish from before those were shared leaves the world's own).

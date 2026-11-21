@@ -11,7 +11,8 @@ import { dieSize, type Ability } from './model/dnd'
 import { traitsOf } from './model/traits'
 
 /** A thing a class's or background's equipment holds, by name (matched to the world's items when it has them). */
-export interface KitLine { name: string; amount?: number; item?: Id }
+/** `among`: the items the player picks one of for the line (until picked, nothing goes into the inventory). */
+export interface KitLine { name: string; amount?: number; item?: Id; among?: Id[] }
 /** One equipment option: items and coins. */
 export interface Kit { items: KitLine[]; money: Copper }
 

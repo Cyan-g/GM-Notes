@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('dndesk', {
   info: () => ipcRenderer.invoke('app:info'),
   open: url => ipcRenderer.invoke('app:open', url),
   cardsPdf: (pageSize, name) => ipcRenderer.invoke('cards:pdf', pageSize, name),
+  cardsMakePdf: pageSize => ipcRenderer.invoke('cards:make-pdf', pageSize),
   db: {
     load: (types, kinds) => ipcRenderer.invoke('db:load', types, kinds),
     create: (d, types, kinds) => ipcRenderer.invoke('db:create', d, types, kinds),
@@ -38,6 +39,9 @@ contextBridge.exposeInMainWorld('dndesk', {
     newId: title => ipcRenderer.invoke('worlds:new-id', title),
     moved: title => ipcRenderer.invoke('worlds:moved', title),
     move: dir => ipcRenderer.invoke('worlds:move', dir),
+    entries: dir => ipcRenderer.invoke('worlds:entries', dir),
+    copyTo: (dir, text) => ipcRenderer.invoke('worlds:copy-to', dir, text),
+    takeCopies: () => ipcRenderer.invoke('worlds:take-copies'),
   },
   live: {
     hostStatus: () => ipcRenderer.invoke('live:host-status'),

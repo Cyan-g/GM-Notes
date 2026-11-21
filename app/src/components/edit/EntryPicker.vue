@@ -1,8 +1,9 @@
 <script setup lang="ts">
-// Pick an entry by typing its name. Single mode shows the current pick; add mode clears after each pick.
+// Pick an entry by typing its name. Single mode shows the current pick; add mode clears after each pick. A picker
+// limited to a few entries (`only`: the Tool items for a recipe's "Crafted with") lists them all, before anything is typed too.
 import EntryIcon from '../EntryIcon.vue'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import type { EntryType } from '../../model/types'
+import type { Entry, EntryType } from '../../model/types'
 import { TYPES, typeWord } from '../../model/schema'
 import { search } from '../../search'
 import { get } from '../../store'
@@ -26,7 +27,12 @@ const q = ref('')
 const sel = ref(0)
 const input = ref<HTMLInputElement>()
 const current = computed(() => get(props.modelValue))
-const results = computed(() => search(q.value, 10, e => (!props.types?.length || props.types.includes(e.type)) && !props.exclude?.includes(e.id) && (!props.only || props.only.includes(e.id))))
+const allowed = (e: Entry) => (!props.types?.length || props.types.includes(e.type)) && !props.exclude?.includes(e.id) && (!props.only || props.only.includes(e.id))
+const results = computed(() => {
+  if (!props.only) return search(q.value, 10, allowed)
+  if (q.value.trim()) return search(q.value, props.only.length, allowed)
+  return props.only.map(id => get(id)).filter((e): e is Entry => !!e && allowed(e)).sort((a, b) => a.name.localeCompare(b.name))
+})
 const createType = computed(() => props.types?.length === 1 && !props.only ? props.types[0] : null)
 const options = computed(() => [
   ...results.value.map(e => ({ kind: 'pick' as const, e })),
@@ -50,7 +56,7 @@ function position() {
     ...(up ? { bottom: `${window.innerHeight - r.top + 2}px`, maxHeight: `${Math.min(300, r.top - 8)}px` } : { top: `${r.bottom + 2}px`, maxHeight: `${Math.min(300, below - 8)}px` }),
   }
 }
-const showList = computed(() => editing.value && !!q.value && options.value.length > 0)
+const showList = computed(() => editing.value && (!!q.value || !!props.only) && options.value.length > 0)
 watch(showList, on => {
   if (on) { position(); window.addEventListener('scroll', position, true); window.addEventListener('resize', position) }
   else { window.removeEventListener('scroll', position, true); window.removeEventListener('resize', position) }

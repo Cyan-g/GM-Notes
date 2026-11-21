@@ -70,7 +70,7 @@ const scale = (t: Trait) => t.scale ? `${t.scale.label}: ${t.scale.steps.map(([l
         <span v-if="t.castWith" class="muted small trait-choice">{{ castText(t) }}</span>
         <span v-if="t.spellLists?.length" class="muted small trait-choice">Spells can also come from the {{ t.spellLists.join(', ') }} spell lists.</span>
         <template v-if="t.choice">
-          <span v-if="t.choice.kind !== 'option'" class="muted small trait-choice">Choose {{ count(t.choice) }} {{ words(t.choice) }}<template v-if="t.choice.among?.length"> from {{ choiceCandidates(t.choice).map(o => o.label).join(', ') }}</template><template v-if="t.choice.category"> ({{ t.choice.category }})</template><template v-if="t.choice.spell"> ({{ spellHow(t.choice) }})</template>.</span>
+          <span v-if="t.choice.kind !== 'option'" class="muted small trait-choice">Choose {{ count(t.choice) }} {{ words(t.choice) }}<template v-if="t.choice.among?.length"> from {{ choiceCandidates(t.choice).map(o => o.label).join(', ') }}</template><template v-if="t.choice.category"> ({{ t.choice.category }})</template><template v-if="t.choice.orExpertise"> (Expertise if already proficient)</template><template v-if="t.choice.spell"> ({{ spellHow(t.choice) }})</template>.</span>
           <template v-else>
             <span v-if="isLineage(t.choice)" class="muted small trait-choice">{{ lineage }} (its characters have it; the others: {{ t.choice.options!.filter(o => !shownOptions(t.choice!).includes(o)).map(o => o.name).join(', ') }}):</span>
             <span v-else class="muted small trait-choice">Choose {{ count(t.choice) }}:</span>

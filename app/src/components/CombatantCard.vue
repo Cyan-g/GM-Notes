@@ -10,7 +10,7 @@ import { statsOf } from '../encounter'
 import { TRACKER_CONDITIONS, signed } from '../model/dnd'
 import ConditionIcon from './ConditionIcon.vue'
 import DeathSaves from './DeathSaves.vue'
-import { applyHp, deathSavesOf, isParty, removeCombatant, fighterStats, setDeathSaves } from '../tracker'
+import { applyHp, deathSavesOf, isParty, removeCombatant, fighterStats, saveRollNotes, setDeathSaves } from '../tracker'
 
 const props = defineProps<{ c: Combatant; current: boolean; selected: boolean }>()
 const emit = defineEmits<{ select: []; stats: [] }>()
@@ -73,6 +73,7 @@ function concDone(i: number, kept: boolean) {
 // ---- death saves ----
 const dying = computed(() => isParty(c.value) && state.value === 'down')
 const ds = computed(() => deathSavesOf(c.value))
+const rollNotes = computed(() => saveRollNotes(c.value))
 /** A creature's legendary actions per round (its statblock; in its lair, the lair count isn't assumed). */
 const legendary = computed(() => (c.value.isPlayer ? 0 : statsOf(get(c.value.entry))?.legendaryUses ?? 0))
 function useLegendary(n: number) { const used = c.value.legendaryUsed ?? 0; c.value.legendaryUsed = used >= n ? n - 1 : n; if (!c.value.legendaryUsed) delete c.value.legendaryUsed; touch() }
@@ -122,10 +123,10 @@ function switchSide() { c.value.side = isParty(c.value) ? 'enemy' : 'party'; tou
       <button v-for="n in legendary" :key="n" type="button" class="ds-box" :class="{ on: (c.legendaryUsed ?? 0) >= n }" :aria-label="`${n} used`" :title="(c.legendaryUsed ?? 0) >= n ? 'Used (click to take back)' : 'Use one'" @click="useLegendary(n)" />
       <span class="muted">{{ legendary - (c.legendaryUsed ?? 0) }} left · back at the start of its turn</span>
     </div>
-    <DeathSaves v-if="dying" :saves="ds" @set="d => { setDeathSaves(c, d); touch() }" @nat20="applyHp(c, '=1')" />
+    <DeathSaves v-if="dying" :saves="ds" :adv="rollNotes.death" @set="d => { setDeathSaves(c, d); touch() }" @nat20="applyHp(c, '=1')" />
 
     <div v-for="(dc, i) in c.concChecks ?? []" :key="'cc' + i" class="conc-check" @click.stop>
-      <span><ConditionIcon name="Concentrating" /> Concentration: <b>CON save DC {{ dc }}</b></span>
+      <span><ConditionIcon name="Concentrating" /> Concentration: <b>CON save DC {{ dc }}</b><template v-if="rollNotes.conc">, {{ rollNotes.conc }}</template></span>
       <button type="button" class="chip-btn" @click="concDone(i, true)">Kept</button>
       <button type="button" class="chip-btn" @click="concDone(i, false)">Lost</button>
     </div>

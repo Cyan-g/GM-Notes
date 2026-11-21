@@ -19,7 +19,7 @@ const conditions = CONDITIONS
 
 /** What each kind of input fills in when it first shows. */
 const FIELD_OF: Record<EffectNeed, keyof GearEffect> = {
-  ability: 'ability', skill: 'skill', type: 'type', text: 'text', mode: 'mode', note: 'note', dice: 'dice', proficient: 'proficient', sense: 'sense', condition: 'condition', pb: 'pb', plusAbility: 'ability', abilities: 'abilities', noShield: 'noShield', when: 'when',
+  ability: 'ability', skill: 'skill', type: 'type', text: 'text', mode: 'mode', note: 'note', dice: 'dice', proficient: 'proficient', sense: 'sense', condition: 'condition', pb: 'pb', plusAbility: 'ability', abilities: 'abilities', noShield: 'noShield', when: 'when', speedType: 'speedType', emptyDice: 'emptyDice',
 }
 function put(i: number, patch: Partial<GearEffect>) {
   const l = list.value.map(x => ({ ...x }))
@@ -76,6 +76,10 @@ const remove = (i: number) => { const l = [...list.value]; l.splice(i, 1); model
         <option value="">—</option>
         <option v-for="o in damageTypes" :key="o.id" :value="o.id">{{ o.label }}</option>
       </select>
+      <select v-if="needs(f, 'speedType')" :value="f.speedType ?? 'climb'" aria-label="Speed" @change="put(i, { speedType: val($event) as GearEffect['speedType'] })">
+        <option v-for="k in ['climb', 'swim', 'fly', 'burrow']" :key="k" :value="k">{{ k }}</option>
+      </select>
+      <input v-if="needs(f, 'emptyDice')" class="effect-value" :value="f.emptyDice ?? ''" placeholder="empty hands: 1d8" title="The die while holding no weapon or shield (Unarmed Fighting)" aria-label="Die with empty hands" @change="put(i, { emptyDice: val($event).trim() || undefined })" />
       <select v-if="needs(f, 'sense')" :value="f.sense" aria-label="Sense" @change="put(i, { sense: val($event) })">
         <option v-for="s in SENSES" :key="s" :value="s">{{ s }}</option>
       </select>
@@ -98,6 +102,9 @@ const remove = (i: number) => { const l = [...list.value]; l.splice(i, 1); model
         <option v-if="f.on !== 'ac'" value="melee">melee attacks</option>
         <option v-if="f.on !== 'ac'" value="ranged">ranged attacks</option>
         <option v-if="f.on !== 'ac'" value="finesseOrRanged">finesse or ranged</option>
+        <option v-if="f.on !== 'ac'" value="heavy">Heavy weapons</option>
+        <option v-if="f.on !== 'ac'" value="oneHanded">one melee weapon in one hand</option>
+        <option v-if="f.on !== 'ac'" value="thrown">thrown weapons, when thrown</option>
         <option v-if="f.on === 'ac'" value="armored">while in armor</option>
       </select>
       <label v-if="needs(f, 'proficient')" class="small effect-check" :title="f.on === 'unarmed' ? 'May use Dexterity instead of Strength (Martial Arts)' : 'Only counts while the wielder is proficient with the weapon'"><input type="checkbox" :checked="!!f.proficient" @change="put(i, { proficient: ($event.target as HTMLInputElement).checked || undefined })" /> {{ f.on === 'unarmed' ? 'STR or DEX' : 'if proficient' }}</label>

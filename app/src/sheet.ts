@@ -178,7 +178,11 @@ export const maxHpOf = (s: CharacterSheet) => {
 /** The species' other speeds, in words: "swim 30 ft, fly 30 ft (hover)". */
 export function otherSpeeds(s: CharacterSheet): string {
   const sp = speciesSpeeds(ownerOf(s))
-  return (['swim', 'fly', 'climb', 'burrow'] as const).filter(k => sp[k]).map(k => `${k} ${sp[k]} ft${k === 'fly' && sp.hover ? ' (hover)' : ''}`).join(', ')
+  const walk = parseInt(speedOf(s) ?? '30') || 0
+  // a feat's speed equal to the walking one (Athlete's climb), where the species gives less
+  const given: Partial<Record<string, number>> = {}
+  for (const x of gearTotals(s).speedTypes) given[x.type] = walk
+  return (['swim', 'fly', 'climb', 'burrow'] as const).filter(k => sp[k] || given[k]).map(k => `${k} ${Math.max(sp[k] ?? 0, given[k] ?? 0)} ft${k === 'fly' && sp.hover ? ' (hover)' : ''}`).join(', ')
 }
 /** The walking speed before gear, in feet: typed on the sheet, else the species', else nothing (30 is assumed). */
 export function baseSpeed(s: CharacterSheet): number | undefined {
@@ -254,7 +258,9 @@ export function armorClass(s: CharacterSheet): { ac: number; from: string; untra
     const n = e.fields.armorClass
     if (e.fields.kind !== 'Armor' || typeof n !== 'number') continue
     if (isShield(e)) { extra += n; parts.push(`+${n} ${e.name}`); shield = true; continue }
-    const cap = dexCap(e)
+    let cap = dexCap(e)
+    // Medium Armor Master: a higher cap in medium armor with DEX 16+
+    if (cap === 2 && t.mediumArmorDex && scoreWith(s, 'dex', t) >= 16 && t.mediumArmorDex.n > cap) { cap = t.mediumArmorDex.n; parts.push(`Dex up to +${cap} (${t.mediumArmorDex.from})`) }
     base = n + (cap === undefined ? 0 : cap === null ? dex : Math.min(dex, cap))
     from = `${base} ${e.name}`
     armored = true
@@ -303,28 +309,45 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
   const ruleOf = (m: string) => optionsIn(state.db?.meta, 'weaponMastery').find(o => o.id === m)?.note
   const propsOf = (e: Entry) => ((e.fields.properties) ?? []).map(p => p.toLowerCase())
   const isRanged = (e: Entry) => propsOf(e).includes('ammunition') || /bow|crossbow|sling|blowgun|dart/i.test(`${e.name} ${e.fields.subtype ?? ''}`)
-  /** Whether a bonus limited to melee, ranged, or finesse-or-ranged attacks counts for this one. */
-  const fits = (when: GearEffect['when'], ranged: boolean, finesse: boolean) => !when || (when === 'melee' && !ranged) || (when === 'ranged' && ranged) || (when === 'finesseOrRanged' && (finesse || ranged))
   const plus = (n: number) => (n ? ' ' + signed(n, '−', ' ') : '')
   const weapons = equipped(s).filter(e => e.fields.kind === 'Weapon')
+  const meleeOneHand = (e: Entry) => !isRanged(e) && !propsOf(e).includes('two-handed')
+  /**
+   * Whether a bonus limited to melee, ranged, finesse-or-ranged or Heavy weapons counts for this attack; "one melee
+   * weapon in one hand" (Dueling) only while it's the only weapon; "when thrown" never counts here (a line of its own).
+   */
+  const fits = (when: GearEffect['when'], ranged: boolean, finesse: boolean, e?: Entry) => !when
+    || (when === 'melee' && !ranged) || (when === 'ranged' && ranged) || (when === 'finesseOrRanged' && (finesse || ranged))
+    || (when === 'heavy' && !!e && propsOf(e).includes('heavy'))
+    || (when === 'oneHanded' && !!e && meleeOneHand(e) && weapons.length === 1)
   const nick = weapons.some(x => mastered.has(String(x.fields.baseWeapon)) && masteryOf(x) === 'Nick')
   function line(e: Entry, offhand = false): Attack {
     const props = propsOf(e), ranged = isRanged(e), finesse = props.includes('finesse')
     const m = finesse ? Math.max(str, dex) : ranged ? dex : str
-    const hitParts = [...(t.attackOf[e.id] ?? []), ...t.attackAll].filter(p => fits(p.when, ranged, finesse))
-    const dmgParts = [...(t.damageOf[e.id] ?? []), ...t.damageAll].filter(p => fits(p.when, ranged, finesse))
+    const hitParts = [...(t.attackOf[e.id] ?? []), ...t.attackAll].filter(p => fits(p.when, ranged, finesse, e))
+    const allDmg = [...(t.damageOf[e.id] ?? []), ...t.damageAll]
+    const dmgParts = allDmg.filter(p => fits(p.when, ranged, finesse, e))
     const dice = String(e.fields.damage ?? '').trim()
     // The off-hand attack adds no ability modifier (unless it's negative), unless a feature says so (Two-Weapon Fighting).
     const ability = offhand && !t.offhandMod ? Math.min(m, 0) : m
     const dmg = ability + sum(dmgParts)
     const hands = props.includes('versatile') ? [' one-handed', ' two-handed'] : []
-    const damage = dice ? dice.split('/').map((d, i) => `${d.trim()}${plus(dmg)}${hands[i] ?? ''}`).join(' / ') : '—'
+    // a versatile weapon held in two hands isn't "in one hand" (Dueling)
+    const twoHandDmg = dmg - sum(dmgParts.filter(p => p.when === 'oneHanded'))
+    // the off-hand weapon is held in one hand: a versatile one's one-handed damage only
+    const dieList = dice.split('/').slice(0, offhand ? 1 : undefined)
+    const damage = dice ? dieList.map((d, i) => `${d.trim()}${plus(i === 1 ? twoHandDmg : dmg)}${dieList.length > 1 ? hands[i] ?? '' : ''}`).join(' / ') : '—'
+    // a bonus only when thrown (Thrown Weapon Fighting): a line of its own
+    const thrown = props.includes('thrown') ? allDmg.filter(p => p.when === 'thrown') : []
     const untrained = proficientWith(s, e) === false
     const untrainedFor = proficientWith(s, e) !== true
     // Typed extra damage: "+ 2 necrotic", "+ 1d6 radiant", "+ 3d6 (once per turn)"; the proficient-only kind needs the proficiency.
-    const extras = [...(t.extraOf[e.id] ?? []), ...t.extraAll].filter(x => (!x.proficient || !untrainedFor) && fits(x.when, ranged, finesse))
+    const extras = [...(t.extraOf[e.id] ?? []), ...t.extraAll].filter(x => (!x.proficient || !untrainedFor) && fits(x.when, ranged, finesse, e))
     // each on a line of its own under the damage: "+ 3d6 · Sneak Attack (once per turn)"
-    const extraLines = extras.map(x => `+ ${x.dice}${x.type ? ' ' + x.type.toLowerCase() : ''}${x.from ? ` · ${x.from}` : ''}${x.note ? ` (${x.note})` : ''}`)
+    const extraLines = [
+      ...thrown.map(p => `${signed(p.n)} when thrown · ${p.label}`),
+      ...extras.map(x => `+ ${x.dice}${x.type ? ' ' + x.type.toLowerCase() : ''}${x.from ? ` · ${x.from}` : ''}${x.note ? ` (${x.note})` : ''}`),
+    ]
     const gear = [breakdown('To hit', hitParts), breakdown('Damage', dmgParts)].filter(Boolean).join('\n') || undefined
     const ms = masteryOf(e)
     const mastery = ms && mastered.has(String(e.fields.baseWeapon ?? '')) ? { name: ms, rule: ruleOf(ms) } : undefined
@@ -334,15 +357,24 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
     }
   }
   const out = weapons.map(e => line(e))
-  // two Light melee weapons: the second one's extra attack, off-hand
+  // two Light melee weapons: the second one's extra attack, off-hand; with Dual Wielder, any other one-handed melee weapon
   const light = weapons.filter(e => propsOf(e).includes('light') && !isRanged(e))
+  const other = t.offhandAny && light.length ? weapons.find(e => e !== light[0] && meleeOneHand(e)) : undefined
   if (light.length >= 2) out.push(line(light[1], true))
+  else if (other) out.push(line(other, true))
+  // Polearm Master: the butt end (d4 bludgeoning) of a Quarterstaff, Spear or Heavy Reach weapon, as a bonus action
+  if (t.poleStrike) {
+    const pole = weapons.find(e => /quarterstaff|spear/i.test(`${e.fields.baseWeapon ?? ''} ${e.name}`) || (propsOf(e).includes('heavy') && propsOf(e).includes('reach')))
+    if (pole) out.push({ ...line({ ...pole, fields: { ...pole.fields, damage: '1d4', properties: (pole.fields.properties ?? []).filter(p => !/versatile|thrown|heavy/i.test(p)) } }), type: 'Bludgeoning', tag: `bonus action · ${t.poleStrike}` })
+  }
   // the unarmed strike, only while no weapon is equipped (or a feature makes it a real attack, Martial Arts):
   // 1 + STR bludgeoning, or the feature's die with STR or DEX
   if (weapons.length && !t.unarmed) return out
   const u = t.unarmed, um = u?.dex ? Math.max(str, dex) : str
   const uHit = t.attackAll.filter(p => fits(p.when, false, !!u?.dex)), uDmg = t.damageAll.filter(p => fits(p.when, false, !!u?.dex))
-  const uDice = u?.dice && /d/.test(u.dice) ? u.dice : undefined
+  // a bigger die with no weapon or shield in hand (Unarmed Fighting)
+  const empty = !weapons.length && !equipped(s).some(isShield)
+  const uDice = empty && u?.emptyDice ? u.emptyDice : u?.dice && /d/.test(u.dice) ? u.dice : undefined
   const uFlat = (uDice ? 0 : Number(u?.dice) || 1) + um + sum(uDmg)
   out.push({
     id: '__unarmed', name: 'Unarmed strike', toHit: um + prof + sum(uHit), damage: uDice ? `${uDice}${plus(um + sum(uDmg))}` : String(Math.max(1, uFlat)), type: 'Bludgeoning',

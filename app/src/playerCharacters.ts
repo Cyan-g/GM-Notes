@@ -1,6 +1,7 @@
 // Players' characters at the DM's table. A player whose world follows the DM's links a character to a campaign the DM
 // shares (the campaign is known to players); while connected to the DM's live session, their app sends it, with the
-// entries it uses that the DM's world doesn't have (their own items, feats, spells…) and its pictures, again a few
+// entries it uses that the DM's world doesn't have (their own items, feats, spells…), its pictures and its relations
+// (to those, and to what the DM shared: family, groups), again a few
 // seconds after each change, and the list of characters still linked. The DM's app keeps them read-only, marked as the
 // player's (sync.ts fromPlayer), never published to other players; one no longer linked stays, marked as such, until
 // the DM removes it. The DM's own entries are never changed by what a player sends.
@@ -49,6 +50,9 @@ async function sendCharacters() {
       // everything the character uses, except what the DM shared (they have it) and other characters
       const plan = planExport(pc.id, { dmText: true, hidden: true, textLinks: false, skip: ['pc'], exclude: e => shared.has(e.id) })
       if (!plan) continue
+      // its relations to what the DM shared go too (family, the groups it's in): the DM has those entries
+      const inPlan = new Set(plan.entries.map(e => e.id))
+      plan.relations = [...plan.relations, ...d.relations.filter(r => (inPlan.has(r.a) && shared.has(r.b)) || (shared.has(r.a) && inPlan.has(r.b)))]
       const bundle = await silently(() => bundleOf(plan))
       if (lastSent.get(pc.id) !== keyOf(bundle)) characters.push({ id: pc.id, bundle })
     }

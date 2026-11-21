@@ -314,7 +314,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
               <td>{{ levelLabel(e) }}</td>
               <td>{{ optionLabel('spell.school', e.fields.school) }}</td>
               <td>{{ e.fields.castingTime ?? '' }}</td>
-              <td>{{ e.fields.range ?? '' }}</td>
+              <td class="sbk-range">{{ e.fields.range ?? '' }}</td>
               <td>{{ e.fields.duration ?? '' }}</td>
               <td class="sbk-check">{{ check(e) }}<div v-if="rolls(e)" class="sbk-rolls">{{ rolls(e) }}</div></td>
               <td>{{ [e.fields.concentration && 'C', e.fields.ritual && 'R'].filter(Boolean).join(' ') }}</td>

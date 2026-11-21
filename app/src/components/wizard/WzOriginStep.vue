@@ -3,7 +3,7 @@
 // offers more than one, the background, and the choices their traits ask for.
 import { computed } from 'vue'
 import type { Entry } from '../../model/types'
-import { backgrounds, mainRace, species, subracesOf, wizard } from '../../wizard'
+import { ownedSpells, backgrounds, mainRace, species, subracesOf, wizard } from '../../wizard'
 import { ABILITY_NAME } from '../../model/dnd'
 import { choiceOpen, isClassOrigin, setCastAbility, sourceTag, speciesSizes, speciesTraits, type ActiveTrait } from '../../species'
 import { traitsOf } from '../../model/traits'
@@ -83,7 +83,7 @@ const setCast = (a: ActiveTrait, ab: string) => { const holder = { species: { ..
     <b>{{ a.trait.name }}</b> <span class="feat-tag" :class="'tag-' + a.race.type">{{ sourceTag(a) }}</span>
     <details v-if="(a.trait.text ?? '').length > 220" class="small wz-rules"><summary>Rules</summary><MarkdownView :source="a.trait.text!" /></details>
     <p v-else-if="a.trait.text" class="small md" v-html="renderInline(a.trait.text)" />
-    <TraitChoicePicker v-if="a.trait.choice" :a="a" @pick="p => setPicks(a, p)" />
+    <TraitChoicePicker v-if="a.trait.choice" :a="a" :owned="a.trait.choice.kind === 'spell' ? ownedSpells(d, { skip: a.key, withClass: true }) : undefined" @pick="p => setPicks(a, p)" />
     <label v-if="a.trait.castWith?.among?.length" class="small wz-cast">Casts its spells with
       <select :value="a.cast ?? ''" @change="setCast(a, val($event))">
         <option value="">Choose…</option>

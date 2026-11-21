@@ -16,6 +16,8 @@ interface Bridge {
   open(url: string): Promise<boolean>
   /** The page's print layout (the cards) as a PDF, saved where the user picks and opened; null if cancelled. */
   cardsPdf(pageSize: 'A4' | 'Letter', name: string): Promise<string | null>
+  /** Make the cards' PDF (kept for cardsPdf, which asks where to save it). */
+  cardsMakePdf(pageSize: 'A4' | 'Letter'): Promise<number>
   db: {
     load(types: string[], kinds: string[]): Promise<import('./backend').Loaded>
     create(d: unknown, types: string[], kinds: string[]): Promise<number>
@@ -58,6 +60,12 @@ interface Bridge {
     create(name: string): Promise<string | null>
     newId(title?: string): Promise<string>
     moved(title?: string): Promise<boolean>
+    /** Another of the known worlds' entries: what it has, by id, type and names. */
+    entries(dir: string): Promise<{ id: string; type: string; name: string; aliases: string[] }[]>
+    /** Put a copy (an export file's text) into another world, for when it opens. */
+    copyTo(dir: string, text: string): Promise<boolean>
+    /** The copies waiting for the open world (taken out of its folder). */
+    takeCopies(): Promise<{ name: string; text: string }[]>
     /** Move a world into the app's worlds folder (the old folder is renamed, not deleted). */
     move(dir: string): Promise<string>
   }

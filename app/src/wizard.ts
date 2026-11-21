@@ -8,10 +8,10 @@ import type {
 } from './model/types'
 import { bonusApplied, bonusOpen, type BonusChoice } from './abilityBonus'
 import { ABILITY_KEYS, dieSize, mod, spellLevel, type Ability } from './model/dnd'
-import { EPIC_BOON_LEVEL, basicsOf, hitDieOf, rulesOf, subclassLevelOf, type Kit, type KitLine } from './classRules'
+import { EPIC_BOON_LEVEL, basicsOf, classEntry, classLabel, hitDieOf, rulesOf, subclassLevelOf, type Kit, type KitLine } from './classRules'
 import { ruleSlots } from './slots'
 import { blankSheet, emptyBook, own } from './sheetData'
-import { choiceOpen, classSpellsFrom, isClassOrigin, isPlayable, raceChain, speciesGrants, speciesTraits } from './species'
+import { choiceOpen, classSpellsFrom, featGivesSave, isClassOrigin, isPlayable, raceChain, speciesGrants, speciesSpells, speciesTraits } from './species'
 import { PROFS_TRAIT } from './model/traits'
 import { entries, get } from './store'
 import { rule } from './rules'
@@ -61,6 +61,8 @@ export interface Draft {
   hpRolls: (number | undefined)[]
   classKit: number
   bgKit: 'items' | 'money'
+  /** The background kit's picks, by line (Wayfarer's gaming set of their choice). */
+  kitPicks?: Record<number, Id>
   cantrips: Id[]
   spells: Id[]
   /** A wizard's further spellbook spells (not prepared). */
@@ -98,6 +100,19 @@ export function draftPc(d: Draft, sheet?: CharacterSheet): Entry {
   } as unknown as Entry
   own(pc.fields.sheet as CharacterSheet, pc)
   return pc
+}
+
+/**
+ * The spells the draft already has, each with where from ("High Elf", "Magic Initiate", "Wizard"): what its species,
+ * background, feats and class features give or had picked (but `skip`, the trait whose picks these are), and with
+ * `withClass`, the cantrips and spells picked in the Spells step.
+ */
+export function ownedSpells(d: Draft, opts: { skip?: string; withClass?: boolean } = {}): Map<Id, string[]> {
+  const out = new Map<Id, string[]>()
+  const add = (id: Id, from: string) => { const l = out.get(id) ?? []; if (!l.includes(from)) out.set(id, [...l, from]) }
+  for (const x of speciesSpells(draftPc(d))) if (!opts.skip || !x.key.startsWith(opts.skip + '.')) add(x.spell.spell, x.source)
+  if (opts.withClass) for (const id of [...d.cantrips, ...d.spells, ...d.book]) add(id, `${(classEntry(d.cls) && classLabel(classEntry(d.cls)!)) || 'class'} spells`)
+  return out
 }
 
 /** The ability bonus the draft takes: the species' (the subrace's, else its main race's), the background's, or custom. */
@@ -189,8 +204,9 @@ const UNCHOSEN = /one you chose|of your choice|chosen above/i
  * new item with just its name, or nowhere (a pick the player didn't make).
  */
 export function kitLineSource(l: KitLine): 'world' | 'srd' | 'new' | 'none' {
-  if (l.item ?? itemNamed(l.name)) return 'world'
-  if (UNCHOSEN.test(l.name)) return 'none'
+  if (l.item) return 'world'
+  if (l.among?.length || UNCHOSEN.test(l.name)) return 'none'
+  if (itemNamed(l.name)) return 'world'
   return srdItemNamed(l.name) ? 'srd' : 'new'
 }
 /** Kit lines the world has no item for get one: the SRD's, else a plain item with the line's name. */
@@ -210,7 +226,14 @@ export function backgroundKit(d: Draft): Kit | undefined {
   if (!eq) return undefined
   // a line for "the one chosen above" (Soldier: a gaming set) is the tool the player picked for the background
   const tool = get(d.species.picks?.[`${d.background}.${PROFS_TRAIT}`]?.[0])?.name
-  return { items: (eq.items ?? []).map(l => ({ name: (!l.item && tool && /chosen above|of your choice/i.test(l.name ?? '') ? tool : (l.item ? get(l.item)?.name : l.name)) ?? l.name ?? '?', amount: l.amount })), money: eq.money ?? 0 }
+  return { items: (eq.items ?? []).map((l, i) => {
+    // a line the player picks an item for: the pick, else the line as it is (left out until picked)
+    if (l.among?.length) {
+      const pick = d.kitPicks?.[i], e = pick && l.among.includes(pick) ? get(pick) : undefined
+      return e ? { name: e.name, item: e.id, amount: l.amount } : { name: l.name || `one of ${l.among.map(id => get(id)?.name ?? id).join(', ')}`, amount: l.amount, among: l.among }
+    }
+    return { name: (!l.item && tool && /chosen above|of your choice/i.test(l.name ?? '') ? tool : (l.item ? get(l.item)?.name : l.name)) ?? l.name ?? '?', amount: l.amount }
+  }), money: eq.money ?? 0 }
 }
 export const backgroundGold = (d: Draft): Copper | undefined => get(d.background)?.fields.equipment?.instead
 /** A class's starting equipment options (its own on the class entry, else the SRD's), each line with its world item. */
@@ -324,6 +347,13 @@ function draftSheet(d: Draft): CharacterSheet {
   const r = rules(d), s = blankSheet()
   s.abilities = finalScores(d)
   s.saves = r ? [...r.saves] : [...d.ownSaves]
+  // Resilient: proficiency in the saves of the abilities the feat raised
+  for (const f of d.feats) {
+    const e = get(f.feat), b = e?.fields.abilityIncrease
+    if (!b || !featGivesSave(e) || !featLevels(d).some(x => x.level === f.level)) continue
+    const plus = bonusApplied(b, f.choice)
+    for (const a of ABILITY_KEYS) if (plus[a] && !s.saves.includes(a)) s.saves.push(a)
+  }
   s.skills = Object.fromEntries(d.skills.map(k => [k, 1 as const]))
   s.maxHp = hpOf(d)
   s.hp = s.maxHp
@@ -339,7 +369,7 @@ function draftSheet(d: Draft): CharacterSheet {
   const kits = kitsOf(d)
   const inventory: InventoryLine[] = []
   for (const l of kits.items) {
-    const id = l.item ?? itemNamed(l.name)?.id, qty = l.amount ?? 1
+    const id = l.item ?? (l.among ? undefined : itemNamed(l.name)?.id), qty = l.amount ?? 1
     if (!id) continue
     const same = inventory.find(x => x.item === id)
     if (same) same.qty += qty

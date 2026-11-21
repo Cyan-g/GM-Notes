@@ -3,7 +3,7 @@
 // "Nat 20" that brings the character back with 1 HP. The sheet and the combat tracker show the same boxes.
 import { computed } from 'vue'
 
-const props = defineProps<{ saves: { ok: number; fail: number }; ro?: boolean }>()
+const props = defineProps<{ saves: { ok: number; fail: number }; ro?: boolean; /** Advantage on them, in words (Durable). */ adv?: string }>()
 const emit = defineEmits<{ set: [d: { ok: number; fail: number }]; nat20: [] }>()
 const fate = computed(() => (props.saves.fail >= 3 ? 'Dead' : props.saves.ok >= 3 ? 'Stable' : ''))
 /** Clicking a box fills the row up to it; clicking the last filled box empties it. */
@@ -17,7 +17,7 @@ function set(kind: 'ok' | 'fail', n: number) {
 
 <template>
   <div class="death-saves" @click.stop>
-    <span class="ds-label">Death saves</span>
+    <span class="ds-label">Death saves<i v-if="adv" class="ds-adv" :title="adv">, {{ adv }}</i></span>
     <span class="ds-row ok" title="Successes">✓
       <button v-for="n in 3" :key="n" type="button" class="ds-box" :class="{ on: saves.ok >= n }" :disabled="ro" :aria-label="`${n} successes`" @click="set('ok', n)" />
     </span>

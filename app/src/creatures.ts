@@ -2,7 +2,6 @@
 // the Spellcasting action from its spell lists, the legendary actions' opening line, the speed line — and the checks
 // that point out what imported text left behind (an unknown condition, saves in the skills, stray periods).
 import type { Abilities, Feature, StatAttack, Statblock } from './model/types'
-import { get } from './store'
 
 type Ability = keyof Abilities
 const ABILITY_NAME: Record<Ability, string> = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' }
@@ -46,9 +45,6 @@ export function spellcastingFeature(sb: Statblock, name: string): Feature | unde
     text: `${who} casts one of the following spells, ${sc.noMaterial ? 'requiring no Material components and ' : ''}using ${ABILITY_NAME[sc.ability]} as the spellcasting ability (spell save DC ${dc}, ${signed(atk)} to hit with spell attacks):\n\n${lists}`,
   }
 }
-/** The names of the spells it casts (for a spell's "Cast by" list and the like). */
-export const spellcastingSpells = (sb: Statblock) => (sb.spellcasting?.lists ?? []).flatMap(l => l.spells).filter(id => get(id))
-
 /** The legendary actions' opening line, with their uses. */
 export function legendaryIntro(sb: Statblock, name: string): string {
   const who = name ? `the ${name.toLowerCase()}` : 'it'

@@ -289,12 +289,11 @@ export function mainRace(id: Id | undefined): Entry | undefined {
   for (let i = 0; r && get(r.fields.parent as Id | undefined) && i < 10; i++) r = get(r.fields.parent as Id | undefined)
   return r
 }
-export const isClassKnown = (cls: string) => !!rulesOf(cls)
 
 // ---------- making it ----------
 
 /** The finished sheet. */
-export function sheetOf(d: Draft): CharacterSheet {
+function draftSheet(d: Draft): CharacterSheet {
   const r = rules(d), s = blankSheet()
   s.abilities = finalScores(d)
   s.saves = r ? [...r.saves] : [...d.ownSaves]
@@ -355,7 +354,7 @@ export function makeCharacter(d: Draft): Entry {
     ...(d.race ? { race: d.race } : {}),
     ...(d.background ? { background: d.background } : {}),
     ...looks,
-    sheet: sheetOf(d),
+    sheet: draftSheet(d),
   }
   if (!fields.classLevels) { delete fields.classLevels; fields.level = d.level }
   const e = createEntry('pc', d.name.trim() || 'New character', fields)

@@ -8,7 +8,6 @@ import { get } from './store'
 export const rollsOf = (e: Entry | undefined): SpellRoll[] => (Array.isArray(e?.fields.rolls) ? e!.fields.rolls! : [])
 /** A spell's effects while it's active. */
 export const activeEffectsOf = (e: Entry | undefined): GearEffect[] => (Array.isArray(e?.fields.active) ? e!.fields.active! : [])
-/** A spell's level as a number (a cantrip is 0). */
 /** A spell's area of effect in words: "20-foot-radius Sphere", "15-foot Cone", "60-foot-long, 5-foot-wide Line". */
 export function areaText(a: SpellArea | undefined): string {
   if (!a?.size) return ''
@@ -22,6 +21,7 @@ export function areaText(a: SpellArea | undefined): string {
     default: return `${n}-foot Cube`
   }
 }
+/** A spell's level as a number (a cantrip is 0). */
 export const spellLevel = (e: Entry) => (e.fields.level === 'Cantrip' ? 0 : Number(e.fields.level) || 0)
 /** How many times a cantrip's dice count at a character level: 1, then 2 at 5, 3 at 11, 4 at 17. */
 export const cantripTier = (level: number) => (level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1)

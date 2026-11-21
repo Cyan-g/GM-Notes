@@ -213,12 +213,12 @@ export const maxHpOf = (s: CharacterSheet) => {
   const t = gearTotals(s), n = s.maxHp + sum(t.maxHp)
   return t.maxHpHalf ? Math.floor(n / 2) : n // 2014 exhaustion, level 4
 }
-/** The speed before gear: typed on the sheet, else the species' ("25 ft"), else nothing (30 ft is assumed). */
 /** The species' other speeds, in words: "swim 30 ft, fly 30 ft (hover)". */
 export function otherSpeeds(s: CharacterSheet): string {
   const sp = speciesSpeeds(ownerOf(s))
   return (['swim', 'fly', 'climb', 'burrow'] as const).filter(k => sp[k]).map(k => `${k} ${sp[k]} ft${k === 'fly' && sp.hover ? ' (hover)' : ''}`).join(', ')
 }
+/** The speed before gear: typed on the sheet, else the species' ("25 ft"), else nothing (30 ft is assumed). */
 export function baseSpeed(s: CharacterSheet): string | undefined {
   if (s.speed) return s.speed
   const n = speciesSpeed(ownerOf(s))
@@ -261,8 +261,8 @@ export function castingAbility(pc: Entry, s: CharacterSheet): Ability | undefine
   return undefined
 }
 
-/** A character's spell attack bonus and save DC, from their sheet; undefined without a casting ability. */
-/** A caster's spell attack and save DC: with their class's casting ability, or `ability` (a trait's spell). */
+/** A caster's spell attack and save DC, from their sheet: with their class's casting ability, or `ability` (a trait's
+ * spell); undefined without a casting ability. */
 export function spellStats(pc: Entry, ability?: Ability): { attack: number; dc: number; ability: Ability } | undefined {
   // Only once the scores are filled in; until then the spellbook's typed numbers count.
   if (!(pc.fields.sheet)?.abilities) return undefined
@@ -444,10 +444,6 @@ export const endDrag = () => { dragged.pc = null }
 /** The line being dragged, if it belongs to this PC. */
 export const draggedLine = (pc: Entry) => (dragged.pc === pc.id ? sheetOf(pc)?.inventory[dragged.i] : undefined)
 
-/**
- * A character's long rest: full HP, no temporary HP, every spell slot back, and half the level in hit dice (at least
- * one), biggest dice first.
- */
 /** A short rest: what recharges on one comes back (features, pact slots, item spells). Hit Dice are the player's to
  * spend and roll; they count them down on the sheet. */
 export function shortRest(pc: Entry): RegainRoll[] {
@@ -460,6 +456,10 @@ export function shortRest(pc: Entry): RegainRoll[] {
   return rolls
 }
 
+/**
+ * A character's long rest: full HP, no temporary HP, every spell slot back, active spells and death saves ended, one
+ * level of exhaustion off, and Hit Dice back (all of them, or half the level with at least one, as the ruleset says).
+ */
 export function longRest(pc: Entry): RegainRoll[] {
   const s = sheetToEdit(pc)
   s.hp = maxHpOf(s)

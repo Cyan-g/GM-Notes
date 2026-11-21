@@ -167,10 +167,6 @@ export function subraceOption(c: TraitChoice, subrace: string, parent: string): 
   const own = (c.options ?? []).filter(o => names.some(n => o.name.toLowerCase() === n || o.name.toLowerCase().startsWith(n + ' ')))
   return own.length === 1 ? own[0] : undefined
 }
-/**
- * A trait's source, short, as a tag: the class with the level the feature comes at ("Warlock 2"), the subclass the
- * same without its class's name ("The Dusk Prince 6"), the race or background, or "feat" for a feat's own feature.
- */
 /** The levels a subclass of a class is expected to bring features at: where the class's other subclasses do, and the
  * level the class chooses its subclass at. */
 export function expectedSubclassLevels(cls: string, except?: string): number[] {
@@ -192,6 +188,11 @@ export function classLabel(e: Entry): string {
 export function levelTag(a: ActiveTrait): string {
   return a.race.type === 'class' || a.race.type === 'subclass' ? `${classLabel(a.race)} Lv ${a.trait.level ?? 1}` : sourceTag(a)
 }
+/**
+ * A trait's source, short, as a tag: the class with the level the feature comes at ("Warlock · Lv 2"), a subclass
+ * without its class's name, with the class's level ("The Dusk Prince · Warlock Lv 6"), the race or background, or
+ * "feat" for a feat's own feature.
+ */
 export function sourceTag(a: ActiveTrait): string {
   const lv = a.trait.level ?? 1
   // class features count the class's level; a subclass's count its class's level too ("The Dusk Prince · Warlock Lv 6")
@@ -216,8 +217,6 @@ export function toggleOn(s: CharacterSheet, key: string) {
   st.on = [...l]
   if (!st.on.length) delete st.on
 }
-/** Whether a trait is one a picked option brought (it isn't in the entry's own traits). */
-export const isSubChoice = (a: ActiveTrait) => !!(a.trait as Trait & { sub?: boolean }).sub
 const active = (pc: Entry | undefined, s?: CharacterSheet) => speciesTraits(pc, s).filter(a => a.active)
 
 /** The effects that count, each with what it comes from (the trait, or the chosen option). */
@@ -437,9 +436,6 @@ export function useSpeciesSpell(s: CharacterSheet, key: string, back = false) {
   st.spellsUsed = [...l]
   if (!st.spellsUsed.length) delete st.spellsUsed
 }
-/** The always-prepared spells, for the Spellbook's prepared list. */
-export const speciesPrepared = (pc: Entry | undefined) => speciesSpells(pc).filter(x => x.spell.how === 'prepared').map(x => x.spell.spell)
-
 /** A rest: a short rest gives back the short-rest uses and spells, a long rest everything. */
 export function restSpecies(s: CharacterSheet, pc: Entry, kind: 'short' | 'long') {
   const st = s.species

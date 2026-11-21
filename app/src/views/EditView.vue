@@ -83,12 +83,9 @@ const showDesc = computed(() => !(e.value?.type === 'item' && e.value.fields.kin
 // (notes written under the statblock stay reachable, folded, if there are any).
 const creature = computed(() => e.value?.type === 'creature')
 const sheet = computed(() => !!e.value && SHEET_TYPES.includes(e.value.type))
-// a feat's prerequisites are one block of their own (FeatPrereqs)
-const FEAT_PREREQ = ['level', 'requires', 'prerequisite', 'requirements']
-const sheetFields = computed(() => (def.value?.fields ?? []).filter(f => f.key !== 'summary' && !BIG.includes(f.kind) && shown(f) && !(e.value?.type === 'feat' && FEAT_PREREQ.includes(f.key))))
-// Yes/no fields share one row of toggle buttons.
+// A field's definition by its key, for the feat form's fields.
 const fieldOf = (k: string) => def.value?.fields.find(f => f.key === k)
-const sheetBools = computed(() => sheetFields.value.filter(f => f.kind === 'bool'))
+/** Turn a yes/no field on or off (a feat's "repeatable"). */
 function toggleBool(key: string) {
   const x = e.value!
   const f = byKey(x.fields)
@@ -192,23 +189,6 @@ function remove() {
                 <FeatPrereqs :e="e" />
                 <label class="fp-switch ff-repeat" title="It can be taken more than once (another version each time, where its text says so)"><input type="checkbox" :checked="!!e.fields.repeatable" @change="toggleBool('repeatable')" /> Can be taken more than once (repeatable)</label>
               </div>
-            </div>
-            <div v-else class="sheet-grid">
-              <!-- Short fields in two columns, then the yes/no toggles, then the full-width ones. -->
-              <label v-for="f in sheetFields.filter(x => !['bool', 'list', 'longtext'].includes(x.kind))" :key="f.key" class="sheet-field" :class="'k-' + f.kind">
-                <span>{{ f.label }}</span>
-                <FieldInput :id="`f-${f.key}`" :def="f" :entry="e" />
-              </label>
-              <div v-if="sheetBools.length" class="sheet-field">
-                <span>Options</span>
-                <div class="seg wrap">
-                  <button v-for="f in sheetBools" :key="f.key" type="button" :class="{ on: !!byKey(e.fields)[f.key] }" @click="toggleBool(f.key)">{{ f.label }}</button>
-                </div>
-              </div>
-              <label v-for="f in sheetFields.filter(x => ['list', 'longtext'].includes(x.kind))" :key="f.key" class="sheet-field" :class="'k-' + f.kind">
-                <span>{{ f.label }}</span>
-                <FieldInput :id="`f-${f.key}`" :def="f" :entry="e" />
-              </label>
             </div>
             <!-- The description closes the card, the way it ends a spell or item card. -->
             <div v-if="showDesc" class="sheet-desc">

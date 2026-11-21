@@ -374,7 +374,6 @@ ul.rel-scroll { max-height: 22rem; overflow-y: auto; overscroll-behavior: contai
 .new-similar li { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
 .new-similar svg.gi { width: 1.1em; height: 1.1em; color: var(--accent); }
 .new-in { display: flex; align-items: center; gap: .45rem; font-size: 14px; }
-.new-entry .actions { display: flex; justify-content: flex-end; gap: .5rem; }
 .entry.editing .entry-grid { grid-template-columns: minmax(0, 1fr) clamp(400px, 30vw, 640px); }
 @media (max-width: 1100px) { .entry.editing .entry-grid { grid-template-columns: 1fr; } .body-editor.split .be-panes { grid-template-columns: 1fr; } }
 
@@ -480,7 +479,7 @@ td.clip { max-width: 360px; }
 .year-input:hover, .year-input:focus { border-color: var(--line); background: var(--panel); }
 .era { font-size: .6em; }
 .today-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-bottom: 1rem; }
-.today-bar .spacer, .tracker-tools .spacer { flex: 1; }
+.today-bar .spacer { flex: 1; }
 .cal-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 1rem; align-items: start; }
 .month-notes { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .6rem; }
 .cal-grid { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--line); gap: 1px; }
@@ -499,17 +498,12 @@ td.clip { max-width: 360px; }
 @media (max-width: 1000px) { .cal-layout { grid-template-columns: 1fr; } .cal-cell { min-height: 64px; } }
 
 /* ---------- encounters & tracker ---------- */
-.run-bar { margin-bottom: 1rem; }
 .free-name { display: flex; gap: .3rem; }
 .free-name > input { flex: 1; }
 .add-row { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
 .add-row .picker { flex: 1; min-width: 180px; }
-.tracker-tools { display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: end; margin-bottom: 1rem; }
-.tracker-tools label { display: flex; flex-direction: column; gap: .2rem; font-size: 12px; color: var(--muted); min-width: 190px; }
-.tracker-tools .row { display: flex; gap: .3rem; }
 .turn-mark { color: var(--accent); margin-right: .3rem; }
 input.init { width: 4em; }
-.chip.cond { background: var(--secret-bg); display: inline-flex; align-items: center; }
 
 /* ---------- maps ---------- */
 .map-view { margin-bottom: 1.5rem; }
@@ -535,7 +529,6 @@ input.init { width: 4em; }
 .pin-editor h4 { margin: .3rem 0 0; }
 .unpinned { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
 .chip-btn { font-size: 12px; padding: .15em .6em; border-radius: 999px; }
-.chip-btn.on { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 /* ---------- data ---------- */
 .row-btns { display: flex; gap: .5rem; flex-wrap: wrap; }
@@ -654,7 +647,7 @@ input.init { width: 4em; }
 .sbk-stats label span { flex: 1; color: var(--ink-2); }
 .sbk-stats input { width: 5em; text-align: center; }
 .sbk-stats .over { color: var(--accent); }
-.sbk-slots h3, .sbk-list h3 { display: flex; justify-content: space-between; align-items: baseline; }
+.sbk-slots h3 { display: flex; justify-content: space-between; align-items: baseline; }
 .sbk-slots h3 .link-btn { font: 12px var(--sans); font-variant: normal; letter-spacing: 0; }
 .slot-cols { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: .5rem; }
 /* One column per level: level on top, its slots as a stack of diamonds, what's left underneath. */
@@ -676,9 +669,7 @@ input.init { width: 4em; }
 
 /* ---------- sheet-style editing (spells) ---------- */
 .sheet-form { margin-bottom: 1.5rem; }
-.sheet-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem 1.5rem; }
-@media (max-width: 700px) { .sheet-grid { grid-template-columns: 1fr; } }
-.sheet-field > select, .sheet-field > input, .sheet-field > .money-input { max-width: 22rem; }
+.sheet-field > select, .sheet-field > input { max-width: 22rem; }
 .sheet-field { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
 .sheet-field > span { font-size: 12px; color: var(--muted); }
 .sheet-field.k-bool { flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: .5rem; align-self: end; padding-bottom: .4rem; }
@@ -754,7 +745,6 @@ table.grid.wb-recipes th:nth-last-child(2) { width: 7.5em; }
 .modal .spell-card { margin-bottom: 0; box-shadow: none; }
 
 /* spellbook drag and drop */
-.drop-zone { transition: box-shadow .12s, border-color .12s; }
 .drop-zone.over { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent), var(--shadow); }
 .sbk-list tr[draggable="true"] { cursor: grab; }
 .sbk-list tr.dragging { opacity: .4; }
@@ -794,11 +784,6 @@ table.grid.wb-recipes th:nth-last-child(2) { width: 7.5em; }
 .init-hp > span { display: block; height: 100%; background: #4f9a4a; }
 .init-chip.bloodied .init-hp > span { background: #d08a24; }
 .init-wrap { align-self: center; color: var(--muted); font-size: 12px; padding: 0 .3rem; border-left: 2px dashed var(--line); white-space: nowrap; }
-
-.tracker-tools-wrap { margin-bottom: 1rem; padding: .5rem 1rem; }
-.tracker-tools-wrap > summary { cursor: pointer; color: var(--muted); font-size: 13px; }
-.tracker-tools-wrap[open] > summary { margin-bottom: .6rem; }
-.tracker-tools { margin-bottom: 0; }
 
 .sides { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; }
 @media (max-width: 900px) { .sides { grid-template-columns: 1fr; } }
@@ -898,7 +883,6 @@ table.grid.wb-recipes th:nth-last-child(2) { width: 7.5em; }
 .cf-wide { grid-column: 1 / -1; }
 @media (max-width: 700px) { .cf-grid { grid-template-columns: 1fr; } }
 .creature-form .sf-field { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
-.creature-form .sf-label { font-size: 12px; color: var(--muted); }
 .cf-row { display: flex; gap: .4rem; align-items: center; }
 .cf-row > input:not(.cf-num), .cf-row > select { flex: 1; min-width: 0; }
 .cf-num { width: 4.5em; text-align: center; }
@@ -924,7 +908,6 @@ table.grid.wb-recipes th:nth-last-child(2) { width: 7.5em; }
 .cf-feat-head { display: flex; gap: .3rem; align-items: center; }
 .cf-feat-name { flex: 1; font-weight: 600; font-style: italic; }
 .cf-feat textarea { width: 100%; resize: vertical; min-height: 2.6em; overflow: hidden; font: inherit; }
-.cf-srd { opacity: .8; }
 .cf-preview { position: sticky; top: calc(var(--bar-h) + 1rem); max-height: calc(100vh - var(--bar-h) - 2rem); overflow-y: auto; columns: auto !important; display: block; }
 
 /* chip toggles (damage types, conditions, skills) */
@@ -970,7 +953,7 @@ tr.craft-time td { color: var(--ink-2); font-weight: 600; border-top: 0; }
 .entry-tabs { margin-top: .5rem; }
 .family-tools { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .8rem; }
 .family-tools .chip-btn.on { background: var(--accent); border-color: var(--accent); color: var(--panel); }
-.family-tools .entry-picker, .family-tools > div:last-child { min-width: 16rem; }
+.family-tools > div:last-child { min-width: 16rem; }
 .family-scroll { overflow: auto; border: 1px solid var(--line); border-radius: 12px; background:
   radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 9%, transparent) 1px, transparent 0) 0 0 / 22px 22px, var(--panel-2); max-height: calc(100vh - 220px); }
 .family-canvas { position: relative; margin: 0 auto; }
@@ -1153,29 +1136,23 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 @media (max-width: 800px) { .cs-abilities { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .cs-abilities { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .cs-ability { display: flex; flex-direction: column; padding: .25rem .35rem .25rem; background: var(--panel); border: 1px solid var(--line); border-radius: 9px; }
-.cs-ab-head { display: grid; grid-template-columns: auto 1fr 3em; align-items: center; gap: .3rem; padding: 0 .15rem .15rem; margin-bottom: .1rem; border-bottom: 1px solid var(--line); }
 .cs-short { font-weight: 700; font-size: 12px; letter-spacing: .05em; color: var(--muted); }
 .cs-mod { font: 600 1.15rem var(--serif); text-align: center; }
 .cs-ab-head input { width: 100%; text-align: center; padding: .1rem; }
 .cs-skill { display: grid; grid-template-columns: 1em 2em 1fr; align-items: baseline; gap: .25rem; border: none; background: none; padding: 0 .2rem; line-height: 1.45; border-radius: 6px; text-align: left; font-size: 12.5px; cursor: pointer; color: var(--ink-2); }
 .cs-skill:hover:not(:disabled) { background: var(--chip); }
 .char-sheet .cs-skill:disabled, .char-sheet .chip-toggle.on:disabled { opacity: 1; cursor: default; }
-.cs-class-line { margin-left: auto; font: 600 1rem var(--serif); color: var(--ink-2); }
 .cs-classes { padding: .7rem .9rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
 .cs-class-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-bottom: .4rem; }
 .cs-class-row label input { width: 3.6em; text-align: center; margin-left: .3rem; }
 .cs-die-label { font-size: 13px; color: var(--ink-2); }
 .cs-other { margin: 0; font-size: 14px; white-space: pre-line; }
-.cs-feature-list { margin: 0; }
-.cs-feature-list dt { font-weight: 600; margin-top: .5rem; }
-.cs-feature-list dt:first-child { margin-top: 0; }
 .pc-notes { padding: .7rem .9rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
 .pc-notes h4 { display: flex; align-items: baseline; gap: .6rem; margin: 0 0 .5rem; font: 600 1rem var(--serif); font-variant: small-caps; letter-spacing: .04em; color: var(--accent); }
 .cs-feature-list dd { margin: .1rem 0 0; white-space: pre-line; font-size: 14px; color: var(--ink-2); }
 .cs-skill.on { color: var(--ink); }
 .cs-skill.on .cs-dot { color: var(--accent); }
 .cs-skill b { text-align: right; }
-.cs-save { font-style: italic; }
 .cs-side textarea { width: 100%; }
 /* proficiencies: one row per list (ProfChips.vue) */
 .cs-profs { display: grid; gap: .45rem; }
@@ -1234,7 +1211,6 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .cs-feature button { grid-row: 1; grid-column: 2; }
 .cs-kind { margin-left: .5em; }
 
-.cs-current { display: flex; align-items: center; gap: 1rem; }
 .cs-sub { margin: .8rem 0 .3rem; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 /* "Spellbook of Aria": whose it is, in the page title */
 .head-of { font-variant: normal; letter-spacing: 0; font-size: .6em; font-weight: 500; color: var(--muted); }
@@ -1280,7 +1256,7 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .current-mark { margin-left: .5rem; font-size: 12px; color: var(--accent); white-space: nowrap; }
 .edit-type { font-size: 13px; color: var(--muted); }
 .sbk-search { margin-left: auto; width: 9rem; font: 13px var(--sans, inherit); font-variant: normal; letter-spacing: 0; padding: .15rem .4rem; }
-.sbk-list h3 { display: flex; align-items: center; gap: .5rem; }
+.sbk-list h3 { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
 .sbk-scroll { max-height: 22rem; overflow-y: auto; }
 .edit-text .field-label { margin: 0 0 .3rem; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
 .edit-meta .badge.dm-only { font-size: 11px; padding: 0 .4rem; }
@@ -1295,10 +1271,10 @@ th.sortable:hover::after { content: ' ↕'; opacity: .5; }
 .side-add .row input { flex: 1; min-width: 0; }
 .current-toggle { font-size: 12px; padding: .05rem .55rem; }
 /* ability cards: head (name, modifier, score box), the save on its band, the skills, a footer for what scales with it */
-.cs-ab-head { grid-template-columns: auto auto 1fr; border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+.cs-ab-head { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: .3rem; padding: 0 .15rem; margin-bottom: 0; border-bottom: none; }
 .cs-ab-head .cs-score { justify-self: end; width: 2.8em; padding: 0; border: 1px solid var(--line); border-radius: 6px; font-size: 12.5px; color: var(--ink-2); }
 .char-sheet .cs-ab-head .cs-score:disabled { border-color: var(--line); }
-.cs-save { margin: .25rem 0 .2rem; padding: .05rem .25rem; background: var(--chip); border-radius: 6px; }
+.cs-save { margin: .25rem 0 .2rem; padding: .05rem .25rem; background: var(--chip); border-radius: 6px; font-style: italic; }
 .cs-save.on { background: color-mix(in srgb, var(--accent) 14%, var(--panel)); }
 .cs-skills { flex: 1; display: flex; flex-direction: column; border-top: 1px solid var(--line); padding-top: .15rem; }
 .cs-noskill { margin: 0; padding: 0 .2rem; font-size: 12px; color: var(--muted); font-style: italic; }
@@ -1334,16 +1310,9 @@ button.brand { background: none; border: none; padding: 0; cursor: pointer; }
 svg.gi { width: 1.1em; height: 1.1em; vertical-align: -0.18em; flex: none; }
 .pc-portrait-icon svg.gi { width: 1em; height: 1em; color: var(--accent); }
 h1 .icon svg.gi { color: var(--accent); }
-.new-type { display: flex; align-items: center; gap: .5rem; }
-.new-type svg.gi { width: 1.6em; height: 1.6em; color: var(--accent); }
 .menu-panel .icon svg.gi, .crumb-root svg.gi { color: var(--accent); }
 .tool > span svg.gi { width: 1.4em; height: 1.4em; color: var(--accent); }
 .tabs svg.gi { color: var(--accent); }
-.ic-props { margin: .4rem 0 0; font-size: 13px; }
-.ic-props dt { font-weight: 600; display: inline; }
-.ic-props dt::after { content: ' — '; font-weight: 400; color: var(--muted); }
-.ic-props dd { display: inline; margin: 0; }
-.ic-props dd::after { content: ''; display: block; margin-bottom: .2rem; }
 .lists-table input.lists-note { display: block; width: min(34rem, 100%); margin-top: .25rem; font-size: 12.5px; color: var(--ink-2); }
 /* descriptions on hover (data-tip, shown by TipLayer.vue) */
 .tip { cursor: help; }
@@ -1363,7 +1332,6 @@ h1 .icon svg.gi { color: var(--accent); }
 .effect-row { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
 .effect-row select, .effect-row input { width: auto; }
 .effect-row .effect-value { width: 4.5em; }
-.effect-row .effect-text { min-width: 14em; }
 .effect-say { font-size: 12px; }
 /* An item card's "While attuned" block: effects as small chips, spells one per line with how they're cast. */
 .ic-gear { margin: .8rem 0 .2rem; padding: .55rem .8rem; border-left: 3px solid var(--rc, var(--accent)); background: var(--panel-2); border-radius: 0 8px 8px 0; }
@@ -1380,7 +1348,7 @@ h1 .icon svg.gi { color: var(--accent); }
 .gear-mod { color: var(--accent); }
 .gear-mod::after { content: '✦'; font-size: .6em; vertical-align: super; margin-left: .1em; }
 .active-gear { margin: .5rem 0 0; padding: 0; list-style: none; font-size: 13px; }
-.active-gear li { padding: .15rem 0; }
+.active-gear li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .4rem; padding: .15rem 0; }
 .active-gear .muted { font-size: 12px; }
 
 /* A character's Equipped card beside the inventory, half and half; stacked when narrow. */
@@ -1410,9 +1378,6 @@ h1 .icon svg.gi { color: var(--accent); }
 .inventory-tab { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 1rem; align-items: start; }
 .inventory-tab > * { margin: 0; min-width: 0; }
 @media (max-width: 900px) { .inventory-tab { grid-template-columns: minmax(0, 1fr); } }
-.cs-gear-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
-.cs-gear-row > * { margin: 0; min-width: 0; }
-@media (max-width: 900px) { .cs-gear-row { grid-template-columns: minmax(0, 1fr); } }
 
 /* Equipped: the Unequip / Unattune button at the end of each line. */
 .equipped-card .rel li { display: flex; align-items: baseline; gap: .4rem; }
@@ -1420,7 +1385,6 @@ h1 .icon svg.gi { color: var(--accent); }
 .eq-off:hover { opacity: 1; }
 
 /* Item charges in Equipped's active gear, and the Spellbook's From items card. */
-.active-gear li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .4rem; }
 .eq-charges { margin-left: auto; white-space: nowrap; font-size: 13px; }
 .eq-charges .link-btn { padding: 0 .25rem; }
 .sbk-col { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
@@ -1436,7 +1400,7 @@ h1 .icon svg.gi { color: var(--accent); }
 .if-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem 1.2rem; }
 @media (max-width: 900px) { .if-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .if-grid { grid-template-columns: minmax(0, 1fr); } }
-.if-grid .sheet-field > select, .if-grid .sheet-field > input, .if-grid .sheet-field > .money-input { max-width: none; width: 100%; }
+.if-grid .sheet-field > select, .if-grid .sheet-field > input { max-width: none; width: 100%; }
 .if-wide { margin-top: .7rem; display: flex; flex-direction: column; gap: .25rem; }
 .if-bools { margin-top: .7rem; }
 .if-add { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 1rem; }
@@ -1452,7 +1416,6 @@ h1 .icon svg.gi { color: var(--accent); }
 .item-form > .if-section:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: .4rem; }
 
 /* A feature's text takes the rest of its row (nothing is repeated beside it). */
-.effect-row .effect-text { flex: 1 1 auto; min-width: 14em; width: auto; }
 .item-form .effect-row:has(.effect-text) { flex-wrap: nowrap; }
 
 /* Advantage / disadvantage from gear on a skill or a save. */
@@ -1463,7 +1426,7 @@ h1 .icon svg.gi { color: var(--accent); }
 /* Rows take the full width so a feature's text (or a save's "when") can grow into it. */
 .effects-input > .effect-row { align-self: stretch; }
 .effects-input > .chip-btn, .effects-input > .picker { align-self: flex-start; }
-.effect-row .effect-text { flex: 1 1 12em; }
+.effect-row .effect-text { flex: 1 1 12em; min-width: 14em; width: auto; }
 
 /* An item's requirements in the editor, and the Equip / Attune pair in the inventory. */
 .req-input { display: flex; flex-direction: column; gap: .5rem; }
@@ -1675,10 +1638,6 @@ button.live-tag { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .flash, .flash-up, .flash-down { animation-duration: .8s; } }
 
 /* species traits (species.ts): the Species card on the sheet, the list on a race's page, the editor */
-.species-card .sp-trait { padding: .5rem 0; border-top: 1px solid var(--line); }
-.species-card .sp-trait:first-of-type { border-top: 0; }
-.species-card .sp-trait.dim { opacity: .55; }
-.species-card .sp-trait.sp-pending { box-shadow: inset 3px 0 0 var(--accent); padding-left: .7rem; }
 .sp-head { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
 .sp-uses { margin-left: auto; display: inline-flex; align-items: center; gap: .25rem; }
 .sp-trait > p.md { margin: .2rem 0; }
@@ -1705,8 +1664,6 @@ button.live-tag { cursor: pointer; }
 .sp-pick-selects select { width: auto; }
 .char-sheet > .feature-choices { padding: .7rem .9rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
 .sp-given { margin-top: .3rem; }
-.trait-more { margin: .3rem 0; }
-.trait-more > summary { cursor: pointer; color: var(--link); }
 .sp-given > summary { cursor: pointer; list-style: none; }
 .sp-given > summary::-webkit-details-marker { display: none; }
 .link-like { color: var(--link); }
@@ -1714,7 +1671,6 @@ button.live-tag { cursor: pointer; }
 .sp-grant { display: inline-flex; align-items: center; gap: .3rem; }
 .sp-grant select { width: auto; padding-top: 1px; padding-bottom: 1px; }
 .sp-grant.swapped select { border-color: var(--accent); }
-.sp-feat { margin: .1rem 0 .4rem; }
 .equipment-input .effect-row input:not(.effect-value) { flex: 1; }
 .sp-open { margin-left: .5rem; color: var(--accent); font: 600 12px var(--sans); text-transform: none; letter-spacing: 0; }
 .trait-chips { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .25rem; }
@@ -1748,7 +1704,6 @@ button.live-tag { cursor: pointer; }
 .equipment-input .trait-row input { width: 6.5rem; }
 .trait-actions { justify-content: flex-end; border-top: 1px solid var(--line); padding-top: .35rem; }
 .trait-options-edit { margin: .3rem 0 .3rem .5rem; }
-.trait-option-card { border-left: 3px solid var(--line); padding-left: .7rem; margin: .45rem 0; }
 .trait-among .seg { margin-top: .3rem; }
 
 /* ---------- the character creation wizard (CharacterWizard.vue) ---------- */
@@ -1799,10 +1754,6 @@ button.live-tag { cursor: pointer; }
 .wz-score b { font-size: 1.3rem; }
 .wz-make { margin-top: .6rem; }
 .wizard-foot { display: flex; justify-content: space-between; margin-top: 1.4rem; padding-top: .8rem; border-top: 1px solid var(--line); }
-.bonus-picker { display: grid; gap: .5rem; margin: .4rem 0; }
-.bp-rows { display: flex; flex-wrap: wrap; gap: .4rem .8rem; align-items: center; }
-.bp-pick { display: inline-flex; align-items: center; gap: .3rem; }
-.bp-pick select { width: auto; }
 @media (max-width: 760px) {
   .wizard-grid { grid-template-columns: 1fr; }
   .wizard-steps { position: static; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); }
@@ -1816,8 +1767,6 @@ button.live-tag { cursor: pointer; }
 .sr-head { display: flex; flex-wrap: wrap; gap: .2rem .6rem; align-items: baseline; }
 
 /* Class features on the sheet (SpeciesCard kind="class") and in the wizard */
-.sp-origin { margin: .8rem 0 .2rem; font-size: .95rem; }
-.sp-origin:first-of-type { margin-top: .2rem; }
 .sp-fold > summary { cursor: pointer; list-style: none; }
 .sp-fold > summary::-webkit-details-marker { display: none; }
 .sp-fold > summary::before { content: '▸'; color: var(--muted); font-size: 11px; margin-right: .35rem; }
@@ -1826,10 +1775,6 @@ button.live-tag { cursor: pointer; }
 .sp-scale { font-size: 12px; }
 .sp-later { margin: .4rem 0 0; }
 .sp-later > summary { cursor: pointer; }
-.sp-option { flex-basis: 100%; }
-.sp-option > summary { cursor: pointer; }
-.sp-option > .md-view, .sp-option > div { margin-left: 1rem; }
-.steps-input { width: 9rem !important; }
 .steps-label { width: 10rem !important; }
 .trait-md { margin: .2rem 0; }
 .trait-options-wrap > summary { cursor: pointer; }
@@ -1921,7 +1866,6 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .cb-tag.changed { color: var(--accent); }
 .cb-toggles button { min-width: 2.6rem; }
 .cb-skills { display: flex; flex-wrap: wrap; gap: .3rem; }
-.cb-skills .chip-btn.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
 .cb-lv { min-width: 2rem; }
 .cb-levels { overflow-x: auto; margin: .4rem 0; }
 .cb-table th, .cb-table td { padding: .2rem .25rem; text-align: center; }
@@ -1941,7 +1885,7 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .trait-level { font-size: 1rem; margin: 1rem 0 .3rem; padding-bottom: .15rem; border-bottom: 1px solid var(--line); color: var(--accent); }
 .trait-group:first-child .trait-level { margin-top: .3rem; }
 /* the feature editor: level headings and badges, sections, level tables, options as rows */
-.trait-level-head { margin: 1rem 0 .3rem; font-size: .95rem; color: var(--accent); border-bottom: 1px solid var(--line); padding-bottom: .1rem; }
+.trait-level-head { display: flex; align-items: baseline; gap: .6rem; margin: 1rem 0 .3rem; font-size: .95rem; color: var(--accent); border-bottom: 1px solid var(--line); padding-bottom: .1rem; }
 .traits-input > .trait-level-head:first-child { margin-top: .2rem; }
 .lv-badge { font: 600 11px var(--sans); padding: .05rem .4rem; border-radius: 999px; background: var(--accent); color: var(--on-accent, #fff); white-space: nowrap; }
 .trait-when { padding-bottom: .3rem; border-bottom: 1px dashed var(--line); }
@@ -1975,7 +1919,6 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .si-fix { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .35rem; }
 .trait-spells { width: auto; min-width: 22rem; margin: .4rem 0; }
 .trait-spells td:first-child, .trait-spells th:first-child { text-align: center; white-space: nowrap; }
-.trait-level-head { display: flex; align-items: baseline; gap: .6rem; }
 .trait-level-head .link-btn { font-family: var(--sans); font-weight: normal; }
 .trait-gap { margin: .2rem 0 .4rem; }
 /* a feature's spells by level */
@@ -1984,7 +1927,7 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .spell-level-row { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; padding: .3rem .4rem; border: 1px solid var(--line); border-radius: 6px; }
 .spell-level-row.new { border-style: dashed; }
 .spell-level-row .chip .link-btn { padding: 0 0 0 .25rem; }
-.spell-level-row .entry-picker, .spell-level-row input[type=search] { width: 12rem; }
+.spell-level-row input[type=search] { width: 12rem; }
 /* a race's speeds, inherited hints, its ability score increase */
 .speeds-input { display: flex; flex-wrap: wrap; gap: .3rem .7rem; align-items: center; }
 .speeds-input label { display: inline-flex; gap: .25rem; align-items: center; }
@@ -2057,7 +2000,6 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .sf-part > h4 { margin: 0 0 .5rem; font-size: .95rem; }
 .sf-quick { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .25rem; }
 .sf-quick .chip-btn { font-size: 11px; padding: .05rem .45rem; }
-.sf-quick .chip-btn.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
 .spell-rolls { display: grid; gap: .5rem; }
 .roll-card { border: 1px solid var(--line); border-radius: 8px; padding: .4rem .6rem; display: grid; gap: .3rem; }
 .roll-line { display: flex; flex-wrap: wrap; gap: .4rem .6rem; align-items: center; }
@@ -2080,7 +2022,6 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .cf-attack .effect-text { flex: 1 1 18rem; }
 .cf-range { width: 5rem !important; }
 .cf-attack-line { margin: .1rem 0 .4rem; font-style: italic; }
-.cf-feat-head .chip-btn.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
 .cf-legendary { flex-wrap: wrap; gap: .4rem 1rem; margin-bottom: .5rem; }
 .cf-splist { flex-wrap: wrap; gap: .35rem; margin: .35rem 0; }
 .cf-sclabel { width: 8rem !important; }
@@ -2171,7 +2112,7 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .renown-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem; padding: .3rem 0; border-bottom: 1px solid var(--line); }
 .renown-row:last-of-type { border-bottom: 0; }
 .renown-row input.short { width: 4rem; }
-.party-renown .entry-picker, .party-renown > :last-child { margin-top: .5rem; }
+.party-renown > :last-child { margin-top: .5rem; }
 .org-goals { margin: 0; white-space: pre-line; }
 /* ---- places: roll tables, the outline, the party, residents, shops ---- */
 .roll-pick { display: flex; justify-content: flex-end; margin: .4rem 0 -.2rem; }

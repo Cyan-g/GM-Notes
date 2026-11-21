@@ -127,7 +127,6 @@ export function describeEffect(f: GearEffect): string {
 /** An item's effects. */
 export const effectsOf = (e: Entry | undefined): GearEffect[] => (Array.isArray(e?.fields.effects) ? e!.fields.effects! : [])
 
-/** Whether an inventory line's item is in use: worn or wielded, or attuned when it requires attunement. */
 /** When an item's effects and features count: what its "Works while" says, else attuned if it needs attunement,
  * equipped if it can be worn or wielded, else carried (a flask, a pearl). */
 export function worksWhileOf(item: Entry): 'carried' | 'equipped' | 'attuned' {
@@ -137,6 +136,8 @@ export function worksWhileOf(item: Entry): 'carried' | 'equipped' | 'attuned' {
   const wearable = ['Weapon', 'Armor'].includes(String(item.fields.kind ?? '')) || !!(effectsOf(item).length || spellsOf(item).length || item.fields.charges)
   return wearable ? 'equipped' : 'carried'
 }
+/** Whether an inventory line's item is in use, by when it works (worksWhileOf): carried while there's any left,
+ * attuned once attuned, equipped once worn, wielded or attuned. */
 export const inUse = (l: InventoryLine, item: Entry | undefined) => {
   if (!item) return false
   const w = worksWhileOf(item)
@@ -202,7 +203,6 @@ export function setCharges(s: CharacterSheet, i: number, n: number) {
   const v = Math.max(0, Math.min(max, Math.round(n)))
   if (v === max) delete l.charges; else l.charges = v
 }
-/** A rest gives back the item spells used since: a short rest the short-rest ones, a long rest all of them. */
 /** How an item's charges come back, in words: "1d6 + 1 at dawn" (its Regains), else as written. */
 export function regainText(item: Entry | undefined): string {
   const r = item?.fields.regain

@@ -125,9 +125,9 @@ export const CLASS_RULES: Record<string, ClassRules> = {
   },
 }
 
-/** The rules of a class by its list id (the standard ones are their own names). */
-/** The rules of a class by its list id: the built-in SRD ones with what its class entry changes ("Class basics"),
- * or only the entry's for a class the app doesn't know (homebrew); undefined when neither has any. */
+/** The rules of a class by its list id (the standard ones are their own names): the built-in SRD ones with what its
+ * class entry changes ("Class basics"), or only the entry's for a class the app doesn't know (homebrew); undefined
+ * when neither has any. */
 export function rulesOf(cls: string | undefined): ClassRules | undefined {
   if (!cls) return undefined
   const own = ownBasics(cls), base = CLASS_RULES[cls]

@@ -103,11 +103,4 @@ export function filterItems(items: TItem[], f: TimelineFilter): TItem[] {
   })
 }
 
-/** What an item says, for lists: the event name, or "Corin Westmarch — member of Clan Westmarch (Duke)". */
-export function itemTitle(it: TItem): { lead?: Id; text: string; target?: Id } {
-  if (it.entry) return { lead: it.entry, text: '' }
-  const r = it.rel!
-  return { lead: r.a, text: RELATION_KINDS[r.kind].forward, target: r.b }
-}
-
 export const today = () => db().meta.today

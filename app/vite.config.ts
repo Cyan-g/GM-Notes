@@ -93,8 +93,24 @@ function devDb(): Plugin {
   }
 }
 
+// Built pages only (the dev server needs its own scripts): a content security policy, so even HTML that got past the
+// cleaning of entry text (markdown.ts) can't run code. Scripts only from the app's own files (no inline ones, no
+// onerror=…), no frames or plugins; pictures also from data: and blob: URLs (the data folder's) and the web.
+const CSP = [
+  "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob: https:",
+  "font-src 'self' data:", "media-src 'self' data: blob:", "connect-src 'self' data: blob:",
+  "object-src 'none'", "frame-src 'none'", "base-uri 'none'", "form-action 'none'",
+].join('; ')
+function csp(): Plugin {
+  return {
+    name: 'csp',
+    apply: 'build',
+    transformIndexHtml: html => html.replace('<meta charset="UTF-8" />', `<meta charset="UTF-8" />\n    <meta http-equiv="Content-Security-Policy" content="${CSP}" />`),
+  }
+}
+
 export default defineConfig({
-  plugins: [vue(), devData(), devDb()],
+  plugins: [vue(), devData(), devDb(), csp()],
   // The desktop app loads the built pages from files, so their links must be relative.
   base: './',
   server: { port: 5199 },

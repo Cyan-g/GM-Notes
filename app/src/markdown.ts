@@ -1,5 +1,8 @@
 // Markdown rendering with [[id|label]] links, :::secret blocks, callout boxes (> [!note]) and images from the data folder.
+// Text may hold HTML (a table, a <details>), but it comes from imported files and the DM's publishes too, so what's
+// rendered is cleaned (DOMPurify): no scripts, event handlers (onerror=…), frames, forms or javascript: links.
 import MarkdownIt from 'markdown-it'
+import DOMPurify from 'dompurify'
 import { get, playerMode, state } from './store'
 import { hrefEntry } from './router'
 import { SECRET_BLOCK } from './model/text'
@@ -124,5 +127,7 @@ function preprocess(src: string, keepEnd = false): string {
   return out.join('\n')
 }
 
-export const renderMarkdown = (src: string, opts: { tasks?: boolean; keepEnd?: boolean } = {}) => md.render(preprocess(src || '', !!opts.keepEnd), { tasks: !!opts.tasks })
-export const renderInline = (src: string) => md.renderInline(src || '')
+/** Rendered HTML without anything that runs code; links may still open in a new window (target), pictures load lazily. */
+const clean = (html: string) => DOMPurify.sanitize(html, { ADD_ATTR: ['target', 'loading'], FORBID_TAGS: ['style', 'form', 'button', 'textarea', 'select'] })
+export const renderMarkdown = (src: string, opts: { tasks?: boolean; keepEnd?: boolean } = {}) => clean(md.render(preprocess(src || '', !!opts.keepEnd), { tasks: !!opts.tasks }))
+export const renderInline = (src: string) => clean(md.renderInline(src || ''))

@@ -9,7 +9,7 @@ import {
   draftPc, featLevels, finalScores, hpOf, itemNamed, kitsOf, makeCharacter, pointsSpent, resetWizard, rules, species, subracesOf, mainRace,
   spellChoices, spellCounts, steps, subclassesOf, wizard,
 } from '../wizard'
-import { SUBCLASS_LEVEL } from '../classRules'
+import { subclassLevelOf } from '../classRules'
 import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, abilityBonusText } from '../abilityBonus'
 import { DICE } from '../model/classes'
 import { SKILLS, mod, signed, currentPc, setCurrent } from '../sheet'
@@ -49,7 +49,7 @@ const subFeatures = (s: Entry) => {
 function setClass(cls: string) {
   Object.assign(wizard.d, { cls, subclass: undefined, skills: [], tools: [], cantrips: [], spells: [], book: [], classKit: 0 })
 }
-watch(() => d.value.level, () => { if (d.value.level < SUBCLASS_LEVEL) wizard.d.subclass = undefined })
+watch(() => d.value.level, () => { if (d.value.level < subclassLevelOf(d.value.cls)) wizard.d.subclass = undefined })
 
 // ---- species and background ----
 const raceList = computed(() => species())
@@ -209,7 +209,7 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
               <select :value="dieOfDraft(d)" @change="wizard.d.die = val($event)"><option v-for="x in DICE" :key="x" :value="x">{{ x }}</option></select>
             </label>
           </div>
-          <template v-if="d.cls && d.level >= SUBCLASS_LEVEL">
+          <template v-if="d.cls && d.level >= subclassLevelOf(d.cls)">
             <h3 class="wz-sub">Subclass</h3>
             <p v-if="!subclasses.length" class="muted small">The world has no subclasses of this class yet.</p>
             <div class="wz-tiles wz-subclasses">
@@ -218,7 +218,7 @@ const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
                 <b>{{ s.name }}</b>
                 <small v-if="tagline(s)" class="muted"><i>{{ tagline(s) }}</i></small>
                 <span v-if="subFeatures(s).now.length" class="chips">
-                  <span v-for="t in subFeatures(s).now" :key="t.id" class="chip" :title="(t.text ?? '').slice(0, 300)">{{ t.name }} <small class="muted">{{ t.level ?? SUBCLASS_LEVEL }}</small></span>
+                  <span v-for="t in subFeatures(s).now" :key="t.id" class="chip" :title="(t.text ?? '').slice(0, 300)">{{ t.name }} <small class="muted">{{ t.level ?? subclassLevelOf(d.cls) }}</small></span>
                 </span>
                 <small v-else class="muted">No features in this world yet.</small>
                 <small v-if="subFeatures(s).later.length" class="muted">Later: {{ subFeatures(s).later.map(t => `${t.name} (${t.level})`).join(', ') }}</small>

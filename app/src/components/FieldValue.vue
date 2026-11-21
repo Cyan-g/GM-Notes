@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import TraitList from './TraitList.vue'
+import { classLabel } from '../species'
 import { abilityBonusText } from '../abilityBonus'
 // Shows one schema field of an entry, read-only.
 import AppIcon from './AppIcon.vue'
@@ -66,7 +67,7 @@ const stock = computed(() => {
     <template v-if="eq.instead">{{ eq.items?.length || eq.money ? '; or ' : '' }}{{ formatMoney(eq.instead) }} instead</template>
   </span>
   <template v-else-if="def.kind === 'abilityBonus'">{{ abilityBonusText(value as AbilityBonus) }}</template>
-  <TraitList v-else-if="def.kind === 'speciesTraits'" :traits="(value as Trait[])" :known="`${entry.fields.summary ?? ''}
+  <TraitList v-else-if="def.kind === 'speciesTraits'" :traits="(value as Trait[])" :by-level="entry.type === 'class' || entry.type === 'subclass' ? classLabel(entry) : undefined" :known="`${entry.fields.summary ?? ''}
 ${entry.body ?? ''}`" />
   <template v-else-if="def.kind === 'itemSpells'">
     <span class="chips"><span v-for="(x, i) in (value as ItemSpell[])" :key="i" class="chip"><EntryLink :id="x.spell" /> <span class="muted small">{{ howCast(x) }}</span></span></span>

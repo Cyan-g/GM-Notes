@@ -138,6 +138,30 @@ export interface SpellRoll {
 /** One of a character's classes: an option of the "class" list, its level, a subclass entry, a hit die for a class without a standard one. */
 export interface ClassLine { class: string; level: number; subclass?: Id; die?: string }
 
+/**
+ * What a class entry sets about its class ("Class basics" on its Edit page): each one it sets wins over the app's
+ * built-in SRD value (classRules.ts); a homebrew class fills them in to work in the wizard, level-up and spell slots.
+ */
+export interface ClassBasics {
+  hitDie?: string
+  /** Its spell slots: full, half or third caster, a warlock's pact magic, an artificer's, or none. */
+  caster?: 'full' | 'half' | 'third' | 'pact' | 'artificer' | 'none'
+  casting?: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
+  saves?: ('str' | 'dex' | 'con' | 'int' | 'wis' | 'cha')[]
+  skills?: { count: number; from: string[] }
+  armor?: string[]
+  weapons?: string[]
+  tools?: string[]
+  /** Cantrips known and spells prepared by class level (index 0 is level 1). */
+  cantrips?: number[]
+  prepared?: number[]
+  /** Spellbook spells at level 1 (two more each level after). */
+  spellbook?: number
+  featLevels?: number[]
+  subclassLevel?: number
+  multiclass?: { primary: ('str' | 'dex' | 'con' | 'int' | 'wis' | 'cha')[]; any?: boolean; armor: string[]; weapons: string[]; tools: string[]; skills?: number; instruments?: number }
+}
+
 /** One line of an encounter: a creature entry (or just a name) and how many. */
 export interface EncounterLine { creature?: Id; name?: string; count: number; hp?: number; ac?: number; init?: number }
 
@@ -275,6 +299,9 @@ export interface TraitOption {
   spells?: TraitSpell[]
   /** Choices that come with this option once it's picked (Pact of the Tome: three cantrips, two rituals). Not options themselves. */
   choices?: TraitChoice[]
+  /** What it takes to pick this option: a level (of the class it comes from, or the character's) and another option of
+   * the same choice picked first (Thirsting Blade: Pact of the Blade). */
+  needs?: { level?: number; option?: string }
 }
 /**
  * A choice the player makes on the sheet: `count` skills, languages or tools (only from `among`, if given), or one

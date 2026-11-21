@@ -11,6 +11,7 @@ import { breakdown, gearTotals, restItems, scoreWith, spellsOf, sum } from './ge
 import { unmet } from './requirements'
 import { setConditions } from './conditions'
 import { rule } from './rules'
+import { castingOf } from './classRules'
 import { own, ownerOf, restSpecies, speciesExpertise, speciesGrants, speciesSkills, speciesSpeed, speciesTraits } from './species'
 
 export type Ability = keyof Abilities
@@ -27,10 +28,6 @@ export const SKILLS: { name: string; ability: Ability }[] = [
   { name: 'Performance', ability: 'cha' }, { name: 'Persuasion', ability: 'cha' }, { name: 'Religion', ability: 'int' },
   { name: 'Sleight of Hand', ability: 'dex' }, { name: 'Stealth', ability: 'dex' }, { name: 'Survival', ability: 'wis' },
 ]
-/** The ability each class casts with. */
-const CASTING: Record<string, Ability> = {
-  artificer: 'int', wizard: 'int', bard: 'cha', paladin: 'cha', sorcerer: 'cha', warlock: 'cha', cleric: 'wis', druid: 'wis', ranger: 'wis',
-}
 
 /**
  * A character's Hit Dice by die: their classes' (hitDicePools), plus what their features and gear add (Hemomancy:
@@ -239,7 +236,7 @@ export function castingAbility(pc: Entry, s: CharacterSheet): Ability | undefine
   if (s.spellAbility) return s.spellAbility
   // The highest level class that casts.
   const lines = [...classesOf(pc)].sort((a, b) => (Number(b.level) || 0) - (Number(a.level) || 0))
-  for (const l of lines) { const a = CASTING[l.class.toLowerCase()]; if (a) return a }
+  for (const l of lines) { const a = castingOf(l.class); if (a) return a }
   return undefined
 }
 

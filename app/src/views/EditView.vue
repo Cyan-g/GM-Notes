@@ -26,7 +26,7 @@ const def = computed(() => (e.value ? TYPES[e.value.type] : undefined))
 
 const shown = (f: FieldDef) => !f.when || f.when.is.includes(String(byKey(e.value!.fields)[f.when.field] ?? ''))
 // A character's sheet is the main column of its Edit page.
-const BIG = ['recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes', 'speciesTraits']
+const BIG = ['recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes', 'classBasics', 'speciesTraits']
 const groups = computed(() => {
   const out = new Map<string, FieldDef[]>()
   for (const f of def.value?.fields ?? []) {

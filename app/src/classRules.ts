@@ -3,7 +3,9 @@
 // the levels with a feat (Ability Score Improvement, or an Epic Boon at 19), and starting equipment or gold instead.
 // The hit die, spell slots and casting ability are in model/classes.ts, slots.ts and sheet.ts. A class that isn't
 // here (homebrew, or one the SRD doesn't have) is filled in by hand in the wizard.
-import type { Abilities, Copper } from './model/types'
+import type { Abilities, ClassBasics, Copper } from './model/types'
+import { state } from './store'
+import { CLASS_DIE } from './model/classes'
 
 type Ability = keyof Abilities
 /** A thing a class's or background's equipment holds, by name (matched to the world's items when it has them). */
@@ -124,7 +126,57 @@ export const CLASS_RULES: Record<string, ClassRules> = {
 }
 
 /** The rules of a class by its list id (the standard ones are their own names). */
-export const rulesOf = (cls: string | undefined): ClassRules | undefined => (cls ? CLASS_RULES[cls] : undefined)
+/** The rules of a class by its list id: the built-in SRD ones with what its class entry changes ("Class basics"),
+ * or only the entry's for a class the app doesn't know (homebrew); undefined when neither has any. */
+export function rulesOf(cls: string | undefined): ClassRules | undefined {
+  if (!cls) return undefined
+  const own = ownBasics(cls), base = CLASS_RULES[cls]
+  if (!base && !own) return undefined
+  const b = base ?? { saves: [], skills: { count: 2, from: [] }, armor: [], weapons: [], tools: [], featLevels: FEATS, equipment: [] }
+  if (!own) return b
+  return {
+    ...b,
+    ...(own.saves ? { saves: own.saves } : {}), ...(own.skills ? { skills: own.skills } : {}),
+    ...(own.armor ? { armor: own.armor } : {}), ...(own.weapons ? { weapons: own.weapons } : {}), ...(own.tools ? { tools: own.tools } : {}),
+    ...(own.cantrips ? { cantrips: own.cantrips } : {}), ...(own.prepared ? { prepared: own.prepared } : {}),
+    ...(own.spellbook != null ? { spellbook: own.spellbook || undefined } : {}), ...(own.featLevels ? { featLevels: own.featLevels } : {}),
+  }
+}
+
+// ---- the class entry's own basics (its Edit page), over the built-in ones ----
+/** What a class's entry sets in "Class basics" (fields.basics), if anything. */
+export function ownBasics(cls: string): ClassBasics | undefined {
+  const e = Object.values(state.db?.entries ?? {}).find(x => x.type === 'class' && x.fields.class === cls)
+  const b = e?.fields.basics as ClassBasics | undefined
+  return b && Object.keys(b).length ? b : undefined
+}
+/** How each SRD class casts: its slot table and casting ability. */
+const CASTER: Record<string, ClassBasics['caster']> = {
+  Bard: 'full', Cleric: 'full', Druid: 'full', Sorcerer: 'full', Wizard: 'full', Paladin: 'half', Ranger: 'half', Artificer: 'artificer', Warlock: 'pact',
+}
+const CASTING: Record<string, Ability> = {
+  Artificer: 'int', Wizard: 'int', Bard: 'cha', Paladin: 'cha', Sorcerer: 'cha', Warlock: 'cha', Cleric: 'wis', Druid: 'wis', Ranger: 'wis',
+}
+/** The built-in basics of a class (the SRD's), for the editor's placeholders and as the default. */
+export function builtInBasics(cls: string): ClassBasics {
+  const r = CLASS_RULES[cls]
+  return {
+    hitDie: CLASS_DIE[cls] ?? 'd8', caster: CASTER[cls] ?? 'none', ...(CASTING[cls] ? { casting: CASTING[cls] } : {}),
+    subclassLevel: SUBCLASS_LEVEL, featLevels: r?.featLevels ?? FEATS,
+    ...(r ? { saves: r.saves, skills: r.skills, armor: r.armor, weapons: r.weapons, tools: r.tools } : {}),
+    ...(r?.cantrips ? { cantrips: r.cantrips } : {}), ...(r?.prepared ? { prepared: r.prepared } : {}), ...(r?.spellbook ? { spellbook: r.spellbook } : {}),
+    ...(MULTICLASS[cls] ? { multiclass: MULTICLASS[cls] } : {}),
+  }
+}
+/** A class's basics: the entry's where it sets them, else the built-in ones. */
+export function basicsOf(cls: string): ClassBasics {
+  return { ...builtInBasics(cls), ...(ownBasics(cls) ?? {}) }
+}
+export const hitDieOf = (cls: string) => basicsOf(cls).hitDie ?? 'd8'
+export const subclassLevelOf = (cls: string | undefined) => (cls ? basicsOf(cls).subclassLevel ?? SUBCLASS_LEVEL : SUBCLASS_LEVEL)
+export const multiclassOf = (cls: string): Multiclass | undefined => basicsOf(cls).multiclass
+export const casterOf = (cls: string) => basicsOf(cls).caster ?? 'none'
+export const castingOf = (cls: string): Ability | undefined => basicsOf(cls).casting
 
 /**
  * Multiclassing (SRD 5.2.1): the scores a class asks for (13 or more in each, or in one of them with `any`), from the new

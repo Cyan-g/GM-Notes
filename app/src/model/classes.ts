@@ -5,6 +5,7 @@ import type { CharacterSheet, ClassLine, Database, Entry } from './types'
 import { labelIn, optionsIn, type ListOption } from './lists'
 import { TYPES } from './schema'
 import { CLASS_SVG } from '../icons/classes'
+import { hitDieOf } from '../classRules'
 
 /** The hit die each standard class brings. Another class picks its own (d8 until it does). */
 export const CLASS_DIE: Record<string, string> = {
@@ -25,7 +26,7 @@ export function totalLevel(pc: Entry): number {
   const c = classesOf(pc)
   return clampLevel(c.length ? c.reduce((s, l) => s + (Number(l.level) || 0), 0) : Number(pc.fields.level) || 1)
 }
-export const dieOf = (l: ClassLine) => l.die || CLASS_DIE[l.class] || 'd8'
+export const dieOf = (l: ClassLine) => l.die || hitDieOf(l.class)
 /** The class that defines the character: the highest level one, the first listed on a tie. */
 export function mainClass(pc: Entry): ClassLine | undefined {
   return classesOf(pc).reduce<ClassLine | undefined>((best, l) => (!best || (Number(l.level) || 0) > (Number(best.level) || 0) ? l : best), undefined)

@@ -1911,3 +1911,55 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .sp-choose.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
 .sp-choice-top { position: sticky; top: -1rem; z-index: 1; background: var(--panel); margin: -1rem -1.2rem 0; padding: 1rem 1.2rem .5rem; border-bottom: 1px solid var(--line); }
 .sp-choice-top .modal-head { margin-bottom: .2rem; }
+/* a class's basics on its Edit page */
+.class-basics h4 { margin: .9rem 0 .3rem; display: flex; gap: .5rem; align-items: baseline; }
+.cb-grid { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; }
+.cb-row, .cb-line { display: flex; flex-wrap: wrap; gap: .4rem .6rem; align-items: center; margin: .25rem 0; }
+.cb-row select, .cb-row input, .cb-line select { width: auto; }
+.cb-row input, .cb-num { width: 4.5rem; }
+.cb-line > input:not(.cb-num) { flex: 1; min-width: 12rem; }
+.cb-tag { font: 11px var(--sans); text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.cb-tag.changed { color: var(--accent); }
+.cb-toggles button { min-width: 2.6rem; }
+.cb-skills { display: flex; flex-wrap: wrap; gap: .3rem; }
+.cb-skills .chip-btn.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
+.cb-lv { min-width: 2rem; }
+.cb-levels { overflow-x: auto; margin: .4rem 0; }
+.cb-table th, .cb-table td { padding: .2rem .25rem; text-align: center; }
+.cb-table th:first-child { text-align: left; white-space: nowrap; }
+.cb-table input { width: 2.6rem; padding: .1rem; text-align: center; }
+/* a class's page: basics, progression table, subclasses; its features under level headings */
+.class-overview { margin-bottom: 1rem; }
+.cb-summary { color: var(--ink-2, var(--muted)); }
+.class-table-wrap > summary { list-style: none; cursor: pointer; }
+.class-table-wrap > summary::-webkit-details-marker { display: none; }
+.class-table-wrap > summary h2 { display: inline; }
+.class-table-scroll { overflow-x: auto; margin: .4rem 0 1rem; }
+.class-table { font-size: 13px; }
+.class-table th, .class-table td { padding: .3rem .5rem; white-space: nowrap; text-align: center; }
+.class-table .ct-feat { text-align: left; white-space: normal; min-width: 16rem; }
+.class-subs { margin: .2rem 0 .5rem; padding-left: 1.1rem; display: grid; gap: .2rem; }
+.trait-level { font-size: 1rem; margin: 1rem 0 .3rem; padding-bottom: .15rem; border-bottom: 1px solid var(--line); color: var(--accent); }
+.trait-group:first-child .trait-level { margin-top: .3rem; }
+/* the feature editor: level headings and badges, sections, level tables, options as rows */
+.trait-level-head { margin: 1rem 0 .3rem; font-size: .95rem; color: var(--accent); border-bottom: 1px solid var(--line); padding-bottom: .1rem; }
+.traits-input > .trait-level-head:first-child { margin-top: .2rem; }
+.lv-badge { font: 600 11px var(--sans); padding: .05rem .4rem; border-radius: 999px; background: var(--accent); color: var(--on-accent, #fff); white-space: nowrap; }
+.trait-when { padding-bottom: .3rem; border-bottom: 1px dashed var(--line); }
+.trait-when input { width: 3.6rem; }
+.trait-sec { border: 1px solid var(--line); border-radius: 8px; padding: .3rem .6rem .45rem; margin: .5rem 0; }
+.trait-sec > legend { font-size: 13px; font-weight: 600; padding: 0 .3rem; color: var(--ink-2, var(--ink)); }
+.trait-fold > summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--ink-2, var(--ink)); }
+.trait-option-card { border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 6px; padding: .3rem .6rem; margin: .3rem 0; background: var(--panel); }
+.trait-option-card[open] { border-left-color: var(--accent); }
+.trait-option-card > summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.trait-row .spacer { flex: 1; }
+.trait-needs { display: flex; flex-wrap: wrap; gap: .4rem .8rem; align-items: center; margin: .3rem 0; }
+.trait-needs select { width: auto; }
+.steps-fold { margin: .2rem 0; }
+.steps-fold > summary { cursor: pointer; color: var(--link); }
+.steps-edit { display: flex; flex-wrap: wrap; gap: .35rem .6rem; align-items: center; margin: .3rem 0; }
+.steps-row { display: inline-flex; gap: .25rem; align-items: center; padding: .1rem .3rem; border: 1px solid var(--line); border-radius: 6px; }
+.steps-lv { width: 3.2rem !important; }
+.steps-val { width: 5rem !important; }
+.steps-words { flex-basis: 100%; }

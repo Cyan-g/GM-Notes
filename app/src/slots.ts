@@ -5,6 +5,7 @@
 import type { Entry, Spellbook } from './model/types'
 import { classesOf } from './model/classes'
 import { get } from './store'
+import { casterOf } from './classRules'
 
 /** Slots by level (1st…9th) for a caster level of 1…20. */
 const TABLE: number[][] = [
@@ -13,8 +14,6 @@ const TABLE: number[][] = [
   [4, 3, 3, 3, 2, 1, 1, 1], [4, 3, 3, 3, 2, 1, 1, 1, 1], [4, 3, 3, 3, 3, 1, 1, 1, 1], [4, 3, 3, 3, 3, 2, 1, 1, 1],
   [4, 3, 3, 3, 3, 2, 2, 1, 1],
 ]
-const FULL = ['Bard', 'Cleric', 'Druid', 'Sorcerer', 'Wizard']
-const HALF = ['Paladin', 'Ranger']
 /** Fighter and rogue subclasses that cast as a third caster. */
 const THIRD = /eldritch knight|arcane trickster/i
 
@@ -34,11 +33,13 @@ export function ruleSlots(pc: Entry): RuleSlots | undefined {
   const kinds = lines.map(l => {
     const n = Number(l.level) || 0
     const sub = l.subclass ? get(l.subclass)?.name ?? l.subclass : ''
-    if (FULL.includes(l.class)) return { kind: 'full' as const, n }
-    if (l.class === 'Artificer') return { kind: 'artificer' as const, n }
-    if (HALF.includes(l.class)) return { kind: 'half' as const, n }
-    if ((l.class === 'Fighter' || l.class === 'Rogue') && THIRD.test(sub)) return { kind: 'third' as const, n }
-    if (l.class === 'Warlock') return { kind: 'warlock' as const, n }
+    // how the class casts: its basics (the SRD's, or what its class entry sets)
+    const c = casterOf(l.class)
+    if (c === 'full') return { kind: 'full' as const, n }
+    if (c === 'artificer') return { kind: 'artificer' as const, n }
+    if (c === 'half') return { kind: 'half' as const, n }
+    if (c === 'third' || ((l.class === 'Fighter' || l.class === 'Rogue') && THIRD.test(sub))) return { kind: 'third' as const, n }
+    if (c === 'pact') return { kind: 'warlock' as const, n }
     return { kind: 'none' as const, n }
   })
   const casters = kinds.filter(k => k.kind !== 'none' && k.kind !== 'warlock')
@@ -55,6 +56,14 @@ export function ruleSlots(pc: Entry): RuleSlots | undefined {
   const pact = w ? { count: w >= 17 ? 4 : w >= 11 ? 3 : w >= 2 ? 2 : 1, level: Math.min(5, Math.ceil(w / 2)) } : undefined
   const arcana = [[11, 6], [13, 7], [15, 8], [17, 9]].filter(([at]) => w >= at).map(([, l]) => l)
   return { slots, pact, arcana }
+}
+
+/** The slots one class gives at a class level on its own (for its progression table): slots of 1st…9th level, or pact
+ * slots with their level. */
+export function classSlotsAt(caster: string, n: number): { slots: number[]; pact?: { count: number; level: number } } {
+  const lvl = caster === 'full' ? n : caster === 'artificer' ? Math.ceil(n / 2) : caster === 'half' ? (n >= 2 ? Math.ceil(n / 2) : 0) : caster === 'third' ? (n >= 3 ? Math.ceil(n / 3) : 0) : 0
+  const slots = Array.from({ length: 9 }, (_, i) => TABLE[Math.min(20, lvl)]?.[i] ?? 0)
+  return caster === 'pact' ? { slots, pact: { count: n >= 17 ? 4 : n >= 11 ? 3 : n >= 2 ? 2 : 1, level: Math.min(5, Math.ceil(n / 2)) } } : { slots }
 }
 
 /** One row of pips in the spellbook. */

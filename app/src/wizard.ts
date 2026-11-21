@@ -7,8 +7,7 @@ import type {
   Abilities, AbilityBonus, CharacterSheet, ClassLine, Copper, Entry, Feature, Id, InventoryLine, SpeciesState, Spellbook,
 } from './model/types'
 import { ABILITY_KEYS, bonusApplied, bonusOpen, type BonusChoice } from './abilityBonus'
-import { CLASS_RULES, EPIC_BOON_LEVEL, SUBCLASS_LEVEL, rulesOf, type Kit, type KitLine } from './classRules'
-import { CLASS_DIE } from './model/classes'
+import { EPIC_BOON_LEVEL, hitDieOf, rulesOf, subclassLevelOf, type Kit, type KitLine } from './classRules'
 import { ruleSlots } from './slots'
 import { blankSheet, mod } from './sheet'
 import { choiceOpen, classSpellsFrom, isClassOrigin, own, speciesTraits } from './species'
@@ -80,7 +79,7 @@ export function resetWizard() { wizard.d = newDraft(); wizard.step = 'class' }
 // ---------- the parts ----------
 
 export const rules = (d: Draft) => rulesOf(d.cls)
-export const dieOfDraft = (d: Draft) => d.die || CLASS_DIE[d.cls] || 'd8'
+export const dieOfDraft = (d: Draft) => d.die || (d.cls ? hitDieOf(d.cls) : 'd8')
 const dieSize = (die: string) => Number(die.replace(/\D/g, '')) || 8
 
 /** The draft as a character entry that isn't stored, for the species' choices and the spell slots. */
@@ -190,7 +189,7 @@ export interface Step { id: string; label: string; open: string[] }
 export function steps(d: Draft): Step[] {
   const r = rules(d), pc = draftPc(d)
   const s: Step[] = []
-  s.push({ id: 'class', label: 'Class', open: [!d.cls && 'a class', !!d.cls && d.level >= SUBCLASS_LEVEL && !d.subclass && subclassesOf(d.cls).length ? 'a subclass' : ''].filter(Boolean) as string[] })
+  s.push({ id: 'class', label: 'Class', open: [!d.cls && 'a class', !!d.cls && d.level >= subclassLevelOf(d.cls) && !d.subclass && subclassesOf(d.cls).length ? 'a subclass' : ''].filter(Boolean) as string[] })
   s.push({ id: 'origin', label: 'Species & background', open: [!d.race && 'a species', d.race && subracesOf(d.race).length ? 'a subrace' : '', !d.background && backgrounds().length ? 'a background' : '',
     ...speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && choiceOpen(a)).map(a => (a.trait.name === a.race.name ? a.trait.name : `${a.trait.name} (${a.race.name})`))].filter(Boolean) as string[] })
   const unset = ABILITY_KEYS.filter(a => d.base[a] == null).length
@@ -239,7 +238,7 @@ export function mainRace(id: Id | undefined): Entry | undefined {
   for (let i = 0; r && get(r.fields.parent as Id | undefined) && i < 10; i++) r = get(r.fields.parent as Id | undefined)
   return r
 }
-export const isClassKnown = (cls: string) => !!CLASS_RULES[cls]
+export const isClassKnown = (cls: string) => !!rulesOf(cls)
 
 // ---------- making it ----------
 

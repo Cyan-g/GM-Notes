@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // A race's, background's, class's or subclass's traits on its page: name, from which level, text, what each does, and
 // the choices it asks for (a long list of options, such as the invocations, folded).
+import { computed } from 'vue'
 import type { Trait, TraitChoice } from '../model/types'
 import { renderInline } from '../markdown'
 import { choiceCandidates, choiceWords, subraceOption, HOW_SPECIES } from '../species'
@@ -8,7 +9,7 @@ import { ABILITY_NAME } from '../abilityBonus'
 import TraitChips from './TraitChips.vue'
 import MarkdownView from './MarkdownView.vue'
 
-const props = defineProps<{ traits: Trait[]; /** On a subrace's page: its name; an option choice with an option of that name (a lineage) shows only that one. */ lineage?: string; /** The race it's a subrace of (its name is left out when matching). */ parent?: string; /** The page's own description: a trait text it already says isn't shown again (a feat's). */ known?: string }>()
+const props = defineProps<{ traits: Trait[]; /** A class's or subclass's features: grouped under level headings ("Warlock" for a subclass's). */ byLevel?: string; /** On a subrace's page: its name; an option choice with an option of that name (a lineage) shows only that one. */ lineage?: string; /** The race it's a subrace of (its name is left out when matching). */ parent?: string; /** The page's own description: a trait text it already says isn't shown again (a feat's). */ known?: string }>()
 /** A text the page's description already holds, ignoring spacing and markup. */
 const flat = (x: string) => x.replace(/[\s*_]+/g, ' ').trim().toLowerCase()
 const said = (t?: string) => !!t && !!props.known && flat(props.known).includes(flat(t))
@@ -31,13 +32,22 @@ const words = (c: TraitChoice) => choiceWords(c, (c.count ?? 1) === 1 && !c.step
 const multi = (t?: string) => !!t && /\n/.test(t)
 /** How a spell choice's spells are cast: "at will, with Intelligence". */
 const spellHow = (c: TraitChoice) => `${HOW_SPECIES[c.spell!.how]}${c.spell!.ability ? `, with ${ABILITY_NAME[c.spell!.ability]}` : ''}`
+/** The features by the level they come at, in order (one group without levels). */
+const groups = computed(() => {
+  if (props.byLevel == null) return [{ level: 0, list: props.traits }]
+  const by = new Map<number, Trait[]>()
+  for (const t of props.traits) { const l = t.level ?? 1; by.set(l, [...(by.get(l) ?? []), t]) }
+  return [...by.entries()].sort((a, b) => a[0] - b[0]).map(([level, list]) => ({ level, list }))
+})
 const scale = (t: Trait) => t.scale ? `${t.scale.label}: ${t.scale.steps.map(([l, v]) => `${v} (${l})`).join(', ')}` : ''
 </script>
 
 <template>
+  <div v-for="g in groups" :key="g.level" class="trait-group">
+  <h3 v-if="byLevel != null" class="trait-level">{{ byLevel ? `${byLevel} level` : 'Level' }} {{ g.level }}</h3>
   <dl class="trait-list">
-    <template v-for="t in traits" :key="t.id">
-      <dt>{{ t.name }} <span v-if="(t.level ?? 1) > 1" class="muted small">from level {{ t.level }}</span></dt>
+    <template v-for="t in g.list" :key="t.id">
+      <dt>{{ t.name }} <span v-if="byLevel == null && (t.level ?? 1) > 1" class="muted small">from level {{ t.level }}</span></dt>
       <dd>
         <MarkdownView v-if="multi(t.text) && !said(t.text)" class="trait-md" :source="t.text!" />
         <span v-else-if="t.text && !said(t.text)" class="md" v-html="renderInline(t.text)" />
@@ -63,4 +73,5 @@ const scale = (t: Trait) => t.scale ? `${t.scale.label}: ${t.scale.steps.map(([l
       </dd>
     </template>
   </dl>
+  </div>
 </template>

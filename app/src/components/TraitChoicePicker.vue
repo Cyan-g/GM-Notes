@@ -31,19 +31,23 @@ function set(slot: number, id: string) {
 const listed = computed(() => c.value.kind === 'option' || c.value.kind === 'feat')
 const filter = ref('')
 /** Its text without the SRD's source line, and the level its prerequisite names ("*Prerequisite: Level 5+ Warlock*"). */
-interface Row { id: string; label: string; text: string; needs?: number; prereq?: string; option?: TraitOption }
+interface Row { id: string; label: string; text: string; needs?: number; needOption?: string; prereq?: string; option?: TraitOption }
 const rows = computed<Row[]>(() => options.value.map(o => {
   const option = c.value.kind === 'option' ? c.value.options?.find(x => x.id === o.id) : undefined
   let text = String(option ? option.text ?? '' : get(o.id)?.fields.summary ?? '').replace(/\s*\*?Source: System Reference Document[^*]*\*?\s*$/i, '').trim()
   const m = text.match(/^\*Prerequisite:\s*([^*]+)\*\s*/i)
   if (m) text = text.slice(m[0].length)
-  const lv = m?.[1].match(/Level (\d+)\+/i)
-  return { id: o.id, label: o.label, text, ...(m ? { prereq: m[1].trim() } : {}), ...(lv ? { needs: Number(lv[1]) } : {}), ...(option ? { option } : {}) }
+  // what it needs: its fields (Needs on the class's Edit page), else the level its prerequisite line names
+  const lv = option?.needs?.level ?? (m?.[1].match(/Level (\d+)\+/i) ? Number(m![1].match(/Level (\d+)\+/i)![1]) : undefined)
+  const needOption = option?.needs?.option
+  return { id: o.id, label: o.label, text, ...(m ? { prereq: m[1].trim() } : {}), ...(lv ? { needs: lv } : {}), ...(needOption ? { needOption } : {}), ...(option ? { option } : {}) }
 }))
 const shown = computed(() => {
   const q = filter.value.trim().toLowerCase()
   return q ? rows.value.filter(r => r.label.toLowerCase().includes(q) || r.text.toLowerCase().includes(q)) : rows.value
 })
+/** What a row still lacks: the level, or the option it needs picked first. */
+const lacking = (r: Row) => [r.needs && r.needs > props.a.level && `needs level ${r.needs} (now ${props.a.level})`, r.needOption && !props.a.picks.includes(r.needOption) && `needs ${rows.value.find(x => x.id === r.needOption)?.label ?? 'another option'} first`].filter(Boolean).join('; ')
 /** The first sentence, shown on the row; the rest folds away. */
 const lead = (t: string) => t.match(/^[^.!?]*[.!?]/)?.[0] ?? t
 /** The picks made, by name, for the line under the trait. */
@@ -92,11 +96,11 @@ function toggle(id: string) {
       </div>
       </div>
     <div class="sp-optlist" role="group" :aria-label="a.trait.name">
-      <label v-for="r in shown" :key="r.id" class="sp-opt" :class="{ on: a.picks.includes(r.id), off: !a.picks.includes(r.id) && full && n > 1, early: r.needs && r.needs > a.level }">
+      <label v-for="r in shown" :key="r.id" class="sp-opt" :class="{ on: a.picks.includes(r.id), off: !a.picks.includes(r.id) && full && n > 1, early: !!lacking(r) }" :title="lacking(r) ? `Can't be taken yet: ${lacking(r)}` : undefined">
         <input :type="n === 1 ? 'radio' : 'checkbox'" :name="a.key" :checked="a.picks.includes(r.id)" :disabled="disabled || (!a.picks.includes(r.id) && full && n > 1)" @change="toggle(r.id)" />
         <span class="sp-opt-body">
           <span class="sp-opt-head"><b>{{ r.label }}</b>
-            <span v-if="r.prereq" class="sp-prereq" :title="r.needs && r.needs > a.level ? `Needs level ${r.needs}; this character's is ${a.level}` : 'Prerequisite'">{{ r.prereq }}</span>
+            <span v-if="r.prereq || r.needs || r.needOption" class="sp-prereq" :class="{ lacking: !!lacking(r) }" :title="lacking(r) || 'Prerequisite'">{{ r.prereq ?? [r.needs && `Level ${r.needs}+`, r.needOption && rows.find(x => x.id === r.needOption)?.label].filter(Boolean).join(', ') }}</span>
             <TraitChips v-if="r.option" :t="r.option" no-grants /></span>
           <span v-if="r.text" class="muted small sp-opt-lead">{{ lead(r.text) }}</span>
           <details v-if="r.text.length > lead(r.text).length + 2" class="sp-opt-more" @click.stop><summary class="small">more</summary><MarkdownView class="small" :source="r.text" /></details>

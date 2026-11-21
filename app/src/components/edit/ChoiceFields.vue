@@ -7,6 +7,7 @@ import type { TraitChoice, TraitSpell } from '../../model/types'
 import { choiceCandidates, HOW_SPECIES } from '../../species'
 import { listOptions } from '../../store'
 import { ABILITY_NAME } from '../../abilityBonus'
+import StepsInput from './StepsInput.vue'
 
 const model = defineModel<TraitChoice>({ required: true })
 const props = defineProps<{ withLabel?: boolean }>()
@@ -36,19 +37,16 @@ function toggleAmong(id: string) {
   put({ among: [...among] })
 }
 const LEVELS = ['Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-const stepsText = (st?: [number, number][]) => (st ?? []).map(([l, v]) => `${l}:${v}`).join(', ')
-function parseSteps(text: string): [number, number][] | undefined {
-  const out = text.split(',').map(x => x.trim().match(/^(\d+)\s*:\s*(\d+)$/)).filter((m): m is RegExpMatchArray => !!m)
-    .map(m => [Number(m[1]), Number(m[2])] as [number, number]).filter(([l]) => l >= 1)
-  return out.length ? out.sort((a, b) => a[0] - b[0]) : undefined
-}
 const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement).value
 </script>
 
 <template>
   <label v-if="props.withLabel" class="small">called <input class="steps-label" :value="model.label ?? ''" placeholder="e.g. Cantrips" @change="put({ label: val($event).trim() || undefined })" /></label>
   <label class="small">how many <input type="number" min="1" max="30" class="effect-value" :value="model.count ?? 1" @change="put({ count: Number(val($event)) || 1 })" /></label>
-  <label class="small" title="The count from a level on, e.g. 2:2, 9:4">by level <input class="steps-input" :value="stepsText(model.steps)" placeholder="2:2, 9:4" @change="put({ steps: parseSteps(val($event)) })" /></label>
+  <details class="steps-fold" :open="!!model.steps?.length">
+    <summary class="small">{{ model.steps?.length ? 'changes by level' : 'same at every level (change by level…)' }}</summary>
+    <StepsInput numeric label="How many" :model-value="model.steps" @update:model-value="v => put({ steps: v as [number, number][] | undefined })" />
+  </details>
   <label v-if="model.kind === 'feat'" class="small">kind <input class="steps-label" :value="model.category ?? ''" placeholder="e.g. Fighting Style" @change="put({ category: val($event).trim() || undefined })" /></label>
   <template v-if="model.kind === 'spell'">
     <select :value="spell.level ?? ''" aria-label="Spell level" @change="putSpell({ level: val($event) || undefined })">

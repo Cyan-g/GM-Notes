@@ -14,7 +14,7 @@ import { MASTERY_OF } from '../model/schema'
 import { optionsIn } from '../model/lists'
 import { ui } from '../ui'
 import {
-  backgroundOf, choiceCandidates, choiceOpen, featOfFeature, isOn, picksLeft, sourceTag, toggleOn, isClassOrigin, scaleAt, shownInPlay, speciesTraits, spendUse, traitsOf, usesLeft, usesMax,
+  backgroundOf, choiceCandidates, choiceOpen, featOfFeature, isOn, levelTag, picksLeft, sourceTag, toggleOn, isClassOrigin, scaleAt, shownInPlay, speciesTraits, spendUse, traitsOf, usesLeft, usesMax,
   type ActiveTrait,
 } from '../species'
 import EntryLink from './EntryLink.vue'
@@ -150,7 +150,7 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
 
     <!-- still to come -->
     <details v-if="later.length" class="sp-later small">
-      <summary class="muted">Later: {{ later.map(a => `${a.trait.name} (${tag(a)})`).join(', ') }}</summary>
+      <summary class="muted">Later: {{ later.map(a => `${a.trait.name} at ${levelTag(a)}`).join(', ') }}</summary>
       <div v-for="a in later" :key="a.key" class="sp-trait dim">
         <b>{{ a.trait.name }}</b> <span class="feat-tag" :class="'tag-' + a.race.type">{{ tag(a) }}</span>
         <MarkdownView v-if="a.trait.text" class="small" :source="a.trait.text" />

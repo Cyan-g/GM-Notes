@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import TraitsInput from './TraitsInput.vue'
+import ClassBasicsInput from './ClassBasicsInput.vue'
+import { classLabel } from '../../species'
 import AbilityBonusInput from './AbilityBonusInput.vue'
 import EquipmentInput from './EquipmentInput.vue'
 import { SKILLS } from '../../sheet'
@@ -80,7 +82,8 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
   <RanksInput v-else-if="def.kind === 'ranks'" v-model="value" />
   <EffectsInput v-else-if="def.kind === 'effects'" v-model="value" />
   <ItemSpellsInput v-else-if="def.kind === 'itemSpells'" v-model="value" />
-  <TraitsInput v-else-if="def.kind === 'speciesTraits'" v-model="value" :entry-type="entry.type" />
+  <ClassBasicsInput v-else-if="def.kind === 'classBasics'" v-model="value" :cls="String(entry.fields.class ?? '')" />
+  <TraitsInput v-else-if="def.kind === 'speciesTraits'" v-model="value" :entry-type="entry.type" :class-name="entry.type === 'class' || entry.type === 'subclass' ? classLabel(entry) : undefined" />
   <AbilityBonusInput v-else-if="def.kind === 'abilityBonus'" v-model="value" />
   <ProfChips v-else-if="def.kind === 'skills'" :values="value ?? []" :toggles="SKILL_OPTIONS" @change="value = $event.length ? $event : undefined" />
   <EquipmentInput v-else-if="def.kind === 'equipment'" v-model="value" />

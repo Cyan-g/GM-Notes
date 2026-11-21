@@ -5,8 +5,8 @@
 // Choices the new features ask for show up in the sheet's Choices card afterwards, as always.
 import { computed, ref } from 'vue'
 import type { CharacterSheet, ClassLine, Entry, Spellbook } from '../model/types'
-import { CLASS_DIE, classesOf, dieOf, totalLevel } from '../model/classes'
-import { EPIC_BOON_LEVEL, MULTICLASS, SUBCLASS_LEVEL, rulesOf } from '../classRules'
+import { classesOf, dieOf, totalLevel } from '../model/classes'
+import { EPIC_BOON_LEVEL, hitDieOf, multiclassOf, rulesOf, subclassLevelOf } from '../classRules'
 import { ABILITY_KEYS, bonusApplied, bonusOpen, type BonusChoice } from '../abilityBonus'
 import { byType, entries, get, listOptions } from '../store'
 import { SKILLS, editSheet, mod, profsToEdit, signed } from '../sheet'
@@ -34,7 +34,7 @@ const label = (id: string) => listOptions('class').find(o => o.id === id)?.label
 const newLevel = computed(() => (line.value?.level ?? 0) + 1)
 
 // ---- hit points ----
-const die = computed(() => (line.value ? dieOf(line.value) : CLASS_DIE[cls.value] || props.s.hitDie || 'd8'))
+const die = computed(() => (line.value ? dieOf(line.value) : cls.value ? hitDieOf(cls.value) : props.s.hitDie || 'd8'))
 const size = computed(() => Number(die.value.replace(/\D/g, '')) || 8)
 const con = computed(() => mod(scoreWith(props.s, 'con', gearTotals(props.s))))
 const how = ref<'avg' | 'roll'>('avg')
@@ -44,7 +44,7 @@ const gain = computed(() => (rolled.value == null || rolled.value < 1 || rolled.
 
 // ---- subclass and features ----
 const subclasses = computed(() => (byType.value.get('subclass') ?? []).filter(e => e.fields.class === cls.value).sort((a, b) => a.name.localeCompare(b.name)))
-const needsSub = computed(() => newLevel.value === SUBCLASS_LEVEL && !line.value?.subclass && subclasses.value.length > 0)
+const needsSub = computed(() => newLevel.value === subclassLevelOf(cls.value) && !line.value?.subclass && subclasses.value.length > 0)
 const sub = ref('')
 const subId = computed(() => line.value?.subclass ?? (needsSub.value ? sub.value : ''))
 const features = computed(() => [classEntry(cls.value), get(subId.value || undefined)].flatMap(e => (e ? traitsOf(e).filter(t => (t.level ?? 1) === newLevel.value).map(t => ({ from: e, t })) : [])))
@@ -83,14 +83,14 @@ const baseScores = computed(() => Object.fromEntries(ABILITY_KEYS.map(a => [a, p
 
 // ---- multiclassing: the scores it asks for, and what the new class brings ----
 const isNew = computed(() => !!cls.value && !line.value && lines.value.length > 0)
-const mc = computed(() => (isNew.value ? MULTICLASS[cls.value] : undefined))
+const mc = computed(() => (isNew.value ? multiclassOf(cls.value) : undefined))
 const scoreNow = (a: string) => scoreWith(props.s, a as (typeof ABILITY_KEYS)[number], gearTotals(props.s))
-const needText = (c: string) => { const m = MULTICLASS[c]; return m ? `${label(c)} ${m.primary.map(a => a.toUpperCase()).join(m.any ? ' or ' : ' + ')} 13` : '' }
+const needText = (c: string) => { const m = multiclassOf(c); return m ? `${label(c)} ${m.primary.map(a => a.toUpperCase()).join(m.any ? ' or ' : ' + ')} 13` : '' }
 /** What the classes ask for and the character lacks: "Wizard: INT 13 (has 10)". */
 const prereqs = computed(() => {
   if (!isNew.value || rule('multiclassing') === 'free') return []
   const need = (c: string) => {
-    const m = MULTICLASS[c]
+    const m = multiclassOf(c)
     if (!m) return ''
     const short = (a: string) => `${a.toUpperCase()} 13 (has ${scoreNow(a)})`
     const low = m.primary.filter(a => scoreNow(a) < 13)
@@ -211,7 +211,7 @@ function apply() {
             <label><input v-model="allowAnyway" type="checkbox" /> The DM allows it anyway</label>
           </div>
           <p v-else-if="rule('multiclassing') !== 'free'" class="small muted">Meets the multiclassing scores ({{ [cls, ...lines.map(l => l.class)].map(needText).filter(Boolean).join(', ') }}).</p>
-          <p v-if="!MULTICLASS[cls]" class="small muted">{{ label(cls) }} has no multiclassing rules here; add its proficiencies on the Edit page.</p>
+          <p v-if="!multiclassOf(cls)" class="small muted">{{ label(cls) }} has no multiclassing rules here; add its proficiencies on the Edit page.</p>
           <p v-else class="small">Gains: {{ gains.join(', ') || 'no armor, weapon or tool proficiencies' }}</p>
           <div v-if="mc?.skills" class="lu-pick">
             <span class="small">Skill ({{ mcSkills.length }}/{{ mc.skills }}):</span>

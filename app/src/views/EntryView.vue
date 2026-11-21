@@ -13,6 +13,7 @@ import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, hiddenFrom
 import { go, hrefEntry, hrefFamily, hrefList, hrefMap, hrefTab, type EntryTab } from '../router'
 import SpellbookView from './SpellbookView.vue'
 import InventoryTab from './InventoryTab.vue'
+import ClassOverview from '../components/ClassOverview.vue'
 import CompanionsTab from './CompanionsTab.vue'
 import CraftingView from './CraftingView.vue'
 import FamilyTree from '../components/FamilyTree.vue'
@@ -69,7 +70,7 @@ const groups = computed(() => {
   const x = e.value
   if (!x || !def.value) return []
   if (x.type === 'item' || x.type === 'spell' || x.type === 'feat') return []
-  const big = ['statblock', 'recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes', 'speciesTraits']
+  const big = ['statblock', 'recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes', 'classBasics', 'speciesTraits']
   const out = new Map<string, { def: FieldDef; value: unknown }[]>()
   for (const f of def.value.fields) {
     if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'creature' && f.key === 'creatureType') || (x.type === 'session' && ['campaign', 'number', 'date', 'playedOn', 'players'].includes(f.key)) || f.key === 'parent' || f.key === 'map' || f.key === 'pins' || f.kind === 'mapData' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
@@ -350,7 +351,8 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         <p v-if="!e.body && !['item', 'spell', 'feat', 'creature', 'encounter', 'pc'].includes(e.type)" class="muted">No text yet<template v-if="!state.readOnly"> — <a :href="hrefEntry(e.id) + '/edit'">✎ Edit</a> to write some</template>.</p>
         <PlayerNotes v-if="shared && NOTE_TYPES.includes(e.type)" :entry="e" />
 
-        <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => !(bodyParts.placed.has('ranks') && f.kind === 'ranks'))" :key="f.key">
+        <ClassOverview v-if="e.type === 'class'" :e="e" />
+        <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => f.kind !== 'classBasics' && !(bodyParts.placed.has('ranks') && f.kind === 'ranks'))" :key="f.key">
           <h2>{{ f.label }}</h2>
           <FieldValue :def="f" :value="byKey(e.fields)[f.key]" :entry="e" />
         </section>

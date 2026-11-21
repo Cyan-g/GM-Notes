@@ -1,12 +1,12 @@
 // Describes every entry type: its label, fields and dropdown options.
 // Forms and pages are generated from this, so adding a field here is enough.
 import type {
-  Abilities, AbilityBonus, CharacterSheet, Equipment, ClassLine, Copper, GearEffect, ItemSpell, SpellRoll, Trait, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
+  Abilities, AbilityBonus, CharacterSheet, ClassBasics, Equipment, ClassLine, Copper, GearEffect, ItemSpell, SpellRoll, Trait, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
 } from './types'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
-  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData' | 'speciesTraits' | 'abilityBonus' | 'skills' | 'equipment' | 'spellRolls'
+  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData' | 'speciesTraits' | 'abilityBonus' | 'skills' | 'equipment' | 'spellRolls' | 'classBasics'
 
 export interface FieldDef {
   key: string
@@ -255,6 +255,8 @@ export const SCHEMA = [
     // describes, from the Classes list; one entry per class.
     type: 'class', label: 'Class', plural: 'Classes', icon: '⚔️', fields: [
       { key: 'class', label: 'Class', kind: 'select', options: CLASSES, list: 'class' },
+      // Hit die, saves, proficiencies, spellcasting and the rest: what it sets wins over the built-in SRD values.
+      { key: 'basics', label: 'Class basics', kind: 'classBasics' },
       { key: 'speciesTraits', label: 'Features', kind: 'speciesTraits' },
     ],
   },
@@ -327,7 +329,7 @@ export interface KindValue {
   money: Copper; weight: number; ref: Id; refs: Id[]; date: WorldDate
   recipe: RecipeLine[]; stock: StockLine[]; statblock: Statblock; abilities: Abilities
   combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]; effects: GearEffect[]; itemSpells: ItemSpell[]; requires: Requirements; mapData: MapScale | MapRoute[]
-  speciesTraits: Trait[]; abilityBonus: AbilityBonus; skills: string[]; equipment: Equipment; spellRolls: SpellRoll[]
+  speciesTraits: Trait[]; abilityBonus: AbilityBonus; skills: string[]; equipment: Equipment; spellRolls: SpellRoll[]; classBasics: ClassBasics
 }
 type Defs = (typeof SCHEMA)[number]['fields'][number]
 /** A field key used by any type. */

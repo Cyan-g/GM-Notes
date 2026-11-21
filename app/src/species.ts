@@ -159,10 +159,20 @@ export function subraceOption(c: TraitChoice, subrace: string, parent: string): 
  * A trait's source, short, as a tag: the class with the level the feature comes at ("Warlock 2"), the subclass the
  * same without its class's name ("The Dusk Prince 6"), the race or background, or "feat" for a feat's own feature.
  */
+/** The class a class or subclass entry belongs to, by its list label ("Warlock"). */
+export function classLabel(e: Entry): string {
+  const cls = e.type === 'class' ? String(e.fields.class ?? e.name) : String(e.fields.class ?? '')
+  return listOptions('class').find(o => o.id === cls)?.label ?? cls
+}
+/** When a class or subclass feature comes: "Warlock Lv 14"; other sources have no level. */
+export function levelTag(a: ActiveTrait): string {
+  return a.race.type === 'class' || a.race.type === 'subclass' ? `${classLabel(a.race)} Lv ${a.trait.level ?? 1}` : sourceTag(a)
+}
 export function sourceTag(a: ActiveTrait): string {
   const lv = a.trait.level ?? 1
-  if (a.race.type === 'class') return `${a.race.name} ${lv}`
-  if (a.race.type === 'subclass') return `${withoutClass(a.race.name, String(a.race.fields.class ?? '')) ?? a.race.name} ${lv}`
+  // class features count the class's level; a subclass's count its class's level too ("The Dusk Prince · Warlock Lv 6")
+  if (a.race.type === 'class') return `${a.race.name} · Lv ${lv}`
+  if (a.race.type === 'subclass') return `${withoutClass(a.race.name, String(a.race.fields.class ?? '')) ?? a.race.name} · ${classLabel(a.race)} Lv ${lv}`
   if (a.race.type === 'feat' && a.trait.name === a.race.name) return 'feat'
   return a.race.name
 }

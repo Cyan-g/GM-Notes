@@ -10,9 +10,25 @@ import EffectsInput from './EffectsInput.vue'
 import EntryPicker from './EntryPicker.vue'
 
 const model = defineModel<TraitOption>({ required: true })
+const props = defineProps<{
+  /** The level of the feature these fields belong to: its spells come with it unless one says a later level. */
+  traitLevel?: number
+  /** For an option of a choice: the other options, one of which it may need picked first. */
+  siblings?: { id: string; name: string }[]
+  /** Label of the level ("Warlock level") for an option's prerequisite. */
+  levelWord?: string
+}>()
+/** The text box grows with its text: two lines when empty, up to sixteen. */
+const rows = (t?: string) => Math.min(16, Math.max(2, (t ?? '').split('\n').reduce((n, line) => n + Math.max(1, Math.ceil(line.length / 105)), 0)))
+function setNeeds(p: Partial<NonNullable<TraitOption['needs']>>) {
+  const n = { ...(model.value.needs ?? {}), ...p }
+  if (!n.level) delete n.level
+  if (!n.option) delete n.option
+  put({ needs: Object.keys(n).length ? n : undefined })
+}
 const put = (patch: Partial<TraitOption>) => {
   const next: TraitOption = { ...model.value, ...patch }
-  for (const k of ['text', 'effects', 'grants', 'spells'] as const) {
+  for (const k of ['text', 'effects', 'grants', 'spells', 'needs'] as const) {
     const v = next[k]
     if (v == null || v === '' || (Array.isArray(v) && !v.length)) delete next[k]
   }
@@ -31,7 +47,8 @@ const removeGrant = (i: number) => put({ grants: grants.value.filter((_, k) => k
 function setSpell(i: number, patch: Partial<TraitSpell>) {
   const l = spells.value.map(x => ({ ...x }))
   l[i] = { ...l[i], ...patch }
-  if (!l[i].from || l[i].from! <= 1) delete l[i].from
+  // a spell comes with its feature: only a later level is kept
+  if (!l[i].from || l[i].from! <= Math.max(1, props.traitLevel ?? 1)) delete l[i].from
   if (!l[i].ability) delete l[i].ability
   if (!l[i].swap) delete l[i].swap
   put({ spells: l })
@@ -44,7 +61,15 @@ const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement | 
 <template>
   <div class="trait-fields">
     <label class="trait-name"><span>Name</span><input :value="model.name" placeholder="e.g. Dwarven Resilience" @input="put({ name: val($event) })" /></label>
-    <label class="trait-text"><span>Text</span><textarea rows="2" :value="model.text ?? ''" placeholder="What it says (shown on the sheet)" @input="put({ text: val($event) })" /></label>
+    <div v-if="siblings" class="trait-needs small">
+      <span class="trait-label">Needs</span>
+      <label>{{ levelWord ?? 'level' }} <input type="number" min="1" max="20" class="effect-value" :value="model.needs?.level ?? ''" placeholder="—" @change="setNeeds({ level: Number(val($event)) || undefined })" /></label>
+      <label>and <select :value="model.needs?.option ?? ''" @change="setNeeds({ option: val($event) || undefined })">
+        <option value="">no other option</option>
+        <option v-for="o in siblings.filter(x => x.id !== model.id)" :key="o.id" :value="o.id">{{ o.name }}</option>
+      </select></label>
+    </div>
+    <label class="trait-text"><span>Text</span><textarea :rows="rows(model.text)" :value="model.text ?? ''" placeholder="What it says (shown on the sheet)" @input="put({ text: val($event) })" /></label>
     <div class="trait-part"><span class="trait-label">Effects</span><EffectsInput traits :model-value="model.effects" @update:model-value="v => put({ effects: v })" /></div>
     <div class="trait-part">
       <span class="trait-label">Grants</span>
@@ -74,7 +99,7 @@ const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement | 
             <option value="">no ability</option>
             <option v-for="(label, id) in ABILITY_NAME" :key="id" :value="id">with {{ label }}</option>
           </select>
-          <label class="small" title="From this character level">from level <input type="number" min="1" max="20" class="effect-value" :value="x.from ?? 1" @change="setSpell(i, { from: Number(val($event)) || 1 })" /></label>
+          <label class="small" title="Only from a later level than the feature's own; empty: with the feature">from level <input type="number" min="1" max="20" class="effect-value" :value="x.from ?? ''" :placeholder="`${traitLevel ?? 1}`" @change="setSpell(i, { from: Number(val($event)) || undefined })" /></label>
           <label class="small" title="The player may swap it for another spell of its level from a class's list (High Elf: a Wizard cantrip)"><input type="checkbox" :checked="!!x.swap" @change="setSpell(i, { swap: ($event.target as HTMLInputElement).checked ? {} : undefined })" /> swappable</label>
           <select v-if="x.swap" :value="x.swap.classes?.[0] ?? ''" aria-label="For a spell of which list" @change="setSpell(i, { swap: val($event) ? { classes: [val($event)] } : {} })">
             <option value="">any list</option>

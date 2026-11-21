@@ -2390,3 +2390,67 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 :where(:root.fl-runecarved) input[type=radio] { accent-color: var(--accent); }
 /* buttons: square corners to match */
 :where(:root.fl-runecarved) :where(button, a.button):not(.pip, .ds-box, .chip-btn, .chip-toggle, .x, .link-btn) { border-radius: 2px; }
+
+/* ---------- Wax & Ribbon: an optional style (Theme menu), soft paper, ribbons and seals; only the theme's colours ---------- */
+/* Rounded boxes with a soft shadow, a ribbon bookmark on the main cards, short notched ribbons under headings, dotted
+   lines to write on, a ribbon HP bar, a ribbon hanging under the open tab, tag-shaped chips, and wax seals for
+   charges, death saves and ticked checkboxes. The seals' rim and pressed ring are mixed from the accent. */
+:root.fl-wax {
+  --wx-edge: color-mix(in srgb, var(--accent) 14%, var(--line));
+  --wx-wax: var(--accent);
+  --wx-wax-light: color-mix(in srgb, var(--accent) 72%, var(--panel));
+  --wx-empty: color-mix(in srgb, var(--accent) 30%, var(--line));
+}
+:where(:root.fl-wax) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .char-sheet > .feature-choices, .cs-stat, .cs-ability, .tool, .slot-row, .feat-card, .trait-option-card) { border-color: var(--wx-edge); border-radius: 10px; }
+:where(:root.fl-wax) :where(.card, .item-card, .spell-card, .start-card) { position: relative; box-shadow: 0 1px 0 var(--wx-edge), var(--shadow); }
+:where(:root.fl-wax) :where(.card, .item-card, .spell-card, .start-card)::before {
+  content: ''; position: absolute; top: -1px; right: 18px; width: 12px; height: 26px; pointer-events: none;
+  background: var(--wx-wax); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%); opacity: .9;
+}
+:where(:root.fl-wax) :where(.modal, .table-wrap, .theme-panel) { border-color: var(--wx-edge); }
+/* headings: a short ribbon with notched ends */
+:root.fl-wax :is(.md h1, .md h2, .entry-main h2) { border-bottom: none; padding-bottom: 0; }
+:root.fl-wax :is(.md h1, .md h2, .entry-main h2)::after, :root.fl-wax .md hr {
+  content: ''; display: block; width: min(260px, 60%); height: 6px; margin-top: .35rem; border: none; background: var(--wx-wax); opacity: .85;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 50%, 100% 100%, 0 100%, 6px 50%);
+}
+:root.fl-wax .md hr { margin: 1.5rem auto; }
+/* fields: a dotted line to write on */
+:where(:root.fl-wax) :is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file]), select, textarea) {
+  border-color: transparent; border-bottom: 1.5px dotted var(--wx-empty); border-radius: 0; background: transparent;
+}
+:where(:root.fl-wax) :is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file]), select, textarea):focus { outline: none; border-bottom-style: solid; border-bottom-color: var(--accent); }
+:where(:root.fl-wax) select { background: var(--panel); }
+/* HP bars: a ribbon with a notched end */
+:root.fl-wax .hp-bar, :root.fl-wax .cs-hp-bar { border: none; border-radius: 0; background: color-mix(in srgb, var(--ink) 9%, var(--panel)); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 50%, 100% 100%, 0 100%); }
+:root.fl-wax .cs-hp-bar { height: 9px; clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 50%, 100% 100%, 0 100%); }
+:root.fl-wax .hp-fill, :root.fl-wax .cs-hp-bar i { background: var(--wx-wax); }
+:root.fl-wax .hp-bar.bloodied .hp-fill { background: var(--wx-wax-light); }
+:root.fl-wax .hp-bar.down .hp-fill { background: var(--muted); }
+/* tabs: a ribbon hangs under the open one */
+:root.fl-wax .tabs { border-bottom-color: var(--wx-edge); }
+:root.fl-wax .tabs a.on { position: relative; border-bottom-color: transparent; }
+:root.fl-wax .tabs a.on::after { content: ''; position: absolute; left: 50%; top: 100%; width: 11px; height: 13px; margin: 1px 0 0 -5.5px; background: var(--wx-wax); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%); }
+/* chips and badges: tags */
+:where(:root.fl-wax) :where(.chip, .badge, .chip-btn, .chip-toggle, .tag-ritual) { border-radius: 0 4px 4px 0; clip-path: polygon(6px 0, 100% 0, 100% 100%, 6px 100%, 0 50%); padding-left: .95em; }
+/* charges, slots, death saves: wax seals */
+:root.fl-wax .pip, :root.fl-wax .ds-box { transform: none; border: none; border-radius: 50%; width: 16px; height: 16px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--wx-empty); }
+:root.fl-wax .pip.on, :root.fl-wax .ds-box.on {
+  background: radial-gradient(circle, var(--wx-wax) 0 36%, var(--wx-wax-light) 38% 54%, var(--wx-wax) 57%);
+  box-shadow: 0 0 0 1.5px var(--wx-wax), 1px 1px 0 2px color-mix(in srgb, var(--wx-wax) 22%, transparent);
+}
+:root.fl-wax .ds-box.on { background: radial-gradient(circle, currentColor 0 36%, color-mix(in srgb, currentColor 70%, var(--panel)) 38% 54%, currentColor 57%); box-shadow: 0 0 0 1.5px currentColor; }
+:root.fl-wax .pip:hover { box-shadow: inset 0 0 0 1.5px var(--wx-wax); }
+:root.fl-wax .pip.on:hover { box-shadow: 0 0 0 1.5px var(--wx-wax), 0 0 0 4px color-mix(in srgb, var(--wx-wax) 25%, transparent); }
+/* checkboxes: a ring, sealed when ticked */
+:where(:root.fl-wax) input[type=checkbox]:not(.settings-switch input) {
+  appearance: none; -webkit-appearance: none; flex: none; width: 15px; height: 15px; margin: 0 .2em; padding: 0; vertical-align: -3px; cursor: pointer;
+  border: none; border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 1.5px var(--wx-empty); transition: background .12s;
+}
+:where(:root.fl-wax) input[type=checkbox]:not(.settings-switch input):checked {
+  background: radial-gradient(circle, var(--panel) 0 17%, var(--wx-wax) 20%); box-shadow: 0 0 0 1px var(--wx-wax), 1px 1px 0 1.5px color-mix(in srgb, var(--wx-wax) 22%, transparent);
+}
+:where(:root.fl-wax) input[type=checkbox]:not(.settings-switch input):indeterminate { background: radial-gradient(circle, var(--wx-wax-light) 0 30%, transparent 33%); }
+:where(:root.fl-wax) input[type=checkbox]:not(.settings-switch input):focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 1px; }
+:where(:root.fl-wax) input[type=checkbox]:disabled { opacity: .5; cursor: default; }
+:where(:root.fl-wax) input[type=radio] { accent-color: var(--accent); }

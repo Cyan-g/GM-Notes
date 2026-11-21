@@ -68,6 +68,7 @@ export const FLOURISHES = [
   { id: 'plain', name: 'Plain', note: 'Clean lines' },
   { id: 'illuminated', name: 'Illuminated', note: 'Gilded rules and scrolled corners' },
   { id: 'runecarved', name: 'Runecarved', note: 'Cut in stone: chamfers, notches and gems' },
+  { id: 'wax', name: 'Wax & Ribbon', note: 'Soft paper, ribbons and wax seals' },
 ]
 
 export const COLOR_LABELS: Record<keyof ThemeColors, string> = {

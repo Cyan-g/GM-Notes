@@ -73,6 +73,7 @@ export function checkField(f: FieldDef, v: unknown, exists?: (id: string) => Ent
     case 'skills': return Array.isArray(v) && v.every(isStr) ? undefined : 'should be a list of skills'
     case 'equipment': return isObj(v) && (v.items == null || Array.isArray(v.items)) ? undefined : 'should be a set of equipment'
     case 'abilityBonus': return isObj(v) ? undefined : 'should be an ability score bonus'
+    case 'spellArea': return isObj(v) ? undefined : 'should be an area of effect'
     case 'regain': return isObj(v) ? undefined : 'should be how charges come back'
     case 'speeds': return isObj(v) ? undefined : 'should be a set of speeds'
     case 'classBasics': return isObj(v) ? undefined : 'should be a set of class basics'

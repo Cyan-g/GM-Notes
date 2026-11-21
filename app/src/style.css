@@ -2052,3 +2052,20 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .item-needs .fp-label { grid-column: 1 / -1; }
 .item-needs .fp-value { grid-column: 1; }
 .if-part > h5 .muted { font-family: var(--sans); font-weight: normal; text-transform: none; letter-spacing: 0; }
+/* a spell's form in parts; its rolls as short sentences; the upcast table */
+.spell-form-sections { display: grid; gap: .8rem; }
+.sf-part { border: 1px solid var(--line); border-radius: 10px; padding: .5rem .8rem .7rem; }
+.sf-part > h4 { margin: 0 0 .5rem; font-size: .95rem; }
+.sf-quick { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .25rem; }
+.sf-quick .chip-btn { font-size: 11px; padding: .05rem .45rem; }
+.sf-quick .chip-btn.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
+.spell-rolls { display: grid; gap: .5rem; }
+.roll-card { border: 1px solid var(--line); border-radius: 8px; padding: .4rem .6rem; display: grid; gap: .3rem; }
+.roll-line { display: flex; flex-wrap: wrap; gap: .4rem .6rem; align-items: center; }
+.roll-line select { width: auto; }
+.roll-line .effect-text { flex: 1; min-width: 10rem; }
+.roll-x { margin-left: auto; }
+.upcast { margin: .8rem 0; }
+.upcast h3 { margin: 0 0 .3rem; font-size: 1rem; }
+.upcast table { width: auto; min-width: 18rem; }
+.spell-rolls > .chip-btn { justify-self: start; }

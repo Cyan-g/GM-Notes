@@ -142,6 +142,9 @@ export interface SpellRoll {
 /** One of a character's classes: an option of the "class" list, its level, a subclass entry, a hit die for a class without a standard one. */
 export interface ClassLine { class: string; level: number; subclass?: Id; die?: string }
 
+/** A spell's area of effect: its shape and size in feet (a line's width, a cylinder's height). */
+export interface SpellArea { shape: 'sphere' | 'cone' | 'cube' | 'line' | 'cylinder' | 'emanation'; size: number; width?: number; height?: number }
+
 /** An item's charges coming back: how many (a number, dice such as "1d6+1", or "all") and when. */
 export interface Regain { amount?: string; when?: 'dawn' | 'long' | 'short' | 'never' }
 

@@ -1,14 +1,18 @@
 <script setup lang="ts">
-// A spell's rolls on its Edit page, one row each: damage (of a type), healing or temporary hit points, the dice, plus
-// the spellcasting modifier, how it grows (a cantrip's dice at levels 5, 11, 17, or dice per slot level above), and a
-// note on when or to whom.
+// A spell's rolls on its Edit page, each a short sentence: what it rolls (damage of a type, healing or temporary hit
+// points), the dice and whether the spellcasting modifier is added; then how it grows — a cantrip's dice at character
+// levels 5, 11 and 17, or more dice per slot level above the spell's — and a note on when or to whom. Underneath, the
+// roll as it reads in the Spellbook.
 import { computed } from 'vue'
-import type { SpellRoll } from '../../model/types'
+import type { Entry, SpellRoll } from '../../model/types'
 import { DAMAGE } from '../../model/schema'
+import { growthText, rollText } from '../../spells'
 
 const model = defineModel<SpellRoll[] | undefined>()
-const props = defineProps<{ cantrip?: boolean }>()
+const props = defineProps<{ cantrip?: boolean; /** The spell (for its level, in the growth and preview). */ spell: Entry }>()
 const list = computed(() => model.value ?? [])
+const ORD = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
+const lvl = computed(() => Number(props.spell.fields.level) || 0)
 function put(i: number, p: Partial<SpellRoll>) {
   const l = list.value.map(x => ({ ...x }))
   const r: SpellRoll = { ...l[i], ...p }
@@ -20,24 +24,33 @@ function put(i: number, p: Partial<SpellRoll>) {
 const add = () => { model.value = [...list.value, { kind: 'damage', dice: '1d6', ...(props.cantrip ? { cantrip: true } : {}) }] }
 const remove = (i: number) => { const l = list.value.filter((_, k) => k !== i); model.value = l.length ? l : undefined }
 const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement).value
+/** How the roll reads, with how it grows: "8d6 fire · +1d6 per slot level above 3rd · half on a save". */
+const preview = (r: SpellRoll) => [rollText(props.spell, r), growthText(props.spell, r), r.note].filter(Boolean).join(' · ')
 </script>
 
 <template>
-  <div class="effects-input spell-rolls">
-    <div v-for="(r, i) in list" :key="i" class="effect-row">
-      <select :value="r.kind" aria-label="What it rolls" @change="put(i, { kind: val($event) as SpellRoll['kind'] })">
-        <option value="damage">Damage</option><option value="healing">Healing</option><option value="tempHp">Temp HP</option>
-      </select>
-      <input class="effect-value roll-dice" :value="r.dice" placeholder="2d10" aria-label="Dice" @change="put(i, { dice: val($event).trim() || '1d6' })" />
-      <select v-if="r.kind === 'damage'" :value="r.type ?? ''" aria-label="Damage type" @change="put(i, { type: val($event) || undefined })">
-        <option value="">any type</option>
-        <option v-for="t in DAMAGE" :key="t" :value="t">{{ t }}</option>
-      </select>
-      <label class="small effect-check" title="Plus the caster's spellcasting ability modifier"><input type="checkbox" :checked="!!r.mod" @change="put(i, { mod: ($event.target as HTMLInputElement).checked })" /> + modifier</label>
-      <label v-if="props.cantrip || r.cantrip" class="small effect-check" title="A cantrip's dice: twice at level 5, three times at 11, four times at 17"><input type="checkbox" :checked="!!r.cantrip" @change="put(i, { cantrip: ($event.target as HTMLInputElement).checked })" /> grows at 5/11/17</label>
-      <label v-else class="small" title="Added for each slot level above the spell's, e.g. 1d6">per slot above <input class="effect-value roll-dice" :value="r.slot ?? ''" placeholder="1d6" @change="put(i, { slot: val($event).trim() || undefined })" /></label>
-      <input class="effect-text" :value="r.note ?? ''" placeholder="note, e.g. half on a save" aria-label="Note" @change="put(i, { note: val($event).trim() || undefined })" />
-      <button type="button" class="link-btn" title="Remove" @click="remove(i)">×</button>
+  <div class="spell-rolls">
+    <div v-for="(r, i) in list" :key="i" class="roll-card">
+      <div class="roll-line">
+        <select :value="r.kind" aria-label="What it rolls" @change="put(i, { kind: val($event) as SpellRoll['kind'] })">
+          <option value="damage">Damage</option><option value="healing">Healing</option><option value="tempHp">Temp HP</option>
+        </select>
+        <input class="effect-value roll-dice" :value="r.dice" placeholder="2d10" aria-label="Dice" @change="put(i, { dice: val($event).trim() || '1d6' })" />
+        <select v-if="r.kind === 'damage'" :value="r.type ?? ''" aria-label="Damage type" @change="put(i, { type: val($event) || undefined })">
+          <option value="">any type</option>
+          <option v-for="t in DAMAGE" :key="t" :value="t">{{ t }}</option>
+        </select>
+        <label class="small effect-check" title="Plus the caster's spellcasting ability modifier"><input type="checkbox" :checked="!!r.mod" @change="put(i, { mod: ($event.target as HTMLInputElement).checked })" /> + spellcasting modifier</label>
+        <button type="button" class="link-btn roll-x" title="Remove this roll" @click="remove(i)">×</button>
+      </div>
+      <div class="roll-line small">
+        <template v-if="cantrip || r.cantrip">
+          <label class="effect-check" title="A cantrip's dice: twice at character level 5, three times at 11, four times at 17"><input type="checkbox" :checked="!!r.cantrip" @change="put(i, { cantrip: ($event.target as HTMLInputElement).checked })" /> More dice at character levels 5, 11 and 17</label>
+        </template>
+        <label v-else>At higher levels: + <input class="effect-value roll-dice" :value="r.slot ?? ''" placeholder="1d6" @change="put(i, { slot: val($event).trim() || undefined })" /> per slot level above {{ ORD[lvl] || 'its level' }}</label>
+        <input class="effect-text" :value="r.note ?? ''" placeholder="note, e.g. half on a save" aria-label="Note" @change="put(i, { note: val($event).trim() || undefined })" />
+      </div>
+      <div class="muted small roll-preview">Reads: <b>{{ preview(r) }}</b></div>
     </div>
     <button type="button" class="chip-btn" @click="add">+ Roll</button>
   </div>

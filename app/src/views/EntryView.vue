@@ -18,6 +18,7 @@ import SubclassInfo from '../components/SubclassInfo.vue'
 import RaceGlance from '../components/RaceGlance.vue'
 import BackgroundGlance from '../components/BackgroundGlance.vue'
 import FeatInfo from '../components/FeatInfo.vue'
+import UpcastTable from '../components/UpcastTable.vue'
 import CompanionsTab from './CompanionsTab.vue'
 import CraftingView from './CraftingView.vue'
 import FamilyTree from '../components/FamilyTree.vue'
@@ -239,7 +240,7 @@ const knownBy = computed(() => (e.value?.type === 'spell' ? (byType.value.get('p
 /** A new item like this one, to make a variant of it (opened in its editor). */
 function copyItem() {
   const x = e.value!
-  const n = createEntry('item', `${x.name} (copy)`, JSON.parse(JSON.stringify(x.fields)))
+  const n = createEntry(x.type, `${x.name} (copy)`, JSON.parse(JSON.stringify(x.fields)))
   n.body = String(x.body ?? '')
   changed(n)
   go(hrefEntry(n.id) + '/edit')
@@ -355,6 +356,8 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
           <SpellCard :e="scrollSpell" />
         </section>
         <SpellCard v-if="e.type === 'spell'" :e="e" />
+        <UpcastTable v-if="e.type === 'spell'" :e="e" />
+        <div v-if="e.type === 'spell' && !state.readOnly && !playerMode" class="copy-row"><button type="button" class="chip-btn" title="A new spell with the same stats, rolls and text, to make a variant of it" @click="copyItem">Copy as new spell</button></div>
         <CharacterSheet v-if="e.type === 'pc'" :pc="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
         <FeatCard v-if="e.type === 'feat'" :e="e" source />

@@ -5,7 +5,7 @@ import { optionLabel } from '../store'
 import type { Entry } from '../model/types'
 import { describe } from '../describe'
 import MarkdownView from './MarkdownView.vue'
-import { activeEffectsOf, growthText, rollText, rollsOf } from '../spells'
+import { activeEffectsOf, areaText, growthText, rollText, rollsOf } from '../spells'
 import { describeEffects } from '../gear'
 
 const props = defineProps<{ e: Entry }>()
@@ -15,7 +15,7 @@ const f = computed(() => props.e.fields)
 const components = computed(() => [f.value.verbal && 'V', f.value.somatic && 'S', f.value.material && `M (${f.value.material === 'yes' ? 'material' : f.value.material})`].filter(Boolean).join(', '))
 const grid = computed(() => ([
   ['Casting time', [f.value.castingTime, f.value.ritual && '(ritual)'].filter(Boolean).join(' ')],
-  ['Range', f.value.range],
+  ['Range', [f.value.range, areaText(f.value.area) && `(${areaText(f.value.area)})`].filter(Boolean).join(' ')],
   ['Components', components.value],
   ['Duration', [f.value.concentration && 'Concentration,', f.value.duration].filter(Boolean).join(' ')],
 ] as [string, string][]))

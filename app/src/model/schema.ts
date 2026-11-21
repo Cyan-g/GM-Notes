@@ -1,12 +1,12 @@
 // Describes every entry type: its label, fields and dropdown options.
 // Forms and pages are generated from this, so adding a field here is enough.
 import type {
-  Abilities, AbilityBonus, CharacterSheet, ClassBasics, Equipment, Regain, Speeds, ClassLine, Copper, GearEffect, ItemSpell, SpellRoll, Trait, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
+  Abilities, AbilityBonus, CharacterSheet, ClassBasics, Equipment, Regain, SpellArea, Speeds, ClassLine, Copper, GearEffect, ItemSpell, SpellRoll, Trait, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
 } from './types'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
-  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData' | 'speciesTraits' | 'abilityBonus' | 'skills' | 'equipment' | 'spellRolls' | 'classBasics' | 'speeds' | 'regain'
+  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData' | 'speciesTraits' | 'abilityBonus' | 'skills' | 'equipment' | 'spellRolls' | 'classBasics' | 'speeds' | 'regain' | 'spellArea'
 
 export interface FieldDef {
   key: string
@@ -232,6 +232,8 @@ export const SCHEMA = [
       { key: 'school', label: 'School', kind: 'select', options: ['Abjuration', 'Conjuration', 'Divination', 'Enchantment', 'Evocation', 'Illusion', 'Necromancy', 'Transmutation'] },
       { key: 'castingTime', label: 'Casting time', kind: 'text' },
       { key: 'range', label: 'Range', kind: 'text' },
+      // Its area of effect: shape and size (20-foot-radius Sphere); shown with the range.
+      { key: 'area', label: 'Area', kind: 'spellArea' },
       { key: 'duration', label: 'Duration', kind: 'text' },
       { key: 'concentration', label: 'Concentration', kind: 'bool' },
       { key: 'ritual', label: 'Ritual', kind: 'bool' },
@@ -348,7 +350,7 @@ export interface KindValue {
   money: Copper; weight: number; ref: Id; refs: Id[]; date: WorldDate
   recipe: RecipeLine[]; stock: StockLine[]; statblock: Statblock; abilities: Abilities
   combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]; effects: GearEffect[]; itemSpells: ItemSpell[]; requires: Requirements; mapData: MapScale | MapRoute[]
-  speciesTraits: Trait[]; abilityBonus: AbilityBonus; skills: string[]; equipment: Equipment; spellRolls: SpellRoll[]; classBasics: ClassBasics; speeds: Speeds; regain: Regain
+  speciesTraits: Trait[]; abilityBonus: AbilityBonus; skills: string[]; equipment: Equipment; spellRolls: SpellRoll[]; classBasics: ClassBasics; speeds: Speeds; regain: Regain; spellArea: SpellArea
 }
 type Defs = (typeof SCHEMA)[number]['fields'][number]
 /** A field key used by any type. */

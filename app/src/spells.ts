@@ -1,7 +1,7 @@
 // What a spell rolls and does (its `rolls`, `conditions` and `active` fields): a roll in words at the caster's level
 // and the slot it's cast with ("2d10 fire", "2d4 + 3 healing"), how it grows, and the spells a character has switched
 // on, whose "while active" effects their sheet counts (gear.ts) until a long rest.
-import type { CharacterSheet, Entry, GearEffect, Id, SpellRoll } from './model/types'
+import type { CharacterSheet, Entry, GearEffect, Id, SpellArea, SpellRoll } from './model/types'
 import { get } from './store'
 
 /** A spell's rolls. */
@@ -9,6 +9,19 @@ export const rollsOf = (e: Entry | undefined): SpellRoll[] => (Array.isArray(e?.
 /** A spell's effects while it's active. */
 export const activeEffectsOf = (e: Entry | undefined): GearEffect[] => (Array.isArray(e?.fields.active) ? e!.fields.active! : [])
 /** A spell's level as a number (a cantrip is 0). */
+/** A spell's area of effect in words: "20-foot-radius Sphere", "15-foot Cone", "60-foot-long, 5-foot-wide Line". */
+export function areaText(a: SpellArea | undefined): string {
+  if (!a?.size) return ''
+  const n = a.size
+  switch (a.shape) {
+    case 'sphere': return `${n}-foot-radius Sphere`
+    case 'cylinder': return `${n}-foot-radius, ${a.height ?? n}-foot-high Cylinder`
+    case 'line': return `${n}-foot-long, ${a.width ?? 5}-foot-wide Line`
+    case 'emanation': return `${n}-foot Emanation`
+    case 'cone': return `${n}-foot Cone`
+    default: return `${n}-foot Cube`
+  }
+}
 export const spellLevel = (e: Entry) => (e.fields.level === 'Cantrip' ? 0 : Number(e.fields.level) || 0)
 /** How many times a cantrip's dice count at a character level: 1, then 2 at 5, 3 at 11, 4 at 17. */
 export const cantripTier = (level: number) => (level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1)

@@ -7,6 +7,7 @@ import { describe } from './describe'
 import { attackOrSave } from './columns'
 import { describeEffect, effectsOf, howCast, regainText, spellsOf, worksWhileOf } from './gear'
 import { describeRequirements } from './requirements'
+import { areaText } from './spells'
 
 // ---- how the cards look, kept with the world ----
 export interface CardStyle {
@@ -100,7 +101,7 @@ function spellCard(e: Entry): Card {
     marks: [f.concentration && 'C', f.ritual && 'R'].filter(Boolean) as string[],
     facts: ([
       ['Casting time', String(f.castingTime ?? '')],
-      ['Range', String(f.range ?? '')],
+      ['Range', [f.range, areaText(f.area) && `(${areaText(f.area)})`].filter(Boolean).join(' ')],
       ['Components', components],
       ['Duration', String(f.duration ?? '')],
     ] as [string, string][]).concat(check.endsWith('save') ? [['Save', check]] : check === 'Attack' ? [['Attack', 'Spell attack']] : []),

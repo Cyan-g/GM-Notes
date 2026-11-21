@@ -7,7 +7,7 @@ import type { CharacterSheet, Entry } from '../model/types'
 import { editSheet } from '../sheet'
 import { state } from '../store'
 import { sourceTag, speciesTraits, spendUse, usesLeft, usesMax, type ActiveTrait } from '../species'
-import { chargesLeft, itemsInUse, setCharges } from '../gear'
+import { chargesLeft, itemsInUse, regainText, setCharges } from '../gear'
 
 const props = defineProps<{ pc: Entry; s: CharacterSheet }>()
 const ro = computed(() => !!state.readOnly)
@@ -16,7 +16,7 @@ const max = (a: ActiveTrait) => usesMax(props.pc, a, props.s)
 const left = (a: ActiveTrait) => usesLeft(props.pc, props.s, a)
 const use = (a: ActiveTrait, n: number) => { if (!ro.value) editSheet(props.pc, x => spendUse(x, props.pc, a, n)) }
 /** The charges of the items in use (a staff, a wand), spent and given back here as on the Inventory tab. */
-const charged = computed(() => itemsInUse(props.s).map(({ l, i, item }) => ({ i, name: item.name, max: Number(item.fields.charges) || 0, left: chargesLeft(l, item) ?? 0, recharge: item.fields.recharge as string | undefined })).filter(x => x.max > 0))
+const charged = computed(() => itemsInUse(props.s).map(({ l, i, item }) => ({ i, name: item.name, max: Number(item.fields.charges) || 0, left: chargesLeft(l, item) ?? 0, recharge: regainText(item) || undefined })).filter(x => x.max > 0))
 const charge = (i: number, n: number) => { if (!ro.value) editSheet(props.pc, x => setCharges(x, i, n)) }
 const back = (a: ActiveTrait) => (a.trait.uses!.recharge === 'short' ? 'short rest' : a.trait.uses!.shortBack ? `long rest (${a.trait.uses!.shortBack} on a short)` : 'long rest')
 </script>

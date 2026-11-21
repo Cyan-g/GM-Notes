@@ -7,7 +7,7 @@ import { TYPES, byKey } from '../model/schema'
 import { fieldLabel, formatMoney, get, state } from '../store'
 import { optionsIn } from '../model/lists'
 import { renderInline } from '../markdown'
-import { describeEffect, effectsOf, howCast, spellsOf } from '../gear'
+import { describeEffect, effectsOf, howCast, regainText, spellsOf, worksWhileOf } from '../gear'
 import EntryLink from './EntryLink.vue'
 import TraitList from './TraitList.vue'
 import { traitsOf, wearable } from '../species'
@@ -25,7 +25,7 @@ const rows = computed(() => ([
   ['Armor class', f.value.armorClass],
   ['Slot', L('slot')],
   [f.value.attunement ? 'Attunement by' : 'Requires', describeRequirements(props.e)],
-  ['Charges', f.value.charges ? [f.value.charges, f.value.recharge && `regains ${f.value.recharge}`].filter(Boolean).join(', ') : ''],
+  ['Charges', f.value.charges ? [f.value.charges, regainText(props.e) && `regains ${regainText(props.e)}`].filter(Boolean).join(', ') : ''],
   ['Crafted with', get(f.value.craftingType)?.name],
   ['Ingredient type', L('category')],
   ['Weight', f.value.weight != null ? `${f.value.weight} lb` : ''],
@@ -42,7 +42,8 @@ const effects = computed(() => effectsOf(props.e).map(describeEffect).filter(Boo
 /** Short effects as chips ("+1 AC"), feature sentences as lines of their own. */
 const chipEffects = computed(() => effectsOf(props.e).filter(x => x.on !== 'feature').map(describeEffect).filter(Boolean))
 const lineEffects = computed(() => effectsOf(props.e).filter(x => x.on === 'feature').map(describeEffect).filter(Boolean))
-const effectsWhen = computed(() => (f.value.attunement ? 'While attuned' : f.value.kind === 'Weapon' ? 'While wielded' : 'While worn'))
+// when its effects count (its "Works while", else its kind's default)
+const effectsWhen = computed(() => { const w = worksWhileOf(props.e); return w === 'attuned' ? 'While attuned' : w === 'carried' ? 'While carried' : f.value.kind === 'Weapon' ? 'While wielded' : 'While worn' })
 const spells = computed(() => spellsOf(props.e).filter(x => get(x.spell)))
 const features = computed(() => traitsOf(props.e))
 /** The kind line, starting with a capital: "Magical Melee (Quarterstaff) · requires attunement". */
@@ -70,7 +71,7 @@ const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magic
         </div>
         <!-- its rules as features (with uses, choices and spells), when it has them -->
         <div v-if="features.length" class="ic-gear ic-features">
-          <div class="ic-gear-head">{{ effects.length || spells.length ? 'Features' : wearable(e) ? effectsWhen : 'While carried' }}</div>
+          <div class="ic-gear-head">{{ effects.length || spells.length ? 'Features' : effectsWhen }}</div>
           <TraitList :traits="features" :known="String(e.body ?? '')" />
         </div>
       </div>

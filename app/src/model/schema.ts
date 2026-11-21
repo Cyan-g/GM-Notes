@@ -1,12 +1,12 @@
 // Describes every entry type: its label, fields and dropdown options.
 // Forms and pages are generated from this, so adding a field here is enough.
 import type {
-  Abilities, AbilityBonus, CharacterSheet, ClassBasics, Equipment, Speeds, ClassLine, Copper, GearEffect, ItemSpell, SpellRoll, Trait, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
+  Abilities, AbilityBonus, CharacterSheet, ClassBasics, Equipment, Regain, Speeds, ClassLine, Copper, GearEffect, ItemSpell, SpellRoll, Trait, MapRoute, MapScale, Requirements, EncounterLine, EntryType, Id, Pin, RankLine, RecipeLine, RelationKind, Statblock, StockLine, WorldDate,
 } from './types'
 
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
-  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData' | 'speciesTraits' | 'abilityBonus' | 'skills' | 'equipment' | 'spellRolls' | 'classBasics' | 'speeds'
+  | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData' | 'speciesTraits' | 'abilityBonus' | 'skills' | 'equipment' | 'spellRolls' | 'classBasics' | 'speeds' | 'regain'
 
 export interface FieldDef {
   key: string
@@ -201,6 +201,8 @@ export const SCHEMA = [
       { key: 'armorType', label: 'Armor type', kind: 'select', options: ARMOR_TYPES, fixed: ARMOR_TYPES, when: A, group: 'Armor' },
       { key: 'armorClass', label: 'Armor class', kind: 'text', when: A, group: 'Armor' },
       { key: 'slot', label: 'Slot', kind: 'select', options: ['Head', 'Chest', 'Cloak', 'Gloves', 'Boots', 'Shield'], when: A, group: 'Armor' },
+      // Heavy armor's (and some medium armor's) disadvantage on Stealth while worn.
+      { key: 'stealthDis', label: 'Stealth disadvantage', kind: 'bool', when: A, group: 'Armor' },
       // What it does to whoever wears, wields or attunes it (gear.ts); not for consumables and ingredients.
       // Who can use it (requirements.ts): checked when it's equipped, or attuned if it needs attunement.
       { key: 'requirements', label: 'Requirements', kind: 'requires', when: GEAR },
@@ -208,6 +210,11 @@ export const SCHEMA = [
       // Spells it lets its user cast, and the charges they cost (gear.ts).
       { key: 'charges', label: 'Charges', kind: 'number', when: GEAR },
       { key: 'recharge', label: 'Regains', kind: 'text', when: GEAR },
+      // How many charges come back, and when (the sheet gives a number back on that rest, or asks for the dice roll).
+      { key: 'regain', label: 'Regains', kind: 'regain', when: GEAR },
+      // When its effects and features count: carried, equipped or attuned (by default: attuned if it needs
+      // attunement, equipped if it can be, else carried).
+      { key: 'worksWhile', label: 'Works while', kind: 'select', options: ['carried', 'equipped', 'attuned'], when: GEAR },
       { key: 'spells', label: 'Spells', kind: 'itemSpells', to: ['spell'], when: GEAR },
       // Its rules as features, like a feat's (species.ts): counted while it's in use, or while carried if it can't be
       // equipped or attuned (a flask, a pearl); listed on the sheet in play with uses, choices and spells.
@@ -341,7 +348,7 @@ export interface KindValue {
   money: Copper; weight: number; ref: Id; refs: Id[]; date: WorldDate
   recipe: RecipeLine[]; stock: StockLine[]; statblock: Statblock; abilities: Abilities
   combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]; effects: GearEffect[]; itemSpells: ItemSpell[]; requires: Requirements; mapData: MapScale | MapRoute[]
-  speciesTraits: Trait[]; abilityBonus: AbilityBonus; skills: string[]; equipment: Equipment; spellRolls: SpellRoll[]; classBasics: ClassBasics; speeds: Speeds
+  speciesTraits: Trait[]; abilityBonus: AbilityBonus; skills: string[]; equipment: Equipment; spellRolls: SpellRoll[]; classBasics: ClassBasics; speeds: Speeds; regain: Regain
 }
 type Defs = (typeof SCHEMA)[number]['fields'][number]
 /** A field key used by any type. */

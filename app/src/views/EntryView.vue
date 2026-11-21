@@ -9,7 +9,7 @@ import { currentPc, setCurrent } from '../sheet'
 import { computed, ref } from 'vue'
 import type { Entry, Relation, Statblock, WorldDate } from '../model/types'
 import { TYPES, RELATION_KINDS, byKey, type FieldDef } from '../model/schema'
-import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, hiddenFromPlayers, placePath, relationsOf, entries, state } from '../store'
+import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, hiddenFromPlayers, placePath, playerMode, relationsOf, entries, state } from '../store'
 import { go, hrefEntry, hrefFamily, hrefList, hrefMap, hrefTab, type EntryTab } from '../router'
 import SpellbookView from './SpellbookView.vue'
 import InventoryTab from './InventoryTab.vue'
@@ -26,7 +26,7 @@ import MapView from '../components/MapView.vue'
 import SubTree from '../components/SubTree.vue'
 import Sunburst from '../components/Sunburst.vue'
 import { newEntry, ui, printCards } from '../ui'
-import { changed, isFavourite, toggleFavourite } from '../edit'
+import { changed, createEntry, isFavourite, toggleFavourite } from '../edit'
 import type { Pin } from '../model/types'
 import EntryLink from '../components/EntryLink.vue'
 import ExportDialog from '../components/ExportDialog.vue'
@@ -236,6 +236,14 @@ const children = computed(() => (e.value ? childrenOf.value.get(e.value.id) ?? [
 const shared = computed(() => isShared(e.value))
 /** The characters with this spell in their spellbook, or this item in their inventory. */
 const knownBy = computed(() => (e.value?.type === 'spell' ? (byType.value.get('pc') ?? []).filter(p => p.fields.sheet?.spellbook?.known?.includes(e.value!.id)) : []))
+/** A new item like this one, to make a variant of it (opened in its editor). */
+function copyItem() {
+  const x = e.value!
+  const n = createEntry('item', `${x.name} (copy)`, JSON.parse(JSON.stringify(x.fields)))
+  n.body = String(x.body ?? '')
+  changed(n)
+  go(hrefEntry(n.id) + '/edit')
+}
 const carriedBy = computed(() => (e.value?.type === 'item' ? (byType.value.get('pc') ?? []).filter(p => p.fields.sheet?.inventory?.some(l => l.item === e.value!.id && l.qty > 0)) : []))
 const mentions = computed(() => {
   const x = e.value
@@ -339,6 +347,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         <!-- An item's card takes the main two thirds; its recipe is the first card on the right (as when editing). -->
         <div v-if="e.type === 'item'" class="item-top">
           <ItemCard :e="e" />
+          <div v-if="!state.readOnly && !playerMode" class="copy-row"><button type="button" class="chip-btn" title="A new item with the same fields, effects, spells and features: a +2 version, a cursed one" @click="copyItem">Copy as new item</button></div>
         </div>
         <!-- A scroll shows the spell it holds. -->
         <section v-if="scrollSpell" class="scroll-spell">
@@ -484,7 +493,8 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         </div>
         <div v-if="carriedBy.length" class="card">
           <h3>Carried by</h3>
-          <ul class="plain"><li v-for="p in carriedBy" :key="p.id"><EntryLink :id="p.id" icon /> <span class="muted small">× {{ p.fields.sheet!.inventory.filter(l => l.item === e!.id).reduce((n, l) => n + l.qty, 0) }}</span></li></ul>
+          <ul class="plain"><li v-for="p in carriedBy" :key="p.id"><EntryLink :id="p.id" icon /> <span class="muted small">× {{ p.fields.sheet!.inventory.filter(l => l.item === e!.id).reduce((n, l) => n + l.qty, 0) }}</span>
+            <span v-if="p.fields.sheet!.inventory.some(l => l.item === e!.id && l.attuned)" class="chip small">attuned</span><span v-else-if="p.fields.sheet!.inventory.some(l => l.item === e!.id && l.equipped)" class="chip small">equipped</span></li></ul>
         </div>
         <!-- a player character's notes beside the sheet, where other pages list what mentions them -->
         <PcNotes v-if="e.type === 'pc'" :pc="e" />

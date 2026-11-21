@@ -9,7 +9,7 @@ import { get, state } from '../store'
 import { blockedFor, canAttune, canEquip, draggedLine, dragged, editSheet, endDrag, proficientWith, sheetOf, startDrag } from '../sheet'
 import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
-import { chargesLeft, describeEffect, effectsOf, itemsInUse, setCharges, spellsOf } from '../gear'
+import { chargesLeft, describeEffect, effectsOf, itemsInUse, regainText, setCharges, spellsOf } from '../gear'
 
 const props = defineProps<{ pc: Entry }>()
 const ATTUNE_SLOTS = 3
@@ -23,7 +23,7 @@ const other = computed(() => lines.value.filter(x => x.l.equipped && !['Armor', 
 /** What each item in use does right now (gear.ts), with its charges. */
 const active = computed(() => itemsInUse(sheetOf(props.pc))
   .map(({ l, i, item }) => ({
-    i, id: item.id, name: item.name, max: Number(item.fields.charges) || 0, left: chargesLeft(l, item), recharge: item.fields.recharge as string | undefined,
+    i, id: item.id, name: item.name, max: Number(item.fields.charges) || 0, left: chargesLeft(l, item), recharge: regainText(item) || undefined,
     says: [...effectsOf(item).map(describeEffect), spellsOf(item).length ? `${spellsOf(item).length} spell${spellsOf(item).length > 1 ? 's' : ''}` : ''].filter(Boolean).join(' · '),
   }))
   .filter(g => g.says || g.max))

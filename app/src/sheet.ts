@@ -7,7 +7,7 @@ import type { Abilities, CharacterSheet, Crafting, Entry, GearEffect, Id, Invent
 import { MARTIAL_WEAPONS, MASTERY_OF, SIMPLE_WEAPONS } from './model/schema'
 import { optionsIn } from './model/lists'
 import { db, get, state, touch } from './store'
-import { breakdown, gearTotals, restItems, scoreWith, spellsOf, sum } from './gear'
+import { breakdown, gearTotals, restItems, scoreWith, spellsOf, sum, type RegainRoll } from './gear'
 import { unmet } from './requirements'
 import { setConditions } from './conditions'
 import { rule } from './rules'
@@ -433,21 +433,22 @@ export const draggedLine = (pc: Entry) => (dragged.pc === pc.id ? sheetOf(pc)?.i
  */
 /** A short rest: what recharges on one comes back (features, pact slots, item spells). Hit Dice are the player's to
  * spend and roll; they count them down on the sheet. */
-export function shortRest(pc: Entry) {
+export function shortRest(pc: Entry): RegainRoll[] {
   const s = sheetToEdit(pc)
   restSlots(s.spellbook, 'short')
-  restItems(s, 'short')
+  const rolls = restItems(s, 'short')
   restSpecies(s, pc, 'short')
   pc.updated = new Date().toISOString()
   touch()
+  return rolls
 }
 
-export function longRest(pc: Entry) {
+export function longRest(pc: Entry): RegainRoll[] {
   const s = sheetToEdit(pc)
   s.hp = maxHpOf(s)
   delete s.tempHp
   restSlots(s.spellbook, 'long')
-  restItems(s, 'long')
+  const rolls = restItems(s, 'long')
   restSpecies(s, pc, 'long')
   delete s.activeSpells
   // spells end, concentration with them; a long rest also ends death saves (they're back up with full HP)
@@ -470,4 +471,5 @@ export function longRest(pc: Entry) {
   if (Object.keys(m).length) s.hitDiceSpent = m; else delete s.hitDiceSpent
   pc.updated = new Date().toISOString()
   touch()
+  return rolls
 }

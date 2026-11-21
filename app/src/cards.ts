@@ -5,7 +5,7 @@ import { TYPES, byKey } from './model/schema'
 import { db, fieldLabel, get, optionLabel, state, touch } from './store'
 import { describe } from './describe'
 import { attackOrSave } from './columns'
-import { describeEffect, effectsOf, howCast, spellsOf } from './gear'
+import { describeEffect, effectsOf, howCast, regainText, spellsOf, worksWhileOf } from './gear'
 import { describeRequirements } from './requirements'
 
 // ---- how the cards look, kept with the world ----
@@ -116,7 +116,7 @@ function itemCard(e: Entry): Card {
   const summary = paragraphs(f.summary), body = paragraphs(e.body)
   const effects = effectsOf(e).map(describeEffect).filter(Boolean)
   const spells = spellsOf(e).filter(x => get(x.spell))
-  const when = f.attunement ? 'While attuned' : f.kind === 'Weapon' ? 'While wielded' : 'While worn'
+  const w = worksWhileOf(e), when = w === 'attuned' ? 'While attuned' : w === 'carried' ? 'While carried' : f.kind === 'Weapon' ? 'While wielded' : 'While worn'
   const rarity = f.rarity ? L('rarity').toLowerCase() : ''
   return {
     id: e.id, kind: 'item', rarity: f.rarity ? String(f.rarity) : undefined, title: e.name,
@@ -127,7 +127,7 @@ function itemCard(e: Entry): Card {
       ['Range', String(f.range ?? '')],
       ['Armor class', String(f.armorClass ?? '')],
       [f.attunement ? 'Attunement by' : 'Requires', describeRequirements(e)],
-      ['Charges', f.charges ? [f.charges, f.recharge && `regains ${f.recharge}`].filter(Boolean).join(', ') : ''],
+      ['Charges', f.charges ? [f.charges, regainText(e) && `regains ${regainText(e)}`].filter(Boolean).join(', ') : ''],
     ] as [string, string][]).filter(([, v]) => v),
     paras: [
       ...summary.paras,

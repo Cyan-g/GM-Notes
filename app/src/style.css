@@ -2033,3 +2033,22 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .ff-needs .feat-prereqs { border: none; padding: 0; }
 .ff-repeat { font-size: 13px; }
 @media (max-width: 760px) { .feat-form, .ff-top { grid-template-columns: 1fr; } }
+/* an item's form: what it gives (left), what it needs (right) */
+.item-cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1rem; margin-top: .8rem; }
+@media (max-width: 860px) { .item-cols { grid-template-columns: 1fr; } }
+.if-part { border-top: 1px dashed var(--line); padding-top: .4rem; }
+.if-part > h5 { margin: 0 0 .3rem; font-size: 14px; display: flex; gap: .5rem; align-items: baseline; flex-wrap: wrap; }
+.if-part > h5 .if-close { margin-left: auto; }
+.if-amount { width: 7rem !important; }
+.item-needs { border: none; padding: 0; }
+.cs-regain { display: grid; gap: .25rem; flex-basis: 100%; }
+.cs-regain-row { display: flex; gap: .4rem; align-items: center; }
+.copy-row { margin-top: .5rem; }
+.item-cols .ff-col { min-width: 0; overflow: hidden; }
+.item-cols .effect-row { flex-wrap: wrap; }
+.item-cols .effect-row > *, .item-cols .if-wide { max-width: 100%; min-width: 0; }
+.item-cols .effects-input { min-width: 0; }
+.item-needs .fp-row { grid-template-columns: minmax(0, 1fr) auto; }
+.item-needs .fp-label { grid-column: 1 / -1; }
+.item-needs .fp-value { grid-column: 1; }
+.if-part > h5 .muted { font-family: var(--sans); font-weight: normal; text-transform: none; letter-spacing: 0; }

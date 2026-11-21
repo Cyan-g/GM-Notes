@@ -18,7 +18,7 @@ import {
   ABILITIES, SKILLS, armorClass, attacks, canAttune, canEquip, castingAbility, hitDiceOf, initiative, levelOf, maxHpOf, mod,
   passivePerception, profBonus, profsOf, profsToEdit, saveBonus, sheetOrBlank, sheetToEdit, signed, skillBonus, skillLevel, speedOf, baseSpeed, otherSpeeds, longRest, shortRest, type Ability,
 } from '../sheet'
-import { advOf, breakdown, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../gear'
+import { advOf, breakdown, chargesLeft, gearTotals, scoreBreakdown, scoreWith, setCharges, sum, type Part, type RegainRoll } from '../gear'
 import ProfChips from './ProfChips.vue'
 import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
@@ -163,8 +163,15 @@ const concDc = ref<number | null>(null)
 const concDone = (kept: boolean) => { if (!kept) edit(x => endConcentration(props.pc, x)); concDc.value = null }
 const dying = computed(() => !build.value && !!maxHp.value && (s.value.hp ?? maxHp.value) <= 0)
 const setSaves = (d: { ok: number; fail: number }) => edit(x => { if (d.ok || d.fail) x.deathSaves = d; else delete x.deathSaves })
-const rest = () => { if (!ro.value) longRest(props.pc) }
-const short = () => { if (!ro.value) shortRest(props.pc) }
+const rest = () => { if (!ro.value) rolls.value = longRest(props.pc) }
+const short = () => { if (!ro.value) rolls.value = shortRest(props.pc) }
+/** Item charges a rest gives back by a dice roll: the player rolls and types the number. */
+const rolls = ref<RegainRoll[]>([])
+function addCharges(r: RegainRoll, v: string) {
+  const n = Math.max(0, Number(v) || 0)
+  if (n) edit(x => { const l = x.inventory[r.i], item = get(l?.item); if (l && item) setCharges(x, r.i, (chargesLeft(l, item) ?? 0) + n) })
+  rolls.value = rolls.value.filter(x => x !== r)
+}
 
 // ---- items in the attack lines open in a pop-up ----
 const shown = ref<number | null>(null)
@@ -283,6 +290,11 @@ const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
       </div>
       <div v-if="!build" class="cs-rests">
         <button class="cs-rest" :disabled="ro" title="Features, pact slots and item spells that recharge on a short rest come back. Spend Hit Dice by counting them down here" @click="short">Short rest</button>
+        <div v-if="rolls.length" class="cs-regain">
+          <div v-for="r in rolls" :key="r.i" class="cs-regain-row small">Roll <b>{{ r.dice }}</b> for {{ r.name }}'s charges:
+            <input type="number" min="0" class="effect-value" placeholder="?" @keydown.enter="addCharges(r, ($event.target as HTMLInputElement).value)" @change="addCharges(r, ($event.target as HTMLInputElement).value)" />
+            <button type="button" class="link-btn" title="Skip" @click="rolls = rolls.filter(x => x !== r)">×</button></div>
+        </div>
         <button class="cs-rest" :disabled="ro" :title="`Full HP, no temp HP, every spell slot, ${rule('hitDiceLongRest') === 'half' ? 'half your' : 'all'} Hit Dice and one exhaustion level back`" @click="rest">Long rest</button>
       </div>
     </div>

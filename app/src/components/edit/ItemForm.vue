@@ -1,58 +1,119 @@
 <script setup lang="ts">
-// An item's Edit form, in sections: the basics, then the stats of its kind (Weapon, Armor, Ingredient, Crafting),
-// then the optional features (Effects, Spells & charges). A feature shows when the item has it; the bar at the
-// bottom adds one, and ✕ takes an empty one away again (or clears it, after asking).
+// An item's Edit form. On top, what it is: the basics (rarity with its usual price) and the stats of its kind — a
+// weapon's showing its base weapon's damage, properties and mastery as defaults, armor's AC only for real armor.
+// Below, side by side: what it gives (when it works, then its effects, spells & charges and features, each with
+// what it's for; empty ones fold into + buttons) and what it needs (attunement, and who can use it, step by step).
 import { computed, ref } from 'vue'
-import type { Entry } from '../../model/types'
-import { TYPES, byKey, type FieldDef } from '../../model/schema'
+import type { Entry, Regain } from '../../model/types'
+import { TYPES, MASTERY_OF, byKey, type FieldDef } from '../../model/schema'
 import { changed } from '../../edit'
+import { formatMoney } from '../../store'
+import { worksWhileOf } from '../../gear'
+import { itemNamed } from '../../wizard'
 import FieldInput from './FieldInput.vue'
+import ItemNeeds from './ItemNeeds.vue'
 
 const props = defineProps<{ entry: Entry }>()
 const f = computed(() => byKey(props.entry.fields))
 const shown = (d: FieldDef) => !d.when || d.when.is.includes(String(f.value[d.when.field] ?? ''))
 const fields = computed(() => TYPES.item.fields.filter(d => shown(d) && d.key !== 'summary' && d.kind !== 'recipe'))
+const fieldOf = (k: string) => fields.value.find(d => d.key === k)
 
-/** The optional features and the fields each holds. */
-const FEATURES = [
-  { id: 'requirements', label: 'Requirements', keys: ['requirements'], hint: 'Who can equip it, or attune to it if it needs attunement' },
-  { id: 'effects', label: 'Effects', keys: ['effects'], hint: 'What it does to whoever wears, wields or attunes it' },
-  { id: 'spells', label: 'Spells & charges', keys: ['charges', 'recharge', 'spells'], hint: 'Spells its user can cast, and its charges' },
-  { id: 'features', label: 'Features', keys: ['speciesTraits'], hint: 'Its rules, each with its text, uses per rest, choices and spells; listed on the sheet while it is in use' },
+/** What it gives, each with what it's for. */
+const GIVES = [
+  { id: 'effects', label: 'Effects', keys: ['effects'], hint: 'Always on while it works: +2 to saves, resistance, a speed' },
+  { id: 'spells', label: 'Spells & charges', keys: ['charges', 'regain', 'recharge', 'spells'], hint: 'Spells cast from it, for charges or once per rest' },
+  { id: 'features', label: 'Features', keys: ['speciesTraits'], hint: 'Named abilities with their own text, uses or choices (Sentience, Treantkin)' },
 ]
-const FEATURE_KEYS = FEATURES.flatMap(x => x.keys)
-const featureFields = (id: string) => fields.value.filter(d => FEATURES.find(x => x.id === id)!.keys.includes(d.key))
-const has = (id: string) => featureFields(id).some(d => { const v = f.value[d.key]; return v != null && v !== '' && !(Array.isArray(v) && !v.length) })
-/** Features opened here but still empty. */
+const GIVE_KEYS = GIVES.flatMap(x => x.keys)
+/** The fields each "needs"/"gives" part takes, and the basics that move to the right (attunement). */
+const NEED_KEYS = ['requirements', 'attunement']
+const partFields = (id: string) => fields.value.filter(d => GIVES.find(x => x.id === id)!.keys.includes(d.key))
+const has = (id: string) => partFields(id).some(d => { const v = f.value[d.key]; return v != null && v !== '' && !(Array.isArray(v) && !v.length) })
 const opened = ref(new Set<string>())
-const features = computed(() => FEATURES.filter(x => featureFields(x.id).length))
-const visible = computed(() => features.value.filter(x => has(x.id) || opened.value.has(x.id)))
-const addable = computed(() => features.value.filter(x => !visible.value.includes(x)))
+const gives = computed(() => GIVES.filter(x => partFields(x.id).length))
+const visible = computed(() => gives.value.filter(x => has(x.id) || opened.value.has(x.id)))
+const addable = computed(() => gives.value.filter(x => !visible.value.includes(x)))
 function open(id: string) { opened.value = new Set([...opened.value, id]) }
 function close(id: string) {
   if (has(id)) {
-    if (!confirm(`Remove this item's ${FEATURES.find(x => x.id === id)!.label.toLowerCase()}?`)) return
-    for (const d of featureFields(id)) delete f.value[d.key]
+    if (!confirm(`Remove this item's ${GIVES.find(x => x.id === id)!.label.toLowerCase()}?`)) return
+    for (const d of partFields(id)) delete f.value[d.key]
     changed(props.entry)
   }
   const s = new Set(opened.value); s.delete(id); opened.value = s
 }
+const isGear = computed(() => !!fieldOf('effects'))
 
-// The basics: everything without a group (yes/no fields as one row of toggles); then one section per group.
-const basics = computed(() => fields.value.filter(d => !d.group && !FEATURE_KEYS.includes(d.key)))
+// ---- the basics and the kind's own stats ----
+const SPECIAL = ['worksWhile', 'regain', 'recharge', 'charges', 'damage', 'range', 'mastery', 'armorClass', 'stealthDis', 'rarity']
+const basics = computed(() => fields.value.filter(d => !d.group && !GIVE_KEYS.includes(d.key) && !NEED_KEYS.includes(d.key) && !SPECIAL.includes(d.key)))
 const groups = computed(() => {
   const out = new Map<string, FieldDef[]>()
-  for (const d of fields.value) if (d.group && !FEATURE_KEYS.includes(d.key)) out.set(d.group, [...(out.get(d.group) ?? []), d])
+  for (const d of fields.value) if (d.group && !SPECIAL.includes(d.key)) out.set(d.group, [...(out.get(d.group) ?? []), d])
   return [...out]
 })
 const WIDE = ['list', 'longtext', 'effects', 'itemSpells', 'requires', 'speciesTraits']
 const short = (l: FieldDef[]) => l.filter(d => !WIDE.includes(d.kind) && d.kind !== 'bool')
 const wide = (l: FieldDef[]) => l.filter(d => WIDE.includes(d.kind))
-const bools = computed(() => basics.value.filter(d => d.kind === 'bool'))
+const bools = (l: FieldDef[]) => l.filter(d => d.kind === 'bool')
 function toggleBool(key: string) {
   if (f.value[key]) delete f.value[key]; else f.value[key] = true
   changed(props.entry)
 }
+const setText = (k: string, v: string) => { if (v.trim()) f.value[k] = v.trim(); else delete f.value[k]; changed(props.entry) }
+
+// ---- rarity: the usual price (2024 rules; consumables half) ----
+const PRICE: Record<string, number> = { Common: 100, Uncommon: 400, Rare: 4000, 'Very rare': 40000, Legendary: 200000 }
+const consumable = computed(() => ['Potion', 'Scroll', 'Poison'].includes(String(f.value.kind ?? '')))
+const usualPrice = computed(() => { const p = PRICE[String(f.value.rarity ?? '')]; return p ? (consumable.value ? p / 2 : p) * 100 : undefined })
+function setRarity(v: string) {
+  if (v) f.value.rarity = v; else delete f.value.rarity
+  const p = PRICE[v]
+  if (p && f.value.value == null) f.value.value = (consumable.value ? p / 2 : p) * 100
+  changed(props.entry)
+}
+
+// ---- a weapon: its base weapon's stats as defaults ----
+const base = computed(() => (f.value.baseWeapon ? itemNamed(String(f.value.baseWeapon)) : undefined))
+const baseMastery = computed(() => (f.value.baseWeapon ? MASTERY_OF[String(f.value.baseWeapon)] : undefined))
+const ranged = computed(() => {
+  const p = ((f.value.properties as string[] | undefined) ?? []).concat((base.value?.fields.properties as string[] | undefined) ?? []).map(x => x.toLowerCase())
+  return !!f.value.range || p.some(x => x === 'ammunition' || x === 'thrown')
+})
+const realArmor = computed(() => ['Light', 'Medium', 'Heavy', 'Shield'].includes(String(f.value.armorType ?? '')))
+/** Heavy armor's Strength: its requirements' STR score (worn without it: −10 ft speed). */
+const strNeeded = computed(() => (f.value.requirements as { scores?: { ability: string; min: number }[] } | undefined)?.scores?.find(x => x.ability === 'str')?.min)
+function setStr(v: string) {
+  const n = Number(v) || 0, r = { ...((f.value.requirements as Record<string, unknown> | undefined) ?? {}) } as { scores?: { ability: string; min: number }[] }
+  const others = (r.scores ?? []).filter(x => x.ability !== 'str')
+  r.scores = n ? [...others, { ability: 'str', min: n }] : others
+  if (!r.scores.length) delete r.scores
+  if (Object.keys(r).length) f.value.requirements = r; else delete f.value.requirements
+  changed(props.entry)
+}
+
+// ---- when it works, and its charges coming back ----
+const WHEN = [{ id: 'carried', label: 'carried' }, { id: 'equipped', label: 'equipped (worn or wielded)' }, { id: 'attuned', label: 'attuned' }]
+const worksDefault = computed(() => worksWhileOf({ ...props.entry, fields: { ...props.entry.fields, worksWhile: undefined } } as Entry))
+const regain = computed<Regain>(() => (f.value.regain as Regain | undefined) ?? {})
+function setRegain(p: Partial<Regain>) {
+  const n: Regain = { ...regain.value, ...p }
+  if (!n.amount?.trim()) delete n.amount
+  if (!n.when) delete n.when
+  if (Object.keys(n).length) f.value.regain = n; else delete f.value.regain
+  changed(props.entry)
+}
+function setCharges(v: string) { const n = Number(v); if (n > 0) f.value.charges = n; else delete f.value.charges; changed(props.entry) }
+/** The written "regains" read as an amount and a time ("1d6 + 1 at dawn"), when it reads as one. */
+const parsed = computed<Regain | undefined>(() => {
+  const m = String(f.value.recharge ?? '').trim().match(/^(?:regains?\s+)?(all|\d+(?:d\d+)?(?:\s*[+-]\s*\d+)?)\s*(?:charges?\s*)?(?:daily\s+)?(at dawn|on a long rest|after a long rest|on a short rest|after a short rest)?$/i)
+  if (!m) return undefined
+  const w = (m[2] ?? '').toLowerCase()
+  return { amount: m[1].replace(/\s+/g, ''), when: w.includes('dawn') ? 'dawn' : w.includes('long') ? 'long' : w.includes('short') ? 'short' : 'dawn' }
+})
+function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete f.value.recharge; changed(props.entry) } }
+const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement).value
 </script>
 
 <template>
@@ -61,30 +122,75 @@ function toggleBool(key: string) {
       <h4>Basics</h4>
       <div class="if-grid">
         <label v-for="d in short(basics)" :key="d.key" class="sheet-field" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>
+        <label class="sheet-field"><span>Rarity</span>
+          <select :value="String(f.rarity ?? '')" @change="setRarity(val($event))">
+            <option value="">—</option>
+            <option v-for="r in ['Common', 'Uncommon', 'Rare', 'Very rare', 'Legendary', 'Artifact']" :key="r" :value="r">{{ r }}</option>
+          </select>
+          <small v-if="usualPrice" class="muted">usual price {{ formatMoney(usualPrice) }}{{ consumable ? ' (consumable: half)' : '' }}</small>
+          <small v-else-if="f.rarity === 'Artifact'" class="muted">priceless</small></label>
       </div>
-      <div v-if="bools.length" class="seg wrap if-bools">
-        <button v-for="d in bools" :key="d.key" type="button" :class="{ on: !!f[d.key] }" @click="toggleBool(d.key)">{{ d.label }}</button>
+      <div v-if="bools(basics).length" class="seg wrap if-bools">
+        <button v-for="d in bools(basics)" :key="d.key" type="button" :class="{ on: !!f[d.key] }" @click="toggleBool(d.key)">{{ d.label }}</button>
       </div>
     </section>
 
     <section v-for="[g, ds] in groups" :key="g" class="if-section">
       <h4>{{ g }}</h4>
-      <div v-if="short(ds).length" class="if-grid">
+      <div class="if-grid">
         <label v-for="d in short(ds)" :key="d.key" class="sheet-field" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>
+        <!-- a weapon: damage, range and mastery with its base weapon's as defaults -->
+        <template v-if="g === 'Weapon'">
+          <label class="sheet-field"><span>Damage</span><input :value="String(f.damage ?? '')" :placeholder="base?.fields.damage ? `${base.fields.damage} (from ${base.name})` : 'e.g. 1d8'" @change="setText('damage', val($event))" /></label>
+          <label v-if="ranged" class="sheet-field"><span>Range</span><input :value="String(f.range ?? '')" :placeholder="base?.fields.range ? `${base.fields.range} (from ${base.name})` : 'e.g. 80/320'" @change="setText('range', val($event))" /></label>
+          <label class="sheet-field"><span>Mastery</span><FieldInput v-if="fieldOf('mastery')" :def="fieldOf('mastery')!" :entry="entry" />
+            <small v-if="!f.mastery && baseMastery" class="muted">{{ baseMastery }} (from {{ f.baseWeapon }})</small></label>
+        </template>
+        <template v-if="g === 'Armor'">
+          <label v-if="realArmor" class="sheet-field"><span>Armor class</span><input :value="String(f.armorClass ?? '')" placeholder="e.g. 14 + Dex (max 2)" @change="setText('armorClass', val($event))" /></label>
+          <label v-if="f.armorType === 'Heavy'" class="sheet-field"><span>Strength needed</span><input type="number" min="0" max="30" :value="strNeeded ?? ''" placeholder="e.g. 15" @change="setStr(val($event))" /><small class="muted">worn without it: −10 ft speed</small></label>
+        </template>
+      </div>
+      <div v-if="g === 'Armor' && (realArmor || f.stealthDis)" class="seg wrap if-bools">
+        <button type="button" :class="{ on: !!f.stealthDis }" title="Disadvantage on Stealth checks while worn" @click="toggleBool('stealthDis')">Stealth disadvantage</button>
       </div>
       <label v-for="d in wide(ds)" :key="d.key" class="sheet-field if-wide" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>
     </section>
 
-    <section v-for="x in visible" :key="x.id" class="if-section">
-      <h4>{{ x.label }} <button type="button" class="link-btn if-close" :title="has(x.id) ? `Remove the ${x.label.toLowerCase()}` : 'Hide this section'" @click="close(x.id)">✕</button></h4>
-      <div v-if="short(featureFields(x.id)).length" class="if-grid">
-        <label v-for="d in short(featureFields(x.id))" :key="d.key" class="sheet-field" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>
+    <div v-if="isGear" class="item-cols">
+      <div class="ff-col ff-gives">
+        <h4>What it gives</h4>
+        <label class="cb-line small">Works while
+          <select :value="String(f.worksWhile ?? '')" @change="setText('worksWhile', val($event))">
+            <option value="">{{ WHEN.find(w => w.id === worksDefault)?.label }} (its kind's default)</option>
+            <option v-for="w in WHEN" :key="w.id" :value="w.id">{{ w.label }}</option>
+          </select></label>
+        <section v-for="x in visible" :key="x.id" class="if-part">
+          <h5>{{ x.label }} <span class="muted small">{{ x.hint }}</span> <button type="button" class="link-btn if-close" :title="has(x.id) ? `Remove the ${x.label.toLowerCase()}` : 'Hide this part'" @click="close(x.id)">✕</button></h5>
+          <template v-if="x.id === 'spells'">
+            <div class="cb-line">
+              <label class="small">Charges <input type="number" min="0" class="effect-value" :value="f.charges ?? ''" @change="setCharges(val($event))" /></label>
+              <label class="small">regains <input class="effect-value if-amount" :value="regain.amount ?? ''" placeholder="1d6+1, 3, all" @change="setRegain({ amount: val($event) })" /></label>
+              <select :value="regain.when ?? ''" aria-label="When" @change="setRegain({ when: (val($event) || undefined) as Regain['when'] })">
+                <option value="">when…</option><option value="dawn">at dawn</option><option value="long">on a long rest</option><option value="short">on a short rest</option><option value="never">never</option>
+              </select>
+            </div>
+            <label v-if="f.recharge || !regain.amount" class="small cb-line">or as written <input :value="String(f.recharge ?? '')" placeholder="e.g. regains 1d6 + 1 at dawn" @change="setText('recharge', val($event))" />
+              <button v-if="parsed && !regain.amount" type="button" class="link-btn small" :title="`Regains ${parsed.amount}, ${parsed.when}: the sheet gives them back (or asks for the roll) on that rest`" @click="useParsed">use as Regains</button></label>
+            <FieldInput v-if="fieldOf('spells')" :def="fieldOf('spells')!" :entry="entry" />
+          </template>
+          <template v-else>
+            <div v-for="d in wide(partFields(x.id))" :key="d.key" class="if-wide"><FieldInput :def="d" :entry="entry" /></div>
+          </template>
+        </section>
+        <div v-if="addable.length" class="if-add">
+          <button v-for="x in addable" :key="x.id" type="button" class="chip-btn" :title="x.hint" @click="open(x.id)">＋ {{ x.label }}</button>
+        </div>
       </div>
-      <div v-for="d in wide(featureFields(x.id))" :key="d.key" class="if-wide"><FieldInput :def="d" :entry="entry" /></div>
-    </section>
-
-    <div v-if="addable.length" class="if-add">
-      <button v-for="x in addable" :key="x.id" type="button" class="chip-btn" :title="x.hint" @click="open(x.id)">＋ {{ x.label }}</button>
+      <div class="ff-col ff-needs">
+        <h4>What it needs</h4>
+        <ItemNeeds :e="entry" />
+      </div>
     </div>
   </div>
 </template>

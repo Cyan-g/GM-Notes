@@ -128,7 +128,20 @@ export function describeEffect(f: GearEffect): string {
 export const effectsOf = (e: Entry | undefined): GearEffect[] => (Array.isArray(e?.fields.effects) ? e!.fields.effects! : [])
 
 /** Whether an inventory line's item is in use: worn or wielded, or attuned when it requires attunement. */
-export const inUse = (l: InventoryLine, item: Entry | undefined) => !!item && (item.fields.attunement ? !!l.attuned : !!l.equipped)
+/** When an item's effects and features count: what its "Works while" says, else attuned if it needs attunement,
+ * equipped if it can be worn or wielded, else carried (a flask, a pearl). */
+export function worksWhileOf(item: Entry): 'carried' | 'equipped' | 'attuned' {
+  const w = item.fields.worksWhile
+  if (w === 'carried' || w === 'equipped' || w === 'attuned') return w
+  if (item.fields.attunement) return 'attuned'
+  const wearable = ['Weapon', 'Armor'].includes(String(item.fields.kind ?? '')) || !!(effectsOf(item).length || spellsOf(item).length || item.fields.charges)
+  return wearable ? 'equipped' : 'carried'
+}
+export const inUse = (l: InventoryLine, item: Entry | undefined) => {
+  if (!item) return false
+  const w = worksWhileOf(item)
+  return w === 'carried' ? l.qty > 0 : w === 'attuned' ? !!l.attuned : !!l.equipped || !!l.attuned
+}
 /** The items in use, with their place in the inventory. */
 export function itemsInUse(s: CharacterSheet | undefined): { l: InventoryLine; i: number; item: Entry }[] {
   return (s?.inventory ?? []).map((l, i) => ({ l, i, item: get(l.item)! })).filter(x => inUse(x.l, x.item))
@@ -190,13 +203,36 @@ export function setCharges(s: CharacterSheet, i: number, n: number) {
   if (v === max) delete l.charges; else l.charges = v
 }
 /** A rest gives back the item spells used since: a short rest the short-rest ones, a long rest all of them. */
-export function restItems(s: CharacterSheet, kind: 'short' | 'long') {
-  for (const l of s.inventory) {
-    if (!l.used?.length) continue
+/** How an item's charges come back, in words: "1d6 + 1 at dawn" (its Regains), else as written. */
+export function regainText(item: Entry | undefined): string {
+  const r = item?.fields.regain
+  if (r?.amount) return `${r.amount}${r.when ? ' ' + ({ dawn: 'at dawn', long: 'on a long rest', short: 'on a short rest', never: '(never)' } as const)[r.when] : ''}`
+  return String(item?.fields.recharge ?? '')
+}
+/** Charges a rest gives back whose dice the player rolls: which line, the item, the dice. */
+export interface RegainRoll { i: number; name: string; dice: string }
+/**
+ * A rest: once-per-rest item spells come back, and charges that come back on it ("at dawn" counts as a long rest).
+ * A number or "all" is given back here; dice are returned for the player to roll and type in.
+ */
+export function restItems(s: CharacterSheet, kind: 'short' | 'long'): RegainRoll[] {
+  const rolls: RegainRoll[] = []
+  s.inventory.forEach((l, i) => {
     const item = get(l.item)
-    l.used = l.used.filter(k => { const how = spellsOf(item)[k]?.how; return kind === 'short' ? how !== 'short' : false })
-    if (!l.used.length) delete l.used
-  }
+    if (l.used?.length) {
+      l.used = l.used.filter(k => { const how = spellsOf(item)[k]?.how; return kind === 'short' ? how !== 'short' : false })
+      if (!l.used.length) delete l.used
+    }
+    const r = item?.fields.regain, max = Number(item?.fields.charges) || 0
+    if (!r?.amount || !max || l.charges == null || l.charges >= max) return
+    const now = r.when === 'short' ? true : r.when === 'long' || r.when === 'dawn' ? kind === 'long' : false
+    if (!now) return
+    const a = r.amount.trim().toLowerCase()
+    if (a === 'all') delete l.charges
+    else if (/^\d+$/.test(a)) { l.charges = Math.min(max, l.charges + Number(a)); if (l.charges >= max) delete l.charges }
+    else rolls.push({ i, name: item!.name, dice: r.amount.trim() })
+  })
+  return rolls
 }
 
 export interface Extra { dice: string; type?: string; proficient?: boolean; from: string; when?: GearEffect['when']; note?: string }
@@ -327,8 +363,9 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
     for (const sk of SKILLS) (t.skillAdv[sk.name] ??= []).push({ mode: 'dis', from: 'Heavily encumbered' })
     for (const a of ['str', 'dex', 'con'] as Ability[]) (t.saveAdv[a] ??= []).push({ mode: 'dis', from: 'Heavily encumbered' })
   }
-  // Heavy armor worn without its Strength: −10 ft speed (5e).
+  // Heavy armor worn without its Strength: −10 ft speed (5e); armor that's noisy: disadvantage on Stealth.
   for (const { item } of itemsInUse(s)) {
+    if (item.fields.stealthDis) (t.skillAdv.Stealth ??= []).push({ mode: 'dis', from: item.name })
     for (const x of requirementsOf(item)?.scores ?? []) {
       if (isHeavyStrength(item, x.ability) && scoreWith(s!, 'str', t) < x.min) t.speed.push({ label: `${item.name} (needs STR ${x.min})`, n: -10 })
     }

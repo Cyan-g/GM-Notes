@@ -142,6 +142,9 @@ export interface SpellRoll {
 /** One of a character's classes: an option of the "class" list, its level, a subclass entry, a hit die for a class without a standard one. */
 export interface ClassLine { class: string; level: number; subclass?: Id; die?: string }
 
+/** An item's charges coming back: how many (a number, dice such as "1d6+1", or "all") and when. */
+export interface Regain { amount?: string; when?: 'dawn' | 'long' | 'short' | 'never' }
+
 /** A race's speeds in feet (walk is its speed); `note` keeps what an old text speed said that isn't a number. */
 export interface Speeds { walk?: number; swim?: number; fly?: number; climb?: number; burrow?: number; hover?: boolean; note?: string }
 

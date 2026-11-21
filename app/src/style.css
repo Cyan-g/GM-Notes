@@ -1888,3 +1888,17 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .lu-foot { display: flex; gap: .5rem; align-items: center; border-top: 1px solid var(--line); padding-top: .6rem; }
 .lu-foot .spacer { flex: 1; }
 .cs-conc-check { display: flex; gap: .4rem; align-items: center; flex-basis: 100%; font-size: 13px; }
+/* the level-up dialog's multiclassing and the ability score points */
+.lu-warn { border: 1px solid var(--secret-line); background: var(--secret-bg); border-radius: 8px; padding: .4rem .6rem; margin-top: .4rem; }
+.lu-warn ul { margin: .2rem 0 .3rem; padding-left: 1.1rem; }
+.lu-pick { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .35rem; }
+.lu-pick select { width: auto; }
+.spread p { margin: .2rem 0 .4rem; }
+.spread-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .4rem; }
+@media (max-width: 560px) { .spread-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.spread-cell { display: grid; justify-items: center; gap: .15rem; padding: .35rem .2rem; border: 1px solid var(--line); border-radius: 8px; }
+.spread-cell.up { border-color: var(--accent); }
+.spread-cell b { font: 600 1.25rem var(--serif); }
+.spread-add { color: var(--accent); }
+.spread-btns { display: flex; gap: .25rem; }
+.spread-btns .chip-btn { min-width: 1.8rem; }

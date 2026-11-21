@@ -125,3 +125,33 @@ export const CLASS_RULES: Record<string, ClassRules> = {
 
 /** The rules of a class by its list id (the standard ones are their own names). */
 export const rulesOf = (cls: string | undefined): ClassRules | undefined => (cls ? CLASS_RULES[cls] : undefined)
+
+/**
+ * Multiclassing (SRD 5.2.1): the scores a class asks for (13 or more in each, or in one of them with `any`), from the new
+ * class and every class the character already has, and the proficiencies a new class brings (fewer than at level 1).
+ */
+export interface Multiclass {
+  primary: Ability[]
+  any?: boolean
+  armor: string[]
+  weapons: string[]
+  tools: string[]
+  /** Skills to pick: from the class's list (empty: any). */
+  skills?: number
+  /** Musical instruments to pick. */
+  instruments?: number
+}
+export const MULTICLASS: Record<string, Multiclass> = {
+  Barbarian: { primary: ['str'], armor: ['Shield'], weapons: ['Martial'], tools: [] },
+  Bard: { primary: ['cha'], armor: ['Light'], weapons: [], tools: [], skills: 1, instruments: 1 },
+  Cleric: { primary: ['wis'], armor: ['Light', 'Medium', 'Shield'], weapons: [], tools: [] },
+  Druid: { primary: ['wis'], armor: ['Light', 'Shield'], weapons: [], tools: [] },
+  Fighter: { primary: ['str', 'dex'], any: true, armor: ['Light', 'Medium', 'Shield'], weapons: ['Martial'], tools: [] },
+  Monk: { primary: ['dex', 'wis'], armor: [], weapons: [], tools: [] },
+  Paladin: { primary: ['str', 'cha'], armor: ['Light', 'Medium', 'Shield'], weapons: ['Martial'], tools: [] },
+  Ranger: { primary: ['dex', 'wis'], armor: ['Light', 'Medium', 'Shield'], weapons: ['Martial'], tools: [], skills: 1 },
+  Rogue: { primary: ['dex'], armor: ['Light'], weapons: [], tools: ["Thieves' Tools"], skills: 1 },
+  Sorcerer: { primary: ['cha'], armor: [], weapons: [], tools: [] },
+  Warlock: { primary: ['cha'], armor: ['Light'], weapons: [], tools: [] },
+  Wizard: { primary: ['int'], armor: [], weapons: [], tools: [] },
+}

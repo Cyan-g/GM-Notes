@@ -43,6 +43,16 @@ export const RULES: RuleDef[] = [
     default: 'milestone', keywords: 'xp level up advancement',
   },
   {
+    id: 'multiclassing', group: 'Advancement', label: 'Multiclassing',
+    text: 'Whether a character can take a level in another class when they level up.',
+    options: [
+      { id: 'on', label: 'Allowed, with prerequisites', text: 'A new class needs 13 in its main score and in those of the classes the character has (the DM can still allow it).' },
+      { id: 'free', label: 'Allowed, no prerequisites', text: 'Any class can be taken, whatever the scores.' },
+      { id: 'off', label: 'Not allowed', text: 'Characters level up in the class they have.' },
+    ],
+    default: 'on', keywords: 'multiclass class level up prerequisites',
+  },
+  {
     id: 'exhaustion', group: 'Conditions', label: 'Exhaustion',
     text: 'What each level of exhaustion does to a character, counted on their sheet.',
     options: [

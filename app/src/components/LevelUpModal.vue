@@ -6,15 +6,17 @@
 import { computed, ref } from 'vue'
 import type { CharacterSheet, ClassLine, Entry, Spellbook } from '../model/types'
 import { CLASS_DIE, classesOf, dieOf, totalLevel } from '../model/classes'
-import { EPIC_BOON_LEVEL, SUBCLASS_LEVEL, rulesOf } from '../classRules'
+import { EPIC_BOON_LEVEL, MULTICLASS, SUBCLASS_LEVEL, rulesOf } from '../classRules'
 import { ABILITY_KEYS, bonusApplied, bonusOpen, type BonusChoice } from '../abilityBonus'
 import { byType, entries, get, listOptions } from '../store'
-import { editSheet, mod, signed } from '../sheet'
+import { SKILLS, editSheet, mod, profsToEdit, signed } from '../sheet'
+import { itemNamed } from '../wizard'
+import { rule } from '../rules'
 import { gearTotals, scoreWith } from '../gear'
-import { classEntry, traitsOf } from '../species'
+import { backgroundOf, classEntry, featOfFeature, traitsOf } from '../species'
 import { changed } from '../edit'
 import { renderInline } from '../markdown'
-import BonusPicker from './BonusPicker.vue'
+import SpreadPicker from './SpreadPicker.vue'
 import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ pc: Entry; s: CharacterSheet }>()
@@ -26,7 +28,8 @@ const main = computed(() => [...lines.value].sort((a, b) => b.level - a.level)[0
 /** The class gaining the level: one the character has, or a new one. */
 const cls = ref<string>(main.value?.class ?? '')
 const line = computed<ClassLine | undefined>(() => lines.value.find(l => l.class === cls.value))
-const others = computed(() => listOptions('class').filter(o => !lines.value.some(l => l.class === o.id)))
+// a new class only when the ruleset allows multiclassing (or the character has no class yet)
+const others = computed(() => (lines.value.length && rule('multiclassing') === 'off' ? [] : listOptions('class').filter(o => !lines.value.some(l => l.class === o.id))))
 const label = (id: string) => listOptions('class').find(o => o.id === id)?.label ?? id
 const newLevel = computed(() => (line.value?.level ?? 0) + 1)
 
@@ -50,14 +53,63 @@ const features = computed(() => [classEntry(cls.value), get(subId.value || undef
 const featLevels = computed(() => rulesOf(cls.value)?.featLevels ?? [4, 8, 12, 16, 19])
 const featDue = computed(() => featLevels.value.includes(newLevel.value))
 const boon = computed(() => newLevel.value === EPIC_BOON_LEVEL)
-const feats = computed(() => {
+/** Feats the character already has (only the Ability Score Improvement can be taken again). */
+const taken = computed(() => new Set([get(backgroundOf(props.pc)?.fields.originFeat)?.id, ...(props.s.features ?? []).map(f => featOfFeature(f)?.id)].filter(Boolean) as string[]))
+const isAsi = (f: Entry) => /^ability score improvement$/i.test(f.name.trim())
+/** Why a feat can't be taken now: the level it needs, the feats it needs, already taken. */
+function lacks(f: Entry): string {
+  const need = Number(f.fields.level) || 0
+  if (need > total.value + 1) return `level ${need}+`
+  const missing = ((f.fields.requires as string[] | undefined) ?? []).filter(id => !taken.value.has(id)).map(id => get(id)?.name ?? id)
+  if (missing.length) return `needs ${missing.join(', ')}`
+  if (taken.value.has(f.id) && !isAsi(f)) return 'taken'
+  return ''
+}
+/** The feats on offer, by kind: Epic Boons at 19, General, Origin and Fighting Style feats, and any other. */
+const KINDS = ['Epic Boon', 'General Feat', 'Origin Feat', 'Fighting Style', 'Other']
+const KIND_LABEL: Record<string, string> = { 'Epic Boon': 'Epic Boons', 'General Feat': 'General feats', 'Origin Feat': 'Origin feats', 'Fighting Style': 'Fighting styles', Other: 'Other' }
+const featGroups = computed(() => {
   const all = entries.value.filter(e => e.type === 'feat').sort((a, b) => a.name.localeCompare(b.name))
-  const of = all.filter(f => f.fields.category === (boon.value ? 'Epic Boon' : 'General Feat'))
-  return of.length ? of : all.filter(f => f.fields.category !== 'Origin Feat')
+  const kinds = boon.value ? KINDS : KINDS.filter(k => k !== 'Epic Boon')
+  const kindOf = (f: Entry) => (KINDS.includes(String(f.fields.category)) ? String(f.fields.category) : 'Other')
+  return kinds.map(k => ({ kind: k, label: KIND_LABEL[k], list: all.filter(f => kindOf(f) === k) })).filter(g => g.list.length)
 })
+const featNote = (f: Entry) => (lacks(f) ? ` (${lacks(f)})` : f.fields.prerequisite ? ` (${f.fields.prerequisite})` : '')
 const feat = ref('')
 const choice = ref<BonusChoice>({ picks: [] })
 const featBonus = computed(() => get(feat.value || undefined)?.fields.abilityIncrease)
+/** The scores as they are now on the sheet (before what the increase adds). */
+const baseScores = computed(() => Object.fromEntries(ABILITY_KEYS.map(a => [a, props.s.abilities[a] ?? 10])) as Record<(typeof ABILITY_KEYS)[number], number>)
+
+// ---- multiclassing: the scores it asks for, and what the new class brings ----
+const isNew = computed(() => !!cls.value && !line.value && lines.value.length > 0)
+const mc = computed(() => (isNew.value ? MULTICLASS[cls.value] : undefined))
+const scoreNow = (a: string) => scoreWith(props.s, a as (typeof ABILITY_KEYS)[number], gearTotals(props.s))
+const needText = (c: string) => { const m = MULTICLASS[c]; return m ? `${label(c)} ${m.primary.map(a => a.toUpperCase()).join(m.any ? ' or ' : ' + ')} 13` : '' }
+/** What the classes ask for and the character lacks: "Wizard: INT 13 (has 10)". */
+const prereqs = computed(() => {
+  if (!isNew.value || rule('multiclassing') === 'free') return []
+  const need = (c: string) => {
+    const m = MULTICLASS[c]
+    if (!m) return ''
+    const short = (a: string) => `${a.toUpperCase()} 13 (has ${scoreNow(a)})`
+    const low = m.primary.filter(a => scoreNow(a) < 13)
+    if (m.any ? low.length < m.primary.length : !low.length) return ''
+    return `${label(c)}: ${m.any ? m.primary.map(short).join(' or ') : low.map(short).join(', ')}`
+  }
+  return [cls.value, ...lines.value.map(l => l.class)].map(need).filter(Boolean)
+})
+const allowAnyway = ref(false)
+const mcSkills = ref<string[]>([])
+const mcInstrument = ref('')
+const skillList = computed(() => { const from = rulesOf(cls.value)?.skills.from ?? []; return (from.length ? from : SKILLS.map(x => x.name)).filter(x => !props.s.skills[x] && !mcSkills.value.includes(x)) })
+function addSkill(ev: Event) {
+  const el = ev.target as HTMLSelectElement
+  if (el.value && mcSkills.value.length < (mc.value?.skills ?? 0)) mcSkills.value = [...mcSkills.value, el.value]
+  el.value = ''
+}
+const instruments = computed(() => entries.value.filter(e => e.type === 'item' && ['Tool', 'Instrument'].includes(String(e.fields.kind))).sort((a, b) => a.name.localeCompare(b.name)))
+const gains = computed(() => (mc.value ? [...mc.value.armor.map(x => (x === 'Shield' ? 'Shields' : `${x} armor`)), ...mc.value.weapons.map(x => `${x} weapons`), ...mc.value.tools] : []))
 const pickFeat = (id: string) => { feat.value = id; choice.value = { picks: [] } }
 
 // ---- spells: what the class's table gives at the new level ----
@@ -79,6 +131,9 @@ const open = computed(() => [
   needsSub.value && !sub.value && 'a subclass',
   featDue.value && !feat.value && (boon.value ? 'an Epic Boon' : 'a feat'),
   featDue.value && feat.value && bonusOpen(featBonus.value, choice.value) > 0 && 'the feat’s ability scores',
+  prereqs.value.length > 0 && !allowAnyway.value && 'the multiclassing scores (or the DM’s OK)',
+  !!mc.value?.skills && mcSkills.value.length < mc.value.skills && `${mc.value.skills - mcSkills.value.length} skill`,
+  !!mc.value?.instruments && !mcInstrument.value && 'a musical instrument',
 ].filter(Boolean) as string[])
 
 function apply() {
@@ -87,6 +142,7 @@ function apply() {
   // what was picked, taken before the class line changes (the dialog's numbers follow the class level)
   const hp = gain.value!, takeFeat = featDue.value && feat.value ? get(feat.value) : undefined, epic = boon.value
   const add = bonusApplied(featBonus.value, choice.value), sp = spells.value
+  const brings = mc.value, skills = [...mcSkills.value], instrument = mcInstrument.value
   // the class line
   const l: ClassLine[] = JSON.parse(JSON.stringify(lines.value))
   const at = l.find(x => x.class === cls.value)
@@ -105,6 +161,18 @@ function apply() {
       const f = takeFeat
       for (const a of ABILITY_KEYS) if (add[a]) s.abilities[a] = Math.min(epic ? 30 : 20, (s.abilities[a] ?? 10) + add[a]!)
       if (!/^ability score improvement$/i.test(f.name.trim())) s.features = [...(s.features ?? []), { name: f.name, text: String(f.fields.summary ?? '').trim() }]
+    }
+    // a new class's proficiencies (multiclassing)
+    if (brings) {
+      const p = profsToEdit(s)
+      const addTo = (l: string[], xs: string[]) => { for (const x of xs) if (!l.includes(x)) l.push(x) }
+      addTo(p.armor, brings.armor)
+      addTo(p.weapons, brings.weapons)
+      for (const t of [...brings.tools, ...(instrument ? [instrument] : [])]) {
+        const id = get(t)?.type === 'item' ? t : itemNamed(t)?.id
+        if (id) addTo(p.tools, [id]); else p.other = [p.other, t].filter(Boolean).join(', ')
+      }
+      for (const sk of skills) s.skills[sk] ??= 1
     }
     // spells: more to prepare, and a wizard's two new spellbook spells are theirs to pick in the Spellbook
     if (sp) {
@@ -136,7 +204,31 @@ function apply() {
             <option v-for="o in others" :key="o.id" :value="o.id">{{ o.label }} 1</option>
           </optgroup>
         </select>
-        <p v-if="!line && cls" class="muted small">A new class at level 1: check its multiclassing prerequisites with the DM.</p>
+        <template v-if="isNew">
+          <div v-if="prereqs.length" class="lu-warn small">
+            <b>Multiclassing needs 13 in each class's main score:</b>
+            <ul><li v-for="p in prereqs" :key="p">{{ p }}</li></ul>
+            <label><input v-model="allowAnyway" type="checkbox" /> The DM allows it anyway</label>
+          </div>
+          <p v-else-if="rule('multiclassing') !== 'free'" class="small muted">Meets the multiclassing scores ({{ [cls, ...lines.map(l => l.class)].map(needText).filter(Boolean).join(', ') }}).</p>
+          <p v-if="!MULTICLASS[cls]" class="small muted">{{ label(cls) }} has no multiclassing rules here; add its proficiencies on the Edit page.</p>
+          <p v-else class="small">Gains: {{ gains.join(', ') || 'no armor, weapon or tool proficiencies' }}</p>
+          <div v-if="mc?.skills" class="lu-pick">
+            <span class="small">Skill ({{ mcSkills.length }}/{{ mc.skills }}):</span>
+            <select v-if="mcSkills.length < mc.skills" aria-label="Skill" @change="addSkill">
+              <option value="">＋ Skill</option>
+              <option v-for="x in skillList" :key="x" :value="x">{{ x }}</option>
+            </select>
+            <span v-for="x in mcSkills" :key="x" class="chip">{{ x }} <button class="link-btn" title="Take it back" @click="mcSkills = mcSkills.filter(y => y !== x)">×</button></span>
+          </div>
+          <div v-if="mc?.instruments" class="lu-pick">
+            <span class="small">Musical instrument:</span>
+            <select v-model="mcInstrument" aria-label="Musical instrument">
+              <option value="">Pick one…</option>
+              <option v-for="e in instruments" :key="e.id" :value="e.id">{{ e.name }}</option>
+            </select>
+          </div>
+        </template>
       </section>
 
       <section>
@@ -171,10 +263,12 @@ function apply() {
         <h3>{{ boon ? 'Epic Boon' : 'Feat or Ability Score Improvement' }}</h3>
         <select :value="feat" aria-label="Feat" @change="pickFeat(($event.target as HTMLSelectElement).value)">
           <option value="">Pick one…</option>
-          <option v-for="f in feats" :key="f.id" :value="f.id">{{ f.name }}</option>
+          <optgroup v-for="g in featGroups" :key="g.kind" :label="g.label">
+            <option v-for="f in g.list" :key="f.id" :value="f.id" :disabled="!!lacks(f)">{{ f.name }}{{ featNote(f) }}</option>
+          </optgroup>
         </select>
-        <p v-if="feat" class="small"><EntryLink :id="feat" /> <span class="muted">{{ get(feat)?.fields.summary }}</span></p>
-        <BonusPicker v-if="featBonus" v-model="choice" :bonus="featBonus" />
+        <p v-if="feat" class="small"><EntryLink :id="feat" /><template v-if="get(feat)?.fields.prerequisite"> · <i>{{ get(feat)?.fields.prerequisite }}</i></template> <span class="muted" v-html="renderInline(String(get(feat)?.fields.summary ?? '').replace(/\s*\*?Source:[^*]*\*?\s*$/, ''))" /></p>
+        <SpreadPicker v-if="featBonus" :key="feat" v-model="choice" :bonus="featBonus" :scores="baseScores" />
       </section>
 
       <section v-if="spells">

@@ -3,7 +3,7 @@
 //   pictures and files, named by their content so the sync service only moves what changed.
 // - A player's world follows one published world: it checks on start and every few minutes, and an update replaces
 //   the shared entries (read-only on the player's side), removes what's no longer shared, updates the lists, the
-//   calendar and today's date, and leaves everything of the player's own alone (characters, notes, sessions…).
+//   calendar, today's date and the ruleset, and leaves everything of the player's own alone (characters, notes, sessions…).
 // - Live sessions (electron/live.cjs) carry the same publish over the local network: the DM hosts, "Send now" writes
 //   the publish for the session (and the shared folder, if the world has one) and tells the connected players, whose
 //   app reads it from the DM instead of the folder while connected.
@@ -13,6 +13,7 @@ import { LISTS, type ListOption } from './model/lists'
 import { mapRefs } from './model/refs'
 import { backupNow, db, listOptions, save, state, touch } from './store'
 import { DATA_VERSION } from './migrations'
+import type { RulesMeta } from './rules'
 import { desktop, type HostStatus, type PlayerStatus } from './storage/desktop'
 import { clone, dataPaths, outgoingEntries, planExport, stable } from './transfer'
 
@@ -33,7 +34,8 @@ export interface Published {
   options: Record<string, ListOption[]>
   /** Names of entries referenced but not shared. */
   names: Record<Id, string>
-  world: { calendar: unknown; eventCategories: unknown; today: unknown }
+  /** The ruleset is null when the DM keeps the standard rules (missing in publishes from before it was shared). */
+  world: { calendar: unknown; eventCategories: unknown; today: unknown; rules?: RulesMeta | null }
   /** Data path → file name in files/. */
   files: Record<string, string>
 }
@@ -54,6 +56,8 @@ export interface PublishPlan {
   added: Entry[]
   changed: Entry[]
   removed: { id: Id; name: string }[]
+  /** Whether the ruleset differs from the last publish's. */
+  rulesChanged: boolean
   /** The last publish, if any. */
   previous?: string
 }
@@ -85,7 +89,7 @@ export async function planPublish(since: PublishTarget = 'publish'): Promise<Pub
     published: new Date().toISOString(),
     entries, relations: plan.relations.filter(r => ids.has(r.a) && ids.has(r.b)).map(clone),
     options: Object.fromEntries(LISTS.map(l => [l.key, listOptions(l.key)])),
-    names, world: clone({ calendar: m.calendar, eventCategories: m.eventCategories, today: m.today }), files,
+    names, world: clone({ calendar: m.calendar, eventCategories: m.eventCategories, today: m.today, rules: m.rules ?? null }), files,
   }
   let last: Published | null = null
   try { last = JSON.parse(decode(await desktop!.read(since, 'world.json')) ?? 'null') } catch { last = null }
@@ -95,6 +99,7 @@ export async function planPublish(since: PublishTarget = 'publish'): Promise<Pub
     added: entries.filter(e => !before.has(e.id)),
     changed: entries.filter(e => before.has(e.id) && content(before.get(e.id)!) !== content(e)),
     removed: [...before.values()].filter(e => !ids.has(e.id)).map(e => ({ id: e.id, name: e.name })),
+    rulesChanged: !!last && stable(last.world?.rules ?? null) !== stable(pub.world.rules),
     previous: last?.published,
   }
 }
@@ -199,14 +204,17 @@ export async function syncNow(): Promise<SyncResult | null> {
     if (b) await state.storage!.writeBlob(p, new Blob([b as BlobPart]))
   }
 
-  // Lists: the DM's, plus options the player added themselves. Calendar, categories and today: the DM's.
+  // Lists: the DM's, plus options the player added themselves. Calendar, categories, today and the ruleset: the DM's
+  // (a publish from before the ruleset was shared leaves the world's own).
   const lists = { ...(d.meta.lists ?? {}) }
   for (const [key, opts] of Object.entries(pub.options)) {
     const own = (lists[key] ?? []).filter(o => !opts.some(x => x.id === o.id))
     lists[key] = [...clone(opts), ...own]
   }
   d.meta.lists = lists
-  Object.assign(d.meta, clone(pub.world))
+  const { rules, ...world } = clone(pub.world)
+  Object.assign(d.meta, world)
+  if (rules !== undefined) d.meta.rules = rules ?? undefined
 
   d.follow = { worldId: pub.worldId, title: pub.title, published: pub.published, ids: [...newIds], relations: [...pubRel], files: { ...pub.files } }
   touch()

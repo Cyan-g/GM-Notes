@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // Archive → Ruleset: how the world's rules work (rules.ts). The DM keeps presets ("Standard", "Our house rules"…),
 // one active; each rule shows its choices with what they do, and the search finds rules by name, text or keyword.
-// A rule changed from the Standard default is marked. Players see the active preset, read-only.
+// A rule changed from the Standard default is marked. Players see the active preset, read-only; a world that follows a
+// shared one has the DM's ruleset (sync.ts).
 import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import { playerMode, state } from '../store'
@@ -9,7 +10,7 @@ import {
   RULES, activePreset, addPreset, changedFromDefault, deletePreset, presets, renamePreset, rule, setActivePreset, setRule, type RuleDef,
 } from '../rules'
 
-const ro = computed(() => !!state.readOnly || playerMode.value)
+const ro = computed(() => !!state.readOnly || playerMode.value || !!state.db?.follow)
 const q = ref('')
 /** The rules matching the search, by group. */
 const groups = computed(() => {

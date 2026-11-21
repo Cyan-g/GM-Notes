@@ -359,7 +359,9 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
   // two Light melee weapons: the second one's extra attack, off-hand
   const light = weapons.filter(e => propsOf(e).includes('light') && !isRanged(e))
   if (light.length >= 2) out.push(line(light[1], true))
-  // the unarmed strike: 1 + STR bludgeoning, or a feature's die with STR or DEX (Martial Arts)
+  // the unarmed strike, only while no weapon is equipped (or a feature makes it a real attack, Martial Arts):
+  // 1 + STR bludgeoning, or the feature's die with STR or DEX
+  if (weapons.length && !t.unarmed) return out
   const u = t.unarmed, um = u?.dex ? Math.max(str, dex) : str
   const uHit = t.attackAll.filter(p => fits(p.when, false, !!u?.dex)), uDmg = t.damageAll.filter(p => fits(p.when, false, !!u?.dex))
   const uDice = u?.dice && /d/.test(u.dice) ? u.dice : undefined

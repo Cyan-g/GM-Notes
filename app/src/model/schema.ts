@@ -142,6 +142,7 @@ export const SCHEMA = [
       { key: 'placeType', label: 'Kind', kind: 'select', options: PLACE_KINDS, fixed: ['Shop', 'Tavern'] },
       { key: 'parent', label: 'Located in', kind: 'ref', to: ['place'] },
       { key: 'markup', label: 'Price markup', kind: 'number', when: { field: 'placeType', is: ['Shop', 'Tavern'] }, group: 'Shop' },
+      { key: 'shopkeeper', label: 'Keeper', kind: 'ref', to: ['npc'], when: { field: 'placeType', is: ['Shop', 'Tavern'] }, group: 'Shop' },
       { key: 'stock', label: 'Stock', kind: 'stock', when: { field: 'placeType', is: ['Shop', 'Tavern'] }, group: 'Shop' },
       { key: 'map', label: 'Map image', kind: 'text', group: 'Map' },
       { key: 'pins', label: 'Pins', kind: 'pins', group: 'Map' },
@@ -334,6 +335,8 @@ export const SCHEMA = [
     type: 'campaign', label: 'Campaign', plural: 'Campaigns', icon: '🎲', fields: [
       { key: 'status', label: 'Status', kind: 'select', options: ['Planned', 'Running', 'Finished', 'One-shot'] },
       { key: 'summary', label: 'Summary', kind: 'longtext' },
+      // where its party is now (set from the place's page)
+      { key: 'partyAt', label: 'The party is at', kind: 'ref', to: ['place'] },
     ],
   },
   {

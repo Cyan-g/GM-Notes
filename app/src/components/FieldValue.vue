@@ -10,6 +10,7 @@ import type { AbilityBonus, Equipment, Entry, RecipeLine, StockLine, WorldDate, 
 import { fieldLabel, formatDate, formatMoney, get, state } from '../store'
 import { listKeyOf, noteIn } from '../model/lists'
 import EntryLink from './EntryLink.vue'
+import StockTable from './StockTable.vue'
 import EncounterTable from './EncounterTable.vue'
 import RanksTable from './RanksTable.vue'
 import { renderInline } from '../markdown'
@@ -87,12 +88,7 @@ ${entry.body ?? ''}`" />
   </template>
   <EncounterTable v-else-if="def.kind === 'combatants'" :lines="(value as any[]) ?? []" />
   <template v-else-if="def.kind === 'stock'">
-    <table class="mini">
-      <thead><tr><th>Item</th><th class="num">Price</th><th class="num">In stock</th></tr></thead>
-      <tbody>
-        <tr v-for="r in stock" :key="r.item"><td><EntryLink :id="r.item" /></td><td class="num">{{ formatMoney(r.price) }}</td><td class="num">{{ r.stock ?? '' }}</td></tr>
-      </tbody>
-    </table>
+    <StockTable :shop="entry" :lines="(value as StockLine[]) ?? []" />
   </template>
   <template v-else>{{ value }}</template>
 </template>

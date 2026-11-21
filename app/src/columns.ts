@@ -59,6 +59,9 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   '@aliases': { label: 'Also known as', value: e => e.aliases.join(', '), sort: e => e.aliases.join(', ').toLowerCase() || '~', kind: 'text' },
   '@lives-in': { label: 'Lives in', value: e => current(e, 'lives-in', true), sort: e => nameOf(current(e, 'lives-in', true)[0]), kind: 'ids' },
   '@member': { label: 'Member of', value: e => current(e, 'member', true), sort: e => nameOf(current(e, 'member', true)[0]), kind: 'ids' },
+  // a place: how many places are right inside it, and how many live there now
+  '@subplaces': { label: 'Places inside', value: e => (e.type === 'place' ? entries.value.filter(p => p.type === 'place' && p.fields.parent === e.id).length || '' : ''), sort: e => -entries.value.filter(p => p.type === 'place' && p.fields.parent === e.id).length, kind: 'text' },
+  '@residents': { label: 'Residents', value: e => current(e, 'lives-in', false).length || '', sort: e => -current(e, 'lives-in', false).length, kind: 'text' },
   // an organization's leaders (members whose role leads) and the gods it worships
   '@leader': { label: 'Led by', value: e => (e.type === 'organization' ? leadersOf(e) : []), sort: e => nameOf(e.type === 'organization' ? leadersOf(e)[0] : undefined), kind: 'ids' },
   '@worships': { label: 'Worships', value: e => current(e, 'worships', true), sort: e => nameOf(current(e, 'worships', true)[0]), kind: 'ids' },

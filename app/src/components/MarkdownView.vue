@@ -36,8 +36,37 @@ async function resolveFiles() {
     }
   }
 }
-onMounted(resolveFiles)
-watch(html, resolveFiles)
+
+// ---- roll tables: a table whose first column is "Roll" (or d6, d20…) takes the number the table rolled and lights
+// up its row. The app never rolls: the players and the DM do. ----
+function rangeOf(cell: string): [number, number] | undefined {
+  const m = cell.replace(/\s/g, '').match(/^(\d+)(?:[-–—](\d+))?\+?$/)
+  return m ? [Number(m[1]), Number(m[2] ?? (cell.includes('+') ? 1e9 : m[1]))] : undefined
+}
+function rollTables() {
+  const el = root.value
+  if (!el) return
+  for (const table of el.querySelectorAll<HTMLTableElement>('table')) {
+    const head = table.querySelector('th')?.textContent?.trim() ?? ''
+    if (!/^(roll|\d*d\d+)$/i.test(head) || table.previousElementSibling?.classList.contains('roll-pick')) continue
+    const box = document.createElement('div')
+    box.className = 'roll-pick'
+    box.innerHTML = '<label>Rolled <input type="number" min="1" placeholder="#" title="Type what was rolled: its row lights up" /></label>'
+    const input = box.querySelector('input')!
+    input.addEventListener('input', () => {
+      const n = Number(input.value)
+      for (const tr of table.querySelectorAll('tbody tr')) {
+        const r = rangeOf(tr.querySelector('td')?.textContent ?? '')
+        tr.classList.toggle('rolled', !!input.value && !!r && n >= r[0] && n <= r[1])
+      }
+      table.querySelector('tr.rolled')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    })
+    table.before(box)
+  }
+}
+const afterRender = async () => { await resolveFiles(); rollTables() }
+onMounted(afterRender)
+watch(html, afterRender)
 </script>
 
 <template>

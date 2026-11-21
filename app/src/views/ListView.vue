@@ -17,7 +17,8 @@ const COLS: Partial<Record<EntryType, { cols: string[]; facets?: string[]; sort?
   pc: { cols: ['player', 'race', '@classes', '@level', '@ac', '@maxHp', '@passives', '@spellDc', '@languages', 'campaigns'], facets: ['campaigns'] },
   // nested under the organization they're part of; grouping by seat or type flattens them
   organization: { cols: ['orgType', 'seat', '@leader', '@worships', 'attitude', '@members'], facets: ['orgType', 'attitude'], tree: 'parent', groups: ['seat', 'orgType'] },
-  place: { cols: ['placeType', 'parent'], facets: ['placeType', 'parent'] },
+  // nested by "Located in"; grouping by kind flattens it
+  place: { cols: ['placeType', '@subplaces', '@residents'], facets: ['placeType'], tree: 'parent', groups: ['placeType'] },
   feat: { cols: ['category', 'level', '@prereq', 'repeatable', 'source', 'abilityIncrease'], facets: ['category', '@takeable', 'repeatable', 'source'] },
   background: { cols: ['originFeat', 'skillProfs', 'toolProfs', 'abilityIncrease'] },
   // Subraces under their main race.

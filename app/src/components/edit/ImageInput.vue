@@ -4,7 +4,8 @@ import { ref } from 'vue'
 import { saveImage } from '../../edit'
 import DataImage from '../DataImage.vue'
 
-const props = defineProps<{ modelValue?: string | null; hint?: string }>()
+/** `noPreview`: the picture shows elsewhere already (a map shown as the map), so just the buttons. */
+const props = defineProps<{ modelValue?: string | null; hint?: string; noPreview?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [string | undefined] }>()
 const input = ref<HTMLInputElement>()
 const busy = ref(false)
@@ -21,8 +22,8 @@ const onPaste = (ev: ClipboardEvent) => use([...(ev.clipboardData?.files ?? [])]
 
 <template>
   <div class="image-input" tabindex="0" @drop.prevent="onDrop" @dragover.prevent @paste="onPaste">
-    <DataImage v-if="modelValue" :path="modelValue" class="portrait" />
-    <p v-else class="muted small">Drop, paste or choose a picture.</p>
+    <DataImage v-if="modelValue && !noPreview" :path="modelValue" class="portrait" />
+    <p v-else-if="!modelValue" class="muted small">Drop, paste or choose a picture.</p>
     <div class="row">
       <button type="button" :disabled="busy" @click="input?.click()">{{ busy ? 'Saving…' : modelValue ? 'Replace…' : 'Choose…' }}</button>
       <button v-if="modelValue" type="button" @click="emit('update:modelValue', undefined)">Remove</button>

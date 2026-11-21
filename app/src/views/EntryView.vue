@@ -63,6 +63,9 @@ import OrgCards from '../components/OrgCards.vue'
 import PartyRenown from '../components/PartyRenown.vue'
 import StandingCard from '../components/StandingCard.vue'
 import OrgsHere from '../components/OrgsHere.vue'
+import PlaceCards from '../components/PlaceCards.vue'
+import PartyHere from '../components/PartyHere.vue'
+import OutlineCard from '../components/OutlineCard.vue'
 
 const props = defineProps<{ id: string; tab?: EntryTab }>()
 const e = computed(() => get(props.id))
@@ -99,6 +102,9 @@ const groups = computed(() => {
     if (x.type === 'npc' && (NPC_ELSEWHERE.includes(f.key) || f.group === 'Roleplay')) continue
     // a deity's facts are in its glance card above the text (the rank and epithet under its name)
     if (x.type === 'deity') continue
+    // a shop's keeper and prices are in its own card (PlaceCards)
+    if (x.type === 'place' && ['markup', 'shopkeeper'].includes(f.key)) continue
+    if (x.type === 'campaign' && f.key === 'partyAt') continue
     // an organization's attitude is by its name, its aims and offers in their own cards
     if (x.type === 'organization' && ['attitude', 'goals', 'secret', 'teaches'].includes(f.key)) continue
     if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'creature' && f.key === 'creatureType') || (x.type === 'session' && ['campaign', 'number', 'date', 'playedOn', 'players'].includes(f.key)) || f.key === 'parent' || (x.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || (x.type === 'race' && ['size', 'otherSizes', 'creatureType', 'speeds', 'abilityIncrease', 'languages'].includes(f.key)) || (x.type === 'background' && ['abilityIncrease', 'originFeat', 'originFeatNote', 'skillProfs', 'toolProfs', 'toolsAll', 'equipment'].includes(f.key)) || f.key === 'map' || f.key === 'pins' || f.kind === 'mapData' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
@@ -205,6 +211,7 @@ const relGroups = computed(() => {
     const mine = r.a === x.id
     const label = mine ? k.forward : k.reverse
     if (x.type === 'organization' && r.kind === 'member' && !mine) continue // shown in MembersCard
+    if (x.type === 'place' && r.kind === 'lives-in' && !mine) continue // shown in the Residents card (PlaceCards)
     if (inFacts.value.has(r.id)) continue // shown under the name
     if (!out.has(label)) out.set(label, [])
     out.get(label)!.push({ other: mine ? r.b : r.a, r })
@@ -454,6 +461,8 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
       </div>
 
       <aside class="entry-side">
+        <PartyHere v-if="e.type === 'place'" :place="e" />
+        <OutlineCard v-if="e.type !== 'pc'" :e="e" />
         <SessionSide v-if="e.type === 'session'" :e="e" />
         <div v-for="f in e.type === 'item' ? bigFields.filter(x => x.kind !== 'speciesTraits') : []" :key="f.key" class="card side-big">
           <h3>{{ f.label }}</h3>
@@ -489,6 +498,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         <MembersCard v-if="e.type === 'organization'" :org="e" />
         <PartyRenown v-if="e.type === 'organization' && !playerMode" :org="e" />
         <OrgCards v-if="e.type === 'organization'" :e="e" />
+        <PlaceCards v-if="e.type === 'place'" :e="e" />
         <OrgsHere v-if="e.type === 'place'" :place="e" />
         <!-- A character's attacks and proficiencies instead of the relation cards (Equipped and the inventory are under the sheet). -->
         <AttacksCard v-if="e.type === 'pc'" :pc="e" />

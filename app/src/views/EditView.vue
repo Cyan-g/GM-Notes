@@ -29,6 +29,7 @@ import NpcStats from '../components/edit/NpcStats.vue'
 import NpcAppearance from '../components/edit/NpcAppearance.vue'
 import DeityForm from '../components/edit/DeityForm.vue'
 import OrgForm from '../components/edit/OrgForm.vue'
+import SubPlaces from '../components/edit/SubPlaces.vue'
 
 const props = defineProps<{ id: string }>()
 const e = computed(() => get(props.id))
@@ -51,7 +52,7 @@ const npc = computed(() => e.value?.type === 'npc')
 const deity = computed(() => e.value?.type === 'deity')
 /** Types whose text gets the "Add a section" buttons (the headings the others of the type use) and grows with it. */
 const org = computed(() => e.value?.type === 'organization')
-const sectioned = computed(() => npc.value || deity.value || org.value)
+const sectioned = computed(() => npc.value || deity.value || org.value || e.value?.type === 'place')
 /** An organization's fields in its own form (OrgForm); type, parent and seat stay in Details. */
 const ORG_FORM = ['presence', 'attitude', 'goals', 'secret', 'teaches']
 const groups = computed(() => {
@@ -103,7 +104,7 @@ function setBody(v: string) { e.value!.body = v; changed(e.value!) }
 
 // ---- an NPC's text: the headings other NPCs' texts use, one click to start a section ----
 const headingsIn = (body: string) => [...body.matchAll(/^#{1,3}\s*(.+?)\s*$/gm)].map(m => m[1])
-const SECTIONS: Record<string, string[]> = { npc: ['History', 'Description', 'Hooks'], deity: ['Dogma', 'Realm', 'Manifestations', 'Orders & Followers', 'Relations'], organization: ['Structure', 'Presence', 'Uniform', 'Feats'] }
+const SECTIONS: Record<string, string[]> = { npc: ['History', 'Description', 'Hooks'], deity: ['Dogma', 'Realm', 'Manifestations', 'Orders & Followers', 'Relations'], organization: ['Structure', 'Presence', 'Uniform', 'Feats'], place: ['Geography', 'History'] }
 const sections = computed(() => {
   if (!sectioned.value) return []
   const t = e.value!.type
@@ -239,7 +240,7 @@ function remove() {
         <NpcStats v-if="npc" :entry="e" />
         <section v-if="e.type === 'place'">
           <h2>Map</h2>
-          <ImageInput :model-value="e.fields.map" :hint="e.name + ' map'" @update:model-value="setMap" />
+          <ImageInput :model-value="e.fields.map" :hint="e.name + ' map'" :no-preview="!!e.fields.map" @update:model-value="setMap" />
           <MapView v-if="e.fields.map" :place="e" editable class="inline-map" />
         </section>
         <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => f.kind !== 'sheet' && f.kind !== 'classes')" :key="f.key">
@@ -280,6 +281,7 @@ function remove() {
             </template>
           </div>
         </div>
+        <SubPlaces v-if="e.type === 'place'" :place="e" />
         <div class="card">
           <h3>Relations</h3>
           <RelationsEditor :entry="e" />

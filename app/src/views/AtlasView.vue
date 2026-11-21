@@ -12,6 +12,7 @@ import DataImage from '../components/DataImage.vue'
 import EntryLink from '../components/EntryLink.vue'
 import TimelineView from './TimelineView.vue'
 import { holidayGods } from '../deity'
+import PartyAt from '../components/PartyAt.vue'
 
 /** The World menu's dashboard has two tabs: the atlas itself and the timeline. */
 defineProps<{ tab?: 'timeline' }>()
@@ -50,6 +51,8 @@ const upcoming = computed(() => {
 const inDays = (n: number) => (n === 0 ? 'today' : n === 1 ? 'tomorrow' : `in ${n} days`)
 
 // ---- factions: top-level organizations with members and seat ----
+/** Whether any campaign's party has a place (the card shows then). */
+const partyPlaces = computed(() => (byType.value.get('campaign') ?? []).some(c => c.fields.partyAt && c.fields.status !== 'Finished'))
 const factions = computed(() => (byType.value.get('organization') ?? [])
   .filter(o => !o.fields.parent)
   .map(o => ({ o, members: (relationsOf.value.get(o.id) ?? []).filter(r => r.kind === 'member' && r.b === o.id && isCurrent(r)).length }))
@@ -110,6 +113,10 @@ const seat = (o: Entry) => o.fields.seat
           <p v-else class="muted small">Nothing on the calendar in the next year.</p>
         </section>
 
+        <section v-if="partyPlaces" class="card">
+          <h3>⚑ The party</h3>
+          <PartyAt />
+        </section>
         <section class="card">
           <h3>Factions <span class="muted small">{{ factions.length }}</span></h3>
           <ul class="rel">

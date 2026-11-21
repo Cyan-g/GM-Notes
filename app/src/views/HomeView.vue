@@ -16,6 +16,7 @@ import { describe } from '../describe'
 import { armorClass, sheetOf, maxHpOf } from '../sheet'
 import EntryLink from '../components/EntryLink.vue'
 import { nextSessionNo, sessionsOf } from '../sessions'
+import PartyAt from '../components/PartyAt.vue'
 
 const byName = (a: Entry, b: Entry) => a.name.localeCompare(b.name)
 const list = (t: Entry['type']) => byType.value.get(t) ?? []
@@ -129,6 +130,7 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
         <h3><TypeIcon type="campaign" /> Campaign</h3>
         <template v-if="current">
           <p class="home-current"><EntryLink :id="current.c.id" /> <span class="muted small">{{ current.sessions.length }} sessions</span></p>
+          <PartyAt :campaign="current.c" />
           <ul class="rel">
             <li v-for="s in current.sessions.slice(0, 3)" :key="s.id"><EntryLink :id="s.id" /><span class="when">{{ sessionDate(s) }}</span></li>
           </ul>

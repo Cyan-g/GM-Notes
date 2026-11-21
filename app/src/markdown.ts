@@ -78,18 +78,21 @@ md.renderer.rules.link_open = (tokens, idx, opts, env, self) => {
 
 /**
  * Headings with nothing under them (the next heading is the same level or higher, or the text ends) aren't shown:
- * an outline started and not filled in yet. The text keeps them. Code blocks are left alone.
+ * an outline started and not filled in yet ("-" placeholders count as nothing). The text keeps them. Code blocks are left alone.
  */
 function dropEmptyHeadings(lines: string[], keepEnd = false): string[] {
   const level = (l: string) => l.match(/^(#{1,6})\s/)?.[1].length ?? 0
   const fence: boolean[] = []
   let inFence = false
   for (const l of lines) { if (/^\s*(```|~~~)/.test(l)) inFence = !inFence; fence.push(inFence) }
+  // a lone "-" (an outline's placeholder, an empty bullet) counts as nothing and isn't shown
+  const blank = (i: number) => !fence[i] && /^\s*[-–—*]?\s*$/.test(lines[i])
   return lines.filter((l, i) => {
     const n = level(l)
-    if (!n || fence[i]) return true
+    if (fence[i]) return true
+    if (!n) return !(l.trim() && blank(i))
     let j = i + 1
-    while (j < lines.length && !lines[j].trim()) j++
+    while (j < lines.length && blank(j)) j++
     if (j >= lines.length) return keepEnd
     const next = fence[j] ? 0 : level(lines[j])
     return !(next && next <= n)

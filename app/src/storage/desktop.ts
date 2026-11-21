@@ -16,6 +16,8 @@ interface Bridge {
   open(url: string): Promise<boolean>
   /** The page's print layout (the cards) as a PDF, saved where the user picks and opened; null if cancelled. */
   cardsPdf(pageSize: 'A4' | 'Letter', name: string): Promise<string | null>
+  /** Make the cards' PDF (kept for cardsPdf, which asks where to save it). */
+  cardsMakePdf(pageSize: 'A4' | 'Letter'): Promise<number>
   db: {
     load(types: string[], kinds: string[]): Promise<import('./backend').Loaded>
     create(d: unknown, types: string[], kinds: string[]): Promise<number>

@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('dndesk', {
   info: () => ipcRenderer.invoke('app:info'),
   open: url => ipcRenderer.invoke('app:open', url),
   cardsPdf: (pageSize, name) => ipcRenderer.invoke('cards:pdf', pageSize, name),
+  cardsMakePdf: pageSize => ipcRenderer.invoke('cards:make-pdf', pageSize),
   db: {
     load: (types, kinds) => ipcRenderer.invoke('db:load', types, kinds),
     create: (d, types, kinds) => ipcRenderer.invoke('db:create', d, types, kinds),

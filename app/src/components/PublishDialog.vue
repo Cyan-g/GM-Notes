@@ -7,6 +7,7 @@ import { computed, ref, watch } from 'vue'
 import { SCHEMA } from '../model/schema'
 import { desktop } from '../storage/desktop'
 import { db } from '../store'
+import { finish, stage, tick } from '../progress'
 import { autoSend, hasChanges, hostErrorText, live, planPublish, publish, setSharing, type PublishPlan, type PublishTarget } from '../sync'
 
 const open = defineModel<boolean>({ required: true })
@@ -22,7 +23,8 @@ async function prepare() {
   live.host = await desktop!.live.hostStatus()
   if (!folder.value && !hosting.value) return
   busy.value = 'Looking at what would be shared…'
-  try { plan.value = await planPublish(folder.value ? 'publish' : 'live') } catch (e) { error.value = (e as Error).message } finally { busy.value = '' }
+  await stage('Share with players', 'Looking at what would be shared')
+  try { plan.value = await planPublish(folder.value ? 'publish' : 'live') } catch (e) { error.value = (e as Error).message } finally { busy.value = ''; finish() }
 }
 watch(open, v => { if (v) { done.value = ''; prepare() } }, { immediate: true })
 async function choose() { if (await desktop!.publish.pick()) await prepare() }
@@ -56,7 +58,9 @@ async function go() {
   error.value = ''
   busy.value = hosting.value ? 'Sending…' : 'Publishing…'
   try {
-    await publish(plan.value, (n, total) => { busy.value = `Copying pictures and files… ${n} / ${total}` }, targets.value)
+    const title = hosting.value ? 'Sending to the players' : 'Publishing'
+    await stage(title, 'Writing the world')
+    await publish(plan.value, (n, total) => { busy.value = `Copying pictures and files… ${n} / ${total}`; if (n === 1) void stage(title, 'Pictures and files', total); void tick(n) }, targets.value).finally(finish)
     const t = new Date().toLocaleTimeString()
     const players = host.value?.players.length ?? 0
     done.value = [

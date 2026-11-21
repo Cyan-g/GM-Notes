@@ -3,6 +3,7 @@
 import { reactive } from 'vue'
 import { desktop } from './storage/desktop'
 import { save, state } from './store'
+import { withProgress } from './progress'
 
 export interface KnownWorld { id: string; title: string; dir: string; opened: string; exists: boolean; current: boolean; inApp?: boolean }
 
@@ -48,7 +49,7 @@ export async function newWorld(name: string) {
 /** Move a world into the app's own folder (the open one is saved first; the app starts again with it). */
 export async function moveWorld(w: KnownWorld) {
   if (w.current) await leave()
-  await desktop!.worlds.move(w.dir)
+  await withProgress(`Moving ${w.title}`, () => desktop!.worlds.move(w.dir))
   if (w.current) location.reload()
   else await loadWorlds()
 }

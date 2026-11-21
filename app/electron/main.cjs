@@ -194,10 +194,17 @@ function identify(w, title) {
 
 const followOf = dir => (dir ? Object.entries(config.follow ?? {}).find(([d]) => same(d, dir))?.[1] : undefined)
 /** The shared folder this world publishes to, if one was chosen. */
-// ---------- cards: the page's print layout as a PDF, saved where the user says, then opened ----------
+// ---------- cards: the page's print layout as a PDF (made first, so the window can show it working), then saved
+// where the user says and opened ----------
+let cardsPdf = null
+ipcMain.handle('cards:make-pdf', async (e, pageSize) => {
+  cardsPdf = await e.sender.printToPDF({ pageSize: pageSize === 'Letter' ? 'Letter' : 'A4', printBackground: true, preferCSSPageSize: false, margins: { marginType: 'none' } })
+  return cardsPdf.length
+})
 ipcMain.handle('cards:pdf', async (e, pageSize, name) => {
   const win = BrowserWindow.fromWebContents(e.sender)
-  const pdf = await e.sender.printToPDF({ pageSize: pageSize === 'Letter' ? 'Letter' : 'A4', printBackground: true, preferCSSPageSize: false, margins: { marginType: 'none' } })
+  const pdf = cardsPdf ?? await e.sender.printToPDF({ pageSize: pageSize === 'Letter' ? 'Letter' : 'A4', printBackground: true, preferCSSPageSize: false, margins: { marginType: 'none' } })
+  cardsPdf = null
   const safe = String(name || 'Cards').replace(/[\\/:*?"<>|]+/g, '').trim() || 'Cards'
   const r = await dialog.showSaveDialog(win, { title: 'Save the cards', defaultPath: path.join(app.getPath('documents'), `${safe}.pdf`), filters: [{ name: 'PDF', extensions: ['pdf'] }] })
   if (r.canceled || !r.filePath) return null

@@ -10,6 +10,7 @@ import { ui } from '../ui'
 import { cardStyle, cardsOf, kindColor, setCardStyle, type Card, type CardStyle } from '../cards'
 import { renderMarkdown } from '../markdown'
 import { desktop } from '../storage/desktop'
+import { finish, stage, tick } from '../progress'
 import { FONTS, TEXT_FONTS } from '../theme'
 import AppIcon from './AppIcon.vue'
 import DataImage from './DataImage.vue'
@@ -56,7 +57,10 @@ async function layout() {
   const max = style.value.size
   pieces.value = cardsOf(set.value?.ids ?? []).map(card => ({ card, paras: [...card.paras], font: max, cont: false, joins: false }))
   await document.fonts.ready
+  const total = pieces.value.length
+  if (total > 6) await stage('Preparing the cards', 'Fitting the text', total)
   for (let i = 0; i < pieces.value.length && i < 2000; i++) {
+    if (total > 6) await tick(Math.min(total, i + 1))
     for (let guard = 0; guard < 400; guard++) {
       await nextTick()
       const body = root.value?.querySelectorAll<HTMLElement>('.print-pages .pc-body')[i]
@@ -83,6 +87,7 @@ async function layout() {
     }
   }
   fitting.value = false
+  if (total > 6) finish()
 }
 // fonts and size change the layout; colours, paper and the rest don't
 watch([set, paper, () => style.value.size, () => style.value.headFont, () => style.value.textFont, () => style.value.show.facts], layout)
@@ -117,6 +122,8 @@ async function save() {
   try {
     if (!desktop) { window.print(); return }
     const name = `${ui.printCards!.name}${ui.printCards!.sets.length > 1 ? ` (${set.value!.label.toLowerCase()})` : ''}`
+    await stage('Saving the cards', 'Making the PDF')
+    try { await desktop.cardsMakePdf(paper.value) } finally { finish() }
     const file = await desktop.cardsPdf(paper.value, name)
     if (file) saved.value = file
   } catch (e) { error.value = (e as Error).message }

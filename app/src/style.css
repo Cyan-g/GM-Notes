@@ -1673,6 +1673,12 @@ button.live-tag { cursor: pointer; }
 .sp-opt-more > summary { cursor: pointer; color: var(--link); }
 .sp-pick-selects { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .3rem; }
 .sp-pick-selects select { width: auto; }
+/* weapons to master: what each picked weapon's mastery does, and the list of all of them */
+.sp-masteries { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; gap: .2rem; }
+.sp-mastery-list { margin-top: .4rem; }
+.sp-mastery-list dl { display: grid; grid-template-columns: max-content 1fr; gap: .25rem .7rem; margin: .4rem 0 0; }
+.sp-mastery-list dt { font-weight: 600; }
+.sp-mastery-list dd { margin: 0; }
 .char-sheet > .feature-choices { padding: .7rem .9rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
 .sp-given { margin-top: .3rem; }
 .sp-given > summary { cursor: pointer; list-style: none; }
@@ -1764,7 +1770,10 @@ button.live-tag { cursor: pointer; }
 .wz-score { display: grid; justify-items: center; min-width: 3.6rem; padding: .3rem; border: 1px solid var(--line); border-radius: 8px; }
 .wz-score b { font-size: 1.3rem; }
 .wz-make { margin-top: .6rem; }
-.wizard-foot { display: flex; justify-content: space-between; margin-top: 1.4rem; padding-top: .8rem; border-top: 1px solid var(--line); }
+/* the step's title with Back and Next, kept in view under the top bar while the step scrolls */
+.wizard-head { position: sticky; top: var(--bar-h); z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: -.8rem -1rem .4rem; padding: .6rem 1rem; background: var(--panel); border-bottom: 1px solid var(--line); border-radius: 12px 12px 0 0; }
+.wizard-head h2 { margin: 0; }
+.wz-nav { margin-left: auto; display: flex; gap: .5rem; }
 @media (max-width: 760px) {
   .wizard-grid { grid-template-columns: 1fr; }
   .wizard-steps { position: static; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); }

@@ -7,6 +7,8 @@ import type {
 export type FieldKind =
   | 'text' | 'longtext' | 'number' | 'bool' | 'select' | 'list' | 'money' | 'weight'
   | 'ref' | 'refs' | 'date' | 'recipe' | 'stock' | 'statblock' | 'abilities' | 'combatants' | 'pins' | 'ranks' | 'sheet' | 'classes' | 'effects' | 'itemSpells' | 'requires' | 'mapData' | 'speciesTraits' | 'abilityBonus' | 'skills' | 'equipment' | 'spellRolls' | 'classBasics' | 'speeds' | 'regain' | 'spellArea'
+  // A picture in the data folder (its path), copied along when the entry is exported or published.
+  | 'image'
 
 export interface FieldDef {
   key: string
@@ -25,6 +27,8 @@ export interface FieldDef {
   /** Only show when another field has one of these values, e.g. weapon fields when kind = Weapon. */
   when?: { readonly field: string; readonly is: readonly string[] }
   group?: string
+  /** Only for the DM: left out of exports and publishes without DM-only text, and kept on import when a file has none. */
+  dmOnly?: true
 }
 
 export interface TypeDef {
@@ -76,7 +80,7 @@ export const SCHEMA = [
     type: 'npc', label: 'NPC', plural: 'NPCs', icon: '👤', fields: [
       // Who they are, under the name (NpcForm): what they do, how they stand with the party, alive or not.
       { key: 'occupation', label: 'Occupation', kind: 'text' },
-      { key: 'attitude', label: 'Attitude', kind: 'select', options: ['Friendly', 'Indifferent', 'Hostile'] },
+      { key: 'attitude', label: 'Attitude', kind: 'select', options: ['Friendly', 'Indifferent', 'Hostile'], dmOnly: true },
       { key: 'status', label: 'Status', kind: 'text' },
       { key: 'statusSince', label: 'Since', kind: 'date' },
       { key: 'race', label: 'Race', kind: 'ref', to: ['race'], group: 'Appearance' },
@@ -95,7 +99,7 @@ export const SCHEMA = [
       { key: 'flaws', label: 'Flaws', kind: 'longtext', group: 'Roleplay' },
       { key: 'voice', label: 'Voice & mannerisms', kind: 'longtext', group: 'Roleplay' },
       { key: 'wants', label: 'Wants', kind: 'longtext', group: 'Roleplay' },
-      { key: 'secret', label: 'Secret', kind: 'longtext', group: 'Roleplay' },
+      { key: 'secret', label: 'Secret', kind: 'longtext', group: 'Roleplay', dmOnly: true },
       { key: 'statblock', label: 'Stats', kind: 'statblock', group: 'Stats' },
     ],
   },
@@ -128,9 +132,9 @@ export const SCHEMA = [
       { key: 'seat', label: 'Seat', kind: 'ref', to: ['place'] },
       // Edited with OrgForm: where else it is, how it stands with the party, what it's after, what joining gives.
       { key: 'presence', label: 'Present in', kind: 'refs', to: ['place'] },
-      { key: 'attitude', label: 'Attitude', kind: 'select', options: ['Friendly', 'Indifferent', 'Hostile'] },
+      { key: 'attitude', label: 'Attitude', kind: 'select', options: ['Friendly', 'Indifferent', 'Hostile'], dmOnly: true },
       { key: 'goals', label: 'Goals', kind: 'longtext' },
-      { key: 'secret', label: 'Secret', kind: 'longtext' },
+      { key: 'secret', label: 'Secret', kind: 'longtext', dmOnly: true },
       { key: 'teaches', label: 'Membership offers', kind: 'refs', to: ['subclass', 'spell', 'feat', 'item'] },
       { key: 'ranks', label: 'Ranks', kind: 'ranks' },
     ],
@@ -144,7 +148,7 @@ export const SCHEMA = [
       { key: 'markup', label: 'Price markup', kind: 'number', when: { field: 'placeType', is: ['Shop', 'Tavern'] }, group: 'Shop' },
       { key: 'shopkeeper', label: 'Keeper', kind: 'ref', to: ['npc'], when: { field: 'placeType', is: ['Shop', 'Tavern'] }, group: 'Shop' },
       { key: 'stock', label: 'Stock', kind: 'stock', when: { field: 'placeType', is: ['Shop', 'Tavern'] }, group: 'Shop' },
-      { key: 'map', label: 'Map image', kind: 'text', group: 'Map' },
+      { key: 'map', label: 'Map image', kind: 'image', group: 'Map' },
       { key: 'pins', label: 'Pins', kind: 'pins', group: 'Map' },
       // Set and drawn on the map itself (travel.ts), not in the form.
       { key: 'mapScale', label: 'Map scale', kind: 'mapData', group: 'Map' },
@@ -200,7 +204,7 @@ export const SCHEMA = [
       { key: 'plane', label: 'Home plane', kind: 'text' },
       { key: 'worshippers', label: 'Typical worshippers', kind: 'text' },
       { key: 'symbol', label: 'Symbol', kind: 'text' },
-      { key: 'symbolImage', label: 'Symbol picture', kind: 'text' },
+      { key: 'symbolImage', label: 'Symbol picture', kind: 'image' },
       // the calendar's holidays that are its holy days (by name)
       { key: 'holyDays', label: 'Holy days', kind: 'list' },
       // the subclasses it is the patron of (a warlock's patron)
@@ -388,6 +392,7 @@ export interface KindValue {
   recipe: RecipeLine[]; stock: StockLine[]; statblock: Statblock; abilities: Abilities
   combatants: EncounterLine[]; pins: Pin[]; ranks: RankLine[]; sheet: CharacterSheet; classes: ClassLine[]; effects: GearEffect[]; itemSpells: ItemSpell[]; requires: Requirements; mapData: MapScale | MapRoute[]
   speciesTraits: Trait[]; abilityBonus: AbilityBonus; skills: string[]; equipment: Equipment; spellRolls: SpellRoll[]; classBasics: ClassBasics; speeds: Speeds; regain: Regain; spellArea: SpellArea
+  image: string
 }
 type Defs = (typeof SCHEMA)[number]['fields'][number]
 /** A field key used by any type. */

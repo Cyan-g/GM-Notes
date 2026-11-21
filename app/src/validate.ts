@@ -44,8 +44,12 @@ export function checkField(f: FieldDef, v: unknown, exists?: (id: string) => Ent
     if (f.pick && !f.pick.is.includes(String((e.fields as Record<string, unknown>)[f.pick.field] ?? ''))) return `links to ${e.name}, which isn't a ${f.pick.is.join(' or ')}`
     return undefined
   }
+  /** Links held deeper in a field (a statblock's base creature and spells, the races asked for): only checked against
+   * the world's entries, so an import's shape check doesn't throw a whole field away for one of them. */
+  const linksIn = (ids: unknown) => (exists && Array.isArray(ids) ? ids.filter(id => id != null).map(id => link(id)).find(Boolean) : undefined)
   switch (f.kind) {
     case 'text': case 'longtext': return isStr(v) ? undefined : 'should be text'
+    case 'image': return isStr(v) ? undefined : 'should be a picture'
     case 'number': case 'money': case 'weight': return isNum(v) ? undefined : `should be a number, is ${JSON.stringify(v)}`
     case 'bool': return typeof v === 'boolean' ? undefined : 'should be yes or no'
     case 'select': return !isStr(v) ? 'should be one of the choices' : choice(v)
@@ -67,7 +71,7 @@ export function checkField(f: FieldDef, v: unknown, exists?: (id: string) => Ent
       return undefined
     }
     case 'mapData': return isObj(v) || Array.isArray(v) ? undefined : 'should be map data'
-    case 'requires': return isObj(v) ? undefined : 'should be a set of requirements'
+    case 'requires': return !isObj(v) ? 'should be a set of requirements' : linksIn(v.races)
     case 'itemSpells': return Array.isArray(v) && v.every(x => isObj(x) && isStr(x.spell) && isStr(x.how)) ? undefined : 'should be a list of spells'
     case 'effects': return Array.isArray(v) && v.every(x => isObj(x) && isStr(x.on)) ? undefined : 'should be a list of effects'
     case 'skills': return Array.isArray(v) && v.every(isStr) ? undefined : 'should be a list of skills'
@@ -82,7 +86,12 @@ export function checkField(f: FieldDef, v: unknown, exists?: (id: string) => Ent
       if (!Array.isArray(v) || !v.every(l => isObj(l) && isStr(l.class) && isNum(l.level))) return 'should be a list of classes with levels'
       return v.map(l => (l.subclass != null ? link(l.subclass) : undefined)).find(Boolean)
     case 'ranks': return Array.isArray(v) && v.every(r => isObj(r) && isStr(r.title)) ? undefined : 'should be a list of ranks with titles'
-    case 'statblock': case 'abilities': return isObj(v) ? undefined : 'should be a statblock'
+    case 'statblock': {
+      if (!isObj(v)) return 'should be a statblock'
+      const casting = isObj(v.spellcasting) && Array.isArray(v.spellcasting.lists) ? v.spellcasting.lists : []
+      return linksIn([v.base]) ?? casting.map(l => (isObj(l) ? linksIn(l.spells) : undefined)).find(Boolean)
+    }
+    case 'abilities': return isObj(v) ? undefined : 'should be a statblock'
     case 'sheet': {
       if (!isObj(v)) return 'should be a character sheet'
       if (v.inventory != null && !Array.isArray(v.inventory)) return 'has a broken inventory'

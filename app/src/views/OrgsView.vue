@@ -11,6 +11,7 @@ import { hrefDashboard, hrefEntry, hrefList } from '../router'
 import { TYPES } from '../model/schema'
 import { newEntry } from '../ui'
 import EntryLink from '../components/EntryLink.vue'
+import { leadersOf, leads } from '../org'
 
 const orgs = computed(() => byType.value.get('organization') ?? [])
 const npcs = computed(() => byType.value.get('npc') ?? [])
@@ -27,13 +28,10 @@ const shown = computed(() => orgs.value.filter(o =>
 // ---- per organization ----
 const members = (o: Entry) => (relationsOf.value.get(o.id) ?? []).filter(r => r.kind === 'member' && r.b === o.id && isCurrent(r))
 const ranks = (o: Entry) => (o.fields.ranks) ?? []
-const LEADER = /\b(leader|head|king|queen|duke|duchess|chief|chieftain|general|archmage|vizier|saint|high[- ]?priest(ess)?|grandmaster|captain|matriarch|patriarch)\b/i
-/** Who leads it: the holder of the top rank, else a member whose role sounds like it. */
+/** Who leads it (org.ts, as the entry's page and the list say): the holder of the top rank, else a member whose role leads. */
 function leader(o: Entry): { id: Id; role?: string } | undefined {
-  const m = members(o)
-  const top = ranks(o)[0]?.title?.toLowerCase()
-  const r = (top && m.find(x => x.role?.trim().toLowerCase() === top)) || m.find(x => x.role && LEADER.test(x.role))
-  return r ? { id: r.a, role: r.role } : undefined
+  const id = leadersOf(o)[0]
+  return id ? { id, role: members(o).find(r => r.a === id && leads(o, r.role))?.role } : undefined
 }
 const subOrgs = (o: Entry) => (childrenOf.value.get(o.id) ?? []).filter(c => c.type === 'organization')
 

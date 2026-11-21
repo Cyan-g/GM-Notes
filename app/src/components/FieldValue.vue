@@ -10,6 +10,7 @@ import type { AbilityBonus, Equipment, Entry, RecipeLine, StockLine, WorldDate, 
 import { fieldLabel, formatDate, formatMoney, get, state } from '../store'
 import { listKeyOf, noteIn } from '../model/lists'
 import EntryLink from './EntryLink.vue'
+import DataImage from './DataImage.vue'
 import StockTable from './StockTable.vue'
 import EncounterTable from './EncounterTable.vue'
 import RanksTable from './RanksTable.vue'
@@ -87,6 +88,7 @@ ${entry.body ?? ''}`" />
     </table>
   </template>
   <EncounterTable v-else-if="def.kind === 'combatants'" :lines="(value as any[]) ?? []" />
+  <DataImage v-else-if="def.kind === 'image'" :path="String(value)" :alt="`${entry.name}: ${def.label}`" />
   <template v-else-if="def.kind === 'stock'">
     <StockTable :shop="entry" :lines="(value as StockLine[]) ?? []" />
   </template>

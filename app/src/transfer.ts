@@ -67,11 +67,16 @@ const isObj = (v: unknown): v is Record<string, any> => !!v && typeof v === 'obj
 /** JSON with sorted keys, to tell whether two things are the same. */
 export const stable = (v: unknown) => JSON.stringify(v, (_k, x) => (isObj(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) : x))
 
+/** The keys of a type's picture fields (a place's map, a deity's symbol). */
+const imageKeys = (t: EntryType) => (TYPES[t]?.fields ?? []).filter(f => f.kind === 'image').map(f => f.key)
+/** The keys of a type's DM-only fields (an NPC's secret and attitude). */
+const dmOnlyKeys = (t: EntryType) => (TYPES[t]?.fields ?? []).filter(f => f.dmOnly).map(f => f.key)
+
 /** Paths of the pictures and files an entry uses. */
 export function dataPaths(e: Entry): string[] {
   const out = new Set<string>()
   if (e.image) out.add(e.image)
-  if (typeof e.fields.map === 'string' && e.fields.map) out.add(e.fields.map)
+  for (const k of imageKeys(e.type)) { const v = (e.fields as Record<string, unknown>)[k]; if (typeof v === 'string' && v) out.add(v) }
   for (const f of e.files ?? []) out.add(f)
   for (const m of (e.body ?? '').matchAll(DATA_PATH)) out.add(decodeURI(m[1]))
   return [...out]
@@ -146,8 +151,8 @@ export function outgoingEntries(plan: ExportPlan): { entries: Entry[]; names: Re
   const entries = plan.entries.map(e => {
     const c = clone(e)
     if (!plan.opts.dmText && hasSecrets(c.body)) c.body = stripSecrets(c.body)
-    // an NPC's secret is DM-only text too
-    if (!plan.opts.dmText) delete (c.fields as Record<string, unknown>).secret
+    // so are the DM-only fields (an NPC's or organization's secret, and how it stands with the party)
+    if (!plan.opts.dmText) for (const k of dmOnlyKeys(c.type)) delete (c.fields as Record<string, unknown>)[k]
     // stats based on a creature that doesn't go along: its stats written out, so the copy is complete
     const sb = c.fields.statblock as Statblock | undefined
     if (sb?.base && !ids.has(sb.base)) { const full = { ...(statsOf(e) ?? sb) }; delete full.base; c.fields.statblock = full }
@@ -378,7 +383,7 @@ export async function readImport(file: File): Promise<ImportPlan> {
     const p = c.type === 'pc' ? c.fields.sheet?.proficiencies : undefined
     if (p) for (const k of ['armor', 'weapons', 'languages'] as const) if (Array.isArray(p[k])) p[k] = [...new Set(p[k].map(id => prof(k, String(id))))]
     // Pictures and files at their path here.
-    if (typeof fields.map === 'string') { const to = paths.get(fields.map); if (to) fields.map = to; else delete fields.map }
+    for (const k of imageKeys(c.type)) if (typeof fields[k] === 'string') { const to = paths.get(fields[k] as string); if (to) fields[k] = to; else delete fields[k] }
     c.body = c.body.replace(DATA_PATH, (all, path: string) => { const to = paths.get(decodeURI(path)); return to ? all.replace(path, encodeURI(to)) : all })
     if (c.image) c.image = paths.get(c.image)
     if (!c.image) delete c.image
@@ -393,7 +398,7 @@ export async function readImport(file: File): Promise<ImportPlan> {
       }
       // A file without the DM-only text never wipes it out here.
       if (b.dmText === false && hasSecrets(h.body)) c.body = h.body
-      if (b.dmText === false && h.fields.secret != null) fields.secret = h.fields.secret
+      if (b.dmText === false) for (const k of dmOnlyKeys(c.type)) { const v = (h.fields as Record<string, unknown>)[k]; if (v != null) fields[k] = clone(v) }
       c.created = h.created
     } else c.created = typeof e.created === 'string' ? e.created : now
     c.updated = now

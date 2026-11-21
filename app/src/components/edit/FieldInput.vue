@@ -28,6 +28,7 @@ import RanksInput from './RanksInput.vue'
 import EffectsInput from './EffectsInput.vue'
 import ItemSpellsInput from './ItemSpellsInput.vue'
 import RequirementsInput from './RequirementsInput.vue'
+import ImageInput from './ImageInput.vue'
 const SKILL_OPTIONS = SKILLS.map(x => ({ id: x.name, label: x.name }))
 
 const props = defineProps<{ def: FieldDef; entry: Entry }>()
@@ -109,5 +110,6 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
   <StockInput v-else-if="def.kind === 'stock'" v-model="value" :markup="(entry.fields.markup) ?? 1" />
   <EncounterInput v-else-if="def.kind === 'combatants'" v-model="value" />
   <StatblockInput v-else-if="def.kind === 'statblock'" v-model="value" />
+  <ImageInput v-else-if="def.kind === 'image'" :model-value="value" :hint="`${entry.name} ${def.label.toLowerCase()}`" @update:model-value="v => (value = v)" />
   <input v-else :value="value ?? ''" @input="value = ($event.target as HTMLInputElement).value" />
 </template>

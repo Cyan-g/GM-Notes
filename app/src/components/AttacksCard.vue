@@ -44,7 +44,7 @@ const cantrips = computed(() => {
     const st = ability ? spellStats(props.pc, ability) : undefined
     const atk = st?.attack ?? spellAtk.value, save = st?.dc ?? dc.value, m = ability ? mod(scoreWith(s.value, ability, gt.value)) : castMod.value
     const check = e.fields.spellType === 'Attack' ? signed(atk) : `DC ${save}`
-    const tip = e.fields.spellType === 'Attack' ? `Spell attack${ability ? `, cast with ${ability.toUpperCase()}` : ''}` : `${String(e.fields.savingThrow ?? '').toUpperCase()} save${ability ? `, cast with ${ability.toUpperCase()}` : ''}`
+    const tip = e.fields.spellType === 'Attack' ? `Spell attack${ability ? `, cast with ${ability.toUpperCase()}` : ''}` : `${String(e.fields.savingThrow ?? '').slice(0, 3).toUpperCase()} save${ability ? `, cast with ${ability.toUpperCase()}` : ''}`
     return [{ id, name: e.name, check, tip, rolls: rollsLine(e, { level: levelOf(props.pc), mod: m }) }]
   })
 })

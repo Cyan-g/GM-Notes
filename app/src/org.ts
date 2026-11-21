@@ -4,16 +4,23 @@ import type { Entry, Id, RankLine } from './model/types'
 import { byType, get, isCurrent, relationsOf } from './store'
 import { sheetOf } from './sheet'
 
-/** Roles that lead an organization ("Queen", "High Priest", "Captain"…). */
-export const LEADER = /\b(leader|head|chief|duke|duchess|king|queen|abbess|abbot|master|captain|high priest|high priestess|archbishop|matriarch|patriarch|lord|lady|commander|general|elder|sage|saint)\b/i
+/** Roles that lead an organization ("Queen", "High Priest", "Captain"…). The one list every page goes by. */
+export const LEADER = /\b(leader|head|chief|chieftain|duke|duchess|king|queen|abbess|abbot|master|grandmaster|captain|high[- ]?priest(ess)?|archbishop|archmage|vizier|matriarch|patriarch|lord|lady|commander|general|elder|sage|saint)\b/i
 
 export const ranksOf = (org: Entry) => ((org.fields.ranks as RankLine[] | undefined) ?? []).filter(r => r.title.trim())
 /** The current members (their "member of" links). */
 export const membersOf = (org: Entry) => (relationsOf.value.get(org.id) ?? []).filter(r => r.kind === 'member' && r.b === org.id && isCurrent(r))
-/** Its leaders: current members whose role is a leader's or its top rank's title. */
+/** Whether a member's role leads the organization: a leader's role, or its top rank's title. */
+export function leads(org: Entry, role?: string): boolean {
+  const r = role?.trim().toLowerCase()
+  return !!r && (LEADER.test(r) || r === ranksOf(org)[0]?.title.trim().toLowerCase())
+}
+/** Its leaders: current members whose role leads it, the holders of its top rank first. */
 export function leadersOf(org: Entry): Id[] {
-  const top = ranksOf(org)[0]?.title.toLowerCase()
-  return membersOf(org).filter(r => r.role && (LEADER.test(r.role) || r.role.toLowerCase() === top)).map(r => r.a)
+  const top = ranksOf(org)[0]?.title.trim().toLowerCase()
+  const m = membersOf(org).filter(r => leads(org, r.role))
+  const isTop = (role?: string) => role?.trim().toLowerCase() === top
+  return [...m.filter(r => isTop(r.role)), ...m.filter(r => !isTop(r.role))].map(r => r.a)
 }
 
 /** The rank a renown earns (the highest one it reaches; appointed ranks, without a number, aren't earned) and the next. */

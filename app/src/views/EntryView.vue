@@ -10,6 +10,7 @@ import { computed, ref, watch } from 'vue'
 import type { Entry, Relation, Statblock, WorldDate } from '../model/types'
 import { TYPES, RELATION_KINDS, byKey, type FieldDef } from '../model/schema'
 import { backlinks, byType, childrenOf, dateKey, db, formatDate, get, hiddenFromPlayers, placePath, playerMode, relationsOf, entries, state } from '../store'
+import { leads } from '../org'
 import { go, hrefEntry, hrefFamily, hrefList, hrefMap, hrefTab, type EntryTab } from '../router'
 import SpellbookView from './SpellbookView.vue'
 import InventoryTab from './InventoryTab.vue'
@@ -232,8 +233,7 @@ const onMaps = computed(() => {
 // Places show their kind as the badge; items and spells show their line inside their card.
 const lead = computed(() => (e.value && !['place', 'item', 'spell', 'feat'].includes(e.value.type) ? describe(e.value, { parent: false }) : ''))
 
-/** The few facts that belong right under the name: affiliations, home, rulers, leaders. */
-const LEADER = /\b(leader|head|chief|duke|duchess|king|queen|abbess|abbot|master|captain|high priest|archbishop|matriarch|patriarch|lord|lady|commander|general|elder)\b/i
+/** The few facts that belong right under the name: affiliations, home, rulers, leaders (as org.ts tells them). */
 const facts = computed(() => {
   const x = e.value
   if (!x) return []
@@ -246,7 +246,7 @@ const facts = computed(() => {
     add('Rules', rs.filter(r => r.kind === 'rules' && r.a === x.id).map(r => ({ id: r.b, rel: r.id })))
     add('Worships', rs.filter(r => r.kind === 'worships' && r.a === x.id).map(r => ({ id: r.b, rel: r.id })))
   } else if (x.type === 'organization') {
-    add('Led by', rs.filter(r => r.kind === 'member' && r.b === x.id && r.role && LEADER.test(r.role)).map(r => ({ id: r.a, note: r.role, rel: r.id })))
+    add('Led by', rs.filter(r => r.kind === 'member' && r.b === x.id && leads(x, r.role)).map(r => ({ id: r.a, note: r.role, rel: r.id })))
   } else if (x.type === 'place') {
     add('Ruled by', rs.filter(r => r.kind === 'rules' && r.b === x.id).map(r => ({ id: r.a, note: r.role, rel: r.id })))
   }

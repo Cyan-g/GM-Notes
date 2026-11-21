@@ -1,8 +1,9 @@
 // Every place an entry points at another entry, in one walk: ref and refs fields, recipe and stock lines, map pins,
-// encounter lines, a character sheet's inventory, spellbook, recipes and tools, an item's spells, a species trait's
-// spells and tools, and [[links]] in the text.
+// encounter lines, a statblock's base creature and spells, required races, a background's and a class's starting
+// equipment, a character sheet's inventory, spellbook, active and concentrated spells, recipes, tools, companions
+// and renown, an item's spells, a species trait's spells and tools, and [[links]] in the text.
 // Sharing uses it both to follow what an entry needs and to rewrite the ids when it lands in another world.
-import type { CharacterSheet, Entry, Id, ItemSpell, Trait, TraitOption } from './types'
+import type { CharacterSheet, ClassBasics, Entry, Id, ItemSpell, Requirements, Statblock, Trait, TraitOption } from './types'
 import { TYPES } from './schema'
 
 /** The id to use instead, or null to drop the reference. */
@@ -46,13 +47,7 @@ export function mapRefs(e: Entry, to: RefMap, word: (id: Id) => string = id => i
       case 'equipment': {
         const eq = v as { items?: { item?: Id; name?: string }[] }
         if (!Array.isArray(eq.items)) break
-        eq.items = eq.items.map(l => {
-          if (!l.item) return l
-          const n = to(l.item)
-          if (n != null) return { ...l, item: n }
-          const { item, ...rest } = l
-          return { ...rest, name: rest.name ?? word(item) }
-        })
+        eq.items = eq.items.map(l => equipmentLine(l, to, word))
         break
       }
       case 'combatants': {
@@ -94,7 +89,9 @@ export function mapRefs(e: Entry, to: RefMap, word: (id: Id) => string = id => i
           const spells = t.spells?.flatMap(x => { const n = to(x.spell); return n == null ? [] : [{ ...x, spell: n }] })
           const grants = t.grants?.flatMap(g => { if (g.kind !== 'tool') return [g]; const n = to(g.id); return n == null ? [] : [{ ...g, id: n }] })
           if ((spells?.length ?? 0) < (t.spells?.length ?? 0) || (grants?.length ?? 0) < (t.grants?.length ?? 0)) lost = true
-          return { ...t, ...(t.spells ? { spells } : {}), ...(t.grants ? { grants } : {}) }
+          // The tool choices that come with an option pick among Tool items, like a trait's own.
+          const choices = t.choices?.map(c => (c.kind === 'tool' && c.among ? { ...c, among: c.among.flatMap(id => { const n = to(id); return n == null ? [] : [n] }) } : c))
+          return { ...t, ...(t.spells ? { spells } : {}), ...(t.grants ? { grants } : {}), ...(t.choices ? { choices } : {}) }
         }
         f[def.key] = (v as Trait[]).map(t => {
           const x = part(t)
@@ -115,6 +112,41 @@ export function mapRefs(e: Entry, to: RefMap, word: (id: Id) => string = id => i
           const { subclass, ...rest } = l
           return rest
         })
+        break
+      }
+      case 'statblock': {
+        // The creature it's based on, and the spells it casts.
+        const sb = v as Statblock
+        if (typeof sb !== 'object') break
+        if (sb.base) {
+          const n = to(sb.base)
+          if (n != null) sb.base = n
+          else { delete sb.base; cut.add(def.key) }
+        }
+        if (Array.isArray(sb.spellcasting?.lists)) {
+          sb.spellcasting.lists = sb.spellcasting.lists.map(l => {
+            if (!Array.isArray(l.spells)) return l
+            const spells = l.spells.flatMap(id => { const n = to(id); return n == null ? [] : [n] })
+            if (spells.length < l.spells.length) cut.add(def.key)
+            return { ...l, spells }
+          })
+        }
+        break
+      }
+      case 'requires': {
+        // The races it asks for; the rest is names and numbers.
+        const r = v as Requirements
+        if (!Array.isArray(r.races)) break
+        const races = r.races.flatMap(id => { const n = typeof id === 'string' ? to(id) : null; return n == null ? [] : [n] })
+        if (races.length < r.races.length) cut.add(def.key)
+        if (races.length) r.races = races; else delete r.races
+        break
+      }
+      case 'classBasics': {
+        // Its starting equipment options, each like a background's equipment: a lost item keeps its name.
+        const b = v as ClassBasics
+        if (!Array.isArray(b.equipment)) break
+        b.equipment = b.equipment.map(eq => (Array.isArray(eq.items) ? { ...eq, items: eq.items.map(l => equipmentLine(l, to, word)) } : eq))
         break
       }
     }
@@ -144,6 +176,29 @@ function mapSheet(s: CharacterSheet, to: RefMap, word: (id: Id) => string) {
   if (s.spellbook) for (const k of ['known', 'prepared', 'always'] as const) s.spellbook[k] = ids(s.spellbook[k]) as Id[]
   if (s.crafting) s.crafting.known = ids(s.crafting.known) as Id[]
   if (s.proficiencies) s.proficiencies.tools = ids(s.proficiencies.tools) as Id[]
+  if (Array.isArray(s.activeSpells)) s.activeSpells = ids(s.activeSpells) as Id[]
+  if (s.concentrating) {
+    const n = to(s.concentrating)
+    if (n != null) s.concentrating = n; else delete s.concentrating
+  }
+  // A companion is its creature's statblock with a name: without the creature there is nothing left to show.
+  if (Array.isArray(s.companions)) s.companions = s.companions.flatMap(c => { const n = c.creature ? to(c.creature) : null; return n == null ? [] : [{ ...c, creature: n }] })
+  if (s.renown && typeof s.renown === 'object') {
+    const renown: Record<Id, number> = {}
+    for (const [id, v] of Object.entries(s.renown)) { const n = to(id); if (n != null) renown[n] = v }
+    s.renown = renown
+  }
+  // The species picks and swaps are left as they are: they hold entry ids (feats, spells, tools) and option ids or
+  // skill names alike, and only the trait they belong to says which, so they can't be told apart here.
+}
+
+/** An equipment line with its item renamed, or, when the item is dropped, with the item's name in its place. */
+function equipmentLine<L extends { item?: Id; name?: string }>(l: L, to: RefMap, word: (id: Id) => string): L {
+  if (!l.item) return l
+  const n = to(l.item)
+  if (n != null) return { ...l, item: n }
+  const { item, ...rest } = l
+  return { ...rest, name: rest.name ?? word(item) } as L
 }
 
 /** The entries an entry points at (with or without the links in its text). */

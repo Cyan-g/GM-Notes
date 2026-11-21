@@ -126,6 +126,12 @@ export const SCHEMA = [
       { key: 'orgType', label: 'Type', kind: 'select', options: ['Clan', 'Family', 'Guild', 'Faith', 'Government', 'Military', 'Order', 'Tribe', 'Company', 'Crew', 'Cult', 'Other'] },
       { key: 'parent', label: 'Part of', kind: 'ref', to: ['organization'] },
       { key: 'seat', label: 'Seat', kind: 'ref', to: ['place'] },
+      // Edited with OrgForm: where else it is, how it stands with the party, what it's after, what joining gives.
+      { key: 'presence', label: 'Present in', kind: 'refs', to: ['place'] },
+      { key: 'attitude', label: 'Attitude', kind: 'select', options: ['Friendly', 'Indifferent', 'Hostile'] },
+      { key: 'goals', label: 'Goals', kind: 'longtext' },
+      { key: 'secret', label: 'Secret', kind: 'longtext' },
+      { key: 'teaches', label: 'Membership offers', kind: 'refs', to: ['subclass', 'spell', 'feat', 'item'] },
       { key: 'ranks', label: 'Ranks', kind: 'ranks' },
     ],
   },

@@ -201,6 +201,8 @@ export interface Feature { name: string; text: string; /** A statblock action th
 /** A player character's sheet (a PC entry's `sheet` field). Everything that follows from the rules is worked out, not stored. */
 export interface CharacterSheet {
   abilities: Abilities
+  /** Renown with organizations (by id), as the DM hands it out: member or not. */
+  renown?: Record<Id, number>
   /** Saving throws the character is proficient in. */
   saves: (keyof Abilities)[]
   /** 1 = proficient, 2 = expertise. */

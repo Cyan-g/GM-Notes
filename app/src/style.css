@@ -2164,3 +2164,13 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .deity-link-btns { display: flex; flex-wrap: wrap; gap: .3rem; margin-left: auto; }
 .deity-link-btns .chip-btn { font-size: 12px; }
 .si-patron { margin: .2rem 0 .6rem; }
+/* ---- organizations: members by rank, the party's renown, a character's standing ---- */
+.org-form + .field-label { margin-top: 1.2rem; }
+.members-add { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .6rem; padding-top: .6rem; border-top: 1px solid var(--line); }
+.members-add > :first-child { flex: 1 1 10rem; min-width: 0; }
+.members-add input.short { width: 7rem; }
+.renown-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem; padding: .3rem 0; border-bottom: 1px solid var(--line); }
+.renown-row:last-of-type { border-bottom: 0; }
+.renown-row input.short { width: 4rem; }
+.party-renown .entry-picker, .party-renown > :last-child { margin-top: .5rem; }
+.org-goals { margin: 0; white-space: pre-line; }

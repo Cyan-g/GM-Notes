@@ -28,6 +28,7 @@ import NpcForm from '../components/edit/NpcForm.vue'
 import NpcStats from '../components/edit/NpcStats.vue'
 import NpcAppearance from '../components/edit/NpcAppearance.vue'
 import DeityForm from '../components/edit/DeityForm.vue'
+import OrgForm from '../components/edit/OrgForm.vue'
 
 const props = defineProps<{ id: string }>()
 const e = computed(() => get(props.id))
@@ -49,7 +50,10 @@ const BIG = ['recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes', 'clas
 const npc = computed(() => e.value?.type === 'npc')
 const deity = computed(() => e.value?.type === 'deity')
 /** Types whose text gets the "Add a section" buttons (the headings the others of the type use) and grows with it. */
-const sectioned = computed(() => npc.value || deity.value)
+const org = computed(() => e.value?.type === 'organization')
+const sectioned = computed(() => npc.value || deity.value || org.value)
+/** An organization's fields in its own form (OrgForm); type, parent and seat stay in Details. */
+const ORG_FORM = ['presence', 'attitude', 'goals', 'secret', 'teaches']
 const groups = computed(() => {
   const out = new Map<string, FieldDef[]>()
   // an NPC's fields are in its own form (NpcForm, NpcAppearance, NpcStats)
@@ -62,6 +66,7 @@ const groups = computed(() => {
     if (BIG.includes(f.kind) || (e.value?.type === 'race' && f.key === 'abilityIncrease') || (e.value?.type === 'background' && BG_MAIN.includes(f.key)) || (e.value?.type === 'pc' && f.key === 'level') || (e.value?.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || !shown(f) || f.key === 'pins' || f.key === 'map' || f.kind === 'mapData') continue
     const g = f.kind === 'statblock' ? 'Stats' : f.group ?? 'Details'
     if (pcLooks && g === 'Appearance') continue
+    if (e.value?.type === 'organization' && ORG_FORM.includes(f.key)) continue
     if (!out.has(g)) out.set(g, [])
     out.get(g)!.push(f)
   }
@@ -98,7 +103,7 @@ function setBody(v: string) { e.value!.body = v; changed(e.value!) }
 
 // ---- an NPC's text: the headings other NPCs' texts use, one click to start a section ----
 const headingsIn = (body: string) => [...body.matchAll(/^#{1,3}\s*(.+?)\s*$/gm)].map(m => m[1])
-const SECTIONS: Record<string, string[]> = { npc: ['History', 'Description', 'Hooks'], deity: ['Dogma', 'Realm', 'Manifestations', 'Orders & Followers', 'Relations'] }
+const SECTIONS: Record<string, string[]> = { npc: ['History', 'Description', 'Hooks'], deity: ['Dogma', 'Realm', 'Manifestations', 'Orders & Followers', 'Relations'], organization: ['Structure', 'Presence', 'Uniform', 'Feats'] }
 const sections = computed(() => {
   if (!sectioned.value) return []
   const t = e.value!.type
@@ -222,6 +227,7 @@ function remove() {
           <BackgroundEdit v-if="e.type === 'background'" :e="e" />
           <NpcForm v-if="npc" :entry="e" />
           <DeityForm v-if="deity" :entry="e" />
+          <OrgForm v-if="org" :entry="e" />
           <h4 class="field-label">Text</h4>
           <BodyEditor :model-value="e.body" :hint="e.name" :compact="sectioned" @update:model-value="setBody" />
           <div v-if="sectioned" class="npc-add body-sections">

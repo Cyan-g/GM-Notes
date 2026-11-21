@@ -93,7 +93,7 @@ function groupLabel(e: Entry): string {
   return col.kind === 'ids' || col.field?.kind === 'ref' ? get(String(first))?.name ?? '' : String(first)
 }
 const grouped = computed(() => {
-  if (!groupBy.value || props.tree) return null
+  if (!groupBy.value) return null
   const m = new Map<string, Entry[]>()
   for (const e of shown.value) { const g = groupLabel(e); if (!m.has(g)) m.set(g, []); m.get(g)!.push(e) }
   // the named groups in order, the rows without one last

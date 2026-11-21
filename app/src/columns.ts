@@ -12,6 +12,7 @@ import { describeRequirements } from './requirements'
 import { statsOf } from './encounter'
 import { statusText } from './npc'
 import { partyLine } from './sheet'
+import { leadersOf } from './org'
 
 export interface Col {
   key: string
@@ -58,6 +59,9 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   '@aliases': { label: 'Also known as', value: e => e.aliases.join(', '), sort: e => e.aliases.join(', ').toLowerCase() || '~', kind: 'text' },
   '@lives-in': { label: 'Lives in', value: e => current(e, 'lives-in', true), sort: e => nameOf(current(e, 'lives-in', true)[0]), kind: 'ids' },
   '@member': { label: 'Member of', value: e => current(e, 'member', true), sort: e => nameOf(current(e, 'member', true)[0]), kind: 'ids' },
+  // an organization's leaders (members whose role leads) and the gods it worships
+  '@leader': { label: 'Led by', value: e => (e.type === 'organization' ? leadersOf(e) : []), sort: e => nameOf(e.type === 'organization' ? leadersOf(e)[0] : undefined), kind: 'ids' },
+  '@worships': { label: 'Worships', value: e => current(e, 'worships', true), sort: e => nameOf(current(e, 'worships', true)[0]), kind: 'ids' },
   '@members': { label: 'Members', value: e => current(e, 'member', false).length, sort: e => -current(e, 'member', false).length, kind: 'text' },
   '@classes': { label: 'Classes', value: e => classText(e, state.db?.meta, id => get(id)?.name), sort: e => classText(e, state.db?.meta).toLowerCase() || '~', kind: 'text' },
   '@level': { label: 'Level', value: e => (e.type === 'pc' ? totalLevel(e) : ''), sort: e => (e.type === 'pc' ? -totalLevel(e) : 0), kind: 'text' },

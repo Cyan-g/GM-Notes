@@ -73,7 +73,7 @@ const within = (id: Id | undefined, region: Id) => !!id && placePath(id).some(p 
 const regions = computed(() => (world.value ? (childrenOf.value.get(world.value.id) ?? []).filter(c => c.type === 'place') : []).map(r => ({
   r,
   subs: (childrenOf.value.get(r.id) ?? []).filter(c => c.type === 'place').sort(byName),
-  orgs: list('organization').filter(o => !o.fields.parent && within(o.fields.seat, r.id)).sort(byName),
+  orgs: list('organization').filter(o => !o.fields.parent && (within(o.fields.seat, r.id) || ((o.fields.presence as string[] | undefined) ?? []).some(p => within(p, r.id)))).sort(byName),
   maps: list('place').filter(p => p.id !== r.id && p.fields.map && within(p.id, r.id)).sort(byName),
 })).sort((a, b) => b.subs.length + b.orgs.length - (a.subs.length + a.orgs.length) || byName(a.r, b.r)))
 const homeless = computed(() => list('organization').filter(o => !o.fields.parent && !regions.value.some(r => r.orgs.includes(o))).sort(byName))

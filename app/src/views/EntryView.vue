@@ -56,9 +56,13 @@ import { allItems, filterItems } from '../timeline'
 import SubraceCards from '../components/SubraceCards.vue'
 import NpcRoleplay from '../components/NpcRoleplay.vue'
 import DeityGlance from '../components/DeityGlance.vue'
-import DeityLinks from '../components/DeityLinks.vue'
+import TextLinks from '../components/TextLinks.vue'
 import { statusText } from '../npc'
 import { addEntryToTracker } from '../tracker'
+import OrgCards from '../components/OrgCards.vue'
+import PartyRenown from '../components/PartyRenown.vue'
+import StandingCard from '../components/StandingCard.vue'
+import OrgsHere from '../components/OrgsHere.vue'
 
 const props = defineProps<{ id: string; tab?: EntryTab }>()
 const e = computed(() => get(props.id))
@@ -79,7 +83,7 @@ const shown = (f: FieldDef, x: Entry) => !f.when || f.when.is.includes(String(by
 const NPC_ELSEWHERE = ['race', 'gender', 'age', 'occupation', 'attitude', 'status', 'statusSince']
 /** "Dead since 86 AC", by the name. */
 const status = computed(() => (e.value?.type === 'npc' ? statusText(e.value) : ''))
-const attitude = computed(() => (e.value?.type === 'npc' && !playerMode.value ? String(e.value.fields.attitude ?? '') : ''))
+const attitude = computed(() => ((e.value?.type === 'npc' || e.value?.type === 'organization') && !playerMode.value ? String(e.value.fields.attitude ?? '') : ''))
 const added = ref(0)
 function toTracker() { addEntryToTracker(e.value!.id); added.value++ }
 watch(() => props.id, () => { added.value = 0 })
@@ -95,6 +99,8 @@ const groups = computed(() => {
     if (x.type === 'npc' && (NPC_ELSEWHERE.includes(f.key) || f.group === 'Roleplay')) continue
     // a deity's facts are in its glance card above the text (the rank and epithet under its name)
     if (x.type === 'deity') continue
+    // an organization's attitude is by its name, its aims and offers in their own cards
+    if (x.type === 'organization' && ['attitude', 'goals', 'secret', 'teaches'].includes(f.key)) continue
     if (big.includes(f.kind) || (x.type === 'pc' && f.key === 'level') || (x.type === 'creature' && f.key === 'creatureType') || (x.type === 'session' && ['campaign', 'number', 'date', 'playedOn', 'players'].includes(f.key)) || f.key === 'parent' || (x.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || (x.type === 'race' && ['size', 'otherSizes', 'creatureType', 'speeds', 'abilityIncrease', 'languages'].includes(f.key)) || (x.type === 'background' && ['abilityIncrease', 'originFeat', 'originFeatNote', 'skillProfs', 'toolProfs', 'toolsAll', 'equipment'].includes(f.key)) || f.key === 'map' || f.key === 'pins' || f.kind === 'mapData' || !shown(f, x) || empty(byKey(x.fields)[f.key])) continue
     const g = f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
@@ -473,7 +479,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         </div>
 
         <NpcRoleplay v-if="e.type === 'npc'" :e="e" />
-        <DeityLinks v-if="e.type === 'deity'" :e="e" />
+        <TextLinks v-if="e.type === 'deity' || e.type === 'organization'" :e="e" />
         <StatblockView v-if="statblock && e.type !== 'creature'" :sb="statblock" :name="e.name" />
         <div v-if="statblock && e.type === 'npc' && !state.readOnly && !playerMode" class="copy-row">
           <button type="button" class="chip-btn" title="Add to the initiative tracker as an enemy" @click="toTracker">⚔ Add to tracker</button>
@@ -481,8 +487,12 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         </div>
 
         <MembersCard v-if="e.type === 'organization'" :org="e" />
+        <PartyRenown v-if="e.type === 'organization' && !playerMode" :org="e" />
+        <OrgCards v-if="e.type === 'organization'" :e="e" />
+        <OrgsHere v-if="e.type === 'place'" :place="e" />
         <!-- A character's attacks and proficiencies instead of the relation cards (Equipped and the inventory are under the sheet). -->
         <AttacksCard v-if="e.type === 'pc'" :pc="e" />
+        <StandingCard v-if="e.type === 'pc'" :pc="e" />
         <!-- A character's details and appearance come after what they carry. -->
         <div v-for="[g, fs] in e.type === 'pc' ? groups : []" :key="'pc-' + g" class="card">
           <h3>{{ g }}</h3>

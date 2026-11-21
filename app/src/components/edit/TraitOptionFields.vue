@@ -8,6 +8,7 @@ import { ABILITY_NAME } from '../../abilityBonus'
 import { listOptions } from '../../store'
 import EffectsInput from './EffectsInput.vue'
 import EntryPicker from './EntryPicker.vue'
+import SpellLevelsInput from './SpellLevelsInput.vue'
 
 const model = defineModel<TraitOption>({ required: true })
 const props = defineProps<{
@@ -17,6 +18,8 @@ const props = defineProps<{
   siblings?: { id: string; name: string }[]
   /** Label of the level ("Warlock level") for an option's prerequisite. */
   levelWord?: string
+  /** A class's or subclass's feature: its spells are edited as a list by level ("Warlock level"). */
+  byLevel?: string
 }>()
 /** The text box grows with its text: two lines when empty, up to sixteen. */
 const rows = (t?: string) => Math.min(16, Math.max(2, (t ?? '').split('\n').reduce((n, line) => n + Math.max(1, Math.ceil(line.length / 105)), 0)))
@@ -89,7 +92,11 @@ const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement | 
     </div>
     <div class="trait-part">
       <span class="trait-label">Spells</span>
-      <div class="effects-input">
+      <div class="trait-spells-edit">
+      <!-- a class's or subclass's feature: the spells by level, set once for the list; each spell's settings fold below -->
+      <SpellLevelsInput v-if="byLevel" :model-value="model.spells" :trait-level="traitLevel ?? 1" :level-word="byLevel" @update:model-value="v => put({ spells: v })" />
+      <component :is="byLevel ? 'details' : 'div'" v-if="!byLevel || spells.length" class="effects-input" :class="{ 'steps-fold': byLevel }">
+        <summary v-if="byLevel" class="small">Each spell's settings</summary>
         <div v-for="(x, i) in spells" :key="i" class="effect-row">
           <EntryPicker :model-value="x.spell" :types="['spell']" @update:model-value="v => v ? setSpell(i, { spell: v }) : removeSpell(i)" />
           <select :value="x.how" aria-label="How it's cast" @change="setSpell(i, { how: val($event) as TraitSpell['how'] })">
@@ -106,7 +113,8 @@ const val = (ev: Event) => (ev.target as HTMLInputElement | HTMLSelectElement | 
             <option v-for="o in listOptions('class')" :key="o.id" :value="o.id">{{ o.label }} list</option>
           </select>
         </div>
-        <EntryPicker add :types="['spell']" :exclude="spells.map(x => x.spell)" placeholder="Add a spell…" @pick="addSpell" />
+        <EntryPicker v-if="!byLevel" add :types="['spell']" :exclude="spells.map(x => x.spell)" placeholder="Add a spell…" @pick="addSpell" />
+      </component>
       </div>
     </div>
   </div>

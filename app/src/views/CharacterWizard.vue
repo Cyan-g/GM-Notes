@@ -40,7 +40,7 @@ const classes = computed(() => listOptions('class'))
 const r = computed(() => rules(d.value))
 const subclasses = computed(() => (d.value.cls ? subclassesOf(d.value.cls) : []))
 /** A subclass's tagline: its description's first paragraph when it's set in italics (the SRD's). */
-const tagline = (s: Entry) => String(s.body ?? '').split(/\n\s*\n/)[0].trim().match(/^\*([^*]+)\*$/)?.[1]
+const tagline = (s: Entry) => (s.fields.tagline as string | undefined) || String(s.body ?? '').split(/\n\s*\n/)[0].trim().match(/^\*([^*]+)\*$/)?.[1]
 /** A subclass's features: up to the chosen level, and later ones. */
 const subFeatures = (s: Entry) => {
   const all = traitsOf(s)

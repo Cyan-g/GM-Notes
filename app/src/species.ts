@@ -10,6 +10,7 @@
 // uses that can grow by level (Rage), scaling values (Sneak Attack), and picks (Fighting Style, Expertise, Metamagic).
 import type { Abilities, CharacterSheet, Entry, GearEffect, Id, SpeciesState, Trait, TraitChoice, TraitGrant, TraitOption, TraitSpell } from './model/types'
 import { classesOf, totalLevel, withoutClass } from './model/classes'
+import { subclassLevelOf } from './classRules'
 import { entries, get, listOptions, state } from './store'
 import { SKILLS, mod, score, sheetOf } from './sheet'
 import { effectsOf, inUse, spellsOf } from './gear'
@@ -159,6 +160,12 @@ export function subraceOption(c: TraitChoice, subrace: string, parent: string): 
  * A trait's source, short, as a tag: the class with the level the feature comes at ("Warlock 2"), the subclass the
  * same without its class's name ("The Dusk Prince 6"), the race or background, or "feat" for a feat's own feature.
  */
+/** The levels a subclass of a class is expected to bring features at: where the class's other subclasses do, and the
+ * level the class chooses its subclass at. */
+export function expectedSubclassLevels(cls: string, except?: string): number[] {
+  const other = entries.value.filter(e => e.type === 'subclass' && e.fields.class === cls && e.id !== except)
+  return [...new Set([subclassLevelOf(cls), ...other.flatMap(e => traitsOf(e).map(t => t.level ?? 1))])].sort((a, b) => a - b)
+}
 /** The class a class or subclass entry belongs to, by its list label ("Warlock"). */
 export function classLabel(e: Entry): string {
   const cls = e.type === 'class' ? String(e.fields.class ?? e.name) : String(e.fields.class ?? '')

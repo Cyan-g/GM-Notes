@@ -394,13 +394,11 @@
      "spells": [
       {
        "spell": "Power Word Heal",
-       "how": "prepared",
-       "from": 20
+       "how": "prepared"
       },
       {
        "spell": "Power Word Kill",
-       "how": "prepared",
-       "from": 20
+       "how": "prepared"
       }
      ]
     }
@@ -1132,8 +1130,7 @@
      "spells": [
       {
        "spell": "Divine Smite",
-       "how": "prepared",
-       "from": 2
+       "how": "prepared"
       }
      ]
     },
@@ -1190,8 +1187,7 @@
      "spells": [
       {
        "spell": "Find Steed",
-       "how": "prepared",
-       "from": 5
+       "how": "prepared"
       }
      ]
     },
@@ -2089,8 +2085,7 @@
      "spells": [
       {
        "spell": "Contact Other Plane",
-       "how": "prepared",
-       "from": 9
+       "how": "prepared"
       }
      ]
     },
@@ -2289,23 +2284,19 @@
      "spells": [
       {
        "spell": "Aid",
-       "how": "prepared",
-       "from": 3
+       "how": "prepared"
       },
       {
        "spell": "Bless",
-       "how": "prepared",
-       "from": 3
+       "how": "prepared"
       },
       {
        "spell": "Cure Wounds",
-       "how": "prepared",
-       "from": 3
+       "how": "prepared"
       },
       {
        "spell": "Lesser Restoration",
-       "how": "prepared",
-       "from": 3
+       "how": "prepared"
       },
       {
        "spell": "Mass Healing Word",
@@ -2379,18 +2370,15 @@
         "spells": [
          {
           "spell": "Blur",
-          "how": "prepared",
-          "from": 3
+          "how": "prepared"
          },
          {
           "spell": "Burning Hands",
-          "how": "prepared",
-          "from": 3
+          "how": "prepared"
          },
          {
           "spell": "Fire Bolt",
-          "how": "prepared",
-          "from": 3
+          "how": "prepared"
          },
          {
           "spell": "Fireball",
@@ -2415,18 +2403,15 @@
         "spells": [
          {
           "spell": "Fog Cloud",
-          "how": "prepared",
-          "from": 3
+          "how": "prepared"
          },
          {
           "spell": "Hold Person",
-          "how": "prepared",
-          "from": 3
+          "how": "prepared"
          },
          {
           "spell": "Ray of Frost",
-          "how": "prepared",
-          "from": 3
+          "how": "prepared"
          },
          {
           "spell": "Sleet Storm",
@@ -2451,18 +2436,15 @@
         "spells": [
          {
           "spell": "Misty Step",
-          "how": "prepared",
-          "from": 3
+          "how": "prepared"
          },
          {
           "spell": "Shocking Grasp",
-          "how": "prepared",
-          "from": 3
+          "how": "prepared"
          },
          {
           "spell": "Sleep",
-          "how": "prepared",
-          "from": 3
+          "how": "prepared"
          },
          {
           "spell": "Lightning Bolt",
@@ -2487,18 +2469,15 @@
         "spells": [
          {
           "spell": "Acid Splash",
-          "how": "prepared",
-          "from": 3
+          "how": "prepared"
          },
          {
           "spell": "Ray of Sickness",
-          "how": "prepared",
-          "from": 3
+          "how": "prepared"
          },
          {
           "spell": "Web",
-          "how": "prepared",
-          "from": 3
+          "how": "prepared"
          },
          {
           "spell": "Stinking Cloud",
@@ -2653,13 +2632,11 @@
      "spells": [
       {
        "spell": "Protection from Evil and Good",
-       "how": "prepared",
-       "from": 3
+       "how": "prepared"
       },
       {
        "spell": "Shield of Faith",
-       "how": "prepared",
-       "from": 3
+       "how": "prepared"
       },
       {
        "spell": "Aid",
@@ -2872,23 +2849,19 @@
      "spells": [
       {
        "spell": "Alter Self",
-       "how": "prepared",
-       "from": 3
+       "how": "prepared"
       },
       {
        "spell": "Chromatic Orb",
-       "how": "prepared",
-       "from": 3
+       "how": "prepared"
       },
       {
        "spell": "Command",
-       "how": "prepared",
-       "from": 3
+       "how": "prepared"
       },
       {
        "spell": "Dragon's Breath",
-       "how": "prepared",
-       "from": 3
+       "how": "prepared"
       },
       {
        "spell": "Fear",
@@ -3025,23 +2998,19 @@
      "spells": [
       {
        "spell": "Burning Hands",
-       "how": "prepared",
-       "from": 3
+       "how": "prepared"
       },
       {
        "spell": "Command",
-       "how": "prepared",
-       "from": 3
+       "how": "prepared"
       },
       {
        "spell": "Scorching Ray",
-       "how": "prepared",
-       "from": 3
+       "how": "prepared"
       },
       {
        "spell": "Suggestion",
-       "how": "prepared",
-       "from": 3
+       "how": "prepared"
       },
       {
        "spell": "Fireball",

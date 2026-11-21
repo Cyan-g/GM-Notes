@@ -9,6 +9,7 @@ import { backlinks, get, relationsOf, state } from '../store'
 import { changed, deleteEntry } from '../edit'
 import { go, hrefEntry, hrefList } from '../router'
 import FieldInput from '../components/edit/FieldInput.vue'
+import SubclassInfo from '../components/SubclassInfo.vue'
 import ListInput from '../components/edit/ListInput.vue'
 import BodyEditor from '../components/edit/BodyEditor.vue'
 import CharacterSheet from '../components/CharacterSheet.vue'
@@ -30,7 +31,8 @@ const BIG = ['recipe', 'stock', 'combatants', 'ranks', 'sheet', 'classes', 'clas
 const groups = computed(() => {
   const out = new Map<string, FieldDef[]>()
   for (const f of def.value?.fields ?? []) {
-    if (BIG.includes(f.kind) || (e.value?.type === 'pc' && f.key === 'level') || !shown(f) || f.key === 'pins' || f.key === 'map' || f.kind === 'mapData') continue
+    // a subclass's class and tagline are at the top of its main column (SubclassInfo)
+    if (BIG.includes(f.kind) || (e.value?.type === 'pc' && f.key === 'level') || (e.value?.type === 'subclass' && ['class', 'tagline'].includes(f.key)) || !shown(f) || f.key === 'pins' || f.key === 'map' || f.kind === 'mapData') continue
     const g = f.kind === 'statblock' ? 'Stats' : f.group ?? 'Details'
     if (!out.has(g)) out.set(g, [])
     out.get(g)!.push(f)
@@ -147,6 +149,7 @@ function remove() {
         <!-- A character is built on its sheet; the notes are written on the character's page. -->
         <CharacterSheet v-else-if="e.type === 'pc'" :pc="e" build />
         <section v-else class="edit-text">
+          <SubclassInfo v-if="e.type === 'subclass'" :e="e" edit />
           <h4 class="field-label">Text</h4>
           <BodyEditor :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
         </section>

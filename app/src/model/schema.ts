@@ -263,6 +263,8 @@ export const SCHEMA = [
   {
     type: 'subclass', label: 'Subclass', plural: 'Subclasses', icon: '📜', fields: [
       { key: 'class', label: 'Class', kind: 'select', options: CLASSES, list: 'class' },
+      // A line under its name (the SRD's "Make a Deal with the Lower Planes"); the wizard shows it with the subclass.
+      { key: 'tagline', label: 'Tagline', kind: 'text' },
       // Its features, by the character's level in the class.
       { key: 'speciesTraits', label: 'Features', kind: 'speciesTraits' },
     ],

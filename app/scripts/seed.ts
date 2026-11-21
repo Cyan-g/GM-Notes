@@ -115,10 +115,14 @@ const classes: Entry[] = [
     id: slug(c.name), type: 'class', name: c.name, aliases: [], tags: [], visibility: 'known', body: SOURCE,
     fields: { class: c.name, speciesTraits: featuresWithIds(c.features) }, created: stamp, updated: stamp,
   } as Entry)),
-  ...CLS.subclasses.map(c => ({
-    id: slug(c.name), type: 'subclass', name: c.name, aliases: [], tags: [], visibility: 'known', body: [c.body, SOURCE].join('\n\n'),
-    fields: { class: c.class, speciesTraits: featuresWithIds(c.features) }, created: stamp, updated: stamp,
-  } as Entry)),
+  ...CLS.subclasses.map(c => {
+    // the SRD's italic first line ("Make a Deal with the Lower Planes") is the subclass's tagline
+    const m = c.body.match(/^\*([^*\n]+)\*\s*\n\s*\n/)
+    return {
+      id: slug(c.name), type: 'subclass', name: c.name, aliases: [], tags: [], visibility: 'known', body: [m ? c.body.slice(m[0].length) : c.body, SOURCE].join('\n\n'),
+      fields: { class: c.class, ...(m ? { tagline: m[1].trim() } : {}), speciesTraits: featuresWithIds(c.features) }, created: stamp, updated: stamp,
+    } as Entry
+  }),
 ]
 const picked = [...chosen, ...species, ...tools, ...backgrounds, ...classes].sort((a, b) => a.type.localeCompare(b.type) || a.id.localeCompare(b.id))
 const ids = new Set(picked.map(e => e.id))

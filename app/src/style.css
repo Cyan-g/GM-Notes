@@ -1963,3 +1963,26 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .steps-lv { width: 3.2rem !important; }
 .steps-val { width: 5rem !important; }
 .steps-words { flex-basis: 100%; }
+/* a subclass's class, levels, tagline and fixes at the top of its page */
+.subclass-info { margin-bottom: .8rem; }
+.si-line { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; font-size: 14px; color: var(--ink-2, var(--ink)); }
+.si-line .spacer { flex: 1; }
+.si-class { display: inline-flex; gap: .4rem; align-items: center; font-weight: 600; }
+.si-class select { width: auto; }
+.si-tagline { display: flex; gap: .5rem; align-items: center; margin: .4rem 0; font-size: 14px; }
+.si-tagline input { flex: 1; }
+.si-tag { margin: .3rem 0 0; font-size: 1.05rem; }
+.si-warn { margin-top: .5rem; }
+.si-fix { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .35rem; }
+.trait-spells { width: auto; min-width: 22rem; margin: .4rem 0; }
+.trait-spells td:first-child, .trait-spells th:first-child { text-align: center; white-space: nowrap; }
+.trait-level-head { display: flex; align-items: baseline; gap: .6rem; }
+.trait-level-head .link-btn { font-family: var(--sans); font-weight: normal; }
+.trait-gap { margin: .2rem 0 .4rem; }
+/* a feature's spells by level */
+.trait-spells-edit { display: grid; gap: .3rem; flex: 1; min-width: 0; }
+.spell-levels { display: grid; gap: .3rem; }
+.spell-level-row { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; padding: .3rem .4rem; border: 1px solid var(--line); border-radius: 6px; }
+.spell-level-row.new { border-style: dashed; }
+.spell-level-row .chip .link-btn { padding: 0 0 0 .25rem; }
+.spell-level-row .entry-picker, .spell-level-row input[type=search] { width: 12rem; }

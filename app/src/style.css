@@ -1869,3 +1869,5 @@ button.live-tag { cursor: pointer; }
 .comp-hp input { width: 4.2rem; }
 .comp-hp.down input:first-child { color: var(--flash-down); }
 .comp-change { display: inline-flex; gap: .3rem; align-items: center; }
+/* a select with a see-through face (the conditions' "+ Condition") still opens its list in the theme's colours */
+select option, select optgroup { background: var(--panel); color: var(--ink); }

@@ -220,7 +220,7 @@ function createDevices(hooks) {
     const w = hooks.world()
     // "who is pairing?": answered by a device that is
     if (m.pairAsk) {
-      if (pairing && pairing.until > Date.now() && w && srv) srv.udp?.send(Buffer.from(JSON.stringify({ t: HELLO, pairing: true, title: w.title, port: srv.port, name: hooks.me().name })), r.port, r.address, () => {})
+      if (pairing && pairing.until > Date.now() && w && srv) srv.udp?.send(Buffer.from(JSON.stringify({ t: HELLO, pairing: true, title: w.title, port: srv.port, name: hooks.me().name, device: hooks.me().id })), r.port, r.address, () => {})
       return
     }
     if (!w || m.worldId !== w.worldId || m.device === hooks.me().id || !openPair()?.peers?.[m.device]) return
@@ -392,7 +392,7 @@ function createDevices(hooks) {
       const sock = dgram.createSocket('udp4')
       const ask = () => { for (const t of new Set(['255.255.255.255', ...networks().map(n => n.broadcast)])) sock.send(JSON.stringify({ t: HELLO, pairAsk: true }), PORT, t, () => {}) }
       sock.on('message', (buf, r) => {
-        try { const m = JSON.parse(buf.toString()); if (m?.t === HELLO && m.pairing && m.port) found.set(`${r.address}:${m.port}`, { host: r.address, port: Number(m.port), title: String(m.title ?? ''), name: String(m.name ?? '') }) } catch {}
+        try { const m = JSON.parse(buf.toString()); if (m?.t === HELLO && m.pairing && m.port && !found.has(m.device || `${r.address}:${m.port}`)) found.set(m.device || `${r.address}:${m.port}`, { host: r.address, port: Number(m.port), title: String(m.title ?? ''), name: String(m.name ?? '') }) } catch {}
       })
       sock.on('error', () => {})
       sock.bind(0, () => { try { sock.setBroadcast(true) } catch {} ask(); setTimeout(ask, ms / 3) })

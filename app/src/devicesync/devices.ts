@@ -74,6 +74,28 @@ async function pullFrom(id: string) {
   }
 }
 
+// ---- what the screens use (DevicesDialog, DeviceJoin) ----
+const plainError = (e: unknown) => new Error(String((e as Error).message ?? e).replace(/^Error invoking remote method '[^']+': (Error: )?/, ''))
+async function call<T>(job: () => Promise<T>): Promise<T> { try { return await job() } catch (e) { throw plainError(e) } }
+export async function refreshDevices() { if (desktop?.devices) devices.status = await desktop.devices.status() }
+export async function setDeviceName(name: string) { devices.status = await call(() => desktop!.devices.setName(name)) }
+export async function startPairing() { devices.status = await call(() => desktop!.devices.pairStart()) }
+export async function stopPairing() { await call(() => desktop!.devices.pairStop()); await refreshDevices() }
+export async function forgetDevice(id: string) { await call(() => desktop!.devices.forget(id)); await refreshDevices() }
+/** Get a device's latest changes now (also happens by itself after each change there). */
+export async function syncNow(id: string) { queue.add(id); await pullAll(); if (devices.error) throw new Error(devices.error) }
+/** Computers on this network showing a pairing code. */
+export const findPairing = () => call(() => desktop!.devices.find())
+/**
+ * Join the world another device is pairing, with its code: the copy is made in GM Notes' own folder and opened
+ * (this page reloads). `target`: "host:port" or an address typed in.
+ */
+export async function joinDevice(target: string, code: string) {
+  if (state.db && (state.dirty || state.saving)) await save()
+  await call(() => desktop!.devices.join(target, code))
+  location.reload()
+}
+
 /** Listen to the network side: device status, and "this device changed something". */
 export function startDeviceSync() {
   if (!desktop?.devices) return

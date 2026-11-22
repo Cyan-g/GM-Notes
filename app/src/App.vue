@@ -31,6 +31,8 @@ import CharacterWizard from './views/CharacterWizard.vue'
 import NewEntryDialog from './components/NewEntryDialog.vue'
 import ImportDialog from './components/ImportDialog.vue'
 import ExportDialog from './components/ExportDialog.vue'
+import DevicesDialog from './components/DevicesDialog.vue'
+import SyncNotice from './components/SyncNotice.vue'
 import LinkPreview from './components/LinkPreview.vue'
 import TipLayer from './components/TipLayer.vue'
 import StartScreen from './components/StartScreen.vue'
@@ -141,6 +143,8 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
     <NewEntryDialog v-model="ui.newOpen" :type="ui.newType" :fields="ui.newFields" />
     <ImportDialog v-model="ui.importPlan" />
     <ExportDialog v-model="ui.worldExport" />
+    <DevicesDialog v-if="ui.devices" @close="ui.devices = false" />
+    <SyncNotice />
     <PublishDialog v-model="ui.publishOpen" />
     <LinkPreview />
     <TipLayer />

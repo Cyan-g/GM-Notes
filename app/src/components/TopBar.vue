@@ -11,6 +11,7 @@ import SettingsMenu from './SettingsMenu.vue'
 import WorldList from './WorldList.vue'
 import { desktop } from '../storage/desktop'
 import SessionButton from './SessionButton.vue'
+import SyncChip from './SyncChip.vue'
 /** The world's name: a menu with Home and the known worlds (desktop app). */
 const worldsOpen = ref(false)
 const brandBox = ref<HTMLElement | null>(null)
@@ -100,6 +101,7 @@ const current = computed(() => visibleMenus.value.findIndex(m => m.owns(route.cu
         <template v-else-if="state.dirty">Unsaved…</template>
         <template v-else-if="state.savedAt">✓ Saved</template>
       </span>
+      <SyncChip />
       <SessionButton />
       <button class="mode-tag" :title="state.db?.follow ? 'Player mode: a world your DM shares' : `${playerMode ? 'Player' : 'DM'} mode: switch it in Settings`" @click.stop="settingsMenu?.toggle()">{{ playerMode ? 'Player mode' : 'DM mode' }}</button>
       <SettingsMenu ref="settingsMenu" />

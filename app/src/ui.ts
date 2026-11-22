@@ -19,6 +19,8 @@ export const ui = reactive({
   worldExport: false,
   /** The Publish for players dialog. */
   publishOpen: false,
+  /** My devices: this world synced with the user's other computers (DevicesDialog.vue). */
+  devices: false,
   /** Cards to print (PrintCards.vue): a title for the file, and one or more sets to choose from. */
   printCards: null as null | { name: string; sets: { label: string; ids: Id[] }[] },
 })

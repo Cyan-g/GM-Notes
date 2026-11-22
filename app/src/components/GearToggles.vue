@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // The Equip and Attune buttons for one inventory line. Turning one on is refused (the button greyed out, the
 // reason on hover) when the character doesn't meet the item's requirements (requirements.ts); off always works.
-import { useReadOnly } from '../composables/useReadOnly'
+import { useReadOnlyShared as useReadOnly } from '../composables/useReadOnly'
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { state } from '../store'

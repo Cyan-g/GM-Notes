@@ -9,7 +9,9 @@ import { listKeyOf } from './model/lists'
 import { membersOf, sessionNo, sessionsOf } from './sessions'
 import { abilityBonusText } from './abilityBonus'
 import { describeRequirements } from './requirements'
-import { statsOf } from './encounter'
+import { lineInfo, statsOf } from './encounter'
+import { basicsOf } from './classRules'
+import { ABILITY_SHORT } from './model/dnd'
 import { statusText } from './npc'
 import { partyLine } from './sheet'
 import { leadersOf } from './org'
@@ -46,7 +48,20 @@ const speedText = (e: Entry) => {
 }
 const concRitual = (e: Entry) => [e.fields.concentration && 'C', e.fields.ritual && 'R'].filter(Boolean).join(' ')
 
+/** An encounter's creatures, all told, and their XP. */
+const encCount = (e: Entry) => (e.type === 'encounter' ? (e.fields.creatures ?? []).reduce((n, l) => n + (l.count || 1), 0) : 0)
+const encXp = (e: Entry) => (e.type === 'encounter' ? (e.fields.creatures ?? []).reduce((n, l) => n + (lineInfo(l).xp ?? 0) * (l.count || 1), 0) : 0)
+const CASTER: Record<string, string> = { full: 'Full', half: 'Half', third: 'Third', pact: 'Pact magic', artificer: 'Half (Artificer)', none: '' }
+const clsOf = (e: Entry) => (e.type === 'class' && e.fields.class ? basicsOf(String(e.fields.class)) : undefined)
+
 const COMPUTED: Record<string, Omit<Col, 'key'>> = {
+  // an encounter: how many creatures, and the XP they're worth
+  '@creatures': { label: 'Creatures', value: e => encCount(e) || '', sort: e => -encCount(e), kind: 'text' },
+  '@xp': { label: 'XP', value: e => encXp(e) ? encXp(e).toLocaleString() : '', sort: e => -encXp(e), kind: 'text' },
+  // a class: hit die, saving throws, spellcasting
+  '@hitDie': { label: 'Hit die', value: e => clsOf(e)?.hitDie ?? '', sort: e => Number(clsOf(e)?.hitDie?.slice(1) ?? 0), kind: 'text' },
+  '@saves': { label: 'Saves', value: e => (clsOf(e)?.saves ?? []).map(a => ABILITY_SHORT[a]).join(', '), sort: e => (clsOf(e)?.saves ?? []).join(), kind: 'text' },
+  '@caster': { label: 'Spellcasting', value: e => CASTER[clsOf(e)?.caster ?? 'none'] ?? '', sort: e => ['full', 'pact', 'half', 'artificer', 'third', 'none'].indexOf(clsOf(e)?.caster ?? 'none'), kind: 'text' },
   '@type': { label: 'Type', value: e => TYPES[e.type].label, sort: e => TYPES[e.type].label, kind: 'text' },
   '@aliases': { label: 'Also known as', value: e => e.aliases.join(', '), sort: e => e.aliases.join(', ').toLowerCase() || '~', kind: 'text' },
   '@lives-in': { label: 'Lives in', value: e => current(e, 'lives-in', true), sort: e => nameOf(current(e, 'lives-in', true)[0]), kind: 'ids' },
@@ -160,6 +175,8 @@ export function facet(key: string, type?: EntryType): Facet {
   if (key === '@attackSave') return { key, label: 'Attack / save', values: rows => [...new Set(rows.map(attackOrSave).filter(Boolean))].sort(), match: (e, v) => attackOrSave(e) === v }
   // feats a character of a level can take: those needing that level or less (or none)
   if (key === '@takeable') return { key, label: 'Takeable at level', values: () => Array.from({ length: 20 }, (_, i) => String(i + 1)), match: (e, v) => !e.fields.level || Number(e.fields.level) <= Number(v) }
+  // the DM's "not shared yet" view: what players know of, and what's still DM only
+  if (key === '@shared') return { key, label: 'Players see', values: () => ['Yes', 'No'], match: (e, v) => (e.visibility === 'known') === (v === 'Yes') }
   if (key === '@type') return { key, label: 'Type', values: rows => [...new Set(rows.map(e => TYPES[e.type].label))].sort(), match: (e, v) => TYPES[e.type].label === v }
   const field = (type && TYPES[type].fields.find(f => f.key === key)) || FIELD_BY_KEY.get(key)
   const label = field?.label ?? key

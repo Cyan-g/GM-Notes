@@ -22,7 +22,7 @@ function pick(id: string) { wizard.d.race = picked.value === id ? main.value?.id
 </script>
 
 <template>
-  <WzChooser :items="items" :picked="picked" :label="`Subraces of ${main?.name ?? 'the species'}`" @pick="pick">
+  <WzChooser :items="items" :picked="picked" :label="`Subraces of ${main?.name ?? 'the species'}`" :need="!picked" :intro="`Click a subrace of ${main?.name ?? 'the species'} on the left to see what it adds. Clicking takes it.`" @pick="pick">
     <template #detail="{ item, picked: on }">
       <WzTraitChoices v-if="on" which="subrace" />
       <p v-else class="small muted wz-ch-hint-line">Click {{ item.label }} on the left to take it.</p>

@@ -2,7 +2,7 @@
 // A character's inventory: gear, the ingredient pouch (what the Workbench crafts with) and money.
 // Items open in a pop-up; they can be dragged onto the Equipped card, and dropping one back here unequips it.
 // `side`: the narrow version beside the sheet (player mode), with equip and attune left to the pop-up and dragging.
-import { useReadOnly } from '../composables/useReadOnly'
+import { useReadOnlyShared as useReadOnly } from '../composables/useReadOnly'
 import { computed, nextTick, ref } from 'vue'
 import { optionLabel } from '../store'
 import type { CharacterSheet, Entry } from '../model/types'

@@ -100,6 +100,8 @@ const pretty = (n: string) => {
 }
 /** Links open in the browser (desktop app) or a new tab. */
 const open = (url: string) => (desktop ? desktop.open(url) : window.open(url, '_blank'))
+/** One way to write a moment on this page: "22 Nov 2026, 14:03". */
+const when = (t: string | number | Date) => new Date(t).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 </script>
 
 <template>
@@ -116,16 +118,16 @@ const open = (url: string) => (desktop ? desktop.open(url) : window.open(url, '_
               <span class="muted small">{{ moving }}</span></template></dd>
           <dd v-else>{{ state.storage?.label }}</dd>
           <dt>Entries</dt><dd>{{ entries.length }}, with {{ db().relations.length }} relations</dd>
-          <dt>Saved</dt><dd>{{ state.saving ? 'saving…' : state.dirty ? 'unsaved changes' : state.savedAt ? `all saved, ${new Date(state.savedAt).toLocaleTimeString()}` : 'all saved' }} <button v-if="state.dirty" class="link-btn" @click="save()">Save now</button></dd>
+          <dt>Saved</dt><dd>{{ state.saving ? 'saving…' : state.dirty ? 'unsaved changes' : state.savedAt ? `all saved, ${when(state.savedAt)}` : 'all saved' }} <button v-if="state.dirty" class="link-btn" @click="save()">Save now</button></dd>
           <dt v-if="version">App</dt><dd v-if="version">GM Notes {{ version }}</dd>
-          <dt>Last edit</dt><dd>{{ edited ? new Date(edited).toLocaleString() : 'none yet' }}</dd>
+          <dt>Last edit</dt><dd>{{ edited ? when(edited) : 'none yet' }}</dd>
         </dl>
       </section>
 
       <section class="card" :class="{ warn: age == null || age > 7 }">
         <h3>Backup copy</h3>
-        <p class="small">The app keeps its own backups, but they're on the same stick. A backup copy on your PC or another drive survives losing the stick.</p>
-        <p><b>Last backup copy:</b> {{ last ? `${new Date(last).toLocaleString()} (${age === 0 ? 'today' : age + ' days ago'})` : 'never' }}</p>
+        <p class="small">The app keeps its own backups, but they're on the same drive as the world. A backup copy on another drive (or a USB stick) survives losing that one.</p>
+        <p><b>Last backup copy:</b> {{ last ? `${when(last)} (${age === 0 ? 'today' : age + ' days ago'})` : 'never' }}</p>
         <template v-if="desktop">
           <div class="row-btns">
             <button class="primary" :disabled="!!progress" @click="run(false)">{{ destName ? `Make a backup copy in “${destName}”` : 'Make a backup copy…' }}</button>
@@ -158,7 +160,7 @@ const open = (url: string) => (desktop ? desktop.open(url) : window.open(url, '_
       <p v-if="broughtBack" class="ok small">✓ <a :href="hrefEntry(broughtBack.id)">{{ broughtBack.name }}</a> is back. Add its relations again on its page.</p>
       <ul class="rel deleted-list">
         <li v-for="d in deleted" :key="d.entry.id + d.saved">
-          <span>{{ d.entry.name }}</span><span class="role">{{ TYPES[d.entry.type]?.label ?? d.entry.type }}, deleted {{ new Date(d.saved).toLocaleString() }}</span>
+          <span>{{ d.entry.name }}</span><span class="role">{{ TYPES[d.entry.type]?.label ?? d.entry.type }}, deleted {{ when(d.saved) }}</span>
           <button class="link-btn" :disabled="!!state.readOnly || !!db().entries[d.entry.id]" @click="bringBack(d)">Bring back</button>
         </li>
       </ul>

@@ -40,7 +40,7 @@ onUnmounted(() => { document.removeEventListener('pointerdown', outside); window
             @click="toggle"><AppIcon ui="cog" /><span v-if="overdue" class="settings-dot" /></button>
     <div v-if="open === 'menu'" class="theme-panel settings-list" role="menu">
       <button role="menuitem" @click="theme"><span><AppIcon ui="palette" /></span>Theme &amp; colours<span class="hint">…</span></button>
-      <label v-if="!state.db?.follow" class="settings-switch" title="Off: player mode, trimmed to spells, crafting and maps, without DM-only text">
+      <label v-if="!state.db?.follow" class="settings-switch" title="Off: player mode, showing only what the players know (no DM-only entries, text or encounters)">
         <span><AppIcon ui="dice" /></span>DM mode
         <input type="checkbox" role="switch" :checked="!playerMode" :disabled="!!state.readOnly" @change="setMode(($event.target as HTMLInputElement).checked ? 'dm' : 'player')" />
       </label>

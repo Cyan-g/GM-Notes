@@ -1192,6 +1192,78 @@
     "value": 4000,
     "summary": "Contains: Backpack, Book, Ink, Ink Pen, Lamp, 10 flasks of Oil, 10 sheets of Parchment and Tinderbox."
    }
+  },
+  {
+   "name": "Bedroll",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 7,
+    "value": 100,
+    "summary": "Bedding for one Small or Medium sleeper. While in it, you automatically succeed on saving throws against extreme cold."
+   }
+  },
+  {
+   "name": "Book",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 5,
+    "value": 2500,
+    "summary": "Fiction or nonfiction. Consulting an accurate nonfiction Book about its topic gives +5 to Intelligence (Arcana, History, Nature, or Religion) checks about that topic."
+   }
+  },
+  {
+   "name": "Costume",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 4,
+    "value": 500,
+    "summary": "While wearing it, you have Advantage on ability checks to impersonate the person or kind of person it represents."
+   }
+  },
+  {
+   "name": "Fine Clothes",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 6,
+    "value": 1500,
+    "summary": "Clothes of expensive fabric, fit for a feast or a court. Some places and events admit only those dressed in them."
+   }
+  },
+  {
+   "name": "Lamp",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 1,
+    "value": 50,
+    "summary": "Burns Oil to shed Bright Light in a 15-foot radius and Dim Light for 30 feet beyond that."
+   }
+  },
+  {
+   "name": "Mirror",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 0.5,
+    "value": 500,
+    "summary": "A handheld steel mirror: for personal care, looking around corners, or signalling with reflected light."
+   }
+  },
+  {
+   "name": "Oil",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 1,
+    "value": 10,
+    "summary": "A flask of oil: fuel for a Lamp or Lantern. Splashed on a creature or poured on the ground and set alight, it adds 5 Fire damage."
+   }
+  },
+  {
+   "name": "Perfume",
+   "fields": {
+    "kind": "Adventuring Gear",
+    "weight": 0.25,
+    "value": 500,
+    "summary": "Worn for about an hour, it gives Advantage on Charisma (Persuasion) checks to influence an Indifferent Humanoid within 5 feet."
+   }
   }
  ]
 }

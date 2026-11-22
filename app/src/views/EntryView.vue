@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import AppIcon from '../components/AppIcon.vue'
 import TypeIcon from '../components/TypeIcon.vue'
-import { NOTE_TYPES, isShared } from '../sync'
+import { NOTE_TYPES, fromPlayer, isShared } from '../sync'
 import PlayerNotes from '../components/PlayerNotes.vue'
 import { computed } from 'vue'
 import type { Entry, Id } from '../model/types'
 import { TYPES, byKey, type FieldDef } from '../model/schema'
-import { childrenOf, get, placePath, playerMode, entries, state } from '../store'
+import { childrenOf, get, hiddenFromPlayers, placePath, playerMode, entries, state } from '../store'
 import { go, hrefEntry, hrefFamily, hrefList, hrefTab, type EntryTab } from '../router'
 import type { UiIcon } from '../icons/ui'
 import SpellbookView from './SpellbookView.vue'
@@ -64,7 +64,7 @@ import PartyHere from '../components/PartyHere.vue'
 import OutlineCard from '../components/OutlineCard.vue'
 import { featsGrantedBy } from '../lookup'
 import { bodyParts as cutBody, setBodyPart, type BodyPart } from '../bodyParts'
-import { provideLocked } from '../composables/useReadOnly'
+import { provideLocked, provideSharedEditable } from '../composables/useReadOnly'
 import { currentPc } from '../sheet'
 import { characterSend } from '../playerCharacters'
 
@@ -88,7 +88,7 @@ const tabs = computed(() => {
   const s = x.fields.sheet
   return [
     { href: hrefTab(x.id, 'inventory'), on: onInv.value, icon: 'otherItems' as UiIcon, label: 'Inventory', count: s?.inventory?.length },
-    { href: hrefTab(x.id, 'spellbook'), on: onBook.value, icon: 'spellbook' as UiIcon, label: 'Spellbook', count: s?.spellbook?.prepared?.length },
+    { href: hrefTab(x.id, 'spellbook'), on: onBook.value, icon: 'spellbook' as UiIcon, label: 'Spellbook', count: s?.spellbook?.prepared?.filter(id => get(id)?.fields.level !== 'Cantrip').length },
     { href: hrefTab(x.id, 'crafting'), on: onBench.value, icon: 'workbench' as UiIcon, label: 'Workbench', count: s?.crafting?.known?.length },
     { href: hrefTab(x.id, 'companions'), on: onPals.value, icon: 'link' as UiIcon, label: 'Companions', count: s?.companions?.length },
     family,
@@ -170,6 +170,8 @@ const children = computed(() => (e.value ? childrenOf.value.get(e.value.id) ?? [
 const shared = computed(() => isShared(e.value))
 // every card on the page (the character sheet's too) is read-only on a shared entry
 provideLocked(shared)
+// a player's character at the DM's: its HP, conditions and inventory are the DM's to change too
+provideSharedEditable(computed(() => e.value?.type === 'pc' && !!fromPlayer(e.value)))
 /** A campaign the DM shares: the player's characters in it, putting the current one in, and taking one out. */
 const campaignsOf = (pc: Entry) => (pc.fields.campaigns as Id[] | undefined) ?? []
 const myInCampaign = computed(() => (e.value?.type === 'campaign' && shared.value ? entries.value.filter(x => x.type === 'pc' && !isShared(x) && campaignsOf(x).includes(e.value!.id)) : []))
@@ -190,7 +192,11 @@ const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.valu
 </script>
 
 <template>
-  <article v-if="e && def" class="entry">
+  <div v-if="e && hiddenFromPlayers(e)" class="empty-state">
+    <h1>Not known to players</h1>
+    <p>Player mode shows what the players know, and this {{ def?.label.toLowerCase() ?? 'entry' }} isn't marked Known to players{{ e.type === 'encounter' ? ' (encounters are the DM\'s)' : '' }}.</p>
+  </div>
+  <article v-else-if="e && def" class="entry">
     <nav class="crumbs">
       <a class="crumb-root" :href="hrefList(e.type)"><TypeIcon :type="e.type" /> {{ def.plural }}</a>
       <template v-for="c in crumbs" :key="c.id"><span class="sep">›</span><EntryLink :id="c.id" /></template>
@@ -226,6 +232,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.valu
         <CharacterSheet v-if="e.type === 'pc'" :pc="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
         <AddToTracker v-if="statblock && e.type === 'creature' && !state.readOnly && !playerMode" :id="e.id" />
+        <p v-if="!statblock && e.type === 'creature'" class="muted">No stats yet<template v-if="!state.readOnly && !playerMode"> — <a :href="hrefEntry(e.id) + '/edit'">✎ Edit</a> to fill in the statblock</template>.</p>
         <FeatCard v-if="e.type === 'feat'" :e="e" source />
         <FeatInfo v-if="e.type === 'feat'" :e="e" />
         <SubclassInfo v-if="e.type === 'subclass'" :e="e" />

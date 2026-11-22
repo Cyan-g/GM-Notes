@@ -226,7 +226,7 @@ export function loadSrdGear(): Promise<void> {
 /** The SRD item a kit line names ("Arrows" finds "Arrow"), if the app has one. */
 export const srdItemNamed = (name: string) => srdGear.value?.get(norm(name)) ?? srdGear.value?.get(norm(name).replace(/s$/, ''))
 /** A kit line for a pick the player makes ("Musical Instrument (one you chose)"), when the pick wasn't made. */
-const UNCHOSEN = /one you chose|of your choice|chosen above/i
+export const UNCHOSEN = /one you chose|of your choice|chosen above/i
 /**
  * Where a kit line's item comes from: the world's item, the SRD's (added to the world when the character is made), a
  * new item with just its name, or nowhere (a pick the player didn't make).
@@ -366,7 +366,7 @@ export function steps(d: Draft): Step[] {
     const c = spellCounts(d)
     s.push({ id: 'spells', label: 'Spells', open: [
       c.cantrips != null && d.cantrips.length < c.cantrips ? `${c.cantrips - d.cantrips.length} cantrip${c.cantrips - d.cantrips.length === 1 ? '' : 's'}` : '',
-      c.prepared != null && d.spells.length < c.prepared ? `${c.prepared - d.spells.length} spell${c.prepared - d.spells.length === 1 ? '' : 's'}` : '',
+      // prepared spells are optional: they can be prepared later in the Spellbook
       c.book != null && d.spells.length + d.book.length < Math.min(c.book, spellChoices(d).spells.length) ? 'spellbook spells' : '',
     ].filter(Boolean) as string[], chosen: [d.cantrips.length && `${d.cantrips.length} cantrip${d.cantrips.length === 1 ? '' : 's'}`, d.spells.length && `${d.spells.length} spell${d.spells.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ') })
   }

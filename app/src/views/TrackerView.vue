@@ -5,7 +5,7 @@ import ConditionIcon from '../components/ConditionIcon.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Combatant, Id, Statblock } from '../model/types'
-import { byType, get, touch } from '../store'
+import { byType, get, playerMode, touch } from '../store'
 import { newCombatantId, statsOf } from '../encounter'
 import { currentCampaign } from '../sessions'
 import { addCombatant, addEntryToTracker, addPlayers, clearTracker, isParty, loadEncounter, nextTurn, partyOf, rollInitiative, sortByInitiative, fighterStats, tracker } from '../tracker'
@@ -116,6 +116,7 @@ const shownC = computed(() => t.value.combatants.find(c => c.id === shown.value)
 const shownStats = computed(() => statsOf(get(shownC.value?.entry)) as Statblock | undefined)
 
 function onKey(ev: KeyboardEvent) {
+  if (playerMode.value) return
   const el = ev.target as HTMLElement
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return
   if (ev.key === 'n' || ev.key === ' ') { ev.preventDefault(); nextTurn() }
@@ -128,7 +129,11 @@ function clearAll() { if (confirm('Clear the tracker? The monsters go; player ch
 </script>
 
 <template>
-  <div class="tracker-view">
+  <div v-if="playerMode" class="empty-state">
+    <h1>Combat is the DM's</h1>
+    <p>Player mode shows what the players see; the combat tracker is in DM mode.</p>
+  </div>
+  <div v-else class="tracker-view">
     <header class="list-head">
       <h1><span class="icon"><AppIcon ui="combat" /></span>Combat <span v-if="t.round" class="count">round {{ t.round }}</span></h1>
       <span v-if="encounter" class="muted"><EntryLink :id="encounter.id" icon /></span>

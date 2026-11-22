@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // A character's side card: what they wear and wield, and their three attunement slots.
 // Each item has a button to take it off (or end the attunement); it also opens in a pop-up.
-import { useReadOnly } from '../composables/useReadOnly'
+import { useReadOnlyShared as useReadOnly } from '../composables/useReadOnly'
 import { printCards } from '../ui'
 import AppIcon from './AppIcon.vue'
 import { computed, ref } from 'vue'

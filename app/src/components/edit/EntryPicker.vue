@@ -4,7 +4,7 @@
 // Enter takes the highlighted entry; it never creates one or adds typed text unless that row was chosen on purpose
 // (arrow keys or the mouse), so a typo can't make a new world entry. `noCreate`: no "＋ Create" row at all.
 import EntryIcon from '../EntryIcon.vue'
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { Entry, EntryType } from '../../model/types'
 import { TYPES, typeWord } from '../../model/schema'
 import { search } from '../../search'
@@ -25,6 +25,8 @@ const props = withDefaults(defineProps<{
   noCreate?: boolean
   /** No × to clear the pick (a table row with its own remove button). */
   noClear?: boolean
+  /** Put the cursor in it when it shows (opened by a button: "＋ Parent"). */
+  focus?: boolean
 }>(), { modelValue: null, add: false })
 const emit = defineEmits<{ 'update:modelValue': [string | null]; pick: [string]; text: [string] }>()
 
@@ -69,6 +71,7 @@ watch(showList, on => {
   if (on) { position(); window.addEventListener('scroll', position, true); window.addEventListener('resize', position) }
   else { window.removeEventListener('scroll', position, true); window.removeEventListener('resize', position) }
 })
+onMounted(() => { if (props.focus) void (props.add ? nextTick().then(() => input.value?.focus()) : start()) })
 onBeforeUnmount(() => { window.removeEventListener('scroll', position, true); window.removeEventListener('resize', position) })
 
 async function start() {

@@ -7,7 +7,7 @@
 // (multiclassing), max HP, AC, speed, scores, proficiencies, spellcasting and features.
 // Hit dice come from the classes, one pool per die size, each spent on its own.
 import Dropdown from './Dropdown.vue'
-import { useReadOnly } from '../composables/useReadOnly'
+import { useReadOnly, useReadOnlyShared } from '../composables/useReadOnly'
 import AppIcon from './AppIcon.vue'
 import ConditionIcon from './ConditionIcon.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
@@ -40,6 +40,7 @@ import DeathSaves from './DeathSaves.vue'
 import LevelUpModal from './LevelUpModal.vue'
 import ChoicesModal from './ChoicesModal.vue'
 import ShortRestModal from './ShortRestModal.vue'
+import WildShapeCard from './WildShapeCard.vue'
 import { isShared } from '../sync'
 import { XP_AT } from '../sheet'
 import { endConcentration, hpChanged, isDead, massiveDamage, noDeathSaves, settleDeathSaves } from '../conditions'
@@ -49,6 +50,8 @@ import { ui } from '../ui'
 const props = defineProps<{ pc: Entry; build?: boolean }>()
 /** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
 const ro = useReadOnly()
+/** HP, conditions and the like: changeable on a player's character at the DM's too (sharedParts.ts). */
+const roShared = useReadOnlyShared()
 /** Build-time parts are locked unless the sheet is being edited. */
 const build = computed(() => !!props.build && !ro.value)
 const locked = computed(() => !build.value)
@@ -93,6 +96,12 @@ const spellAtk = computed(() => prof.value + castMod.value + sum(gt.value.spellA
 
 function edit(fn: (s: CharacterSheet) => void) {
   if (ro.value) return
+  fn(sheetToEdit(props.pc))
+  changed(props.pc)
+}
+/** An edit of the shared parts (HP, death saves). */
+function editShared(fn: (s: CharacterSheet) => void) {
+  if (roShared.value) return
   fn(sheetToEdit(props.pc))
   changed(props.pc)
 }
@@ -187,7 +196,7 @@ function hit(ev: Event) {
   const n = Number(input.value)
   input.value = ''
   if (!n) return
-  edit(x => {
+  editShared(x => {
     const before = x.hp ?? maxHp.value ?? 0
     let hp = before
     if (n < 0) {
@@ -211,7 +220,7 @@ function hit(ev: Event) {
 }
 /** Typed straight into the current HP box. */
 function setHpNow(ev: Event) {
-  edit(x => {
+  editShared(x => {
     const before = x.hp ?? maxHp.value ?? 0
     x.hp = num(ev)
     if (maxHp.value) hpChanged(props.pc, x, before, x.hp ?? maxHp.value, (x.hp ?? before) < before)
@@ -219,9 +228,9 @@ function setHpNow(ev: Event) {
 }
 /** The CON save the last damage asks for while concentrating (gone once answered). */
 const concDc = ref<number | null>(null)
-const concDone = (kept: boolean) => { if (!kept) edit(x => endConcentration(props.pc, x)); concDc.value = null }
+const concDone = (kept: boolean) => { if (!kept) editShared(x => endConcentration(props.pc, x)); concDc.value = null }
 const dying = computed(() => !build.value && !!maxHp.value && (s.value.hp ?? maxHp.value) <= 0)
-const setSaves = (d: DeathSaveState) => edit(x => { if (noDeathSaves(d)) delete x.deathSaves; else x.deathSaves = settleDeathSaves(d) })
+const setSaves = (d: DeathSaveState) => editShared(x => { if (noDeathSaves(d)) delete x.deathSaves; else x.deathSaves = settleDeathSaves(d) })
 // a rest says what it gave back, with Undo (a stray click at the table)
 function restNow(kind: 'short' | 'long') {
   if (ro.value) return
@@ -371,19 +380,19 @@ onBeforeUnmount(() => {
         <span class="cs-label">{{ build ? 'Maximum hit points' : 'Hit points' }}</span>
         <div class="cs-hp-row">
           <template v-if="!build">
-            <input v-flash="s.hp ?? maxHp" class="cs-hp-now" type="number" :value="s.hp ?? maxHp ?? ''" placeholder="now" :disabled="ro" title="Current HP" @change="setHpNow" />
+            <input v-flash="s.hp ?? maxHp" class="cs-hp-now" type="number" :value="s.hp ?? maxHp ?? ''" placeholder="now" :disabled="roShared" title="Current HP" @change="setHpNow" />
             <span class="muted">/</span>
           </template>
           <span :class="{ tip: hpParts.length && !build, 'gear-mod': gt.maxHp.length && !build }" :data-tip="build ? undefined : breakdown(`${s.maxHp ?? 0} set`, hpParts)"><input v-flash="build ? baseMaxHp(s) : maxHp" type="number" :value="(build ? baseMaxHp(s) : maxHp) ?? ''" :placeholder="'max'" :disabled="locked" title="Maximum HP" @change="edit(x => setMaxHp(x, num($event)))" /></span>
           <label v-if="!build" class="cs-hp-temp"><span class="muted small">temp</span>
-            <input v-flash="s.tempHp ?? 0" type="number" :value="s.tempHp ?? ''" placeholder="0" :disabled="ro" title="Temporary HP" @change="edit(x => x.tempHp = num($event) || undefined)" /></label>
+            <input v-flash="s.tempHp ?? 0" type="number" :value="s.tempHp ?? ''" placeholder="0" :disabled="roShared" title="Temporary HP" @change="editShared(x => x.tempHp = num($event) || undefined)" /></label>
         </div>
         <div v-if="maxHp && !build" class="cs-hp-bar"><i :style="{ width: Math.min(100, Math.round(100 * (s.hp ?? maxHp) / maxHp)) + '%' }" /></div>
       </div>
-      <label v-if="!build" class="cs-hp-change"><span class="cs-label">Damage / heal</span><input placeholder="−7 or +5" :disabled="ro" @keydown.enter="hit" @change="hit" />
+      <label v-if="!build" class="cs-hp-change"><span class="cs-label">Damage / heal</span><input placeholder="−7 or +5" :disabled="roShared" @keydown.enter="hit" @change="hit" />
         <!-- what the sheet knows the character resists or is immune to: said, the player halves it -->
         <small v-if="resists" class="muted cs-resist" :title="resists">{{ resists }}</small></label>
-      <DeathSaves v-if="dying" :saves="s.deathSaves ?? { ok: 0, fail: 0 }" :adv="deathSaveAdv(gt)" :ro="ro" @set="setSaves" @nat20="edit(x => { const b = x.hp ?? 0; x.hp = 1; hpChanged(pc, x, b, 1, false) })" />
+      <DeathSaves v-if="dying" :saves="s.deathSaves ?? { ok: 0, fail: 0 }" :adv="deathSaveAdv(gt)" :ro="roShared" @set="setSaves" @nat20="editShared(x => { const b = x.hp ?? 0; x.hp = 1; hpChanged(pc, x, b, 1, false) })" />
       <div v-if="concDc != null && s.conditions?.includes('Concentrating')" class="cs-conc-check">
         <span>Concentration: <b>CON save DC {{ concDc }}</b><template v-if="concentrationAdv(gt)">, {{ concentrationAdv(gt) }}</template></span>
         <button type="button" class="chip-btn" @click="concDone(true)">Kept</button>
@@ -420,6 +429,7 @@ onBeforeUnmount(() => {
     <!-- in play: the limited uses of features, to tick off without scrolling -->
     <UsesCard v-if="!build" :pc="pc" :s="s" />
     <ActiveSpellsCard v-if="!build" :pc="pc" :s="s" />
+    <WildShapeCard v-if="!build" :pc="pc" :s="s" />
     </div>
     <!-- abilities, then attacks, spellcasting and proficiencies, in the same column -->
     <div class="cs-grid">

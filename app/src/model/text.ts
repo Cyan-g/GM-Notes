@@ -17,7 +17,8 @@ export const slug = (s: string) => s.normalize('NFKD').replace(/[\u0300-\u036f]/
   .replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'entry'
 
 /** A DM-only block: ":::secret" on a line of its own, then the text (captured), then ":::" on a line of its own. */
-export const SECRET_BLOCK = /^:::secret\s*\n([\s\S]*?)\n:::\s*$/gm
+// (only spaces after the markers: a \s* there would eat the next line's break and glue what follows to the block)
+export const SECRET_BLOCK = /^:::secret[ \t]*\r?\n([\s\S]*?)\r?\n:::[ \t]*(?=\r?$)/gm
 /** A text without its DM-only blocks. */
 export const stripSecrets = (text: string) => text.replace(SECRET_BLOCK, '')
 /** Whether a text has a DM-only block. */

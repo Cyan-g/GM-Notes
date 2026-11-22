@@ -26,7 +26,7 @@ const setCast = (a: ActiveTrait, ab: string) => { const holder = { species: { ..
 </script>
 
 <template>
-  <div v-for="a in choices" :key="a.key" class="wz-choice" :class="{ open: choiceOpen(a) }">
+  <div v-for="a in choices" :key="a.key" class="wz-choice" :class="{ open: choiceOpen(a), 'wz-todo': choiceOpen(a) }" :data-left="choiceOpen(a) ? 'to pick' : undefined">
     <b>{{ a.trait.name }}</b> <span class="feat-tag" :class="'tag-' + a.race.type">{{ sourceTag(a) }}</span>
     <details v-if="(a.trait.text ?? '').length > 220" class="small wz-rules"><summary>Rules</summary><MarkdownView :source="a.trait.text!" /></details>
     <p v-else-if="a.trait.text" class="small md" v-html="renderInline(a.trait.text)" />

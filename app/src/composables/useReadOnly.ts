@@ -4,9 +4,18 @@ import { computed, inject, provide, type ComputedRef, type InjectionKey } from '
 import { state } from '../store'
 
 const LOCKED: InjectionKey<ComputedRef<boolean>> = Symbol('locked')
+const SHARED_OK: InjectionKey<ComputedRef<boolean>> = Symbol('sharedOk')
 
 /** The entry's page: whether its entry is read-only here, for the cards on it. */
 export const provideLocked = (locked: ComputedRef<boolean>) => provide(LOCKED, locked)
+
+/** The entry's page: whether the parts both sides change (HP, conditions, inventory: sharedParts.ts) may change though it's locked. */
+export const provideSharedEditable = (ok: ComputedRef<boolean>) => provide(SHARED_OK, ok)
+/** True when the shared parts (HP, conditions, inventory) may not be changed here: a player's character at the DM's may. */
+export function useReadOnlyShared(): ComputedRef<boolean> {
+  const locked = inject(LOCKED, null), ok = inject(SHARED_OK, null)
+  return computed(() => !!state.readOnly || (!!locked?.value && !ok?.value))
+}
 
 /** True when nothing may be changed here. */
 export function useReadOnly(): ComputedRef<boolean> {

@@ -1,6 +1,6 @@
 import type { Entry } from './model/types'
-import { entries, playerMode } from './store'
-import { norm as normName, stripSecrets } from './model/text'
+import { entries, get, playerMode } from './store'
+import { SECRET_BLOCK, norm as normName, stripSecrets } from './model/text'
 
 /** Lower case, no accents, no apostrophes ("Mariner's" = "mariners"), other punctuation as spaces. */
 const norm = (s: string) => normName(s, ' ')
@@ -51,9 +51,10 @@ export interface TextHit { e: Entry; before: string; hit: string; after: string 
 
 /** The text an entry shows, as plain text: in player mode without DM-only blocks; links as their labels. */
 function plainBody(e: Entry): string {
-  const body = playerMode.value ? stripSecrets(e.body) : e.body
+  // DM-only text: marked 🔒 in the excerpt (left out in player mode)
+  const body = playerMode.value ? stripSecrets(e.body) : e.body.replace(SECRET_BLOCK, (_, inner: string) => `🔒 ${inner} 🔒`)
   return body
-    .replace(/\[\[([^\]|]+?)\\?\|([^\]]+)\]\]/g, '$2').replace(/\[\[([^\]]+)\]\]/g, (_, id: string) => id.replace(/-/g, ' '))
+    .replace(/\[\[([^\]|]+?)\\?\|([^\]]+)\]\]/g, '$2').replace(/\[\[([^\]]+)\]\]/g, (_, id: string) => get(id.trim())?.name ?? id.replace(/-/g, ' '))
     .replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
     .replace(/<[^>]+>/g, ' ').replace(/:::\w*/g, ' ').replace(/^[#>\-*+\s]+|[*_`~]|\[[ xX]\]/gm, '').replace(/\s+/g, ' ')
 }

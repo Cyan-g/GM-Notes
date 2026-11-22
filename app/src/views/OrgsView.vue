@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// The People menu's front page: every organization as a card, grouped by the region its seat is in,
-// with its leader, members and ranks at a glance; and the people tables beside it.
+// The People menu's front page: the NPCs first (what they do, where they belong), then every organization as a card,
+// grouped by the region its seat is in, with its leader, members and ranks at a glance; and the people tables beside it.
 import AppIcon from '../components/AppIcon.vue'
 import TypeIcon from '../components/TypeIcon.vue'
 import { computed, ref } from 'vue'
@@ -16,6 +16,24 @@ import { leadersOf, leads, membersOf } from '../org'
 const orgs = computed(() => byType.value.get('organization') ?? [])
 const npcs = computed(() => byType.value.get('npc') ?? [])
 const ORG_TYPES = computed(() => listOptions('organization.orgType').map(o => o.id))
+
+// ---- the NPCs: one search finds people and organizations ----
+const NPC_MANY = 48
+const allNpcs = ref(false)
+/** The organizations each NPC belongs to. */
+const orgsOfNpc = computed(() => {
+  const m = new Map<Id, Entry[]>()
+  for (const o of orgs.value) for (const r of membersOf(o)) { if (!m.has(r.a)) m.set(r.a, []); m.get(r.a)!.push(o) }
+  return m
+})
+const npcShown = computed(() => {
+  const n = q.value.trim().toLowerCase()
+  return npcs.value.filter(e => !n || [e.name, ...e.aliases, String(e.fields.occupation ?? '')].some(s => s.toLowerCase().includes(n)))
+    .sort((a, b) => a.name.localeCompare(b.name))
+})
+const deadish = (e: Entry) => /dead|missing|imprisoned/i.test(String(e.fields.status ?? ''))
+/** Under the name: what they do, where they belong, and a status that isn't "alive". */
+const about = (e: Entry) => [e.fields.occupation, ...(orgsOfNpc.value.get(e.id) ?? []).map(o => o.name), deadish(e) ? e.fields.status : ''].filter(Boolean).join(' · ')
 
 // ---- filters ----
 const typeFilter = ref<string>('')
@@ -69,8 +87,8 @@ const people = computed(() => [
 <template>
   <div class="orgs-page">
     <header class="list-head">
-      <h1><span class="icon"><AppIcon ui="overview" /></span>Organizations</h1>
-      <span class="muted">{{ orgs.length }} organizations · {{ inOrg.size }} of {{ npcs.length }} NPCs belong to one</span>
+      <h1><span class="icon"><AppIcon ui="overview" /></span>People</h1>
+      <span class="muted">{{ npcs.length }} NPCs · {{ orgs.length }} organizations · {{ inOrg.size }} NPCs belong to one</span>
       <span class="spacer" />
       <button @click="newEntry('npc')">＋ NPC</button>
       <button class="primary" @click="newEntry('organization')">＋ Organization</button>
@@ -79,7 +97,23 @@ const people = computed(() => [
     <div class="orgs-grid">
       <div class="orgs-main">
         <div class="orgs-filter">
-          <input v-model="q" placeholder="Find an organization…" />
+          <input v-model="q" placeholder="Find a person or organization…" />
+        </div>
+
+        <section class="org-group">
+          <h2>NPCs <span class="muted small">{{ npcShown.length }}</span></h2>
+          <div class="people-grid">
+            <div v-for="n in allNpcs ? npcShown : npcShown.slice(0, NPC_MANY)" :key="n.id" class="person" :class="{ gone: deadish(n) }">
+              <EntryLink :id="n.id" icon />
+              <span v-if="about(n)" class="muted small">{{ about(n) }}</span>
+            </div>
+          </div>
+          <button v-if="!allNpcs && npcShown.length > NPC_MANY" type="button" class="link-btn small" @click="allNpcs = true">Show all {{ npcShown.length }}</button>
+          <p v-if="!npcShown.length" class="muted small">{{ npcs.length ? 'No NPC matches.' : 'No NPCs yet.' }}</p>
+        </section>
+
+        <h2 class="people-orgs-head">Organizations <span class="muted small">{{ shown.length }}</span></h2>
+        <div class="orgs-filter">
           <div class="seg wrap">
             <button :class="{ on: !typeFilter }" @click="typeFilter = ''">All</button>
             <button v-for="t in types" :key="t" :class="{ on: typeFilter === t }" @click="typeFilter = typeFilter === t ? '' : t">{{ optionLabel('organization.orgType', t) }}</button>

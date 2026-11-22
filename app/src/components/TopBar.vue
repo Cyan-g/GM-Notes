@@ -3,7 +3,7 @@
 import AppIcon from './AppIcon.vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { visibleMenus } from '../menu'
-import { db, playerMode, save, state } from '../store'
+import { db, playerMode, save, setMode, state } from '../store'
 import { newEntry } from '../ui'
 import { goBack, nav, route } from '../router'
 import MenuPanel from './MenuPanel.vue'
@@ -103,7 +103,10 @@ const current = computed(() => visibleMenus.value.findIndex(m => m.owns(route.cu
       </span>
       <SyncChip />
       <SessionButton />
-      <button class="mode-tag" :title="state.db?.follow ? 'Player mode: a world your DM shares' : `${playerMode ? 'Player' : 'DM'} mode: switch it in Settings`" @click.stop="settingsMenu?.toggle()">{{ playerMode ? 'Player mode' : 'DM mode' }}</button>
+      <!-- the mode, switched right here: player mode shows only what the players know -->
+      <button class="mode-tag" :class="{ player: playerMode }" :disabled="!!state.db?.follow || !!state.readOnly" :aria-pressed="playerMode"
+              :title="state.db?.follow ? 'Player mode: a world your DM shares' : playerMode ? 'Player mode: only what the players know is shown. Click for DM mode' : 'DM mode: everything is shown. Click for player mode, to see what the players see'"
+              @click.stop="setMode(playerMode ? 'dm' : 'player')">{{ playerMode ? 'Player mode' : 'DM mode' }}</button>
       <SettingsMenu ref="settingsMenu" />
     </div>
   </header>

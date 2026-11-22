@@ -7,6 +7,7 @@ import { hitDiceOf, maxHpOf, score } from '../sheet'
 import { editSheet } from '../sheetData'
 import { hpChanged } from '../conditions'
 import { mod, signed } from '../model/dnd'
+import ArcaneRecovery from './ArcaneRecovery.vue'
 
 const props = defineProps<{ pc: Entry; s: CharacterSheet; /** What the rest gave back, in words. */ summary: string }>()
 const emit = defineEmits<{ close: [] }>()
@@ -59,6 +60,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
           <button type="button" class="chip-btn" :class="{ primary: gain(p.die) != null }" :disabled="gain(p.die) == null || (count[p.die] ?? 0) > p.left" @click="spend(p.die)">Heal</button>
         </div>
         <p v-if="healed.length" class="small">Healed: {{ healed.join(' · ') }}</p>
+        <ArcaneRecovery :pc="pc" :s="s" />
         <footer class="lu-foot"><span class="spacer" /><button class="primary" @click="emit('close')">Done</button></footer>
       </div>
     </div>

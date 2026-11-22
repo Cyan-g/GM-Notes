@@ -8,7 +8,8 @@ import type { CharacterSheet, Entry } from '../model/types'
 import { editSheet } from '../sheetData'
 import { score } from '../sheet'
 import { state } from '../store'
-import { sourceTag, speciesTraits, spendUse, usesLeft, usesMax, type ActiveTrait } from '../species'
+import { isPool, sourceTag, speciesTraits, spendUse, usesLeft, usesMax, useReminder, type ActiveTrait } from '../species'
+import { noteUndo, restoreSheet, snapSheet } from '../undoNote'
 import { chargesLeft, itemsInUse, regainText, setCharges } from '../items'
 
 const props = defineProps<{ pc: Entry; s: CharacterSheet }>()
@@ -17,7 +18,13 @@ const ro = useReadOnly()
 const rows = computed(() => speciesTraits(props.pc, props.s).filter(a => a.active && usesMax(props.pc, a, props.s, score) > 0))
 const max = (a: ActiveTrait) => usesMax(props.pc, a, props.s, score)
 const left = (a: ActiveTrait) => usesLeft(props.pc, props.s, a, score)
-const use = (a: ActiveTrait, n: number) => { if (!ro.value) editSheet(props.pc, x => spendUse(x, props.pc, a, n, score)) }
+// spending one says what the feature does (it isn't done for the player: they roll and type), with Undo
+function use(a: ActiveTrait, n: number) {
+  if (ro.value) return
+  const before = snapSheet(props.pc)
+  editSheet(props.pc, x => spendUse(x, props.pc, a, n, score))
+  if (n > 0 && !isPool(a)) noteUndo(useReminder(a), restoreSheet(props.pc, before))
+}
 /** The charges of the items in use (a staff, a wand), spent and given back here as on the Inventory tab. */
 const charged = computed(() => itemsInUse(props.s).map(({ l, i, item }) => ({ i, name: item.name, max: Number(item.fields.charges) || 0, left: chargesLeft(l, item) ?? 0, recharge: regainText(item) || undefined })).filter(x => x.max > 0))
 const charge = (i: number, n: number) => { if (!ro.value) editSheet(props.pc, x => setCharges(x, i, n)) }
@@ -30,7 +37,7 @@ const back = (a: ActiveTrait) => (a.trait.uses!.recharge === 'short' || (a.trait
     <div v-for="a in rows" :key="a.key" class="cs-use" :title="`${a.trait.name} (${sourceTag(a)}): back on a ${back(a)}`">
       <span class="cs-use-name">{{ a.trait.name }}</span>
       <span class="sp-uses">
-        <template v-if="max(a) <= 10">
+        <template v-if="max(a) <= 10 && !isPool(a)">
           <button v-for="p in max(a)" :key="p" class="pip" :class="{ on: p <= left(a) }" :disabled="ro" :title="p <= left(a) ? 'Use it' : 'Get it back'" @click="use(a, p <= left(a) ? 1 : -1)" />
         </template>
         <template v-else>

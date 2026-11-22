@@ -6,7 +6,8 @@
 // feats (a Fighting Style) are lines of their own. Each line names its source as a tag and folds its text away; use
 // pips (or − / ＋ for a pool), scaling values stay on the line. Choices are made on the Edit page, not here.
 import { useReadOnly } from '../composables/useReadOnly'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import ChoicesModal from './ChoicesModal.vue'
 import type { CharacterSheet, Entry, Feature, TraitOption } from '../model/types'
 import { editSheet } from '../sheetData'
 import { mod, profBonus } from '../model/dnd'
@@ -20,7 +21,7 @@ import { optionsIn } from '../model/lists'
 import { ui } from '../ui'
 import {
   backgroundOf, choiceCandidates, choiceOpen, featOfFeature, isOn, levelTag, picksLeft, sourceTag, toggleOn, isClassOrigin, scaleAt, shownInPlay,
-  speciesTraits, spendUse, usesLeft, usesMax, type ActiveTrait,
+  speciesTraits, spendUse, usesLeft, usesMax, useReminder, isPool, type ActiveTrait,
 } from '../species'
 import { traitsOf } from '../model/traits'
 import EntryLink from './EntryLink.vue'
@@ -59,6 +60,8 @@ const originFeat = computed(() => {
 })
 /** The sheet's feature lines, but for feats whose features are listed. */
 const ownFeatures = computed(() => props.s.features.filter(f => f.name.trim() && !live(featOfFeature(f))))
+/** The "to pick" window. */
+const choosing = ref(false)
 // switching a feature with uses on spends one (entering a Rage), and the note says how many are left, with Undo
 function flip(a: ActiveTrait) {
   if (ro.value) return
@@ -67,7 +70,13 @@ function flip(a: ActiveTrait) {
   editSheet(props.pc, x => { toggleOn(x, a.key); if (spends && had > 0) spendUse(x, props.pc, a, 1, score) })
   if (spends) noteUndo(had > 0 ? `${a.trait.name} on: ${had - 1} of ${max(a)} use${max(a) === 1 ? '' : 's'} left` : `${a.trait.name} on, with no uses left`, restoreSheet(props.pc, before))
 }
-const use = (a: ActiveTrait, n: number) => { if (!ro.value) editSheet(props.pc, x => spendUse(x, props.pc, a, n, score)) }
+// spending one says what the feature does, with Undo (as on the Uses card)
+function use(a: ActiveTrait, n: number) {
+  if (ro.value) return
+  const before = snapSheet(props.pc)
+  editSheet(props.pc, x => spendUse(x, props.pc, a, n, score))
+  if (n > 0 && !isPool(a)) noteUndo(useReminder(a), restoreSheet(props.pc, before))
+}
 const max = (a: ActiveTrait) => usesMax(props.pc, a, props.s, score)
 /** The save DC a feature shows (Monk's Focus, Cunning Strike): 8 + proficiency bonus + the ability's modifier. */
 const dcOf = (a: ActiveTrait) => 8 + profBonus(totalLevel(props.pc)) + mod(score(props.s, a.trait.dc!))
@@ -89,6 +98,7 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
 </script>
 
 <template>
+  <ChoicesModal v-if="choosing" :pc="pc" :s="s" @close="choosing = false" />
   <div class="feature-list">
     <template v-for="l in lines" :key="l.kind === 'trait' ? l.a.key : l.kind === 'option' ? `${l.a.key}.${l.o.id}` : `${l.a.key}.${l.id}`">
       <!-- a feature or trait -->
@@ -101,9 +111,9 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
             <span v-if="l.a.trait.dc" class="chip sp-scale" :title="`8 + proficiency bonus + ${l.a.trait.dc.toUpperCase()} modifier`">DC {{ dcOf(l.a) }}</span>
             <button v-if="l.a.trait.toggle" class="chip-btn sbk-on" :class="{ on: isOn(l.a, s) }" :aria-pressed="isOn(l.a, s)" :disabled="ro" :title="isOn(l.a, s) ? 'On: its effects count on the sheet. Click to end it' : 'Switch it on: its effects count on the sheet until you end it or take a long rest'" @click.stop.prevent="flip(l.a)">{{ isOn(l.a, s) ? 'On' : 'Off' }}</button>
             <span v-if="pickNames(l.a).length" class="muted small">{{ pickNames(l.a).join(', ') }}</span>
-            <a v-if="choiceOpen(l.a) && !ro" class="sp-open small" :href="hrefEntry(pc.id, true)" title="Pick on the Edit page" @click.stop="ui.scrollTo = 'choices'">{{ picksLeft(l.a) }} to pick ✎</a>
+            <button v-if="choiceOpen(l.a) && !ro" type="button" class="link-btn sp-open small" title="Make the choice" @click.stop.prevent="choosing = true">{{ picksLeft(l.a) }} to pick ✎</button>
             <span v-if="max(l.a)" class="sp-uses" :title="`Uses; back on a ${l.a.trait.uses!.recharge} rest${l.a.trait.uses!.shortBack ? `, ${l.a.trait.uses!.shortBack} on a short rest` : ''}`" @click.stop.prevent>
-              <template v-if="max(l.a) <= 10">
+              <template v-if="max(l.a) <= 10 && !isPool(l.a)">
                 <button v-for="p in max(l.a)" :key="p" class="pip" :class="{ on: p <= left(l.a) }" :disabled="ro"
                         :title="p <= left(l.a) ? 'Use it' : 'Get it back'" @click="use(l.a, p <= left(l.a) ? 1 : -1)" />
               </template>
@@ -122,8 +132,9 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
       <!-- a picked option (an invocation, a Metamagic option, a lineage…) -->
       <div v-else-if="l.kind === 'option'" class="sp-trait">
         <details class="sp-fold">
-          <summary class="sp-head"><b>{{ l.o.name }}</b>
-            <span class="feat-tag" :class="'tag-' + l.a.race.type" :title="`Picked in ${l.a.trait.name}, from ${l.a.race.name}`">{{ l.a.trait.name }}</span></summary>
+          <!-- a single pick reads as the feature with it ("Elemental Affinity (Fire)"); one of several by its own name -->
+          <summary class="sp-head"><b>{{ (l.a.trait.choice?.count ?? 1) === 1 && !l.a.trait.choice?.steps?.length ? `${l.a.trait.name} (${l.o.name})` : l.o.name }}</b>
+            <span class="feat-tag" :class="'tag-' + l.a.race.type" :title="`Picked in ${l.a.trait.name}, from ${l.a.race.name}`">{{ (l.a.trait.choice?.count ?? 1) === 1 && !l.a.trait.choice?.steps?.length ? sourceTag(l.a) : l.a.trait.name }}</span></summary>
           <MarkdownView v-if="l.o.text" class="small sp-text" :source="l.o.text" />
           <TraitChips :t="l.o" :reached="l.a.level" />
         </details>

@@ -18294,7 +18294,13 @@
       "id": "improved-critical",
       "name": "Improved Critical",
       "text": "Your attack rolls with weapons and Unarmed Strikes can score a Critical Hit on a roll of 19 or 20 on the d20.",
-      "level": 3
+      "level": 3,
+      "effects": [
+       {
+        "on": "critRange",
+        "value": 19
+       }
+      ]
      },
      {
       "id": "remarkable-athlete",
@@ -18334,7 +18340,13 @@
       "id": "superior-critical",
       "name": "Superior Critical",
       "text": "Your attack rolls with weapons and Unarmed Strikes can now score a Critical Hit on a roll of 18–20 on the d20.",
-      "level": 15
+      "level": 15,
+      "effects": [
+       {
+        "on": "critRange",
+        "value": 18
+       }
+      ]
      },
      {
       "id": "survivor",

@@ -24,7 +24,8 @@ const emit = defineEmits<{ change: [values: string[]] }>()
 const listId = `prof-${Math.random().toString(36).slice(2, 8)}`
 const typed = ref('')
 const all = computed(() => [...(props.toggles ?? []), ...(props.suggest ?? [])])
-const labelOf = (id: string) => all.value.find(o => o.id === id)?.label ?? id
+/** An option's label; an id the lists don't have reads as words ("bagpipes" → "Bagpipes", "herbalism-kit" → "Herbalism kit"). */
+const labelOf = (id: string) => all.value.find(o => o.id === id)?.label ?? (/^[a-z0-9-]+$/.test(id) ? (id.charAt(0).toUpperCase() + id.slice(1)).replace(/-/g, ' ') : id)
 const has = (id: string) => props.values.includes(id)
 const givenBy = (id: string) => props.given?.filter(g => g.id === id).map(g => g.from).join(', ') ?? ''
 /** Given ones not typed and not a toggle: greyed chips. */

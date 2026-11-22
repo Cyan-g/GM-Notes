@@ -19,15 +19,19 @@ import { ABILITY_NAME } from '../model/dnd'
 import TraitChoicePicker from './TraitChoicePicker.vue'
 import { inputValue as val } from '../dom'
 
-const props = defineProps<{ pc: Entry; s: CharacterSheet }>()
+/** `openOnly`: just the choices still to make (the level-up dialog, the sheet's "to pick" window), not folded. */
+const props = defineProps<{ pc: Entry; s: CharacterSheet; openOnly?: boolean }>()
 /** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
 const ro = useReadOnly()
 /** Class features by level, then the rest; the ones still waiting for a pick first. */
 const list = computed(() => {
   const act = speciesTraits(props.pc, props.s).filter(a => a.active && hasChoices(a))
   const all = [...act.filter(a => isClassOrigin(a.race)).sort((x, y) => (x.trait.level ?? 1) - (y.trait.level ?? 1)), ...act.filter(a => !isClassOrigin(a.race))]
+  // the open ones as they were when shown: one stays while its picks are made (it doesn't vanish mid-pick)
+  if (props.openOnly) return all.filter(a => choiceOpen(a) || shownOpen.has(a.key))
   return [...all.filter(choiceOpen), ...all.filter(a => !choiceOpen(a))]
 })
+const shownOpen = new Set<string>(props.openOnly ? speciesTraits(props.pc, props.s).filter(a => a.active && hasChoices(a) && choiceOpen(a)).map(a => a.key) : [])
 const left = computed(() => list.value.reduce((n, a) => n + picksLeft(a), 0))
 function swapOptions(g: TraitGrant & { was?: string }) {
   const opts = grantOptions(g.kind)
@@ -55,8 +59,9 @@ onMounted(async () => {
 <template>
   <section v-if="list.length" ref="root" class="feature-choices">
     <!-- all made: folded to its heading, opened to change one -->
-    <details class="fc-fold" :open="left > 0">
-    <summary><h4>Choices from classes, species, background and feats <span v-if="left" class="sp-open small">{{ left }} to pick</span><span v-else class="muted small">all {{ list.length }} made · open to change</span></h4></summary>
+    <details class="fc-fold" :open="left > 0 || openOnly">
+    <summary v-if="!openOnly"><h4>Choices from classes, species, background and feats <span v-if="left" class="sp-open small">{{ left }} to pick</span><span v-else class="muted small">all {{ list.length }} made · open to change</span></h4></summary>
+    <p v-else class="small muted">{{ left ? `${left} pick${left === 1 ? '' : 's'} to make.` : 'All made.' }}</p>
     <div v-for="a in list" :key="a.key" class="sp-trait" :class="{ 'sp-pending': choiceOpen(a) }">
       <div class="sp-head"><b>{{ a.trait.name }}</b> <span class="feat-tag" :class="'tag-' + a.race.type">{{ sourceTag(a) }}</span>
         <span v-if="picksLeft(a)" class="sp-open small">{{ picksLeft(a) }} to pick</span></div>

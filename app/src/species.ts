@@ -337,24 +337,20 @@ export function spendUse(s: CharacterSheet, pc: Entry, a: ActiveTrait, n: number
 }
 
 // ---- what's listed in play ----
-/** Effects the sheet works into its numbers or marks (a score, a save's advantage, speed…); others are rules to read. */
-const COUNTED: GearEffect['on'][] = ['ac', 'ability', 'saves', 'save', 'attack', 'damage', 'spellAttack', 'spellDC', 'skill', 'speed', 'initiative', 'maxHp', 'maxHpLevel', 'skillAdv', 'saveAdv']
 /**
- * Whether a trait is listed on the sheet in play: unless set by its `onSheet`, it is when it has uses or a scaling
- * value, asks to pick options, feats or weapons to master (those are what's used), or carries no data at all (its
- * text is the rule). A trait whose data is all counted elsewhere (proficiencies, languages, Expertise, spells, numbers)
- * is left out; one with a sense, resistance, immunity or feature line stays, since those are only read here.
+ * Whether a trait is listed on the sheet in play: unless set by its `onSheet`, every one but those that only give
+ * proficiencies, languages or spells (the sheet lists those where they're used).
  */
 export function shownInPlay(a: ActiveTrait): boolean {
   const t = a.trait
   if (t.onSheet) return t.onSheet === 'show'
-  if (t.uses || t.scale) return true
-  const k = t.choice?.kind
-  if (k === 'option' || k === 'feat' || k === 'mastery') return true
+  // a feature whose numbers the sheet counts is still listed (folded): its conditions ("not in heavy armor",
+  // "unless incapacitated") are only read here. Left out: one that only gives proficiencies, languages or spells,
+  // which the sheet lists where they're used.
+  if (t.uses || t.scale || t.choice || t.toggle) return true
   const effects = [...(t.effects ?? []), ...a.options.flatMap(o => o.effects ?? [])]
-  if (effects.some(e => !COUNTED.includes(e.on))) return true
-  const data = !!(t.grants?.length || t.spells?.length || t.spellLists?.length || effects.length || k)
-  return !data
+  if (effects.length) return true
+  return !(t.grants?.length || t.spells?.length || t.spellLists?.length)
 }
 /** Whether a trait asks the player for anything: a choice, or proficiencies they may swap. */
 export const hasChoices = (a: ActiveTrait) => !!a.trait.choice || !!a.trait.castWith?.among?.length || swappableSpells(a).length > 0
@@ -457,6 +453,18 @@ export function restSpecies(s: CharacterSheet, pc: Entry, kind: 'short' | 'long'
   if (st.spellsUsed) st.spellsUsed = st.spellsUsed.filter(k => !short.has(k))
 }
 
+/**
+ * What using a feature does, in a sentence for the note after spending a use ("Second Wind: … regain HP equal to
+ * 1d10 plus your Fighter level"): its first sentence, without Markdown.
+ */
+export function useReminder(a: ActiveTrait): string {
+  const sentences = String(a.trait.text ?? '').replace(/[*_`#>]/g, '').replace(/\s+/g, ' ').trim().match(/[^.!?]+[.!?]/g) ?? []
+  // the sentence with the rule (a roll, what it heals or gives), else the first
+  const rule = sentences.find(x => /\d*d\d+|regain|Hit Points|bonus action|advantage|until/i.test(x)) ?? sentences[0] ?? ''
+  return `${a.trait.name} used${rule ? `: ${rule.trim()}` : ''}`
+}
+/** A pool of uses (Lay on Hands: 5 × level HP) rather than a few separate ones: spent with − / ＋. */
+export const isPool = (a: ActiveTrait) => (a.trait.uses?.times ?? 1) > 1
 /** A trait in a few words, for chips: its uses ("PB/long rest") and spells' timing. */
 export function usesLabel(t: Trait): string {
   const u = t.uses

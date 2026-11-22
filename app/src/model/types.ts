@@ -82,6 +82,8 @@ export interface GearEffect {
     // a damage type's: Agonizing Blast, Elemental Affinity); advantage on Initiative (Remarkable Athlete); more
     // cantrips (Magician); Heroic Inspiration on a long rest (Resourceful)
     | 'halfProf' | 'spellDamage' | 'initiativeAdv' | 'cantrips' | 'restInspiration'
+    // weapon attacks score a critical hit on this roll or higher (Champion: 19, then 18)
+    | 'critRange'
   value?: number
   set?: boolean
   force?: boolean

@@ -44,6 +44,7 @@ export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: Effect
   { on: 'initiativeAdv', label: 'Initiative: advantage / disadvantage', needs: ['mode'], noValue: true },
   { on: 'cantrips', label: 'More cantrips known' },
   { on: 'restInspiration', label: 'Heroic Inspiration on each long rest', noValue: true },
+  { on: 'critRange', label: 'Critical hit on a roll of at least' },
   { on: 'spellAttack', label: 'Spell attack' },
   { on: 'spellDC', label: 'Spell save DC' },
   { on: 'skill', label: 'A skill', needs: ['skill', 'plusAbility'] },
@@ -114,6 +115,7 @@ export function describeEffect(f: GearEffect): string {
     case 'initiativeAdv': return `${MODE[f.mode ?? 'adv']} on Initiative`
     case 'cantrips': return `${signed(v)} cantrip${Math.abs(v) === 1 ? '' : 's'} known`
     case 'restInspiration': return 'Heroic Inspiration after each long rest'
+    case 'critRange': return `Critical hit on ${v}–20 with weapons`
     case 'offhandMod': return 'Off-hand attack adds the ability modifier'
     case 'offhandAny': return 'Off-hand attack with any one-handed melee weapon'
     case 'poleStrike': return 'Butt-end attack: d4 bludgeoning, bonus action'
@@ -171,6 +173,8 @@ export interface GearTotals {
   cantrips: Part[]
   /** Heroic Inspiration on each long rest (Resourceful), by what gives it. */
   restInspiration?: string
+  /** The lowest roll that's a critical hit with weapons (Improved Critical: 19), with what gives it. */
+  critRange?: { n: number; from: string }
   offhandMod?: string
   /** Any one-handed melee weapon for the off-hand attack; the butt-end attack; advantage on death saves (by what gives it). */
   offhandAny?: string
@@ -257,6 +261,7 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
         case 'initiativeAdv': t.initiativeAdv.push({ mode: f.mode ?? 'adv', from: name }); break
         case 'cantrips': t.cantrips.push(p); break
         case 'restInspiration': t.restInspiration = name; break
+        case 'critRange': if (n && (!t.critRange || n < t.critRange.n)) t.critRange = { n, from: name }; break
         case 'offhandMod': t.offhandMod = name; break
         case 'offhandAny': t.offhandAny = name; break
         case 'poleStrike': t.poleStrike = name; break

@@ -11,13 +11,14 @@ import { activeBench, currentPc } from '../sheet'
 import type { Entry as PcEntry } from '../model/types'
 import { CRAFTING_RULE, craftingTime, recipeCost } from '../crafting'
 import EntryLink from '../components/EntryLink.vue'
+import { noteUndo } from '../undoNote'
 import EntryPicker from '../components/edit/EntryPicker.vue'
 
 /** On a character's page (their tab) it's theirs; on its own page, the current character's or the world's. */
 const props = defineProps<{ pc?: PcEntry }>()
 const owner = computed(() => props.pc ?? currentPc.value)
 const c = computed(() => activeBench(props.pc))
-const message = ref('')
+
 
 // ---- proficiencies: the Tool items ----
 // With a current character these are the tool proficiencies on their sheet, changed only there; the recipes show
@@ -56,7 +57,8 @@ function craft(e: Entry) {
   if (!canCraft(e)) return
   for (const l of lines(e)) addTo('pouch', l.item, -(l.amount || 1))
   addTo('made', e.id, 1)
-  message.value = `Crafted ${e.name}.`
+  // said where it's seen (the note at the bottom), with where it went
+  noteUndo(`Crafted ${e.name}: it's in ${owner.value?.name ?? 'the'}${owner.value ? "'s" : ''} inventory`)
 }
 const learnable = computed(() => (byType.value.get('item') ?? []).filter(e => (e.fields.recipe)?.length).map(e => e.id))
 function learn(id: Id) { if (!c.value.known.includes(id)) c.value.setKnown([...c.value.known, id]) }
@@ -66,9 +68,9 @@ const ingredientIds = computed(() => (byType.value.get('item') ?? []).filter(e =
 
 <template>
   <div class="workbench">
-    <header class="list-head">
-      <h1 v-if="!pc"><span class="icon"><AppIcon ui="workbench" /></span>Workbench<span v-if="owner" class="head-of">of <EntryLink :id="owner.id" /></span></h1>
-      <span v-if="message" class="ok small">{{ message }}</span>
+    <!-- on a character's own tab the tab is the heading: no empty header line under it -->
+    <header v-if="!pc" class="list-head">
+      <h1><span class="icon"><AppIcon ui="workbench" /></span>Workbench<span v-if="owner" class="head-of">of <EntryLink :id="owner.id" /></span></h1>
     </header>
 
     <div class="wb-grid">

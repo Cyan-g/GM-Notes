@@ -7,16 +7,19 @@ import Dropdown from './Dropdown.vue'
 import { computed, ref } from 'vue'
 import type { CharacterSheet, ClassLine, Entry, Spellbook } from '../model/types'
 import { classesOf, totalLevel } from '../model/classes'
-import { EPIC_BOON_LEVEL, hitDieOf, multiclassOf, rulesOf, subclassLevelOf, dieOf, classEntry } from '../classRules'
+import { EPIC_BOON_LEVEL, basicsOf, hitDieOf, multiclassOf, rulesOf, subclassLevelOf, dieOf, classEntry } from '../classRules'
 import { bonusApplied, bonusOpen, type BonusChoice } from '../abilityBonus'
 import { byType, entries, get, listOptions } from '../store'
 import { castingAbility, maxHpOf } from '../sheet'
+import { classSlotsAt } from '../slots'
+import MarkdownView from './MarkdownView.vue'
+import FeatureChoices from './FeatureChoices.vue'
 import { editSheet, profsToEdit, sheetToEdit } from '../sheetData'
-import { SKILLS, mod, signed, ABILITY_KEYS } from '../model/dnd'
+import { SKILLS, mod, signed, ABILITY_KEYS, ORD } from '../model/dnd'
 import { itemNamed } from '../lookup'
 import { rule } from '../rules'
 import { gearTotals, scoreWith } from '../effects'
-import { backgroundOf, featBonusFor, featGivesSave, featOfFeature, speciesTraits } from '../species'
+import { backgroundOf, choiceOpen, featBonusFor, featGivesSave, featOfFeature, speciesTraits } from '../species'
 import { traitsOf } from '../model/traits'
 import { unmet } from '../requirements'
 import { changed } from '../edit'
@@ -135,10 +138,37 @@ const spells = computed(() => {
   }
 })
 
+// ---- what grows at the new level: more picks (invocations, Metamagic), a scaling value, pact slots ----
+const atStep = <T,>(steps: [number, T][] | undefined, l: number) => steps?.filter(([x]) => x <= l).at(-1)?.[1]
+const grows = computed(() => {
+  const n = newLevel.value, out: string[] = []
+  for (const e of [classEntry(cls.value), get(subId.value || undefined)]) {
+    for (const t of e ? traitsOf(e) : []) {
+      if ((t.level ?? 1) >= n) continue // a new feature is listed above
+      const c0 = atStep(t.choice?.steps, n - 1), c1 = atStep(t.choice?.steps, n)
+      if (c1 != null && c1 !== c0) out.push(`${t.name}: ${c0 ?? 0} → ${c1}`)
+      const s0 = atStep(t.scale?.steps, n - 1), s1 = atStep(t.scale?.steps, n)
+      if (s1 != null && s1 !== s0) out.push(`${t.scale!.label || t.name}: ${s0 ?? '—'} → ${s1}`)
+      const u0 = atStep(t.uses?.steps, n - 1), u1 = atStep(t.uses?.steps, n)
+      if (u1 != null && u1 !== u0) out.push(`${t.name} uses: ${u0 ?? 0} → ${u1}`)
+    }
+  }
+  if (basicsOf(cls.value).caster === 'pact' && n > 1) {
+    const a = classSlotsAt('pact', n - 1).pact!, b = classSlotsAt('pact', n).pact!
+    if (a.count !== b.count || a.level !== b.level) out.push(`Pact slots: ${a.count} × ${ORD[a.level]} → ${b.count} × ${ORD[b.level]}`)
+  }
+  return out
+})
+/** A feature's text: its first paragraph, the rest folded. */
+const firstPara = (t: string) => t.split(/\n\s*\n/)[0]
+const restOf = (t: string) => t.split(/\n\s*\n/).slice(1).join('\n\n')
+/** After the level is taken: the choices it opened, made here before closing. */
+const phase = ref<'level' | 'choices'>('level')
+
 // ---- what's still missing ----
 const open = computed(() => [
   !cls.value && 'a class',
-  gain.value == null && (how.value === 'roll' ? `a roll from 1 to ${size.value}` : 'hit points'),
+  gain.value == null && (how.value === 'roll' ? (roll.value != null ? `a roll from 1 to ${size.value} (${roll.value} isn't one)` : `a roll from 1 to ${size.value}`) : 'hit points'),
   needsSub.value && !sub.value && 'a subclass',
   featDue.value && !feat.value && (boon.value ? 'an Epic Boon' : 'a feat'),
   featDue.value && feat.value && bonusOpen(featBonus.value, choice.value) > 0 && 'the feat’s ability scores',
@@ -201,7 +231,10 @@ function apply() {
     if (s.hp != null && after != null && maxBefore != null) s.hp = Math.min(after, s.hp + Math.max(0, after - maxBefore))
   })
   changed(pc)
-  emit('close')
+  // choices the new level opened (an invocation, Expertise, a mastery): made here, then done
+  const pending = speciesTraits(pc, sheetToEdit(pc)).some(a => a.active && choiceOpen(a))
+  if (pending) phase.value = 'choices'
+  else emit('close')
 }
 </script>
 
@@ -209,11 +242,16 @@ function apply() {
   <div class="modal-back" @mousedown.self="emit('close')" @keydown.esc="emit('close')">
     <div class="modal levelup" role="dialog" aria-label="Level up">
       <header class="modal-head">
-        <h2>Level up to {{ total + 1 }}</h2>
+        <h2>{{ phase === 'choices' ? `Level ${total}: its choices` : `Level up to ${total + 1}` }}</h2>
         <span class="spacer" />
         <button class="x" title="Close (Esc)" @click="emit('close')">×</button>
       </header>
 
+      <template v-if="phase === 'choices'">
+        <FeatureChoices :pc="pc" :s="s" open-only />
+        <footer class="lu-foot"><span class="muted small">These can also be made later, from "to pick" on the sheet.</span><span class="spacer" /><button class="primary" @click="emit('close')">Done</button></footer>
+      </template>
+      <template v-else>
       <section>
         <h3>Class</h3>
         <Dropdown v-model="cls" aria-label="Class gaining the level" @change="sub = ''; feat = ''">
@@ -271,10 +309,12 @@ function apply() {
         <h3>New features</h3>
         <ul v-if="features.length" class="lu-feats">
           <li v-for="f in features" :key="f.from.id + f.t.name"><b>{{ f.t.name }}</b> <span class="muted small">· {{ f.from.name }}</span>
-            <div v-if="f.t.text" class="small lu-text" v-html="renderInline(String(f.t.text).split('\n')[0])" /></li>
+            <div v-if="f.t.text" class="small lu-text"><MarkdownView :source="firstPara(String(f.t.text))" />
+              <details v-if="restOf(String(f.t.text))" class="lu-more"><summary class="small">more</summary><MarkdownView :source="restOf(String(f.t.text))" /></details></div></li>
         </ul>
-        <p v-else class="muted small">None listed for {{ label(cls) }} {{ newLevel }}<template v-if="!classEntry(cls)"> (the world has no class entry for it)</template>.</p>
-        <p class="muted small">Choices they ask for show up in the sheet's Choices card.</p>
+        <p v-else-if="!grows.length" class="muted small">None listed for {{ label(cls) }} {{ newLevel }}<template v-if="!classEntry(cls)"> (the world has no class entry for it)</template>.</p>
+        <ul v-if="grows.length" class="plain small lu-grows"><li v-for="g in grows" :key="g">{{ g }}</li></ul>
+        <p class="muted small">Choices they ask for come right after Level up.</p>
       </section>
 
       <section v-if="featDue">
@@ -305,6 +345,7 @@ function apply() {
         <button @click="emit('close')">Cancel</button>
         <button class="primary" :disabled="open.length > 0" @click="apply">Level up</button>
       </footer>
+      </template>
     </div>
   </div>
 </template>

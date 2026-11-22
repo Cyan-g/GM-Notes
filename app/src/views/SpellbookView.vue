@@ -67,12 +67,29 @@ function rest() {
   restSlots(book.value, 'long')
   touch()
 }
-/** Cast a levelled spell: spend a slot of its level, or the lowest higher one left. */
-function cast(e: Entry) {
-  const r = slotFor(rows.value, Number(e.fields.level))
+/** Cast a levelled spell: spend a slot of its level (or the lowest higher one left), or the one picked to upcast. */
+function cast(e: Entry, slot?: SlotRow) {
+  const r = slot ?? slotFor(rows.value, Number(e.fields.level))
   if (!r) return
   useSlot(book.value, r, 1)
   touch()
+  begin(e)
+  upcastOf.value = null
+}
+/** A cast concentration spell starts concentrating (ending the one before); one with effects is switched on. */
+function begin(e: Entry) {
+  const pc = caster.value
+  if (!pc || !e.fields.concentration && !switchable(e)) return
+  if (switchable(e)) { if (!on(e)) toggleOn(e) }
+  else if (!concentrating(e)) toggleConc(e)
+}
+// ---- upcasting: the ▾ beside Cast lists the higher slots that are free, with what the spell does at each ----
+const upcastOf = ref<Id | null>(null)
+const higher = (e: Entry) => rows.value.filter(r => r.kind !== 'arcanum' && r.used < r.max && r.level > Number(e.fields.level))
+  .sort((a, b) => a.level - b.level).filter((r, i, l) => l.findIndex(x => x.level === r.level && x.kind === r.kind) === i)
+function rollsAt(e: Entry, level: number) {
+  const pc = caster.value, sh = pc ? sheetOf(pc) : undefined, ab = fromSheet.value?.ability
+  return rollsLine(e, { level: pc ? charLevel(pc) : undefined, mod: sh && ab ? mod(score(sh, ab)) : undefined, add: spellDamageAdd(sh, e), slot: level })
 }
 // ---- free casts: a feature's use instead of a slot (Divine Smite once per long rest, Favored Enemy's Hunter's Mark) ----
 /** The feature with a use left that casts this spell without a slot; the player picks Free or Cast (a slot, to upcast). */
@@ -88,6 +105,7 @@ function castFree(e: Entry) {
   if (!pc || !a) return
   const before = snapSheet(pc)
   editSheet(pc, x => spendUse(x, pc, a, 1, score))
+  begin(e)
   noteUndo(`${e.name} cast free with ${a.trait.name}: ${usesLeft(pc, sheetOf(pc), a, score)} of ${usesMax(pc, a, sheetOf(pc), score)} left`, restoreSheet(pc, before))
 }
 const canCast = (e: Entry) => {
@@ -138,7 +156,13 @@ const innateRows = computed(() => {
   }
   return rows
 })
-const castInnate = (x: SpeciesSpell, back = false) => { if (owner.value) editSheet(owner.value, s => useSpeciesSpell(s, x.key, back)) }
+const castInnate = (x: SpeciesSpell, back = false) => {
+  if (!owner.value) return
+  editSheet(owner.value, s => useSpeciesSpell(s, x.key, back))
+  // cast, a concentration spell starts concentrating (Faerie Fire from a Drow's lineage)
+  const e = get(x.spell.spell)
+  if (!back && e) begin(e)
+}
 const castItem = (g: GrantedSpell) => { if (owner.value) editSheet(owner.value, s => castFromItem(s, g)) }
 const giveBack = (g: GrantedSpell) => { if (owner.value) editSheet(owner.value, s => unuse(s, g)) }
 const shortRest = () => {
@@ -380,7 +404,14 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
               <td>{{ [e.fields.concentration && 'C', e.fields.ritual && 'R'].filter(Boolean).join(' ') }}</td>
               <td class="sbk-actions">
                 <span v-if="spellLevel(e) && given.get(e.id)?.how === 'atWill' && onlyGiven(e.id)" class="muted small" title="Cast without a spell slot">at will</span>
-                <button v-else-if="spellLevel(e)" class="chip-btn" :disabled="!canCast(e)" :title="canCast(e) ? 'Spend a slot of this level (or the next free higher one)' : 'No slot left for this level'" @click="cast(e)">Cast</button>
+                <span v-else-if="spellLevel(e)" class="cast-split">
+                  <button class="chip-btn" :disabled="!canCast(e)" :title="canCast(e) ? 'Spend a slot of this level (or the next free higher one)' : 'No slot left for this level'" @click="cast(e)">Cast</button><button v-if="higher(e).length" class="chip-btn cast-more" :aria-expanded="upcastOf === e.id" title="Cast with a higher slot" @click="upcastOf = upcastOf === e.id ? null : e.id">▾</button>
+                  <span v-if="upcastOf === e.id" class="cast-menu" role="menu">
+                    <button v-for="r in higher(e)" :key="r.key" type="button" class="menu-row" role="menuitem" @click="cast(e, r)">
+                      <b>{{ r.kind === 'pact' ? 'Pact ' : '' }}{{ ORD[r.level] }}</b> <span class="muted small">({{ r.max - r.used }} left)</span> <span class="small">{{ rollsAt(e, r.level) }}</span>
+                    </button>
+                  </span>
+                </span>
                 <button v-if="spellLevel(e) && freeFor(e)" class="chip-btn" :title="freeTip(e)" @click="castFree(e)">Free</button>
                 <button v-if="caster && e.fields.concentration && !switchable(e)" class="chip-btn sbk-on" :class="{ on: concentrating(e) }" :aria-pressed="concentrating(e)" :title="concentrating(e) ? 'Concentrating on it. Click to end it' : 'Concentrate on it: any other concentration spell ends'" @click="toggleConc(e)">{{ concentrating(e) ? 'Concentrating' : 'Concentrate' }}</button>
                 <button v-if="switchable(e)" class="chip-btn sbk-on" :class="{ on: on(e) }" :aria-pressed="on(e)" :title="on(e) ? 'Active: the sheet counts its effects. Click to end it' : 'Switch it on: the sheet counts its effects until you end it or take a long rest'" @click="toggleOn(e)">{{ on(e) ? 'Active' : 'On' }}</button>

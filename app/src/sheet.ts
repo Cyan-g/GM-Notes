@@ -439,9 +439,7 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
     const pole = weapons.find(e => /quarterstaff|spear/i.test(`${e.fields.baseWeapon ?? ''} ${e.name}`) || (propsOf(e).includes('heavy') && propsOf(e).includes('reach')))
     if (pole) out.push({ ...line({ ...pole, fields: { ...pole.fields, damage: '1d4', properties: (pole.fields.properties ?? []).filter(p => !/versatile|thrown|heavy/i.test(p)) } }), type: 'Bludgeoning', tag: `bonus action · ${t.poleStrike}` })
   }
-  // the unarmed strike, only while no weapon is equipped (or a feature makes it a real attack, Martial Arts):
-  // 1 + STR bludgeoning, or the feature's die with STR or DEX
-  if (weapons.length && !t.unarmed) return out
+  // the unarmed strike, always there (grapple and shove too): 1 + STR bludgeoning, or a feature's die with STR or DEX
   const u = t.unarmed, um = u?.dex ? Math.max(str, dex) : str
   const uHit = t.attackAll.filter(p => fits(p.when, false, !!u?.dex)), uDmg = t.damageAll.filter(p => fits(p.when, false, !!u?.dex))
   // a bigger die with no weapon or shield in hand (Unarmed Fighting)
@@ -524,7 +522,7 @@ export function restSummary(pc: Entry, before: CharacterSheet | undefined, kind:
   const exWas = was.conditions?.includes('Exhaustion') ? was.exhaustion ?? 1 : 0, exNow = now.conditions?.includes('Exhaustion') ? now.exhaustion ?? 1 : 0
   if (exWas !== exNow) out.push(`Exhaustion ${exWas} → ${exNow}`)
   const name = kind === 'long' ? 'Long rest' : 'Short rest'
-  return out.length ? `${name}: ${out.join(' · ')}` : `${name}: nothing to get back${kind === 'short' ? '. Spend Hit Dice by counting them down, then type what you rolled (+ CON each) as healing' : ''}`
+  return out.length ? `${name}: ${out.join(' · ')}` : `${name}: nothing came back`
 }
 
 export function shortRest(pc: Entry): RegainRoll[] {

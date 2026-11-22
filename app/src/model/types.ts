@@ -285,6 +285,8 @@ export interface CharacterSheet {
   activeSpells?: Id[]
   /** Known recipes for the Workbench; the tools are in the proficiencies, the ingredients in the inventory. */
   crafting?: { known: Id[] }
+  /** Wild Shape (wildShape.ts): the Beasts the Druid knows as forms, and the one they're in now. */
+  wildShape?: { forms?: Id[]; form?: Id }
   /** What the player chose in their species' traits and the uses spent (species.ts), by trait key. */
   species?: SpeciesState
 }

@@ -10599,8 +10599,9 @@
     ],
     "active": [
      {
-      "on": "feature",
-      "text": "Weapon attacks deal an extra 1d4 radiant damage"
+      "on": "extraDamage",
+      "dice": "1d4",
+      "type": "Radiant"
      }
     ]
    },
@@ -12930,8 +12931,10 @@
     ],
     "active": [
      {
-      "on": "feature",
-      "text": "An extra 1d6 necrotic damage when you hit the cursed target"
+      "on": "extraDamage",
+      "dice": "1d6",
+      "type": "Necrotic",
+      "note": "against the cursed target"
      }
     ]
    },

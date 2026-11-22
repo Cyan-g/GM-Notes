@@ -2464,6 +2464,27 @@ select.dd option:is(:hover, :focus-visible)::before {
 .fx[data-fx] .cast-split { clip-path: var(--fx-chip-clip, none); }
 .fx[data-fx] .cast-split > .chip-btn { clip-path: none; }
 .cast-menu { position: absolute; right: 0; top: 100%; z-index: 30; min-width: 16rem; padding: .25rem; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+.wild-shape { grid-column: 1 / -1; display: grid; gap: .5rem; }
+.wild-shape.shifted { border-color: var(--accent); }
+.ws-head { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .7rem; }
+.ws-head .spacer { flex: 1; }
+.ws-shifted { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 1rem; align-items: start; }
+@media (max-width: 900px) { .ws-shifted { grid-template-columns: 1fr; } }
+.ws-rules { margin: 0; padding-left: 1.1rem; display: grid; gap: .3rem; }
+.ws-forms { display: grid; gap: .35rem; }
+.ws-list { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; }
+.ws-list > .picker { flex: 1 1 12rem; max-width: 18rem; }
+.ws-form { display: inline-flex; align-items: center; gap: .35rem; padding: .15rem .2rem .15rem .5rem; border: 1px solid var(--line); border-radius: 8px; }
+.ws-form.unfit { opacity: .6; border-style: dashed; }
+.slot-helpers { display: grid; gap: .35rem; margin-top: .5rem; padding-top: .5rem; border-top: 1px solid var(--line); }
+.sh-line { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; }
+.sh-line .chip-btn, .sh-line .link-btn { margin-left: auto; }
+.sh-font { display: grid; gap: .3rem; }
+.sh-row { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
+.sh-row > .small:first-child { min-width: 6.5rem; }
+.arcane-recovery { margin-top: .8rem; }
+.ar-pick { display: inline-flex; align-items: center; gap: .25rem; margin-right: .5rem; }
+.ar-n { min-width: 1.2em; text-align: center; font-weight: 600; }
 .cast-menu .menu-row { display: block; width: 100%; text-align: left; white-space: nowrap; }
 .cs-levelup { margin-top: .15rem; font-size: 10.5px; padding: .05rem .45rem; }
 .choices-modal { width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 64px); overflow: auto; }

@@ -23,6 +23,7 @@ import EntryLink from '../components/EntryLink.vue'
 import { newEntry, printCards } from '../ui'
 import { hrefEntry } from '../router'
 import SpellModal from '../components/SpellModal.vue'
+import SlotHelpers from '../components/SlotHelpers.vue'
 import EntryPicker from '../components/edit/EntryPicker.vue'
 
 /** On a character's page (their tab) it's theirs; on its own page, the current character's or the world's. */
@@ -109,6 +110,13 @@ function castFree(e: Entry) {
   editSheet(pc, x => spendUse(x, pc, a, 1, score))
   begin(e)
   noteUndo(`${e.name} cast free with ${a.trait.name}: ${usesLeft(pc, sheetOf(pc), a, score)} of ${usesMax(pc, a, sheetOf(pc), score)} left`, restoreSheet(pc, before))
+}
+// ---- rituals: 10 minutes longer, no slot (a prepared ritual spell; a Wizard's from the book, prepared or not) ----
+function castRitual(e: Entry) {
+  const pc = owner.value, before = pc ? snapSheet(pc) : undefined
+  begin(e)
+  upcastOf.value = null
+  noteUndo(`${e.name} cast as a ritual: it takes 10 minutes longer and uses no slot`, pc ? restoreSheet(pc, before) : undefined, 6000)
 }
 const canCast = (e: Entry) => {
   const lvl = Number(e.fields.level)
@@ -406,6 +414,7 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
         </div>
         <p v-if="!shownSlots.length && !arcana.length" class="muted small">{{ classesKnown ? 'Their classes give no spell slots.' : 'No slots yet: click Edit to set them.' }}</p>
         <p v-else-if="classesKnown && !editSlots" class="muted small slot-src">From the class levels{{ rows.some(r => r.rule != null) ? ', with typed changes (✎)' : '' }}.</p>
+        <SlotHelpers v-if="owner && !editSlots" :pc="owner" />
       </section>
     </div>
 
@@ -453,6 +462,8 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
                 <span v-if="freeKnown.has(e.id)" class="muted small" :title="`In the spellbook for free, from ${freeKnown.get(e.id)}`">{{ freeKnown.get(e.id) }}</span>
                 <span v-if="isPrepared(e.id)" class="muted small">prepared</span>
                 <button v-else-if="e.fields.level !== 'Cantrip'" class="chip-btn" title="Prepare it (or drag it to Prepared spells)" @click="prepare(e.id)">Prepare</button>
+                <!-- Ritual Adept: a Wizard casts a ritual from the book without preparing it -->
+                <button v-if="e.fields.ritual && !isPrepared(e.id) && bookClasses.length && caster" class="chip-btn" title="Cast it as a ritual from the book: 10 minutes longer, no slot, no need to prepare it" @click="castRitual(e)">Ritual</button>
                 <button v-if="!freeKnown.has(e.id)" class="link-btn x" title="Remove from the spellbook" @click="forget(e.id)">✕</button>
               </td>
             </tr>
@@ -489,8 +500,11 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
               <td class="sbk-actions">
                 <span v-if="spellLevel(e) && given.get(e.id)?.how === 'atWill' && onlyGiven(e.id)" class="muted small" title="Cast without a spell slot">at will</span>
                 <span v-else-if="spellLevel(e)" class="cast-wrap"><span class="cast-split">
-                  <button class="chip-btn" :disabled="!canCast(e)" :title="canCast(e) ? 'Spend a slot of this level (or the next free higher one)' : 'No slot left for this level'" @click="cast(e)">Cast</button><button v-if="higher(e).length" class="chip-btn cast-more" :aria-expanded="upcastOf === e.id" title="Cast with a higher slot" @click="upcastOf = upcastOf === e.id ? null : e.id">▾</button><button v-if="freeFor(e)" class="chip-btn" :title="freeTip(e)" @click="castFree(e)">Free</button></span>
+                  <button class="chip-btn" :disabled="!canCast(e)" :title="canCast(e) ? 'Spend a slot of this level (or the next free higher one)' : 'No slot left for this level'" @click="cast(e)">Cast</button><button v-if="higher(e).length || e.fields.ritual" class="chip-btn cast-more" :aria-expanded="upcastOf === e.id" :title="e.fields.ritual ? 'Cast as a ritual, or with a higher slot' : 'Cast with a higher slot'" @click="upcastOf = upcastOf === e.id ? null : e.id">▾</button><button v-if="freeFor(e)" class="chip-btn" :title="freeTip(e)" @click="castFree(e)">Free</button></span>
                   <span v-if="upcastOf === e.id" class="cast-menu" role="menu">
+                    <button v-if="e.fields.ritual" type="button" class="menu-row" role="menuitem" @click="castRitual(e)">
+                      <b>As a ritual</b> <span class="muted small">10 minutes longer, no slot</span>
+                    </button>
                     <button v-for="r in higher(e)" :key="r.key" type="button" class="menu-row" role="menuitem" @click="cast(e, r)">
                       <b>{{ r.kind === 'pact' ? 'Pact ' : '' }}{{ ORD[r.level] }}</b> <span class="muted small">({{ r.max - r.used }} left)</span> <span class="small">{{ rollsAt(e, r.level) }}</span>
                     </button>

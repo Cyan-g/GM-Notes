@@ -40,6 +40,7 @@ import DeathSaves from './DeathSaves.vue'
 import LevelUpModal from './LevelUpModal.vue'
 import ChoicesModal from './ChoicesModal.vue'
 import ShortRestModal from './ShortRestModal.vue'
+import WildShapeCard from './WildShapeCard.vue'
 import { isShared } from '../sync'
 import { XP_AT } from '../sheet'
 import { endConcentration, hpChanged, isDead, massiveDamage, noDeathSaves, settleDeathSaves } from '../conditions'
@@ -420,6 +421,7 @@ onBeforeUnmount(() => {
     <!-- in play: the limited uses of features, to tick off without scrolling -->
     <UsesCard v-if="!build" :pc="pc" :s="s" />
     <ActiveSpellsCard v-if="!build" :pc="pc" :s="s" />
+    <WildShapeCard v-if="!build" :pc="pc" :s="s" />
     </div>
     <!-- abilities, then attacks, spellcasting and proficiencies, in the same column -->
     <div class="cs-grid">

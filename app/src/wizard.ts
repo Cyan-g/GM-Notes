@@ -292,7 +292,9 @@ export interface Step { id: string; label: string; open: string[] }
 export function steps(d: Draft): Step[] {
   const r = rules(d), pc = draftPc(d)
   const s: Step[] = []
-  s.push({ id: 'class', label: 'Class', open: [!d.cls && 'a class', !!d.cls && d.level >= subclassLevelOf(d.cls) && !d.subclass && subclassesOf(d.cls).length ? 'a subclass' : ''].filter(Boolean) as string[] })
+  s.push({ id: 'class', label: 'Class', open: [!d.cls && 'a class'].filter(Boolean) as string[] })
+  // the subclass, once the level reaches it: a step of its own, its details beside the list
+  if (d.cls && d.level >= subclassLevelOf(d.cls)) s.push({ id: 'subclass', label: 'Subclass', open: [!d.subclass && subclassesOf(d.cls).length ? 'a subclass' : ''].filter(Boolean) as string[] })
   s.push({ id: 'origin', label: 'Species & background', open: [!d.race && 'a species', d.race && subracesOf(d.race).length ? 'a subrace' : '', !d.background && backgrounds().length ? 'a background' : '',
     ...speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && choiceOpen(a)).map(a => (a.trait.name === a.race.name ? a.trait.name : `${a.trait.name} (${a.race.name})`))].filter(Boolean) as string[] })
   const unset = ABILITY_KEYS.filter(a => d.base[a] == null).length

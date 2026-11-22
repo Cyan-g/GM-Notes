@@ -10,6 +10,7 @@ import { subclassLevelOf } from '../classRules'
 import { newBlankEntry } from '../ui'
 import AppIcon from '../components/AppIcon.vue'
 import WzClassStep from '../components/wizard/WzClassStep.vue'
+import WzSubclassStep from '../components/wizard/WzSubclassStep.vue'
 import WzOriginStep from '../components/wizard/WzOriginStep.vue'
 import WzScoresStep from '../components/wizard/WzScoresStep.vue'
 import WzProfsStep from '../components/wizard/WzProfsStep.vue'
@@ -61,6 +62,7 @@ function startOver() { if (confirm('Clear everything chosen so far?')) resetWiza
         <p v-if="step.open.length" class="wz-open small">Still to choose: {{ step.open.join(', ') }}</p>
 
         <WzClassStep v-if="step.id === 'class'" />
+        <WzSubclassStep v-else-if="step.id === 'subclass'" />
         <WzOriginStep v-else-if="step.id === 'origin'" />
         <WzScoresStep v-else-if="step.id === 'scores'" />
         <WzProfsStep v-else-if="step.id === 'profs'" />

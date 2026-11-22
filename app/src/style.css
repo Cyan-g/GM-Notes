@@ -2328,3 +2328,15 @@ select.dd option:is(:hover, :focus-visible)::before {
 .saved-buttons { display: inline-flex; gap: .7rem; font-variant: normal; letter-spacing: 0; }
 .saved-new { display: flex; gap: .4rem; margin: 0 0 .5rem; }
 .saved-new input { flex: 1; }
+
+/* ---------- the creator: the subclass step (list beside the chosen one's page), and the folding parts of a page ---------- */
+.wz-subclass-step { display: grid; grid-template-columns: minmax(13rem, 18rem) minmax(0, 1fr); gap: 1rem; align-items: start; }
+@media (max-width: 760px) { .wz-subclass-step { grid-template-columns: 1fr; } }
+.wz-sub-list { display: grid; gap: .4rem; position: sticky; top: calc(var(--bar-h) + 4.5rem); max-height: calc(100vh - var(--bar-h) - 6rem); overflow-y: auto; }
+.wz-sub-list .wz-tile.shown { border-style: dashed; border-color: var(--accent); }
+.wz-sub-detail .wz-page { margin-top: 0; padding-top: 0; border-top: none; }
+.wz-fold { margin: .4rem 0; }
+.wz-fold > summary { cursor: pointer; font: 600 1.05rem var(--serif); color: var(--accent); padding: .3rem 0; list-style: none; }
+.wz-fold > summary::-webkit-details-marker { display: none; }
+.wz-fold > summary::before { content: '▸'; display: inline-block; width: 1.1em; color: var(--muted); transition: rotate .15s; }
+.wz-fold[open] > summary::before { rotate: 90deg; }

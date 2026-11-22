@@ -44,6 +44,12 @@ const items = computed<ChooserItem[]>(() => {
   return [...cantrips, ...spells]
 })
 const picked = computed(() => [...d.value.cantrips, ...d.value.spells, ...d.value.book])
+/** What's still to pick in the list (cantrips; a Wizard's spellbook spells), for its tag. */
+const spellsLeft = computed(() => {
+  const c = counts.value.cantrips != null ? counts.value.cantrips - d.value.cantrips.length : 0
+  const b = counts.value.book != null ? Math.min(counts.value.book, sc.value.spells.length) - d.value.spells.length - d.value.book.length : 0
+  return [c > 0 && `${c} cantrip${c === 1 ? '' : 's'}`, b > 0 && `${b} spellbook spell${b === 1 ? '' : 's'}`].filter(Boolean).join(', ') + (c > 0 || b > 0 ? ' left' : '')
+})
 /** A spellbook class (Wizard): its spells go into the book. */
 const bookCaster = computed(() => counts.value.book != null)
 const inBook = (id: Id) => d.value.spells.includes(id) || d.value.book.includes(id)
@@ -71,7 +77,7 @@ function pick(id: Id) {
 </script>
 
 <template>
-  <WzChooser :items="items" :picked="picked" label="Spells" :empty="sc.cantrips.length || sc.spells.length ? 'No spell by that name.' : 'The world has no spells for this class (a spell\'s Classes field lists who can cast it).'" @pick="pick">
+  <WzChooser :items="items" :picked="picked" label="Spells" :need="!!spellsLeft" :need-text="spellsLeft" intro="Click a spell on the left to read it here. Clicking a cantrip takes it; clicking a spell puts it in (or out of) your spells." :empty="sc.cantrips.length || sc.spells.length ? 'No spell by that name.' : 'The world has no spells for this class (a spell\'s Classes field lists who can cast it).'" @pick="pick">
     <template #top>
       <p class="small wz-ch-top">
         <template v-if="counts.cantrips != null">{{ d.cantrips.length }} / {{ counts.cantrips }} cantrips · {{ d.spells.length }} / {{ counts.prepared }} prepared <span class="muted">(optional: the Spellbook prepares them later too)</span></template>

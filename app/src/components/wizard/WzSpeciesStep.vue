@@ -31,7 +31,7 @@ const isMine = (id: string) => id === main.value?.id
 </script>
 
 <template>
-  <WzChooser :items="items" :picked="main?.id" label="Species" @pick="pick">
+  <WzChooser :items="items" :picked="main?.id" label="Species" :need="!main" intro="Click a species on the left to see its size, speed, senses and traits. Clicking takes it." @pick="pick">
     <template #detail="{ item }">
       <template v-if="isMine(item.id)">
         <p v-if="subracesOf(main?.id).length" class="small muted">{{ main?.name }} has subraces: the next step picks one.</p>

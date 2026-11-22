@@ -19,7 +19,7 @@ const pick = (id: string) => { wizard.d.subclass = d.value.subclass === id ? und
 </script>
 
 <template>
-  <WzChooser :items="items" :picked="d.subclass" label="Subclasses" empty="The world has no subclasses of this class yet; add them on the class's page, or go on without one." @pick="pick">
+  <WzChooser :items="items" :picked="d.subclass" label="Subclasses" :need="!d.subclass && items.length > 0" intro="Click a subclass on the left to see the features it gives. Clicking takes it." empty="The world has no subclasses of this class yet; add them on the class's page, or go on without one." @pick="pick">
     <template #detail="{ item, picked }">
       <p v-if="!picked" class="small muted wz-ch-hint-line">Click {{ item.label }} on the left to take it.</p>
       <WizardPage v-if="get(item.id)" :e="get(item.id)!" :title="item.label" :level="d.level" />

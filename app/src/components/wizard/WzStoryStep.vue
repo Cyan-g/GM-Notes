@@ -18,7 +18,7 @@ const dropCampaign = (id: string) => { wizard.d.campaigns = chosen.value.filter(
 <template>
   <!-- who: the name big, with player and campaign beside it; then looks and story side by side -->
   <div class="wz-who">
-    <label class="wz-name"><span>Name</span><input :value="d.name" placeholder="The character's name" @input="wizard.d.name = val($event)" /></label>
+    <label class="wz-name"><span>Name</span><input :class="{ 'wz-todo': !d.name.trim() }" :value="d.name" placeholder="The character's name" @input="wizard.d.name = val($event)" /></label>
     <label v-if="!playerMode" class="wz-player"><span>Player</span><input :value="d.player" @input="wizard.d.player = val($event)" /></label>
     <div class="wz-campaigns"><span>Campaign</span>
       <span class="wz-campaign-list">

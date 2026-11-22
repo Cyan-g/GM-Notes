@@ -16,7 +16,7 @@ const pick = (id: string) => { wizard.d.background = id }
 </script>
 
 <template>
-  <WzChooser :items="items" :picked="d.background" label="Backgrounds" empty="The world has no backgrounds yet; go on without one." @pick="pick">
+  <WzChooser :items="items" :picked="d.background" label="Backgrounds" :need="!d.background && items.length > 0" intro="Click a background on the left to see what it gives: ability score increases, an Origin feat, two skills, a tool and starting equipment. Clicking takes it." empty="The world has no backgrounds yet; go on without one." @pick="pick">
     <template #detail="{ item, picked }">
       <p v-if="!picked" class="small muted wz-ch-hint-line">Click {{ item.label }} on the left to take it.</p>
       <p class="small wz-bg-gives">

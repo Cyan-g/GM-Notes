@@ -62,7 +62,7 @@ const scoresBefore = (lv: number) => finalScores({ ...d.value, feats: d.value.fe
     </button>
   </div>
   <p v-else-if="level" class="small muted">A {{ level.boon ? 'Epic Boon' : 'feat' }} at level {{ level.level }}; an Ability Score Improvement is a feat too.</p>
-  <WzChooser v-if="level" :key="level.level" :items="items" :picked="featAt(level.level)?.feat" :label="`Feats for level ${level.level}`" @pick="id => setFeat(level!.level, id)">
+  <WzChooser v-if="level" :key="level.level" :items="items" :picked="featAt(level.level)?.feat" :need="!featAt(level.level)?.feat" :intro="`Click a feat on the left to see what it does; clicking takes it at level ${level.level}.`" :label="`Feats for level ${level.level}`" @pick="id => setFeat(level!.level, id)">
     <template #detail="{ item, picked }">
       <p v-if="!picked && item.off" class="small wz-need-line">Not yet: {{ item.hint }}.</p>
       <p v-else-if="!picked" class="small muted wz-ch-hint-line">Click {{ item.label }} on the left to take it at level {{ level!.level }}.</p>

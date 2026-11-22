@@ -18,6 +18,7 @@
  *   panel      menus, pick lists, search, link previews       row      the row under the mouse in those
  *   sep        menu separators                                th / tr  list tables' headers and hovered rows
  *   tip        tooltips                                       scroll   scrollbars
+ *   picker     the list a dropdown field opens
  */
 
 /* ---------- frame: cards and the sheet's boxes ---------- */
@@ -120,6 +121,30 @@
 :where(.fx[data-fx]) :where(.menu-row, .settings-list button, .picker-list li, .qs li) { position: relative; }
 .fx[data-fx] :is(.menu-row:hover, .menu-row.open, .settings-list button:hover, .picker-list li.sel, .qs li.sel) { background: var(--fx-row-paint); box-shadow: var(--fx-row-shadow, none); }
 .fx[data-fx] :is(.menu-row:hover, .menu-row.open, .settings-list button:hover, .picker-list li.sel, .qs li.sel)::before {
+  content: var(--fx-row-mark, none); position: absolute; left: var(--fx-row-mark-left, 0); top: var(--fx-row-mark-top, 4px); bottom: var(--fx-row-mark-bottom, auto);
+  width: var(--fx-row-mark-width, 4px); height: var(--fx-row-mark-height, auto); margin-top: var(--fx-row-mark-shift, 0); background: var(--fx-row-mark-paint, var(--accent)); clip-path: var(--fx-row-mark-clip, none);
+}
+
+/* ---------- picker: the list a dropdown field opens ----------
+   Drawn by the page instead of Windows ("customizable select", Chromium 135+), so it takes the style's menu look:
+   the same edge, the row mark on the option under the mouse, the theme's colours. Keyboard and typing to jump work
+   as before. Only in a style: in Plain the lists stay the system's own. */
+:where(.fx[data-fx]) select, :where(.fx[data-fx]) select::picker(select) { appearance: base-select; }
+:where(.fx[data-fx]) select { align-items: center; }
+:where(.fx[data-fx]) select::picker-icon { color: var(--muted); transition: rotate .15s; }
+:where(.fx[data-fx]) select:open::picker-icon { rotate: 180deg; }
+:where(.fx[data-fx]) select::picker(select) {
+  margin: 2px 0; padding: 4px; max-height: min(320px, 60vh); color: var(--ink); background: var(--panel);
+  border: 1px solid var(--fx-panel-edge); border-radius: var(--fx-panel-radius); outline: var(--fx-panel-outline, none); outline-offset: var(--fx-panel-outline-offset, 0);
+  box-shadow: 0 2px 4px rgb(0 0 0 / .08), 0 10px 32px rgb(0 0 0 / .22);
+}
+:where(.fx[data-fx]) select option { position: relative; padding: .3rem .6rem .3rem .5rem; border-radius: 4px; background: transparent; color: var(--ink-2); font-size: 14px; }
+:where(.fx[data-fx]) select option::checkmark { color: var(--accent); }
+:where(.fx[data-fx]) select option:checked { color: var(--ink); font-weight: 600; }
+:where(.fx[data-fx]) select option:disabled { color: var(--muted); }
+:where(.fx[data-fx]) select optgroup { font-weight: 600; color: var(--muted); font-size: 12px; }
+.fx[data-fx] select option:is(:hover, :focus-visible) { background: var(--fx-row-paint); box-shadow: var(--fx-row-shadow, none); color: var(--ink); outline: none; }
+.fx[data-fx] select option:is(:hover, :focus-visible)::before {
   content: var(--fx-row-mark, none); position: absolute; left: var(--fx-row-mark-left, 0); top: var(--fx-row-mark-top, 4px); bottom: var(--fx-row-mark-bottom, auto);
   width: var(--fx-row-mark-width, 4px); height: var(--fx-row-mark-height, auto); margin-top: var(--fx-row-mark-shift, 0); background: var(--fx-row-mark-paint, var(--accent)); clip-path: var(--fx-row-mark-clip, none);
 }

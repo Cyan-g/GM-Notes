@@ -16,6 +16,8 @@ export interface ThemeSettings {
   textFont?: string
   /** Decorative style: frames, heading rules, fields and HP bars (drawn in the theme's colours); plain when unset. */
   flourish?: string
+  /** The saved theme picked (its colours are in `colors`, on top of its `preset`, so the world looks right anywhere). */
+  saved?: string
 }
 export interface Preset { id: string; name: string; note: string; dark: boolean; colors: ThemeColors }
 
@@ -155,6 +157,58 @@ export function applyTheme() {
 export function startTheme() {
   watchEffect(() => { void JSON.stringify(state.db?.meta.theme); void systemDark.value; applyTheme() })
   darkQuery.addEventListener('change', e => { systemDark.value = e.matches })
+}
+
+// ---------- themes the user saved: their own colours, kept on this computer for every world ----------
+
+/** A theme made from changed colours: its name, the theme it was made from, and all five colours. */
+export interface SavedTheme { id: string; name: string; base: string; colors: ThemeColors }
+const SAVED_KEY = 'gm-notes:saved-themes'
+function readSaved(): SavedTheme[] {
+  try { const v = JSON.parse(localStorage.getItem(SAVED_KEY) ?? '[]'); return Array.isArray(v) ? v.filter(t => t?.id && t.name && t.colors?.bg) : [] } catch { return [] }
+}
+/** The saved themes (GM Notes' own storage on this computer: every world here has them, players and other devices don't). */
+export const savedThemes = ref<SavedTheme[]>(readSaved())
+function writeSaved() { try { localStorage.setItem(SAVED_KEY, JSON.stringify(savedThemes.value)) } catch { /* not saved; they're there until the app closes */ } }
+const baseColors = (id: string) => (PRESETS.find(p => p.id === id) ?? PRESETS[0]).colors
+/** The colours that differ from a theme's own (what's kept in the world as its changes). */
+function changesFrom(base: string, c: ThemeColors): Partial<ThemeColors> | undefined {
+  const b = baseColors(base), out: Partial<ThemeColors> = {}
+  for (const k of Object.keys(c) as (keyof ThemeColors)[]) if (c[k].toLowerCase() !== b[k].toLowerCase()) out[k] = c[k]
+  return Object.keys(out).length ? out : undefined
+}
+/** Save the colours as they are now as a theme called `name`, and use it. */
+export function saveTheme(name: string): SavedTheme {
+  const s = settings()
+  const t: SavedTheme = { id: crypto.randomUUID(), name: name.trim().slice(0, 40) || 'My theme', base: activePreset(s).id, colors: { ...effectiveColors(s) } }
+  savedThemes.value = [...savedThemes.value, t]
+  writeSaved()
+  setTheme({ saved: t.id })
+  return t
+}
+/** Use a saved theme: its colours, on top of the theme it was made from. */
+export function useSaved(t: SavedTheme) { setTheme({ preset: t.base, colors: changesFrom(t.base, t.colors), saved: t.id }) }
+/** The saved theme takes the colours as they are now. */
+export function updateSaved(id: string) {
+  savedThemes.value = savedThemes.value.map(t => (t.id === id ? { ...t, colors: { ...effectiveColors(settings()) } } : t))
+  writeSaved()
+}
+export function renameSaved(id: string, name: string) {
+  savedThemes.value = savedThemes.value.map(t => (t.id === id ? { ...t, name: name.trim().slice(0, 40) || t.name } : t))
+  writeSaved()
+}
+/** Delete a saved theme; a world using it keeps its colours. */
+export function deleteSaved(id: string) {
+  savedThemes.value = savedThemes.value.filter(t => t.id !== id)
+  writeSaved()
+  if (settings().saved === id) setTheme({ saved: undefined })
+}
+/** The picked saved theme, and whether the colours have been changed since it was saved. */
+export function savedState(s = settings()): { theme?: SavedTheme; changed: boolean } {
+  const theme = s.saved ? savedThemes.value.find(t => t.id === s.saved) : undefined
+  if (!theme) return { changed: false }
+  const now = effectiveColors(s)
+  return { theme, changed: (Object.keys(now) as (keyof ThemeColors)[]).some(k => now[k].toLowerCase() !== theme.colors[k].toLowerCase()) }
 }
 
 export function setTheme(patch: Partial<ThemeSettings>) {

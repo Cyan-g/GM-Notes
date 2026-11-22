@@ -1827,9 +1827,21 @@ button.live-tag { cursor: pointer; }
 .wz-had { margin-left: 6px; font-size: 0.85em; opacity: 0.75; }
 .wz-filter { max-width: 18rem; }
 .wz-kit { display: flex; gap: .5rem; align-items: baseline; margin: .3rem 0; }
-.wz-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: .5rem 1rem; }
-.wz-form label, .wz-story { display: grid; gap: .2rem; font-size: 13px; color: var(--muted); }
-.wz-story { margin-top: .8rem; }
+/* the Name & story step: who (name big, player, campaign), then looks and story side by side */
+.wz-who { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .6rem 1.4rem; margin-bottom: 1rem; }
+.wz-who label, .wz-looks label { display: grid; gap: .2rem; font-size: 13px; color: var(--muted); }
+.wz-name { flex: 2 1 20rem; }
+.wz-name input { font: 600 1.35rem var(--serif); padding: .35rem .6rem; }
+.wz-player { flex: 1 1 10rem; }
+.wz-who .wz-campaigns { flex: 1 1 14rem; display: grid; gap: .2rem; font-size: 13px; color: var(--muted); }
+.wz-campaign-list { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; min-height: 2.2rem; color: var(--ink); }
+.wz-about { display: grid; grid-template-columns: minmax(16rem, 2fr) minmax(0, 3fr); gap: 1rem; align-items: stretch; }
+@media (max-width: 900px) { .wz-about { grid-template-columns: 1fr; } }
+.wz-about > .card { margin: 0; display: flex; flex-direction: column; gap: .5rem; }
+.wz-about h3 { margin: 0; }
+.wz-looks-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem .8rem; }
+.wz-looks-grid .wide { grid-column: 1 / -1; }
+.wz-story textarea { flex: 1; min-height: 14rem; resize: vertical; }
 .wz-sum-head { font-size: 1.1rem; }
 .wz-sum-scores { display: flex; flex-wrap: wrap; gap: .5rem; margin: .5rem 0 .8rem; }
 .wz-score { display: grid; justify-items: center; min-width: 3.6rem; padding: .3rem; border: 1px solid var(--line); border-radius: 8px; }
@@ -1905,8 +1917,9 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .levelup section { margin-bottom: .8rem; }
 .levelup h3 { margin: 0 0 .3rem; font-size: 1rem; }
 .lu-hp { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; align-items: center; }
-.lu-hp label { display: inline-flex; gap: .35rem; align-items: center; }
-.lu-roll { width: 4rem; }
+.lu-hp label { display: inline-flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+/* room for two digits beside the spinner (a d10 or d12) */
+.lu-roll { width: 5rem; min-width: 5rem; }
 .lu-gain { color: var(--accent); }
 .lu-feats { margin: 0; padding-left: 1.1rem; display: grid; gap: .3rem; }
 .lu-text { color: var(--ink-2, var(--muted)); }

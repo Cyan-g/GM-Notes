@@ -16,17 +16,31 @@ const dropCampaign = (id: string) => { wizard.d.campaigns = chosen.value.filter(
 </script>
 
 <template>
-  <div class="wz-form">
-    <label>Name <input :value="d.name" placeholder="The character's name" @input="wizard.d.name = val($event)" /></label>
-    <label v-if="!playerMode">Player <input :value="d.player" @input="wizard.d.player = val($event)" /></label>
+  <!-- who: the name big, with player and campaign beside it; then looks and story side by side -->
+  <div class="wz-who">
+    <label class="wz-name"><span>Name</span><input :value="d.name" placeholder="The character's name" @input="wizard.d.name = val($event)" /></label>
+    <label v-if="!playerMode" class="wz-player"><span>Player</span><input :value="d.player" @input="wizard.d.player = val($event)" /></label>
     <div class="wz-campaigns"><span>Campaign</span>
-      <span v-for="id in chosen" :key="id" class="chip">{{ get(id)?.name ?? id }} <button type="button" class="link-btn" title="Not in this campaign" @click="dropCampaign(id)">×</button></span>
-      <Dropdown v-if="campaigns.length" compact value="" aria-label="Add a campaign" @change="addCampaign(($event.target as HTMLSelectElement).value)">
-        <option value="">{{ chosen.length ? '＋ another…' : 'Choose…' }}</option>
-        <option v-for="c in campaigns" :key="c.id" :value="c.id">{{ c.name }}</option>
-      </Dropdown>
+      <span class="wz-campaign-list">
+        <span v-for="id in chosen" :key="id" class="chip">{{ get(id)?.name ?? id }} <button type="button" class="link-btn" title="Not in this campaign" @click="dropCampaign(id)">×</button></span>
+        <Dropdown v-if="campaigns.length" compact value="" aria-label="Add a campaign" @change="addCampaign(($event.target as HTMLSelectElement).value)">
+          <option value="">{{ chosen.length ? '＋ another…' : 'Choose…' }}</option>
+          <option v-for="c in campaigns" :key="c.id" :value="c.id">{{ c.name }}</option>
+        </Dropdown>
+        <span v-if="!chosen.length && !campaigns.length" class="muted small">none in this world</span>
+      </span>
     </div>
-    <label v-for="(v, k) in d.looks" :key="k">{{ k.charAt(0).toUpperCase() + k.slice(1) }} <input :value="v" @input="wizard.d.looks = { ...d.looks, [k]: val($event) }" /></label>
   </div>
-  <label class="wz-story">Story <textarea rows="6" :value="d.story" placeholder="Where they come from, what they want… (Markdown)" @input="wizard.d.story = val($event)" /></label>
+  <div class="wz-about">
+    <section class="card wz-looks">
+      <h3>Looks</h3>
+      <div class="wz-looks-grid">
+        <label v-for="(v, k) in d.looks" :key="k" :class="{ wide: k === 'clothing' }"><span>{{ k.charAt(0).toUpperCase() + k.slice(1) }}</span><input :value="v" @input="wizard.d.looks = { ...d.looks, [k]: val($event) }" /></label>
+      </div>
+    </section>
+    <section class="card wz-story">
+      <h3>Story</h3>
+      <textarea :value="d.story" placeholder="Where they come from, what they want… (Markdown)" aria-label="Story" @input="wizard.d.story = val($event)" />
+    </section>
+  </div>
 </template>

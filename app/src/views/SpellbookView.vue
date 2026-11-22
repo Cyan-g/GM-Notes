@@ -198,12 +198,25 @@ function forget(id: Id) {
   })
 }
 const isPrepared = (id: Id) => book.value.prepared.includes(id) || book.value.always.includes(id)
-function prepare(id: Id) { learn(id); if (!isPrepared(id)) { book.value.prepared.push(id); touch() } }
-function unprepare(id: Id) { book.value.prepared = book.value.prepared.filter(x => x !== id); book.value.always = book.value.always.filter(x => x !== id); touch() }
+/** Prepare a spell, unless the prepared spells are at the limit (cantrips and always-prepared ones don't count). */
+function prepare(id: Id) {
+  if (isCantrip(id)) { learn(id); return }
+  if (isPrepared(id)) return
+  if (atLimit.value && !alwaysIds.value.has(id)) { noteUndo(`${preparedLimit.value} of ${preparedLimit.value} spells prepared: unprepare one first`, undefined, 5000); return }
+  learn(id); book.value.prepared.push(id); touch()
+}
+/** Unprepare a spell (a cantrip stays: it's always ready). */
+function unprepare(id: Id) {
+  if (isCantrip(id)) return
+  book.value.prepared = book.value.prepared.filter(x => x !== id); book.value.always = book.value.always.filter(x => x !== id); touch()
+}
 /** Always prepared <-> prepared (always-prepared spells don't count against the limit). */
 function toggleAlways(id: Id) {
   const b = book.value
-  if (b.always.includes(id)) { b.always = b.always.filter(x => x !== id); b.prepared.push(id) }
+  if (b.always.includes(id)) {
+    if (atLimit.value) { noteUndo(`${preparedLimit.value} of ${preparedLimit.value} spells prepared: it can't count as prepared now`, undefined, 5000); return }
+    b.always = b.always.filter(x => x !== id); b.prepared.push(id)
+  }
   else { b.prepared = b.prepared.filter(x => x !== id); b.always.push(id) }
   touch()
 }
@@ -212,7 +225,8 @@ function toggleAlways(id: Id) {
 const spells = (ids: Id[]) => ids.map(id => get(id)).filter((e): e is Entry => !!e)
   .sort((a, b) => spellLevel(a) - spellLevel(b) || a.name.localeCompare(b.name))
 const knownList = computed(() => spells([...book.value.known, ...[...freeKnown.value.keys()].filter(id => !book.value.known.includes(id))]))
-const preparedList = computed(() => spells([...new Set([...book.value.always, ...book.value.prepared, ...given.value.keys()])]))
+// known cantrips are always ready: in the list, locked (no drag, star or unprepare)
+const preparedList = computed(() => spells([...new Set([...book.value.always, ...book.value.prepared, ...given.value.keys(), ...book.value.known.filter(id => isCantrip(id))])]))
 /** Always prepared: by hand, or given by a feature or item. */
 // cantrips never count as prepared spells, and a spell that's always prepared (a domain or oath spell, even one the
 // player had prepared before) doesn't use up a preparation
@@ -221,6 +235,9 @@ const alwaysIds = computed(() => new Set([...book.value.always, ...given.value.k
 const alwaysCount = computed(() => alwaysIds.value.size)
 /** The prepared spells that count against the limit. */
 const preparedCount = computed(() => book.value.prepared.filter(id => !isCantrip(id) && !alwaysIds.value.has(id)).length)
+/** The limit: the one typed in, else the classes' (by level). */
+const preparedLimit = computed(() => book.value.preparedMax ?? (lines.value.reduce((t, l) => t + (basicsOf(l.class).prepared?.[Math.min(20, l.level) - 1] ?? 0), 0) || undefined))
+const atLimit = computed(() => preparedLimit.value != null && preparedCount.value >= preparedLimit.value)
 /** What the spell rolls, at the caster's level and with their spellcasting modifier (a trait's spell: its own ability). */
 function rolls(e: Entry | undefined, ability?: Ability) {
   if (!e) return ''
@@ -355,7 +372,7 @@ const SOURCE_HINT: Record<string, string> = { list: 'changed after a long rest',
 /** The known spells matching the search box. */
 const knownQ = ref('')
 const knownShown = computed(() => { const q = knownQ.value.trim().toLowerCase(); return q ? knownList.value.filter(e => e.name.toLowerCase().includes(q)) : knownList.value })
-const full = computed(() => book.value.preparedMax != null && preparedCount.value > book.value.preparedMax)
+const full = computed(() => preparedLimit.value != null && preparedCount.value > preparedLimit.value)
 </script>
 
 <template>
@@ -386,7 +403,7 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
           <label><span>Spell attack</span><input type="number" :value="book.attackBonus" @change="setNum('attackBonus', ($event.target as HTMLInputElement).value)" /></label>
           <label><span>Save DC</span><input type="number" :value="book.saveDC" @change="setNum('saveDC', ($event.target as HTMLInputElement).value)" /></label>
         </template>
-        <label><span>Prepared</span><b v-flash.neutral="preparedCount" :class="{ over: full }">{{ preparedCount }}</b> / <input type="number" min="0" :value="book.preparedMax" @change="setNum('preparedMax', ($event.target as HTMLInputElement).value)" /></label>
+        <label><span>Prepared</span><b v-flash.neutral="preparedCount" :class="{ over: full }">{{ preparedCount }}</b> / <input type="number" min="0" :value="book.preparedMax" :placeholder="preparedLimit != null ? String(preparedLimit) : ''" @change="setNum('preparedMax', ($event.target as HTMLInputElement).value)" /></label>
         <label v-if="cantripsMax"><span>Cantrips</span><b :class="{ over: cantripsKnown > cantripsMax }">{{ cantripsKnown }}</b> / {{ cantripsMax }}</label>
       </section>
 
@@ -435,7 +452,7 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
               <td class="sbk-actions">
                 <span v-if="given.has(e.id)" class="muted small" :title="`Always prepared: from ${given.get(e.id)!.from}`">always</span>
                 <button v-else-if="e.fields.level === 'Cantrip'" class="chip-btn" :class="{ on: isKnownCantrip(e.id) }" :aria-pressed="isKnownCantrip(e.id)" @click="learnCantrip(e.id)">{{ isKnownCantrip(e.id) ? '✓ Known' : 'Learn' }}</button>
-                <button v-else class="chip-btn" :class="{ on: isPrepared(e.id) }" :aria-pressed="isPrepared(e.id)" @click="togglePrepared(e.id)">{{ isPrepared(e.id) ? '✓ Prepared' : 'Prepare' }}</button>
+                <button v-else class="chip-btn" :class="{ on: isPrepared(e.id) }" :aria-pressed="isPrepared(e.id)" :disabled="!isPrepared(e.id) && atLimit" :title="!isPrepared(e.id) && atLimit ? `${preparedLimit} of ${preparedLimit} prepared: unprepare one first` : undefined" @click="togglePrepared(e.id)">{{ isPrepared(e.id) ? '✓ Prepared' : 'Prepare' }}</button>
               </td>
             </tr>
           </tbody>
@@ -453,15 +470,17 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
         <table class="grid">
           <thead><tr><th>Spell</th><th>Level</th><th></th></tr></thead>
           <tbody>
-            <tr v-for="e in knownShown" :key="e.id" :class="{ dim: isPrepared(e.id), dragging: dragging?.id === e.id }"
-                :draggable="!isPrepared(e.id)" :title="isPrepared(e.id) ? '' : 'Drag to Prepared spells'"
+            <tr v-for="e in knownShown" :key="e.id" :class="{ dim: isPrepared(e.id) || isCantrip(e.id), dragging: dragging?.id === e.id }"
+                :draggable="!isPrepared(e.id) && !isCantrip(e.id)" :title="isPrepared(e.id) || isCantrip(e.id) ? '' : 'Drag to Prepared spells'"
                 @dragstart="dragStart($event, e.id, 'known')" @dragend="dragEnd">
               <td><a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a> <span v-if="e.fields.ritual" class="tag-ritual" title="A ritual: it can be cast in 10 more minutes without a spell slot">ritual</span></td>
               <td>{{ levelLabel(e) }}</td>
               <td class="sbk-actions">
                 <span v-if="freeKnown.has(e.id)" class="muted small" :title="`In the spellbook for free, from ${freeKnown.get(e.id)}`">{{ freeKnown.get(e.id) }}</span>
-                <span v-if="isPrepared(e.id)" class="muted small">prepared</span>
-                <button v-else-if="e.fields.level !== 'Cantrip'" class="chip-btn" title="Prepare it (or drag it to Prepared spells)" @click="prepare(e.id)">Prepare</button>
+                <span v-if="isCantrip(e.id)" class="muted small" title="Cantrips are always ready">cantrip</span>
+                <span v-else-if="given.has(e.id)" class="muted small" :title="`Always prepared: from ${given.get(e.id)!.from}`">always</span>
+                <button v-else-if="isPrepared(e.id)" class="chip-btn on" aria-pressed="true" title="Prepared. Click to unprepare it" @click="unprepare(e.id)">✓ Prepared</button>
+                <button v-else class="chip-btn" :disabled="atLimit" :title="atLimit ? `${preparedLimit} of ${preparedLimit} prepared: unprepare one first` : 'Prepare it (or drag it to Prepared spells)'" @click="prepare(e.id)">Prepare</button>
                 <!-- Ritual Adept: a Wizard casts a ritual from the book without preparing it -->
                 <button v-if="e.fields.ritual && !isPrepared(e.id) && bookClasses.length && caster" class="chip-btn" title="Cast it as a ritual from the book: 10 minutes longer, no slot, no need to prepare it" @click="castRitual(e)">Ritual</button>
                 <button v-if="!freeKnown.has(e.id)" class="link-btn x" title="Remove from the spellbook" @click="forget(e.id)">✕</button>
@@ -479,14 +498,15 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
       <div class="sbk-col">
       <section v-if="!noCasting || preparedList.length" class="card sbk-list drop-zone" :class="{ over: over === 'prepared' }"
                @dragover="dragOver($event, 'prepared')" @dragleave.self="over = null" @drop.prevent="drop('prepared')">
-        <h3>Prepared spells <span class="muted small" :class="{ over: full }" title="Cantrips and always-prepared spells don't count">{{ preparedCount }}<template v-if="book.preparedMax != null"> / {{ book.preparedMax }}</template><template v-if="alwaysCount"> + {{ alwaysCount }} always</template></span></h3>
+        <h3>Prepared spells <span class="muted small" :class="{ over: full }" title="Cantrips and always-prepared spells don't count">{{ preparedCount }}<template v-if="preparedLimit != null"> / {{ preparedLimit }}</template><template v-if="alwaysCount"> + {{ alwaysCount }} always</template></span></h3>
         <table v-if="preparedList.length" class="grid">
           <thead><tr><th>Spell</th><th>Level</th><th>Casting time</th><th>Duration</th><th>Attack / save</th><th title="Concentration · Ritual">C/R</th><th></th></tr></thead>
           <tbody>
-            <tr v-for="e in preparedList" :key="e.id" :class="{ dragging: dragging?.id === e.id }" :draggable="!onlyGiven(e.id)"
-                :title="onlyGiven(e.id) ? `Always prepared: from ${given.get(e.id)!.from}` : 'Drag back to Known spells to unprepare'" @dragstart="dragStart($event, e.id, 'prepared')" @dragend="dragEnd">
+            <tr v-for="e in preparedList" :key="e.id" :class="{ dragging: dragging?.id === e.id }" :draggable="!onlyGiven(e.id) && !isCantrip(e.id)"
+                :title="isCantrip(e.id) ? 'A cantrip: always ready' : onlyGiven(e.id) ? `Always prepared: from ${given.get(e.id)!.from}` : 'Drag back to Known spells to unprepare'" @dragstart="dragStart($event, e.id, 'prepared')" @dragend="dragEnd">
               <td>
-                <button v-if="onlyGiven(e.id)" class="link-btn always on" disabled :title="`Always prepared: from ${given.get(e.id)!.from}`"><AppIcon ui="star" /></button>
+                <span v-if="isCantrip(e.id)" class="link-btn always" aria-hidden="true" />
+                <button v-else-if="onlyGiven(e.id)" class="link-btn always on" disabled :title="`Always prepared: from ${given.get(e.id)!.from}`"><AppIcon ui="star" /></button>
                 <button v-else class="link-btn always" :class="{ on: book.always.includes(e.id) }" :title="alwaysTitle(e.id)" @click="toggleAlways(e.id)"><AppIcon ui="star" /></button>
                 <a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a> <span v-if="e.fields.ritual" class="tag-ritual" title="A ritual: it can be cast in 10 more minutes without a spell slot">ritual</span>
                 <span v-if="given.has(e.id)" class="muted small sbk-from" :title="given.get(e.id)!.how === 'atWill' ? 'At will: no slot needed' : 'Always prepared: cast with your own spell slots'"> · {{ given.get(e.id)!.from }}</span>

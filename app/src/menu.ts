@@ -117,7 +117,7 @@ export const MENUS: TopMenu[] = [
     home: '#/spellbook',
     owns: r => typeOf(r) === 'spell' || dashOf(r) === 'spells' || r.name === 'spellbook',
     items: () => [
-      { label: 'Spellbook', uiIcon: 'spellbook', href: '#/spellbook', hint: bookNow() ? `${bookNow()!.prepared.length} prepared` : undefined },
+      { label: 'Spellbook', uiIcon: 'spellbook', href: '#/spellbook', hint: bookNow() ? `${bookNow()!.prepared.filter(id => get(id)?.fields.level !== 'Cantrip').length} prepared` : undefined },
       SEP,
       { label: 'All spells', typeIcon: 'spell', href: hrefDashboard('spells', 'All spells'), hint: count('spell') },
     ],

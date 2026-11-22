@@ -292,7 +292,7 @@ function apply() {
         <div class="lu-hp">
           <label><input v-model="how" type="radio" value="avg" /> Average: {{ size / 2 + 1 }} {{ signed(con) }} CON</label>
           <label><input v-model="how" type="radio" value="roll" /> Rolled {{ die }}:
-            <input v-model.number="roll" type="number" min="1" :max="size" class="lu-roll" :disabled="how !== 'roll'" placeholder="?" @focus="how = 'roll'" /> {{ signed(con) }} CON</label>
+            <input v-model.number="roll" type="number" min="1" :max="size" class="lu-roll" placeholder="?" :aria-label="`What the ${die} showed`" @focus="how = 'roll'" @input="how = 'roll'" /> {{ signed(con) }} CON</label>
           <b v-if="gain != null" class="lu-gain">+{{ gain }} HP</b>
         </div>
       </section>

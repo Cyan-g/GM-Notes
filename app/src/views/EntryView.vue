@@ -88,7 +88,7 @@ const tabs = computed(() => {
   const s = x.fields.sheet
   return [
     { href: hrefTab(x.id, 'inventory'), on: onInv.value, icon: 'otherItems' as UiIcon, label: 'Inventory', count: s?.inventory?.length },
-    { href: hrefTab(x.id, 'spellbook'), on: onBook.value, icon: 'spellbook' as UiIcon, label: 'Spellbook', count: s?.spellbook?.prepared?.length },
+    { href: hrefTab(x.id, 'spellbook'), on: onBook.value, icon: 'spellbook' as UiIcon, label: 'Spellbook', count: s?.spellbook?.prepared?.filter(id => get(id)?.fields.level !== 'Cantrip').length },
     { href: hrefTab(x.id, 'crafting'), on: onBench.value, icon: 'workbench' as UiIcon, label: 'Workbench', count: s?.crafting?.known?.length },
     { href: hrefTab(x.id, 'companions'), on: onPals.value, icon: 'link' as UiIcon, label: 'Companions', count: s?.companions?.length },
     family,

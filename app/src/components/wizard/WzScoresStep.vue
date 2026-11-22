@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The wizard's ability scores step: the base scores (standard array, point buy or typed in), the bonus from the
 // background, the species or typed by hand, and what the feats add.
+import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import type { Id } from '../../model/types'
 import { POINTS, POINT_COST, STANDARD_ARRAY, bonusAdds, bonusOf, featLevels, pointsSpent, wizard } from '../../wizard'
@@ -54,10 +55,10 @@ const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20
       <tr v-for="a in ABILITY_KEYS" :key="a">
         <th>{{ ABILITY_NAME[a] }}</th>
         <td>
-          <select v-if="d.method === 'array'" :value="d.base[a] ?? ''" @change="setBase(a, val($event) ? Number(val($event)) : undefined)">
+          <Dropdown v-if="d.method === 'array'" :value="d.base[a] ?? ''" @change="setBase(a, val($event) ? Number(val($event)) : undefined)">
             <option value="">—</option>
             <option v-for="n in [...new Set(arrayLeft(a))]" :key="n" :value="n">{{ n }}</option>
-          </select>
+          </Dropdown>
           <span v-else-if="d.method === 'pointbuy'" class="wz-buy">
             <button type="button" class="chip-btn" @click="buy(a, -1)">−</button><b>{{ d.base[a] ?? 8 }}</b><button type="button" class="chip-btn" @click="buy(a, 1)">＋</button>
           </span>

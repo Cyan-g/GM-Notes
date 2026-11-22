@@ -3,6 +3,7 @@
 // by level, feat levels, the subclass level and multiclassing. Each shows the class's current value; the 12 SRD classes
 // start from the app's built-in values (marked "standard"), and anything changed here is stored on the entry and wins.
 // "Reset" puts one back to the standard value.
+import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import type { ClassBasics } from '../../model/types'
 import { builtInBasics } from '../../classRules'
@@ -66,7 +67,7 @@ const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 's
 
     <div class="cb-grid">
       <label class="cb-row"><span>Hit die</span>
-        <select :value="cur.hitDie" @change="set('hitDie', ($event.target as HTMLSelectElement).value)"><option v-for="d in DICE" :key="d" :value="d">{{ d }}</option></select>
+        <Dropdown :value="cur.hitDie" @change="set('hitDie', ($event.target as HTMLSelectElement).value)"><option v-for="d in DICE" :key="d" :value="d">{{ d }}</option></Dropdown>
         <span class="cb-tag" :class="tag('hitDie')">{{ tag('hitDie') }}</span><button v-if="isOwn('hitDie')" type="button" class="link-btn small" @click="reset('hitDie')">Reset</button></label>
       <label class="cb-row"><span>Subclass at level</span>
         <input type="number" min="1" max="20" :value="cur.subclassLevel" @change="set('subclassLevel', num($event))" />
@@ -90,8 +91,8 @@ const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 's
     <h4>Spellcasting <span class="cb-tag" :class="isOwn('caster') || isOwn('casting') ? 'changed' : tag('caster')">{{ isOwn('caster') || isOwn('casting') ? 'changed' : tag('caster') }}</span>
       <button v-if="isOwn('caster') || isOwn('casting')" type="button" class="link-btn small" @click="reset('caster'); reset('casting')">Reset</button></h4>
     <div class="cb-line">
-      <select :value="cur.caster ?? 'none'" aria-label="Spell slots" @change="set('caster', ($event.target as HTMLSelectElement).value as ClassBasics['caster'])"><option v-for="c in CASTERS" :key="c.id" :value="c.id">{{ c.label }}</option></select>
-      <select v-if="casts" :value="cur.casting ?? ''" aria-label="Casting ability" @change="set('casting', (($event.target as HTMLSelectElement).value || undefined) as ClassBasics['casting'])"><option value="">Casting ability…</option><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ ABILITY_SHORT[a] }}</option></select>
+      <Dropdown :value="cur.caster ?? 'none'" aria-label="Spell slots" @change="set('caster', ($event.target as HTMLSelectElement).value as ClassBasics['caster'])"><option v-for="c in CASTERS" :key="c.id" :value="c.id">{{ c.label }}</option></Dropdown>
+      <Dropdown v-if="casts" :value="cur.casting ?? ''" aria-label="Casting ability" @change="set('casting', (($event.target as HTMLSelectElement).value || undefined) as ClassBasics['casting'])"><option value="">Casting ability…</option><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ ABILITY_SHORT[a] }}</option></Dropdown>
     </div>
     <template v-if="casts">
       <div class="cb-levels">

@@ -3,6 +3,7 @@
 // points), the dice and whether the spellcasting modifier is added; then how it grows — a cantrip's dice at character
 // levels 5, 11 and 17, or more dice per slot level above the spell's — and a note on when or to whom. Underneath, the
 // roll as it reads in the Spellbook.
+import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import type { Entry, SpellRoll } from '../../model/types'
 import { DAMAGE } from '../../model/schema'
@@ -32,14 +33,14 @@ const preview = (r: SpellRoll) => [rollText(props.spell, r), growthText(props.sp
   <div class="spell-rolls">
     <div v-for="(r, i) in list" :key="i" class="roll-card">
       <div class="roll-line">
-        <select :value="r.kind" aria-label="What it rolls" @change="put(i, { kind: val($event) as SpellRoll['kind'] })">
+        <Dropdown :value="r.kind" aria-label="What it rolls" @change="put(i, { kind: val($event) as SpellRoll['kind'] })">
           <option value="damage">Damage</option><option value="healing">Healing</option><option value="tempHp">Temp HP</option>
-        </select>
+        </Dropdown>
         <input class="effect-value roll-dice" :value="r.dice" placeholder="2d10" aria-label="Dice" @change="put(i, { dice: val($event).trim() || '1d6' })" />
-        <select v-if="r.kind === 'damage'" :value="r.type ?? ''" aria-label="Damage type" @change="put(i, { type: val($event) || undefined })">
+        <Dropdown v-if="r.kind === 'damage'" :value="r.type ?? ''" aria-label="Damage type" @change="put(i, { type: val($event) || undefined })">
           <option value="">any type</option>
           <option v-for="t in DAMAGE" :key="t" :value="t">{{ t }}</option>
-        </select>
+        </Dropdown>
         <label class="small effect-check" title="Plus the caster's spellcasting ability modifier"><input type="checkbox" :checked="!!r.mod" @change="put(i, { mod: ($event.target as HTMLInputElement).checked })" /> + spellcasting modifier</label>
         <button type="button" class="link-btn roll-x" title="Remove this roll" @click="remove(i)">×</button>
       </div>

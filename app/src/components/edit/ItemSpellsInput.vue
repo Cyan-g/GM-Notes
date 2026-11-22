@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The spells an item lets its user cast (items.ts), as a table: the spell, how it's cast, what it costs in charges
 // and the level it's cast at (blank: its own).
+import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import type { ItemSpell } from '../../model/types'
 import { howCast } from '../../items'
@@ -32,9 +33,9 @@ const num = (ev: Event) => Number((ev.target as HTMLInputElement).value) || unde
       <tbody>
         <tr v-for="(x, i) in list" :key="i" :title="howCast(x)">
           <td><EntryPicker :model-value="x.spell" :types="['spell']" @update:model-value="v => v ? put(i, { spell: v }) : remove(i)" /></td>
-          <td><select :value="x.how" aria-label="How it's cast" @change="put(i, { how: ($event.target as HTMLSelectElement).value as ItemSpell['how'] })">
+          <td><Dropdown compact :value="x.how" aria-label="How it's cast" @change="put(i, { how: ($event.target as HTMLSelectElement).value as ItemSpell['how'] })">
             <option v-for="h in HOW" :key="h.id" :value="h.id">{{ h.label }}</option>
-          </select></td>
+          </Dropdown></td>
           <td class="num"><input v-if="x.how === 'charges'" type="number" min="1" class="effect-value" :value="x.cost ?? 1" aria-label="Charges it costs" @change="put(i, { cost: num($event) ?? 1 })" /><span v-else class="muted">—</span></td>
           <td class="num"><input type="number" min="1" max="9" class="effect-value" :value="x.level ?? ''" placeholder="—" aria-label="Level it's cast at" @change="put(i, { level: num($event) })" /></td>
           <td><button type="button" class="x" title="Remove this spell" @click="remove(i)">×</button></td>

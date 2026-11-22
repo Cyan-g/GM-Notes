@@ -5,6 +5,7 @@
 // A card whose text doesn't fit gets smaller text first (down to 6.5 pt); then its end moves, sentence by sentence,
 // to a card marked "(continued)" right after it. The layout is measured at 100 %, as it prints.
 // In print only the pages are shown (see style.css, @media print).
+import Dropdown from './Dropdown.vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { ui } from '../ui'
 import { cardStyle, cardsOf, kindColor, setCardStyle, type Card, type CardStyle } from '../cards'
@@ -222,20 +223,20 @@ const count = computed(() => pieces.value.length)
         <aside v-if="showStyle" class="print-style">
           <h3>Style <span class="muted small">kept with the world</span></h3>
           <label class="ps-row"><span>Colour</span>
-            <select :value="style.color" @change="set_({ color: ($event.target as HTMLSelectElement).value as CardStyle['color'] })">
+            <Dropdown :value="style.color" @change="set_({ color: ($event.target as HTMLSelectElement).value as CardStyle['color'] })">
               <option value="theme">Theme accent</option><option value="kind">By school / rarity</option><option value="custom">One colour…</option>
-            </select>
+            </Dropdown>
             <input v-if="style.color === 'custom'" type="color" :value="style.custom || '#8c2f1f'" aria-label="Card colour" @input="set_({ custom: ($event.target as HTMLInputElement).value })" />
           </label>
           <label class="ps-row"><span>Heading font</span>
-            <select :value="style.headFont" @change="set_({ headFont: ($event.target as HTMLSelectElement).value })">
+            <Dropdown :value="style.headFont" @change="set_({ headFont: ($event.target as HTMLSelectElement).value })">
               <option value="theme">Theme's heading font</option><option v-for="f in FONTS" :key="f.id" :value="f.id">{{ f.name }}</option>
-            </select>
+            </Dropdown>
           </label>
           <label class="ps-row"><span>Text font</span>
-            <select :value="style.textFont" @change="set_({ textFont: ($event.target as HTMLSelectElement).value })">
+            <Dropdown :value="style.textFont" @change="set_({ textFont: ($event.target as HTMLSelectElement).value })">
               <option value="theme">Theme's text font</option><option v-for="f in TEXT_FONTS" :key="f.id" :value="f.id">{{ f.name }}</option>
-            </select>
+            </Dropdown>
           </label>
           <div class="ps-row"><span>Text size</span>
             <div class="seg">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Edit every relation of one entry. A change shows up on the other entry's page too.
+import Dropdown from '../Dropdown.vue'
 import { computed, ref } from 'vue'
 import type { Entry, EntryType, Relation, RelationKind } from '../../model/types'
 import { RELATION_KINDS } from '../../model/schema'
@@ -87,10 +88,10 @@ function add(other: string) {
     <div class="rel-add">
       <div class="seg wrap rel-quick">
         <button v-for="o in quick" :key="o.value" type="button" :class="{ on: newKind === o.value }" @click="newKind = o.value">{{ o.label }}</button>
-        <select :value="quick.some(o => o.value === newKind) ? '' : newKind" title="Other kinds of relation" @change="newKind = ($event.target as HTMLSelectElement).value || newKind">
+        <Dropdown compact :value="quick.some(o => o.value === newKind) ? '' : newKind" title="Other kinds of relation" @change="newKind = ($event.target as HTMLSelectElement).value || newKind">
           <option value="">more…</option>
           <option v-for="o in OPTIONS.filter(o => !quick.includes(o))" :key="o.value" :value="o.value">{{ o.label }}</option>
-        </select>
+        </Dropdown>
       </div>
       <EntryPicker add :exclude="[entry.id]" :types="newOther" :placeholder="`${OPTIONS.find(o => o.value === newKind)?.label ?? 'Add'}: type a name…`" @pick="add" />
     </div>
@@ -108,9 +109,9 @@ function add(other: string) {
           </div>
           <div v-if="open.has(r.id)" class="rel-details">
             <label><span>Kind</span>
-              <select :value="optionOf(r)" @change="setOption(r, ($event.target as HTMLSelectElement).value)">
+              <Dropdown :value="optionOf(r)" @change="setOption(r, ($event.target as HTMLSelectElement).value)">
                 <option v-for="o in optionsFor(r)" :key="o.value" :value="o.value">{{ o.label }}</option>
-              </select>
+              </Dropdown>
             </label>
             <template v-if="RELATION_KINDS[r.kind].dated">
               <label><span>From</span><DateInput :model-value="r.from" @update:model-value="v => setField(r, 'from', v)" /></label>

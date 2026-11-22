@@ -3,6 +3,7 @@
 // feats ask for (Fighting Style, Expertise, invocations, a lineage, skills, a casting ability…), the open ones first,
 // with how many picks are left. Proficiencies a feature gives are listed as given, with a fold to swap them for
 // another of the same kind. In play the sheet only shows what was picked.
+import Dropdown from './Dropdown.vue'
 import { useReadOnly } from '../composables/useReadOnly'
 import { computed, nextTick, onMounted, ref } from 'vue'
 import type { CharacterSheet, Entry, TraitGrant } from '../model/types'
@@ -64,25 +65,25 @@ onMounted(async () => {
         <div class="sp-grants">
           <label v-for="gr in traitGrants(a, s)" :key="gr.key" class="sp-grant small" :class="{ swapped: gr.was }" :title="gr.was ? `Swapped; it gives ${nameOf({ kind: gr.kind, id: gr.was })}` : `${kindName(gr.kind)}; pick another to swap it`">
             <span class="muted">{{ gr.kind === 'language' ? 'Speaks' : kindName(gr.kind) }}</span>
-            <select :value="gr.id" :disabled="ro" @change="swap(gr.key, val($event), gr.was ?? gr.id)">
+            <Dropdown compact :value="gr.id" :disabled="ro" @change="swap(gr.key, val($event), gr.was ?? gr.id)">
               <option v-for="o in swapOptions(gr)" :key="o.id" :value="o.id">{{ o.label }}{{ o.id === (gr.was ?? gr.id) && gr.was ? ' (given)' : '' }}</option>
-            </select>
+            </Dropdown>
           </label>
         </div>
       </details>
       <div v-if="a.trait.castWith?.among?.length || swappableSpells(a, s).length" class="sp-grants">
         <label v-if="a.trait.castWith?.among?.length" class="sp-grant small" title="The ability this trait's spells are cast with (their attack and save DC)">
           <span class="muted">Casts its spells with</span>
-          <select :value="a.cast ?? ''" :disabled="ro" @change="cast(a, val($event))">
+          <Dropdown compact :value="a.cast ?? ''" :disabled="ro" @change="cast(a, val($event))">
             <option value="">Choose…</option>
             <option v-for="ab in a.trait.castWith.among" :key="ab" :value="ab">{{ ABILITY_NAME[ab] }}</option>
-          </select>
+          </Dropdown>
         </label>
         <label v-for="x in swappableSpells(a, s)" :key="x.key" class="sp-grant small" :class="{ swapped: x.id !== x.given }" :title="`From ${x.from}; pick another to swap it`">
           <span class="muted">Spell (swappable)</span>
-          <select :value="x.id" :disabled="ro" @change="swap(x.key, val($event), x.given)">
+          <Dropdown compact :value="x.id" :disabled="ro" @change="swap(x.key, val($event), x.given)">
             <option v-for="e in x.candidates" :key="e.id" :value="e.id">{{ e.name }}{{ e.id === x.given ? ' (given)' : '' }}</option>
-          </select>
+          </Dropdown>
         </label>
       </div>
       <TraitChoicePicker v-if="a.trait.choice" :a="a" :disabled="ro" @pick="p => pick(a, p)" />

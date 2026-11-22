@@ -2,6 +2,7 @@
 // The wizard's equipment step: the class's starting kit options, the background's items or gold, and what goes into
 // the inventory. What the world has no item for comes from the SRD's gear (or is made as a plain item) when the
 // character is made, and the step says so.
+import Dropdown from '../Dropdown.vue'
 import { computed, onMounted } from 'vue'
 import { backgroundGold, backgroundKit, classKitsOf, kitLineSource, loadSrdGear, wizard } from '../../wizard'
 import { itemNamed } from '../../lookup'
@@ -43,10 +44,10 @@ function setPick(i: number, id: string) { wizard.d.kitPicks = { ...(wizard.d.kit
       <span><b>B</b> {{ formatMoney(bgGold) }}</span></label>
     <p v-for="p in d.bgKit === 'items' ? picks : []" :key="p.i" class="small wz-kit-pick">
       <label>{{ p.l.name || 'Pick one' }}:
-        <select :value="d.kitPicks?.[p.i] ?? ''" @change="setPick(p.i, val($event))">
+        <Dropdown :value="d.kitPicks?.[p.i] ?? ''" @change="setPick(p.i, val($event))">
           <option value="" disabled>Pick one…</option>
           <option v-for="id in p.l.among" :key="id" :value="id">{{ pickName(id) }}</option>
-        </select></label>
+        </Dropdown></label>
     </p>
   </template>
   <h3>Goes into the inventory</h3>

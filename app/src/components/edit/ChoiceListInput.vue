@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Several choices from a list (a weapon's properties): the chosen ones as chips (with their description on hover),
 // and a dropdown to add another.
+import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import type { ListOption } from '../../model/lists'
 
@@ -21,9 +22,9 @@ const remove = (id: string) => emit('change', props.values.filter(v => v !== id)
     <span v-for="o in chosen" :key="o.id" class="chip" :class="{ tip: 'note' in o && o.note }" :data-tip="'note' in o ? o.note : undefined">
       {{ o.label }}<button type="button" class="link-btn" :title="`Remove ${o.label}`" @click="remove(o.id)">×</button>
     </span>
-    <select v-if="left.length" class="choice-add" :aria-label="placeholder ?? 'Add…'" @change="add">
+    <Dropdown v-if="left.length" class="choice-add" :aria-label="placeholder ?? 'Add…'" @change="add">
       <option value="">{{ placeholder ?? 'Add…' }}</option>
       <option v-for="o in left" :key="o.id" :value="o.id" :title="o.note">{{ o.label }}</option>
-    </select>
+    </Dropdown>
   </div>
 </template>

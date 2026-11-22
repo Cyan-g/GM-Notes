@@ -3,6 +3,7 @@
 // one active; each rule shows its choices with what they do, and the search finds rules by name, text or keyword.
 // A rule changed from the Standard default is marked. Players see the active preset, read-only; a world that follows a
 // shared one has the DM's ruleset (sync.ts).
+import Dropdown from '../components/Dropdown.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import { playerMode, state } from '../store'
@@ -43,9 +44,9 @@ function remove() {
 
     <div class="card rs-presets">
       <label>Preset
-        <select :value="activePreset.id" :disabled="ro" @change="setActivePreset(($event.target as HTMLSelectElement).value)">
+        <Dropdown :value="activePreset.id" :disabled="ro" @change="setActivePreset(($event.target as HTMLSelectElement).value)">
           <option v-for="p in presets" :key="p.id" :value="p.id">{{ p.name }}</option>
-        </select>
+        </Dropdown>
       </label>
       <span class="muted small">{{ changed ? `${changed} rule${changed === 1 ? '' : 's'} changed from the standard` : 'all rules as standard' }}</span>
       <span v-if="!ro" class="rs-actions">

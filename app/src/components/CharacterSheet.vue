@@ -6,6 +6,7 @@
 // On the Edit page (`build`) it also opens what's set when building the character: classes and their levels
 // (multiclassing), max HP, AC, speed, scores, proficiencies, spellcasting and features.
 // Hit dice come from the classes, one pool per die size, each spent on its own.
+import Dropdown from './Dropdown.vue'
 import { useReadOnly } from '../composables/useReadOnly'
 import AppIcon from './AppIcon.vue'
 import ConditionIcon from './ConditionIcon.vue'
@@ -271,17 +272,17 @@ onBeforeUnmount(() => {
       <h4>Classes <span v-if="classes.length" class="muted small">level {{ level }}</span><button class="link-btn" :disabled="!classOptions('').length" @click="addClass">＋ Class</button></h4>
       <p v-if="!classes.length" class="muted small">No class yet: the level below counts on its own.</p>
       <div v-for="(l, i) in classes" :key="i" class="cs-class-row">
-        <select :value="l.class" :aria-label="`Class ${i + 1}`" @change="setClass(i, ($event.target as HTMLSelectElement).value)">
+        <Dropdown :value="l.class" :aria-label="`Class ${i + 1}`" @change="setClass(i, ($event.target as HTMLSelectElement).value)">
           <option v-for="o in classOptions(l.class)" :key="o.id" :value="o.id">{{ o.label }}</option>
-        </select>
+        </Dropdown>
         <label class="small">Level <input type="number" min="1" max="20" :value="l.level" @change="setClassLevel(i, num($event))" /></label>
-        <select :value="l.subclass ?? ''" :aria-label="`Subclass of class ${i + 1}`" :disabled="!subclassesOf(l.class).length && !l.subclass" @change="setSubclass(i, ($event.target as HTMLSelectElement).value)">
+        <Dropdown :value="l.subclass ?? ''" :aria-label="`Subclass of class ${i + 1}`" :disabled="!subclassesOf(l.class).length && !l.subclass" @change="setSubclass(i, ($event.target as HTMLSelectElement).value)">
           <option value="">{{ subclassesOf(l.class).length ? 'Subclass…' : 'No subclasses' }}</option>
           <option v-for="sc in subclassesOf(l.class)" :key="sc.id" :value="sc.id">{{ sc.name }}</option>
-        </select>
-        <select v-if="!CLASS_DIE[l.class]" :value="dieOf(l)" title="This class's hit die" @change="setDie(i, ($event.target as HTMLSelectElement).value)">
+        </Dropdown>
+        <Dropdown v-if="!CLASS_DIE[l.class]" :value="dieOf(l)" title="This class's hit die" @change="setDie(i, ($event.target as HTMLSelectElement).value)">
           <option v-for="d in DICE" :key="d" :value="d">{{ d }}</option>
-        </select>
+        </Dropdown>
         <span v-else class="muted small" title="The class's hit die">{{ dieOf(l) }}</span>
         <button class="link-btn x" title="Remove this class" @click="setClasses(x => x.splice(i, 1))">✕</button>
       </div>
@@ -303,14 +304,14 @@ onBeforeUnmount(() => {
       </p>
       <div class="cs-set">
         <label v-if="!classes.length"><span>Level</span><input type="number" min="1" max="20" :value="pc.fields.level ?? ''" placeholder="1" @change="setLevel" /></label>
-        <label v-if="!classes.length"><span>Hit die</span><select :value="s.hitDie || 'd8'" @change="edit(x => x.hitDie = ($event.target as HTMLSelectElement).value)"><option v-for="d in DICE" :key="d" :value="d">{{ d }}</option></select></label>
+        <label v-if="!classes.length"><span>Hit die</span><Dropdown :value="s.hitDie || 'd8'" @change="edit(x => x.hitDie = ($event.target as HTMLSelectElement).value)"><option v-for="d in DICE" :key="d" :value="d">{{ d }}</option></Dropdown></label>
         <div class="cs-set-hp">
           <label><span>Max HP</span><input type="number" :value="s.maxHp ?? ''" :placeholder="avgHp ? String(avgHp) : 'max'" title="Maximum HP" @change="edit(x => x.maxHp = num($event))" /></label>
           <small v-if="avgHp && s.maxHp !== avgHp" class="muted" :title="avgText">average {{ avgHp }} <button type="button" class="link-btn" @click="edit(x => x.maxHp = avgHp)">use it</button></small>
         </div>
         <label><span>AC</span><input type="number" :value="s.acOverride ?? ''" :placeholder="`auto (${ac.ac})`" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></label>
         <label><span>Speed</span><input :value="ft(s.speed)" :placeholder="ft(baseSpeed(s) ?? 30)" @change="edit(x => x.speed = feet($event))" /></label>
-        <label v-if="sizes.length > 1" title="The species lets the player pick its size"><span>Size</span><select :value="s.size && sizes.includes(s.size) ? s.size : sizes[0]" @change="edit(x => x.size = ($event.target as HTMLSelectElement).value === sizes[0] ? undefined : ($event.target as HTMLSelectElement).value)"><option v-for="z in sizes" :key="z" :value="z">{{ z }}</option></select></label>
+        <label v-if="sizes.length > 1" title="The species lets the player pick its size"><span>Size</span><Dropdown :value="s.size && sizes.includes(s.size) ? s.size : sizes[0]" @change="edit(x => x.size = ($event.target as HTMLSelectElement).value === sizes[0] ? undefined : ($event.target as HTMLSelectElement).value)"><option v-for="z in sizes" :key="z" :value="z">{{ z }}</option></Dropdown></label>
       </div>
     </div>
     <div v-else class="cs-strip">
@@ -320,7 +321,7 @@ onBeforeUnmount(() => {
       <div class="cs-stat cs-ac tip" :class="{ warn: ac.untrained.length }" :data-tip="ac.from + (ac.untrained.length ? ` — not proficient with ${ac.untrained.join(', ')}: disadvantage on STR and DEX rolls, no spellcasting` : '')"><span>Armor class<template v-if="ac.untrained.length"> <AppIcon ui="warning" /></template></span><b v-flash="ac.ac" :class="{ 'gear-mod': gt.ac.length }">{{ ac.ac }}</b>
         <input v-if="build" class="cs-mini" type="number" :value="s.acOverride ?? ''" placeholder="auto" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></div>
       <label class="cs-stat" :class="{ tip: gt.speed.length }" :data-tip="breakdown(`${ft(baseSpeed(s) ?? 30)} without gear`, gt.speed)"><span :class="{ 'gear-mod': gt.speed.length }">Speed</span><input v-flash="locked ? speedOf(s) : s.speed" :value="(locked ? speedOf(s) : ft(s.speed)) ?? ''" :placeholder="ft(baseSpeed(s) ?? 30)" :disabled="locked" @change="edit(x => x.speed = feet($event))" /><small v-if="otherSpeeds(s)" class="muted cs-speeds">{{ otherSpeeds(s) }}</small></label>
-      <label v-if="build && sizes.length > 1" class="cs-stat" title="The species lets the player pick its size"><span>Size</span><select :value="s.size && sizes.includes(s.size) ? s.size : sizes[0]" @change="edit(x => x.size = ($event.target as HTMLSelectElement).value === sizes[0] ? undefined : ($event.target as HTMLSelectElement).value)"><option v-for="z in sizes" :key="z" :value="z">{{ z }}</option></select></label>
+      <label v-if="build && sizes.length > 1" class="cs-stat" title="The species lets the player pick its size"><span>Size</span><Dropdown :value="s.size && sizes.includes(s.size) ? s.size : sizes[0]" @change="edit(x => x.size = ($event.target as HTMLSelectElement).value === sizes[0] ? undefined : ($event.target as HTMLSelectElement).value)"><option v-for="z in sizes" :key="z" :value="z">{{ z }}</option></Dropdown></label>
       <label v-if="rule('experience') === 'xp'" class="cs-stat cs-xp" :title="xpNext ? `Level ${level + 1} at ${xpNext.toLocaleString()} XP` : 'Highest level'"><span>XP</span><input v-flash="s.xp ?? 0" type="number" min="0" :value="s.xp ?? ''" placeholder="0" :disabled="ro" @change="edit(x => x.xp = num($event) || undefined)" /><small v-if="xpNext" class="muted">/ {{ xpNext.toLocaleString() }}</small></label>
       <button v-if="!build && !ro && level < 20" class="cs-stat cs-lvlup" :class="{ ready: rule('experience') === 'xp' && xpNext && (s.xp ?? 0) >= xpNext }" title="Level up: class, hit points, new features, feat and spells" @click="leveling = true"><span>Level up</span><b>↑</b></button>
       <button v-if="!build && rule('inspiration') !== 'off'" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" :title="inspirationTip" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>{{ rule('inspiration') === 'heroic' ? 'Heroic Inspiration' : 'Inspiration' }}</span><b><AppIcon ui="star" :class="{ off: !(s.inspiration) }" /></b></button>
@@ -360,9 +361,9 @@ onBeforeUnmount(() => {
             <span class="muted">/ {{ p.total }}</span>
           </template>
           <span v-else>{{ p.total }} ×</span>
-          <select v-if="build && !classes.length" class="cs-die" :value="s.hitDie || 'd8'" title="Hit die" @change="edit(x => x.hitDie = ($event.target as HTMLSelectElement).value)">
+          <Dropdown v-if="build && !classes.length" class="cs-die" :value="s.hitDie || 'd8'" title="Hit die" @change="edit(x => x.hitDie = ($event.target as HTMLSelectElement).value)">
             <option v-for="d in DICE" :key="d" :value="d">{{ d }}</option>
-          </select>
+          </Dropdown>
           <b v-else class="cs-die-label">{{ p.die }}</b>
         </div>
       </div>
@@ -412,10 +413,10 @@ onBeforeUnmount(() => {
         <template v-if="build">
         <h4>Spellcasting</h4>
         <div class="cs-cast">
-          <select v-if="build" :value="s.spellAbility ?? ''" @change="edit(x => x.spellAbility = (($event.target as HTMLSelectElement).value || undefined) as Ability | undefined)">
+          <Dropdown v-if="build" :value="s.spellAbility ?? ''" @change="edit(x => x.spellAbility = (($event.target as HTMLSelectElement).value || undefined) as Ability | undefined)">
             <option value="">{{ cast && !s.spellAbility ? `${cast.toUpperCase()} (class)` : 'None' }}</option>
             <option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.short }}</option>
-          </select>
+          </Dropdown>
           <span v-else>{{ castLabel }}</span>
           <template v-if="cast"><span>Save DC <b v-flash="spellDC" :class="{ 'gear-mod tip': gt.spellDC.length }" :data-tip="tipOf(spellDC, gt.spellDC, String)">{{ spellDC }}</b></span><span>Attack <b v-flash="spellAtk" :class="{ 'gear-mod tip': gt.spellAttack.length }" :data-tip="tipOf(spellAtk, gt.spellAttack)">{{ signed(spellAtk) }}</b></span></template>
           <a :href="hrefTab(pc.id, 'spellbook')" class="small">Spellbook →</a>
@@ -447,11 +448,11 @@ onBeforeUnmount(() => {
         <a v-if="!build && openChoices && !ro" class="sp-open small" :href="hrefEntry(pc.id, true)" :title="`${openChoices} pick${openChoices === 1 ? '' : 's'} still to make, on the Edit page`" @click="ui.scrollTo = 'choices'">{{ openChoices }} to pick ✎</a></h4>
       <template v-if="build">
         <label v-if="background || s.originFeat !== undefined" class="cs-origin"><span>Origin feat</span>
-          <select :value="originValue" @change="setOrigin(($event.target as HTMLSelectElement).value)">
+          <Dropdown :value="originValue" @change="setOrigin(($event.target as HTMLSelectElement).value)">
             <option value="">{{ bgFeat ? `${bgFeat.name}${background?.fields.originFeatNote ? ` (${background.fields.originFeatNote})` : ''}: from ${background?.name}` : `none from ${background?.name ?? 'the background'}` }}</option>
             <option v-for="f in originFeats" :key="f.id" :value="f.id">{{ f.name }} instead</option>
             <option value="none">None</option>
-          </select>
+          </Dropdown>
           <small class="muted">{{ originValue === '' ? 'The background\'s; pick another if the DM allows it' : originValue === 'none' ? 'No Origin feat' : 'Instead of the background\'s' }}</small>
         </label>
         <div v-for="(f, i) in s.features" :key="i" class="cs-feature">

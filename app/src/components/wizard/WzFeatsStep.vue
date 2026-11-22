@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The wizard's feats step: a feat at each level that gives one (an Ability Score Improvement is a feat too), with
 // the scores its ability bonus raises.
+import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import { featLevels, finalScores, wizard } from '../../wizard'
 import { ABILITY_KEYS, ABILITY_NAME } from '../../model/dnd'
@@ -31,10 +32,10 @@ const scoresBefore = (level: number) => finalScores({ ...d.value, feats: d.value
   <p class="muted small">A feat at each of these levels; an Ability Score Improvement is a feat too.</p>
   <div v-for="f in featLevels(d)" :key="f.level" class="wz-choice" :class="{ open: !featAt(f.level)?.feat }">
     <b>Level {{ f.level }}</b> <span class="muted small">{{ f.boon ? 'Epic Boon' : 'feat' }}</span>
-    <select :value="featAt(f.level)?.feat ?? ''" @change="setFeat(f.level, val($event))">
+    <Dropdown :value="featAt(f.level)?.feat ?? ''" @change="setFeat(f.level, val($event))">
       <option value="">Choose…</option>
       <option v-for="x in featsFor(f.boon)" :key="x.id" :value="x.id">{{ x.name }}</option>
-    </select>
+    </Dropdown>
     <template v-if="get(featAt(f.level)?.feat)?.fields.abilityIncrease">
       <SpreadPicker :key="featAt(f.level)!.feat" :bonus="get(featAt(f.level)!.feat)!.fields.abilityIncrease!" :scores="scoresBefore(f.level)" :model-value="featAt(f.level)!.choice" @update:model-value="c => setFeatChoice(f.level, c)" />
     </template>

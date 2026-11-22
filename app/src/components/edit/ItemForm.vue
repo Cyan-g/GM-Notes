@@ -3,6 +3,7 @@
 // weapon's showing its base weapon's damage, properties and mastery as defaults, armor's AC only for real armor.
 // Below, side by side: what it gives (when it works, then its effects, spells & charges and features, each with
 // what it's for; empty ones fold into + buttons) and what it needs (attunement, and who can use it, step by step).
+import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import type { Entry, Regain } from '../../model/types'
 import { TYPES, MASTERY_OF, byKey, type FieldDef } from '../../model/schema'
@@ -119,10 +120,10 @@ function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete
       <div class="if-grid">
         <label v-for="d in short(basics)" :key="d.key" class="sheet-field" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>
         <label class="sheet-field"><span>Rarity</span>
-          <select :value="String(f.rarity ?? '')" @change="setRarity(val($event))">
+          <Dropdown :value="String(f.rarity ?? '')" @change="setRarity(val($event))">
             <option value="">—</option>
             <option v-for="r in ['Common', 'Uncommon', 'Rare', 'Very rare', 'Legendary', 'Artifact']" :key="r" :value="r">{{ r }}</option>
-          </select>
+          </Dropdown>
           <small v-if="usualPrice" class="muted">usual price {{ formatMoney(usualPrice) }}{{ consumable ? ' (consumable: half)' : '' }}</small>
           <small v-else-if="f.rarity === 'Artifact'" class="muted">priceless</small></label>
       </div>
@@ -157,10 +158,10 @@ function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete
       <div class="ff-col ff-gives">
         <h4>What it gives</h4>
         <label class="cb-line small">Works while
-          <select :value="String(f.worksWhile ?? '')" @change="setText('worksWhile', val($event))">
+          <Dropdown :value="String(f.worksWhile ?? '')" @change="setText('worksWhile', val($event))">
             <option value="">{{ WHEN.find(w => w.id === worksDefault)?.label }} (its kind's default)</option>
             <option v-for="w in WHEN" :key="w.id" :value="w.id">{{ w.label }}</option>
-          </select></label>
+          </Dropdown></label>
         <section v-for="x in visible" :key="x.id" class="if-part">
           <h5>{{ x.label }} <span class="muted small">{{ x.hint }}</span> <button type="button" class="link-btn if-close" :title="has(x.id) ? `Remove the ${x.label.toLowerCase()}` : 'Hide this part'" @click="close(x.id)">✕</button></h5>
           <template v-if="x.id === 'spells'">
@@ -170,9 +171,9 @@ function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete
               <template v-if="f.charges">
                 <span class="muted">·</span>
                 <label>regains <input class="if-amount" :value="regain.amount ?? ''" placeholder="1d6+1, 3, all" @change="setRegain({ amount: val($event) })" /></label>
-                <select :value="regain.when ?? ''" aria-label="When" @change="setRegain({ when: (val($event) || undefined) as Regain['when'] })">
+                <Dropdown compact :value="regain.when ?? ''" aria-label="When" @change="setRegain({ when: (val($event) || undefined) as Regain['when'] })">
                   <option value="">when…</option><option value="dawn">at dawn</option><option value="long">on a long rest</option><option value="short">on a short rest</option><option value="never">never</option>
-                </select>
+                </Dropdown>
               </template>
             </div>
             <!-- an older item's regains as written, until it's turned into the line above -->

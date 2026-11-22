@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The wizard's species and background step: the species (and its subrace, when it has subraces), the size when it
 // offers more than one, the background, and the choices their traits ask for.
+import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import type { Entry } from '../../model/types'
 import { ownedSpells, backgrounds, mainRace, species, subracesOf, wizard } from '../../wizard'
@@ -61,15 +62,15 @@ const setCast = (a: ActiveTrait, ab: string) => { const holder = { species: { ..
   </div>
   <div class="wz-row">
     <label v-if="sizes.length > 1">Size
-      <select :value="d.size && sizes.includes(d.size) ? d.size : sizes[0]" @change="wizard.d.size = val($event)">
+      <Dropdown :value="d.size && sizes.includes(d.size) ? d.size : sizes[0]" @change="wizard.d.size = val($event)">
         <option v-for="z in sizes" :key="z" :value="z">{{ z }}</option>
-      </select>
+      </Dropdown>
     </label>
     <label>Background
-      <select :value="d.background ?? ''" @change="wizard.d.background = val($event) || undefined">
+      <Dropdown :value="d.background ?? ''" @change="wizard.d.background = val($event) || undefined">
         <option value="">{{ bgList.length ? 'Choose…' : 'none in this world' }}</option>
         <option v-for="x in bgList" :key="x.id" :value="x.id">{{ x.name }}</option>
-      </select>
+      </Dropdown>
     </label>
   </div>
   <!-- the species' page (and the subrace's), for its lore and traits -->
@@ -85,10 +86,10 @@ const setCast = (a: ActiveTrait, ab: string) => { const holder = { species: { ..
     <p v-else-if="a.trait.text" class="small md" v-html="renderInline(a.trait.text)" />
     <TraitChoicePicker v-if="a.trait.choice" :a="a" :owned="a.trait.choice.kind === 'spell' ? ownedSpells(d, { skip: a.key, withClass: true }) : undefined" @pick="p => setPicks(a, p)" />
     <label v-if="a.trait.castWith?.among?.length" class="small wz-cast">Casts its spells with
-      <select :value="a.cast ?? ''" @change="setCast(a, val($event))">
+      <Dropdown :value="a.cast ?? ''" @change="setCast(a, val($event))">
         <option value="">Choose…</option>
         <option v-for="ab in a.trait.castWith.among" :key="ab" :value="ab">{{ ABILITY_NAME[ab] }}</option>
-      </select>
+      </Dropdown>
     </label>
   </div>
 </template>

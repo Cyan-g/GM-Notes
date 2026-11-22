@@ -761,7 +761,6 @@ table.grid.wb-recipes th:nth-last-child(2) { width: 7.5em; }
 @media (max-width: 1000px) { .atlas-grid { grid-template-columns: 1fr; } }
 .atlas-main, .atlas-side { display: grid; gap: 1rem; }
 .atlas .card h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
-.atlas .card h3 select { font: 13px var(--sans); }
 .atlas-today { font: 600 1.25rem var(--serif); margin: 0 0 .6rem; }
 .map-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .8rem; }
 .map-tile { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel-2); color: var(--ink); text-decoration: none; transition: transform .12s, box-shadow .12s; }
@@ -1079,7 +1078,7 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 /* ---------- character sheet (a PC's page) ---------- */
 .char-sheet { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
 .char-sheet h4 { display: flex; align-items: baseline; gap: .6rem; margin: 0 0 .5rem; font: 600 1rem var(--serif); font-variant: small-caps; letter-spacing: .04em; color: var(--accent); }
-.char-sheet input, .char-sheet select, .char-sheet textarea { font: inherit; }
+.char-sheet input, .char-sheet textarea { font: inherit; }
 .char-sheet input:disabled, .char-sheet textarea:disabled, .char-sheet select:disabled { background: transparent; border-color: transparent; color: inherit; opacity: 1; }
 /* the top: portrait, then the stat cards and the HP / hit dice cards beside it */
 .cs-top { display: grid; gap: .6rem; }
@@ -1699,7 +1698,7 @@ button.live-tag { cursor: pointer; }
 .link-like { color: var(--link); }
 .sp-grants { display: flex; flex-wrap: wrap; gap: .35rem .6rem; margin-top: .35rem; }
 .sp-grant { display: inline-flex; align-items: center; gap: .3rem; }
-.sp-grant select { width: auto; padding-top: 1px; padding-bottom: 1px; }
+.sp-grant select { width: auto; }
 .sp-grant.swapped select { border-color: var(--accent); }
 .equipment-input .effect-row input:not(.effect-value) { flex: 1; }
 .sp-open { margin-left: .5rem; color: var(--accent); font: 600 12px var(--sans); text-transform: none; letter-spacing: 0; }
@@ -2101,7 +2100,7 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .npc-secret-view { margin: .6rem 0 0; font-size: 14px; white-space: pre-line; }
 .rel-quick { margin-bottom: .4rem; }
 .rel-quick button { font-size: 12px; padding: .25em .6em; }
-.rel-quick select { font-size: 12px; padding: .2em .4em; width: auto; }
+.rel-quick select { width: auto; }
 .rel-edit > .rel-add { grid-template-columns: minmax(0, 1fr); margin-bottom: .8rem; padding-bottom: .8rem; border-bottom: 1px solid var(--line); }
 table.grid tr.group-row td { background: var(--panel-2); font-family: var(--serif); font-weight: 600; color: var(--accent); padding-top: .5rem; }
 .npc-form + .field-label { margin-top: 1.2rem; }
@@ -2170,11 +2169,11 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .if-charges label { display: flex; align-items: center; gap: .3rem; }
 .if-charges input { width: 4.5rem; padding: .25rem .4rem; }
 .if-charges input.if-amount { width: 7rem; }
-.if-charges select { width: auto; padding: .25rem .4rem; }
+.if-charges select { width: auto; }
 .if-written { margin: 0 0 .5rem; }
 .if-spells { width: 100%; margin-bottom: .4rem; table-layout: fixed; }
 .if-spells td { padding: .2rem .25rem; vertical-align: middle; }
-.if-spells select { width: 100%; padding: .25rem .3rem; }
+.if-spells select { width: 100%; }
 .if-spells input.effect-value { width: 3.2rem; }
 .if-spells th:nth-child(2) { width: 8.6rem; }
 .if-spells th:nth-child(3), .if-spells th:nth-child(4) { width: 3.6rem; }
@@ -2272,3 +2271,36 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .sg-pop { align-items: flex-start; }
 .sg-pop .menu-panel { min-width: 9rem; }
 .sg-table { box-shadow: none; }
+
+/* ---------- the dropdown (components/Dropdown.vue): one look for every list to choose from ----------
+   The same text, height, arrow and open list everywhere; `compact` for dense rows. The list is drawn by the page
+   (customizable select) in Plain too, so it matches the search pickers' lists; the styles add their touches
+   (styles/base.css: field and picker). styles/selects.ts keeps each one as wide as its longest option. */
+select.dd { appearance: base-select; display: inline-flex; align-items: center; gap: .4em; font: 400 15px/1.35 var(--sans); padding: .4em .55em .4em .65em; color: var(--ink); cursor: pointer; }
+select.dd.compact { font-size: 13px; padding: .2em .4em .2em .5em; border-radius: 6px; }
+select.dd::picker-icon { color: var(--muted); font-size: .8em; transition: rotate .15s; }
+select.dd:open::picker-icon { rotate: 180deg; }
+select.dd:disabled { cursor: default; }
+select.dd::picker(select) {
+  appearance: base-select; margin: 2px 0; padding: 4px; max-height: min(320px, 60vh); color: var(--ink); background: var(--panel);
+  border: 1px solid var(--fx-panel-edge, var(--line)); border-radius: var(--fx-panel-radius, 10px);
+  outline: var(--fx-panel-outline, none); outline-offset: var(--fx-panel-outline-offset, 0);
+  box-shadow: 0 2px 4px rgb(0 0 0 / .08), 0 10px 32px rgb(0 0 0 / .22);
+}
+select.dd option { position: relative; padding: .32rem .6rem .32rem .5rem; border-radius: 6px; background: transparent; color: var(--ink-2); font-size: 14px; }
+select.dd.compact option { font-size: 13px; padding: .25rem .5rem .25rem .45rem; }
+select.dd option::checkmark { color: var(--accent); }
+select.dd option:checked { color: var(--ink); font-weight: 600; }
+select.dd option:disabled { color: var(--muted); }
+select.dd optgroup { font-weight: 600; color: var(--muted); font-size: 12px; }
+select.dd option:is(:hover, :focus-visible) { background: var(--fx-row-paint, var(--chip)); box-shadow: var(--fx-row-shadow, none); color: var(--ink); outline: none; }
+select.dd option:is(:hover, :focus-visible)::before {
+  content: var(--fx-row-mark, none); position: absolute; left: var(--fx-row-mark-left, 0); top: var(--fx-row-mark-top, 4px); bottom: var(--fx-row-mark-bottom, auto);
+  width: var(--fx-row-mark-width, 4px); height: var(--fx-row-mark-height, auto); margin-top: var(--fx-row-mark-shift, 0); background: var(--fx-row-mark-paint, var(--accent)); clip-path: var(--fx-row-mark-clip, none);
+}
+
+/* ---------- the search pickers (EntryPicker): typed into, but they look like the dropdown ---------- */
+.picker-value, .picker input { font: 400 15px/1.35 var(--sans); }
+.picker-value { display: inline-flex; align-items: center; gap: .4em; }
+.picker-value::after { content: '▾'; margin-left: auto; padding-left: .4em; color: var(--muted); font-size: .8em; }
+.picker-list li { font-size: 14px; }

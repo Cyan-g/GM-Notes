@@ -3,6 +3,7 @@
 // fields, HP bars, chips, charges, death saves, a checkbox, tabs, stat boxes, a list table, a menu, a tooltip — in
 // every style (styles/), side by side, in a light and a dark theme. One look (or one screenshot) checks a change to a
 // style everywhere. Each box carries its own theme colours and style, so the page doesn't change the window's.
+import Dropdown from '../components/Dropdown.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { FLOURISHES, PRESETS, applyTheme, effectiveColors, settings, tokens } from '../theme'
 
@@ -26,8 +27,8 @@ onUnmounted(applyTheme)
     <p class="muted small">Every style on the same parts, in your theme and in a light and a dark one. The styles are written in <code>app/src/styles/</code>: <code>base.css</code> says which parts each one decorates, and each style sets its variables there.
       Rows under the mouse can't show here: try the menu and the table.</p>
     <div class="sg-pick small">
-      <label>Light theme <select v-model="light"><option v-for="p in PRESETS.filter(x => !x.dark)" :key="p.id" :value="p.id">{{ p.name }}</option></select></label>
-      <label>Dark theme <select v-model="dark"><option v-for="p in PRESETS.filter(x => x.dark)" :key="p.id" :value="p.id">{{ p.name }}</option></select></label>
+      <label>Light theme <Dropdown v-model="light"><option v-for="p in PRESETS.filter(x => !x.dark)" :key="p.id" :value="p.id">{{ p.name }}</option></Dropdown></label>
+      <label>Dark theme <Dropdown v-model="dark"><option v-for="p in PRESETS.filter(x => x.dark)" :key="p.id" :value="p.id">{{ p.name }}</option></Dropdown></label>
     </div>
     <div class="sg-grid" :style="{ gridTemplateColumns: `8rem repeat(${columns.length}, minmax(0, 1fr))` }">
       <span />
@@ -38,7 +39,7 @@ onUnmounted(applyTheme)
           <div class="card sg-card">
             <div class="md"><h2>Celeste Nevoya</h2></div>
             <nav class="tabs"><a class="on">Overview</a><a>Inventory</a><a>Spellbook</a></nav>
-            <div class="sg-line"><input value="Damage / heal" aria-label="Sample field" /><select aria-label="Sample list"><option>Wizard</option></select></div>
+            <div class="sg-line"><input value="Damage / heal" aria-label="Sample field" /><Dropdown aria-label="Sample list"><option>Wizard</option></Dropdown></div>
             <div class="hp-bar sg-hp"><div class="hp-fill" style="width: 62%" /><span class="hp-text"><b>49</b> / 79</span></div>
             <div class="hp-bar bloodied sg-hp"><div class="hp-fill" style="width: 30%" /><span class="hp-text"><b>24</b> / 79</span></div>
             <div class="cs-hp-bar"><i style="width: 62%" /></div>

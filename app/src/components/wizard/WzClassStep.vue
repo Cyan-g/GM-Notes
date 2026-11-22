@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The wizard's class step: the class and level (a class without rules: its hit die), the subclass once the level
 // reaches it, and the class's page for its lore, table and features.
+import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import type { Entry } from '../../model/types'
 import { dieOfDraft, rules, subclassesOf, wizard } from '../../wizard'
@@ -35,7 +36,7 @@ function setClass(cls: string) {
   <div class="wz-row">
     <label>Level <input type="number" min="1" max="20" :value="d.level" @change="wizard.d.level = Math.min(20, Math.max(1, num($event) || 1))" /></label>
     <label v-if="d.cls && !r">Hit die
-      <select :value="dieOfDraft(d)" @change="wizard.d.die = val($event)"><option v-for="x in DICE" :key="x" :value="x">{{ x }}</option></select>
+      <Dropdown :value="dieOfDraft(d)" @change="wizard.d.die = val($event)"><option v-for="x in DICE" :key="x" :value="x">{{ x }}</option></Dropdown>
     </label>
   </div>
   <template v-if="d.cls && d.level >= subclassLevelOf(d.cls)">

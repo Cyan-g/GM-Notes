@@ -3,6 +3,7 @@
 // it adds (the die's average or a typed roll, plus CON), the features that level brings, the subclass when it's due,
 // the feat (or Ability Score Improvement) at the class's feat levels, and how many more spells the class gets.
 // Choices the new features ask for show up in the sheet's Choices card afterwards, as always.
+import Dropdown from './Dropdown.vue'
 import { computed, ref } from 'vue'
 import type { CharacterSheet, ClassLine, Entry, Spellbook } from '../model/types'
 import { classesOf, totalLevel } from '../model/classes'
@@ -210,12 +211,12 @@ function apply() {
 
       <section>
         <h3>Class</h3>
-        <select v-model="cls" aria-label="Class gaining the level" @change="sub = ''; feat = ''">
+        <Dropdown v-model="cls" aria-label="Class gaining the level" @change="sub = ''; feat = ''">
           <option v-for="l in lines" :key="l.class" :value="l.class">{{ label(l.class) }} {{ l.level }} → {{ l.level + 1 }}</option>
           <optgroup v-if="others.length" label="A new class (multiclassing)">
             <option v-for="o in others" :key="o.id" :value="o.id">{{ o.label }} 1</option>
           </optgroup>
-        </select>
+        </Dropdown>
         <template v-if="isNew">
           <div v-if="prereqs.length" class="lu-warn small">
             <b>Multiclassing needs 13 in each class's main score:</b>
@@ -227,18 +228,18 @@ function apply() {
           <p v-else class="small">Gains: {{ gains.join(', ') || 'no armor, weapon or tool proficiencies' }}</p>
           <div v-if="mc?.skills" class="lu-pick">
             <span class="small">Skill ({{ mcSkills.length }}/{{ mc.skills }}):</span>
-            <select v-if="mcSkills.length < mc.skills" aria-label="Skill" @change="addSkill">
+            <Dropdown v-if="mcSkills.length < mc.skills" aria-label="Skill" @change="addSkill">
               <option value="">＋ Skill</option>
               <option v-for="x in skillList" :key="x" :value="x">{{ x }}</option>
-            </select>
+            </Dropdown>
             <span v-for="x in mcSkills" :key="x" class="chip">{{ x }} <button class="link-btn" title="Take it back" @click="mcSkills = mcSkills.filter(y => y !== x)">×</button></span>
           </div>
           <div v-if="mc?.instruments" class="lu-pick">
             <span class="small">Musical instrument:</span>
-            <select v-model="mcInstrument" aria-label="Musical instrument">
+            <Dropdown v-model="mcInstrument" aria-label="Musical instrument">
               <option value="">Pick one…</option>
               <option v-for="e in instruments" :key="e.id" :value="e.id">{{ e.name }}</option>
-            </select>
+            </Dropdown>
           </div>
         </template>
       </section>
@@ -255,10 +256,10 @@ function apply() {
 
       <section v-if="needsSub">
         <h3>Subclass</h3>
-        <select v-model="sub" aria-label="Subclass">
+        <Dropdown v-model="sub" aria-label="Subclass">
           <option value="">Pick a subclass…</option>
           <option v-for="e in subclasses" :key="e.id" :value="e.id">{{ e.name }}</option>
-        </select>
+        </Dropdown>
       </section>
 
       <section>
@@ -273,12 +274,12 @@ function apply() {
 
       <section v-if="featDue">
         <h3>{{ boon ? 'Epic Boon' : 'Feat or Ability Score Improvement' }}</h3>
-        <select :value="feat" aria-label="Feat" @change="pickFeat(($event.target as HTMLSelectElement).value)">
+        <Dropdown :value="feat" aria-label="Feat" @change="pickFeat(($event.target as HTMLSelectElement).value)">
           <option value="">Pick one…</option>
           <optgroup v-for="g in featGroups" :key="g.kind" :label="g.label">
             <option v-for="f in g.list" :key="f.id" :value="f.id" :disabled="!!lacks(f)">{{ f.name }}{{ featNote(f) }}</option>
           </optgroup>
-        </select>
+        </Dropdown>
         <p v-if="feat" class="small"><EntryLink :id="feat" /><template v-if="get(feat)?.fields.prerequisite"> · <i>{{ get(feat)?.fields.prerequisite }}</i></template> <span class="muted" v-html="renderInline(String(get(feat)?.fields.summary ?? '').replace(/\s*\*?Source:[^*]*\*?\s*$/, ''))" /></p>
         <SpreadPicker v-if="featBonus" :key="feat" v-model="choice" :bonus="featBonus" :scores="baseScores" />
       </section>

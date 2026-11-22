@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // "The party is here", per campaign: on a place's page, which campaigns' party is here, and a quick way to move a
 // campaign's party here. The home page and the atlas show where each party is (PartyAt).
+import Dropdown from './Dropdown.vue'
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { byType, playerMode, state } from '../store'
@@ -27,7 +28,7 @@ const pick = (ev: Event) => { const id = (ev.target as HTMLSelectElement).value;
     <div v-for="c in here" :key="c.id" class="renown-row"><EntryLink :id="c.id" icon /><button v-if="canEdit" type="button" class="link-btn small" title="They've moved on" @click="move(c, false)">left</button></div>
     <template v-if="canEdit && elsewhere.length">
       <button v-if="campaigns.length === 1" type="button" class="chip-btn" @click="move(campaigns[0], true)">⚑ The party is here now</button>
-      <select v-else class="small" @change="pick"><option value="">⚑ A party is here now…</option><option v-for="c in elsewhere" :key="c.id" :value="c.id">{{ c.name }}</option></select>
+      <Dropdown v-else class="small" @change="pick"><option value="">⚑ A party is here now…</option><option v-for="c in elsewhere" :key="c.id" :value="c.id">{{ c.name }}</option></Dropdown>
     </template>
   </div>
 </template>

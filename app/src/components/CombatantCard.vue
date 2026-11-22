@@ -2,6 +2,7 @@
 // One fighter in the initiative tracker: name, AC, initiative, an HP bar with damage and healing, the conditions in
 // effect (with rounds left), concentration saves to roll and, for a party member at 0 HP, death saves.
 // A player character's AC, initiative bonus and HP are their sheet's.
+import Dropdown from './Dropdown.vue'
 import AppIcon from './AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Combatant } from '../model/types'
@@ -137,10 +138,10 @@ function switchSide() { c.value.side = isParty(c.value) ? 'enemy' : 'party'; tou
         <input type="number" min="1" class="cond-rounds" :value="c.rounds?.[x] ?? ''" placeholder="∞" :title="`Rounds left (counts down at the end of ${c.name}'s turn); empty: until removed`" @focus="selectAll" @change="setRounds(x, ($event.target as HTMLInputElement).value)" />
         <button type="button" class="cond-x" :title="`Remove ${x}`" @click="remove(x)">×</button>
       </span>
-      <select class="cond-add" :aria-label="`Add a condition to ${c.name}`" @change="add">
+      <Dropdown class="cond-add" :aria-label="`Add a condition to ${c.name}`" @change="add">
         <option value="">＋ Condition</option>
         <option v-for="x in missing" :key="x" :value="x">{{ x }}</option>
-      </select>
+      </Dropdown>
     </div>
   </article>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The World menu's dashboard: the whole world as rings, every map, what's coming up in the calendar,
 // and the factions at a glance.
+import Dropdown from '../components/Dropdown.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Entry, Pin, WorldDate } from '../model/types'
@@ -79,9 +80,9 @@ const seat = (o: Entry) => o.fields.seat
         <section v-if="root" class="card atlas-world">
           <h3>
             <span>The world</span>
-            <select v-if="roots.length > 1" :value="root.id" @change="rootId = ($event.target as HTMLSelectElement).value">
+            <Dropdown compact v-if="roots.length > 1" :value="root.id" @change="rootId = ($event.target as HTMLSelectElement).value">
               <option v-for="r in roots" :key="r.id" :value="r.id">{{ r.name }}</option>
-            </select>
+            </Dropdown>
           </h3>
           <Sunburst :id="root.id" :key="root.id" :max="640" :rings="3" />
         </section>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // An in-world date: year required, month and day optional.
+import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import type { WorldDate } from '../../model/types'
 import { db } from '../../store'
@@ -24,10 +25,10 @@ const maxDay = computed(() => d.value?.month ? months.value[d.value.month - 1]?.
 <template>
   <span class="date-input">
     <input type="number" class="day" :value="d?.day ?? ''" min="1" :max="maxDay" placeholder="Day" :disabled="!d?.month" @change="set('day', ($event.target as HTMLInputElement).value)" />
-    <select :value="d?.month ?? ''" :disabled="d?.year == null" @change="set('month', ($event.target as HTMLSelectElement).value)">
+    <Dropdown :value="d?.month ?? ''" :disabled="d?.year == null" @change="set('month', ($event.target as HTMLSelectElement).value)">
       <option value="">Month</option>
       <option v-for="(m, i) in months" :key="m.name" :value="i + 1">{{ m.name }}</option>
-    </select>
+    </Dropdown>
     <input type="number" class="year" :value="d?.year ?? ''" placeholder="Year" :title="yearHint" @change="set('year', ($event.target as HTMLInputElement).value)" />
   </span>
 </template>

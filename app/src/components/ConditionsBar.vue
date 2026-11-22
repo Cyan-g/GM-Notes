@@ -2,6 +2,7 @@
 // At the top of the play sheet: the conditions the character has (the same list as their combatant's in the tracker),
 // each with its icon and ✕, more from the menu, the exhaustion level as the ruleset counts it, and a line on what each
 // one does. The sheet's numbers already count what they change (conditions.ts); the lines say the rest.
+import Dropdown from './Dropdown.vue'
 import { useReadOnly } from '../composables/useReadOnly'
 import { computed } from 'vue'
 import type { CharacterSheet, Entry } from '../model/types'
@@ -44,10 +45,10 @@ const lines = computed(() => list.value.map(x => ({ name: x, text: x === 'Exhaus
         </span>
         <button type="button" class="cond-x" :disabled="ro" :title="`Remove ${x}`" @click="remove(x)">×</button>
       </span>
-      <select v-if="!ro" class="cond-add" aria-label="Add a condition" @change="add">
+      <Dropdown v-if="!ro" class="cond-add" aria-label="Add a condition" @change="add">
         <option value="">＋ Condition</option>
         <option v-for="x in missing" :key="x" :value="x">{{ x }}</option>
-      </select>
+      </Dropdown>
     </div>
     <ul v-if="lines.length" class="cs-cond-lines small">
       <li v-for="l in lines" :key="l.name"><b>{{ l.name }}</b> <span class="muted">{{ l.text }}</span></li>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Combat: initiative order, HP, conditions, and the statblock of whoever is acting.
+import Dropdown from '../components/Dropdown.vue'
 import ConditionIcon from '../components/ConditionIcon.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -158,7 +159,7 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
         <div class="card side-add" :class="{ slim: party.length }">
           <label><span>Party</span>
             <span class="row">
-              <select v-model="partyCampaign"><option value="">All player characters ({{ partyOf().length }})</option><option v-for="c in campaigns" :key="c.id" :value="c.id">{{ c.name }} ({{ partyOf(c.id).length }})</option></select>
+              <Dropdown v-model="partyCampaign"><option value="">All player characters ({{ partyOf().length }})</option><option v-for="c in campaigns" :key="c.id" :value="c.id">{{ c.name }} ({{ partyOf(c.id).length }})</option></Dropdown>
               <button @click="addParty">Add</button>
             </span>
           </label>

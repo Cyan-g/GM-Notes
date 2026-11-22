@@ -5,6 +5,7 @@
 // and weapons are dropdowns right here. A count says how many are picked. Used on the Edit page and in the wizard.
 // Weapons to master show their mastery in the dropdown, what each picked one's mastery does, and while picks are
 // left, what every mastery does (the Lists page's notes).
+import Dropdown from './Dropdown.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { TraitOption } from '../model/types'
 import { choiceCandidates, choiceCount, choiceWords, type ActiveTrait } from '../species'
@@ -140,10 +141,10 @@ function toggle(id: string) {
 
     <!-- everything else: one dropdown per pick -->
     <div v-if="!listed" class="sp-pick-selects">
-      <select v-for="k in n" :key="k" :value="a.picks[k - 1] ?? ''" :disabled="disabled" :aria-label="`${a.trait.name}: pick ${k}`" @change="set(k - 1, ($event.target as HTMLSelectElement).value)">
+      <Dropdown v-for="k in n" :key="k" :value="a.picks[k - 1] ?? ''" :disabled="disabled" :aria-label="`${a.trait.name}: pick ${k}`" @change="set(k - 1, ($event.target as HTMLSelectElement).value)">
         <option value="">—</option>
         <option v-for="o in options" :key="o.id" :value="o.id" :disabled="a.picks.includes(o.id) && a.picks[k - 1] !== o.id">{{ weaponLabel(o) }}{{ hasIt(o.id) ? ` ✓ has it: ${hasIt(o.id)}` : '' }}</option>
-      </select>
+      </Dropdown>
       <template v-if="c.kind === 'spell'"><span v-for="id in a.picks" :key="id"><EntryLink :id="id" /><span v-if="hasIt(id)" class="wz-had small" :title="`Already has it: ${hasIt(id)}`">✓ also from {{ hasIt(id) }}</span></span></template>
     </div>
     <template v-if="mastery">

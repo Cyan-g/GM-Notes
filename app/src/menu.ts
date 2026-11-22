@@ -138,8 +138,8 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'Archive',
-    owns: r => dashOf(r) === 'armory' || r.name === 'lists' || r.name === 'rules' || (['item', 'creature', 'deity', 'race', 'background', 'class', 'feat', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? '')))),
-    // The item tables (crafting kinds are in the Crafting menu), every kind of entry kept for reference, the dropdown lists.
+    owns: r => dashOf(r) === 'armory' || (['item', 'creature', 'deity', 'race', 'background', 'class', 'feat', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? '')))),
+    // The item tables (crafting kinds are in the Crafting menu), every kind of entry kept for reference.
     items: () => [
       viewLink('armory', 'Weapons', 'weapons', kindCount('Weapon')),
       viewLink('armory', 'Armor', 'armor', kindCount('Armor')),
@@ -147,9 +147,16 @@ export const MENUS: TopMenu[] = [
       viewLink('armory', 'Other items', 'otherItems'),
       SEP,
       ...(['creature', 'deity', 'race', 'background', 'class', 'subclass', 'feat', 'writing', 'note'] as EntryType[]).map(typeLink),
-      SEP,
-      { label: 'Lists', uiIcon: 'lists', href: '#/lists', hint: 'dropdown options' },
+    ],
+  },
+  {
+    // How the game works in this world: the ruleset's presets and optional rules, and the dropdown lists.
+    title: 'Ruleset',
+    home: '#/rules',
+    owns: r => r.name === 'rules' || r.name === 'lists',
+    items: () => [
       { label: 'Ruleset', uiIcon: 'scales', href: '#/rules', hint: 'optional rules, presets' },
+      { label: 'Lists', uiIcon: 'lists', href: '#/lists', hint: 'dropdown options' },
     ],
   },
   {

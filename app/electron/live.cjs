@@ -99,7 +99,8 @@ function createLive(hooks) {
       res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' })
       let who = ''
       try { who = decodeURIComponent(String(req.headers['x-gm-who'] ?? '')).slice(0, 60) } catch {}
-      const c = { res, who: who || ip.replace(/^::ffff:/, ''), ip }
+      const world = String(req.headers['x-gm-world'] ?? '').slice(0, 100)
+      const c = { res, who: who || ip.replace(/^::ffff:/, ''), ip, world }
       h.clients.add(c)
       const p = publishedIn(h.dir)
       if (p) res.write(`event: published\ndata: ${p}\n\n`)
@@ -179,6 +180,20 @@ function createLive(hooks) {
     const p = publishedIn(host.dir)
     if (p) for (const c of host.clients) c.res.write(`event: published\ndata: ${p}\n\n`)
     tellHost()
+  }
+
+  /**
+   * The DM changed what a player's character shares with them (HP, conditions, inventory, relations): to that
+   * player's app only (`to`: its world ID). One line of JSON.
+   */
+  function sendShared(text) {
+    if (!host) return { error: 'Not hosting.' }
+    let to = ''
+    try { to = String(JSON.parse(text).to ?? '') } catch { return { error: 'Not JSON.' } }
+    const line = String(text).replace(/\r?\n/g, ' ')
+    let n = 0
+    for (const c of host.clients) if (c.world && c.world === to) { c.res.write(`event: shared\ndata: ${line}\n\n`); n++ }
+    return { ok: true, sent: n }
   }
 
   /** A new code: everyone connected is dropped and needs the new one. */
@@ -311,7 +326,7 @@ function createLive(hooks) {
     if (g !== gen || !follow) return
     if (!target) return again(20_000)
     follow.host = target.host; follow.port = target.port
-    const req = http.get({ host: target.host, port: target.port, path: '/events', headers: { 'x-gm-code': follow.code, 'x-gm-who': encodeURIComponent(follow.who || os.hostname()) } }, res => {
+    const req = http.get({ host: target.host, port: target.port, path: '/events', headers: { 'x-gm-code': follow.code, 'x-gm-who': encodeURIComponent(follow.who || os.hostname()), 'x-gm-world': follow.me ?? '' } }, res => {
       if (g !== gen) { res.destroy(); return }
       if (res.statusCode === 401) { res.resume(); setState('wrong-code'); return }
       if (res.statusCode !== 200) { res.resume(); return again(20_000) }
@@ -325,6 +340,7 @@ function createLive(hooks) {
           const block = buf.slice(0, i); buf = buf.slice(i + 2)
           const ev = block.match(/^event: (.+)$/m)?.[1], data = block.match(/^data: (.*)$/m)?.[1]
           if (ev === 'published' && data) hooks.send('live:published', data)
+          if (ev === 'shared' && data) hooks.send('live:shared', data)
         }
       })
       res.on('close', () => { if (g === gen) { setState('searching'); again(3000) } })
@@ -348,7 +364,7 @@ function createLive(hooks) {
   }
 
   return {
-    newCode, startHost, stopHost, hostStatus, sent, changeCode,
+    newCode, startHost, stopHost, hostStatus, sent, changeCode, sendShared,
     discover, check, parseAddress, followLive, stopPlayer, read, sendCharacters,
     playerStatus: () => playerState,
     stopAll() { stopHost(); stopPlayer() },

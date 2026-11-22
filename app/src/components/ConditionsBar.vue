@@ -3,7 +3,7 @@
 // each with its icon and ✕, more from the menu, and the exhaustion level as the ruleset counts it. What each one does
 // shows when the mouse is on its chip. The sheet's numbers already count what they change (conditions.ts).
 import Dropdown from './Dropdown.vue'
-import { useReadOnly } from '../composables/useReadOnly'
+import { useReadOnlyShared as useReadOnly } from '../composables/useReadOnly'
 import { computed } from 'vue'
 import type { CharacterSheet, Entry } from '../model/types'
 import { editSheet } from '../sheetData'

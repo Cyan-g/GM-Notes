@@ -7,7 +7,7 @@ import { armorClass, initiative, maxHpOf } from './sheet'
 import { concentrationAdv, deathSaveAdv, gearTotals } from './effects'
 import { sheetOf, sheetToEdit } from './sheetData'
 import { changed } from './edit'
-import { isShared } from './sync'
+import { fromPlayer, isShared } from './sync'
 import { rule } from './rules'
 import { membersOf } from './sessions'
 import { deathSaveFromDamage, isDead, massiveDamage, noDeathSaves, settleDeathSaves } from './conditions'
@@ -44,8 +44,9 @@ export function fighterStats(c: Combatant): FighterStats {
   if (!s) return { hp: c.hp, maxHp: c.maxHp, tempHp: c.tempHp, ac: c.ac, initMod: c.initMod, acFromSheet: false, hpFromSheet: false }
   const max = maxHpOf(s)
   const linked = max != null
-  // A player's character sent from their app is read-only here: the fight keeps its own HP, starting from the sheet's.
-  if (isShared(pc)) return { ac: armorClass(s).ac, initMod: initiative(s), acFromSheet: true, hpFromSheet: false, hp: c.hp ?? s.hp ?? max, maxHp: max ?? c.maxHp, tempHp: c.tempHp }
+  // A character shared by the DM (in a player's world) is read-only: the fight keeps its own HP, starting from the
+  // sheet's. A player's character at the DM's shares its HP with the player (sharedParts.ts): the sheet's.
+  if (isShared(pc) && !fromPlayer(pc)) return { ac: armorClass(s).ac, initMod: initiative(s), acFromSheet: true, hpFromSheet: false, hp: c.hp ?? s.hp ?? max, maxHp: max ?? c.maxHp, tempHp: c.tempHp }
   return {
     ac: armorClass(s).ac, initMod: initiative(s), acFromSheet: true, hpFromSheet: linked,
     hp: linked ? s.hp ?? max : c.hp, maxHp: linked ? max : c.maxHp, tempHp: linked ? s.tempHp : c.tempHp,

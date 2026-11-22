@@ -77,6 +77,8 @@ contextBridge.exposeInMainWorld('dndesk', {
     onPublished: cb => ipcRenderer.on('live:published', (_e, p) => cb(p)),
     sendCharacters: text => ipcRenderer.invoke('live:send-characters', text),
     onCharacter: cb => ipcRenderer.on('live:character', (_e, msg) => cb(msg)),
+    sendShared: text => ipcRenderer.invoke('live:send-shared', text),
+    onShared: cb => ipcRenderer.on('live:shared', (_e, msg) => cb(msg)),
   },
   onUpdate: cb => ipcRenderer.on('update', (_e, info) => cb(info)),
   installUpdate: () => ipcRenderer.invoke('update:install'),

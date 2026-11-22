@@ -73,6 +73,10 @@ interface Bridge {
     sendCharacters(text: string): Promise<{ ok?: true; error?: string }>
     /** The DM: characters a player sent. */
     onCharacter(cb: (msg: unknown) => void): void
+    /** The DM's app: what's shared of a player's characters, to that player's app (sharedParts.ts). */
+    sendShared(text: string): Promise<{ ok?: true; sent?: number; error?: string }>
+    /** A player's app: the DM's side of its characters' shared parts. */
+    onShared(cb: (msg: string) => void): void
   }
   worlds: {
     list(): Promise<{ current: string | null; worldsDir: string | null; worlds: import('../worlds').KnownWorld[] }>

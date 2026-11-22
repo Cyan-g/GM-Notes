@@ -350,11 +350,13 @@ ipcMain.handle('live:check', (_e, target, code) => {
 /** Keep in touch with the followed world's live session, if it has one (`who`: the name the DM sees). */
 ipcMain.handle('live:follow', (_e, who) => {
   const f = followOf(config.dataDir)
-  if (f?.live) live.followLive({ worldId: f.worldId, ...f.live, who: String(who ?? '') }); else live.stopPlayer()
+  // `me`: this world's ID, so the DM's app sends it what's shared of its own characters
+  if (f?.live) live.followLive({ worldId: f.worldId, ...f.live, who: String(who ?? ''), me: openWorld().setting('worldId') ?? '' }); else live.stopPlayer()
   return live.playerStatus()
 })
 ipcMain.handle('live:player-status', () => live.playerStatus())
 ipcMain.handle('live:send-characters', (_e, text) => live.sendCharacters(String(text ?? '')))
+ipcMain.handle('live:send-shared', (_e, text) => live.sendShared(String(text ?? '')))
 ipcMain.handle('shared:get', () => followOf(config.dataDir) ?? null)
 
 /** The known worlds, last opened first, with whether their folder still holds a world. */

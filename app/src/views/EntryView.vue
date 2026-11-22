@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppIcon from '../components/AppIcon.vue'
 import TypeIcon from '../components/TypeIcon.vue'
-import { NOTE_TYPES, isShared } from '../sync'
+import { NOTE_TYPES, fromPlayer, isShared } from '../sync'
 import PlayerNotes from '../components/PlayerNotes.vue'
 import { computed } from 'vue'
 import type { Entry, Id } from '../model/types'
@@ -64,7 +64,7 @@ import PartyHere from '../components/PartyHere.vue'
 import OutlineCard from '../components/OutlineCard.vue'
 import { featsGrantedBy } from '../lookup'
 import { bodyParts as cutBody, setBodyPart, type BodyPart } from '../bodyParts'
-import { provideLocked } from '../composables/useReadOnly'
+import { provideLocked, provideSharedEditable } from '../composables/useReadOnly'
 import { currentPc } from '../sheet'
 import { characterSend } from '../playerCharacters'
 
@@ -170,6 +170,8 @@ const children = computed(() => (e.value ? childrenOf.value.get(e.value.id) ?? [
 const shared = computed(() => isShared(e.value))
 // every card on the page (the character sheet's too) is read-only on a shared entry
 provideLocked(shared)
+// a player's character at the DM's: its HP, conditions and inventory are the DM's to change too
+provideSharedEditable(computed(() => e.value?.type === 'pc' && !!fromPlayer(e.value)))
 /** A campaign the DM shares: the player's characters in it, putting the current one in, and taking one out. */
 const campaignsOf = (pc: Entry) => (pc.fields.campaigns as Id[] | undefined) ?? []
 const myInCampaign = computed(() => (e.value?.type === 'campaign' && shared.value ? entries.value.filter(x => x.type === 'pc' && !isShared(x) && campaignsOf(x).includes(e.value!.id)) : []))

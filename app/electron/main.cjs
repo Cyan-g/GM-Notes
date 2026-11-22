@@ -8,6 +8,7 @@ const os = require('node:os')
 const path = require('node:path')
 const { WorldDb, convertFromJson } = require('./db.cjs')
 const { createLive } = require('./live.cjs')
+const { createDevices } = require('./devices.cjs')
 
 const REPO = { owner: 'Cyan-g', repo: 'GM-Notes' }
 const RELEASES = `https://github.com/${REPO.owner}/${REPO.repo}/releases/latest`
@@ -88,7 +89,7 @@ ipcMain.handle('fs:write', async (_e, root, rel, bytes) => {
   fs.writeFileSync(tmp, Buffer.from(bytes))
   // A virus scanner or sync tool briefly holding the old file makes the swap fail on Windows: try a few times.
   for (let attempt = 1; ; attempt++) {
-    try { fs.renameSync(tmp, f); if (root === 'data') openWorld().logFile(String(rel), 'put'); return true } catch (err) {
+    try { fs.renameSync(tmp, f); if (root === 'data') { openWorld().logFile(String(rel), 'put'); devices.changed() } return true } catch (err) {
       if (attempt >= 5 || !['EPERM', 'EBUSY', 'EACCES'].includes(err.code)) { try { fs.unlinkSync(tmp) } catch {} throw err }
       await new Promise(r => setTimeout(r, 200 * attempt))
     }
@@ -143,7 +144,7 @@ function openWorld() {
   if (!world) world = new WorldDb(rootDir('data'), { device: device() })
   return world
 }
-function closeWorld() { live.stopAll(); world?.close(); world = null }
+function closeWorld() { live.stopAll(); devices.stop(); world?.close(); world = null }
 const stamp = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}` }
 
 /**
@@ -160,11 +161,15 @@ handleTimed('db:load', (_e, types, kinds) => {
   const w = openWorld()
   w.allow(types, kinds)
   const loaded = w.load()
-  return { ...loaded, converted, ...identify(w, loaded.data?.meta?.title) }
+  const ids = identify(w, loaded.data?.meta?.title)
+  // the user's other devices with this world: found and kept in touch with (devices.cjs)
+  devices.start().catch(() => {})
+  return { ...loaded, converted, ...ids }
 })
 handleTimed('db:create', (_e, d, types, kinds) => openWorld().create(d, types, kinds))
 handleTimed('db:save', (_e, changes) => {
   const rev = openWorld().save(changes)
+  devices.changed()
   // A renamed world is renamed in the list of worlds too.
   if (changes?.meta?.title) {
     const id = openWorld().setting('worldId')
@@ -267,6 +272,52 @@ ipcMain.handle('shared:follow', (_e, folder, worldId, liveCfg) => {
   config.follow = { ...rest, [config.dataDir]: next }
   writeConfig(config)
   return true
+})
+
+// ---------- the user's other devices with the same world (devices.cjs; the merge is in src/devicesync) ----------
+
+const devices = createDevices({
+  send: (channel, data) => { for (const w of BrowserWindow.getAllWindows()) w.webContents.send(channel, data) },
+  me: () => ({ id: device(), name: config.deviceName || os.hostname() }),
+  world: () => (world ? { db: world, worldId: world.setting('worldId'), title: world.setting('meta')?.title ?? '', dir: rootDir('data') } : null),
+  pairs: () => (config.devices ??= {}),
+  savePairs: () => writeConfig(config),
+})
+ipcMain.handle('devices:status', () => devices.status())
+ipcMain.handle('devices:pair-start', () => devices.startPairing())
+ipcMain.handle('devices:pair-stop', () => { devices.stopPairing(); return true })
+ipcMain.handle('devices:find', () => devices.findPairing())
+handleTimed('devices:pull', (_e, id) => devices.pull(String(id)))
+ipcMain.handle('devices:pulled', (_e, id, upTo, log) => { devices.pulled(String(id), Number(upTo) || 0, String(log ?? '')); return true })
+/** A picture or file from another device, logged as that device's change (`origin`). */
+handleTimed('devices:file', async (_e, id, p, origin) => {
+  await devices.fetchFile(String(id), String(p))
+  openWorld().logFile(String(p), 'put', origin && typeof origin === 'object' ? { at: String(origin.at), device: String(origin.device) } : undefined)
+  return true
+})
+ipcMain.handle('devices:forget', (_e, id) => { devices.forget(String(id)); return true })
+ipcMain.handle('devices:set-name', (_e, name) => { config.deviceName = String(name ?? '').trim().slice(0, 60) || os.hostname(); writeConfig(config); return devices.status() })
+/**
+ * Join a world another device is pairing (found by devices:find, or typed: "192.168.1.20[:47110]"): the copy goes
+ * into a new folder in the app's worlds folder, with a change log of its own, and is opened (the page reloads).
+ */
+handleTimed('devices:join', async (e, target, code) => {
+  const t = typeof target === 'string' ? devices.parseAddress(target) : target
+  if (!t?.host) throw new Error("That doesn't look like an address (e.g. 192.168.1.20).")
+  const progress = (label, done, total) => e.sender.send('devices:join-progress', { label, done, total })
+  const got = await devices.join(t, String(code ?? ''), progress)
+  const dir = freeWorldDir(got.title || 'World')
+  fs.mkdirSync(dir, { recursive: true })
+  fs.writeFileSync(path.join(dir, 'dndesk.sqlite'), got.db)
+  for (const f of got.files) { const to = path.join(dir, ...f.path.split('/')); fs.mkdirSync(path.dirname(to), { recursive: true }); fs.writeFileSync(to, f.data) }
+  const copy = new WorldDb(dir, { device: device() })
+  try { copy.startOwnLog() } finally { copy.close() }
+  config.devices = { ...(config.devices ?? {}), [got.worldId]: { key: got.key, peers: { [got.device]: { name: got.name, host: got.host, port: got.port, got: got.seq, log: got.log, since: new Date().toISOString() } } } }
+  closeWorld()
+  config.dataDir = dir
+  config.worldsDir = appWorldsDir()
+  remember(got.worldId, got.title, dir)
+  return dir
 })
 
 // ---------- live sessions on the local network (live.cjs) ----------

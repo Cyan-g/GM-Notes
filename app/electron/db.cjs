@@ -281,6 +281,8 @@ class WorldDb {
     for (const k of keys) { const i = k.indexOf(':'); const r = q.get(k.slice(0, i), k.slice(i + 1)); if (r) out[k] = { at: r.at, device: r.device } }
     return out
   }
+  /** A fresh, empty log of its own (a copy just made from another device's world). */
+  startOwnLog() { if (!this.readOnly) { this.db.prepare('DELETE FROM changes').run(); this.newLog() } }
   /** A new log ID (after the database was replaced by a backup): other devices then sync everything again. */
   newLog() { if (!this.readOnly) this.setSetting('changeLog', crypto.randomUUID()) }
 

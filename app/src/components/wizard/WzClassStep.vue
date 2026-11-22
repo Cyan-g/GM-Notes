@@ -1,32 +1,44 @@
 <script setup lang="ts">
-// The wizard's class step: the class and level (a class without rules: its hit die), and the class's page for its
-// lore, table and features. The subclass is a step of its own (WzSubclassStep).
+// The wizard's class step: the classes as a list (hit die and saves beside each), the level above it, and the class
+// looked at beside the list: what it gives up to the chosen level first, then its description, table and features.
+// The subclass is a step of its own (WzSubclassStep).
 import Dropdown from '../Dropdown.vue'
+import { computed } from 'vue'
 import { dieOfDraft, rules, wizard } from '../../wizard'
+import { classEntry } from '../../classRules'
 import { DICE } from '../../model/classes'
 import { ABILITY_SHORT } from '../../model/dnd'
 import { useDraft } from '../../composables/useDraft'
 import { inputNumber as num, inputValue as val } from '../../dom'
 import WizardPage from '../WizardPage.vue'
+import WzChooser, { type ChooserItem } from './WzChooser.vue'
 
-const { d, r, classes, classPage } = useDraft()
+const { d, r, classes } = useDraft()
+const items = computed<ChooserItem[]>(() => classes.value.map(c => {
+  const cr = rules({ ...d.value, cls: c.id })
+  return { id: c.id, label: c.label, hint: cr ? `${dieOfDraft({ ...d.value, cls: c.id, die: undefined })} · ${cr.saves.map(a => ABILITY_SHORT[a]).join(' ')}` : 'by hand' }
+}))
+/** Another class: what was picked for the old one goes. */
 function setClass(cls: string) {
+  if (cls === d.value.cls) return
   Object.assign(wizard.d, { cls, subclass: undefined, skills: [], tools: [], cantrips: [], spells: [], book: [], classKit: 0 })
 }
 </script>
 
 <template>
-  <div class="wz-tiles">
-    <button v-for="c in classes" :key="c.id" type="button" class="wz-tile" :class="{ on: d.cls === c.id }" @click="setClass(c.id)">
-      <b>{{ c.label }}</b><small class="muted">{{ rules({ ...d, cls: c.id }) ? `${dieOfDraft({ ...d, cls: c.id, die: undefined })} · ${rules({ ...d, cls: c.id })!.saves.map(a => ABILITY_SHORT[a]).join(' ')}` : 'filled in by hand' }}</small>
-    </button>
-  </div>
-  <div class="wz-row">
-    <label>Level <input type="number" min="1" max="20" :value="d.level" @change="wizard.d.level = Math.min(20, Math.max(1, num($event) || 1))" /></label>
-    <label v-if="d.cls && !r">Hit die
-      <Dropdown :value="dieOfDraft(d)" @change="wizard.d.die = val($event)"><option v-for="x in DICE" :key="x" :value="x">{{ x }}</option></Dropdown>
-    </label>
-  </div>
-  <!-- the class's page, for its lore, table and features -->
-  <WizardPage v-if="classPage" :e="classPage" :title="`About the ${classPage.name}`" />
+  <WzChooser :items="items" :picked="d.cls" label="Classes" @pick="setClass">
+    <template #top>
+      <div class="wz-row wz-ch-top">
+        <label>Level <input type="number" min="1" max="20" :value="d.level" @change="wizard.d.level = Math.min(20, Math.max(1, num($event) || 1))" /></label>
+        <label v-if="d.cls && !r">Hit die
+          <Dropdown :value="dieOfDraft(d)" @change="wizard.d.die = val($event)"><option v-for="x in DICE" :key="x" :value="x">{{ x }}</option></Dropdown>
+        </label>
+      </div>
+    </template>
+    <template #detail="{ item, picked }">
+      <p v-if="!picked" class="small muted wz-ch-hint-line">Click {{ item.label }} on the left to take it.</p>
+      <WizardPage v-if="classEntry(item.id)" :e="classEntry(item.id)!" :title="item.label" :level="d.level" />
+      <p v-else class="muted small">This class has no page in the world; it's filled in by hand on the next steps.</p>
+    </template>
+  </WzChooser>
 </template>

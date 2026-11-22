@@ -12,9 +12,13 @@ import ClassOverview from './ClassOverview.vue'
 import RaceGlance from './RaceGlance.vue'
 import TraitList from './TraitList.vue'
 
-const props = defineProps<{ e: Entry; title?: string }>()
+/** `level`: a class's or subclass's features up to it come first, as a line ("At level 3: …"). */
+const props = defineProps<{ e: Entry; title?: string; level?: number }>()
 const traits = computed(() => traitsOf(props.e))
 const isClass = computed(() => props.e.type === 'class' || props.e.type === 'subclass')
+/** A class's or subclass's features up to the chosen level, and the next one after it. */
+const upTo = computed(() => (isClass.value && props.level ? traits.value.filter(t => (t.level ?? 1) <= props.level!) : []))
+const next = computed(() => (isClass.value && props.level ? traits.value.filter(t => (t.level ?? 1) > props.level!).sort((a, b) => (a.level ?? 1) - (b.level ?? 1))[0] : undefined))
 const KEY = 'gm-notes:wizard-folded'
 const folded = ref<string[]>((() => { try { return JSON.parse(localStorage.getItem(KEY) ?? '[]') } catch { return [] } })())
 /** Whether a part (lore, table, features) is open; folding it remembers that for every page. */
@@ -30,6 +34,12 @@ function toggled(part: string, ev: Event) {
 <template>
   <section class="wz-page">
     <h3 class="wz-page-head">{{ title ?? e.name }} <a :href="hrefEntry(e.id)" class="small" target="_self" title="Its own page">open its page</a></h3>
+    <p v-if="upTo.length || next" class="wz-at-level small">
+      <b>At level {{ level }}:</b>
+      <span v-for="t in upTo" :key="t.id" class="chip" :title="(t.text ?? '').slice(0, 300)">{{ t.name }}</span>
+      <span v-if="!upTo.length" class="muted">nothing yet</span>
+      <span v-if="next" class="muted"> · next: {{ next.name }} ({{ next.level }})</span>
+    </p>
     <details v-if="e.body.trim()" class="wz-fold" :open="isOpen('lore')" @toggle="toggled('lore', $event)">
       <summary>{{ e.type === 'race' ? 'About them' : 'Description' }}</summary>
       <MarkdownView :source="e.body" />

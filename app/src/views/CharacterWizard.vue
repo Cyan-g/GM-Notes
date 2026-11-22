@@ -11,7 +11,8 @@ import { newBlankEntry } from '../ui'
 import AppIcon from '../components/AppIcon.vue'
 import WzClassStep from '../components/wizard/WzClassStep.vue'
 import WzSubclassStep from '../components/wizard/WzSubclassStep.vue'
-import WzOriginStep from '../components/wizard/WzOriginStep.vue'
+import WzSpeciesStep from '../components/wizard/WzSpeciesStep.vue'
+import WzBackgroundStep from '../components/wizard/WzBackgroundStep.vue'
 import WzScoresStep from '../components/wizard/WzScoresStep.vue'
 import WzProfsStep from '../components/wizard/WzProfsStep.vue'
 import WzFeaturesStep from '../components/wizard/WzFeaturesStep.vue'
@@ -63,7 +64,8 @@ function startOver() { if (confirm('Clear everything chosen so far?')) resetWiza
 
         <WzClassStep v-if="step.id === 'class'" />
         <WzSubclassStep v-else-if="step.id === 'subclass'" />
-        <WzOriginStep v-else-if="step.id === 'origin'" />
+        <WzSpeciesStep v-else-if="step.id === 'species'" />
+        <WzBackgroundStep v-else-if="step.id === 'background'" />
         <WzScoresStep v-else-if="step.id === 'scores'" />
         <WzProfsStep v-else-if="step.id === 'profs'" />
         <WzFeaturesStep v-else-if="step.id === 'features'" />

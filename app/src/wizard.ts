@@ -295,8 +295,11 @@ export function steps(d: Draft): Step[] {
   s.push({ id: 'class', label: 'Class', open: [!d.cls && 'a class'].filter(Boolean) as string[] })
   // the subclass, once the level reaches it: a step of its own, its details beside the list
   if (d.cls && d.level >= subclassLevelOf(d.cls)) s.push({ id: 'subclass', label: 'Subclass', open: [!d.subclass && subclassesOf(d.cls).length ? 'a subclass' : ''].filter(Boolean) as string[] })
-  s.push({ id: 'origin', label: 'Species & background', open: [!d.race && 'a species', d.race && subracesOf(d.race).length ? 'a subrace' : '', !d.background && backgrounds().length ? 'a background' : '',
-    ...speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && choiceOpen(a)).map(a => (a.trait.name === a.race.name ? a.trait.name : `${a.trait.name} (${a.race.name})`))].filter(Boolean) as string[] })
+  // species and background: a step each, their traits' open choices with them (an Origin feat's with the background)
+  const originOpen = (species: boolean) => speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && choiceOpen(a) && (a.race.type === 'race') === species)
+    .map(a => (a.trait.name === a.race.name ? a.trait.name : `${a.trait.name} (${a.race.name})`))
+  s.push({ id: 'species', label: 'Species', open: [!d.race && 'a species', d.race && subracesOf(d.race).length ? 'a subrace' : '', ...originOpen(true)].filter(Boolean) as string[] })
+  s.push({ id: 'background', label: 'Background', open: [!d.background && backgrounds().length ? 'a background' : '', ...originOpen(false)].filter(Boolean) as string[] })
   const unset = ABILITY_KEYS.filter(a => d.base[a] == null).length
   s.push({ id: 'scores', label: 'Ability scores', open: [
     unset ? `${unset} score${unset === 1 ? '' : 's'}` : '',

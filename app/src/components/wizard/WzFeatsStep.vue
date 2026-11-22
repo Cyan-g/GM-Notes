@@ -1,14 +1,15 @@
 <script setup lang="ts">
-// The wizard's feats step: a feat at each level that gives one (an Ability Score Improvement is a feat too), with
-// the scores its ability bonus raises.
-import Dropdown from '../Dropdown.vue'
-import { computed } from 'vue'
+// The wizard's feats step: a feat at each level that gives one (an Ability Score Improvement is a feat too). One level
+// at a time (the tabs above the list): its feats as a list, the one looked at beside it as its card, and for the
+// picked one the scores its ability bonus raises.
+import { computed, ref } from 'vue'
 import { featLevels, finalScores, wizard } from '../../wizard'
 import { ABILITY_KEYS, ABILITY_NAME } from '../../model/dnd'
-import { entries, get } from '../../store'
+import { entries, get, optionLabel } from '../../store'
 import { useDraft } from '../../composables/useDraft'
-import { inputValue as val } from '../../dom'
 import SpreadPicker from '../SpreadPicker.vue'
+import FeatCard from '../FeatCard.vue'
+import WzChooser, { type ChooserItem } from './WzChooser.vue'
 
 const { d } = useDraft()
 const feats = computed(() => entries.value.filter(e => e.type === 'feat').sort((a, b) => a.name.localeCompare(b.name)))
@@ -17,27 +18,40 @@ const featsFor = (boon: boolean) => {
   const of = feats.value.filter(f => f.fields.category === want)
   return of.length ? of : feats.value.filter(f => f.fields.category !== 'Origin Feat')
 }
-const featAt = (level: number) => d.value.feats.find(f => f.level === level)
-function setFeat(level: number, feat: string) {
-  wizard.d.feats = [...d.value.feats.filter(f => f.level !== level), ...(feat ? [{ level, feat, choice: { picks: [] } }] : [])]
+const levels = computed(() => featLevels(d.value))
+/** The level whose feat is being chosen: the first without one, else the first. */
+const chosenLevel = ref<number | null>(null)
+const level = computed(() => levels.value.find(l => l.level === chosenLevel.value) ?? levels.value.find(l => !featAt(l.level)?.feat) ?? levels.value[0])
+const featAt = (lv: number) => d.value.feats.find(f => f.level === lv)
+const items = computed<ChooserItem[]>(() => (level.value ? featsFor(level.value.boon) : []).map(f => ({
+  id: f.id, label: f.name, hint: f.fields.abilityIncrease ? '+ ability' : '', title: f.fields.category ? optionLabel('feat.category', f.fields.category) : undefined,
+})))
+function setFeat(lv: number, feat: string) {
+  const same = featAt(lv)?.feat === feat
+  wizard.d.feats = [...d.value.feats.filter(f => f.level !== lv), ...(!same ? [{ level: lv, feat, choice: { picks: [] } }] : [])]
 }
-function setFeatChoice(level: number, choice: { alt?: boolean; picks: (keyof typeof ABILITY_NAME)[][] }) {
-  wizard.d.feats = d.value.feats.map(f => (f.level === level ? { ...f, choice } : f))
+function setFeatChoice(lv: number, choice: { alt?: boolean; picks: (keyof typeof ABILITY_NAME)[][] }) {
+  wizard.d.feats = d.value.feats.map(f => (f.level === lv ? { ...f, choice } : f))
 }
 /** The scores a feat's + buttons start from: with the bonus and the feats taken before its level. */
-const scoresBefore = (level: number) => finalScores({ ...d.value, feats: d.value.feats.filter(f => f.level < level) }) as Record<(typeof ABILITY_KEYS)[number], number>
+const scoresBefore = (lv: number) => finalScores({ ...d.value, feats: d.value.feats.filter(f => f.level < lv) }) as Record<(typeof ABILITY_KEYS)[number], number>
 </script>
 
 <template>
-  <p class="muted small">A feat at each of these levels; an Ability Score Improvement is a feat too.</p>
-  <div v-for="f in featLevels(d)" :key="f.level" class="wz-choice" :class="{ open: !featAt(f.level)?.feat }">
-    <b>Level {{ f.level }}</b> <span class="muted small">{{ f.boon ? 'Epic Boon' : 'feat' }}</span>
-    <Dropdown :value="featAt(f.level)?.feat ?? ''" @change="setFeat(f.level, val($event))">
-      <option value="">Choose…</option>
-      <option v-for="x in featsFor(f.boon)" :key="x.id" :value="x.id">{{ x.name }}</option>
-    </Dropdown>
-    <template v-if="get(featAt(f.level)?.feat)?.fields.abilityIncrease">
-      <SpreadPicker :key="featAt(f.level)!.feat" :bonus="get(featAt(f.level)!.feat)!.fields.abilityIncrease!" :scores="scoresBefore(f.level)" :model-value="featAt(f.level)!.choice" @update:model-value="c => setFeatChoice(f.level, c)" />
-    </template>
+  <div v-if="levels.length > 1" class="seg wz-feat-levels" role="tablist" aria-label="Feat levels">
+    <button v-for="l in levels" :key="l.level" type="button" role="tab" :class="{ on: level?.level === l.level }" :aria-selected="level?.level === l.level" @click="chosenLevel = l.level">
+      Level {{ l.level }}<template v-if="featAt(l.level)?.feat">: {{ get(featAt(l.level)!.feat)?.name }}</template><span v-else class="wz-need small"> to choose</span>
+    </button>
   </div>
+  <p v-else-if="level" class="small muted">A {{ level.boon ? 'Epic Boon' : 'feat' }} at level {{ level.level }}; an Ability Score Improvement is a feat too.</p>
+  <WzChooser v-if="level" :key="level.level" :items="items" :picked="featAt(level.level)?.feat" :label="`Feats for level ${level.level}`" @pick="id => setFeat(level!.level, id)">
+    <template #detail="{ item, picked }">
+      <p v-if="!picked" class="small muted wz-ch-hint-line">Click {{ item.label }} on the left to take it at level {{ level!.level }}.</p>
+      <div v-if="picked && get(item.id)?.fields.abilityIncrease" class="wz-choice">
+        <b>Its ability increase</b>
+        <SpreadPicker :key="item.id" :bonus="get(item.id)!.fields.abilityIncrease!" :scores="scoresBefore(level!.level)" :model-value="featAt(level!.level)!.choice" @update:model-value="c => setFeatChoice(level!.level, c)" />
+      </div>
+      <FeatCard v-if="get(item.id)" :e="get(item.id)!" title />
+    </template>
+  </WzChooser>
 </template>

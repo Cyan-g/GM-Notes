@@ -180,7 +180,8 @@ function remove() {
         </template>
         <!-- A character is built on its sheet; the notes are written on the character's page. -->
         <CharacterSheet v-else-if="e.type === 'pc'" :pc="e" build />
-        <section v-else class="edit-text">
+        <!-- a class's text (mostly "Source: …") comes after its structured parts: below, not above, a long page -->
+        <section v-else-if="e.type !== 'class'" class="edit-text">
           <SubclassInfo v-if="e.type === 'subclass'" :e="e" edit />
           <RaceBonusEdit v-if="e.type === 'race' && abilityDef" :e="e" :def="abilityDef" />
           <BackgroundEdit v-if="e.type === 'background'" :e="e" />
@@ -204,6 +205,10 @@ function remove() {
         <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => f.kind !== 'sheet' && f.kind !== 'classes')" :key="f.key">
           <h2>{{ f.label }}</h2>
           <FieldInput :def="f" :entry="e" />
+        </section>
+        <section v-if="e.type === 'class'" class="edit-text">
+          <h2>Text</h2>
+          <BodyEditor compact :model-value="e.body" :hint="e.name" @update:model-value="setBody" />
         </section>
       </div>
 

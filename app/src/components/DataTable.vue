@@ -36,7 +36,12 @@ const props = withDefaults(defineProps<{
 
 /** The columns, leaving out any with nothing in any row (a Player nobody filled in). */
 const columns = computed(() => props.cols.map(k => column(k, props.type)).filter(c => !props.rows.length || props.rows.some(e => !isEmpty(c.value(e)))))
-const facetDefs = computed(() => props.facets.map(k => facet(k, props.type)).map(f => ({ f, values: f.values(props.rows) })).filter(x => x.values.length > 1))
+// ---- known to players or DM only: entries that can be shared (not characters, sessions, encounters, nor what came
+// from elsewhere and is read-only here) ----
+const shareable = (e: Entry) => e.type !== 'pc' && canExport(e) && !isShared(e)
+const knownCol = computed(() => !playerMode.value && !store.readOnly && props.rows.some(shareable))
+// (in DM mode, where some rows can be shared: "Players see", to find what isn't shared yet)
+const facetDefs = computed(() => [...props.facets, ...(knownCol.value ? ['@shared'] : [])].map(k => facet(k, props.type)).map(f => ({ f, values: f.values(props.rows) })).filter(x => x.values.length > 1))
 
 const q = ref('')
 const sortKey = ref(props.sort.key)
@@ -137,10 +142,7 @@ function addToBook(id: string) {
   const b = activeSpellbook()
   if (!b.known.includes(id)) { b.known.push(id); touch() }
 }
-// ---- known to players or DM only: entries that can be shared (not characters, sessions, encounters, nor what came
-// from elsewhere and is read-only here) ----
-const shareable = (e: Entry) => e.type !== 'pc' && canExport(e) && !isShared(e)
-const knownCol = computed(() => !playerMode.value && !store.readOnly && props.rows.some(shareable))
+// ---- known to players or DM only (shareable and knownCol: above, for the facets) ----
 const shownShareable = computed(() => shown.value.filter(shareable))
 const allKnown = computed(() => shownShareable.value.length > 0 && shownShareable.value.every(e => e.visibility === 'known'))
 const someKnown = computed(() => shownShareable.value.some(e => e.visibility === 'known'))

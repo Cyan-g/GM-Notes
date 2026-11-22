@@ -97,15 +97,19 @@ const groups = computed(() => {
   return [...map.values()].sort((a, b) => a.first - b.first).map(g => ({ ...g, bars: g.bars.sort((a, b) => a.left - b.left) }))
 })
 const nowPct = computed(() => pct(now.value))
+/** A year label too close to the "now" label to show beside it. */
+const nearNow = (t: number) => Math.abs(pct(t) - nowPct.value) * width.value / 100 < 34
 </script>
 
 <template>
   <div ref="root" class="tl-chart">
     <div class="tl-axis">
-      <span v-for="t in ticks" :key="t" class="tl-tick" :style="{ left: pct(t) + '%' }">{{ yearLabel(t) }}</span>
+      <!-- "now" is a label of the axis (a year next to it gives way), not over the rows' labels -->
+      <span v-for="t in ticks.filter(t => !nearNow(t))" :key="t" class="tl-tick" :style="{ left: pct(t) + '%' }">{{ yearLabel(t) }}</span>
+      <span v-if="nowPct >= 0 && nowPct <= 100" class="tl-tick tl-tick-now" :style="{ left: nowPct + '%' }">now</span>
     </div>
     <div class="tl-body">
-      <div v-if="nowPct >= 0 && nowPct <= 100" class="tl-now" :style="{ left: nowPct + '%' }"><span>now</span></div>
+      <div v-if="nowPct >= 0 && nowPct <= 100" class="tl-now" :style="{ left: nowPct + '%' }" />
       <div v-for="t in ticks" :key="'g' + t" class="tl-grid" :style="{ left: pct(t) + '%' }" />
 
       <template v-if="events.length">

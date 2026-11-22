@@ -31,10 +31,11 @@ const COLS: Partial<Record<EntryType, { cols: string[]; facets?: string[]; sort?
   event: { cols: ['date', 'category', 'places'], facets: ['category'] },
   campaign: { cols: ['status', '@sessions', '@lastPlayed', '@party'] },
   session: { cols: ['campaign', '@sessionNo', 'date'], facets: ['campaign'], sort: { key: '@sessionNo', dir: -1 } },
-  encounter: { cols: ['campaign', 'session', 'location'], facets: ['campaign'] },
+  encounter: { cols: ['campaign', 'session', 'location', '@creatures', '@xp'], facets: ['campaign'] },
   writing: { cols: ['writingType', 'category', 'author'], facets: ['writingType'] },
   note: { cols: ['category', 'campaign'] },
-  class: { cols: ['class'] },
+  // the name is the class: what tells them apart is the die, the saves and the spellcasting
+  class: { cols: ['@hitDie', '@saves', '@caster'] },
   subclass: { cols: ['class'], facets: ['class'] },
 }
 const cfg = computed(() => COLS[props.type] ?? { cols: [] })

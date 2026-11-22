@@ -230,6 +230,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.valu
         <CharacterSheet v-if="e.type === 'pc'" :pc="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
         <AddToTracker v-if="statblock && e.type === 'creature' && !state.readOnly && !playerMode" :id="e.id" />
+        <p v-if="!statblock && e.type === 'creature'" class="muted">No stats yet<template v-if="!state.readOnly && !playerMode"> — <a :href="hrefEntry(e.id) + '/edit'">✎ Edit</a> to fill in the statblock</template>.</p>
         <FeatCard v-if="e.type === 'feat'" :e="e" source />
         <FeatInfo v-if="e.type === 'feat'" :e="e" />
         <SubclassInfo v-if="e.type === 'subclass'" :e="e" />

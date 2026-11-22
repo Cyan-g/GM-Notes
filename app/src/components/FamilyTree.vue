@@ -46,7 +46,7 @@ const sub = (id: Id) => { const e = get(id); return e ? describe(e, { parent: fa
     <div class="family-tools">
       <span class="muted small">Add to the family:</span>
       <button v-for="a in ADD" :key="a.key" type="button" class="chip-btn" :class="{ on: adding === a.key }" @click="adding = adding === a.key ? null : a.key">＋ {{ a.label }}</button>
-      <EntryPicker v-if="adding" add :types="[...PEOPLE]" :exclude="already" :placeholder="`${ADD.find(x => x.key === adding)!.label}: type a name…`" @pick="add" />
+      <EntryPicker v-if="adding" :key="adding" add focus :types="[...PEOPLE]" :exclude="already" :placeholder="`${ADD.find(x => x.key === adding)!.label}: type a name…`" @pick="add" />
     </div>
 
     <div v-if="tree.nodes.length > 1" ref="box" class="family-scroll">

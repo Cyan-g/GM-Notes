@@ -226,7 +226,7 @@ export function loadSrdGear(): Promise<void> {
 /** The SRD item a kit line names ("Arrows" finds "Arrow"), if the app has one. */
 export const srdItemNamed = (name: string) => srdGear.value?.get(norm(name)) ?? srdGear.value?.get(norm(name).replace(/s$/, ''))
 /** A kit line for a pick the player makes ("Musical Instrument (one you chose)"), when the pick wasn't made. */
-const UNCHOSEN = /one you chose|of your choice|chosen above/i
+export const UNCHOSEN = /one you chose|of your choice|chosen above/i
 /**
  * Where a kit line's item comes from: the world's item, the SRD's (added to the world when the character is made), a
  * new item with just its name, or nowhere (a pick the player didn't make).

@@ -15,6 +15,14 @@ export interface NamedOptions {
   qualified?: boolean
 }
 
+/** Any entry with exactly this name, else with it as an alias (a [[link]] written by name instead of id). */
+export function entryByName(name: string): Entry | undefined {
+  const n = name.trim().toLowerCase()
+  if (!n) return undefined
+  const all = [...byType.value.values()].flat()
+  return all.find(e => e.name.trim().toLowerCase() === n) ?? all.find(e => e.aliases.some(a => a.trim().toLowerCase() === n))
+}
+
 /** The world's entry of a type with that name, if there is one (see NamedOptions for what else counts). */
 export function entryNamed(type: EntryType, name: string | undefined, o: NamedOptions = {}): Entry | undefined {
   const key = (s: string) => (o.loose ? norm(s) : s.trim().toLowerCase())

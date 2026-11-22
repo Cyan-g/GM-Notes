@@ -8,14 +8,14 @@ import type { CharacterSheet, Crafting, Entry, GearEffect, Id, InventoryLine, Pr
 import { MARTIAL_WEAPONS, MASTERY_OF, SIMPLE_WEAPONS } from './model/schema'
 import { optionsIn } from './model/lists'
 import { db, get, listOptions, state, touch } from './store'
-import { breakdown, gearTotals, scoreWith, sum } from './effects'
+import { breakdown, gearTotals, scoreWith, sum, type Part } from './effects'
 import { dexCap, isShield, isWearable, isWeaponOrArmor, restItems, type RegainRoll } from './items'
 import { unmet } from './requirements'
 import { setConditions } from './conditions'
 import { rule } from './rules'
 import { castingOf, hitDicePools } from './classRules'
 import { restSpecies, speciesExpertise, speciesGrants, speciesSkills, speciesSpeed, speciesSpeeds, speciesTraits } from './species'
-import { blankProfs, emptyBook, ownerOf, profsToEdit, sheetOf, sheetOrBlank, sheetToEdit, stackItem } from './sheetData'
+import { blankProfs, emptyBook, onSheetEdit, ownerOf, profsToEdit, sheetOf, sheetOrBlank, sheetToEdit, stackItem } from './sheetData'
 import { SKILLS, mod, profBonus, signed, type Ability } from './model/dnd'
 import { changed } from './edit'
 
@@ -143,8 +143,8 @@ export function activeBench(of?: Entry): Bench {
   const edit = (fn: (s: CharacterSheet) => void) => { const s = sheetToEdit(pc); fn(s); s.inventory = s.inventory.filter(l => !l.item || l.qty > 0); changed(pc) }
   const crafting = () => (sheetToEdit(pc).crafting ??= { known: [] })
   return {
-    // The tools are the sheet's tool proficiencies.
-    tools: raw?.proficiencies?.tools ?? [], known: raw?.crafting?.known ?? [],
+    // The tools are the character's tool proficiencies: typed ones and those their class, background, species and feats give.
+    tools: profsOf(sheetOrBlank(pc)).tools, known: raw?.crafting?.known ?? [],
     // The pouch is the ingredients in the inventory; "crafted" is everything else made from a recipe.
     list: w => inv.filter(l => l.item && wanted(w, l.item) && (w === 'pouch' || (get(l.item)?.fields.recipe)?.length)).map(l => ({ item: l.item!, qty: l.qty })),
     add(_w, id, n) { edit(s => stackItem(s, id, n)) },
@@ -164,17 +164,38 @@ export const saveBonus = (s: CharacterSheet, a: Ability, prof: number) => {
 }
 export const skillBonus = (s: CharacterSheet, name: string, prof: number) => {
   const sk = SKILLS.find(x => x.name === name)!
-  const t = gearTotals(s)
-  return mod(scoreWith(s, sk.ability, t)) + skillLevel(s, name) * prof + sum(t.skill[name])
+  const t = gearTotals(s), level = skillLevel(s, name)
+  // without proficiency, half the bonus (rounded down) with Jack of All Trades
+  return mod(scoreWith(s, sk.ability, t)) + (level ? level * prof : t.halfProf ? Math.floor(prof / 2) : 0) + sum(t.skill[name])
 }
 /** Initiative: DEX (with gear), the sheet's own bonus and any gear. */
 export const initiative = (s: CharacterSheet) => { const t = gearTotals(s); return mod(scoreWith(s, 'dex', t)) + (s.initBonus ?? 0) + sum(t.initiative) }
+/** The CON modifier now, with gear and features: what max HP follows. */
+export const conModOf = (s: CharacterSheet) => mod(scoreWith(s, 'con', gearTotals(s)))
+/** What a change of CON since max HP was set adds (or takes): the modifier's difference × the character's level. */
+export function conHpPart(s: CharacterSheet): Part | undefined {
+  if (s.maxHp == null || s.hpCon == null) return undefined
+  const d = conModOf(s) - s.hpCon
+  if (!d) return undefined
+  const pc = ownerOf(s), level = pc ? Math.max(1, totalLevel(pc)) : 1
+  return { label: `${d > 0 ? "higher" : "lower"} CON since it was set (${signed(d)} × level ${level})`, n: d * level }
+}
+/** Maximum HP without gear: the one set, following CON. */
+export const baseMaxHp = (s: CharacterSheet) => (s.maxHp == null ? undefined : s.maxHp + (conHpPart(s)?.n ?? 0))
 /** Maximum HP with gear (a Belt of Dwarvenkind-style +n); undefined while none is set. */
 export const maxHpOf = (s: CharacterSheet) => {
-  if (s.maxHp == null) return undefined
-  const t = gearTotals(s), n = s.maxHp + sum(t.maxHp)
+  const base = baseMaxHp(s)
+  if (base == null) return undefined
+  const t = gearTotals(s), n = base + sum(t.maxHp)
   return t.maxHpHalf ? Math.floor(n / 2) : n // 2014 exhaustion, level 4
 }
+/** Set max HP (typed, or the average): it's made with the CON there is now. */
+export function setMaxHp(s: CharacterSheet, n: number | undefined) {
+  s.maxHp = n
+  if (n == null) delete s.hpCon; else s.hpCon = conModOf(s)
+}
+// Before a sheet changes, note the CON its max HP was made with, so a change of CON from now on is followed.
+onSheetEdit(s => { if (s.maxHp != null && s.hpCon == null) s.hpCon = conModOf(s) })
 /** The species' other speeds, in words: "swim 30 ft, fly 30 ft (hover)". */
 export function otherSpeeds(s: CharacterSheet): string {
   const sp = speciesSpeeds(ownerOf(s))
@@ -321,13 +342,24 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
     || (when === 'heavy' && !!e && propsOf(e).includes('heavy'))
     || (when === 'oneHanded' && !!e && meleeOneHand(e) && weapons.length === 1)
   const nick = weapons.some(x => mastered.has(String(x.fields.baseWeapon)) && masteryOf(x) === 'Nick')
+  // Martial Arts: Monk weapons (Simple melee, Martial melee with Light) use STR or DEX and the Martial Arts die when
+  // it's bigger, while no armor or shield is worn and every weapon held is one
+  const isMonkWeapon = (e: Entry) => {
+    const cat = categoryOf(String(e.fields.baseWeapon ?? e.name)) ?? (e.fields.category as string | undefined)
+    return !isRanged(e) && (cat === 'Simple' || (cat === 'Martial' && propsOf(e).includes('light')))
+  }
+  const ma = t.unarmed?.monkWeapons && /d/.test(t.unarmed.dice) && !equipped(s).some(e => e.fields.kind === 'Armor') && weapons.every(isMonkWeapon) ? t.unarmed : undefined
+  const dieSize = (d: string) => Number(d.match(/d(\d+)/)?.[1]) || 0
   function line(e: Entry, offhand = false): Attack {
     const props = propsOf(e), ranged = isRanged(e), finesse = props.includes('finesse')
-    const m = finesse ? Math.max(str, dex) : ranged ? dex : str
+    const monk = !!ma && isMonkWeapon(e)
+    const m = finesse || monk ? Math.max(str, dex) : ranged ? dex : str
     const hitParts = [...(t.attackOf[e.id] ?? []), ...t.attackAll].filter(p => fits(p.when, ranged, finesse, e))
     const allDmg = [...(t.damageOf[e.id] ?? []), ...t.damageAll]
     const dmgParts = allDmg.filter(p => fits(p.when, ranged, finesse, e))
-    const dice = String(e.fields.damage ?? '').trim()
+    // a Monk weapon's own die, or the Martial Arts die when that's bigger ("1d6/1d8" for a versatile one, each)
+    const ownDice = String(e.fields.damage ?? '').trim()
+    const dice = monk ? ownDice.split('/').map(d => (dieSize(ma!.dice) > dieSize(d) ? ma!.dice : d.trim())).join('/') : ownDice
     // The off-hand attack adds no ability modifier (unless it's negative), unless a feature says so (Two-Weapon Fighting).
     const ability = offhand && !t.offhandMod ? Math.min(m, 0) : m
     const dmg = ability + sum(dmgParts)
@@ -353,7 +385,7 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
     const mastery = ms && mastered.has(String(e.fields.baseWeapon ?? '')) ? { name: ms, rule: ruleOf(ms) } : undefined
     return {
       id: e.id, name: e.name, toHit: m + (untrained ? 0 : prof) + sum(hitParts), damage, ...(extraLines.length ? { extras: extraLines } : {}), type: (e.fields.damageType)?.join('/'), note: e.fields.range,
-      untrained, gear, ...(mastery ? { mastery } : {}), ...(offhand ? { tag: nick ? 'off-hand (Nick)' : 'off-hand, bonus action' } : {}),
+      untrained, gear, ...(mastery ? { mastery } : {}), ...(monk && !offhand ? { tag: ma!.from } : {}), ...(offhand ? { tag: nick ? 'off-hand (Nick)' : 'off-hand, bonus action' } : {}),
     }
   }
   const out = weapons.map(e => line(e))
@@ -429,6 +461,32 @@ export const draggedLine = (pc: Entry) => (dragged.pc === pc.id ? sheetOf(pc)?.i
 
 /** A short rest: what recharges on one comes back (features, pact slots, item spells). Hit Dice are the player's to
  * spend and roll; they count them down on the sheet. */
+/**
+ * What a rest gave back, in a few words for the note after it: "Long rest: HP 12 → 38 · 3 spell slots · Rage ·
+ * 2 Hit Dice · Exhaustion 1 → 0". `before` is the stored sheet as it was.
+ */
+export function restSummary(pc: Entry, before: CharacterSheet | undefined, kind: 'short' | 'long'): string {
+  const now = sheetOrBlank(pc), was = (before ?? {}) as Partial<CharacterSheet>
+  const out: string[] = []
+  const max = maxHpOf(now)
+  const hpWas = was.hp ?? max, hpNow = now.hp ?? max
+  if (hpWas != null && hpNow != null && hpWas !== hpNow) out.push(`HP ${hpWas} → ${hpNow}`)
+  const usedSlots = (b?: Spellbook) => (b?.slots ?? []).reduce((n, x) => n + (x.used || 0), 0) + (b?.pact?.used ?? 0)
+  const slots = usedSlots(was.spellbook) - usedSlots(now.spellbook)
+  if (slots > 0) out.push(`${slots} spell slot${slots === 1 ? '' : 's'}`)
+  const usedWas = was.species?.used ?? {}, usedNow = now.species?.used ?? {}
+  const traits = speciesTraits(pc, now)
+  const back = Object.keys(usedWas).filter(k => (usedNow[k] ?? 0) < usedWas[k]).map(k => traits.find(a => a.key === k)?.trait.name ?? k)
+  if (back.length) out.push([...new Set(back)].join(', '))
+  const dice = (m?: Record<string, number>) => Object.values(m ?? {}).reduce((n, x) => n + x, 0)
+  const hd = dice(was.hitDiceSpent) - dice(now.hitDiceSpent)
+  if (hd > 0) out.push(`${hd} Hit ${hd === 1 ? 'Die' : 'Dice'}`)
+  const exWas = was.conditions?.includes('Exhaustion') ? was.exhaustion ?? 1 : 0, exNow = now.conditions?.includes('Exhaustion') ? now.exhaustion ?? 1 : 0
+  if (exWas !== exNow) out.push(`Exhaustion ${exWas} → ${exNow}`)
+  const name = kind === 'long' ? 'Long rest' : 'Short rest'
+  return out.length ? `${name}: ${out.join(' · ')}` : `${name}: nothing to get back${kind === 'short' ? '. Spend Hit Dice by counting them down, then type what you rolled (+ CON each) as healing' : ''}`
+}
+
 export function shortRest(pc: Entry): RegainRoll[] {
   const s = sheetToEdit(pc)
   restSlots(s.spellbook, 'short')

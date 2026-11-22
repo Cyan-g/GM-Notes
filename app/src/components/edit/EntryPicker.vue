@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // Pick an entry by typing its name. Single mode shows the current pick; add mode clears after each pick. A picker
 // limited to a few entries (`only`: the Tool items for a recipe's "Crafted with") lists them all, before anything is typed too.
+// Enter takes the highlighted entry; it never creates one or adds typed text unless that row was chosen on purpose
+// (arrow keys or the mouse), so a typo can't make a new world entry. `noCreate`: no "＋ Create" row at all.
 import EntryIcon from '../EntryIcon.vue'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import type { Entry, EntryType } from '../../model/types'
@@ -19,6 +21,8 @@ const props = withDefaults(defineProps<{
   only?: string[]
   /** Offer to use the typed text as it is (an option labelled "＋ Add “…” {freeText}"), emitted as `text`. */
   freeText?: string
+  /** No "＋ Create" row: only existing entries (and the free text, if offered). */
+  noCreate?: boolean
 }>(), { modelValue: null, add: false })
 const emit = defineEmits<{ 'update:modelValue': [string | null]; pick: [string]; text: [string] }>()
 
@@ -33,7 +37,7 @@ const results = computed(() => {
   if (q.value.trim()) return search(q.value, props.only.length, allowed)
   return props.only.map(id => get(id)).filter((e): e is Entry => !!e && allowed(e)).sort((a, b) => a.name.localeCompare(b.name))
 })
-const createType = computed(() => props.types?.length === 1 && !props.only ? props.types[0] : null)
+const createType = computed(() => props.types?.length === 1 && !props.only && !props.noCreate ? props.types[0] : null)
 const options = computed(() => [
   ...results.value.map(e => ({ kind: 'pick' as const, e })),
   ...(createType.value && q.value.trim() && !results.value.some(e => e.name.toLowerCase() === q.value.trim().toLowerCase())
@@ -41,7 +45,9 @@ const options = computed(() => [
   ...(props.freeText && q.value.trim() && !results.value.some(e => e.name.toLowerCase() === q.value.trim().toLowerCase())
     ? [{ kind: 'text' as const, e: null }] : []),
 ])
-watch(q, () => { sel.value = 0 })
+// whether the highlighted row was chosen (arrows, mouse) rather than just being first
+const moved = ref(false)
+watch(q, () => { sel.value = 0; moved.value = false })
 
 // The list floats over the page (fixed, at the input), so a card or a scrolling list it sits in never grows or
 // scrolls when it opens; it opens upwards when there's no room below.
@@ -77,15 +83,20 @@ function choose(i = sel.value) {
   if (props.add) emit('pick', id)
   else emit('update:modelValue', id)
   q.value = ''
-  if (!props.add) editing.value = false
+  // done: the list closes (in add mode it opens again on typing)
+  editing.value = false
 }
 function key(ev: KeyboardEvent) {
-  if (ev.key === 'ArrowDown') { sel.value = Math.min(sel.value + 1, options.value.length - 1); ev.preventDefault() }
-  else if (ev.key === 'ArrowUp') { sel.value = Math.max(sel.value - 1, 0); ev.preventDefault() }
-  else if (ev.key === 'Enter') { ev.preventDefault(); choose() }
+  if (ev.key === 'ArrowDown') { sel.value = Math.min(sel.value + 1, options.value.length - 1); moved.value = true; ev.preventDefault() }
+  else if (ev.key === 'ArrowUp') { sel.value = Math.max(sel.value - 1, 0); moved.value = true; ev.preventDefault() }
+  else if (ev.key === 'Enter') {
+    ev.preventDefault()
+    // the best match; a "＋ Create" or "＋ Add" row only when it was chosen
+    if (options.value[sel.value]?.kind === 'pick' || moved.value) choose()
+  }
   else if (ev.key === 'Escape') { editing.value = false; q.value = '' }
 }
-function blur() { setTimeout(() => { if (!props.add) editing.value = false; q.value = '' }, 150) }
+function blur() { setTimeout(() => { editing.value = false; q.value = '' }, 150) }
 </script>
 
 <template>
@@ -98,10 +109,10 @@ function blur() { setTimeout(() => { if (!props.add) editing.value = false; q.va
       <button v-if="modelValue" type="button" class="x" title="Clear" @click="emit('update:modelValue', null)">×</button>
     </div>
     <template v-else>
-      <input ref="input" v-model="q" :placeholder="placeholder || 'Type a name…'" @keydown="key" @blur="blur" @focus="editing = true" />
+      <input ref="input" v-model="q" :placeholder="placeholder || 'Type a name…'" @keydown="key" @blur="blur" @focus="editing = true" @input="editing = true" />
       <Teleport to="body">
       <ul v-if="showList" class="picker-list floating" :style="place">
-        <li v-for="(o, i) in options" :key="o.e?.id ?? o.kind" :class="{ sel: i === sel }" @mousedown.prevent="choose(i)" @mousemove="sel = i">
+        <li v-for="(o, i) in options" :key="o.e?.id ?? o.kind" :class="{ sel: i === sel }" @mousedown.prevent="choose(i)" @mousemove="sel = i; moved = true">
           <template v-if="o.kind === 'pick'">
             <span class="icon"><EntryIcon :e="o.e!" /></span>{{ o.e!.name }}
             <span class="muted small">{{ TYPES[o.e!.type].label }}</span>

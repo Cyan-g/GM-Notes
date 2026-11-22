@@ -6,7 +6,7 @@ import type { CharacterSheet, Entry, Id, Requirements } from './model/types'
 import { get } from './store'
 import { classesOf } from './model/classes'
 import { ABILITY_UPPER } from './model/dnd'
-import { raceChain } from './species'
+import { raceChain, speciesSkills } from './species'
 
 const ABILITY_SHORT: Record<string, string> = ABILITY_UPPER
 const orList = (l: string[]) => (l.length < 2 ? l.join('') : `${l.slice(0, -1).join(', ')} or ${l[l.length - 1]}`)
@@ -69,6 +69,8 @@ export function unmet(pc: Entry, s: CharacterSheet, e: Entry, score: (a: string)
     if (!ok) out.push(`needs ${whoText(r)}`)
   }
   if (r.races?.length && !raceFits(pc.fields.race as Id | undefined, r.races)) out.push(`needs ${orList(r.races.map(id => get(id)?.name ?? id))} heritage`)
-  for (const sk of r.skills ?? []) if (!s.skills[sk]) out.push(`needs proficiency in ${sk}`)
+  // a skill typed on the sheet, or one the class, background, species or a feat gives
+  const given = r.skills?.length ? speciesSkills(pc, s) : undefined
+  for (const sk of r.skills ?? []) if (!s.skills[sk] && !given?.has(sk)) out.push(`needs proficiency in ${sk}`)
   return out
 }

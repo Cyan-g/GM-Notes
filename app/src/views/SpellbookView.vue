@@ -5,8 +5,9 @@ import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import { optionLabel } from '../store'
 import type { Entry, Id, Spellbook } from '../model/types'
-import { db, get, touch } from '../store'
-import { activeSpellbook, currentPc, levelOf as charLevel, longRest, score, spellStats } from '../sheet'
+import { db, get, playerMode, touch } from '../store'
+import { activeSpellbook, currentPc, levelOf as charLevel, longRest, restSummary, score, spellStats } from '../sheet'
+import { noteUndo, restoreSheet, snapSheet } from '../undoNote'
 import { editSheet, sheetOf } from '../sheetData'
 import { ORD, mod, spellLevel, type Ability } from '../model/dnd'
 import { activeEffectsOf, isActive, rollsLine, toggleActive } from '../spells'
@@ -61,7 +62,8 @@ function pip(r: SlotRow, p: number) {
 }
 /** A character's long rest is the whole one (HP and hit dice too); the world's book only gets its slots back. */
 function rest() {
-  if (owner.value) { longRest(owner.value); return }
+  const pc = owner.value
+  if (pc) { const before = snapSheet(pc); longRest(pc); noteUndo(restSummary(pc, before, 'long'), restoreSheet(pc, before)); return }
   restSlots(book.value, 'long')
   touch()
 }
@@ -123,15 +125,27 @@ const innateRows = computed(() => {
 const castInnate = (x: SpeciesSpell, back = false) => { if (owner.value) editSheet(owner.value, s => useSpeciesSpell(s, x.key, back)) }
 const castItem = (g: GrantedSpell) => { if (owner.value) editSheet(owner.value, s => castFromItem(s, g)) }
 const giveBack = (g: GrantedSpell) => { if (owner.value) editSheet(owner.value, s => unuse(s, g)) }
-const shortRest = () => { const pc = owner.value; if (pc) editSheet(pc, s => { restItems(s, 'short'); restSlots(s.spellbook, 'short'); restSpecies(s, pc, 'short') }) }
+const shortRest = () => {
+  const pc = owner.value
+  if (!pc) return
+  const before = snapSheet(pc)
+  editSheet(pc, s => { restItems(s, 'short'); restSlots(s.spellbook, 'short'); restSpecies(s, pc, 'short') })
+  noteUndo(restSummary(pc, before, 'short'), restoreSheet(pc, before))
+}
 const hasShort = computed(() => granted.value.some(g => g.spell.how === 'short') || innate.value.some(x => x.spell.how === 'short') || rows.value.some(r => r.kind === 'pact'))
 
 // ---- known / prepared ----
 function learn(id: Id) { if (!book.value.known.includes(id)) { book.value.known.push(id); touch() } }
+/** Take a spell out of the book (and out of the prepared ones), with an Undo. */
 function forget(id: Id) {
   const b = book.value
+  const was = { known: [...b.known], prepared: [...b.prepared], always: [...b.always] }
   b.known = b.known.filter(x => x !== id); b.prepared = b.prepared.filter(x => x !== id); b.always = b.always.filter(x => x !== id)
   touch()
+  noteUndo(`${get(id)?.name ?? 'The spell'} taken out of the spellbook${was.prepared.includes(id) || was.always.includes(id) ? ' (it was prepared)' : ''}`, () => {
+    Object.assign(book.value, was)
+    touch()
+  })
 }
 const isPrepared = (id: Id) => book.value.prepared.includes(id) || book.value.always.includes(id)
 function prepare(id: Id) { learn(id); if (!isPrepared(id)) { book.value.prepared.push(id); touch() } }
@@ -314,7 +328,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
         <p v-if="!knownShown.length" class="muted small">No known spell matches.</p>
         </div>
         <p v-else class="muted small">No spells in the book yet.</p>
-        <EntryPicker add :types="['spell']" :exclude="book.known" placeholder="Add a spell to the book…" @pick="learn" />
+        <EntryPicker add :types="['spell']" :exclude="book.known" :no-create="playerMode" placeholder="Add a spell to the book…" @pick="learn" />
       </section>
 
       <!-- the right-hand column: prepared spells, then the spells the character's items grant -->

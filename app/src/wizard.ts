@@ -368,8 +368,8 @@ function draftSheet(d: Draft): CharacterSheet {
     for (const a of ABILITY_KEYS) if (plus[a] && !s.saves.includes(a)) s.saves.push(a)
   }
   s.skills = Object.fromEntries(d.skills.map(k => [k, 1 as const]))
+  // full HP: no current HP is the maximum (with what species, subclass and gear add on the sheet)
   s.maxHp = hpOf(d)
-  s.hp = s.maxHp
   if (d.size) s.size = d.size
   // Tools by name become the world's Tool items where it has them, else a line of their own.
   const toolIds: Id[] = [], other: string[] = []

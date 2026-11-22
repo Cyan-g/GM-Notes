@@ -1,5 +1,5 @@
 // The initiative tracker's state is saved with the world, so a fight survives closing the app.
-import type { Combatant, Entry, Id, Tracker } from './model/types'
+import type { Combatant, DeathSaveState, Entry, Id, Tracker } from './model/types'
 import { byType, db, get, touch } from './store'
 import { combatantsFrom, newCombatantId, playerCombatant, statsOf } from './encounter'
 import { concentrationDc, mod } from './model/dnd'
@@ -8,6 +8,7 @@ import { concentrationAdv, deathSaveAdv, gearTotals } from './effects'
 import { sheetOf, sheetToEdit } from './sheetData'
 import { changed } from './edit'
 import { isShared } from './sync'
+import { deathSaveFromDamage, isDead, noDeathSaves, settleDeathSaves } from './conditions'
 
 export function tracker(): Tracker {
   const d = db()
@@ -190,7 +191,11 @@ export function applyHp(c: Combatant, input: string) {
   let hp = s.hp, temp = s.tempHp
   if (op === 't') temp = Math.max(temp ?? 0, n) || undefined
   else if (op === '=') hp = n
-  else if (op === '+') hp = s.maxHp != null ? Math.min(s.maxHp, Math.max(0, hp ?? 0) + n) : (hp ?? 0) + n
+  else if (op === '+') {
+    // three failed death saves: dead; healing brings them back only if the DM says so (a revivify)
+    if (isDead(deathSavesOf(c)) && !window.confirm(`${c.name} is dead (three failed death saves). Heal them anyway?`)) return true
+    hp = s.maxHp != null ? Math.min(s.maxHp, Math.max(0, hp ?? 0) + n) : (hp ?? 0) + n
+  }
   else {
     if (!n) return true
     const wasDown = hp != null && hp <= 0
@@ -206,20 +211,20 @@ export function applyHp(c: Combatant, input: string) {
 
 /** A death saving throw: three successes and the character is stable, three failures and they die. */
 export function addDeathSave(c: Combatant, ok: boolean, by = 1) {
-  const d = { ...deathSavesOf(c) }
-  if (ok) d.ok = Math.min(3, d.ok + by); else d.fail = Math.min(3, d.fail + by)
-  setDeathSaves(c, d)
+  const d = deathSavesOf(c)
+  // a success counts on from where the boxes are; damage ends being stable (deathSaveFromDamage)
+  setDeathSaves(c, ok ? { ok: Math.min(3, d.ok + by), fail: d.fail } : deathSaveFromDamage(d, by))
   touch()
 }
 /** A combatant's death saves: their sheet's for a character whose HP is on it (one set of boxes), else their own. */
-export function deathSavesOf(c: Combatant): { ok: number; fail: number } {
+export function deathSavesOf(c: Combatant): DeathSaveState {
   const pc = sheetPc(c)
   const own = pc && fighterStats(c).hpFromSheet ? sheetOf(pc)?.deathSaves : c.deathSaves
   return own ?? { ok: 0, fail: 0 }
 }
-export function setDeathSaves(c: Combatant, d: { ok: number; fail: number } | undefined) {
+export function setDeathSaves(c: Combatant, d: DeathSaveState | undefined) {
   const pc = sheetPc(c)
-  const keep = d && (d.ok || d.fail) ? d : undefined
+  const keep = d && !noDeathSaves(d) ? settleDeathSaves(d) : undefined
   if (pc && fighterStats(c).hpFromSheet) {
     if (!keep && !sheetOf(pc)?.deathSaves) return
     const s = sheetToEdit(pc)

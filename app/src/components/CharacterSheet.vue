@@ -11,17 +11,18 @@ import { useReadOnly } from '../composables/useReadOnly'
 import AppIcon from './AppIcon.vue'
 import ConditionIcon from './ConditionIcon.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import type { CharacterSheet, ClassLine, Entry, Id, Proficiencies } from '../model/types'
+import type { CharacterSheet, ClassLine, DeathSaveState, Entry, Id, Proficiencies } from '../model/types'
 import { byType, get, listOptions, setList, state } from '../store'
 import { CLASS_DIE, DICE, classText, classesOf } from '../model/classes'
 import { dieOf } from '../classRules'
 import { changed } from '../edit'
 import { hrefEntry, hrefTab } from '../router'
 import {
-  armorClass, attacks, canAttune, canEquip, castingAbility, hitDiceOf, initiative, levelOf, maxHpOf, passivePerception, profsOf, saveBonus,
-  skillBonus, skillLevel, speedOf, baseSpeed, otherSpeeds, longRest, shortRest,
+  armorClass, attacks, baseMaxHp, canAttune, canEquip, castingAbility, conHpPart, hitDiceOf, initiative, levelOf, maxHpOf, passivePerception, setMaxHp, profsOf, saveBonus,
+  skillBonus, skillLevel, speedOf, baseSpeed, otherSpeeds, longRest, shortRest, restSummary,
 } from '../sheet'
 import { profsToEdit, sheetOrBlank, sheetToEdit } from '../sheetData'
+import { noteUndo, restoreSheet, snapSheet } from '../undoNote'
 import { ABILITIES, SKILLS, concentrationDc, dieSize, mod, profBonus, signed, type Ability } from '../model/dnd'
 import { advOf, breakdown, concentrationAdv, deathSaveAdv, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../effects'
 import { chargesLeft, setCharges, type RegainRoll } from '../items'
@@ -38,7 +39,7 @@ import ConditionsBar from './ConditionsBar.vue'
 import DeathSaves from './DeathSaves.vue'
 import LevelUpModal from './LevelUpModal.vue'
 import { XP_AT } from '../sheet'
-import { endConcentration, hpChanged } from '../conditions'
+import { endConcentration, hpChanged, isDead, noDeathSaves, settleDeathSaves } from '../conditions'
 import { featOfFeature, originFeatOf, picksLeft, speciesEffects, speciesExpertise, speciesGrants, speciesSizes, speciesTraits } from '../species'
 import { ui } from '../ui'
 
@@ -75,6 +76,8 @@ const saveAdv = (a: Ability) => advOf(gt.value.saveAdv[a])
 const saveParts = (a: Ability) => [...gt.value.saves, ...(gt.value.save[a] ?? [])]
 const initTotal = computed(() => initiative(s.value))
 const maxHp = computed(() => maxHpOf(s.value))
+/** What max HP is made of beyond the number set: a CON change since, and gear or features. */
+const hpParts = computed(() => [conHpPart(s.value), ...gt.value.maxHp].filter(p => !!p))
 const castMod = computed(() => (cast.value ? mod(scoreOf(cast.value)) : 0))
 const spellDC = computed(() => 8 + prof.value + castMod.value + sum(gt.value.spellDC))
 const spellAtk = computed(() => prof.value + castMod.value + sum(gt.value.spellAttack))
@@ -185,7 +188,11 @@ function hit(ev: Event) {
       hp = Math.max(0, hp - dmg)
       // still standing and concentrating: a CON save to keep it
       if ((hp > 0 || !maxHp.value) && x.conditions?.includes('Concentrating')) concDc.value = concentrationDc(-n)
-    } else hp = maxHp.value != null ? Math.min(maxHp.value, hp + n) : hp + n
+    } else {
+      // three failed death saves: dead; healing brings them back only if the player or DM says so (a revivify)
+      if (isDead(x.deathSaves) && !window.confirm(`${props.pc.name} is dead (three failed death saves). Heal them anyway?`)) return
+      hp = maxHp.value != null ? Math.min(maxHp.value, hp + n) : hp + n
+    }
     x.hp = hp
     if (maxHp.value) hpChanged(props.pc, x, before, hp, n < 0)
   })
@@ -202,9 +209,16 @@ function setHpNow(ev: Event) {
 const concDc = ref<number | null>(null)
 const concDone = (kept: boolean) => { if (!kept) edit(x => endConcentration(props.pc, x)); concDc.value = null }
 const dying = computed(() => !build.value && !!maxHp.value && (s.value.hp ?? maxHp.value) <= 0)
-const setSaves = (d: { ok: number; fail: number }) => edit(x => { if (d.ok || d.fail) x.deathSaves = d; else delete x.deathSaves })
-const rest = () => { if (!ro.value) rolls.value = longRest(props.pc) }
-const short = () => { if (!ro.value) rolls.value = shortRest(props.pc) }
+const setSaves = (d: DeathSaveState) => edit(x => { if (noDeathSaves(d)) delete x.deathSaves; else x.deathSaves = settleDeathSaves(d) })
+// a rest says what it gave back, with Undo (a stray click at the table)
+function restNow(kind: 'short' | 'long') {
+  if (ro.value) return
+  const before = snapSheet(props.pc)
+  rolls.value = kind === 'long' ? longRest(props.pc) : shortRest(props.pc)
+  noteUndo(restSummary(props.pc, before, kind), () => { restoreSheet(props.pc, before)(); rolls.value = [] })
+}
+const rest = () => restNow('long')
+const short = () => restNow('short')
 /** Item charges a rest gives back by a dice roll: the player rolls and types the number. */
 const rolls = ref<RegainRoll[]>([])
 function addCharges(r: RegainRoll, v: string) {
@@ -306,8 +320,8 @@ onBeforeUnmount(() => {
         <label v-if="!classes.length"><span>Level</span><input type="number" min="1" max="20" :value="pc.fields.level ?? ''" placeholder="1" @change="setLevel" /></label>
         <label v-if="!classes.length"><span>Hit die</span><Dropdown :value="s.hitDie || 'd8'" @change="edit(x => x.hitDie = ($event.target as HTMLSelectElement).value)"><option v-for="d in DICE" :key="d" :value="d">{{ d }}</option></Dropdown></label>
         <div class="cs-set-hp">
-          <label><span>Max HP</span><input type="number" :value="s.maxHp ?? ''" :placeholder="avgHp ? String(avgHp) : 'max'" title="Maximum HP" @change="edit(x => x.maxHp = num($event))" /></label>
-          <small v-if="avgHp && s.maxHp !== avgHp" class="muted" :title="avgText">average {{ avgHp }} <button type="button" class="link-btn" @click="edit(x => x.maxHp = avgHp)">use it</button></small>
+          <label><span>Max HP</span><input type="number" :value="baseMaxHp(s) ?? ''" :placeholder="avgHp ? String(avgHp) : 'max'" title="Maximum HP" @change="edit(x => setMaxHp(x, num($event)))" /></label>
+          <small v-if="avgHp && baseMaxHp(s) !== avgHp" class="muted" :title="avgText">average {{ avgHp }} <button type="button" class="link-btn" @click="edit(x => setMaxHp(x, avgHp))">use it</button></small>
         </div>
         <label><span>AC</span><input type="number" :value="s.acOverride ?? ''" :placeholder="`auto (${ac.ac})`" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></label>
         <label><span>Speed</span><input :value="ft(s.speed)" :placeholder="ft(baseSpeed(s) ?? 30)" @change="edit(x => x.speed = feet($event))" /></label>
@@ -335,7 +349,7 @@ onBeforeUnmount(() => {
             <input v-flash="s.hp ?? maxHp" class="cs-hp-now" type="number" :value="s.hp ?? maxHp ?? ''" placeholder="now" :disabled="ro" title="Current HP" @change="setHpNow" />
             <span class="muted">/</span>
           </template>
-          <span :class="{ tip: gt.maxHp.length && !build, 'gear-mod': gt.maxHp.length && !build }" :data-tip="build ? undefined : breakdown(`${s.maxHp ?? 0} without gear`, gt.maxHp)"><input v-flash="build ? s.maxHp : maxHp" type="number" :value="(build ? s.maxHp : maxHp) ?? ''" :placeholder="'max'" :disabled="locked" title="Maximum HP" @change="edit(x => x.maxHp = num($event))" /></span>
+          <span :class="{ tip: hpParts.length && !build, 'gear-mod': gt.maxHp.length && !build }" :data-tip="build ? undefined : breakdown(`${s.maxHp ?? 0} set`, hpParts)"><input v-flash="build ? baseMaxHp(s) : maxHp" type="number" :value="(build ? baseMaxHp(s) : maxHp) ?? ''" :placeholder="'max'" :disabled="locked" title="Maximum HP" @change="edit(x => setMaxHp(x, num($event)))" /></span>
           <template v-if="!build">
             <span class="muted small">temp</span>
             <input v-flash="s.tempHp ?? 0" type="number" :value="s.tempHp ?? ''" placeholder="0" :disabled="ro" title="Temporary HP" @change="edit(x => x.tempHp = num($event) || undefined)" />

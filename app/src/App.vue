@@ -36,6 +36,7 @@ import DevicesDialog from './components/DevicesDialog.vue'
 import SyncNotice from './components/SyncNotice.vue'
 import LinkPreview from './components/LinkPreview.vue'
 import TipLayer from './components/TipLayer.vue'
+import UndoNote from './components/UndoNote.vue'
 import StartScreen from './components/StartScreen.vue'
 import PublishDialog from './components/PublishDialog.vue'
 import { checkShared, isShared, syncStatus } from './sync'
@@ -150,6 +151,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
     <PublishDialog v-model="ui.publishOpen" />
     <LinkPreview />
     <TipLayer />
+    <UndoNote />
   </div>
 
   <StartScreen v-model:ready="ready" />

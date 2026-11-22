@@ -78,6 +78,8 @@ export interface GearEffect {
     // climb), any one-handed melee weapon for the off-hand attack (Dual Wielder), the butt-end attack (Polearm
     // Master), advantage on death saves (Durable), and save proficiency in the ability the feat raised (Resilient)
     | 'mediumArmorDex' | 'speedType' | 'offhandAny' | 'poleStrike' | 'deathSaveAdv' | 'saveFromIncrease'
+    // half the proficiency bonus on skill checks without proficiency (Jack of All Trades)
+    | 'halfProf'
   value?: number
   set?: boolean
   force?: boolean
@@ -96,6 +98,9 @@ export interface GearEffect {
   speedType?: 'climb' | 'swim' | 'fly' | 'burrow'
   /** `unarmed`: the die while holding no weapon or shield (Unarmed Fighting: d8 instead of d6). */
   emptyDice?: string
+  /** `unarmed`: Monk weapons (Simple melee, Martial melee with Light) get it too, the die and STR or DEX, while no
+   * armor or shield is worn and only such weapons are held (Martial Arts). */
+  monkWeapons?: boolean
   condition?: string
   /** AC formula (`acBase`): the ability modifiers added to `value` (Unarmored Defense: DEX and CON). */
   abilities?: Ability[]
@@ -224,6 +229,9 @@ export interface CharacterSheet {
   skills: Record<string, 1 | 2>
   hp?: number
   maxHp?: number
+  /** The CON modifier `maxHp` was set with: when CON changes (an ASI, an edit, an Amulet of Health), max HP follows by
+   * the difference × the character's level (sheet.ts baseMaxHp). Set when max HP is typed, else on the first change. */
+  hpCon?: number
   tempHp?: number
   /** The hit die of a character without classes (with classes, each class brings its own). */
   hitDie?: string
@@ -257,7 +265,7 @@ export interface CharacterSheet {
   /** Their exhaustion level (1–6) while they have Exhaustion. */
   exhaustion?: number
   /** Death saving throws while at 0 HP (the combat tracker shows the same ones). */
-  deathSaves?: { ok: number; fail: number }
+  deathSaves?: DeathSaveState
   /** The spell the character concentrates on (with the Concentrating condition); a second one ends it. */
   concentrating?: Id
   /** Creatures linked to the character (a familiar, a steed, a summon), each with its own name and hit points. */
@@ -405,6 +413,10 @@ export interface Proficiencies {
   other?: string
 }
 /** An item carried: an item entry (so weapons and armor count) or just a name. */
+/** Death saving throws at 0 HP: successes and failures; three successes make the character Stable, and the boxes
+ * start over (`stable`); damage while stable ends it. Three failures: dead. */
+export interface DeathSaveState { ok: number; fail: number; stable?: boolean }
+
 export interface InventoryLine {
   item?: Id; name?: string; qty: number; equipped?: boolean; attuned?: boolean
   /** The item's charges left (its full Charges while unset). */
@@ -544,7 +556,7 @@ export interface Combatant {
   /** Concentration saves still to roll (their DCs), from damage taken while concentrating. */
   concChecks?: number[]
   /** Death saving throws of a party member at 0 HP. */
-  deathSaves?: { ok: number; fail: number }
+  deathSaves?: DeathSaveState
   /** Legendary actions used since the start of its last turn. */
   legendaryUsed?: number
   note?: string

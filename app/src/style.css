@@ -2372,3 +2372,15 @@ select.dd option:is(:hover, :focus-visible)::before {
 .wz-step-text > span { display: inline-flex; align-items: center; gap: .3rem; }
 .wz-chosen { max-width: 9.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 11px; font-weight: 400; }
 .wz-step.on .wz-chosen { color: var(--ink-2); }
+
+/* the money field, with the reason when it refuses what's typed */
+.money-field { display: inline-flex; flex-direction: column; gap: .15rem; vertical-align: top; }
+.money-error { color: var(--accent); font-size: 11.5px; max-width: 16rem; line-height: 1.3; }
+
+/* the note after a rest or a removed spell, with Undo (UndoNote.vue) */
+.undo-note {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 46; display: flex; align-items: center; gap: .7rem;
+  max-width: min(640px, calc(100vw - 32px)); padding: .5rem .6rem .5rem .9rem; background: var(--panel); border: 1px solid var(--line);
+  border-left: 4px solid var(--accent); border-radius: 10px; box-shadow: 0 12px 40px rgb(0 0 0 / .25);
+}
+.undo-note .x { margin-left: auto; }

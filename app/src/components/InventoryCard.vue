@@ -6,7 +6,7 @@ import { useReadOnly } from '../composables/useReadOnly'
 import { computed, ref } from 'vue'
 import { optionLabel } from '../store'
 import type { CharacterSheet, Entry } from '../model/types'
-import { formatMoney, get, state } from '../store'
+import { formatMoney, get, playerMode, state } from '../store'
 import { canAttune, canEquip, draggedLine, dragged, endDrag, startDrag } from '../sheet'
 import { addToInventory, editSheet, sheetOrBlank } from '../sheetData'
 import EntryPicker from './edit/EntryPicker.vue'
@@ -38,6 +38,8 @@ const pouch = computed(() => lines.value.filter(x => x.e?.fields.kind === 'Ingre
 
 const addItem = (id: string) => addToInventory(props.pc, id)
 const addNamed = () => edit(x => { x.inventory.push({ name: 'New thing', qty: 1 }) })
+/** Something the world has no item for, on a line of its own (a bundle of letters). */
+const addText = (name: string) => edit(x => { x.inventory.push({ name, qty: 1 }) })
 
 // ---- the pop-up ----
 const shown = ref<number | null>(null)
@@ -92,7 +94,7 @@ function onDrop(ev: DragEvent) {
       </table>
     </template>
     <div v-if="!ro" class="cs-inv-add">
-      <EntryPicker add :types="['item']" placeholder="Add an item…" @pick="addItem" />
+      <EntryPicker add :types="['item']" :no-create="playerMode" free-text="as a line of its own" placeholder="Add an item…" @pick="addItem" @text="addText" />
       <button class="link-btn" @click="addNamed">＋ Other</button>
     </div>
     <label class="cs-money"><span>Money</span><MoneyInput :model-value="s.money" :disabled="ro" @update:model-value="v => edit(x => x.money = v)" /><span class="muted small">{{ formatMoney(s.money) }}</span></label>

@@ -10,8 +10,8 @@ import { classesOf, totalLevel } from '../model/classes'
 import { EPIC_BOON_LEVEL, hitDieOf, multiclassOf, rulesOf, subclassLevelOf, dieOf, classEntry } from '../classRules'
 import { bonusApplied, bonusOpen, type BonusChoice } from '../abilityBonus'
 import { byType, entries, get, listOptions } from '../store'
-import { castingAbility } from '../sheet'
-import { editSheet, profsToEdit } from '../sheetData'
+import { castingAbility, maxHpOf } from '../sheet'
+import { editSheet, profsToEdit, sheetToEdit } from '../sheetData'
 import { SKILLS, mod, signed, ABILITY_KEYS } from '../model/dnd'
 import { itemNamed } from '../lookup'
 import { rule } from '../rules'
@@ -154,6 +154,8 @@ function apply() {
   const hp = gain.value!, takeFeat = featDue.value && feat.value ? get(feat.value) : undefined, epic = boon.value
   const add = bonusApplied(featBonus.value, choice.value), sp = spells.value
   const brings = mc.value, skills = [...mcSkills.value], instrument = mcInstrument.value
+  // max HP before: the current HP goes up by what the maximum does (the level's HP, a per-level bonus, a higher CON)
+  const maxBefore = maxHpOf(sheetToEdit(pc))
   // the class line
   const l: ClassLine[] = JSON.parse(JSON.stringify(lines.value))
   const at = l.find(x => x.class === cls.value)
@@ -162,11 +164,9 @@ function apply() {
   pc.fields.classLevels = l
   delete pc.fields.level
   editSheet(pc, s => {
-    // hit points: the maximum and the current go up by the same (a sheet without a maximum keeps none)
-    if (s.maxHp != null) {
-      s.maxHp += hp
-      if (s.hp != null) s.hp = Math.min(s.maxHp, s.hp + hp)
-    }
+    // hit points: the level's (a sheet without a maximum keeps none); a higher CON from the feat below adds the
+    // difference for every level by itself (sheet.ts baseMaxHp), this one included
+    if (s.maxHp != null) s.maxHp += hp
     // the feat: its ability increases go into the scores (at most 20); a named feat is listed with the features
     if (takeFeat) {
       const f = takeFeat
@@ -194,6 +194,11 @@ function apply() {
       if (now !== was) book.preparedMax = (book.preparedMax ?? was) + (now - was)
       s.spellbook = book
     }
+  })
+  // the current HP goes up by as much as the maximum did
+  editSheet(pc, s => {
+    const after = maxHpOf(s)
+    if (s.hp != null && after != null && maxBefore != null) s.hp = Math.min(after, s.hp + Math.max(0, after - maxBefore))
   })
   changed(pc)
   emit('close')

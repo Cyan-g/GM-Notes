@@ -23,12 +23,17 @@ export const sheetOf = (pc: Entry): CharacterSheet | undefined =>
   pc.fields.sheet ? own({ ...blankSheet(), ...(pc.fields.sheet) }, pc) : undefined
 /** A PC's sheet for reading, blank if never filled in: still theirs, so their species and classes count on it. */
 export const sheetOrBlank = (pc: Entry): CharacterSheet => sheetOf(pc) ?? own(blankSheet(), pc)
+/** What's done to a sheet before any change (sheet.ts: note the CON max HP was made with). */
+let beforeEdit: ((s: CharacterSheet) => void) | undefined
+export const onSheetEdit = (fn: (s: CharacterSheet) => void) => { beforeEdit = fn }
 /** A PC's stored sheet for changing: created, or completed, as needed. */
 export function sheetToEdit(pc: Entry): CharacterSheet {
   const s = (pc.fields.sheet ??= {} as CharacterSheet) as Partial<CharacterSheet>
   const blank = blankSheet() as unknown as Record<string, unknown>
   for (const k of ['abilities', 'saves', 'skills', 'inventory', 'features']) if ((s as Record<string, unknown>)[k] == null) (s as Record<string, unknown>)[k] = blank[k]
-  return own(s as CharacterSheet, pc)
+  const out = own(s as CharacterSheet, pc)
+  beforeEdit?.(out)
+  return out
 }
 
 // ---- proficiencies ----

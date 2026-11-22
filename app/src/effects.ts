@@ -17,7 +17,7 @@ import { activeGear, itemsInUse, weightOf } from './items'
 export interface Part { label: string; n: number; when?: GearEffect['when'] }
 
 /** What an effect needs besides a number, in the editor. */
-export type EffectNeed = 'ability' | 'skill' | 'type' | 'text' | 'mode' | 'note' | 'dice' | 'proficient' | 'sense' | 'condition' | 'pb' | 'plusAbility' | 'abilities' | 'noShield' | 'when' | 'speedType' | 'emptyDice'
+export type EffectNeed = 'ability' | 'skill' | 'type' | 'text' | 'mode' | 'note' | 'dice' | 'proficient' | 'sense' | 'condition' | 'pb' | 'plusAbility' | 'abilities' | 'noShield' | 'when' | 'speedType' | 'emptyDice' | 'monkWeapons'
 /** What an effect can change, for the editor and the item card. */
 export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: EffectNeed[]; canSet?: boolean; noValue?: boolean }[] = [
   { on: 'ac', label: 'Armor class', needs: ['when'] },
@@ -30,7 +30,7 @@ export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: Effect
   { on: 'attack', label: 'Attack rolls', needs: ['when'] },
   { on: 'damage', label: 'Damage rolls', needs: ['when', 'pb'] },
   { on: 'extraDamage', label: 'Extra damage (typed)', needs: ['dice', 'type', 'proficient', 'when', 'note'], noValue: true },
-  { on: 'unarmed', label: 'Unarmed strike', needs: ['dice', 'proficient', 'emptyDice'], noValue: true },
+  { on: 'unarmed', label: 'Unarmed strike', needs: ['dice', 'proficient', 'emptyDice', 'monkWeapons'], noValue: true },
   { on: 'offhandMod', label: 'Off-hand attack adds its modifier', noValue: true },
   { on: 'offhandAny', label: 'Off-hand attack with any one-handed melee weapon', noValue: true },
   { on: 'poleStrike', label: 'Butt-end attack (d4, bonus action)', noValue: true },
@@ -38,6 +38,7 @@ export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: Effect
   { on: 'speedType', label: 'A speed equal to the walking speed', needs: ['speedType'], noValue: true },
   { on: 'deathSaveAdv', label: 'Advantage on death saves', noValue: true },
   { on: 'saveFromIncrease', label: 'Save proficiency in the ability raised', noValue: true },
+  { on: 'halfProf', label: 'Half proficiency on skill checks without proficiency', noValue: true },
   { on: 'spellAttack', label: 'Spell attack' },
   { on: 'spellDC', label: 'Spell save DC' },
   { on: 'skill', label: 'A skill', needs: ['skill', 'plusAbility'] },
@@ -102,7 +103,8 @@ export function describeEffect(f: GearEffect): string {
     case 'ac': return `${signed(v)} AC${WHEN[f.when ?? ''] ?? ''}`
     case 'acBase': return `AC ${v} + ${(f.abilities ?? []).map(a => ABILITY_SHORT[a]).join(' + ') || '—'} without armor${f.noShield ? ' or shield' : ''}`
     case 'acMin': return `AC at least ${v}`
-    case 'unarmed': return `Unarmed strike: ${f.dice || (f.fromScale ? 'the scaling die' : '1')}${f.emptyDice ? ` (${f.emptyDice} with no weapon or shield)` : ''}${f.proficient ? ', with STR or DEX' : ''}`
+    case 'unarmed': return `Unarmed strike${f.monkWeapons ? ' and Monk weapons' : ''}: ${f.dice || (f.fromScale ? 'the scaling die' : '1')}${f.emptyDice ? ` (${f.emptyDice} with no weapon or shield)` : ''}${f.proficient ? ', with STR or DEX' : ''}${f.monkWeapons ? ' (no armor or shield)' : ''}`
+    case 'halfProf': return 'Half the proficiency bonus on skill checks without proficiency'
     case 'offhandMod': return 'Off-hand attack adds the ability modifier'
     case 'offhandAny': return 'Off-hand attack with any one-handed melee weapon'
     case 'poleStrike': return 'Butt-end attack: d4 bludgeoning, bonus action'
@@ -149,7 +151,9 @@ export interface GearTotals {
   acBase: { label: string; n: number; abilities: Ability[]; noShield?: boolean }[]
   acMin: Part[]
   /** The unarmed strike's damage dice and whether it may use DEX (Martial Arts); the off-hand attack adding its modifier. */
-  unarmed?: { dice: string; dex: boolean; from: string; emptyDice?: string }
+  unarmed?: { dice: string; dex: boolean; from: string; emptyDice?: string; monkWeapons?: boolean }
+  /** Half the proficiency bonus on skill checks without proficiency (Jack of All Trades), by what gives it. */
+  halfProf?: string
   offhandMod?: string
   /** Any one-handed melee weapon for the off-hand attack; the butt-end attack; advantage on death saves (by what gives it). */
   offhandAny?: string
@@ -227,7 +231,8 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
         case 'ac': t.ac.push(p); break
         case 'acBase': t.acBase.push({ label: name, n, abilities: f.abilities ?? [], ...(f.noShield ? { noShield: true } : {}) }); break
         case 'acMin': t.acMin.push(p); break
-        case 'unarmed': if (!t.unarmed || (f.dice ?? '') > t.unarmed.dice) t.unarmed = { dice: f.dice || '1', dex: !!f.proficient, from: name, ...(f.emptyDice ? { emptyDice: f.emptyDice } : {}) }; break
+        case 'unarmed': if (!t.unarmed || (f.dice ?? '') > t.unarmed.dice) t.unarmed = { dice: f.dice || '1', dex: !!f.proficient, from: name, ...(f.emptyDice ? { emptyDice: f.emptyDice } : {}), ...(f.monkWeapons ? { monkWeapons: true } : {}) }; break
+        case 'halfProf': t.halfProf = name; break
         case 'offhandMod': t.offhandMod = name; break
         case 'offhandAny': t.offhandAny = name; break
         case 'poleStrike': t.poleStrike = name; break

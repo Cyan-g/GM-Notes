@@ -95,13 +95,16 @@ export function loadOf(s: CharacterSheet, t?: GearTotals): { carried: number; ca
   const mode = rule('carryingCapacity')
   if (mode === 'off') return undefined
   const str = t ? scoreWith(s, 'str', t) : s.abilities.str
-  const size = String(speciesSize(ownerOf(s)) ?? 'Medium')
-  const k = /large/i.test(size) ? 2 : /tiny/i.test(size) ? 0.5 : 1
+  const k = sizeLoad(s)
   const carried = weightOf(s), capacity = str * 15 * k
   if (mode === 'capacity') return { carried, capacity, state: carried > capacity ? 'over' : 'ok' }
   const light = str * 5 * k, heavy = str * 10 * k
   return { carried, capacity, light, heavy, state: carried > heavy ? 'heavy' : carried > light ? 'encumbered' : 'ok' }
 }
+/** How much more (or less) a creature of the character's size carries: Large ×2, Tiny ×½. */
+const sizeLoad = (s: CharacterSheet) => { const size = String(s.size ?? speciesSize(ownerOf(s)) ?? 'Medium'); return /large/i.test(size) ? 2 : /tiny/i.test(size) ? 0.5 : 1 }
+/** The carrying capacity (STR × 15, by size), shown even when the Ruleset doesn't check it. */
+export const capacityOf = (s: CharacterSheet, t?: GearTotals) => (t ? scoreWith(s, 'str', t) : s.abilities.str) * 15 * sizeLoad(s)
 /** An effect in a few words: "+1 AC", "STR 19", "Resistance: fire", "+2 Stealth". */
 export function describeEffect(f: GearEffect): string {
   const v = Number(f.value) || 0

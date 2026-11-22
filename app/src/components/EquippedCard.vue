@@ -8,7 +8,7 @@ import { computed, ref } from 'vue'
 import type { Entry, InventoryLine } from '../model/types'
 import { get, state } from '../store'
 import { blockedFor, canAttune, canEquip, draggedLine, dragged, endDrag, proficientWith, startDrag } from '../sheet'
-import { editSheet, sheetOf } from '../sheetData'
+import { editSheet, setInUse, sheetOf } from '../sheetData'
 import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
 import { chargesLeft, effectsOf, itemsInUse, regainText, setCharges, spellsOf } from '../items'
@@ -72,17 +72,32 @@ function onDrop(ev: DragEvent) {
   }
   editSheet(props.pc, x => {
     const l = x.inventory[i]
-    // worn or wielded if it can be; attuned too if it needs attunement (a ring, a staff, magic armor)
-    if (canEquip(l)) l.equipped = true
-    if (canAttune(l)) l.attuned = true
+    // worn or wielded if it can be; attuned too if it needs attunement (a ring, a staff, magic armor); one of a stack
+    const eq = canEquip(l), at = canAttune(l)
+    const j = eq ? setInUse(x, i, 'equipped', true) : i
+    if (at) setInUse(x, j, 'attuned', true)
   })
   endDrag()
 }
 
 /** Take an item off, or end its attunement: it stays in the inventory. */
-const off = (i: number, key: 'equipped' | 'attuned') => { if (!ro.value) editSheet(props.pc, x => { delete x.inventory[i][key] }) }
+const off = (i: number, key: 'equipped' | 'attuned') => { if (!ro.value) editSheet(props.pc, x => { setInUse(x, i, key, false) }) }
+/** A two-handed weapon held with a shield: one of them can't be used. */
+const handsFull = computed(() => {
+  const twoHanded = wielded.value.find(x => (x.e!.fields.properties ?? []).some(p => /two-handed/i.test(p)))
+  const shield = worn.value.find(x => x.e!.fields.armorType === 'Shield')
+  return twoHanded && shield ? `${twoHanded.e!.name} needs both hands: with ${shield.e!.name} on, only one of them can be used at a time.` : ''
+})
+/** The name the character gave their copy, else the item's. */
+const nameOf = (x: { l: InventoryLine; e?: Entry }) => x.l.label || x.e!.name
 
 const shown = ref<number | null>(null)
+/** The character's own name or note for the item shown (empty: none). */
+function setOwn(key: 'label' | 'note', ev: Event) {
+  const v = (ev.target as HTMLInputElement).value.trim(), i = shown.value
+  if (i == null || ro.value) return
+  editSheet(props.pc, x => { if (v) x.inventory[i][key] = v; else delete x.inventory[i][key] })
+}
 const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null ? sheetOf(props.pc)?.inventory[shown.value] : undefined))
 </script>
 
@@ -91,7 +106,7 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
     <h3>Equipped <button v-if="lines.length" type="button" class="link-btn small push-right" title="Print these items as cards (PDF, poker size)" @click="printItems"><AppIcon ui="cards" /> Cards</button></h3>
     <ul v-if="worn.length || wielded.length || other.length" class="rel">
       <li v-for="x in [...worn, ...wielded, ...other]" :key="x.i" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'equipped')" @dragend="endDrag">
-        <button class="link-btn cs-item" @click="shown = x.i">{{ x.e!.name }}</button>
+        <button class="link-btn cs-item" @click="shown = x.i">{{ nameOf(x) }}</button>
         <span v-if="untrained(x)" class="cs-untrained" :title="x.e!.fields.kind === 'Weapon' ? 'Not proficient: no proficiency bonus to hit' : 'Not proficient: disadvantage on STR and DEX rolls, no spellcasting'"><AppIcon ui="warning" /></span>
         <span v-if="unfit(x)" class="cs-untrained tip" :data-tip="unfit(x)"><AppIcon ui="warning" /></span>
         <span class="role">{{ label(x) }}</span>
@@ -100,13 +115,17 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
     </ul>
     <p v-else class="muted small">Nothing worn or wielded. Drag weapons, armor and other gear onto this card from the inventory.</p>
 
+    <p v-if="handsFull" class="warn-note small">{{ handsFull }}</p>
     <p v-if="refused" class="error small">Can't: {{ refused }}.</p>
     <h4>Attunement <span v-flash.neutral="attuned.length" class="muted small">{{ attuned.length }} / {{ ATTUNE_SLOTS }}</span></h4>
     <ol class="attune-slots">
       <li v-for="(x, n) in slots" :key="n" :class="{ empty: !x, over: n >= ATTUNE_SLOTS }">
-        <button v-if="x" class="link-btn cs-item" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'attuned')" @dragend="endDrag" @click="shown = x.i">{{ x.e!.name }}</button>
+        <button v-if="x" class="link-btn cs-item" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'attuned')" @dragend="endDrag" @click="shown = x.i">{{ nameOf(x) }}</button>
         <span v-else class="muted small">empty</span>
         <span v-if="x && unfit(x)" class="cs-untrained tip" :data-tip="unfit(x)"><AppIcon ui="warning" /></span>
+        <!-- an attuned weapon or armor still has to be wielded or worn to attack or protect -->
+        <span v-if="x && canEquip(x.l) && !x.l.equipped" class="muted small">not {{ x.e!.fields.kind === 'Weapon' ? 'wielded' : 'worn' }}</span>
+        <button v-if="x && !ro && canEquip(x.l) && !x.l.equipped" class="link-btn" :title="`Equip ${x.e!.name} too`" @click="editSheet(pc, y => { setInUse(y, x.i, 'equipped', true) })">Equip</button>
         <button v-if="x && !ro" class="link-btn eq-off" :title="`End the attunement to ${x.e!.name} (it stays in the inventory)`" @click="off(x.i, 'attuned')">Unattune</button>
       </li>
     </ol>
@@ -127,6 +146,13 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
     <ItemModal v-if="shownLine?.item" :id="shownLine.item" @close="shown = null">
       <template #actions>
         <GearToggles :pc="pc" :i="shown!" />
+      </template>
+      <!-- the character's own copy: a name and a note of theirs -->
+      <template #own>
+        <div class="item-own small">
+          <label>Their name for it <input :value="shownLine.label ?? ''" :placeholder="get(shownLine.item)?.name" :disabled="ro" @change="setOwn('label', $event)" /></label>
+          <label>Note <input :value="shownLine.note ?? ''" placeholder="engraved, a gift from…" :disabled="ro" @change="setOwn('note', $event)" /></label>
+        </div>
       </template>
     </ItemModal>
   </div>

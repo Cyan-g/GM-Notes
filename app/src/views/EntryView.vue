@@ -184,14 +184,6 @@ function leaveCampaign(pc: Entry) {
   if (rest.length) pc.fields.campaigns = rest; else delete pc.fields.campaigns
   changed(pc)
 }
-/** A new item like this one, to make a variant of it (opened in its editor). */
-function copyItem() {
-  const x = e.value!
-  const n = createEntry(x.type, `${x.name} (copy)`, JSON.parse(JSON.stringify(x.fields)))
-  n.body = String(x.body ?? '')
-  changed(n)
-  go(hrefEntry(n.id) + '/edit')
-}
 const campaignNotes = computed(() => e.value?.type === 'campaign'
   ? entries.value.filter(n => (n.type === 'note' && n.fields.campaign === e.value!.id) || (n.type === 'pc' && ((n.fields.campaigns) ?? []).includes(e.value!.id))) : [])
 </script>
@@ -220,7 +212,6 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         <!-- An item's card takes the main two thirds; its recipe is the first card on the right (as when editing). -->
         <div v-if="e.type === 'item'" class="item-top">
           <ItemCard :e="e" />
-          <div v-if="!state.readOnly && !playerMode" class="copy-row"><button type="button" class="chip-btn" title="A new item with the same fields, effects, spells and features: a +2 version, a cursed one" @click="copyItem">Copy as new item</button></div>
         </div>
         <!-- A scroll shows the spell it holds. -->
         <section v-if="scrollSpell" class="scroll-spell">
@@ -229,7 +220,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         </section>
         <SpellCard v-if="e.type === 'spell'" :e="e" />
         <UpcastTable v-if="e.type === 'spell'" :e="e" />
-        <div v-if="e.type === 'spell' && !state.readOnly && !playerMode" class="copy-row"><button type="button" class="chip-btn" title="A new spell with the same stats, rolls and text, to make a variant of it" @click="copyItem">Copy as new spell</button></div>
+
         <CharacterSheet v-if="e.type === 'pc'" :pc="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
         <AddToTracker v-if="statblock && e.type === 'creature' && !state.readOnly && !playerMode" :id="e.id" />

@@ -283,7 +283,8 @@ export function spellStats(pc: Entry, ability?: Ability): { attack: number; dc: 
 
 // ---------- what the inventory adds up to ----------
 
-const equipped = (s: CharacterSheet) => s.inventory.filter(l => l.equipped).map(l => get(l.item)).filter((e): e is Entry => !!e)
+// (with the name the character gave their copy: "Grandfather's Blade" on the Attacks card)
+const equipped = (s: CharacterSheet) => s.inventory.filter(l => l.equipped).map(l => { const e = get(l.item); return e && l.label ? { ...e, name: l.label } : e }).filter((e): e is Entry => !!e)
 
 /**
  * Armor class from what's worn: body armor (its AC plus Dex as its armor type allows) and shields (what they add), plus the AC effects of the
@@ -376,6 +377,7 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
     || (when === 'heavy' && !!e && propsOf(e).includes('heavy'))
     || (when === 'oneHanded' && !!e && meleeOneHand(e) && weapons.length === 1)
   const nick = weapons.some(x => mastered.has(String(x.fields.baseWeapon)) && masteryOf(x) === 'Nick')
+  const shieldOn = equipped(s).some(isShield)
   // Martial Arts: Monk weapons (Simple melee, Martial melee with Light) use STR or DEX and the Martial Arts die when
   // it's bigger, while no armor or shield is worn and every weapon held is one
   const isMonkWeapon = (e: Entry) => {
@@ -400,8 +402,8 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
     const hands = props.includes('versatile') ? [' one-handed', ' two-handed'] : []
     // a versatile weapon held in two hands isn't "in one hand" (Dueling)
     const twoHandDmg = dmg - sum(dmgParts.filter(p => p.when === 'oneHanded'))
-    // the off-hand weapon is held in one hand: a versatile one's one-handed damage only
-    const dieList = dice.split('/').slice(0, offhand ? 1 : undefined)
+    // the off-hand weapon is held in one hand, and so is any weapon with a shield on: a versatile one's one-handed damage only
+    const dieList = dice.split('/').slice(0, offhand || shieldOn ? 1 : undefined)
     const damage = dice ? dieList.map((d, i) => `${d.trim()}${plus(i === 1 ? twoHandDmg : dmg)}${dieList.length > 1 ? hands[i] ?? '' : ''}`).join(' / ') : '—'
     // a bonus only when thrown (Thrown Weapon Fighting): a line of its own
     const thrown = props.includes('thrown') ? allDmg.filter(p => p.when === 'thrown') : []
@@ -425,7 +427,8 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
       untrained, gear, ...(mastery ? { mastery } : {}), ...(monk && !offhand ? { tag: ma!.from } : {}), ...(offhand ? { tag: nick ? 'off-hand (Nick)' : 'off-hand, bonus action' } : {}),
     }
   }
-  const out = weapons.map(e => line(e))
+  // the same weapon twice (two daggers) is one line; the second one is the off-hand attack below
+  const out = weapons.filter((e, i) => weapons.findIndex(x => x.id === e.id && x.name === e.name) === i).map(e => line(e))
   // two Light melee weapons: the second one's extra attack, off-hand; with Dual Wielder, any other one-handed melee weapon
   const light = weapons.filter(e => propsOf(e).includes('light') && !isRanged(e))
   const other = t.offhandAny && light.length ? weapons.find(e => e !== light[0] && meleeOneHand(e)) : undefined

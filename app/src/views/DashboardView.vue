@@ -17,7 +17,7 @@ const rows = computed(() => (view.value ? entries.value.filter(view.value.filter
   <div v-if="dash && view" class="dashboard">
     <header class="list-head">
       <h1><span class="icon"><AppIcon :ui="dash.uiIcon" :type="dash.typeIcon" :text="dash.icon" /></span>{{ dash.title }}</h1>
-      <button v-if="view.creates" class="primary" @click="newEntry(view.creates)">＋ New</button>
+      <button v-if="view.creates" class="primary" @click="newEntry(view.creates, view.createFields)">＋ New</button>
     </header>
     <nav v-if="dash.views.length > 1" class="tabs">
       <a v-for="v in dash.views" :key="v.name" :href="hrefDashboard(dash.id, v.name)" :class="{ on: v === view }">{{ v.name }}</a>

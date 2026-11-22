@@ -41,6 +41,8 @@ export function worksWhileOf(item: Entry): 'carried' | 'equipped' | 'attuned' {
   const w = item.fields.worksWhile
   if (w === 'carried' || w === 'equipped' || w === 'attuned') return w
   if (item.fields.attunement) return 'attuned'
+  // a ring, an amulet or a cloak works while worn
+  if (['Ring', 'Accessory'].includes(String(item.fields.kind ?? ''))) return 'equipped'
   return isWearable(item) ? 'equipped' : 'carried'
 }
 /** Whether an inventory line's item is in use, by when it works (worksWhileOf): carried while there's any left,

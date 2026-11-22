@@ -14,7 +14,7 @@ import { XP_AT, currentPc, levelOf, setCurrent } from '../sheet'
 import { rule } from '../rules'
 import { go, hrefEntry, route } from '../router'
 import { printCards, ui } from '../ui'
-import { isFavourite, toggleFavourite } from '../edit'
+import { changed, createEntry, isFavourite, toggleFavourite } from '../edit'
 import { canExport } from '../transfer'
 import { describe } from '../describe'
 import { statusText } from '../npc'
@@ -62,6 +62,15 @@ const canLevel = computed(() => props.e.type === 'pc' && !shared.value && !playe
 /** Enough XP for the next level (XP rule): the menu says so, and the button shows a dot. */
 const ready = computed(() => canLevel.value && rule('experience') === 'xp' && (props.e.fields.sheet?.xp ?? 0) >= XP_AT[levelOf(props.e)])
 function pick(job: () => void) { menu.value = false; job() }
+/** An item or spell to make a variant of (a +2 version, a cursed one): a copy, opened in its editor. */
+const canVariant = computed(() => (props.e.type === 'item' || props.e.type === 'spell') && !state.readOnly && !playerMode.value)
+function variant() {
+  const x = props.e
+  const n = createEntry(x.type, `${x.name} (copy)`, JSON.parse(JSON.stringify(x.fields)))
+  n.body = String(x.body ?? '')
+  changed(n)
+  go(hrefEntry(n.id) + '/edit')
+}
 /** Level up opens on the character's sheet: on its Overview, where the sheet is. */
 function levelUp() { pick(() => { go(hrefEntry(props.e.id)); ui.levelUp = props.e.id }) }
 const outside = (ev: PointerEvent) => { if (!menuEl.value?.contains(ev.target as Node)) menu.value = false }
@@ -91,6 +100,7 @@ watch(() => route.current, () => { menu.value = false })
           <button type="button" class="menu-row" role="menuitem" title="Earlier versions of this entry" @click="pick(() => showHistory = true)"><AppIcon ui="history" /><span class="menu-label">History</span></button>
           <button v-if="canExport(e)" type="button" class="menu-row" role="menuitem" title="Save as a file to share (someone else can import it)" @click="pick(() => exporting = true)"><AppIcon ui="exportFile" /><span class="menu-label">Export…</span></button>
           <button v-if="desktop && canExport(e)" type="button" class="menu-row" role="menuitem" title="Copy it, with what it uses, to another of your worlds" @click="pick(() => copying = true)"><AppIcon ui="share" /><span class="menu-label">Copy to…</span></button>
+          <button v-if="canVariant" type="button" class="menu-row" role="menuitem" :title="e.type === 'item' ? 'A new item with the same fields, effects, spells and features: a +2 version, a cursed one' : 'A new spell with the same stats, rolls and text, to make a variant of it'" @click="pick(variant)"><AppIcon ui="scrolls" /><span class="menu-label">Copy as new {{ e.type }}</span></button>
         </div>
       </div>
       <span v-if="player?.gone" class="badge" title="Its player unlinked it from your campaign or deleted it; this is the last version they sent">no longer shared</span>

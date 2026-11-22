@@ -440,6 +440,9 @@ export interface DeathSaveState { ok: number; fail: number; stable?: boolean }
 
 export interface InventoryLine {
   item?: Id; name?: string; qty: number; equipped?: boolean; attuned?: boolean
+  /** The character's own name for their copy of an item ("Grandfather's Blade") and a note on it ("engraved"). */
+  label?: string
+  note?: string
   /** The item's charges left (its full Charges while unset). */
   charges?: number
   /** The item's spells (by their place in its list) already used since the last rest. */

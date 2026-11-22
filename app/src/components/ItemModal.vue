@@ -4,6 +4,7 @@ import TypeIcon from './TypeIcon.vue'
 import { computed, onMounted, onUnmounted } from 'vue'
 import type { Id } from '../model/types'
 import { get } from '../store'
+import { spellLevel } from '../model/dnd'
 import { hrefEntry } from '../router'
 import ItemCard from './ItemCard.vue'
 import SpellCard from './SpellCard.vue'
@@ -30,7 +31,9 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true))
         <a class="button" :href="hrefEntry(e.id)" @click="emit('close')">Open page</a>
         <button class="x" title="Close (Esc)" @click="emit('close')">×</button>
       </header>
+      <slot name="own" />
       <ItemCard :e="e" />
+      <p v-if="e.fields.kind === 'Scroll' && spell" class="small muted">A Wizard can copy {{ spell.name }} into their spellbook: 2 hours and 50 gp per spell level ({{ spellLevel(spell) ? `${2 * spellLevel(spell)} hours, ${50 * spellLevel(spell)} gp` : 'a cantrip: not copied' }}).</p>
       <SpellCard v-if="spell" :e="spell" />
       <MarkdownView v-if="e.body" :source="e.body" class="item-modal-text" />
     </div>

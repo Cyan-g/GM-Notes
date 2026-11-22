@@ -48,6 +48,35 @@ export function profsToEdit(s: CharacterSheet): Proficiencies {
 /** A spellbook with nothing in it: no slots at any of the nine levels, no spells. */
 export const emptyBook = (): Spellbook => ({ slots: Array.from({ length: 9 }, () => ({ max: 0, used: 0 })), known: [], prepared: [], always: [] })
 
+// ---- putting an item to use ----
+/**
+ * Equip or attune one of a line's items. On a stack (4 Daggers) one comes off onto a line of its own and the rest stay
+ * in the pack; taking it off puts it back on a stack of the same item, if there is one (without a name or note of its
+ * own). Returns the index of the line that changed.
+ */
+export function setInUse(s: CharacterSheet, i: number, key: 'equipped' | 'attuned', on: boolean): number {
+  const l = s.inventory[i]
+  if (!l) return i
+  if (on) {
+    if (l[key]) return i
+    // a stack: one of them is put to use, on a line of its own
+    if (l.qty > 1 && !l.equipped && !l.attuned) {
+      l.qty -= 1
+      s.inventory.push({ item: l.item, qty: 1, [key]: true })
+      return s.inventory.length - 1
+    }
+    l[key] = true
+    return i
+  }
+  delete l[key]
+  // back in the pack: onto the stack of the same item, if any
+  if (!l.equipped && !l.attuned && l.item && !l.label && !l.note && l.charges == null && !l.used?.length) {
+    const j = s.inventory.findIndex((x, k) => k !== i && x.item === l.item && !x.equipped && !x.attuned && !x.label && !x.note && x.charges == null)
+    if (j >= 0) { s.inventory[j].qty += l.qty; s.inventory.splice(i, 1); return j > i ? j - 1 : j }
+  }
+  return i
+}
+
 // ---- changing it ----
 /** Change a PC's sheet and mark the PC as changed (nothing happens in a tab that doesn't save). */
 export function editSheet(pc: Entry, fn: (s: CharacterSheet) => void) {

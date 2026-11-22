@@ -6,7 +6,7 @@ import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { state } from '../store'
 import { blockedFor, canAttune, canEquip } from '../sheet'
-import { editSheet, sheetOf } from '../sheetData'
+import { editSheet, setInUse, sheetOf } from '../sheetData'
 
 const props = defineProps<{ pc: Entry; i: number }>()
 /** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
@@ -15,7 +15,7 @@ const l = computed(() => sheetOf(props.pc)?.inventory[props.i])
 const blocked = (key: 'equipped' | 'attuned') => (l.value && !l.value[key] ? blockedFor(props.pc, l.value, key) : undefined)
 function toggle(key: 'equipped' | 'attuned') {
   if (ro.value || !l.value || blocked(key)) return
-  editSheet(props.pc, x => { const line = x.inventory[props.i]; if (line[key]) delete line[key]; else line[key] = true })
+  editSheet(props.pc, x => { setInUse(x, props.i, key, !x.inventory[props.i][key]) })
 }
 </script>
 

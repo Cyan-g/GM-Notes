@@ -287,51 +287,59 @@ export const pickedLanguages = (d: Draft) => {
 
 // ---------- what's still open ----------
 
-export interface Step { id: string; label: string; open: string[] }
+/** A step: what it still needs (empty: done), and what's chosen there in a few words, for its tab. */
+export interface Step { id: string; label: string; open: string[]; chosen?: string }
 /** Each step with what it still needs (an empty list: done). */
 export function steps(d: Draft): Step[] {
   const r = rules(d), pc = draftPc(d)
   const s: Step[] = []
-  s.push({ id: 'class', label: 'Class', open: [!d.cls && 'a class'].filter(Boolean) as string[] })
+  const cls = classEntry(d.cls)
+  s.push({ id: 'class', label: 'Class', open: [!d.cls && 'a class'].filter(Boolean) as string[], chosen: d.cls ? `${cls ? classLabel(cls) : d.cls} ${d.level}` : '' })
   // the subclass, once the level reaches it: a step of its own, its details beside the list
-  if (d.cls && d.level >= subclassLevelOf(d.cls)) s.push({ id: 'subclass', label: 'Subclass', open: [!d.subclass && subclassesOf(d.cls).length ? 'a subclass' : ''].filter(Boolean) as string[] })
-  // species and background: a step each, their traits' open choices with them (an Origin feat's with the background)
-  const originOpen = (species: boolean) => speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && choiceOpen(a) && (a.race.type === 'race') === species)
+  if (d.cls && d.level >= subclassLevelOf(d.cls)) s.push({ id: 'subclass', label: 'Subclass', open: [!d.subclass && subclassesOf(d.cls).length ? 'a subclass' : ''].filter(Boolean) as string[], chosen: get(d.subclass)?.name ?? '' })
+  // species, subrace (when the species has them) and background: a step each, with their traits' open choices
+  // (an Origin feat's with the background)
+  const kindOf = (a: ReturnType<typeof speciesTraits>[number]) => (a.race.type !== 'race' ? 'background' : a.race.fields.parent ? 'subrace' : 'species')
+  const originOpen = (kind: string) => speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && choiceOpen(a) && kindOf(a) === kind)
     .map(a => (a.trait.name === a.race.name ? a.trait.name : `${a.trait.name} (${a.race.name})`))
-  s.push({ id: 'species', label: 'Species', open: [!d.race && 'a species', d.race && subracesOf(d.race).length ? 'a subrace' : '', ...originOpen(true)].filter(Boolean) as string[] })
-  s.push({ id: 'background', label: 'Background', open: [!d.background && backgrounds().length ? 'a background' : '', ...originOpen(false)].filter(Boolean) as string[] })
+  const main = mainRace(d.race), sub = d.race && main && d.race !== main.id ? get(d.race) : undefined
+  s.push({ id: 'species', label: 'Species', open: [!d.race && 'a species', ...originOpen('species')].filter(Boolean) as string[], chosen: main?.name ?? '' })
+  if (main && subracesOf(main.id).length) s.push({ id: 'subrace', label: 'Subrace', open: [!sub && 'a subrace', ...originOpen('subrace')].filter(Boolean) as string[], chosen: sub?.name ?? '' })
+  s.push({ id: 'background', label: 'Background', open: [!d.background && backgrounds().length ? 'a background' : '', ...originOpen('background')].filter(Boolean) as string[], chosen: get(d.background)?.name ?? '' })
   const unset = ABILITY_KEYS.filter(a => d.base[a] == null).length
+  const fin = finalScores(d)
   s.push({ id: 'scores', label: 'Ability scores', open: [
     unset ? `${unset} score${unset === 1 ? '' : 's'}` : '',
     d.method === 'pointbuy' && pointsSpent(d) > POINTS ? 'too many points spent' : '',
     d.bonusFrom !== 'custom' && bonusOpen(bonusOf(d), d.bonusChoice) ? 'the bonus\'s picks' : '',
-  ].filter(Boolean) as string[] })
+  ].filter(Boolean) as string[], chosen: unset ? '' : ABILITY_KEYS.map(a => fin[a]).join(' ') })
   const skillCount = r ? r.skills.count : d.ownSkillCount
   s.push({ id: 'profs', label: 'Proficiencies', open: [
     d.skills.length < skillCount ? `${skillCount - d.skills.length} skill${skillCount - d.skills.length === 1 ? '' : 's'}` : '',
     r?.toolChoice && d.tools.length < r.toolChoice.count ? `${r.toolChoice.count - d.tools.length} ${r.toolChoice.what}` : '',
     !r && d.cls && d.ownSaves.length < 2 ? 'two saving throws' : '',
     pickedLanguages(d).length < languageRule(d).picks ? `${languageRule(d).picks - pickedLanguages(d).length} language${languageRule(d).picks - pickedLanguages(d).length === 1 ? '' : 's'}` : '',
-  ].filter(Boolean) as string[] })
+  ].filter(Boolean) as string[], chosen: d.skills.join(', ') })
   const classFeatures = speciesTraits(pc).filter(a => isClassOrigin(a.race) && a.active)
-  if (classFeatures.length) s.push({ id: 'features', label: 'Class features', open: classFeatures.filter(choiceOpen).map(a => a.trait.name) })
+  const featurePicks = classFeatures.filter(a => a.trait.choice).flatMap(a => a.picks.map(id => get(id)?.name ?? a.trait.choice?.options?.find(o => o.id === id)?.name ?? id))
+  if (classFeatures.length) s.push({ id: 'features', label: 'Class features', open: classFeatures.filter(choiceOpen).map(a => a.trait.name), chosen: featurePicks.join(', ') })
   if (featLevels(d).length) s.push({ id: 'feats', label: 'Feats', open: featLevels(d).flatMap(({ level }) => {
     const f = d.feats.find(x => x.level === level)
     if (!f?.feat) return [`a feat at level ${level}`]
     return bonusOpen(get(f.feat)?.fields.abilityIncrease, f.choice) ? [`the scores of ${get(f.feat)?.name}`] : []
-  }) })
+  }), chosen: d.feats.map(f => get(f.feat)?.name).filter(Boolean).join(', ') })
   // Level 1 takes the die's maximum: nothing to choose (the summary shows it); later levels may take a typed roll.
-  if (d.level > 1) s.push({ id: 'hp', label: 'Hit points', open: [] })
-  s.push({ id: 'gear', label: 'Equipment', open: [] })
+  if (d.level > 1) s.push({ id: 'hp', label: 'Hit points', open: [], chosen: d.cls ? `${hpOf(d)} HP` : '' })
+  s.push({ id: 'gear', label: 'Equipment', open: [], chosen: [classKitsOf(d.cls).length > 1 ? `kit ${String.fromCharCode(65 + d.classKit)}` : '', backgroundKit(d) || backgroundGold(d) ? (d.bgKit === 'items' ? 'background gear' : 'background gold') : ''].filter(Boolean).join(' · ') })
   if (d.cls && casts(d)) {
     const c = spellCounts(d)
     s.push({ id: 'spells', label: 'Spells', open: [
       c.cantrips != null && d.cantrips.length < c.cantrips ? `${c.cantrips - d.cantrips.length} cantrip${c.cantrips - d.cantrips.length === 1 ? '' : 's'}` : '',
       c.prepared != null && d.spells.length < c.prepared ? `${c.prepared - d.spells.length} spell${c.prepared - d.spells.length === 1 ? '' : 's'}` : '',
       c.book != null && d.spells.length + d.book.length < Math.min(c.book, spellChoices(d).spells.length) ? 'spellbook spells' : '',
-    ].filter(Boolean) as string[] })
+    ].filter(Boolean) as string[], chosen: [d.cantrips.length && `${d.cantrips.length} cantrip${d.cantrips.length === 1 ? '' : 's'}`, d.spells.length && `${d.spells.length} spell${d.spells.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ') })
   }
-  s.push({ id: 'details', label: 'Name & story', open: [!d.name.trim() && 'a name'].filter(Boolean) as string[] })
+  s.push({ id: 'details', label: 'Name & story', open: [!d.name.trim() && 'a name'].filter(Boolean) as string[], chosen: d.name.trim() })
   s.push({ id: 'summary', label: 'Summary', open: [] })
   return s
 }

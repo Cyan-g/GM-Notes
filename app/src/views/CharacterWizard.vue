@@ -12,6 +12,7 @@ import AppIcon from '../components/AppIcon.vue'
 import WzClassStep from '../components/wizard/WzClassStep.vue'
 import WzSubclassStep from '../components/wizard/WzSubclassStep.vue'
 import WzSpeciesStep from '../components/wizard/WzSpeciesStep.vue'
+import WzSubraceStep from '../components/wizard/WzSubraceStep.vue'
 import WzBackgroundStep from '../components/wizard/WzBackgroundStep.vue'
 import WzScoresStep from '../components/wizard/WzScoresStep.vue'
 import WzProfsStep from '../components/wizard/WzProfsStep.vue'
@@ -55,7 +56,9 @@ function startOver() { if (confirm('Clear everything chosen so far?')) resetWiza
         <nav class="wizard-steps" aria-label="Steps">
           <button v-for="(s, i) in all" :key="s.id" type="button" class="wz-step" :class="{ on: s.id === step.id, done: !s.open.length && i < all.length - 1 }"
                   :aria-current="s.id === step.id ? 'step' : undefined" :title="s.open.length ? `Still to choose: ${s.open.join(', ')}` : undefined" @click="wizard.step = s.id">
-            <span class="wz-dot">{{ s.open.length ? i + 1 : '✓' }}</span>{{ s.label }}<small v-if="s.open.length" class="wz-open-count">{{ s.open.length }}</small>
+            <span class="wz-dot">{{ s.open.length ? i + 1 : '✓' }}</span>
+            <span class="wz-step-text"><span>{{ s.label }}<small v-if="s.open.length" class="wz-open-count">{{ s.open.length }}</small></span>
+              <small v-if="s.chosen" class="wz-chosen" :title="s.chosen">{{ s.chosen }}</small></span>
           </button>
         </nav>
         <div class="wizard-head">
@@ -72,6 +75,7 @@ function startOver() { if (confirm('Clear everything chosen so far?')) resetWiza
         <WzClassStep v-if="step.id === 'class'" />
         <WzSubclassStep v-else-if="step.id === 'subclass'" />
         <WzSpeciesStep v-else-if="step.id === 'species'" />
+        <WzSubraceStep v-else-if="step.id === 'subrace'" />
         <WzBackgroundStep v-else-if="step.id === 'background'" />
         <WzScoresStep v-else-if="step.id === 'scores'" />
         <WzProfsStep v-else-if="step.id === 'profs'" />

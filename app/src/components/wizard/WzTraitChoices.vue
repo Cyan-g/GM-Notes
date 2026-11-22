@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// What the species' traits (which="species") or the background's and its Origin feat's (which="background") ask the
-// player to choose in the wizard: a skill, a language, a cantrip, the ability their spells are cast with.
+// What the species' traits (which="species"), the subrace's ("subrace") or the background's and its Origin feat's
+// ("background") ask the player to choose in the wizard: a skill, a language, a cantrip, the ability their spells use.
 import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import { ownedSpells, wizard } from '../../wizard'
@@ -12,10 +12,10 @@ import { inputValue as val } from '../../dom'
 import TraitChoicePicker from '../TraitChoicePicker.vue'
 import MarkdownView from '../MarkdownView.vue'
 
-const props = defineProps<{ which: 'species' | 'background' }>()
+const props = defineProps<{ which: 'species' | 'subrace' | 'background' }>()
 const { d, pc } = useDraft()
 const choices = computed(() => speciesTraits(pc.value).filter(a => !isClassOrigin(a.race) && a.active && (a.trait.choice || a.trait.castWith?.among?.length)
-  && (props.which === 'species') === (a.race.type === 'race')))
+  && (a.race.type !== 'race' ? 'background' : a.race.fields.parent ? 'subrace' : 'species') === props.which))
 function setPicks(a: ActiveTrait, picks: string[]) {
   const all = { ...(wizard.d.species.picks ?? {}) }
   if (picks.filter(Boolean).length) all[a.key] = picks.filter(Boolean); else delete all[a.key]

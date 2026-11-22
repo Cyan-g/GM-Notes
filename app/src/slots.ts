@@ -62,7 +62,8 @@ export function ruleSlots(pc: Entry): RuleSlots | undefined {
 /** The slots one class gives at a class level on its own (for its progression table): slots of 1st…9th level, or pact
  * slots with their level. */
 export function classSlotsAt(caster: string, n: number): { slots: number[]; pact?: { count: number; level: number } } {
-  const lvl = caster === 'full' ? n : caster === 'artificer' ? Math.ceil(n / 2) : caster === 'half' ? (n >= 2 ? Math.ceil(n / 2) : 0) : caster === 'third' ? (n >= 3 ? Math.ceil(n / 3) : 0) : 0
+  // as the sheet counts them (above): a half caster has slots from level 1 (2024), a third caster from 3
+  const lvl = caster === 'full' ? n : caster === 'artificer' || caster === 'half' ? Math.ceil(n / 2) : caster === 'third' ? (n >= 3 ? Math.ceil(n / 3) : 0) : 0
   const slots = Array.from({ length: 9 }, (_, i) => TABLE[Math.min(20, lvl)]?.[i] ?? 0)
   return caster === 'pact' ? { slots, pact: { count: n >= 17 ? 4 : n >= 11 ? 3 : n >= 2 ? 2 : 1, level: Math.min(5, Math.ceil(n / 2)) } } : { slots }
 }

@@ -3,7 +3,7 @@
 // ("background") ask the player to choose in the wizard: a skill, a language, a cantrip, the ability their spells use.
 import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
-import { ownedSpells, wizard } from '../../wizard'
+import { draftHave, ownedSpells, wizard } from '../../wizard'
 import { ABILITY_NAME } from '../../model/dnd'
 import { choiceOpen, isClassOrigin, setCastAbility, sourceTag, speciesTraits, type ActiveTrait } from '../../species'
 import { renderInline } from '../../markdown'
@@ -30,7 +30,7 @@ const setCast = (a: ActiveTrait, ab: string) => { const holder = { species: { ..
     <b>{{ a.trait.name }}</b> <span class="feat-tag" :class="'tag-' + a.race.type">{{ sourceTag(a) }}</span>
     <details v-if="(a.trait.text ?? '').length > 220" class="small wz-rules"><summary>Rules</summary><MarkdownView :source="a.trait.text!" /></details>
     <p v-else-if="a.trait.text" class="small md" v-html="renderInline(a.trait.text)" />
-    <TraitChoicePicker v-if="a.trait.choice" :a="a" :owned="a.trait.choice.kind === 'spell' ? ownedSpells(d, { skip: a.key, withClass: true }) : undefined" @pick="p => setPicks(a, p)" />
+    <TraitChoicePicker v-if="a.trait.choice" :a="a" :have="draftHave(d)" :owned="a.trait.choice.kind === 'spell' ? ownedSpells(d, { skip: a.key, withClass: true }) : undefined" @pick="p => setPicks(a, p)" />
     <label v-if="a.trait.castWith?.among?.length" class="small wz-cast">Casts its spells with
       <Dropdown :value="a.cast ?? ''" @change="setCast(a, val($event))">
         <option value="">Choose…</option>

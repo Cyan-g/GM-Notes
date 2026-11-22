@@ -9,6 +9,9 @@ import { useReadOnly } from '../composables/useReadOnly'
 import { computed } from 'vue'
 import type { CharacterSheet, Entry, Feature, TraitOption } from '../model/types'
 import { editSheet } from '../sheetData'
+import { mod, profBonus } from '../model/dnd'
+import { totalLevel } from '../model/classes'
+import { noteUndo, restoreSheet, snapSheet } from '../undoNote'
 import { score } from '../sheet'
 import { get, state } from '../store'
 import { hrefEntry } from '../router'
@@ -56,9 +59,18 @@ const originFeat = computed(() => {
 })
 /** The sheet's feature lines, but for feats whose features are listed. */
 const ownFeatures = computed(() => props.s.features.filter(f => f.name.trim() && !live(featOfFeature(f))))
-const flip = (a: ActiveTrait) => { if (!ro.value) editSheet(props.pc, x => toggleOn(x, a.key)) }
+// switching a feature with uses on spends one (entering a Rage), and the note says how many are left, with Undo
+function flip(a: ActiveTrait) {
+  if (ro.value) return
+  const turningOn = !isOn(a, props.s), spends = turningOn && !!a.trait.uses
+  const before = spends ? snapSheet(props.pc) : undefined, had = left(a)
+  editSheet(props.pc, x => { toggleOn(x, a.key); if (spends && had > 0) spendUse(x, props.pc, a, 1, score) })
+  if (spends) noteUndo(had > 0 ? `${a.trait.name} on: ${had - 1} of ${max(a)} use${max(a) === 1 ? '' : 's'} left` : `${a.trait.name} on, with no uses left`, restoreSheet(props.pc, before))
+}
 const use = (a: ActiveTrait, n: number) => { if (!ro.value) editSheet(props.pc, x => spendUse(x, props.pc, a, n, score)) }
 const max = (a: ActiveTrait) => usesMax(props.pc, a, props.s, score)
+/** The save DC a feature shows (Monk's Focus, Cunning Strike): 8 + proficiency bonus + the ability's modifier. */
+const dcOf = (a: ActiveTrait) => 8 + profBonus(totalLevel(props.pc)) + mod(score(props.s, a.trait.dc!))
 const left = (a: ActiveTrait) => usesLeft(props.pc, props.s, a, score)
 /** The source tag: the class (with its level) or subclass, the race, the background. */
 const tag = sourceTag
@@ -86,6 +98,7 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
             <b>{{ l.a.trait.name }}</b>
             <span class="feat-tag" :class="'tag-' + l.a.race.type" :title="`From ${l.a.race.name}`">{{ tag(l.a) }}</span>
             <span v-if="scaleAt(l.a)" class="chip sp-scale">{{ l.a.trait.scale!.label }} {{ scaleAt(l.a) }}</span>
+            <span v-if="l.a.trait.dc" class="chip sp-scale" :title="`8 + proficiency bonus + ${l.a.trait.dc.toUpperCase()} modifier`">DC {{ dcOf(l.a) }}</span>
             <button v-if="l.a.trait.toggle" class="chip-btn sbk-on" :class="{ on: isOn(l.a, s) }" :aria-pressed="isOn(l.a, s)" :disabled="ro" :title="isOn(l.a, s) ? 'On: its effects count on the sheet. Click to end it' : 'Switch it on: its effects count on the sheet until you end it or take a long rest'" @click.stop.prevent="flip(l.a)">{{ isOn(l.a, s) ? 'On' : 'Off' }}</button>
             <span v-if="pickNames(l.a).length" class="muted small">{{ pickNames(l.a).join(', ') }}</span>
             <a v-if="choiceOpen(l.a) && !ro" class="sp-open small" :href="hrefEntry(pc.id, true)" title="Pick on the Edit page" @click.stop="ui.scrollTo = 'choices'">{{ picksLeft(l.a) }} to pick ✎</a>
@@ -98,7 +111,7 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
                 <button class="chip-btn" :disabled="ro || !left(l.a)" title="Use one" @click="use(l.a, 1)">−</button>
                 <button class="chip-btn" :disabled="ro || left(l.a) >= max(l.a)" title="Get one back" @click="use(l.a, -1)">＋</button>
               </template>
-              <span v-flash="left(l.a)" class="muted small">{{ left(l.a) }}/{{ max(l.a) }} · {{ l.a.trait.uses!.recharge }} rest</span>
+              <span v-flash="left(l.a)" class="muted small">{{ left(l.a) }}/{{ max(l.a) }} · {{ l.a.trait.uses!.recharge === 'short' || (l.a.trait.uses!.shortFrom && l.a.level >= l.a.trait.uses!.shortFrom) ? 'short' : 'long' }} rest</span>
             </span>
           </summary>
           <MarkdownView v-if="l.a.trait.text" class="small sp-text" :source="l.a.trait.text" />

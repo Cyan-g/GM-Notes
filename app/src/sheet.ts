@@ -4,17 +4,17 @@
 import { computed, reactive } from 'vue'
 import { restSlots } from './slots'
 import { classesOf, totalLevel } from './model/classes'
-import type { CharacterSheet, Crafting, Entry, GearEffect, Id, InventoryLine, Proficiencies, Spellbook } from './model/types'
+import type { CharacterSheet, Crafting, Entry, GearEffect, Id, InventoryLine, Proficiencies, Spellbook, SpellRoll } from './model/types'
 import { MARTIAL_WEAPONS, MASTERY_OF, SIMPLE_WEAPONS } from './model/schema'
 import { optionsIn } from './model/lists'
 import { db, get, listOptions, state, touch } from './store'
-import { breakdown, gearTotals, scoreWith, sum, type Part } from './effects'
+import { advOf, breakdown, gearTotals, scoreWith, sum, type Part } from './effects'
 import { dexCap, isShield, isWearable, isWeaponOrArmor, restItems, type RegainRoll } from './items'
 import { unmet } from './requirements'
 import { setConditions } from './conditions'
 import { rule } from './rules'
 import { castingOf, hitDicePools } from './classRules'
-import { restSpecies, speciesExpertise, speciesGrants, speciesSkills, speciesSpeed, speciesSpeeds, speciesTraits } from './species'
+import { restSpecies, speciesExpertise, speciesGrants, speciesSize, speciesSkills, speciesSpeed, speciesSpeeds, speciesTraits, type HaveNow } from './species'
 import { blankProfs, emptyBook, onSheetEdit, ownerOf, profsToEdit, sheetOf, sheetOrBlank, sheetToEdit, stackItem } from './sheetData'
 import { SKILLS, mod, profBonus, signed, type Ability } from './model/dnd'
 import { changed } from './edit'
@@ -218,7 +218,30 @@ export function speedOf(s: CharacterSheet): string | undefined {
   const n = Math.max(0, (base ?? 30) + add)
   return `${t.speedHalf ? Math.floor(n / 2) : n} ft`
 }
-export const passivePerception = (s: CharacterSheet, prof: number) => 10 + skillBonus(s, 'Perception', prof)
+/** What a character has now, for a choice's options (species.ts choiceOffer). */
+export function haveNow(s: CharacterSheet): HaveNow {
+  const p = profsOf(s)
+  const pc = ownerOf(s)
+  return { skills: SKILLS.filter(x => skillLevel(s, x.name) > 0).map(x => x.name), weapons: p.weapons, languages: p.languages, classes: pc ? classesOf(pc).map(l => l.class.toLowerCase()) : [] }
+}
+/**
+ * What features add to a spell's damage rolls (Agonizing Blast to Eldritch Blast, Elemental Affinity to fire spells):
+ * for `rollText`'s `add`.
+ */
+export function spellDamageAdd(s: CharacterSheet | undefined, e: Entry): ((r: SpellRoll) => number) | undefined {
+  if (!s) return undefined
+  const t = gearTotals(s)
+  if (!t.spellDamage.length) return undefined
+  return r => r.kind !== 'damage' ? 0 : t.spellDamage
+    .filter(x => (!x.spell || x.spell === e.id) && (!x.type || x.type.toLowerCase() === (r.type ?? '').toLowerCase()))
+    .reduce((n, x) => n + x.n + (x.ability ? mod(scoreWith(s, x.ability, t)) : 0), 0)
+}
+/** A passive score: 10 + the skill, +5 with advantage on its checks, −5 with disadvantage. */
+export function passiveOf(s: CharacterSheet, skill: string, prof: number) {
+  const m = advOf(gearTotals(s).skillAdv[skill]).mode
+  return 10 + skillBonus(s, skill, prof) + (m === 'adv' ? 5 : m === 'dis' ? -5 : 0)
+}
+export const passivePerception = (s: CharacterSheet, prof: number) => passiveOf(s, 'Perception', prof)
 
 /** A character at a glance, for the DM's party overview: AC, max HP, the passives, spell save DC, languages. */
 export function partyLine(pc: Entry) {
@@ -228,9 +251,9 @@ export function partyLine(pc: Entry) {
   return {
     ac: armorClass(s).ac,
     maxHp: maxHpOf(s),
-    perception: 10 + skillBonus(s, 'Perception', prof),
-    insight: 10 + skillBonus(s, 'Insight', prof),
-    investigation: 10 + skillBonus(s, 'Investigation', prof),
+    perception: passiveOf(s, 'Perception', prof),
+    insight: passiveOf(s, 'Insight', prof),
+    investigation: passiveOf(s, 'Investigation', prof),
     spellDc: cast ? 8 + prof + mod(scoreWith(s, cast, gt)) + sum(gt.spellDC) : undefined,
     languages: langs.map(id => names.find(o => o.id === id)?.label ?? id),
   }
@@ -275,10 +298,19 @@ export function armorClass(s: CharacterSheet): { ac: number; from: string; untra
   const dex = m('dex')
   let base = 10 + dex, from = 'unarmored', extra = 0, armored = false, shield = false
   const parts: string[] = []
+  // a shield without training adds nothing (2024 ruleset), not even its magic
+  const shieldOff = new Set<string>()
   for (const e of equipped(s)) {
     const n = e.fields.armorClass
-    if (e.fields.kind !== 'Armor' || typeof n !== 'number') continue
-    if (isShield(e)) { extra += n; parts.push(`+${n} ${e.name}`); shield = true; continue }
+    if (e.fields.kind !== 'Armor') continue
+    // a shield is one however its AC is given (a number, or an AC effect like the world's Roundshield)
+    if (isShield(e)) {
+      shield = true
+      if (proficientWith(s, e) === false && rule('untrainedShield') !== '2014') { shieldOff.add(e.name); parts.push(`${e.name}: no AC without shield training`); continue }
+      if (typeof n === 'number') { extra += n; parts.push(`+${n} ${e.name}`) }
+      continue
+    }
+    if (typeof n !== 'number') continue
     let cap = dexCap(e)
     // Medium Armor Master: a higher cap in medium armor with DEX 16+
     if (cap === 2 && t.mediumArmorDex && scoreWith(s, 'dex', t) >= 16 && t.mediumArmorDex.n > cap) { cap = t.mediumArmorDex.n; parts.push(`Dex up to +${cap} (${t.mediumArmorDex.from})`) }
@@ -297,6 +329,8 @@ export function armorClass(s: CharacterSheet): { ac: number; from: string; untra
   if (from === 'unarmored') from = `${base} unarmored (10 + DEX)`
   for (const p of t.ac) {
     if (p.when === 'armored' && !armored) continue
+    if (p.when === 'unarmored' && (armored || shield)) continue
+    if (shieldOff.has(p.label)) continue
     extra += p.n; parts.push(`${signed(p.n)} ${p.label}`)
   }
   if (s.acBonus) parts.push(`${signed(s.acBonus)} typed bonus`)
@@ -345,7 +379,7 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
   // Martial Arts: Monk weapons (Simple melee, Martial melee with Light) use STR or DEX and the Martial Arts die when
   // it's bigger, while no armor or shield is worn and every weapon held is one
   const isMonkWeapon = (e: Entry) => {
-    const cat = categoryOf(String(e.fields.baseWeapon ?? e.name)) ?? (e.fields.category as string | undefined)
+    const cat = e.fields.weaponCategory ?? categoryOf(String(e.fields.baseWeapon ?? e.name))
     return !isRanged(e) && (cat === 'Simple' || (cat === 'Martial' && propsOf(e).includes('light')))
   }
   const ma = t.unarmed?.monkWeapons && /d/.test(t.unarmed.dice) && !equipped(s).some(e => e.fields.kind === 'Armor') && weapons.every(isMonkWeapon) ? t.unarmed : undefined
@@ -376,7 +410,10 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
     // Typed extra damage: "+ 2 necrotic", "+ 1d6 radiant", "+ 3d6 (once per turn)"; the proficient-only kind needs the proficiency.
     const extras = [...(t.extraOf[e.id] ?? []), ...t.extraAll].filter(x => (!x.proficient || !untrainedFor) && fits(x.when, ranged, finesse, e))
     // each on a line of its own under the damage: "+ 3d6 · Sneak Attack (once per turn)"
+    // a Small or Tiny creature has disadvantage with Heavy weapons
+    const small = props.includes('heavy') && /^(small|tiny)$/i.test(String(s.size ?? speciesSize(pc) ?? ''))
     const extraLines = [
+      ...(small ? [`Disadvantage: a Heavy weapon in ${String(s.size ?? speciesSize(pc)).toLowerCase()} hands`] : []),
       ...thrown.map(p => `${signed(p.n)} when thrown · ${p.label}`),
       ...extras.map(x => `+ ${x.dice}${x.type ? ' ' + x.type.toLowerCase() : ''}${x.from ? ` · ${x.from}` : ''}${x.note ? ` (${x.note})` : ''}`),
     ]
@@ -392,7 +429,10 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
   // two Light melee weapons: the second one's extra attack, off-hand; with Dual Wielder, any other one-handed melee weapon
   const light = weapons.filter(e => propsOf(e).includes('light') && !isRanged(e))
   const other = t.offhandAny && light.length ? weapons.find(e => e !== light[0] && meleeOneHand(e)) : undefined
+  // two of the same Light weapon (two handaxes on one line) are two weapons
+  const pair = light.length === 1 && s.inventory.some(l => l.item === light[0].id && l.equipped && l.qty >= 2)
   if (light.length >= 2) out.push(line(light[1], true))
+  else if (pair) out.push(line(light[0], true))
   else if (other) out.push(line(other, true))
   // Polearm Master: the butt end (d4 bludgeoning) of a Quarterstaff, Spear or Heavy Reach weapon, as a bonus action
   if (t.poleStrike) {
@@ -409,7 +449,7 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
   const uDice = empty && u?.emptyDice ? u.emptyDice : u?.dice && /d/.test(u.dice) ? u.dice : undefined
   const uFlat = (uDice ? 0 : Number(u?.dice) || 1) + um + sum(uDmg)
   out.push({
-    id: '__unarmed', name: 'Unarmed strike', toHit: um + prof + sum(uHit), damage: uDice ? `${uDice}${plus(um + sum(uDmg))}` : String(Math.max(1, uFlat)), type: 'Bludgeoning',
+    id: '__unarmed', name: 'Unarmed strike', toHit: um + prof + sum(uHit), damage: uDice ? `${uDice}${plus(um + sum(uDmg))}` : String(Math.max(0, uFlat)), type: 'Bludgeoning',
     noItem: true, ...(u ? { tag: u.from } : {}), gear: [breakdown('To hit', uHit), breakdown('Damage', uDmg)].filter(Boolean).join('\n') || undefined,
   })
   return out
@@ -526,6 +566,8 @@ export function longRest(pc: Entry): RegainRoll[] {
     if (!m[p.die]) delete m[p.die]
   }
   if (Object.keys(m).length) s.hitDiceSpent = m; else delete s.hitDiceSpent
+  // Heroic Inspiration after each long rest (Resourceful)
+  if (gearTotals(s).restInspiration && rule('inspiration') !== 'off') s.inspiration = true
   changed(pc)
   return rolls
 }

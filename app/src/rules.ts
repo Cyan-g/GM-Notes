@@ -90,6 +90,24 @@ export const RULES: RuleDef[] = [
     ],
     default: 'heroic', keywords: 'inspiration heroic reroll advantage reward star',
   },
+  {
+    id: 'untrainedShield', group: 'Equipment', label: 'Shield without training',
+    text: 'What a Shield does for a character who lacks training with it.',
+    options: [
+      { id: '2024', label: 'No AC from it (2024)', text: 'The Shield adds nothing to Armor Class without training.' },
+      { id: '2014', label: 'AC, with drawbacks (2014)', text: 'The Shield adds its AC, but the character has disadvantage on Strength and Dexterity rolls and can’t cast spells.' },
+    ],
+    default: '2024', keywords: 'shield armor class ac proficiency untrained',
+  },
+  {
+    id: 'concentrationCap', group: 'Conditions', label: 'Concentration save DC',
+    text: 'The Constitution save to keep concentrating after taking damage: DC 10 or half the damage, whichever is higher.',
+    options: [
+      { id: '2024', label: 'At most 30 (2024)', text: 'The DC is never higher than 30.' },
+      { id: '2014', label: 'No limit (2014)', text: 'Half the damage, however high.' },
+    ],
+    default: '2024', keywords: 'concentration con save dc damage',
+  },
 ]
 export const ruleDef = (id: string) => RULES.find(r => r.id === id)
 

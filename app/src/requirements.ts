@@ -6,7 +6,7 @@ import type { CharacterSheet, Entry, Id, Requirements } from './model/types'
 import { get } from './store'
 import { classesOf } from './model/classes'
 import { ABILITY_UPPER } from './model/dnd'
-import { raceChain, speciesSkills } from './species'
+import { raceChain, speciesGrants, speciesSkills } from './species'
 
 const ABILITY_SHORT: Record<string, string> = ABILITY_UPPER
 const orList = (l: string[]) => (l.length < 2 ? l.join('') : `${l.slice(0, -1).join(', ')} or ${l[l.length - 1]}`)
@@ -54,9 +54,18 @@ function raceFits(raceId: Id | undefined, races: Id[]): boolean {
  * Heavy armor's Strength isn't a reason (it slows instead).
  */
 export function unmet(pc: Entry, s: CharacterSheet, e: Entry, score: (a: string) => number, caster: boolean, hasFeature?: (name: string) => boolean): string[] {
-  const r = requirementsOf(e)
-  if (!r) return []
   const out: string[] = []
+  // a feat's armor or shield training ("Heavy Armor Training", "Shield Training"), as its prerequisite says
+  if (e.type === 'feat') {
+    const pre = String(e.fields.prerequisite ?? '')
+    const armor = new Set([...(s.proficiencies?.armor ?? []), ...speciesGrants(pc, s).filter(g => g.kind === 'armor').map(g => g.id)])
+    for (const m of pre.matchAll(/\b(Light|Medium|Heavy) Armor Training|\bShield Training/gi)) {
+      const need = m[1] ? m[1][0].toUpperCase() + m[1].slice(1).toLowerCase() : 'Shield'
+      if (!armor.has(need)) out.push(`needs ${need === 'Shield' ? 'shield' : need.toLowerCase() + ' armor'} training`)
+    }
+  }
+  const r = requirementsOf(e)
+  if (!r) return out
   const low = (r.scores ?? []).filter(x => !isHeavyStrength(e, x.ability) && score(x.ability) < x.min)
   // "Strength or Dexterity 13": one of them is enough
   if (r.anyScore && (r.scores?.length ?? 0) > 1) { if (low.length === r.scores!.length) out.push(`needs ${orList(r.scores!.map(x => `${ABILITY_SHORT[x.ability] ?? x.ability} ${x.min}`))}`) }

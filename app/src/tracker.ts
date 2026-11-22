@@ -8,7 +8,9 @@ import { concentrationAdv, deathSaveAdv, gearTotals } from './effects'
 import { sheetOf, sheetToEdit } from './sheetData'
 import { changed } from './edit'
 import { isShared } from './sync'
-import { deathSaveFromDamage, isDead, noDeathSaves, settleDeathSaves } from './conditions'
+import { rule } from './rules'
+import { deathSaveFromDamage, isDead, massiveDamage, noDeathSaves, settleDeathSaves } from './conditions'
+import { noteUndo } from './undoNote'
 
 export function tracker(): Tracker {
   const d = db()
@@ -201,8 +203,11 @@ export function applyHp(c: Combatant, input: string) {
     const wasDown = hp != null && hp <= 0
     let dmg = n
     if (temp) { const used = Math.min(temp, dmg); temp -= used; dmg -= used }
+    // massive damage: said, not done (the DM decides)
+    const massive = isParty(c) ? massiveDamage(c.name, hp ?? 0, dmg, s.maxHp) : ''
+    if (massive) noteUndo(massive)
     hp = Math.max(0, (hp ?? 0) - dmg)
-    if (c.conditions.includes('Concentrating') && hp > 0) c.concChecks = [...(c.concChecks ?? []), concentrationDc(n)]
+    if (c.conditions.includes('Concentrating') && hp > 0) c.concChecks = [...(c.concChecks ?? []), concentrationDc(n, rule('concentrationCap') === '2014' ? Infinity : 30)]
     if (wasDown && isParty(c)) addDeathSave(c, false)
   }
   setHp(c, hp, temp)

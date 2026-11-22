@@ -5,7 +5,7 @@ import AppIcon from './AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Entry, Id } from '../model/types'
 import { byType, get, listOptions } from '../store'
-import { attacks, castingAbility, levelOf, profsOf, spellStats } from '../sheet'
+import { attacks, castingAbility, levelOf, profsOf, spellDamageAdd, spellStats } from '../sheet'
 import { sheetOrBlank } from '../sheetData'
 import { mod, profBonus, signed, type Ability } from '../model/dnd'
 import { speciesSpells } from '../species'
@@ -47,7 +47,7 @@ const cantrips = computed(() => {
     const atk = st?.attack ?? spellAtk.value, save = st?.dc ?? dc.value, m = ability ? mod(scoreWith(s.value, ability, gt.value)) : castMod.value
     const check = e.fields.spellType === 'Attack' ? signed(atk) : `DC ${save}`
     const tip = e.fields.spellType === 'Attack' ? `Spell attack${ability ? `, cast with ${ability.toUpperCase()}` : ''}` : `${String(e.fields.savingThrow ?? '').slice(0, 3).toUpperCase()} save${ability ? `, cast with ${ability.toUpperCase()}` : ''}`
-    return [{ id, name: e.name, check, tip, rolls: rollsLine(e, { level: levelOf(props.pc), mod: m }) }]
+    return [{ id, name: e.name, check, tip, rolls: rollsLine(e, { level: levelOf(props.pc), mod: m, add: spellDamageAdd(s.value, e) }) }]
   })
 })
 const armorTypes = computed(() => listOptions('item.armorType').filter(o => o.id !== 'Clothing'))

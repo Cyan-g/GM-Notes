@@ -6,14 +6,14 @@ import { computed, ref } from 'vue'
 import { optionLabel } from '../store'
 import type { Entry, Id, Spellbook } from '../model/types'
 import { db, get, playerMode, touch } from '../store'
-import { activeSpellbook, currentPc, levelOf as charLevel, longRest, restSummary, score, spellStats } from '../sheet'
+import { activeSpellbook, currentPc, levelOf as charLevel, longRest, restSummary, score, spellDamageAdd, spellStats } from '../sheet'
 import { noteUndo, restoreSheet, snapSheet } from '../undoNote'
 import { editSheet, sheetOf } from '../sheetData'
 import { ORD, mod, spellLevel, type Ability } from '../model/dnd'
 import { activeEffectsOf, isActive, rollsLine, toggleActive } from '../spells'
 import { endConcentration, startConcentration } from '../conditions'
 import { castFromItem, grantedSpells, restItems, unuse, type GrantedSpell } from '../items'
-import { classSpellsFrom, restSpecies, speciesSpells, useSpeciesSpell, type SpeciesSpell } from '../species'
+import { classSpellsFrom, restSpecies, speciesSpells, speciesTraits, spendUse, usesLeft, usesMax, useSpeciesSpell, type SpeciesSpell } from '../species'
 import { classesOf } from '../model/classes'
 import { restSlots, setSlotCount, slotFor, slotRows, useSlot, type SlotRow } from '../slots'
 import type { Entry as PcEntry } from '../model/types'
@@ -73,6 +73,22 @@ function cast(e: Entry) {
   if (!r) return
   useSlot(book.value, r, 1)
   touch()
+}
+// ---- free casts: a feature's use instead of a slot (Divine Smite once per long rest, Favored Enemy's Hunter's Mark) ----
+/** The feature with a use left that casts this spell without a slot; the player picks Free or Cast (a slot, to upcast). */
+function freeFor(e: Entry) {
+  const pc = owner.value
+  if (!pc) return undefined
+  const s = sheetOf(pc)
+  return speciesTraits(pc, s).find(a => a.active && a.trait.freeCast?.includes(e.id) && usesLeft(pc, s, a, score) > 0)
+}
+const freeTip = (e: Entry) => { const a = freeFor(e), pc = owner.value; return a && pc ? `Cast without a slot: ${a.trait.name}, ${usesLeft(pc, sheetOf(pc), a, score)} of ${usesMax(pc, a, sheetOf(pc), score)} left` : '' }
+function castFree(e: Entry) {
+  const pc = owner.value, a = freeFor(e)
+  if (!pc || !a) return
+  const before = snapSheet(pc)
+  editSheet(pc, x => spendUse(x, pc, a, 1, score))
+  noteUndo(`${e.name} cast free with ${a.trait.name}: ${usesLeft(pc, sheetOf(pc), a, score)} of ${usesMax(pc, a, sheetOf(pc), score)} left`, restoreSheet(pc, before))
 }
 const canCast = (e: Entry) => {
   const lvl = Number(e.fields.level)
@@ -164,13 +180,21 @@ const spells = (ids: Id[]) => ids.map(id => get(id)).filter((e): e is Entry => !
 const knownList = computed(() => spells([...book.value.known, ...[...freeKnown.value.keys()].filter(id => !book.value.known.includes(id))]))
 const preparedList = computed(() => spells([...new Set([...book.value.always, ...book.value.prepared, ...given.value.keys()])]))
 /** Always prepared: by hand, or given by a feature or item. */
-const alwaysCount = computed(() => new Set([...book.value.always, ...[...given.value.keys()].filter(id => !book.value.prepared.includes(id))]).size)
+// cantrips never count as prepared spells, and a spell that's always prepared (a domain or oath spell, even one the
+// player had prepared before) doesn't use up a preparation
+const isCantrip = (id: Id) => get(id)?.fields.level === 'Cantrip'
+const alwaysIds = computed(() => new Set([...book.value.always, ...given.value.keys()].filter(id => !isCantrip(id))))
+const alwaysCount = computed(() => alwaysIds.value.size)
+/** The prepared spells that count against the limit. */
+const preparedCount = computed(() => book.value.prepared.filter(id => !isCantrip(id) && !alwaysIds.value.has(id)).length)
 /** What the spell rolls, at the caster's level and with their spellcasting modifier (a trait's spell: its own ability). */
 function rolls(e: Entry | undefined, ability?: Ability) {
   if (!e) return ''
   const pc = caster.value, sh = pc ? sheetOf(pc) : undefined
   const ab = ability ?? fromSheet.value?.ability
-  return rollsLine(e, { level: pc ? charLevel(pc) : undefined, mod: sh && ab ? mod(score(sh, ab)) : undefined })
+  // a pact caster's spells are always cast with the pact slots: their numbers at that level
+  const pact = !shownSlots.value.some(r => r.kind === 'slot' && r.max > 0) ? rows.value.find(r => r.kind === 'pact')?.level : undefined
+  return rollsLine(e, { level: pc ? charLevel(pc) : undefined, mod: sh && ab ? mod(score(sh, ab)) : undefined, add: spellDamageAdd(sh, e), ...(pact && spellLevel(e) > 0 && pact > spellLevel(e) ? { slot: pact } : {}) })
 }
 /** Spells with effects while active can be switched on for the current character (their sheet counts them). */
 const switchable = (e: Entry | undefined) => !!caster.value && activeEffectsOf(e).length > 0
@@ -241,7 +265,7 @@ const levelLabel = (e: Entry) => (spellLevel(e) ? ORD[spellLevel(e)] : 'Cantrip'
 /** The known spells matching the search box. */
 const knownQ = ref('')
 const knownShown = computed(() => { const q = knownQ.value.trim().toLowerCase(); return q ? knownList.value.filter(e => e.name.toLowerCase().includes(q)) : knownList.value })
-const full = computed(() => book.value.preparedMax != null && book.value.prepared.length > book.value.preparedMax)
+const full = computed(() => book.value.preparedMax != null && preparedCount.value > book.value.preparedMax)
 </script>
 
 <template>
@@ -271,7 +295,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
           <label><span>Spell attack</span><input type="number" :value="book.attackBonus" @change="setNum('attackBonus', ($event.target as HTMLInputElement).value)" /></label>
           <label><span>Save DC</span><input type="number" :value="book.saveDC" @change="setNum('saveDC', ($event.target as HTMLInputElement).value)" /></label>
         </template>
-        <label><span>Prepared</span><b v-flash.neutral="book.prepared.length" :class="{ over: full }">{{ book.prepared.length }}</b> / <input type="number" min="0" :value="book.preparedMax" @change="setNum('preparedMax', ($event.target as HTMLInputElement).value)" /></label>
+        <label><span>Prepared</span><b v-flash.neutral="preparedCount" :class="{ over: full }">{{ preparedCount }}</b> / <input type="number" min="0" :value="book.preparedMax" @change="setNum('preparedMax', ($event.target as HTMLInputElement).value)" /></label>
       </section>
 
       <section class="card sbk-slots">
@@ -335,7 +359,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
       <div class="sbk-col">
       <section class="card sbk-list drop-zone" :class="{ over: over === 'prepared' }"
                @dragover="dragOver($event, 'prepared')" @dragleave.self="over = null" @drop.prevent="drop('prepared')">
-        <h3>Prepared spells <span class="muted small" :class="{ over: full }">{{ book.prepared.length }}<template v-if="book.preparedMax != null"> / {{ book.preparedMax }}</template><template v-if="alwaysCount"> + {{ alwaysCount }} always</template></span></h3>
+        <h3>Prepared spells <span class="muted small" :class="{ over: full }" title="Cantrips and always-prepared spells don't count">{{ preparedCount }}<template v-if="book.preparedMax != null"> / {{ book.preparedMax }}</template><template v-if="alwaysCount"> + {{ alwaysCount }} always</template></span></h3>
         <table v-if="preparedList.length" class="grid">
           <thead><tr><th>Spell</th><th>Level</th><th>School</th><th>Casting time</th><th>Range</th><th>Duration</th><th>Attack / save</th><th title="Concentration · Ritual">C/R</th><th></th></tr></thead>
           <tbody>
@@ -357,6 +381,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
               <td class="sbk-actions">
                 <span v-if="spellLevel(e) && given.get(e.id)?.how === 'atWill' && onlyGiven(e.id)" class="muted small" title="Cast without a spell slot">at will</span>
                 <button v-else-if="spellLevel(e)" class="chip-btn" :disabled="!canCast(e)" :title="canCast(e) ? 'Spend a slot of this level (or the next free higher one)' : 'No slot left for this level'" @click="cast(e)">Cast</button>
+                <button v-if="spellLevel(e) && freeFor(e)" class="chip-btn" :title="freeTip(e)" @click="castFree(e)">Free</button>
                 <button v-if="caster && e.fields.concentration && !switchable(e)" class="chip-btn sbk-on" :class="{ on: concentrating(e) }" :aria-pressed="concentrating(e)" :title="concentrating(e) ? 'Concentrating on it. Click to end it' : 'Concentrate on it: any other concentration spell ends'" @click="toggleConc(e)">{{ concentrating(e) ? 'Concentrating' : 'Concentrate' }}</button>
                 <button v-if="switchable(e)" class="chip-btn sbk-on" :class="{ on: on(e) }" :aria-pressed="on(e)" :title="on(e) ? 'Active: the sheet counts its effects. Click to end it' : 'Switch it on: the sheet counts its effects until you end it or take a long rest'" @click="toggleOn(e)">{{ on(e) ? 'Active' : 'On' }}</button>
               </td>
@@ -420,6 +445,7 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
         <button v-if="!isPrepared(shown)" class="chip-btn" @click="prepare(shown!)">Prepare</button>
         <template v-else>
           <button v-if="shownEntry && spellLevel(shownEntry)" class="chip-btn" :disabled="!canCast(shownEntry)" @click="cast(shownEntry)">Cast</button>
+          <button v-if="shownEntry && spellLevel(shownEntry) && freeFor(shownEntry)" class="chip-btn" :title="freeTip(shownEntry)" @click="castFree(shownEntry)">Free</button>
           <button class="chip-btn" @click="unprepare(shown!)">Unprepare</button>
         </template>
       </template>

@@ -21,7 +21,7 @@ const use = (a: ActiveTrait, n: number) => { if (!ro.value) editSheet(props.pc, 
 /** The charges of the items in use (a staff, a wand), spent and given back here as on the Inventory tab. */
 const charged = computed(() => itemsInUse(props.s).map(({ l, i, item }) => ({ i, name: item.name, max: Number(item.fields.charges) || 0, left: chargesLeft(l, item) ?? 0, recharge: regainText(item) || undefined })).filter(x => x.max > 0))
 const charge = (i: number, n: number) => { if (!ro.value) editSheet(props.pc, x => setCharges(x, i, n)) }
-const back = (a: ActiveTrait) => (a.trait.uses!.recharge === 'short' ? 'short rest' : a.trait.uses!.shortBack ? `long rest (${a.trait.uses!.shortBack} on a short)` : 'long rest')
+const back = (a: ActiveTrait) => (a.trait.uses!.recharge === 'short' || (a.trait.uses!.shortFrom && a.level >= a.trait.uses!.shortFrom) ? 'short rest' : a.trait.uses!.shortBack ? `long rest, ${a.trait.uses!.shortBack} back on a short` : 'long rest')
 </script>
 
 <template>
@@ -37,7 +37,7 @@ const back = (a: ActiveTrait) => (a.trait.uses!.recharge === 'short' ? 'short re
           <button class="chip-btn" :disabled="ro || !left(a)" title="Use one" @click="use(a, 1)">−</button>
           <button class="chip-btn" :disabled="ro || left(a) >= max(a)" title="Get one back" @click="use(a, -1)">＋</button>
         </template>
-        <span v-flash="left(a)" class="muted small">{{ left(a) }}/{{ max(a) }} · {{ a.trait.uses!.recharge === 'short' ? 'short rest' : 'long rest' }}</span>
+        <span v-flash="left(a)" class="muted small">{{ left(a) }}/{{ max(a) }} · {{ back(a) }}</span>
       </span>
     </div>
     <div v-for="c in charged" :key="'c' + c.i" class="cs-use" :title="`${c.name}: charges${c.recharge ? `, regains ${c.recharge}` : ''}`">

@@ -1435,6 +1435,10 @@ h1 .icon svg.gi { color: var(--accent); }
 .cs-adv { font-style: normal; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; margin-left: auto; padding: 0 .35em; border-radius: 6px; background: var(--chip); color: var(--ink-2); }
 .cs-adv.adv { color: #3c8d4f; }
 .cs-adv.dis { color: #b33; }
+.cs-adv.fail { color: #fff; background: #b33; }
+/* an option or feat whose prerequisite isn't met yet */
+.sp-opt-lacks { display: block; color: var(--accent); }
+.wz-ch-row.off { opacity: .55; }
 .effect-check { display: inline-flex; align-items: center; gap: .25rem; white-space: nowrap; }
 /* Rows take the full width so a feature's text (or a save's "when") can grow into it. */
 .effects-input > .effect-row { align-self: stretch; }

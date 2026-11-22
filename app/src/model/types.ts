@@ -78,8 +78,10 @@ export interface GearEffect {
     // climb), any one-handed melee weapon for the off-hand attack (Dual Wielder), the butt-end attack (Polearm
     // Master), advantage on death saves (Durable), and save proficiency in the ability the feat raised (Resilient)
     | 'mediumArmorDex' | 'speedType' | 'offhandAny' | 'poleStrike' | 'deathSaveAdv' | 'saveFromIncrease'
-    // half the proficiency bonus on skill checks without proficiency (Jack of All Trades)
-    | 'halfProf'
+    // half the proficiency bonus on skill checks without proficiency (Jack of All Trades); spell damage (a spell's, or
+    // a damage type's: Agonizing Blast, Elemental Affinity); advantage on Initiative (Remarkable Athlete); more
+    // cantrips (Magician); Heroic Inspiration on a long rest (Resourceful)
+    | 'halfProf' | 'spellDamage' | 'initiativeAdv' | 'cantrips' | 'restInspiration'
   value?: number
   set?: boolean
   force?: boolean
@@ -98,6 +100,8 @@ export interface GearEffect {
   speedType?: 'climb' | 'swim' | 'fly' | 'burrow'
   /** `unarmed`: the die while holding no weapon or shield (Unarmed Fighting: d8 instead of d6). */
   emptyDice?: string
+  /** `spellDamage`: only this spell's damage (else every spell's of `type`, or every spell's). */
+  spell?: Id
   /** `unarmed`: Monk weapons (Simple melee, Martial melee with Light) get it too, the die and STR or DEX, while no
    * armor or shield is worn and only such weapons are held (Martial Arts). */
   monkWeapons?: boolean
@@ -110,7 +114,7 @@ export interface GearEffect {
    * Attack, damage, extra damage or AC: only for melee or ranged attacks, finesse-or-ranged ones, weapons with the Heavy
    * property, a melee weapon in one hand and no other weapon (Dueling), thrown weapons (when thrown), or in armor.
    */
-  when?: 'melee' | 'ranged' | 'finesseOrRanged' | 'heavy' | 'oneHanded' | 'thrown' | 'armored'
+  when?: 'melee' | 'ranged' | 'finesseOrRanged' | 'heavy' | 'oneHanded' | 'thrown' | 'armored' | 'unarmored'
   /** A feature's effect whose number or dice is the feature's scaling value (Rage Damage, Sneak Attack, Martial Arts). */
   fromScale?: boolean
 }
@@ -367,6 +371,8 @@ export interface TraitChoice {
   options?: TraitOption[]
   /** For a feat choice: only feats of this kind ("Fighting Style"). */
   category?: string
+  /** For a weapon mastery choice: only melee weapons (Barbarian). */
+  meleeOnly?: boolean
 }
 /** A value that grows with the level, shown with the trait ("Rage Damage +2", "Sneak Attack 3d6"). */
 export interface TraitScale { label: string; steps: [number, string][] }
@@ -381,7 +387,15 @@ export interface Trait extends TraitOption {
    * ability modifier (at least 1); `times` multiplies it (Lay on Hands: 5 × level), `steps` gives the count by level.
    * A long-rest use can give `shortBack` back on a short rest (Rage: one).
    */
-  uses?: { count: number | 'pb' | 'level' | Ability; recharge: 'short' | 'long'; times?: number; steps?: [number, number][]; shortBack?: number }
+  uses?: { count: number | 'pb' | 'level' | Ability; recharge: 'short' | 'long'; times?: number; steps?: [number, number][]; shortBack?: number
+    /** From this level on (of the class it comes from) all uses come back on a short rest too (Font of Inspiration: 5). */
+    shortFrom?: number }
+  /** Switched off when the character is incapacitated (Rage). */
+  endsIncapacitated?: boolean
+  /** Spells a use of it casts without a slot (Divine Smite once per long rest; Favored Enemy's Hunter's Mark). */
+  freeCast?: Id[]
+  /** A save DC it shows on the sheet: 8 + proficiency bonus + this ability's modifier (Monk's Focus, Cunning Strike). */
+  dc?: Ability
   scale?: TraitScale
   /**
    * Whether it's listed on the sheet in play: by default only when there's something to use or read there (uses, a

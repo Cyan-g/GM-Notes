@@ -16,7 +16,7 @@ import { SKILLS, mod, signed, ABILITY_KEYS } from '../model/dnd'
 import { itemNamed } from '../lookup'
 import { rule } from '../rules'
 import { gearTotals, scoreWith } from '../effects'
-import { backgroundOf, featGivesSave, featOfFeature, speciesTraits } from '../species'
+import { backgroundOf, featBonusFor, featGivesSave, featOfFeature, speciesTraits } from '../species'
 import { traitsOf } from '../model/traits'
 import { unmet } from '../requirements'
 import { changed } from '../edit'
@@ -88,7 +88,7 @@ const featGroups = computed(() => {
 const featNote = (f: Entry) => (lacks(f) ? ` (${lacks(f)})` : f.fields.prerequisite ? ` (${f.fields.prerequisite})` : '')
 const feat = ref('')
 const choice = ref<BonusChoice>({ picks: [] })
-const featBonus = computed(() => get(feat.value || undefined)?.fields.abilityIncrease)
+const featBonus = computed(() => featBonusFor(get(feat.value || undefined), props.s.saves))
 /** The scores as they are now on the sheet (before what the increase adds). */
 const baseScores = computed(() => Object.fromEntries(ABILITY_KEYS.map(a => [a, props.s.abilities[a] ?? 10])) as Record<(typeof ABILITY_KEYS)[number], number>)
 

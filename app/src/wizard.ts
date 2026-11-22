@@ -11,7 +11,7 @@ import { ABILITY_KEYS, dieSize, mod, spellLevel, type Ability } from './model/dn
 import { EPIC_BOON_LEVEL, basicsOf, classEntry, classLabel, hitDieOf, rulesOf, subclassLevelOf, type Kit, type KitLine } from './classRules'
 import { ruleSlots } from './slots'
 import { blankSheet, emptyBook, own } from './sheetData'
-import { choiceOpen, classSpellsFrom, featGivesSave, isClassOrigin, isPlayable, raceChain, speciesGrants, speciesSpells, speciesTraits } from './species'
+import { choiceOpen, classSpellsFrom, featGivesSave, isClassOrigin, isPlayable, raceChain, speciesEffects, speciesGrants, speciesSpells, speciesTraits, type HaveNow } from './species'
 import { PROFS_TRAIT } from './model/traits'
 import { entries, get } from './store'
 import { rule } from './rules'
@@ -102,6 +102,18 @@ export function draftPc(d: Draft, sheet?: CharacterSheet): Entry {
   return pc
 }
 
+/** What the draft has so far, for a choice's options: the skills, weapon proficiencies and languages picked or given. */
+export function draftHave(d: Draft): HaveNow {
+  const r = rules(d), g = speciesGrants(draftPc(d))
+  const given = (k: string) => g.filter(x => x.kind === k).map(x => x.id)
+  return {
+    skills: [...new Set([...d.skills, ...given('skill')])],
+    weapons: [...new Set([...(r ? r.weapons : d.ownWeapons), ...given('weapon')])],
+    languages: [...new Set([...d.languages, ...given('language')])],
+    classes: d.cls ? [d.cls.toLowerCase()] : [],
+  }
+}
+
 /**
  * The spells the draft already has, each with where from ("High Elf", "Magic Initiate", "Wizard"): what its species,
  * background, feats and class features give or had picked (but `skip`, the trait whose picks these are), and with
@@ -174,7 +186,9 @@ export function spellCounts(d: Draft): { cantrips?: number; prepared?: number; b
   const r = rules(d)
   if (!r) return {}
   const i = d.level - 1
-  return { cantrips: r.cantrips?.[i] ?? 0, prepared: r.prepared?.[i] ?? 0, book: r.spellbook ? r.spellbook + 2 * (d.level - 1) : undefined }
+  // more cantrips a feature gives (Magician, Thaumaturge)
+  const more = speciesEffects(draftPc(d)).flatMap(x => x.effects).filter(f => f.on === 'cantrips').reduce((n, f) => n + (Number(f.value) || 0), 0)
+  return { cantrips: (r.cantrips?.[i] ?? 0) + more, prepared: r.prepared?.[i] ?? 0, book: r.spellbook ? r.spellbook + 2 * (d.level - 1) : undefined }
 }
 export const casts = (d: Draft) => {
   const r = rules(d)
@@ -355,8 +369,8 @@ export const mainRace = (id: Id | undefined): Entry | undefined => raceChain(id,
 
 // ---------- making it ----------
 
-/** The finished sheet. */
-function draftSheet(d: Draft): CharacterSheet {
+/** The finished sheet (also what checks on the draft read: scores, proficiencies). */
+export function draftSheet(d: Draft): CharacterSheet {
   const r = rules(d), s = blankSheet()
   s.abilities = finalScores(d)
   s.saves = r ? [...r.saves] : [...d.ownSaves]

@@ -6,6 +6,7 @@ import type { GearTotals } from './effects'
 import { rule } from './rules'
 import { db, get, state, touch } from './store'
 import { sheetToEdit } from './sheetData'
+import { speciesTraits } from './species'
 import { watch } from 'vue'
 import { ABILITY_KEYS, SKILLS, type Ability } from './model/dnd'
 
@@ -49,7 +50,7 @@ export function applyConditions(s: CharacterSheet, t: GearTotals) {
     const r = CONDITION_RULES[c]
     if (!r) continue
     if (r.checks === 'dis') for (const { name: sk } of SKILLS) (t.skillAdv[sk] ??= []).push({ mode: 'dis', from: c })
-    if (r.saves) for (const a of r.saves.abilities) (t.saveAdv[a] ??= []).push({ mode: 'dis', from: c, ...(r.saves.mode === 'fail' ? { note: '(fails it)' } : {}) })
+    if (r.saves) for (const a of r.saves.abilities) (t.saveAdv[a] ??= []).push({ mode: r.saves.mode, from: c })
     if (r.speed0) t.speedZero ??= c
     if (r.attack) (t.attackMode ??= []).push({ mode: r.attack, from: c })
   }
@@ -72,7 +73,15 @@ export function applyConditions(s: CharacterSheet, t: GearTotals) {
 
 // ---- one list with the combat tracker ----
 /** Set a character's conditions (and exhaustion level); their combatants in the tracker get the same. */
+/** Conditions that incapacitate (they include Incapacitated). */
+export const INCAPACITATING = ['Incapacitated', 'Paralyzed', 'Petrified', 'Stunned', 'Unconscious']
 export function setConditions(pc: Entry, s: CharacterSheet, list: string[], exhaustion?: number) {
+  // incapacitated: features that end then are switched off (Rage)
+  if (list.some(c => INCAPACITATING.includes(c)) && s.species?.on?.length) {
+    const ends = new Set(speciesTraits(pc, s).filter(a => a.trait.endsIncapacitated).map(a => a.key))
+    s.species.on = s.species.on.filter(k => !ends.has(k))
+    if (!s.species.on.length) delete s.species.on
+  }
   s.conditions = list.length ? [...list] : undefined
   if (!s.conditions) delete s.conditions
   if (!list.includes('Concentrating')) dropConcentration(s)
@@ -128,6 +137,12 @@ export const settleDeathSaves = (d: DeathSaveState): DeathSaveState => (d.ok >= 
 export const noDeathSaves = (d: DeathSaveState | undefined) => !d || (!d.ok && !d.fail && !d.stable)
 /** Damage at 0 HP: a failed death save (two from a critical hit), and no longer stable. */
 export const deathSaveFromDamage = (d: DeathSaveState | undefined, by = 1): DeathSaveState => ({ ok: d?.ok ?? 0, fail: Math.min(3, (d?.fail ?? 0) + by) })
+/** Massive damage: what's left after dropping to 0 HP is at least the maximum: by the rules, the character dies.
+ * The words for the note that says so (the DM decides), or nothing. */
+export function massiveDamage(name: string, hpBefore: number, damage: number, max: number | undefined): string {
+  const left = damage - Math.max(0, hpBefore)
+  return max && left > 0 && left >= max ? `Massive damage: ${left} left over at 0 HP is at least ${name}'s maximum of ${max}. By the rules, ${name} dies.` : ''
+}
 /** Dead: three failed death saves. */
 export const isDead = (d: DeathSaveState | undefined) => (d?.fail ?? 0) >= 3
 

@@ -8,6 +8,7 @@ import { useReadOnly } from '../composables/useReadOnly'
 import { computed, nextTick, onMounted, ref } from 'vue'
 import type { CharacterSheet, Entry, TraitGrant } from '../model/types'
 import { editSheet } from '../sheetData'
+import { haveNow } from '../sheet'
 import { state } from '../store'
 import { ui } from '../ui'
 import {
@@ -86,7 +87,7 @@ onMounted(async () => {
           </Dropdown>
         </label>
       </div>
-      <TraitChoicePicker v-if="a.trait.choice" :a="a" :disabled="ro" @pick="p => pick(a, p)" />
+      <TraitChoicePicker v-if="a.trait.choice" :a="a" :have="haveNow(s)" :disabled="ro" @pick="p => pick(a, p)" />
     </div>
     </details>
   </section>

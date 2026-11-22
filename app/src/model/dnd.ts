@@ -68,5 +68,5 @@ export function crProf(cr?: string): number {
 export const CONDITIONS = ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious']
 /** What a character sheet and the combat tracker can mark: the conditions, and Concentrating. */
 export const TRACKER_CONDITIONS = [...CONDITIONS, 'Concentrating']
-/** The CON save DC to keep concentrating after taking damage. */
-export const concentrationDc = (dmg: number) => Math.max(10, Math.floor(dmg / 2))
+/** The CON save DC to keep concentrating after taking damage: 10 or half the damage, at most `cap` (2024: 30). */
+export const concentrationDc = (dmg: number, cap = Infinity) => Math.min(cap, Math.max(10, Math.floor(dmg / 2)))

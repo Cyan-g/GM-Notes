@@ -39,7 +39,7 @@ import ConditionsBar from './ConditionsBar.vue'
 import DeathSaves from './DeathSaves.vue'
 import LevelUpModal from './LevelUpModal.vue'
 import { XP_AT } from '../sheet'
-import { endConcentration, hpChanged, isDead, noDeathSaves, settleDeathSaves } from '../conditions'
+import { endConcentration, hpChanged, isDead, massiveDamage, noDeathSaves, settleDeathSaves } from '../conditions'
 import { featOfFeature, originFeatOf, picksLeft, speciesEffects, speciesExpertise, speciesGrants, speciesSizes, speciesTraits } from '../species'
 import { ui } from '../ui'
 
@@ -73,6 +73,7 @@ const tipOf = (total: number, parts: Part[], fmt = signed) => breakdown(`${fmt(t
 /** Advantage or disadvantage from gear on a skill or a save (they cancel out). */
 const skillAdv = (name: string) => advOf(gt.value.skillAdv[name])
 const saveAdv = (a: Ability) => advOf(gt.value.saveAdv[a])
+const initAdv = computed(() => advOf(gt.value.initiativeAdv))
 const saveParts = (a: Ability) => [...gt.value.saves, ...(gt.value.save[a] ?? [])]
 const initTotal = computed(() => initiative(s.value))
 const maxHp = computed(() => maxHpOf(s.value))
@@ -185,9 +186,12 @@ function hit(ev: Event) {
       let dmg = -n
       const soak = Math.min(x.tempHp ?? 0, dmg)
       if (soak) { x.tempHp = (x.tempHp ?? 0) - soak || undefined; dmg -= soak }
+      // massive damage: said, not done (the DM decides)
+      const massive = massiveDamage(props.pc.name, hp, dmg, maxHp.value)
+      if (massive) noteUndo(massive)
       hp = Math.max(0, hp - dmg)
       // still standing and concentrating: a CON save to keep it
-      if ((hp > 0 || !maxHp.value) && x.conditions?.includes('Concentrating')) concDc.value = concentrationDc(-n)
+      if ((hp > 0 || !maxHp.value) && x.conditions?.includes('Concentrating')) concDc.value = concentrationDc(-n, rule('concentrationCap') === '2014' ? Infinity : 30)
     } else {
       // three failed death saves: dead; healing brings them back only if the player or DM says so (a revivify)
       if (isDead(x.deathSaves) && !window.confirm(`${props.pc.name} is dead (three failed death saves). Heal them anyway?`)) return
@@ -418,7 +422,7 @@ onBeforeUnmount(() => {
             <p v-if="!skillsOf(a.key).length" class="cs-noskill">no skills</p>
           </div>
           <!-- what else scales with it, at the bottom: initiative (DEX), passive perception (WIS) -->
-          <div v-if="a.key === 'dex'" class="cs-foot tip" :data-tip="tipOf(initTotal, gt.initiative) ?? 'Initiative: DEX modifier plus any bonus'"><span>Initiative</span><b v-flash="initTotal" :class="{ 'gear-mod': gt.initiative.length }">{{ signed(initTotal) }}</b></div>
+          <div v-if="a.key === 'dex'" class="cs-foot tip" :data-tip="tipOf(initTotal, gt.initiative) ?? 'Initiative: DEX modifier plus any bonus'"><span>Initiative</span><i v-if="initAdv.tip" class="cs-adv tip" :class="initAdv.mode" :data-tip="initAdv.tip">{{ initAdv.mode ?? '±' }}</i><b v-flash="initTotal" :class="{ 'gear-mod': gt.initiative.length }">{{ signed(initTotal) }}</b></div>
           <div v-else-if="a.key === 'wis'" class="cs-foot" title="Passive perception: 10 + Perception"><span>Passive perception</span><b v-flash="passivePerception(s, prof)">{{ passivePerception(s, prof) }}</b></div>
         </div>
       </section>

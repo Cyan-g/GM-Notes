@@ -8,20 +8,27 @@
 import Dropdown from './Dropdown.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { TraitOption } from '../model/types'
-import { choiceCandidates, choiceCount, choiceWords, type ActiveTrait } from '../species'
+import { choiceCount, choiceOffer, choiceWords, type ActiveTrait, type HaveNow } from '../species'
+import { categoryOf } from '../sheet'
 import { get, listOptions } from '../store'
 import { MASTERY_OF } from '../model/schema'
 import MarkdownView from './MarkdownView.vue'
 import EntryLink from './EntryLink.vue'
 import TraitChips from './TraitChips.vue'
 
-/** `owned`: the spells the character has already, with where from, marked in a spell pick's dropdown (the wizard). */
-const props = defineProps<{ a: ActiveTrait; disabled?: boolean; owned?: Map<string, string[]> }>()
+/**
+ * `owned`: the spells the character has already, with where from, marked in a spell pick's dropdown (the wizard).
+ * `have`: what the character has (skills, weapon proficiencies, languages): Expertise, weapon mastery and languages
+ * offer only what fits, and a skill they have already is marked.
+ */
+const props = defineProps<{ a: ActiveTrait; disabled?: boolean; owned?: Map<string, string[]>; have?: HaveNow }>()
 const hasIt = (id: string) => (c.value.kind === 'spell' ? props.owned?.get(id)?.join(', ') : undefined)
 const emit = defineEmits<{ pick: [picks: string[]] }>()
 const c = computed(() => props.a.trait.choice!)
 const n = computed(() => choiceCount(props.a))
-const options = computed(() => choiceCandidates(c.value))
+const options = computed(() => choiceOffer(c.value, props.have, props.a.picks, w => categoryOf(w), w => MASTERY_OF[w]))
+/** A skill (or skill or tool) pick the character has already: marked, picking it gives nothing new. */
+const hadSkill = (id: string) => (['skill', 'skillTool'].includes(c.value.kind) && props.have?.skills.includes(id) && !props.a.picks.includes(id) ? ' ✓ has it' : '')
 const words = computed(() => choiceWords(c.value, n.value))
 const picked = computed(() => props.a.picks.filter(Boolean).length)
 const full = computed(() => picked.value >= n.value)
@@ -78,6 +85,9 @@ watch(open, v => (v ? window.addEventListener('keydown', onKey, true) : window.r
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 function toggle(id: string) {
   if (props.disabled) return
+  // an option whose level or other option isn't there yet can't be taken (one taken already can be given up)
+  const r = rows.value.find(x => x.id === id)
+  if (r && lacking(r) && !props.a.picks.includes(id)) return
   const now = props.a.picks.filter(Boolean)
   if (now.includes(id)) return emit('pick', now.filter(x => x !== id))
   if (n.value === 1) return emit('pick', [id])
@@ -116,11 +126,12 @@ function toggle(id: string) {
       </div>
     <div class="sp-optlist" role="group" :aria-label="a.trait.name">
       <label v-for="r in shown" :key="r.id" class="sp-opt" :class="{ on: a.picks.includes(r.id), off: !a.picks.includes(r.id) && full && n > 1, early: !!lacking(r) }" :title="lacking(r) ? `Can't be taken yet: ${lacking(r)}` : undefined">
-        <input :type="n === 1 ? 'radio' : 'checkbox'" :name="a.key" :checked="a.picks.includes(r.id)" :disabled="disabled || (!a.picks.includes(r.id) && full && n > 1)" @change="toggle(r.id)" />
+        <input :type="n === 1 ? 'radio' : 'checkbox'" :name="a.key" :checked="a.picks.includes(r.id)" :disabled="disabled || (!a.picks.includes(r.id) && ((full && n > 1) || !!lacking(r)))" @change="toggle(r.id)" />
         <span class="sp-opt-body">
           <span class="sp-opt-head"><b>{{ r.label }}</b>
             <span v-if="r.prereq || r.needs || r.needOption" class="sp-prereq" :class="{ lacking: !!lacking(r) }" :title="lacking(r) || 'Prerequisite'">{{ r.prereq ?? [r.needs && `Level ${r.needs}+`, r.needOption && rows.find(x => x.id === r.needOption)?.label].filter(Boolean).join(', ') }}</span>
             <TraitChips v-if="r.option" :t="r.option" no-grants /></span>
+          <span v-if="lacking(r) && !a.picks.includes(r.id)" class="small sp-opt-lacks">Not yet: {{ lacking(r) }}</span>
           <span v-if="r.text" class="muted small sp-opt-lead">{{ lead(r.text) }}</span>
           <details v-if="r.text.length > lead(r.text).length + 2" class="sp-opt-more" @click.stop><summary class="small">more</summary><MarkdownView class="small" :source="r.text" /></details>
         </span>
@@ -136,7 +147,7 @@ function toggle(id: string) {
     <div v-if="!listed" class="sp-pick-selects">
       <Dropdown v-for="k in n" :key="k" :value="a.picks[k - 1] ?? ''" :disabled="disabled" :aria-label="`${a.trait.name}: pick ${k}`" :data-tip="masteryTip(a.picks[k - 1])" @change="set(k - 1, ($event.target as HTMLSelectElement).value)">
         <option value="">—</option>
-        <option v-for="o in options" :key="o.id" :value="o.id" :disabled="a.picks.includes(o.id) && a.picks[k - 1] !== o.id" :data-tip="masteryTip(o.id)">{{ weaponLabel(o) }}{{ hasIt(o.id) ? ` ✓ has it: ${hasIt(o.id)}` : '' }}</option>
+        <option v-for="o in options" :key="o.id" :value="o.id" :disabled="a.picks.includes(o.id) && a.picks[k - 1] !== o.id" :data-tip="masteryTip(o.id)">{{ weaponLabel(o) }}{{ hasIt(o.id) ? ` ✓ has it: ${hasIt(o.id)}` : '' }}{{ hadSkill(o.id) }}</option>
       </Dropdown>
       <template v-if="c.kind === 'spell'"><span v-for="id in a.picks" :key="id"><EntryLink :id="id" /><span v-if="hasIt(id)" class="wz-had small" :title="`Already has it: ${hasIt(id)}`">✓ also from {{ hasIt(id) }}</span></span></template>
     </div>

@@ -8,7 +8,8 @@
 //   top     slot above the list (the level, a filter); `detail` slot: the item looked at
 import { computed, nextTick, ref, watch } from 'vue'
 
-export interface ChooserItem { id: string; label: string; hint?: string; group?: string; mark?: string; title?: string }
+/** `off`: can't be taken now (its prerequisite): shown dimmed, the reason in `hint`. */
+export interface ChooserItem { id: string; label: string; hint?: string; group?: string; mark?: string; title?: string; off?: boolean }
 const props = defineProps<{ items: ChooserItem[]; picked?: string | string[] | null; label: string; empty?: string }>()
 const emit = defineEmits<{ pick: [id: string] }>()
 
@@ -52,7 +53,7 @@ const rows = computed(() => props.items.map((x, i) => ({ x, head: x.group && x.g
         <template v-for="{ x, head } in rows" :key="x.id">
           <div v-if="head" class="wz-ch-group">{{ head }}</div>
           <div :id="`wzc-${x.id}`" :data-id="x.id" class="wz-ch-row" role="option" :aria-selected="isPicked(x.id)" :title="x.title"
-               :class="{ on: isPicked(x.id), shown: shown?.id === x.id }" @click="click(x)">
+               :class="{ on: isPicked(x.id), shown: shown?.id === x.id, off: x.off && !isPicked(x.id) }" @click="click(x)">
             <span class="wz-ch-tick" aria-hidden="true">{{ isPicked(x.id) ? '✓' : '' }}</span>
             <span class="wz-ch-label">{{ x.label }}<small v-if="x.mark" class="wz-ch-mark">{{ x.mark }}</small></span>
             <small v-if="x.hint" class="wz-ch-hint">{{ x.hint }}</small>

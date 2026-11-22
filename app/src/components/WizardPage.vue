@@ -2,6 +2,7 @@
 // The full page of what's picked in the character wizard, under the choices: a class's or species' lore text and
 // its facts (the class table, the species' size and speed) and features or traits, as on its own page. Each part
 // folds; what's folded stays folded on the next class (remembered on this computer).
+import { pickOrigin } from '../wizard'
 import { computed, ref } from 'vue'
 import type { Entry } from '../model/types'
 import { classLabel } from '../classRules'
@@ -64,7 +65,7 @@ function toggled(part: string, ev: Event) {
       <template v-if="e.fields.abilityIncrease"><dt>Ability scores</dt><dd>{{ abilityBonusText(e.fields.abilityIncrease) }}</dd></template>
       <template v-if="e.fields.skillProfs?.length"><dt>Skills</dt><dd>{{ e.fields.skillProfs.join(', ') }}</dd></template>
       <template v-if="e.fields.toolProfs?.length"><dt>Tool</dt><dd>{{ e.fields.toolProfs.map(t => get(t)?.name ?? t).join(', ') }}</dd></template>
-      <template v-if="e.fields.originFeat"><dt>Origin feat</dt><dd>{{ get(e.fields.originFeat)?.name ?? e.fields.originFeat }}</dd></template>
+      <template v-if="e.fields.originFeat && !pickOrigin()"><dt>Origin feat</dt><dd>{{ get(e.fields.originFeat)?.name ?? e.fields.originFeat }}</dd></template>
       <template v-if="e.fields.equipment"><dt>Equipment</dt><dd>{{ equipmentText }}</dd></template>
     </dl>
     <details v-if="hasLore" class="wz-fold" :open="isOpen('lore')" @toggle="toggled('lore', $event)">

@@ -65,6 +65,8 @@ export interface Draft {
   /** The species' and background's choices (species.ts). */
   species: SpeciesState
   feats: FeatPick[]
+  /** The Origin feat the player picked instead of the background's (the "Any Origin feat" rule); unset: the background's. */
+  originFeat?: Id
   /** Hit points for levels 2 and up: typed rolls; missing ones take the average. */
   hpRolls: (number | undefined)[]
   classKit: number
@@ -90,7 +92,11 @@ export const newDraft = (): Draft => ({
 })
 
 /** The draft in progress (kept while the app is open, so leaving the wizard and coming back keeps it). */
-export const wizard = reactive({ d: newDraft(), step: 'class' })
+export const wizard = reactive<{ d: Draft; step: string; featTab?: string }>({ d: newDraft(), step: 'class' })
+/** Whether the player picks the Origin feat (the rule), rather than taking the background's. */
+export const pickOrigin = () => rule('originFeat') === 'any'
+/** The draft's Origin feat: the one picked (the rule allowing it), else the background's. */
+export const originOf = (d: Draft): Id | undefined => (pickOrigin() && d.originFeat ? d.originFeat : (get(d.background)?.fields.originFeat as Id | undefined) || undefined)
 export function resetWizard() { wizard.d = newDraft(); wizard.step = 'class' }
 
 // ---------- the parts ----------
@@ -103,12 +109,15 @@ export function draftPc(d: Draft, sheet?: CharacterSheet): Entry {
   const classLevels: ClassLine[] = d.cls ? [{ class: d.cls, level: d.level, ...(d.subclass ? { subclass: d.subclass } : {}), ...(d.die ? { die: d.die } : {}) }] : []
   const pc = {
     id: '__draft', type: 'pc', name: d.name || 'New character', aliases: [], tags: [], body: '', visibility: 'known',
-    fields: { classLevels, ...(d.race ? { race: d.race } : {}), ...(d.background ? { background: d.background } : {}), sheet: sheet ?? { ...blankSheet(), species: d.species } },
+    fields: { classLevels, ...(d.race ? { race: d.race } : {}), ...(d.background ? { background: d.background } : {}), sheet: sheet ?? { ...blankSheet(), species: d.species, ...originSheet(d) } },
     created: '', updated: '',
   } as unknown as Entry
   own(pc.fields.sheet as CharacterSheet, pc)
   return pc
 }
+
+/** The sheet's Origin feat for a draft: set only when the player picks it (else the background's counts). */
+const originSheet = (d: Draft) => (pickOrigin() ? { originFeat: originOf(d) ?? null } : {})
 
 /** What the draft has so far, for a choice's options: the skills, weapon proficiencies and languages picked or given. */
 export function draftHave(d: Draft): HaveNow {
@@ -331,7 +340,9 @@ export function steps(d: Draft): Step[] {
   // species, subrace (when the species has them) and background: a step each, with their traits' open choices
   // (an Origin feat's with the background)
   const kindOf = (a: ReturnType<typeof speciesTraits>[number]) => (a.race.type !== 'race' ? 'background' : a.race.fields.parent ? 'subrace' : 'species')
-  const originOpen = (kind: string) => speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && choiceOpen(a) && kindOf(a) === kind)
+  // a feat's choices, and a choice of a feat (Versatile), are made in the Feats step
+  const inFeats = (a: ReturnType<typeof speciesTraits>[number]) => a.race.type === 'feat' || a.trait.choice?.kind === 'feat'
+  const originOpen = (kind: string) => speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && choiceOpen(a) && !inFeats(a) && kindOf(a) === kind)
     .map(a => (a.trait.name === a.race.name ? a.trait.name : `${a.trait.name} (${a.race.name})`))
   const main = mainRace(d.race), sub = d.race && main && d.race !== main.id ? get(d.race) : undefined
   s.push({ id: 'species', label: 'Species', open: [!d.race && 'a species', ...originOpen('species')].filter(Boolean) as string[], chosen: main?.name ?? '' })
@@ -354,11 +365,18 @@ export function steps(d: Draft): Step[] {
   const classFeatures = speciesTraits(pc).filter(a => isClassOrigin(a.race) && a.active)
   const featurePicks = classFeatures.filter(a => a.trait.choice).flatMap(a => a.picks.map(id => get(id)?.name ?? a.trait.choice?.options?.find(o => o.id === id)?.name ?? id))
   if (classFeatures.length) s.push({ id: 'features', label: 'Class features', open: classFeatures.filter(choiceOpen).map(a => a.trait.name), chosen: featurePicks.join(', ') })
-  if (featLevels(d).length) s.push({ id: 'feats', label: 'Feats', open: featLevels(d).flatMap(({ level }) => {
-    const f = d.feats.find(x => x.level === level)
-    if (!f?.feat) return [`a feat at level ${level}`]
-    return bonusOpen(get(f.feat)?.fields.abilityIncrease, f.choice) ? [`the scores of ${get(f.feat)?.name}`] : []
-  }), chosen: d.feats.map(f => get(f.feat)?.name).filter(Boolean).join(', ') })
+  // the Feats step: the Origin feat, the feats a trait gives (Versatile), and a feat at each level that gives one
+  const featTraits = speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && inFeats(a))
+  const origin = originOf(d)
+  if (featLevels(d).length || origin || pickOrigin() || featTraits.length) s.push({ id: 'feats', label: 'Feats', open: [
+    pickOrigin() && !origin ? 'an Origin feat' : '',
+    ...featTraits.filter(choiceOpen).map(a => (a.trait.choice?.kind === 'feat' ? `a feat for ${a.trait.name}` : a.trait.name === a.race.name ? a.trait.name : `${a.trait.name} (${a.race.name})`)),
+    ...featLevels(d).flatMap(({ level }) => {
+      const f = d.feats.find(x => x.level === level)
+      if (!f?.feat) return [`a feat at level ${level}`]
+      return bonusOpen(get(f.feat)?.fields.abilityIncrease, f.choice) ? [`the scores of ${get(f.feat)?.name}`] : []
+    }),
+  ].filter(Boolean), chosen: [get(origin)?.name, ...featTraits.filter(a => a.trait.choice?.kind === 'feat').flatMap(a => a.picks.map(id => get(id)?.name)), ...d.feats.map(f => get(f.feat)?.name)].filter(Boolean).join(', ') })
   // Level 1 takes the die's maximum: nothing to choose (the summary shows it); later levels may take a typed roll.
   if (d.level > 1) s.push({ id: 'hp', label: 'Hit points', open: [], chosen: d.cls ? `${hpOf(d)} HP` : '' })
   s.push({ id: 'gear', label: 'Equipment', open: [], chosen: [classKitsOf(d.cls).length > 1 ? `kit ${String.fromCharCode(65 + d.classKit)}` : '', backgroundKit(d) || backgroundGold(d) ? (d.bgKit === 'items' ? 'background gear' : 'background gold') : ''].filter(Boolean).join(' · ') })
@@ -417,6 +435,7 @@ export function defaultCampaigns(): Id[] {
 /** The finished sheet (also what checks on the draft read: scores, proficiencies). */
 export function draftSheet(d: Draft): CharacterSheet {
   const r = rules(d), s = blankSheet()
+  Object.assign(s, originSheet(d))
   s.abilities = finalScores(d)
   s.saves = r ? [...r.saves] : [...d.ownSaves]
   // Resilient: proficiency in the saves of the abilities the feat raised
@@ -452,14 +471,15 @@ export function draftSheet(d: Draft): CharacterSheet {
   if (kits.money) s.money = kits.money
   // The Origin feat and the feats taken at their levels.
   const feats: Feature[] = []
-  const origin = get(d.background)?.fields.originFeat
+  const origin = originOf(d)
+  if (pickOrigin()) s.originFeat = origin ?? null
   const featLine = (id: Id | undefined, note?: string) => {
     const f = get(id)
     // An Ability Score Improvement is all in the scores; nothing to list.
     if (f && /^ability score improvement$/i.test(f.name.trim())) return
     if (f) feats.push({ name: note ? `${f.name} (${note})` : f.name, text: String(f.fields.summary ?? '').trim() })
   }
-  featLine(origin, get(d.background)?.fields.originFeatNote)
+  featLine(origin, origin === get(d.background)?.fields.originFeat ? get(d.background)?.fields.originFeatNote : undefined)
   for (const f of [...d.feats].sort((a, b) => a.level - b.level)) if (featLevels(d).some(x => x.level === f.level)) featLine(f.feat)
   s.features = feats
   if (Object.keys(d.species).length) s.species = JSON.parse(JSON.stringify(d.species))

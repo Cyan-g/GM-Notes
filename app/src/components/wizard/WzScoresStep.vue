@@ -14,7 +14,7 @@ import { raceChain } from '../../species'
 import { get } from '../../store'
 import { useDraft } from '../../composables/useDraft'
 import { inputNumber as num, inputValue as val } from '../../dom'
-import SpreadPicker from '../SpreadPicker.vue'
+import { useSpread } from '../../composables/useSpread'
 import { useDraftSheet } from '../../composables/useDraftSheet'
 import { bonusOpen } from '../../abilityBonus'
 import { dieOfDraft } from '../../wizard'
@@ -84,6 +84,11 @@ function feeds(a: Ability): string[] {
 }
 const skillsOf = (a: Ability) => skills.value.filter(x => x.ability === a)
 const bonusLeft = computed(() => d.value.bonusFrom !== 'custom' && !!bonus.value && bonusOpen(bonus.value, d.value.bonusChoice) > 0)
+// ---- the bonus, placed point by point in the table (background's or species'), or typed in ----
+const spread = useSpread(computed(() => (d.value.bonusFrom !== 'custom' ? bonus.value : undefined)), baseScores, computed(() => d.value.bonusChoice), c => { wizard.d.bonusChoice = c })
+/** Points placed but not all yet: the score shows them already (the sheet counts them once all are placed). */
+const pending = (a: Ability) => (bonusLeft.value ? (spread.adds.value[a] ?? 0) + spread.fixed(a) - (adds.value[a] ?? 0) : 0)
+const shown = (a: Ability) => scores.value[a] + pending(a)
 const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20, (d.value.base[a] ?? 10) + (adds.value[a] ?? 0))
 </script>
 
@@ -101,11 +106,23 @@ const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20
       <p :class="{ 'wz-bad': pointsSpent(d) > POINTS }"><b>{{ POINTS - pointsSpent(d) }}</b> of {{ POINTS }} points left.</p>
     </template>
     <p v-else><b>Typed in:</b> scores rolled at the table (usually 4d6 six times, dropping the lowest die of each) or agreed with your DM. Type each one in.</p>
-    <p>Then the <b>bonus</b> below adds to these (in the 2024 rules from the background: +2 and +1, or +1 to three scores; no score above 20 at creation). Every 2 points over 10 is +1 to the modifier, which is what the dice use.</p>
+    <p>Then the <b>bonus</b> (its column in the table) adds to these (in the 2024 rules from the background: +2 and +1, or +1 to three scores; no score above 20 at creation). Every 2 points over 10 is +1 to the modifier, which is what the dice use.</p>
     <p v-if="priorities" class="wz-priority">★ {{ priorities }} Then <b>Constitution</b> (hit points, concentration) and <b>Dexterity</b> (AC, initiative) help every class.</p>
   </div>
+  <div class="wz-bonus-src">
+    <span class="small">Bonus from</span>
+    <div class="seg">
+      <button v-for="x in sources" :key="x" type="button" :class="{ on: d.bonusFrom === x }" :disabled="x === 'subrace' && !hasSubrace && d.bonusFrom !== 'subrace'" :title="x === 'subrace' && !hasSubrace ? 'Only with a subrace' : undefined" @click="setBonusFrom(x)">{{ LABEL[x] }}</button>
+    </div>
+    <span class="muted small">
+      <template v-if="d.bonusFrom === 'background'">{{ d.background ? abilityBonusText(get(d.background)?.fields.abilityIncrease) || 'This background gives none.' : 'Choose a background first.' }}</template>
+      <template v-else-if="d.bonusFrom === 'species' || d.bonusFrom === 'subrace'">{{ d.race ? speciesBonusText || 'This species gives none.' : 'Choose a species first.' }}</template>
+      <template v-else>Type the bonus for each score in its column.</template>
+      <template v-if="bonus && d.bonusFrom !== 'custom'"> · place them with − and + in the Bonus column<template v-if="spread.cap.value !== 20"> (up to {{ spread.cap.value }})</template>.</template>
+    </span>
+  </div>
   <table class="wz-scores">
-    <thead><tr><th /><th>Base</th><th>Bonus</th><th v-if="featLevels(d).length">Feats</th><th>Score</th><th>Mod</th><th class="wz-does-h">What it does now</th></tr></thead>
+    <thead><tr><th /><th>Base</th><th :class="{ 'wz-todo': bonusLeft }">Bonus<span v-if="bonusLeft" class="wz-left wz-th-left">{{ spread.points.value - spread.spent.value }} left</span></th><th v-if="featLevels(d).length">Feats</th><th>Score</th><th>Mod</th><th class="wz-does-h">What it does now</th></tr></thead>
     <tbody>
       <tr v-for="a in ABILITY_KEYS" :key="a" :class="{ 'wz-key': isKey(a) }">
         <th>{{ ABILITY_NAME[a] }}<span v-if="isKey(a)" class="wz-key-mark" title="One of the class's main scores"> ★</span></th>
@@ -121,11 +138,16 @@ const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20
         </td>
         <td>
           <input v-if="d.bonusFrom === 'custom'" type="number" min="-5" max="5" class="wz-small" :value="d.custom[a] ?? ''" placeholder="0" @change="wizard.d.custom = { ...d.custom, [a]: num($event) || undefined }" />
+          <span v-else-if="bonus && (spread.allowed(a) || spread.fixed(a))" class="wz-bonus-pick">
+            <button type="button" class="chip-btn" :disabled="!spread.adds.value[a]" :aria-label="`Take a point back from ${ABILITY_NAME[a]}`" @click="spread.add(a, -1)">−</button>
+            <b :class="{ muted: !(spread.adds.value[a] || spread.fixed(a)) }">+{{ (spread.adds.value[a] ?? 0) + spread.fixed(a) }}</b>
+            <button type="button" class="chip-btn" :disabled="!spread.canAdd(a)" :aria-label="`One point to ${ABILITY_NAME[a]}`" @click="spread.add(a, 1)">+</button>
+          </span>
           <template v-else>{{ adds[a] ? signed(adds[a]!) : '' }}</template>
         </td>
         <td v-if="featLevels(d).length">{{ featAdds(a) ? signed(featAdds(a)) : '' }}</td>
-        <td><b v-flash="scores[a]">{{ scores[a] }}</b></td>
-        <td>{{ signed(mod(scores[a])) }}</td>
+        <td><b v-flash="shown(a)">{{ shown(a) }}</b></td>
+        <td>{{ signed(mod(shown(a))) }}</td>
         <td class="wz-does">
           <span class="wz-does-save" :class="{ on: abilities.find(x => x.a === a)?.saveProf }">Save {{ signed(abilities.find(x => x.a === a)?.save ?? 0) }}<template v-if="abilities.find(x => x.a === a)?.saveProf"> (proficient)</template></span>
           <span v-for="x in skillsOf(a)" :key="x.name" class="wz-does-skill" :class="{ on: x.level > 0 }">{{ x.name }} {{ signed(x.bonus) }}</span>
@@ -134,14 +156,4 @@ const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20
       </tr>
     </tbody>
   </table>
-  <h3>Ability score bonus</h3>
-  <div class="seg">
-    <button v-for="x in sources" :key="x" type="button" :class="{ on: d.bonusFrom === x }" :disabled="x === 'subrace' && !hasSubrace && d.bonusFrom !== 'subrace'" :title="x === 'subrace' && !hasSubrace ? 'Only with a subrace' : undefined" @click="setBonusFrom(x)">{{ LABEL[x] }}</button>
-  </div>
-  <p class="muted small">
-    <template v-if="d.bonusFrom === 'background'">{{ d.background ? abilityBonusText(get(d.background)?.fields.abilityIncrease) || 'This background gives none.' : 'Choose a background first.' }}</template>
-    <template v-else-if="d.bonusFrom === 'species' || d.bonusFrom === 'subrace'">{{ d.race ? speciesBonusText || 'This species gives none.' : 'Choose a species first.' }}</template>
-    <template v-else>Type the bonus for each score in the table.</template>
-  </p>
-  <SpreadPicker v-if="bonus && d.bonusFrom !== 'custom'" :class="{ 'wz-todo': bonusLeft }" :data-left="bonusLeft ? 'to pick' : undefined" :key="d.bonusFrom + (d.bonusFrom === 'background' ? d.background : d.race)" v-model="wizard.d.bonusChoice" :bonus="bonus" :scores="baseScores" />
 </template>

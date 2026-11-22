@@ -2,7 +2,7 @@
 // The wizard's background step: the backgrounds as a list (its Origin feat beside each), and the one looked at
 // beside it: what it gives (Origin feat, skills), for the picked one what its traits ask to choose, then its page.
 import { computed } from 'vue'
-import { backgrounds, wizard } from '../../wizard'
+import { backgrounds, pickOrigin, wizard } from '../../wizard'
 import { get } from '../../store'
 import { useDraft } from '../../composables/useDraft'
 import EntryLink from '../EntryLink.vue'
@@ -11,7 +11,7 @@ import WzChooser, { type ChooserItem } from './WzChooser.vue'
 import WzTraitChoices from './WzTraitChoices.vue'
 
 const { d } = useDraft()
-const items = computed<ChooserItem[]>(() => backgrounds().map(b => ({ id: b.id, label: b.name, hint: get(String(b.fields.originFeat ?? ''))?.name ?? '' })))
+const items = computed<ChooserItem[]>(() => backgrounds().map(b => ({ id: b.id, label: b.name, hint: pickOrigin() ? '' : get(String(b.fields.originFeat ?? ''))?.name ?? '' })))
 const pick = (id: string) => { wizard.d.background = id }
 </script>
 
@@ -20,7 +20,9 @@ const pick = (id: string) => { wizard.d.background = id }
     <template #detail="{ item, picked }">
       <p v-if="!picked" class="small muted wz-ch-hint-line">Click {{ item.label }} on the left to take it.</p>
       <p class="small wz-bg-gives">
-        <template v-if="get(item.id)?.fields.originFeat">Origin feat <EntryLink :id="String(get(item.id)?.fields.originFeat)" /><template v-if="get(item.id)?.fields.originFeatNote"> ({{ get(item.id)?.fields.originFeatNote }})</template> · </template>
+        <!-- the Origin feat: the background's (set up in Feats), or none when the player picks their own -->
+        <template v-if="pickOrigin()">Origin feat: you pick one in the Feats step · </template>
+        <template v-else-if="get(item.id)?.fields.originFeat">Origin feat <EntryLink :id="String(get(item.id)?.fields.originFeat)" /><template v-if="get(item.id)?.fields.originFeatNote"> ({{ get(item.id)?.fields.originFeatNote }})</template><template v-if="picked"> (<button type="button" class="link-btn" @click="wizard.featTab = 'origin'; wizard.step = 'feats'">set it up in Feats</button>)</template> · </template>
         skills {{ (get(item.id)?.fields.skillProfs ?? []).join(', ') || '—' }}
       </p>
       <WzTraitChoices v-if="picked" which="background" />

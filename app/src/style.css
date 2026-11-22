@@ -664,10 +664,20 @@ input.init { width: 4em; }
 .pip:hover { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
 .slot-left { font-size: 12px; color: var(--muted); }
 .slot-max { width: 4em; text-align: center; padding: .2em; }
-.sbk-list { margin-bottom: 1rem; overflow-x: auto; }
+/* the spell tables never scroll sideways: squeezed, they drop their least important columns first (the name stays) */
+.sbk-list { margin-bottom: 1rem; overflow-x: clip; container-type: inline-size; }
+.sbk-list .grid { width: 100%; }
+.sbk-list .grid td:first-child { white-space: normal; overflow-wrap: anywhere; }
+.sbk-list .grid td.sbk-actions { white-space: nowrap; }
+@container (max-width: 860px) { .sbk-t-prep :is(th, td):nth-child(6), .sbk-t-inn :is(th, td):nth-child(6) { display: none; } }
+@container (max-width: 760px) { .sbk-t-prep :is(th, td):nth-child(4), .sbk-t-inn :is(th, td):nth-child(5) { display: none; } }
+@container (max-width: 660px) { .sbk-t-prep :is(th, td):nth-child(3), .sbk-t-inn :is(th, td):nth-child(3) { display: none; } }
+@container (max-width: 560px) { .sbk-t-prep :is(th, td):nth-child(2), .sbk-t-inn :is(th, td):nth-child(2) { display: none; } }
+@container (max-width: 440px) { .sbk-t-prep :is(th, td):nth-child(5), .sbk-t-inn :is(th, td):nth-child(7) { display: none; } }
+@container (max-width: 300px) { .sbk-t-short :is(th, td):nth-child(2) { display: none; } }
 .sbk-list table { margin-bottom: .6rem; }
 /* a spell's name and its range stay on one line (the table scrolls sideways when narrow) */
-.sbk-list .grid td:first-child, .sbk-list .grid td.sbk-range { white-space: nowrap; }
+.sbk-list .grid td.sbk-range { white-space: nowrap; }
 .sbk-check { white-space: nowrap; color: var(--ink); font-weight: 500; }
 .sbk-actions { white-space: nowrap; text-align: right; }
 .sbk-actions .chip-btn { font-size: 12px; padding: .15em .7em; }
@@ -1821,6 +1831,19 @@ button.live-tag { cursor: pointer; }
 @keyframes wz-flash { 0% { outline-color: var(--accent); outline-width: 4px; } 100% { outline-width: 2px; } }
 .wz-next-open { margin-right: .4rem; }
 .wz-ch-intro { padding: 2rem 1rem; max-width: 40rem; }
+/* the sheet's ability cards in the creator (WzAbilityCards): six in a row where there's room */
+.wz-cs-abilities { grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr)); grid-auto-rows: auto; padding: .2rem; margin: .4rem 0 .8rem; }
+.wz-cs-score { justify-self: end; min-width: 2.4em; padding: 0 .3em; border: 1px solid var(--line); border-radius: 6px; font-size: 12.5px; text-align: center; color: var(--ink-2); }
+.wz-cs-abilities .cs-skill { grid-template-columns: 1em 2em minmax(0, 1fr) auto; font-size: 13px; }
+.wz-cs-abilities .cs-skill:disabled { cursor: default; }
+.wz-cs-abilities .cs-skill.can { color: var(--ink); }
+.wz-cs-abilities .cs-skill:not(.can):not(.on):disabled { opacity: .6; }
+.wz-bonus-src { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; margin: .6rem 0 .3rem; }
+.wz-bonus-pick { display: inline-flex; align-items: center; gap: .25rem; }
+.wz-bonus-pick b { min-width: 1.8em; text-align: center; }
+.wz-th-left { margin-left: .35rem; vertical-align: middle; }
+.wz-feat-pointer { margin: .5rem 0; padding: .4rem .6rem; border: 1px dashed var(--line); border-radius: 8px; }
+.wz-feat-fixed { display: grid; gap: .5rem; }
 /* the ability scores step's guidance, and what each score feeds */
 .wz-guide { max-width: 60rem; margin: .6rem 0; display: grid; gap: .35rem; font-size: 14px; }
 .wz-guide p { margin: 0; }
@@ -2339,6 +2362,8 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .item-where .iw-sub { margin: .4rem 0 .2rem; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .item-where .chip-btn { margin-top: .5rem; }
 /* the entry picker's list floats over the page (EntryPicker): fixed at its input, above dialogs too */
+.picker-caret { position: absolute; right: .6rem; top: 50%; translate: 0 -50%; color: var(--muted); font-size: .8em; pointer-events: none; }
+.picker-dd { padding-right: 1.8rem; cursor: pointer; }
 .picker-list.floating { position: fixed; right: auto; z-index: 2000; margin: 0; min-width: 0; }
 /* ---- the wizard: the picked class's or species' page under the choices; the subrace as its own choice ---- */
 .wz-page { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
@@ -2447,7 +2472,8 @@ select.dd::picker-icon { color: var(--muted); font-size: .8em; transition: rotat
 select.dd:open::picker-icon { rotate: 180deg; }
 select.dd:disabled { cursor: default; }
 select.dd::picker(select) {
-  appearance: base-select; margin: 2px 0; padding: 4px; max-height: min(320px, 60vh); color: var(--ink); background: var(--panel);
+  /* a long list scrolls inside it, and it never runs off a small window */
+  appearance: base-select; margin: 2px 0; padding: 4px; max-height: min(320px, 60vh); overflow-y: auto; overscroll-behavior: contain; color: var(--ink); background: var(--panel);
   border: 1px solid var(--fx-panel-edge, var(--line)); border-radius: var(--fx-panel-radius, 10px);
   outline: var(--fx-panel-outline, none); outline-offset: var(--fx-panel-outline-offset, 0);
   box-shadow: 0 2px 4px rgb(0 0 0 / .08), 0 10px 32px rgb(0 0 0 / .22);

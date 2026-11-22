@@ -8,7 +8,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { Entry, EntryType } from '../../model/types'
 import { TYPES, typeWord } from '../../model/schema'
 import { search } from '../../search'
-import { get } from '../../store'
+import { entries, get } from '../../store'
 import { createEntry } from '../../edit'
 
 const props = withDefaults(defineProps<{
@@ -25,6 +25,8 @@ const props = withDefaults(defineProps<{
   noCreate?: boolean
   /** No × to clear the pick (a table row with its own remove button). */
   noClear?: boolean
+  /** Opens as a dropdown: an arrow, and the whole list on a click (typing filters it), not only once something's typed. */
+  dropdown?: boolean
   /** Put the cursor in it when it shows (opened by a button: "＋ Parent"). */
   focus?: boolean
 }>(), { modelValue: null, add: false })
@@ -37,7 +39,9 @@ const input = ref<HTMLInputElement>()
 const current = computed(() => get(props.modelValue))
 const allowed = (e: Entry) => (!props.types?.length || props.types.includes(e.type)) && !props.exclude?.includes(e.id) && (!props.only || props.only.includes(e.id))
 const results = computed(() => {
-  if (!props.only) return search(q.value, 10, allowed)
+  // a dropdown with nothing typed: everything it offers, by name
+  if (!props.only && props.dropdown && !q.value.trim()) return entries.value.filter(allowed).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 300)
+  if (!props.only) return search(q.value, props.dropdown ? 100 : 10, allowed)
   if (q.value.trim()) return search(q.value, props.only.length, allowed)
   return props.only.map(id => get(id)).filter((e): e is Entry => !!e && allowed(e)).sort((a, b) => a.name.localeCompare(b.name))
 })
@@ -66,7 +70,7 @@ function position() {
     ...(up ? { bottom: `${window.innerHeight - r.top + 2}px`, maxHeight: `${Math.min(300, r.top - 8)}px` } : { top: `${r.bottom + 2}px`, maxHeight: `${Math.min(300, below - 8)}px` }),
   }
 }
-const showList = computed(() => editing.value && (!!q.value || !!props.only) && options.value.length > 0)
+const showList = computed(() => editing.value && (!!q.value || !!props.only || props.dropdown) && options.value.length > 0)
 watch(showList, on => {
   if (on) { position(); window.addEventListener('scroll', position, true); window.addEventListener('resize', position) }
   else { window.removeEventListener('scroll', position, true); window.removeEventListener('resize', position) }
@@ -114,7 +118,8 @@ function blur() { setTimeout(() => { editing.value = false; q.value = '' }, 150)
       <button v-if="modelValue && !noClear" type="button" class="x" title="Clear" @click="emit('update:modelValue', null)">×</button>
     </div>
     <template v-else>
-      <input ref="input" v-model="q" :placeholder="placeholder || 'Type a name…'" @keydown="key" @blur="blur" @focus="editing = true" @input="editing = true" />
+      <input ref="input" v-model="q" :class="{ 'picker-dd': dropdown }" :placeholder="placeholder || 'Type a name…'" @keydown="key" @blur="blur" @focus="editing = true" @input="editing = true" @click="editing = true" />
+      <span v-if="dropdown" class="picker-caret" aria-hidden="true">▾</span>
       <Teleport to="body">
       <ul v-if="showList" class="picker-list floating" :style="place">
         <li v-for="(o, i) in options" :key="o.e?.id ?? o.kind" :class="{ sel: i === sel }" @mousedown.prevent="choose(i)" @mousemove="sel = i; moved = true">

@@ -78,7 +78,13 @@ export function proficientWith(s: CharacterSheet | undefined, e: Entry): boolean
     const t = e.fields.armorType
     return !t || t === 'Clothing' ? undefined : p.armor.includes(t)
   }
-  if (e.fields.kind === 'Tool') return p.tools.includes(e.id)
+  if (e.fields.kind === 'Tool' || e.fields.kind === 'Instrument') {
+    if (p.tools.includes(e.id)) return true
+    // one particular item of a kind ("Elmar's Lyre", subtype "Instrument (Lyre)"): proficiency in the kind covers it
+    const kind = String(e.fields.subtype ?? '').match(/\(([^)]+)\)\s*$/)?.[1]?.trim().toLowerCase()
+    if (kind && p.tools.some(t => (get(t)?.name ?? t).trim().toLowerCase() === kind)) return true
+    return e.fields.kind === 'Tool' ? false : undefined
+  }
   return undefined
 }
 

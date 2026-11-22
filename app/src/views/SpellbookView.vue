@@ -139,7 +139,8 @@ const innate = computed(() => allInnate.value.filter(x => !unlimited(x.spell.how
  */
 const given = computed(() => {
   const m = new Map<Id, { from: string; how: string; ability?: Ability }>()
-  for (const x of allInnate.value) if (unlimited(x.spell.how) && !m.has(x.spell.spell)) m.set(x.spell.spell, { from: x.from, how: x.spell.how, ability: x.spell.ability })
+  // (a once-per-rest spell that's also always prepared, Magic Initiate's: here as prepared, below for its free cast)
+  for (const x of allInnate.value) if ((unlimited(x.spell.how) || x.spell.prepared) && !m.has(x.spell.spell)) m.set(x.spell.spell, { from: x.from, how: x.spell.prepared ? 'prepared' : x.spell.how, ability: x.spell.ability })
   for (const g of allGranted.value) if (unlimited(g.spell.how) && !m.has(g.spell.spell)) m.set(g.spell.spell, { from: g.item.name, how: g.spell.how })
   return m
 })
@@ -443,7 +444,7 @@ const full = computed(() => preparedLimit.value != null && preparedCount.value >
           <input v-model="classQ" class="sbk-search" type="search" placeholder="Find…" aria-label="Find a spell on the class list" />
         </h3>
         <div class="sbk-scroll">
-        <table class="grid">
+        <table class="grid sbk-t-short">
           <thead><tr><th>Spell</th><th>Level</th><th></th></tr></thead>
           <tbody>
             <tr v-for="e in classShown" :key="e.id" :class="{ on: e.fields.level === 'Cantrip' ? isKnownCantrip(e.id) : isPrepared(e.id) }">
@@ -467,7 +468,7 @@ const full = computed(() => preparedLimit.value != null && preparedCount.value >
           <input v-if="knownList.length > 1" v-model="knownQ" class="sbk-search" type="search" placeholder="Find…" aria-label="Find a known spell" />
         </h3>
         <div v-if="knownList.length" class="sbk-scroll">
-        <table class="grid">
+        <table class="grid sbk-t-short">
           <thead><tr><th>Spell</th><th>Level</th><th></th></tr></thead>
           <tbody>
             <tr v-for="e in knownShown" :key="e.id" :class="{ dim: isPrepared(e.id) || isCantrip(e.id), dragging: dragging?.id === e.id }"
@@ -479,8 +480,8 @@ const full = computed(() => preparedLimit.value != null && preparedCount.value >
                 <span v-if="freeKnown.has(e.id)" class="muted small" :title="`In the spellbook for free, from ${freeKnown.get(e.id)}`">{{ freeKnown.get(e.id) }}</span>
                 <span v-if="isCantrip(e.id)" class="muted small" title="Cantrips are always ready">cantrip</span>
                 <span v-else-if="given.has(e.id)" class="muted small" :title="`Always prepared: from ${given.get(e.id)!.from}`">always</span>
-                <button v-else-if="isPrepared(e.id)" class="chip-btn on" aria-pressed="true" title="Prepared. Click to unprepare it" @click="unprepare(e.id)">✓ Prepared</button>
-                <button v-else class="chip-btn" :disabled="atLimit" :title="atLimit ? `${preparedLimit} of ${preparedLimit} prepared: unprepare one first` : 'Prepare it (or drag it to Prepared spells)'" @click="prepare(e.id)">Prepare</button>
+                <button v-else-if="isPrepared(e.id)" class="chip-btn on small" aria-pressed="true" title="Prepared. Click to unprepare it" @click="unprepare(e.id)">✓ Prepared</button>
+                <button v-else class="chip-btn small" :disabled="atLimit" :title="atLimit ? `${preparedLimit} of ${preparedLimit} prepared: unprepare one first` : 'Prepare it (or drag it to Prepared spells)'" @click="prepare(e.id)">Prepare</button>
                 <!-- Ritual Adept: a Wizard casts a ritual from the book without preparing it -->
                 <button v-if="e.fields.ritual && !isPrepared(e.id) && bookClasses.length && caster" class="chip-btn" title="Cast it as a ritual from the book: 10 minutes longer, no slot, no need to prepare it" @click="castRitual(e)">Ritual</button>
                 <button v-if="!freeKnown.has(e.id)" class="link-btn x" title="Remove from the spellbook" @click="forget(e.id)">✕</button>
@@ -491,7 +492,7 @@ const full = computed(() => preparedLimit.value != null && preparedCount.value >
         <p v-if="!knownShown.length" class="muted small">No known spell matches.</p>
         </div>
         <p v-else class="muted small">No spells in the book yet.</p>
-        <EntryPicker add :types="['spell']" :exclude="book.known" :only="bookOffer" :no-create="playerMode" :placeholder="bookOffer ? `Add a ${bookClasses[0].class} spell to the book…` : 'Add a spell to the book…'" @pick="learn" />
+        <EntryPicker add dropdown :types="['spell']" :exclude="book.known" :only="bookOffer" :no-create="playerMode" :placeholder="bookOffer ? `Add a ${bookClasses[0].class} spell to the book…` : 'Add a spell to the book…'" @pick="learn" />
       </section>
 
       <!-- the right-hand column: prepared spells, then the spells the character's items grant -->
@@ -499,7 +500,7 @@ const full = computed(() => preparedLimit.value != null && preparedCount.value >
       <section v-if="!noCasting || preparedList.length" class="card sbk-list drop-zone" :class="{ over: over === 'prepared' }"
                @dragover="dragOver($event, 'prepared')" @dragleave.self="over = null" @drop.prevent="drop('prepared')">
         <h3>Prepared spells <span class="muted small" :class="{ over: full }" title="Cantrips and always-prepared spells don't count">{{ preparedCount }}<template v-if="preparedLimit != null"> / {{ preparedLimit }}</template><template v-if="alwaysCount"> + {{ alwaysCount }} always</template></span></h3>
-        <table v-if="preparedList.length" class="grid">
+        <table v-if="preparedList.length" class="grid sbk-t-prep">
           <thead><tr><th>Spell</th><th>Level</th><th>Casting time</th><th>Duration</th><th>Attack / save</th><th title="Concentration · Ritual">C/R</th><th></th></tr></thead>
           <tbody>
             <tr v-for="e in preparedList" :key="e.id" :class="{ dragging: dragging?.id === e.id }" :draggable="!onlyGiven(e.id) && !isCantrip(e.id)"
@@ -542,7 +543,7 @@ const full = computed(() => preparedLimit.value != null && preparedCount.value >
         <h3>{{ !innate.length ? 'From items' : !granted.length ? 'From species and features' : 'From items, species and features' }} <span class="muted small">{{ granted.length + innate.length }}</span>
 
         </h3>
-        <table class="grid">
+        <table class="grid sbk-t-inn">
           <thead><tr><th>Spell</th><th>Level</th><th>From</th><th>How</th><th>Casting time</th><th>Range</th><th>Attack / save</th><th></th></tr></thead>
           <tbody>
             <tr v-for="g in granted" :key="g.i + '-' + g.k" :class="{ dim: !g.ready }">

@@ -63,6 +63,15 @@ export const RULES: RuleDef[] = [
     default: 'off', keywords: 'asi ability scores race species subrace creation bonus',
   },
   {
+    id: 'originFeat', group: 'Character creation', label: 'Origin feat',
+    text: 'Where a new character’s Origin feat comes from. Its choices (Magic Initiate’s spell list and spells) are made in the creator’s Feats step either way.',
+    options: [
+      { id: 'background', label: 'The background’s (2024)', text: 'Each background gives its own Origin feat.' },
+      { id: 'any', label: 'Any Origin feat', text: 'The player picks any Origin feat in the Feats step; the background’s is picked to start with, and the background no longer gives it.' },
+    ],
+    default: 'background', keywords: 'origin feat background magic initiate creation',
+  },
+  {
     id: 'bonusCustom', group: 'Character creation', label: 'Ability increase: typed in',
     text: 'Whether the player may type the bonus for each score themselves.',
     options: [{ id: 'on', label: 'Offered' }, { id: 'off', label: 'Not offered' }],

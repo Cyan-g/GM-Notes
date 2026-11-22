@@ -345,6 +345,8 @@ export interface TraitSpell {
   from?: number
   /** The ability it's cast with, if the trait says (attack and DC are shown with it); else the trait's `castWith`. */
   ability?: Ability
+  /** Once per rest (`short` / `long`) and also always prepared, cast with slots too (Magic Initiate's level 1 spell). */
+  prepared?: boolean
   /** The player may swap it for another spell of these classes' lists (any) and this level (the spell's own). */
   swap?: { classes?: string[]; level?: string }
 }
@@ -372,7 +374,7 @@ export interface TraitChoice {
   /** What it's called when it comes with an option ("Cantrips"); the option's name goes before it. */
   label?: string
   /** For a spell choice: which spells (any class's list, if `classes` is empty), and how the picked ones are cast. */
-  spell?: { classes?: string[]; level?: string; ritual?: boolean; /** Only spells of these schools (Fey Touched: Divination or Enchantment). */ schools?: string[]; how: TraitSpell['how']; ability?: TraitSpell['ability'] }
+  spell?: { classes?: string[]; level?: string; ritual?: boolean; /** Only spells of these schools (Fey Touched: Divination or Enchantment). */ schools?: string[]; how: TraitSpell['how']; ability?: TraitSpell['ability']; prepared?: boolean }
   count?: number
   /** A skill choice: a picked skill the character is already proficient in becomes Expertise (Keen Mind, Observant). */
   orExpertise?: boolean

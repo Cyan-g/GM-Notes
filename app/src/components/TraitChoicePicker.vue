@@ -22,7 +22,7 @@ import TraitChips from './TraitChips.vue'
  * `have`: what the character has (skills, weapon proficiencies, languages): Expertise, weapon mastery and languages
  * offer only what fits, and a skill they have already is marked.
  */
-const props = defineProps<{ a: ActiveTrait; disabled?: boolean; owned?: Map<string, string[]>; have?: HaveNow }>()
+const props = defineProps<{ a: ActiveTrait; disabled?: boolean; owned?: Map<string, string[]>; have?: HaveNow; /** Options another time of the same repeatable feat took: id → where. */ taken?: Map<string, string> }>()
 const hasIt = (id: string) => (c.value.kind === 'spell' ? props.owned?.get(id)?.join(', ') : undefined)
 const emit = defineEmits<{ pick: [picks: string[]] }>()
 const c = computed(() => props.a.trait.choice!)
@@ -72,7 +72,7 @@ const shown = computed(() => {
   return q ? rows.value.filter(r => r.label.toLowerCase().includes(q) || r.text.toLowerCase().includes(q)) : rows.value
 })
 /** What a row still lacks: the level, or the option it needs picked first. */
-const lacking = (r: Row) => [r.needs && r.needs > props.a.level && `needs level ${r.needs} (now ${props.a.level})`, r.needOption && !props.a.picks.includes(r.needOption) && `needs ${rows.value.find(x => x.id === r.needOption)?.label ?? 'another option'} first`].filter(Boolean).join('; ')
+const lacking = (r: Row) => [props.taken?.has(r.id) && `taken by ${props.taken.get(r.id)} (a different one each time)`, r.needs && r.needs > props.a.level && `needs level ${r.needs} (now ${props.a.level})`, r.needOption && !props.a.picks.includes(r.needOption) && `needs ${rows.value.find(x => x.id === r.needOption)?.label ?? 'another option'} first`].filter(Boolean).join('; ')
 /** The first sentence, shown on the row; the rest folds away. */
 const lead = (t: string) => t.match(/^[^.!?]*[.!?]/)?.[0] ?? t
 /** The picks made, by name, for the line under the trait. */

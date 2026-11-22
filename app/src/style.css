@@ -1302,7 +1302,9 @@ th.sortable { cursor: pointer; user-select: none; }
 th.sortable:hover { color: var(--accent); }
 th.sortable:hover::after { content: ' ↕'; opacity: .5; }
 .older-sessions summary { cursor: pointer; color: var(--muted); font-size: 13px; margin-bottom: .3rem; }
-.mode-tag { font-size: 11px; padding: .1rem .5rem; border-radius: 999px; border: 1px solid var(--line); background: var(--chip); color: var(--muted); cursor: pointer; white-space: nowrap; }
+.mode-tag { font-size: 11px; padding: .1rem .55rem; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; white-space: nowrap; }
+.mode-tag.player { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
+.mode-tag:disabled { cursor: default; opacity: .8; }
 .mode-tag:hover { color: var(--accent); }
 .small-seg { margin-left: auto; font-size: 12px; font-variant: normal; letter-spacing: 0; }
 .small-seg button { padding: .05rem .5rem; }

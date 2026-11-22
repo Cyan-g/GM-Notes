@@ -223,7 +223,11 @@ export const playerMode = computed(() => state.db?.meta.mode === 'player')
 /** The DM's fight material, which player mode leaves out of search and lists: encounters (creatures are shared with
  * players once they're known). */
 export const DM_TYPES: string[] = ['encounter']
-export const hiddenFromPlayers = (e: Entry | undefined) => !!e && playerMode.value && DM_TYPES.includes(e.type)
+/**
+ * Player mode shows what players see: what isn't Known to players (DM only) is left out everywhere (lists, search,
+ * menus, links), and so are the DM's encounters. Characters are always the players'.
+ */
+export const hiddenFromPlayers = (e: Entry | undefined) => !!e && playerMode.value && (DM_TYPES.includes(e.type) || (e.visibility === 'secret' && e.type !== 'pc'))
 export function setMode(mode: 'dm' | 'player') {
   const m = db().meta
   if (mode === 'dm') delete m.mode; else m.mode = mode
@@ -278,7 +282,8 @@ export async function createWorld(backend: Backend, storage: Storage, title: str
   await open(backend, storage)
 }
 
-export const entries = computed(() => { version.value; return state.db ? Object.values(state.db.entries) : [] })
+// every entry there is to see: in player mode, only what players know (hiddenFromPlayers)
+export const entries = computed(() => { version.value; const all = state.db ? Object.values(state.db.entries) : []; return playerMode.value ? all.filter(e => !hiddenFromPlayers(e)) : all })
 
 export const byType = computed(() => {
   const m = new Map<EntryType, Entry[]>()

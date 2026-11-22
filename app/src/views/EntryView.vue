@@ -6,7 +6,7 @@ import PlayerNotes from '../components/PlayerNotes.vue'
 import { computed } from 'vue'
 import type { Entry, Id } from '../model/types'
 import { TYPES, byKey, type FieldDef } from '../model/schema'
-import { childrenOf, get, placePath, playerMode, entries, state } from '../store'
+import { childrenOf, get, hiddenFromPlayers, placePath, playerMode, entries, state } from '../store'
 import { go, hrefEntry, hrefFamily, hrefList, hrefTab, type EntryTab } from '../router'
 import type { UiIcon } from '../icons/ui'
 import SpellbookView from './SpellbookView.vue'
@@ -190,7 +190,11 @@ const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.valu
 </script>
 
 <template>
-  <article v-if="e && def" class="entry">
+  <div v-if="e && hiddenFromPlayers(e)" class="empty-state">
+    <h1>Not known to players</h1>
+    <p>Player mode shows what the players know, and this {{ def?.label.toLowerCase() ?? 'entry' }} isn't marked Known to players{{ e.type === 'encounter' ? ' (encounters are the DM\'s)' : '' }}.</p>
+  </div>
+  <article v-else-if="e && def" class="entry">
     <nav class="crumbs">
       <a class="crumb-root" :href="hrefList(e.type)"><TypeIcon :type="e.type" /> {{ def.plural }}</a>
       <template v-for="c in crumbs" :key="c.id"><span class="sep">›</span><EntryLink :id="c.id" /></template>

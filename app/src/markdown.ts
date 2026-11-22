@@ -3,7 +3,7 @@
 // rendered is cleaned (DOMPurify): no scripts, event handlers (onerror=…), frames, forms or javascript: links.
 import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
-import { get, playerMode, state } from './store'
+import { get, hiddenFromPlayers, playerMode, state } from './store'
 import { hrefEntry } from './router'
 import { SECRET_BLOCK } from './model/text'
 
@@ -18,9 +18,13 @@ md.inline.ruler.before('link', 'wikilink', (state, silent) => {
   if (!silent) {
     const inner = src.slice(pos + 2, end)
     const [id, ...rest] = inner.split(/\\?\|/)
-    const e = get(id.trim())
-    const label = rest.join('|') || e?.name || id
-    if (e) {
+    const found = get(id.trim())
+    // in player mode an entry players don't know isn't a link (just its words)
+    const e = hiddenFromPlayers(found) ? undefined : found
+    const label = rest.join('|') || found?.name || id
+    if (found && !e) {
+      state.push('text', '', 0).content = label
+    } else if (e) {
       const open = state.push('link_open', 'a', 1)
       open.attrSet('href', hrefEntry(e.id))
       open.attrSet('class', 'wl')

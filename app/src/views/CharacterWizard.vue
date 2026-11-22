@@ -57,12 +57,13 @@ function startOver() { if (confirm('Clear everything chosen so far?')) resetWiza
         <!-- the steps across the top, and the step's title with Back and Next: they stay in view together -->
         <div ref="top" class="wizard-top">
         <nav class="wizard-steps" aria-label="Steps">
-          <button v-for="(s, i) in all" :key="s.id" type="button" class="wz-step" :class="{ on: s.id === step.id, done: isDone(s, i) }"
-                  :aria-current="s.id === step.id ? 'step' : undefined" :title="s.open.length ? `Still to choose: ${s.open.join(', ')}` : undefined" @click="wizard.step = s.id">
+          <button v-for="(s, i) in all" :key="s.id" type="button" class="wz-step" :class="{ on: s.id === step.id, done: isDone(s, i), small: isDone(s, i) && s.id !== step.id }"
+                  :aria-current="s.id === step.id ? 'step' : undefined" :title="s.open.length ? `Still to choose: ${s.open.join(', ')}` : s.chosen ? `${s.label}: ${s.chosen}` : undefined" @click="wizard.step = s.id">
             <span class="wz-dot">{{ isDone(s, i) ? '✓' : i + 1 }}</span>
             <span class="wz-step-text"><span>{{ s.label }}</span>
               <small v-if="s.open.length" class="wz-chosen wz-to-choose">{{ s.open.length }} to choose</small>
-              <small v-else-if="s.chosen" class="wz-chosen" :title="s.chosen">{{ s.chosen }}</small></span>
+              <!-- a finished step shrinks to its tick and name (the choice on hover): all the steps fit in one row -->
+              <small v-else-if="s.chosen && !(isDone(s, i) && s.id !== step.id)" class="wz-chosen">{{ s.chosen }}</small></span>
           </button>
         </nav>
         <div class="wizard-head">

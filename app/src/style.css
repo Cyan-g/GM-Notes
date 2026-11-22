@@ -45,6 +45,8 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
+/* room for the scrollbar on every page: the top bar doesn't shift between short and long pages */
+html { scrollbar-gutter: stable; }
 body {
   color: var(--ink); font: 15px/1.55 var(--sans);
   /* A faint parchment glow in the middle and darker edges, built from the theme colours. */
@@ -801,6 +803,9 @@ table.grid.wb-recipes th:nth-last-child(2) { width: 7.5em; }
 .side-col.enemies .fighter { border-left-color: var(--accent); }
 .fighter.current { box-shadow: 0 0 0 2px var(--accent), var(--shadow); }
 .fighter.selected:not(.current) { outline: 1px dashed var(--accent-2); }
+/* a decorative style's frame only on the acting and the selected card: the others quiet, so the eye finds whose turn it is */
+.fx[data-fx] .fighter:not(.current, .selected) { border-top-color: var(--line); border-right-color: var(--line); border-bottom-color: var(--line); outline: none; }
+.fx[data-fx] .fighter:not(.current, .selected)::before, .fx[data-fx] .fighter:not(.current, .selected)::after { content: none; }
 .fighter.down:not(.party) { opacity: .55; }
 .fighter.down:not(.party) .fighter-name { text-decoration: line-through; }
 /* a party member at 0 HP is dying, not gone: marked, still fully usable */
@@ -849,6 +854,9 @@ table.grid.wb-recipes th:nth-last-child(2) { width: 7.5em; }
   border: 1px solid var(--line); border-radius: 6px 6px 50% 50% / 6px 6px 40% 40%; background: color-mix(in srgb, var(--panel) 60%, transparent); text-transform: none; }
 .fighter-stat input.unset::placeholder { color: var(--muted); font-weight: 400; font-size: 12px; }
 .hp-max-ro { min-width: 2em; text-align: left; }
+.hp-max-text { background: none; border: 0; padding: 0 .15em; font: inherit; font-weight: 700; color: inherit; cursor: text; border-radius: 4px; }
+.hp-max-text:hover { background: color-mix(in srgb, var(--panel) 60%, transparent); }
+.hp-max-text.unset { font-weight: 400; font-size: 12px; color: var(--muted); }
 .conc-check { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem; margin-top: .4rem; padding: .3rem .5rem; border-radius: 8px; font-size: 13px;
   background: color-mix(in srgb, var(--accent) 14%, var(--panel)); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
 .conc-check > span { margin-right: auto; }
@@ -1784,6 +1792,8 @@ button.live-tag { cursor: pointer; }
 .wz-step.on { background: color-mix(in srgb, var(--accent) 18%, transparent); font-weight: 600; }
 .wz-dot { display: inline-grid; place-items: center; width: 1.4rem; height: 1.4rem; border-radius: 50%; border: 1px solid var(--line); font-size: 12px; flex: none; }
 .wz-step.done .wz-dot { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.wz-step.small { padding: .3rem .4rem .3rem .3rem; gap: .3rem; font-size: 13px; color: var(--ink-2); }
+.wz-step.small .wz-dot { width: 1.15rem; height: 1.15rem; font-size: 10px; }
 .wizard-body h2 { margin-top: 0; }
 .wizard-body h3 { margin: 1.1rem 0 .4rem; font-size: 1rem; }
 .wz-open { color: var(--accent); margin: -.3rem 0 .8rem; }

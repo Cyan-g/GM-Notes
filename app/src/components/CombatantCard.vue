@@ -4,7 +4,7 @@
 // A player character's AC, initiative bonus and HP are their sheet's.
 import Dropdown from './Dropdown.vue'
 import AppIcon from './AppIcon.vue'
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import type { Combatant } from '../model/types'
 import { get, touch } from '../store'
 import { statsOf } from '../encounter'
@@ -26,6 +26,11 @@ const pct = computed(() => (max.value ? Math.max(0, Math.min(100, ((st.value.hp 
 const tempPct = computed(() => (max.value && st.value.tempHp ? Math.min(100 - pct.value, (st.value.tempHp / max.value) * 100) : 0))
 const state = computed(() => (st.value.hp == null || !max.value ? '' : st.value.hp <= 0 ? 'down' : st.value.hp <= max.value / 2 ? 'bloodied' : 'healthy'))
 const amount = ref('')
+/** Max HP being changed: the bar shows it as text ("13 / 13") until clicked. */
+const editMax = ref(false)
+const maxBox = ref<HTMLInputElement>()
+async function startMax() { editMax.value = true; await nextTick(); maxBox.value?.focus(); maxBox.value?.select() }
+function endMax(raw: string) { if (!editMax.value) return; editMax.value = false; setNum('maxHp', raw) }
 function hp(op: '-' | '+' | 't' | '') {
   const v = amount.value.trim()
   if (!v) return
@@ -118,7 +123,9 @@ function switchSide() { c.value.side = isParty(c.value) ? 'enemy' : 'party'; tou
         <span class="hp-text">
           <b>{{ st.hp ?? '—' }}</b> /
           <b v-if="st.hpFromSheet" class="hp-max-ro">{{ max }}</b>
-          <input v-else type="number" class="hp-max" :value="c.maxHp ?? ''" title="Max HP" placeholder="max" @click.stop @focus="selectAll" @change="setNum('maxHp', ($event.target as HTMLInputElement).value)" />
+          <input v-else-if="editMax" ref="maxBox" type="number" class="hp-max" :value="c.maxHp ?? ''" title="Max HP" placeholder="max" @click.stop
+                 @keydown.enter="($event.target as HTMLInputElement).blur()" @keydown.esc="editMax = false" @blur="endMax(($event.target as HTMLInputElement).value)" />
+          <button v-else type="button" class="hp-max-text" :class="{ unset: !max }" title="Max HP: click to change" @click.stop="startMax">{{ max || 'set max' }}</button>
           <span v-if="st.tempHp" class="hp-temp-text" title="Temporary HP">+{{ st.tempHp }}</span>
         </span>
       </div>

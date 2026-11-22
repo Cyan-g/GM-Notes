@@ -16,7 +16,7 @@ import { describe } from '../describe'
 import { armorClass, maxHpOf } from '../sheet'
 import { sheetOf } from '../sheetData'
 import EntryLink from '../components/EntryLink.vue'
-import { nextSessionNo, sessionsOf } from '../sessions'
+import { currentCampaign, nextSessionFields, nextSessionNo, sessionsOf } from '../sessions'
 import PartyAt from '../components/PartyAt.vue'
 
 const byName = (a: Entry, b: Entry) => a.name.localeCompare(b.name)
@@ -27,10 +27,11 @@ const campaigns = computed(() => list('campaign').map(c => {
   const s = sessionsOf(c.id).reverse()
   return { c, sessions: s }
 }).sort((a, b) => b.sessions.length - a.sessions.length || byName(a.c, b.c)))
-const current = computed(() => campaigns.value[0]?.sessions.length ? campaigns.value[0] : undefined)
+// the campaign being played: the current one (else the most played) first
+const current = computed(() => campaigns.value.find(x => x.c.id === currentCampaign.value?.id && x.sessions.length) ?? (campaigns.value[0]?.sessions.length ? campaigns.value[0] : undefined))
 const others = computed(() => campaigns.value.filter(x => x !== current.value))
 const nextNumber = computed(() => (current.value ? nextSessionNo(current.value.c.id) : 1))
-const newSession = () => current.value && newEntry('session', { campaign: current.value.c.id, number: nextNumber.value, date: { ...db().meta.today } })
+const newSession = () => current.value && newEntry('session', nextSessionFields(current.value.c.id))
 const notes = computed(() => list('note').sort(byName))
 
 // ---- the desk: dashboards and tools ----

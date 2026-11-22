@@ -2,6 +2,7 @@
 // The settings of a trait's choice (other than its kind and its options): how many, by level, a feat's kind, which
 // spells for a spell choice and how they're cast, and the candidates it's limited to. In the trait editor, for a
 // trait's own choice and for the choices an option brings.
+import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import type { TraitChoice, TraitSpell } from '../../model/types'
 import { choiceCandidates, HOW_SPECIES } from '../../species'
@@ -50,18 +51,18 @@ const LEVELS = ['Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9']
   <label v-if="model.kind === 'skill'" class="small" title="A picked skill the character is already proficient in becomes Expertise (Keen Mind, Observant)"><input type="checkbox" :checked="!!model.orExpertise" @change="put({ orExpertise: ($event.target as HTMLInputElement).checked || undefined })" /> or Expertise if proficient</label>
   <label v-if="model.kind === 'feat'" class="small">kind <input class="steps-label" :value="model.category ?? ''" placeholder="e.g. Fighting Style" @change="put({ category: val($event).trim() || undefined })" /></label>
   <template v-if="model.kind === 'spell'">
-    <select :value="spell.level ?? ''" aria-label="Spell level" @change="putSpell({ level: val($event) || undefined })">
+    <Dropdown :value="spell.level ?? ''" aria-label="Spell level" @change="putSpell({ level: val($event) || undefined })">
       <option value="">any level</option>
       <option v-for="l in LEVELS" :key="l" :value="l">{{ l === 'Cantrip' ? 'cantrips' : `level ${l}` }}</option>
-    </select>
+    </Dropdown>
     <label class="small"><input type="checkbox" :checked="!!spell.ritual" @change="putSpell({ ritual: ($event.target as HTMLInputElement).checked })" /> rituals only</label>
-    <select :value="spell.how" aria-label="How the picked spells are cast" @change="putSpell({ how: val($event) as TraitSpell['how'] })">
+    <Dropdown :value="spell.how" aria-label="How the picked spells are cast" @change="putSpell({ how: val($event) as TraitSpell['how'] })">
       <option v-for="(label, id) in HOW_SPECIES" :key="id" :value="id">{{ label }}</option>
-    </select>
-    <select :value="spell.ability ?? ''" aria-label="Cast with" title="The ability they're cast with (their attack and save DC are shown with them)" @change="putSpell({ ability: (val($event) || undefined) as SpellFilter['ability'] })">
+    </Dropdown>
+    <Dropdown :value="spell.ability ?? ''" aria-label="Cast with" title="The ability they're cast with (their attack and save DC are shown with them)" @change="putSpell({ ability: (val($event) || undefined) as SpellFilter['ability'] })">
       <option value="">no ability</option>
       <option v-for="(label, id) in ABILITY_NAME" :key="id" :value="id">with {{ label }}</option>
-    </select>
+    </Dropdown>
     <details class="trait-among">
       <summary class="small">{{ spell.classes?.length ? `${spell.classes.join(', ')} list${spell.classes.length > 1 ? 's' : ''}` : "any class's list" }}</summary>
       <div class="seg wrap">

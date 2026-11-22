@@ -5,7 +5,7 @@
 import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Entry } from '../model/types'
-import { byKey } from '../model/schema'
+import { MASTERY_OF, byKey } from '../model/schema'
 import { LISTS, type ListDef, type ListOption } from '../model/lists'
 import { entries, listOptions, setList, state } from '../store'
 import { hrefEntry } from '../router'
@@ -30,6 +30,8 @@ function usersOf(l: ListDef): Map<string, Entry[]> {
       for (const id of Array.isArray(v) ? v : [v]) add(id, e)
     }
     if (l.key === 'class' && e.type === 'pc') for (const c of e.fields.classLevels ?? []) add(c.class, e)
+    // a weapon that names no mastery of its own has its base weapon's (a longsword: Sap)
+    if (l.key === 'weaponMastery' && e.type === 'item' && !e.fields.mastery) add(MASTERY_OF[String(e.fields.baseWeapon ?? '')], e)
     const p = l.sheet && e.type === 'pc' ? e.fields.sheet?.proficiencies : undefined
     if (p && l.sheet) for (const id of p[l.sheet] ?? []) add(id, e)
   }

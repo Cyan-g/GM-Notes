@@ -5,10 +5,13 @@ import AppIcon from './AppIcon.vue'
 import { computed, ref } from 'vue'
 import type { Entry, Id } from '../model/types'
 import { byType, get, listOptions } from '../store'
-import { attacks, castingAbility, levelOf, profsOf, spellStats } from '../sheet'
+import { attacks, castingAbility, levelOf, profsOf, spellDamageAdd, spellStats } from '../sheet'
 import { sheetOrBlank } from '../sheetData'
-import { mod, profBonus, signed, type Ability } from '../model/dnd'
-import { speciesSpells } from '../species'
+import { ORD, mod, profBonus, signed, type Ability } from '../model/dnd'
+import { speciesSpells, speciesTraits } from '../species'
+import { slotRows, useSlot, type SlotRow } from '../slots'
+import { editSheet, emptyBook } from '../sheetData'
+import { useReadOnly } from '../composables/useReadOnly'
 import { rollsLine, rollsOf } from '../spells'
 import { hrefEntry } from '../router'
 import { breakdown, gearTotals, scoreWith, sum } from '../effects'
@@ -47,18 +50,40 @@ const cantrips = computed(() => {
     const atk = st?.attack ?? spellAtk.value, save = st?.dc ?? dc.value, m = ability ? mod(scoreWith(s.value, ability, gt.value)) : castMod.value
     const check = e.fields.spellType === 'Attack' ? signed(atk) : `DC ${save}`
     const tip = e.fields.spellType === 'Attack' ? `Spell attack${ability ? `, cast with ${ability.toUpperCase()}` : ''}` : `${String(e.fields.savingThrow ?? '').slice(0, 3).toUpperCase()} save${ability ? `, cast with ${ability.toUpperCase()}` : ''}`
-    return [{ id, name: e.name, check, tip, rolls: rollsLine(e, { level: levelOf(props.pc), mod: m }) }]
+    return [{ id, name: e.name, check, tip, rolls: rollsLine(e, { level: levelOf(props.pc), mod: m, add: spellDamageAdd(s.value, e) }) }]
   })
 })
 const armorTypes = computed(() => listOptions('item.armorType').filter(o => o.id !== 'Clothing'))
 const tools = computed(() => (byType.value.get('item') ?? []).filter(e => e.fields.kind === 'Tool').map(e => ({ id: e.id, label: e.name })))
 const shown = ref<Id | null>(null)
+const ro = useReadOnly()
+// ---- the Spells column: only for someone with spells; slots to spend; a lineage's own casting ability ----
+const book = computed(() => props.pc.fields.sheet?.spellbook)
+const slots = computed(() => (book.value ? slotRows(book.value, props.pc).filter(r => r.max > 0 && r.kind !== 'arcanum') : []))
+function pip(r: SlotRow, p: number) { editSheet(props.pc, x => { x.spellbook ??= emptyBook(); useSlot(x.spellbook, r, p < r.max - r.used ? 1 : -1) }) }
+const ownAbilities = computed(() => {
+  const seen = new Map<string, { ability: Ability; from: string; dc: number; attack: number }>()
+  for (const x of speciesSpells(props.pc, s.value)) {
+    const ab = x.spell.ability as Ability | undefined
+    if (!ab || ab === cast.value || seen.has(ab)) continue
+    const st = spellStats(props.pc, ab)
+    if (st) seen.set(ab, { ability: ab, from: x.source, dc: st.dc, attack: st.attack })
+  }
+  return [...seen.values()]
+})
+const hasSpells = computed(() => !!cast.value || slots.value.length > 0 || ownAbilities.value.length > 0 || cantrips.value.length > 0)
+/** Attacks with the Attack action: 1, or more with Extra Attack (Two / Three Extra Attacks: 3, 4). */
+const extraAttacks = computed(() => {
+  const n = speciesTraits(props.pc, s.value).filter(a => a.active).map(a => a.trait.name.toLowerCase())
+    .map(t => (t === 'extra attack' ? 2 : t === 'two extra attacks' ? 3 : t === 'three extra attacks' ? 4 : 1))
+  return Math.max(1, ...n)
+})
 const none = (k: 'armor' | 'weapons' | 'tools' | 'languages') => !profs.value[k]?.length
 </script>
 
 <template>
   <div class="card attacks-card">
-    <div class="atk-cols">
+    <div class="atk-cols" :class="{ solo: !hasSpells }">
       <div>
         <h3>Attacks</h3>
         <p v-for="m in rollMode" :key="m.mode" class="small cs-roll-mode" :class="m.mode">{{ m.mode === 'adv' ? 'Advantage' : 'Disadvantage' }} on attack rolls ({{ m.from }})</p>
@@ -71,7 +96,8 @@ const none = (k: 'armor' | 'weapons' | 'tools' | 'languages') => !profs.value[k]
               <span v-if="a.tag" class="muted small"> · {{ a.tag }}</span>
             </td>
             <td><b v-flash="a.toHit" :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td>
-            <td><span v-flash="a.damage" class="atk-dmg">{{ a.damage }}</span> <span class="muted small">{{ a.type }}</span>
+            <td><span v-for="(part, j) in a.damage.split(' / ')" :key="j" v-flash="a.damage" class="atk-dmg">{{ part }}</span> <span class="muted small">{{ a.type }}</span>
+              <span v-if="a.note" class="atk-extra small">{{ a.note }}</span>
               <span v-for="(x, j) in a.extras ?? []" :key="j" class="atk-extra small">{{ x }}</span></td>
           </tr>
           <!-- cantrips that attack or force a save, at the character's level -->
@@ -81,17 +107,24 @@ const none = (k: 'armor' | 'weapons' | 'tools' | 'languages') => !profs.value[k]
             <td><span v-flash="c.rolls">{{ c.rolls }}</span></td>
           </tr>
         </table>
-        <p v-else class="muted small">Equip a weapon to see its attack here.</p>
-        <p v-if="atks.length <= 1" class="muted small">Weapons appear here once equipped (Inventory tab).</p>
+        <p v-if="extraAttacks > 1 || gt.critRange" class="small atk-notes"><template v-if="extraAttacks > 1">Attack action: <b>{{ extraAttacks }} attacks</b></template><template v-if="extraAttacks > 1 && gt.critRange"> · </template><template v-if="gt.critRange">Critical hit on <b>{{ gt.critRange.n }}–20</b> <span class="muted">({{ gt.critRange.from }})</span></template></p>
+        <p v-if="!atks.some(a => !a.noItem)" class="muted small">Weapons appear here once equipped (Inventory tab).</p>
       </div>
-      <div class="atk-spell">
+      <div v-if="hasSpells" class="atk-spell">
         <h3>Spells</h3>
         <template v-if="cast">
           <div class="atk-spell-row"><span>{{ cast.toUpperCase() }}</span><b v-flash="castMod">{{ signed(castMod) }}</b></div>
           <div class="atk-spell-row"><span>Save DC</span><b v-flash="dc" :class="{ 'gear-mod tip': gt.spellDC.length }" :data-tip="breakdown(`${dc - sum(gt.spellDC)} without gear`, gt.spellDC)">{{ dc }}</b></div>
           <div class="atk-spell-row"><span>Attack</span><b v-flash="spellAtk" :class="{ 'gear-mod tip': gt.spellAttack.length }" :data-tip="breakdown(`${signed(spellAtk - sum(gt.spellAttack))} without gear`, gt.spellAttack)">{{ signed(spellAtk) }}</b></div>
         </template>
-        <p v-else class="muted small">No casting ability.</p>
+        <!-- a lineage's or feat's spells cast with their own ability (a Drow's INT) -->
+        <template v-for="x in ownAbilities" :key="x.ability">
+          <div class="atk-spell-row" :title="`Spells from ${x.from}`"><span>{{ x.ability.toUpperCase() }} <small>({{ x.from }})</small></span><b>DC {{ x.dc }} · {{ signed(x.attack) }}</b></div>
+        </template>
+        <!-- the spell slots, spent and given back right here -->
+        <div v-for="r in slots" :key="r.key" class="atk-spell-row atk-slot"><span>{{ r.kind === 'pact' ? `Pact ${ORD[r.level]}` : ORD[r.level] }}</span>
+          <span class="pips-inline"><button v-for="p in r.max" :key="p" type="button" class="pip" :class="{ on: p - 1 < r.max - r.used }" :disabled="ro"
+                  :title="p - 1 < r.max - r.used ? 'Spend this slot' : 'Get this slot back'" :aria-label="`${ORD[r.level]} slot ${p}`" @click="pip(r, p - 1)" /></span></div>
         <a :href="hrefTab(pc.id, 'spellbook')" class="small">Spellbook →</a>
       </div>
     </div>

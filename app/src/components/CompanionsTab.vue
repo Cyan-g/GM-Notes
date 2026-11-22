@@ -2,6 +2,7 @@
 // A character's Companions tab: creatures linked to them (a familiar, a steed, a summoned beast), each with its own
 // name and hit points, and its statblock from the creature entry. Only creatures the players may see can be picked;
 // the same creature can be linked more than once (two wolves).
+import Dropdown from './Dropdown.vue'
 import { useReadOnly } from '../composables/useReadOnly'
 import { computed, ref } from 'vue'
 import type { Companion, Entry } from '../model/types'
@@ -56,10 +57,10 @@ function apply(key: string, sign: number) { const n = Math.abs(Number(amount.val
       <p class="muted small">A familiar, a steed, a summon: it gets its own name and hit points here. Only creatures the players may see are listed.</p>
       <div v-if="!ro" class="comp-add">
         <input v-model="filter" type="search" placeholder="Filter creatures…" aria-label="Filter creatures" />
-        <select aria-label="Creature to link" @change="add(($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = ''">
+        <Dropdown aria-label="Creature to link" @change="add(($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = ''">
           <option value="">＋ Creature ({{ shown.length }})</option>
           <option v-for="c in shown" :key="c.id" :value="c.id">{{ c.name }}<template v-if="statsOf(c)?.cr"> (CR {{ statsOf(c)!.cr }})</template></option>
-        </select>
+        </Dropdown>
       </div>
       <p v-if="!creatures.length" class="muted small">No creatures the players may see yet.</p>
     </section>

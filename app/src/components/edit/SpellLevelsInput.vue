@@ -2,6 +2,7 @@
 // A feature's spells as a list by level (Fiend Spells: Lv 3 Burning Hands, Command…; Lv 5 Fireball…): one row per level
 // with its spells and a picker to add more, and how the whole list is gained (always prepared, on the spell list, in
 // the spellbook…) and cast set once. Each spell's own settings (swappable, a different way) stay in the fold below it.
+import Dropdown from '../Dropdown.vue'
 import { computed, ref } from 'vue'
 import type { TraitSpell } from '../../model/types'
 import { HOW_SPECIES } from '../../species'
@@ -40,15 +41,15 @@ const nextLevel = computed(() => newLevel.value ?? Math.min(20, (rows.value.at(-
   <div class="spell-levels">
     <div class="trait-row small">
       <span>Gained</span>
-      <select :value="shared('how')" aria-label="How the spells are gained" @change="val($event) !== 'mixed' && setAll({ how: val($event) as TraitSpell['how'] })">
+      <Dropdown :value="shared('how')" aria-label="How the spells are gained" @change="val($event) !== 'mixed' && setAll({ how: val($event) as TraitSpell['how'] })">
         <option v-if="shared('how') === 'mixed'" value="mixed">mixed (set per spell)</option>
         <option v-for="(label, id) in HOW_SPECIES" :key="id" :value="id">{{ label }}</option>
-      </select>
-      <select :value="shared('ability')" aria-label="Cast with" @change="val($event) !== 'mixed' && setAll({ ability: (val($event) || undefined) as TraitSpell['ability'] })">
+      </Dropdown>
+      <Dropdown :value="shared('ability')" aria-label="Cast with" @change="val($event) !== 'mixed' && setAll({ ability: (val($event) || undefined) as TraitSpell['ability'] })">
         <option v-if="shared('ability') === 'mixed'" value="mixed">mixed abilities</option>
         <option value="">with the class's ability</option>
         <option v-for="(label, id) in ABILITY_NAME" :key="id" :value="id">with {{ label }}</option>
-      </select>
+      </Dropdown>
     </div>
     <div v-for="[level, list] in rows" :key="level" class="spell-level-row">
       <label class="small">{{ levelWord }} <input type="number" min="1" max="20" class="steps-lv" :value="level" :aria-label="`Level of these spells`" @change="moveRow(level, Number(val($event)))" /></label>

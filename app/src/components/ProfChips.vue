@@ -24,7 +24,8 @@ const emit = defineEmits<{ change: [values: string[]] }>()
 const listId = `prof-${Math.random().toString(36).slice(2, 8)}`
 const typed = ref('')
 const all = computed(() => [...(props.toggles ?? []), ...(props.suggest ?? [])])
-const labelOf = (id: string) => all.value.find(o => o.id === id)?.label ?? id
+/** An option's label; an id the lists don't have reads as words ("bagpipes" → "Bagpipes", "herbalism-kit" → "Herbalism kit"). */
+const labelOf = (id: string) => all.value.find(o => o.id === id)?.label ?? (/^[a-z0-9-]+$/.test(id) ? (id.charAt(0).toUpperCase() + id.slice(1)).replace(/-/g, ' ') : id)
 const has = (id: string) => props.values.includes(id)
 const givenBy = (id: string) => props.given?.filter(g => g.id === id).map(g => g.from).join(', ') ?? ''
 /** Given ones not typed and not a toggle: greyed chips. */
@@ -36,12 +37,19 @@ const offered = computed(() => (props.suggest ?? []).filter(o => !has(o.id)))
 
 const toggle = (id: string) => emit('change', has(id) ? props.values.filter(x => x !== id) : [...props.values, id])
 const remove = (id: string) => emit('change', props.values.filter(x => x !== id))
+/** The only one, if there's exactly one. */
+const one = <T,>(l: T[]) => (l.length === 1 ? l[0] : undefined)
 function add() {
   const raw = typed.value.trim()
   if (!raw) return
   const low = raw.toLowerCase()
+  // the best match: the name itself, else the one suggestion it starts (or else is part of); only a name that matches
+  // nothing is new ("Elv" is Elvish, never a language called "Elv")
   const found = all.value.find(o => o.label.toLowerCase() === low)
-  const id = found?.id ?? props.create?.(raw)
+    ?? one(offered.value.filter(o => o.label.toLowerCase().startsWith(low)))
+    ?? one(offered.value.filter(o => o.label.toLowerCase().includes(low)))
+  const matches = offered.value.some(o => o.label.toLowerCase().includes(low))
+  const id = found?.id ?? (matches ? undefined : props.create?.(raw))
   if (!id) return
   if (!has(id)) emit('change', [...props.values, id])
   typed.value = ''

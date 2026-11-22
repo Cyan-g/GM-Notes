@@ -1,11 +1,13 @@
 <script setup lang="ts">
 // Combat: initiative order, HP, conditions, and the statblock of whoever is acting.
+import Dropdown from '../components/Dropdown.vue'
 import ConditionIcon from '../components/ConditionIcon.vue'
 import AppIcon from '../components/AppIcon.vue'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Combatant, Id, Statblock } from '../model/types'
 import { byType, get, touch } from '../store'
 import { newCombatantId, statsOf } from '../encounter'
+import { currentCampaign } from '../sessions'
 import { addCombatant, addEntryToTracker, addPlayers, clearTracker, isParty, loadEncounter, nextTurn, partyOf, rollInitiative, sortByInitiative, fighterStats, tracker } from '../tracker'
 import { hrefEntry } from '../router'
 import EntryLink from '../components/EntryLink.vue'
@@ -17,7 +19,7 @@ const t = computed(() => tracker())
 const selected = ref<string | null>(null)
 const encounter = computed(() => get(t.value.encounter))
 const campaigns = computed(() => byType.value.get('campaign') ?? [])
-const partyCampaign = ref<string>((encounter.value?.fields.campaign) ?? '')
+const partyCampaign = ref<string>((encounter.value?.fields.campaign) ?? currentCampaign.value?.id ?? '')
 
 function load(id: string | null) {
   if (!id) return
@@ -79,6 +81,30 @@ const order = computed(() => {
   return { left, centre: list[at], right: build(rightIdx, 'right') }
 })
 const current = (c: Combatant) => t.value.combatants[t.value.turn]?.id === c.id
+/** The strip's columns: each side as wide as its share of the chips (an empty left side leaves its room to the right). */
+const stripCols = computed(() => {
+  const n = (l: StripItem[]) => Math.max(0.01, l.filter(x => x.kind === 'chip').length)
+  return `minmax(0, ${n(order.value.left)}fr) auto minmax(0, ${n(order.value.right)}fr)`
+})
+// ---- the statblock beside the cards: the acting creature's, else the last one looked at ----
+const pinned = ref<string | null>(null)
+const panelC = computed(() => {
+  const now = t.value.combatants[t.value.turn]
+  if (now && !isParty(now) && statsOf(get(now.entry))) return now
+  return t.value.combatants.find(c => c.id === pinned.value) ?? null
+})
+const panelStats = computed(() => statsOf(get(panelC.value?.entry)) as Statblock | undefined)
+/** A card's name: its statblock beside the cards on a wide screen, in a pop-up on a narrow one. */
+function showStats(c: Combatant) {
+  if (window.matchMedia('(min-width: 1200px)').matches && statsOf(get(c.entry))) pinned.value = c.id
+  else shown.value = c.id
+}
+// a new turn: the acting one's card comes into view
+watch(() => t.value.turn, async () => { await nextTick(); document.querySelector('.fighter.current')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) })
+// ---- compact cards: one row each, remembered on this computer ----
+const COMPACT = 'gm-notes:tracker-compact'
+const compact = ref((() => { try { return localStorage.getItem(COMPACT) === '1' } catch { return false } })())
+function toggleCompact() { compact.value = !compact.value; try { localStorage.setItem(COMPACT, compact.value ? '1' : '0') } catch { /* just for now */ } }
 const stripState = (c: Combatant) => { const s = fighterStats(c); return s.hp == null || !s.maxHp ? '' : s.hp <= 0 ? 'down' : s.hp <= s.maxHp / 2 ? 'bloodied' : '' }
 const hpPct = (c: Combatant) => { const s = fighterStats(c); return s.maxHp ? Math.max(0, Math.min(100, ((s.hp ?? 0) / s.maxHp) * 100)) : null }
 // Typing an initiative re-sorts the order straight away.
@@ -98,7 +124,7 @@ function onKey(ev: KeyboardEvent) {
 }
 onMounted(() => window.addEventListener('keydown', onKey))
 onUnmounted(() => window.removeEventListener('keydown', onKey))
-function clearAll() { if (confirm('Clear the tracker? Player characters stay, with their HP restored.')) clearTracker() }
+function clearAll() { if (confirm('Clear the tracker? The monsters go; player characters stay, keeping the HP on their sheets.')) clearTracker() }
 </script>
 
 <template>
@@ -107,6 +133,7 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
       <h1><span class="icon"><AppIcon ui="combat" /></span>Combat <span v-if="t.round" class="count">round {{ t.round }}</span></h1>
       <span v-if="encounter" class="muted"><EntryLink :id="encounter.id" icon /></span>
       <span class="spacer" />
+      <button v-if="t.combatants.length" :aria-pressed="compact" :class="{ on: compact }" title="One row per fighter, so the whole fight fits on the screen" @click="toggleCompact">Compact</button>
       <button v-if="t.combatants.length" title="Roll d20 + Dex for every monster without an initiative" @click="rollInitiative()"><AppIcon ui="dice" /> Roll for monsters</button>
       <button v-if="t.combatants.length" class="danger" title="End the fight: monsters go, player characters stay, keeping the HP on their sheets" @click="clearAll">Clear</button>
       <div class="cal-nav">
@@ -116,7 +143,7 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
     </header>
 
     <!-- The order of play: whoever is acting in the middle, earlier turns to the left, upcoming to the right. -->
-    <div class="init-strip card" :class="{ empty: !t.combatants.length }">
+    <div class="init-strip card" :class="{ empty: !t.combatants.length }" :style="t.combatants.length ? { gridTemplateColumns: stripCols } : undefined">
       <span v-if="!t.combatants.length" class="muted small">The initiative order shows up here once there's someone in the fight.</span>
       <template v-else>
         <div class="init-side left">
@@ -150,15 +177,15 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
       </template>
     </div>
 
-    <div class="sides">
+    <div class="sides" :class="{ compact, 'with-panel': !!panelStats }">
       <section class="side-col">
         <h2 class="side-title"><AppIcon ui="shield" /> Party &amp; allies <span class="muted small">{{ party.length }}</span></h2>
-        <CombatantCard v-for="c in party" :key="c.id" :c="c" :current="current(c)" :selected="selected === c.id" @select="selected = c.id" @stats="shown = c.id" />
+        <CombatantCard v-for="c in party" :key="c.id" :c="c" :current="current(c)" :selected="selected === c.id" :compact="compact" @select="selected = c.id" @stats="showStats(c)" />
         <!-- Adding: a big card while the side is empty, a slim one under the fighters after. -->
         <div class="card side-add" :class="{ slim: party.length }">
           <label><span>Party</span>
             <span class="row">
-              <select v-model="partyCampaign"><option value="">All player characters ({{ partyOf().length }})</option><option v-for="c in campaigns" :key="c.id" :value="c.id">{{ c.name }} ({{ partyOf(c.id).length }})</option></select>
+              <Dropdown v-model="partyCampaign"><option value="">All player characters ({{ partyOf().length }})</option><option v-for="c in campaigns" :key="c.id" :value="c.id">{{ c.name }} ({{ partyOf(c.id).length }})</option></Dropdown>
               <button @click="addParty">Add</button>
             </span>
           </label>
@@ -167,7 +194,7 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
       </section>
       <section class="side-col enemies">
         <h2 class="side-title"><AppIcon ui="skull" /> Enemies <span v-if="enemies.length" class="muted small">{{ enemies.filter(c => stripState(c) !== 'down').length }} / {{ enemies.length }} standing</span></h2>
-        <CombatantCard v-for="c in enemies" :key="c.id" :c="c" :current="current(c)" :selected="selected === c.id" @select="selected = c.id" @stats="shown = c.id" />
+        <CombatantCard v-for="c in enemies" :key="c.id" :c="c" :current="current(c)" :selected="selected === c.id" :compact="compact" @select="selected = c.id; if (statsOf(get(c.entry))) pinned = c.id" @stats="showStats(c)" />
         <div class="card side-add" :class="{ slim: enemies.length }">
           <label><span>Encounter</span><EntryPicker :model-value="t.encounter ?? null" :types="['encounter']" placeholder="Load an encounter…" @update:model-value="load" /></label>
           <label><span>Enemy</span><EntryPicker add :types="['creature', 'npc']" placeholder="Add a creature by name…" @pick="addEntry" /></label>
@@ -176,6 +203,15 @@ function clearAll() { if (confirm('Clear the tracker? Player characters stay, wi
           </label>
         </div>
       </section>
+      <!-- the statblock of whoever's acting (or was looked at last), beside the cards -->
+      <aside v-if="panelStats && panelC" class="side-col stat-panel card">
+        <header class="stat-panel-head">
+          <h2 class="side-title">{{ panelC.name }} <span v-if="current(panelC)" class="muted small">acting</span></h2>
+          <a v-if="panelC.entry" class="small" :href="hrefEntry(panelC.entry)">Open page</a>
+          <button v-if="!current(panelC)" type="button" class="x" title="Close" @click="pinned = null">×</button>
+        </header>
+        <StatblockView :sb="panelStats" :name="panelC.name" />
+      </aside>
     </div>
 
     <div v-if="shownC" class="modal-back" @mousedown.self="shown = null">

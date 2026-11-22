@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Dropdown from '../Dropdown.vue'
 import TraitsInput from './TraitsInput.vue'
 import ClassBasicsInput from './ClassBasicsInput.vue'
 import SpeedsInput from './SpeedsInput.vue'
@@ -81,10 +82,10 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
   <input v-else-if="def.kind === 'number'" type="number" :value="value ?? ''" @change="value = ($event.target as HTMLInputElement).value === '' ? undefined : Number(($event.target as HTMLInputElement).value)" />
   <input v-else-if="def.kind === 'weight'" type="number" step="0.1" min="0" :value="value ?? ''" placeholder="lb" @change="value = ($event.target as HTMLInputElement).value === '' ? undefined : Number(($event.target as HTMLInputElement).value)" />
   <label v-else-if="def.kind === 'bool'" class="toggle"><input type="checkbox" :checked="!!value" @change="value = ($event.target as HTMLInputElement).checked || undefined" /><span>{{ value ? 'Yes' : 'No' }}</span></label>
-  <select v-else-if="def.kind === 'select'" :value="value ?? ''" @change="value = ($event.target as HTMLSelectElement).value">
+  <Dropdown v-else-if="def.kind === 'select'" :value="value ?? ''" @change="value = ($event.target as HTMLSelectElement).value">
     <option value="">{{ fromParent ? `— (${fromParent})` : '—' }}</option>
     <option v-for="o in selectOptions" :key="o.id" :value="o.id">{{ o.label }}</option>
-  </select>
+  </Dropdown>
   <ChoiceListInput v-else-if="def.kind === 'list' && hasList && DROPDOWN_LISTS.includes(listKeyOf(def) ?? '')" :values="value ?? []" :options="options" :placeholder="`Add a ${def.label.toLowerCase().replace(/ies$/, 'y').replace(/s$/, '')}…`" @change="value = $event" />
   <ProfChips v-else-if="def.kind === 'list' && hasList" :values="value ?? []" :toggles="options" @change="value = $event" />
   <ListInput v-else-if="def.kind === 'list'" v-model="value" />

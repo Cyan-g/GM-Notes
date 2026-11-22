@@ -48,6 +48,11 @@ const saved = { entries: new Map<Id, string>(), relations: new Map<string, strin
 let rev = 0
 /** Entries whose current version must go into the history on the next save (see HistoryDialog). */
 export const keepVersion = new Set<Id>()
+/**
+ * For the next save, about changes taken from another device (devicesync/devices.ts): which device made each and
+ * when (for the change log), and how many entry deletions came from there (not counted as a mass deletion here).
+ */
+export const syncSave: { origin: Record<string, { at: string; device: string }>; removals: number } = { origin: {}, removals: 0 }
 
 export const db = () => state.db!
 
@@ -106,7 +111,7 @@ function changesOf(d: Database): Changes & { world: boolean } {
  * The database refuses broken entries and links by itself; this catches mass deletions it can't tell from intent.
  */
 function checkBeforeSave(c: Changes): string {
-  if (c.remove.length > 10) return `${c.remove.length} entries would disappear in one go`
+  if (c.remove.length - syncSave.removals > 10) return `${c.remove.length} entries would disappear in one go`
   return ''
 }
 
@@ -131,8 +136,11 @@ export async function save(force = false) {
       if (backupDue) await b.copyTo('data', `${BACKUP_DIR}/dndesk-${stampOf(new Date())}.sqlite`)
       if (force) c.rev = -1
       c.keep = c.upsert.filter(e => keepVersion.has(e.id)).map(e => e.id)
+      if (Object.keys(syncSave.origin).length) c.origin = syncSave.origin
       rev = await b.save(c)
       keepVersion.clear()
+      syncSave.origin = {}
+      syncSave.removals = 0
       remember(d)
       if (backupDue && !b.readOnly) {
         for (const n of backupsToDelete(await state.storage!.list(BACKUP_DIR))) await state.storage!.remove(`${BACKUP_DIR}/${n}`)

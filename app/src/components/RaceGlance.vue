@@ -30,6 +30,9 @@ const type = computed(() => pick(x => x.fields.creatureType as string | undefine
 const speeds = computed(() => {
   const all: Speeds = {}
   for (const x of [...chain.value].reverse()) Object.assign(all, Object.fromEntries(Object.entries(x.fields.speeds ?? {}).filter(([, v]) => v != null && v !== '')))
+  // a trait that adds to the walking speed (Wood Elf's Fleet of Foot: +5 ft) counts here too
+  const more = allTraits.value.flatMap(t => t.effects ?? []).filter(f => f.on === 'speed' && !f.when && !f.fromScale).reduce((n, f) => n + (Number(f.value) || 0), 0)
+  if (all.walk != null) all.walk = Number(all.walk) + more
   const parts = [all.walk != null && `${all.walk} ft`, ...(['swim', 'fly', 'climb', 'burrow'] as const).filter(k => all[k]).map(k => `${k} ${all[k]} ft${k === 'fly' && all.hover ? ' (hover)' : ''}`), all.note].filter(Boolean)
   return parts.join(', ')
 })
@@ -46,6 +49,7 @@ const languages = computed(() => pick(x => {
 }))
 const bonus = computed(() => pick(x => (x.fields.abilityIncrease ? abilityBonusText(x.fields.abilityIncrease) : undefined)))
 const traitCount = computed(() => allTraits.value.length)
+const ownCount = computed(() => traitsOf(props.e).length)
 const lineages = computed(() => allTraits.value.filter(t => t.choice?.kind === 'option' && (t.choice.count ?? 1) === 1).map(t => `${t.name} (${t.choice!.options?.length ?? 0})`))
 const canEdit = computed(() => !state.readOnly && !playerMode.value)
 function copy() {
@@ -66,7 +70,7 @@ function copy() {
       <template v-if="senses"><dt>Senses</dt><dd>{{ senses }}</dd></template>
       <template v-if="languages"><dt>Languages</dt><dd>{{ languages.v }} <small v-if="languages.from" class="muted">from {{ languages.from.name }}</small></dd></template>
       <template v-if="bonus"><dt>Ability scores</dt><dd>{{ bonus.v }} <small v-if="bonus.from" class="muted">from {{ bonus.from.name }}</small></dd></template>
-      <dt>Traits</dt><dd>{{ traitCount }}<template v-if="lineages.length"> · choose: {{ lineages.join(', ') }}</template></dd>
+      <dt>Traits</dt><dd>{{ traitCount }}<template v-if="e.fields.parent && ownCount !== traitCount"> ({{ ownCount }} its own, the rest {{ chain.slice(1).map(x => x.name).join(' and ') }}'s)</template><template v-if="lineages.length"> · choose: {{ lineages.join(', ') }}</template></dd>
     </dl>
     <button v-if="canEdit && !noActions" type="button" class="chip-btn" title="A new race with the same fields, traits and text, to make your own from" @click="copy">Copy as new race</button>
   </section>

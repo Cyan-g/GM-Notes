@@ -3,6 +3,7 @@
 // range and area, duration, components, concentration and ritual), what it does (attack or save, its rolls, the
 // conditions it causes, its effects while active) and who learns it (classes). Casting time, range and duration take
 // any text, with the usual wordings one click away.
+import Dropdown from '../Dropdown.vue'
 import { computed, ref } from 'vue'
 import { fieldOptions } from '../../store'
 import type { Entry, SpellArea } from '../../model/types'
@@ -43,7 +44,8 @@ const LABELS: Record<Quick, string> = { castingTime: 'Casting time', range: 'Ran
 const PLACEHOLDER: Record<Quick, string> = { castingTime: 'Action', range: '60 feet', duration: 'Instantaneous' }
 /** A reaction says when it's taken. */
 const isReaction = computed(() => /^reaction/i.test(String(f.value.castingTime ?? '')))
-const durationText = computed(() => [f.value.concentration && 'Concentration, up to', f.value.duration].filter(Boolean).join(' '))
+// "up to" only once: a duration typed as "up to 1 minute" keeps its own
+const durationText = computed(() => [f.value.concentration && (/^\s*up to/i.test(String(f.value.duration ?? '')) ? 'Concentration,' : 'Concentration, up to'), f.value.duration].filter(Boolean).join(' '))
 
 // Material: 'yes' means "needs materials" without saying which.
 const hasM = computed(() => !!f.value.material)
@@ -88,10 +90,10 @@ function addCondition(ev: Event) { const s = ev.target as HTMLSelectElement; if 
         </div>
         <label class="sf-cell">
           <span class="sf-label">School</span>
-          <select :value="f.school ?? ''" @change="set('school', ($event.target as HTMLSelectElement).value || undefined)">
+          <Dropdown :value="f.school ?? ''" @change="set('school', ($event.target as HTMLSelectElement).value || undefined)">
             <option value="">—</option>
             <option v-for="o in SCHOOLS" :key="o.id" :value="o.id">{{ o.label }}</option>
-          </select>
+          </Dropdown>
         </label>
         <div class="sf-cell">
           <span class="sf-label">Components</span>
@@ -117,10 +119,10 @@ function addCondition(ev: Event) { const s = ev.target as HTMLSelectElement; if 
         <div class="sf-cell">
           <span class="sf-label">Area</span>
           <div class="sf-inline">
-            <select :value="area?.shape ?? ''" aria-label="Shape" @change="($event.target as HTMLSelectElement).value ? setArea({ shape: ($event.target as HTMLSelectElement).value as SpellArea['shape'] }) : setArea(null)">
+            <Dropdown :value="area?.shape ?? ''" aria-label="Shape" @change="($event.target as HTMLSelectElement).value ? setArea({ shape: ($event.target as HTMLSelectElement).value as SpellArea['shape'] }) : setArea(null)">
               <option value="">none (one target)</option>
               <option v-for="s in SHAPES" :key="s.id" :value="s.id">{{ s.label }}</option>
-            </select>
+            </Dropdown>
             <template v-if="area">
               <label class="small">{{ SHAPES.find(s => s.id === area!.shape)?.size }} <input type="number" min="5" step="5" class="effect-value" :value="area.size" @change="setArea({ size: num($event) ?? 5 })" /> ft</label>
               <label v-if="area.shape === 'line'" class="small">wide <input type="number" min="5" step="5" class="effect-value" :value="area.width ?? 5" @change="setArea({ width: num($event) })" /> ft</label>
@@ -145,14 +147,14 @@ function addCondition(ev: Event) { const s = ev.target as HTMLSelectElement; if 
         <div class="sf-cell full">
           <span class="sf-label">Attack or save</span>
           <div class="sf-inline">
-            <select :value="f.spellType ?? ''" @change="set('spellType', ($event.target as HTMLSelectElement).value || undefined)">
+            <Dropdown :value="f.spellType ?? ''" @change="set('spellType', ($event.target as HTMLSelectElement).value || undefined)">
               <option value="">—</option>
               <option v-for="o in KINDS" :key="o.id" :value="o.id">{{ o.label }}</option>
-            </select>
-            <select v-if="f.spellType === 'Saving throw' || f.savingThrow" :value="f.savingThrow ?? ''" aria-label="Saving throw" @change="set('savingThrow', ($event.target as HTMLSelectElement).value || undefined)">
+            </Dropdown>
+            <Dropdown v-if="f.spellType === 'Saving throw' || f.savingThrow" :value="f.savingThrow ?? ''" aria-label="Saving throw" @change="set('savingThrow', ($event.target as HTMLSelectElement).value || undefined)">
               <option value="">which save?</option>
               <option v-for="o in ABILITIES" :key="o.id" :value="o.id">{{ o.label }} save</option>
-            </select>
+            </Dropdown>
           </div>
         </div>
         <div class="sf-cell full">
@@ -163,10 +165,10 @@ function addCondition(ev: Event) { const s = ev.target as HTMLSelectElement; if 
           <span class="sf-label">Conditions it can cause</span>
           <div class="conds">
             <span v-for="c in f.conditions ?? []" :key="c" class="cond-chip" :title="CONDITION_RULES[c]?.text"><ConditionIcon :name="c" />{{ c }}<button type="button" class="cond-x" :title="`Remove ${c}`" @click="toggleIn('conditions', c)">×</button></span>
-            <select class="cond-add" aria-label="Add a condition" @change="addCondition">
+            <Dropdown class="cond-add" aria-label="Add a condition" @change="addCondition">
               <option value="">＋ Condition</option>
               <option v-for="c in missing" :key="c" :value="c">{{ c }}</option>
-            </select>
+            </Dropdown>
           </div>
         </div>
         <div class="sf-cell full">

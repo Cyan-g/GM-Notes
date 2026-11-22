@@ -3,19 +3,23 @@
 // it adds (the die's average or a typed roll, plus CON), the features that level brings, the subclass when it's due,
 // the feat (or Ability Score Improvement) at the class's feat levels, and how many more spells the class gets.
 // Choices the new features ask for show up in the sheet's Choices card afterwards, as always.
+import Dropdown from './Dropdown.vue'
 import { computed, ref } from 'vue'
 import type { CharacterSheet, ClassLine, Entry, Spellbook } from '../model/types'
 import { classesOf, totalLevel } from '../model/classes'
-import { EPIC_BOON_LEVEL, hitDieOf, multiclassOf, rulesOf, subclassLevelOf, dieOf, classEntry } from '../classRules'
+import { EPIC_BOON_LEVEL, basicsOf, hitDieOf, multiclassOf, rulesOf, subclassLevelOf, dieOf, classEntry } from '../classRules'
 import { bonusApplied, bonusOpen, type BonusChoice } from '../abilityBonus'
 import { byType, entries, get, listOptions } from '../store'
-import { castingAbility } from '../sheet'
-import { editSheet, profsToEdit } from '../sheetData'
-import { SKILLS, mod, signed, ABILITY_KEYS } from '../model/dnd'
+import { castingAbility, maxHpOf } from '../sheet'
+import { classSlotsAt } from '../slots'
+import MarkdownView from './MarkdownView.vue'
+import FeatureChoices from './FeatureChoices.vue'
+import { editSheet, profsToEdit, sheetToEdit } from '../sheetData'
+import { SKILLS, mod, signed, ABILITY_KEYS, ORD } from '../model/dnd'
 import { itemNamed } from '../lookup'
 import { rule } from '../rules'
 import { gearTotals, scoreWith } from '../effects'
-import { backgroundOf, featGivesSave, featOfFeature, speciesTraits } from '../species'
+import { backgroundOf, choiceOpen, featBonusFor, featGivesSave, featOfFeature, speciesTraits } from '../species'
 import { traitsOf } from '../model/traits'
 import { unmet } from '../requirements'
 import { changed } from '../edit'
@@ -87,7 +91,7 @@ const featGroups = computed(() => {
 const featNote = (f: Entry) => (lacks(f) ? ` (${lacks(f)})` : f.fields.prerequisite ? ` (${f.fields.prerequisite})` : '')
 const feat = ref('')
 const choice = ref<BonusChoice>({ picks: [] })
-const featBonus = computed(() => get(feat.value || undefined)?.fields.abilityIncrease)
+const featBonus = computed(() => featBonusFor(get(feat.value || undefined), props.s.saves))
 /** The scores as they are now on the sheet (before what the increase adds). */
 const baseScores = computed(() => Object.fromEntries(ABILITY_KEYS.map(a => [a, props.s.abilities[a] ?? 10])) as Record<(typeof ABILITY_KEYS)[number], number>)
 
@@ -134,10 +138,37 @@ const spells = computed(() => {
   }
 })
 
+// ---- what grows at the new level: more picks (invocations, Metamagic), a scaling value, pact slots ----
+const atStep = <T,>(steps: [number, T][] | undefined, l: number) => steps?.filter(([x]) => x <= l).at(-1)?.[1]
+const grows = computed(() => {
+  const n = newLevel.value, out: string[] = []
+  for (const e of [classEntry(cls.value), get(subId.value || undefined)]) {
+    for (const t of e ? traitsOf(e) : []) {
+      if ((t.level ?? 1) >= n) continue // a new feature is listed above
+      const c0 = atStep(t.choice?.steps, n - 1), c1 = atStep(t.choice?.steps, n)
+      if (c1 != null && c1 !== c0) out.push(`${t.name}: ${c0 ?? 0} → ${c1}`)
+      const s0 = atStep(t.scale?.steps, n - 1), s1 = atStep(t.scale?.steps, n)
+      if (s1 != null && s1 !== s0) out.push(`${t.scale!.label || t.name}: ${s0 ?? '—'} → ${s1}`)
+      const u0 = atStep(t.uses?.steps, n - 1), u1 = atStep(t.uses?.steps, n)
+      if (u1 != null && u1 !== u0) out.push(`${t.name} uses: ${u0 ?? 0} → ${u1}`)
+    }
+  }
+  if (basicsOf(cls.value).caster === 'pact' && n > 1) {
+    const a = classSlotsAt('pact', n - 1).pact!, b = classSlotsAt('pact', n).pact!
+    if (a.count !== b.count || a.level !== b.level) out.push(`Pact slots: ${a.count} × ${ORD[a.level]} → ${b.count} × ${ORD[b.level]}`)
+  }
+  return out
+})
+/** A feature's text: its first paragraph, the rest folded. */
+const firstPara = (t: string) => t.split(/\n\s*\n/)[0]
+const restOf = (t: string) => t.split(/\n\s*\n/).slice(1).join('\n\n')
+/** After the level is taken: the choices it opened, made here before closing. */
+const phase = ref<'level' | 'choices'>('level')
+
 // ---- what's still missing ----
 const open = computed(() => [
   !cls.value && 'a class',
-  gain.value == null && (how.value === 'roll' ? `a roll from 1 to ${size.value}` : 'hit points'),
+  gain.value == null && (how.value === 'roll' ? (roll.value != null ? `a roll from 1 to ${size.value} (${roll.value} isn't one)` : `a roll from 1 to ${size.value}`) : 'hit points'),
   needsSub.value && !sub.value && 'a subclass',
   featDue.value && !feat.value && (boon.value ? 'an Epic Boon' : 'a feat'),
   featDue.value && feat.value && bonusOpen(featBonus.value, choice.value) > 0 && 'the feat’s ability scores',
@@ -153,6 +184,8 @@ function apply() {
   const hp = gain.value!, takeFeat = featDue.value && feat.value ? get(feat.value) : undefined, epic = boon.value
   const add = bonusApplied(featBonus.value, choice.value), sp = spells.value
   const brings = mc.value, skills = [...mcSkills.value], instrument = mcInstrument.value
+  // max HP before: the current HP goes up by what the maximum does (the level's HP, a per-level bonus, a higher CON)
+  const maxBefore = maxHpOf(sheetToEdit(pc))
   // the class line
   const l: ClassLine[] = JSON.parse(JSON.stringify(lines.value))
   const at = l.find(x => x.class === cls.value)
@@ -161,11 +194,9 @@ function apply() {
   pc.fields.classLevels = l
   delete pc.fields.level
   editSheet(pc, s => {
-    // hit points: the maximum and the current go up by the same (a sheet without a maximum keeps none)
-    if (s.maxHp != null) {
-      s.maxHp += hp
-      if (s.hp != null) s.hp = Math.min(s.maxHp, s.hp + hp)
-    }
+    // hit points: the level's (a sheet without a maximum keeps none); a higher CON from the feat below adds the
+    // difference for every level by itself (sheet.ts baseMaxHp), this one included
+    if (s.maxHp != null) s.maxHp += hp
     // the feat: its ability increases go into the scores (at most 20); a named feat is listed with the features
     if (takeFeat) {
       const f = takeFeat
@@ -194,8 +225,16 @@ function apply() {
       s.spellbook = book
     }
   })
+  // the current HP goes up by as much as the maximum did
+  editSheet(pc, s => {
+    const after = maxHpOf(s)
+    if (s.hp != null && after != null && maxBefore != null) s.hp = Math.min(after, s.hp + Math.max(0, after - maxBefore))
+  })
   changed(pc)
-  emit('close')
+  // choices the new level opened (an invocation, Expertise, a mastery): made here, then done
+  const pending = speciesTraits(pc, sheetToEdit(pc)).some(a => a.active && choiceOpen(a))
+  if (pending) phase.value = 'choices'
+  else emit('close')
 }
 </script>
 
@@ -203,19 +242,24 @@ function apply() {
   <div class="modal-back" @mousedown.self="emit('close')" @keydown.esc="emit('close')">
     <div class="modal levelup" role="dialog" aria-label="Level up">
       <header class="modal-head">
-        <h2>Level up to {{ total + 1 }}</h2>
+        <h2>{{ phase === 'choices' ? `Level ${total}: its choices` : `Level up to ${total + 1}` }}</h2>
         <span class="spacer" />
         <button class="x" title="Close (Esc)" @click="emit('close')">×</button>
       </header>
 
+      <template v-if="phase === 'choices'">
+        <FeatureChoices :pc="pc" :s="s" open-only />
+        <footer class="lu-foot"><span class="muted small">These can also be made later, from "to pick" on the sheet.</span><span class="spacer" /><button class="primary" @click="emit('close')">Done</button></footer>
+      </template>
+      <template v-else>
       <section>
         <h3>Class</h3>
-        <select v-model="cls" aria-label="Class gaining the level" @change="sub = ''; feat = ''">
+        <Dropdown v-model="cls" aria-label="Class gaining the level" @change="sub = ''; feat = ''">
           <option v-for="l in lines" :key="l.class" :value="l.class">{{ label(l.class) }} {{ l.level }} → {{ l.level + 1 }}</option>
           <optgroup v-if="others.length" label="A new class (multiclassing)">
             <option v-for="o in others" :key="o.id" :value="o.id">{{ o.label }} 1</option>
           </optgroup>
-        </select>
+        </Dropdown>
         <template v-if="isNew">
           <div v-if="prereqs.length" class="lu-warn small">
             <b>Multiclassing needs 13 in each class's main score:</b>
@@ -227,18 +271,18 @@ function apply() {
           <p v-else class="small">Gains: {{ gains.join(', ') || 'no armor, weapon or tool proficiencies' }}</p>
           <div v-if="mc?.skills" class="lu-pick">
             <span class="small">Skill ({{ mcSkills.length }}/{{ mc.skills }}):</span>
-            <select v-if="mcSkills.length < mc.skills" aria-label="Skill" @change="addSkill">
+            <Dropdown v-if="mcSkills.length < mc.skills" aria-label="Skill" @change="addSkill">
               <option value="">＋ Skill</option>
               <option v-for="x in skillList" :key="x" :value="x">{{ x }}</option>
-            </select>
+            </Dropdown>
             <span v-for="x in mcSkills" :key="x" class="chip">{{ x }} <button class="link-btn" title="Take it back" @click="mcSkills = mcSkills.filter(y => y !== x)">×</button></span>
           </div>
           <div v-if="mc?.instruments" class="lu-pick">
             <span class="small">Musical instrument:</span>
-            <select v-model="mcInstrument" aria-label="Musical instrument">
+            <Dropdown v-model="mcInstrument" aria-label="Musical instrument">
               <option value="">Pick one…</option>
               <option v-for="e in instruments" :key="e.id" :value="e.id">{{ e.name }}</option>
-            </select>
+            </Dropdown>
           </div>
         </template>
       </section>
@@ -255,30 +299,32 @@ function apply() {
 
       <section v-if="needsSub">
         <h3>Subclass</h3>
-        <select v-model="sub" aria-label="Subclass">
+        <Dropdown v-model="sub" aria-label="Subclass">
           <option value="">Pick a subclass…</option>
           <option v-for="e in subclasses" :key="e.id" :value="e.id">{{ e.name }}</option>
-        </select>
+        </Dropdown>
       </section>
 
       <section>
         <h3>New features</h3>
         <ul v-if="features.length" class="lu-feats">
           <li v-for="f in features" :key="f.from.id + f.t.name"><b>{{ f.t.name }}</b> <span class="muted small">· {{ f.from.name }}</span>
-            <div v-if="f.t.text" class="small lu-text" v-html="renderInline(String(f.t.text).split('\n')[0])" /></li>
+            <div v-if="f.t.text" class="small lu-text"><MarkdownView :source="firstPara(String(f.t.text))" />
+              <details v-if="restOf(String(f.t.text))" class="lu-more"><summary class="small">more</summary><MarkdownView :source="restOf(String(f.t.text))" /></details></div></li>
         </ul>
-        <p v-else class="muted small">None listed for {{ label(cls) }} {{ newLevel }}<template v-if="!classEntry(cls)"> (the world has no class entry for it)</template>.</p>
-        <p class="muted small">Choices they ask for show up in the sheet's Choices card.</p>
+        <p v-else-if="!grows.length" class="muted small">None listed for {{ label(cls) }} {{ newLevel }}<template v-if="!classEntry(cls)"> (the world has no class entry for it)</template>.</p>
+        <ul v-if="grows.length" class="plain small lu-grows"><li v-for="g in grows" :key="g">{{ g }}</li></ul>
+        <p class="muted small">Choices they ask for come right after Level up.</p>
       </section>
 
       <section v-if="featDue">
         <h3>{{ boon ? 'Epic Boon' : 'Feat or Ability Score Improvement' }}</h3>
-        <select :value="feat" aria-label="Feat" @change="pickFeat(($event.target as HTMLSelectElement).value)">
+        <Dropdown :value="feat" aria-label="Feat" @change="pickFeat(($event.target as HTMLSelectElement).value)">
           <option value="">Pick one…</option>
           <optgroup v-for="g in featGroups" :key="g.kind" :label="g.label">
             <option v-for="f in g.list" :key="f.id" :value="f.id" :disabled="!!lacks(f)">{{ f.name }}{{ featNote(f) }}</option>
           </optgroup>
-        </select>
+        </Dropdown>
         <p v-if="feat" class="small"><EntryLink :id="feat" /><template v-if="get(feat)?.fields.prerequisite"> · <i>{{ get(feat)?.fields.prerequisite }}</i></template> <span class="muted" v-html="renderInline(String(get(feat)?.fields.summary ?? '').replace(/\s*\*?Source:[^*]*\*?\s*$/, ''))" /></p>
         <SpreadPicker v-if="featBonus" :key="feat" v-model="choice" :bonus="featBonus" :scores="baseScores" />
       </section>
@@ -299,6 +345,7 @@ function apply() {
         <button @click="emit('close')">Cancel</button>
         <button class="primary" :disabled="open.length > 0" @click="apply">Level up</button>
       </footer>
+      </template>
     </div>
   </div>
 </template>

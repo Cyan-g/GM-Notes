@@ -1649,7 +1649,8 @@
         "skill": "Athletics",
         "mode": "adv"
        }
-      ]
+      ],
+      "endsIncapacitated": true
      },
      {
       "id": "unarmored-defense",
@@ -1686,7 +1687,8 @@
          10,
          4
         ]
-       ]
+       ],
+       "meleeOnly": true
       }
      },
      {
@@ -1859,7 +1861,8 @@
       "text": "You can supernaturally inspire others through words, music, or dance. This inspiration is represented by your Bardic Inspiration die, which is a d6.\n\n**Using Bardic Inspiration.** As a Bonus Action, you can inspire another creature within 60 feet of yourself who can see or hear you. That creature gains one of your Bardic Inspiration dice. A creature can have only one Bardic Inspiration die at a time.\n\nOnce within the next hour when the creature fails a D20 Test, the creature can roll the Bardic Inspiration die and add the number rolled to the d20, potentially turning the failure into a success. A Bardic Inspiration die is expended when it's rolled.\n\n**Number of Uses.** You can confer a Bardic Inspiration die a number of times equal to your Charisma modifier (minimum of once), and you regain all expended uses when you finish a Long Rest.\n\n**At Higher Levels.** Your Bardic Inspiration die changes when you reach certain Bard levels, as shown in the Bardic Die column of the Bard Features table. The die becomes a d8 at level 5, a d10 at level 10, and a d12 at level 15.",
       "uses": {
        "count": "cha",
-       "recharge": "long"
+       "recharge": "long",
+       "shortFrom": 5
       },
       "scale": {
        "label": "Bardic Die",
@@ -1913,7 +1916,12 @@
       "id": "jack-of-all-trades",
       "name": "Jack of All Trades",
       "text": "You can add half your Proficiency Bonus (round down) to any ability check you make that uses a skill proficiency you lack and that doesn't otherwise use your Proficiency Bonus.\n\nFor example, if you make a Strength (Athletics) check and lack Athletics proficiency, you can add half your Proficiency Bonus to the check.",
-      "level": 2
+      "level": 2,
+      "effects": [
+       {
+        "on": "halfProf"
+       }
+      ]
      },
      {
       "id": "bard-subclass",
@@ -2029,7 +2037,23 @@
         {
          "id": "thaumaturge",
          "name": "Thaumaturge",
-         "text": "You know one extra cantrip from the Cleric spell list. In addition, your mystical connection to the divine gives you a bonus to your Intelligence (Arcana or Religion) checks. The bonus equals your Wisdom modifier (minimum of +1)."
+         "text": "You know one extra cantrip from the Cleric spell list. In addition, your mystical connection to the divine gives you a bonus to your Intelligence (Arcana or Religion) checks. The bonus equals your Wisdom modifier (minimum of +1).",
+         "effects": [
+          {
+           "on": "cantrips",
+           "value": 1
+          },
+          {
+           "on": "skill",
+           "skill": "Arcana",
+           "ability": "wis"
+          },
+          {
+           "on": "skill",
+           "skill": "Religion",
+           "ability": "wis"
+          }
+         ]
         }
        ]
       }
@@ -2164,7 +2188,23 @@
         {
          "id": "magician",
          "name": "Magician",
-         "text": "You know one extra cantrip from the Druid spell list. In addition, your mystical connection to nature gives you a bonus to your Intelligence (Arcana or Nature) checks. The bonus equals your Wisdom modifier (minimum bonus of +1)."
+         "text": "You know one extra cantrip from the Druid spell list. In addition, your mystical connection to nature gives you a bonus to your Intelligence (Arcana or Nature) checks. The bonus equals your Wisdom modifier (minimum bonus of +1).",
+         "effects": [
+          {
+           "on": "cantrips",
+           "value": 1
+          },
+          {
+           "on": "skill",
+           "skill": "Arcana",
+           "ability": "wis"
+          },
+          {
+           "on": "skill",
+           "skill": "Nature",
+           "ability": "wis"
+          }
+         ]
         },
         {
          "id": "warden",
@@ -2516,7 +2556,8 @@
        {
         "on": "unarmed",
         "fromScale": true,
-        "proficient": true
+        "proficient": true,
+        "monkWeapons": true
        }
       ]
      },
@@ -2544,7 +2585,8 @@
       "uses": {
        "count": "level",
        "recharge": "short"
-      }
+      },
+      "dc": "wis"
      },
      {
       "id": "unarmored-movement",
@@ -2575,7 +2617,14 @@
          "+30 ft"
         ]
        ]
-      }
+      },
+      "effects": [
+       {
+        "on": "speed",
+        "fromScale": true,
+        "when": "unarmored"
+       }
+      ]
      },
      {
       "id": "uncanny-metabolism",
@@ -2766,6 +2815,13 @@
         "spell": "divine-smite",
         "how": "prepared"
        }
+      ],
+      "uses": {
+       "count": 1,
+       "recharge": "long"
+      },
+      "freeCast": [
+       "divine-smite"
       ]
      },
      {
@@ -2925,6 +2981,9 @@
         "spell": "hunters-mark",
         "how": "prepared"
        }
+      ],
+      "freeCast": [
+       "hunters-mark"
       ]
      },
      {
@@ -3201,7 +3260,8 @@
       "id": "cunning-strike",
       "name": "Cunning Strike",
       "text": "You've developed cunning ways to use your Sneak Attack. When you deal Sneak Attack damage, you can add one of the following Cunning Strike effects. Each effect has a die cost, which is the number of Sneak Attack damage dice you must forgo to add the effect. You remove the die before rolling, and the effect occurs immediately after the attack's damage is dealt. For example, if you add the Poison effect, remove 1d6 from the Sneak Attack's damage before rolling.\n\nIf a Cunning Strike effect requires a saving throw, the DC equals 8 plus your Dexterity modifier and Proficiency Bonus.\n\nPoison (Cost: 1d6). You add a toxin to your strike, forcing the target to make a Constitution saving throw. On a failed save, the target has the Poisoned condition for 1 minute. At the end of each of its turns, the Poisoned target repeats the save, ending the effect on itself on a success.\n\nTo use this effect, you must have a Poisoner's Kit on your person.\n\nTrip (Cost: 1d6). If the target is Large or smaller, it must succeed on a Dexterity saving throw or have the Prone condition.\n\nWithdraw (Cost: 1d6). Immediately after the attack, you move up to half your Speed without provoking Opportunity Attacks.",
-      "level": 5
+      "level": 5,
+      "dc": "dex"
      },
      {
       "id": "uncanny-dodge",
@@ -3486,12 +3546,25 @@
          "text": "*Prerequisite: Level 2+ Warlock, a Warlock Cantrip That Deals Damage*\n\nChoose one of your known Warlock cantrips that deals damage. You can add your Charisma modifier to that spell's damage rolls.\n\n**Repeatable.** You can gain this invocation more than once. Each time you do so, choose a different eligible cantrip.",
          "needs": {
           "level": 2
-         }
+         },
+         "effects": [
+          {
+           "on": "spellDamage",
+           "spell": "eldritch-blast",
+           "ability": "cha"
+          }
+         ]
         },
         {
          "id": "armor-of-shadows",
          "name": "Armor of Shadows",
-         "text": "You can cast Mage Armor on yourself without expending a spell slot."
+         "text": "You can cast Mage Armor on yourself without expending a spell slot.",
+         "spells": [
+          {
+           "spell": "mage-armor",
+           "how": "atWill"
+          }
+         ]
         },
         {
          "id": "ascendant-step",
@@ -3499,7 +3572,13 @@
          "text": "*Prerequisite: Level 5+ Warlock*\n\nYou can cast Levitate on yourself without expending a spell slot.",
          "needs": {
           "level": 5
-         }
+         },
+         "spells": [
+          {
+           "spell": "levitate",
+           "how": "atWill"
+          }
+         ]
         },
         {
          "id": "devils-sight",
@@ -3546,7 +3625,13 @@
          "text": "*Prerequisite: Level 2+ Warlock*\n\nYou can cast False Life on yourself without expending a spell slot. When you cast the spell with this feature, you don't roll the die for the Temporary Hit Points; you automatically get the highest number on the die.",
          "needs": {
           "level": 2
-         }
+         },
+         "spells": [
+          {
+           "spell": "false-life",
+           "how": "atWill"
+          }
+         ]
         },
         {
          "id": "gaze-of-two-minds",
@@ -3605,7 +3690,13 @@
          "text": "*Prerequisite: Level 2+ Warlock*\n\nYou can cast Disguise Self without expending a spell slot.",
          "needs": {
           "level": 2
-         }
+         },
+         "spells": [
+          {
+           "spell": "disguise-self",
+           "how": "atWill"
+          }
+         ]
         },
         {
          "id": "master-of-myriad-forms",
@@ -3621,7 +3712,13 @@
          "text": "*Prerequisite: Level 2+ Warlock*\n\nYou can cast Silent Image without expending a spell slot.",
          "needs": {
           "level": 2
-         }
+         },
+         "spells": [
+          {
+           "spell": "silent-image",
+           "how": "atWill"
+          }
+         ]
         },
         {
          "id": "one-with-shadows",
@@ -3637,7 +3734,13 @@
          "text": "*Prerequisite: Level 2+ Warlock*\n\nYou can cast Jump on yourself without expending a spell slot.",
          "needs": {
           "level": 2
-         }
+         },
+         "spells": [
+          {
+           "spell": "jump",
+           "how": "atWill"
+          }
+         ]
         },
         {
          "id": "pact-of-the-blade",
@@ -7287,7 +7390,12 @@
      {
       "id": "resourceful",
       "name": "Resourceful",
-      "text": "You gain Heroic Inspiration whenever you finish a Long Rest."
+      "text": "You gain Heroic Inspiration whenever you finish a Long Rest.",
+      "effects": [
+       {
+        "on": "restInspiration"
+       }
+      ]
      },
      {
       "id": "skillful",
@@ -7301,7 +7409,12 @@
      {
       "id": "versatile",
       "name": "Versatile",
-      "text": "You gain an Origin feat of your choice. Skilled is recommended."
+      "text": "You gain an Origin feat of your choice. Skilled is recommended.",
+      "choice": {
+       "kind": "feat",
+       "count": 1,
+       "category": "Origin Feat"
+      }
      }
     ]
    },
@@ -12857,6 +12970,14 @@
       "dice": "1d6",
       "type": "Force"
      }
+    ],
+    "active": [
+     {
+      "on": "extraDamage",
+      "dice": "1d6",
+      "type": "Force",
+      "note": "against the marked target"
+     }
     ]
    },
    "body": "",
@@ -18173,7 +18294,13 @@
       "id": "improved-critical",
       "name": "Improved Critical",
       "text": "Your attack rolls with weapons and Unarmed Strikes can score a Critical Hit on a roll of 19 or 20 on the d20.",
-      "level": 3
+      "level": 3,
+      "effects": [
+       {
+        "on": "critRange",
+        "value": 19
+       }
+      ]
      },
      {
       "id": "remarkable-athlete",
@@ -18184,6 +18311,10 @@
        {
         "on": "skillAdv",
         "skill": "Athletics",
+        "mode": "adv"
+       },
+       {
+        "on": "initiativeAdv",
         "mode": "adv"
        }
       ]
@@ -18209,7 +18340,13 @@
       "id": "superior-critical",
       "name": "Superior Critical",
       "text": "Your attack rolls with weapons and Unarmed Strikes can now score a Critical Hit on a roll of 18–20 on the d20.",
-      "level": 15
+      "level": 15,
+      "effects": [
+       {
+        "on": "critRange",
+        "value": 18
+       }
+      ]
      },
      {
       "id": "survivor",
@@ -18558,6 +18695,11 @@
           {
            "on": "resistance",
            "type": "Acid"
+          },
+          {
+           "on": "spellDamage",
+           "type": "Acid",
+           "ability": "cha"
           }
          ]
         },
@@ -18568,6 +18710,11 @@
           {
            "on": "resistance",
            "type": "Cold"
+          },
+          {
+           "on": "spellDamage",
+           "type": "Cold",
+           "ability": "cha"
           }
          ]
         },
@@ -18578,6 +18725,11 @@
           {
            "on": "resistance",
            "type": "Fire"
+          },
+          {
+           "on": "spellDamage",
+           "type": "Fire",
+           "ability": "cha"
           }
          ]
         },
@@ -18588,6 +18740,11 @@
           {
            "on": "resistance",
            "type": "Lightning"
+          },
+          {
+           "on": "spellDamage",
+           "type": "Lightning",
+           "ability": "cha"
           }
          ]
         },
@@ -18598,6 +18755,11 @@
           {
            "on": "resistance",
            "type": "Poison"
+          },
+          {
+           "on": "spellDamage",
+           "type": "Poison",
+           "ability": "cha"
           }
          ]
         }
@@ -18645,7 +18807,54 @@
       "id": "evocation-savant",
       "name": "Evocation Savant",
       "text": "Choose two Wizard spells from the Evocation school, each of which must be no higher than level 2, and add them to your spellbook for free.\n\nIn addition, whenever you gain access to a new level of spell slots in this class, you can add one Wizard spell from the Evocation school to your spellbook for free. The chosen spell must be of a level for which you have spell slots.",
-      "level": 3
+      "level": 3,
+      "choice": {
+       "kind": "spell",
+       "count": 2,
+       "steps": [
+        [
+         3,
+         2
+        ],
+        [
+         5,
+         3
+        ],
+        [
+         7,
+         4
+        ],
+        [
+         9,
+         5
+        ],
+        [
+         11,
+         6
+        ],
+        [
+         13,
+         7
+        ],
+        [
+         15,
+         8
+        ],
+        [
+         17,
+         9
+        ]
+       ],
+       "spell": {
+        "classes": [
+         "Wizard"
+        ],
+        "schools": [
+         "Evocation"
+        ],
+        "how": "book"
+       }
+      }
      },
      {
       "id": "potent-cantrip",
@@ -19190,6 +19399,92 @@
    },
    "created": "2026-11-20T00:00:00.000Z",
    "updated": "2026-11-20T00:00:00.000Z"
+  },
+  {
+   "id": "blessed-warrior",
+   "type": "feat",
+   "name": "Blessed Warrior",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "created": "2026-11-22T14:25:19.274Z",
+   "updated": "2026-11-22T14:25:19.274Z",
+   "fields": {
+    "category": "Fighting Style",
+    "prerequisite": "Paladin, Fighting Style feature",
+    "summary": "You learn two Cleric cantrips of your choice, cast with Charisma. When you gain a Paladin level, you can swap one of them for another Cleric cantrip.",
+    "requirements": {
+     "classes": [
+      "Paladin"
+     ],
+     "features": [
+      "Fighting Style"
+     ]
+    },
+    "speciesTraits": [
+     {
+      "id": "blessed-warrior",
+      "name": "Blessed Warrior",
+      "text": "You learn two Cleric cantrips of your choice, cast with Charisma. When you gain a Paladin level, you can swap one of them for another Cleric cantrip.",
+      "choice": {
+       "kind": "spell",
+       "count": 2,
+       "spell": {
+        "classes": [
+         "Cleric"
+        ],
+        "level": "Cantrip",
+        "how": "atWill",
+        "ability": "cha"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "druidic-warrior",
+   "type": "feat",
+   "name": "Druidic Warrior",
+   "aliases": [],
+   "tags": [],
+   "body": "",
+   "visibility": "known",
+   "created": "2026-11-22T14:25:19.274Z",
+   "updated": "2026-11-22T14:25:19.274Z",
+   "fields": {
+    "category": "Fighting Style",
+    "prerequisite": "Ranger, Fighting Style feature",
+    "summary": "You learn two Druid cantrips of your choice, cast with Wisdom. When you gain a Ranger level, you can swap one of them for another Druid cantrip.",
+    "requirements": {
+     "classes": [
+      "Ranger"
+     ],
+     "features": [
+      "Fighting Style"
+     ]
+    },
+    "speciesTraits": [
+     {
+      "id": "druidic-warrior",
+      "name": "Druidic Warrior",
+      "text": "You learn two Druid cantrips of your choice, cast with Wisdom. When you gain a Ranger level, you can swap one of them for another Druid cantrip.",
+      "choice": {
+       "kind": "spell",
+       "count": 2,
+       "spell": {
+        "classes": [
+         "Druid"
+        ],
+        "level": "Cantrip",
+        "how": "atWill",
+        "ability": "wis"
+       }
+      }
+     }
+    ]
+   }
   }
  ],
  "relations": []

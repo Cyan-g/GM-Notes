@@ -1,0 +1,131 @@
+/* Runecarved: as if cut in stone. Chamfered corners (painted in the colour under the box, so nothing inside is
+   clipped), a gem on heading rules, engraved fields, HP bars in ten notches, a slanted bar under the open tab, pointed
+   chips, hexagonal charges, a carved slash for a tick, square menus with a notched mark on the hovered row, squared
+   scrollbars. (The parts: base.css) */
+.fx[data-fx="runecarved"] {
+  --rc-edge: color-mix(in srgb, var(--ink) 24%, var(--panel));
+  --rc-cut: color-mix(in srgb, var(--panel) 55%, var(--bg));
+  --rc-sunk: inset 0 2px 3px color-mix(in srgb, var(--bg) 70%, transparent);
+  --hex: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+
+  /* frame: cut corners with an edge along each cut */
+  --fx-frame-edge: var(--rc-edge);
+  --fx-frame-radius: 0;
+  --fx-frame-ornament: '';
+  --fx-frame-ornament-inset: -1px;
+  --fx-frame-ornament-paint:
+    linear-gradient(135deg, var(--fx-under, var(--bg)) 9px, var(--rc-edge) 9px 10px, transparent 10px) top left / 13px 13px no-repeat,
+    linear-gradient(225deg, var(--fx-under, var(--bg)) 9px, var(--rc-edge) 9px 10px, transparent 10px) top right / 13px 13px no-repeat,
+    linear-gradient(45deg, var(--fx-under, var(--bg)) 9px, var(--rc-edge) 9px 10px, transparent 10px) bottom left / 13px 13px no-repeat,
+    linear-gradient(315deg, var(--fx-under, var(--bg)) 9px, var(--rc-edge) 9px 10px, transparent 10px) bottom right / 13px 13px no-repeat;
+  --fx-small-edge: var(--rc-edge);
+  --fx-small-radius: 0;
+  --fx-small-ornament: '';
+  --fx-small-ornament-paint:
+    linear-gradient(135deg, var(--fx-under, var(--bg)) 5px, var(--rc-edge) 5px 6px, transparent 6px) top left / 9px 9px no-repeat,
+    linear-gradient(225deg, var(--fx-under, var(--bg)) 5px, var(--rc-edge) 5px 6px, transparent 6px) top right / 9px 9px no-repeat,
+    linear-gradient(45deg, var(--fx-under, var(--bg)) 5px, var(--rc-edge) 5px 6px, transparent 6px) bottom left / 9px 9px no-repeat,
+    linear-gradient(315deg, var(--fx-under, var(--bg)) 5px, var(--rc-edge) 5px 6px, transparent 6px) bottom right / 9px 9px no-repeat;
+  --fx-scroller-edge: var(--rc-edge);
+
+  /* heading: a rule with a gem in the middle */
+  --fx-rule-height: 12px;
+  --fx-rule-paint: var(--accent);
+  --fx-rule-opacity: .85;
+  --fx-rule-mask: url(./ornaments/gem.svg) center / 8px 12px no-repeat,
+    linear-gradient(90deg, #000 calc(50% - 8px), transparent calc(50% - 7px), transparent calc(50% + 7px), #000 calc(50% + 8px)) center / 100% 1px no-repeat;
+
+  /* field: engraved into the panel, one corner cut */
+  --fx-field-line: 1px solid transparent;
+  --fx-field-radius: 0;
+  --fx-field-paint: var(--rc-cut);
+  --fx-field-shadow: var(--rc-sunk), inset 0 -1px 0 var(--rc-edge);
+  --fx-field-clip: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  --fx-field-focus-line: 1px solid transparent;
+  --fx-field-focus-shadow: var(--rc-sunk), inset 0 -2px 0 var(--accent);
+
+  /* hp: ten notches */
+  --fx-hp-edge: var(--rc-edge);
+  --fx-hp-radius: 0;
+  --fx-hp-track: var(--rc-cut);
+  --fx-hp-mini-height: 8px;
+  --fx-hp-mini-track: var(--rc-cut);
+  --fx-hp-fill: var(--accent);
+  --fx-hp-bloodied: color-mix(in srgb, var(--accent) 60%, var(--rc-cut));
+  --fx-hp-marks: '';
+  --fx-hp-marks-paint: repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), var(--panel) calc(10% - 2px) 10%);
+
+  /* tab: a bar with slanted ends under the open one */
+  --fx-tab-rule: var(--rc-edge);
+  --fx-tab-bar: transparent;
+  --fx-tab-mark-left: 0;
+  --fx-tab-mark-right: 0;
+  --fx-tab-mark-bottom: -2px;
+  --fx-tab-mark-width: auto;
+  --fx-tab-mark-height: 3px;
+  --fx-tab-mark-clip: polygon(3px 0, calc(100% - 3px) 0, 100% 100%, 0 100%);
+
+  /* chip: pointed ends */
+  --fx-chip-radius: 0;
+  --fx-chip-clip: polygon(6px 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0 50%);
+
+  /* check: an engraved square, a carved slash for a tick */
+  --fx-check-size: 14px;
+  --fx-check-lift: -2px;
+  --fx-check-radius: 0;
+  --fx-check-paint: var(--rc-cut);
+  --fx-check-shadow: inset 0 0 0 1px var(--rc-edge), inset 0 2px 2px color-mix(in srgb, var(--bg) 70%, transparent);
+  --fx-tick: '';
+  --fx-tick-width: 10px;
+  --fx-tick-height: 2.5px;
+  --fx-tick-paint: var(--accent);
+  --fx-tick-off: rotate(-35deg) scale(0);
+  --fx-tick-on: rotate(-35deg) scale(1);
+
+  /* panel, row, sep: square menus, a notched mark on the row under the mouse, chiselled separators */
+  --fx-panel-edge: var(--rc-edge);
+  --fx-panel-radius: 2px;
+  --fx-row-paint: color-mix(in srgb, var(--ink) 7%, var(--panel));
+  --fx-row-mark: '';
+  --fx-row-mark-bottom: 4px;
+  --fx-row-mark-clip: polygon(0 0, 100% 25%, 100% 75%, 0 100%);
+  --fx-sep-height: 1px;
+  --fx-sep-margin: 5px 8px;
+  --fx-sep-paint: repeating-linear-gradient(90deg, var(--rc-edge) 0 6px, transparent 6px 9px);
+
+  /* th, tr: headers sunk into the panel, a mark on the hovered row */
+  --fx-th-case: small-caps;
+  --fx-th-spacing: .05em;
+  --fx-th-paint: var(--rc-cut);
+  --fx-th-shadow: inset 0 2px 3px color-mix(in srgb, var(--bg) 60%, transparent), inset 0 -1px 0 var(--rc-edge);
+  --fx-tr-paint: color-mix(in srgb, var(--ink) 6%, var(--panel));
+  --fx-tr-mark: inset 3px 0 0 var(--accent);
+
+  /* tip, scroll */
+  --fx-tip-edge: var(--rc-edge);
+  --fx-tip-radius: 0;
+  --fx-tip-clip: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  --fx-scroll-paint: color-mix(in srgb, var(--ink) 28%, var(--panel));
+  --fx-scroll-radius: 0;
+}
+
+/* frames: a light top edge as if carved */
+:where(.fx[data-fx="runecarved"]) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .race-bonus, .char-sheet > .feature-choices) {
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 7%, transparent), var(--shadow);
+}
+:where(.fx[data-fx="runecarved"]) :where(.modal, .table-wrap, .theme-panel) { border-radius: 2px; }
+.fx[data-fx="runecarved"] :is(.md h1, .md h2, .entry-main h2) { letter-spacing: .06em; }
+.fx[data-fx="runecarved"] .tabs a { border-radius: 0; }
+:where(.fx[data-fx="runecarved"]) :where(.chip, .badge, .chip-btn, .chip-toggle, .tag-ritual) { padding-left: .8em; padding-right: .8em; }
+/* charges and spell slots: hexagons; death saves too */
+.fx[data-fx="runecarved"] .pip { transform: none; border: none; border-radius: 0; width: 15px; height: 17px; clip-path: var(--hex); background: color-mix(in srgb, var(--accent) 22%, var(--rc-cut)); }
+.fx[data-fx="runecarved"] .pip.on { background: var(--accent); }
+.fx[data-fx="runecarved"] .pip:hover { box-shadow: none; filter: brightness(1.15); }
+.fx[data-fx="runecarved"] .ds-box { border-radius: 0; clip-path: var(--hex); border: none; background: color-mix(in srgb, currentColor 25%, transparent); }
+.fx[data-fx="runecarved"] .ds-box.on { background: currentColor; }
+:where(.fx[data-fx="runecarved"]) input[type=checkbox]:not(.settings-switch input):indeterminate::after { transform: scale(.7); }
+/* menus: square and bevelled */
+:where(.fx[data-fx="runecarved"]) :where(.menu-panel, .settings-list, .picker-list, .qs, .link-preview) { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 8%, transparent), 0 10px 30px rgb(0 0 0 / .25); }
+:where(.fx[data-fx="runecarved"]) :where(.menu-row, .settings-list button, .picker-list li, .qs li) { border-radius: 0; }
+/* buttons: square corners to match */
+:where(.fx[data-fx="runecarved"]) :where(button, a.button):not(.pip, .ds-box, .chip-btn, .chip-toggle, .x, .link-btn) { border-radius: 2px; }

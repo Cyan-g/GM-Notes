@@ -42,15 +42,31 @@ export const RULES: RuleDef[] = [
     ],
     default: 'milestone', keywords: 'xp level up advancement',
   },
+  // Where a new character's ability score increase can come from: the creator offers the ones switched on, and the
+  // player takes one of them.
   {
-    id: 'abilityIncrease', group: 'Character creation', label: 'Ability score increase',
-    text: 'Where a new character\u2019s ability score increase comes from in the character creation wizard.',
-    options: [
-      { id: 'choice', label: 'The player\u2019s choice', text: 'The wizard offers the background\u2019s or the species\u2019 increase (or one typed in).' },
-      { id: 'background', label: 'Background (2024)', text: 'The background\u2019s increase; the species gives none.' },
-      { id: 'species', label: 'Species (2014)', text: 'The species\u2019 increase; the background gives none.' },
-    ],
-    default: 'choice', keywords: 'asi ability scores race species background creation',
+    id: 'bonusBackground', group: 'Character creation', label: 'Ability increase: the background’s (2024)',
+    text: 'Whether the creator offers the background’s ability score increase (+2 and +1, or +1 to three, among its abilities).',
+    options: [{ id: 'on', label: 'Offered' }, { id: 'off', label: 'Not offered' }],
+    default: 'on', keywords: 'asi ability scores background creation bonus',
+  },
+  {
+    id: 'bonusSpecies', group: 'Character creation', label: 'Ability increase: the species’ with its subrace’s (2014)',
+    text: 'Whether the creator offers the species’ ability score increase, with the subrace’s added to it (a Mountain Dwarf: the Dwarf’s +2 Con and its own +2 Str).',
+    options: [{ id: 'on', label: 'Offered' }, { id: 'off', label: 'Not offered' }],
+    default: 'on', keywords: 'asi ability scores race species subrace creation bonus',
+  },
+  {
+    id: 'bonusSubrace', group: 'Character creation', label: 'Ability increase: the subrace’s alone',
+    text: 'Whether the creator offers just the subrace’s own ability score increase, without the main species’ (a species without subraces: its own).',
+    options: [{ id: 'on', label: 'Offered' }, { id: 'off', label: 'Not offered' }],
+    default: 'off', keywords: 'asi ability scores race species subrace creation bonus',
+  },
+  {
+    id: 'bonusCustom', group: 'Character creation', label: 'Ability increase: typed in',
+    text: 'Whether the player may type the bonus for each score themselves.',
+    options: [{ id: 'on', label: 'Offered' }, { id: 'off', label: 'Not offered' }],
+    default: 'on', keywords: 'asi ability scores custom creation bonus',
   },
   {
     id: 'multiclassing', group: 'Advancement', label: 'Multiclassing',
@@ -90,6 +106,24 @@ export const RULES: RuleDef[] = [
     ],
     default: 'heroic', keywords: 'inspiration heroic reroll advantage reward star',
   },
+  {
+    id: 'untrainedShield', group: 'Equipment', label: 'Shield without training',
+    text: 'What a Shield does for a character who lacks training with it.',
+    options: [
+      { id: '2024', label: 'No AC from it (2024)', text: 'The Shield adds nothing to Armor Class without training.' },
+      { id: '2014', label: 'AC, with drawbacks (2014)', text: 'The Shield adds its AC, but the character has disadvantage on Strength and Dexterity rolls and can’t cast spells.' },
+    ],
+    default: '2024', keywords: 'shield armor class ac proficiency untrained',
+  },
+  {
+    id: 'concentrationCap', group: 'Conditions', label: 'Concentration save DC',
+    text: 'The Constitution save to keep concentrating after taking damage: DC 10 or half the damage, whichever is higher.',
+    options: [
+      { id: '2024', label: 'At most 30 (2024)', text: 'The DC is never higher than 30.' },
+      { id: '2014', label: 'No limit (2014)', text: 'Half the damage, however high.' },
+    ],
+    default: '2024', keywords: 'concentration con save dc damage',
+  },
 ]
 export const ruleDef = (id: string) => RULES.find(r => r.id === id)
 
@@ -97,6 +131,18 @@ const STANDARD = 'standard'
 /** The world's presets (the Standard one first if there are none stored yet). */
 export const presets = computed<RulePreset[]>(() => state.db?.meta.rules?.presets ?? [{ id: STANDARD, name: 'Standard', values: {} }])
 export const activePreset = computed<RulePreset>(() => presets.value.find(p => p.id === state.db?.meta.rules?.active) ?? presets.value[0])
+/** The ability score increases the creator offers, in order (a world from before the switches keeps what its old
+ * "Ability score increase" rule allowed). */
+export function bonusSources(): ('background' | 'species' | 'subrace' | 'custom')[] {
+  const v = activePreset.value.values, old = v.abilityIncrease
+  const on = (id: string, fallback: string) => (v[id] ?? fallback) === 'on'
+  const out: ('background' | 'species' | 'subrace' | 'custom')[] = []
+  if (on('bonusBackground', old === 'species' ? 'off' : 'on')) out.push('background')
+  if (on('bonusSpecies', old === 'background' ? 'off' : 'on')) out.push('species')
+  if (on('bonusSubrace', 'off')) out.push('subrace')
+  if (on('bonusCustom', 'on') || !out.length) out.push('custom')
+  return out
+}
 /** How a rule works in the active preset. */
 export const rule = (id: string): string => activePreset.value.values[id] ?? ruleDef(id)?.default ?? ''
 /** Whether a preset's rule differs from the Standard default. */

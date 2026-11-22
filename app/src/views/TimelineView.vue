@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Dropdown from '../components/Dropdown.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { computed, reactive, watch } from 'vue'
 import { optionLabel } from '../store'
@@ -35,14 +36,14 @@ const num = (v: string) => (v.trim() === '' ? null : Number(v))
 
     <div class="tl-filters card">
       <label><span>Show</span>
-        <select v-model="f.type">
+        <Dropdown v-model="f.type">
           <option value="all">Everything</option>
           <option value="event">All events</option>
           <option v-for="c in categories" :key="c" :value="c">· {{ optionLabel('event.category', c) }}</option>
           <option value="relation">Memberships & roles</option>
           <option value="session">Sessions</option>
           <option value="writing">Writings</option>
-        </select>
+        </Dropdown>
       </label>
       <label><span>Person</span><EntryPicker v-model="f.person" :types="['npc', 'pc', 'deity']" placeholder="Anyone" /></label>
       <label><span>Organization</span><EntryPicker v-model="f.org" :types="['organization']" placeholder="Any" /></label>

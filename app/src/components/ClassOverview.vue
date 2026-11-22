@@ -40,6 +40,8 @@ const growing = computed(() => traits.value.flatMap((t: Trait) => [
   ...(t.choice?.steps?.length ? [{ key: t.id + 'c', label: t.name, value: (l: number) => (l >= (t.level ?? 1) ? at(t.choice!.steps!, l) ?? '' : '') }] : []),
   ...(t.scale?.steps?.length ? [{ key: t.id + 's', label: t.scale.label || t.name, value: (l: number) => at(t.scale!.steps, l) ?? '' }] : []),
   ...(t.uses?.steps?.length ? [{ key: t.id + 'u', label: `${t.name} uses`, value: (l: number) => (l >= (t.level ?? 1) ? at(t.uses!.steps!, l) ?? '' : '') }] : []),
+  // uses equal to the class level (Focus Points, Sorcery Points)
+  ...(!t.uses?.steps?.length && t.uses?.count === 'level' ? [{ key: t.id + 'u', label: `${t.name} uses`, value: (l: number) => (l >= (t.level ?? 1) ? l * (t.uses!.times ?? 1) : '') }] : []),
 ]))
 const casts = computed(() => b.value.caster && b.value.caster !== 'none')
 const pact = computed(() => b.value.caster === 'pact')
@@ -49,7 +51,14 @@ const slotLevels = computed(() => {
   const top = Math.max(0, ...classSlotsAt(b.value.caster!, 20).slots.map((n, i) => (n ? i + 1 : 0)))
   return Array.from({ length: top }, (_, i) => i)
 })
-const features = (l: number) => traits.value.filter(t => (t.level ?? 1) === l).map(t => t.name)
+// each level's features; a feat level (Ability Score Improvement) is listed at every one, not only the first
+const ASI = 'Ability Score Improvement'
+const features = (l: number) => {
+  const names = traits.value.filter(t => (t.level ?? 1) === l).map(t => t.name)
+  return b.value.featLevels?.includes(l) && !names.some(n => n.toLowerCase() === ASI.toLowerCase()) && l < 19 ? [...names, ASI] : names
+}
+/** A level whose features already name the subclass ("Fighter Subclass"): no "subclass feature" after it. */
+const namesSubclass = (l: number) => features(l).some(n => /subclass/i.test(n))
 const canAdd = computed(() => !state.readOnly && !playerMode.value)
 </script>
 
@@ -71,7 +80,7 @@ const canAdd = computed(() => !state.readOnly && !playerMode.value)
           <tbody>
             <tr v-for="l in LEVELS" :key="l">
               <td>{{ l }}</td><td>+{{ profBonus(l) }}</td>
-              <td class="ct-feat">{{ features(l).join(', ') }}<span v-if="subLevels.has(l)" class="muted">{{ features(l).length ? ', ' : '' }}subclass feature</span><span v-if="!features(l).length && !subLevels.has(l)" class="muted">—</span></td>
+              <td class="ct-feat">{{ features(l).join(', ') }}<span v-if="subLevels.has(l) && !namesSubclass(l)" class="muted">{{ features(l).length ? ', ' : '' }}subclass feature</span><span v-if="!features(l).length && !subLevels.has(l)" class="muted">—</span></td>
               <td v-for="g in growing" :key="g.key">{{ g.value(l) }}</td>
               <template v-if="casts"><td v-if="b.cantrips">{{ b.cantrips[l - 1] ?? '' }}</td><td v-if="b.prepared">{{ b.prepared[l - 1] ?? '' }}</td></template>
               <template v-if="pact"><td>{{ classSlotsAt('pact', l).pact!.count }}</td><td>{{ ORD[classSlotsAt('pact', l).pact!.level] }}</td></template>

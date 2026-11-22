@@ -1,10 +1,11 @@
 <script setup lang="ts">
 // Where an item is: the characters carrying it (how many, worn or attuned) and the shops selling it (at what price,
-// how many left). "Give to …" hands one to the current character for free: loot handed out at the table.
-import { computed } from 'vue'
+// how many left). "Give to …" hands one to a character (the current one first) for free: loot handed out at the table.
+import { computed, ref } from 'vue'
 import type { Entry } from '../model/types'
-import { formatMoney, playerMode, state } from '../store'
+import { byType, formatMoney, get, playerMode, state } from '../store'
 import { currentPc } from '../sheet'
+import Dropdown from './Dropdown.vue'
 import { addToInventory } from '../sheetData'
 import { carriersOf, shopsSelling } from '../items'
 import EntryLink from './EntryLink.vue'
@@ -12,9 +13,15 @@ import EntryLink from './EntryLink.vue'
 const props = defineProps<{ item: Entry }>()
 const carriers = computed(() => carriersOf(props.item))
 const shops = computed(() => shopsSelling(props.item))
-const giver = computed(() => (state.readOnly || playerMode.value ? undefined : currentPc.value))
+/** The characters it can be given to: the current one first, then the others by name. */
+const pcs = computed(() => (state.readOnly || playerMode.value ? [] : (byType.value.get('pc') ?? []).slice().sort((a, b) => Number(b.id === currentPc.value?.id) - Number(a.id === currentPc.value?.id) || a.name.localeCompare(b.name))))
+const to = ref('')
+const giver = computed(() => get(to.value) ?? pcs.value[0])
+const given = ref('')
 function give() {
-  if (giver.value) addToInventory(giver.value, props.item.id)
+  if (!giver.value) return
+  addToInventory(giver.value, props.item.id)
+  given.value = `One ${props.item.name} put in ${giver.value.name}'s inventory.`
 }
 </script>
 
@@ -32,6 +39,12 @@ function give() {
         <span class="muted small"> · {{ x.price != null ? formatMoney(x.price) : 'no price' }}<template v-if="x.stock != null"> · {{ x.stock ? `${x.stock} left` : 'sold out' }}</template></span></li></ul>
     </template>
     <p v-if="!carriers.length && !shops.length" class="muted small">Nobody carries it and no shop sells it.</p>
-    <button v-if="giver" type="button" class="chip-btn" :title="`Put one in ${giver.name}'s inventory, free (loot)`" @click="give">＋ Give to {{ giver.name.split(' ')[0] }}</button>
+    <div v-if="giver" class="iw-give">
+      <button type="button" class="chip-btn" :title="`Put one in ${giver.name}'s inventory, free (loot)`" @click="give">＋ Give to</button>
+      <Dropdown compact :value="giver.id" aria-label="The character to give it to" @change="to = ($event.target as HTMLSelectElement).value">
+        <option v-for="p in pcs" :key="p.id" :value="p.id">{{ p.name }}{{ p.id === currentPc?.id ? ' (current)' : '' }}</option>
+      </Dropdown>
+    </div>
+    <p v-if="given" class="small ok">{{ given }}</p>
   </div>
 </template>

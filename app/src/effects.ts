@@ -6,6 +6,7 @@ import type { CharacterSheet, Entry, GearEffect, Id } from './model/types'
 import { isHeavyStrength, requirementsOf } from './requirements'
 import { speciesEffects, speciesSize } from './species'
 import { ownerOf } from './sheetData'
+import { get } from './store'
 import { rule } from './rules'
 import { applyConditions } from './conditions'
 import { ABILITY_UPPER, SKILLS, mod, profBonus, signed, type Ability } from './model/dnd'
@@ -17,7 +18,7 @@ import { activeGear, itemsInUse, weightOf } from './items'
 export interface Part { label: string; n: number; when?: GearEffect['when'] }
 
 /** What an effect needs besides a number, in the editor. */
-export type EffectNeed = 'ability' | 'skill' | 'type' | 'text' | 'mode' | 'note' | 'dice' | 'proficient' | 'sense' | 'condition' | 'pb' | 'plusAbility' | 'abilities' | 'noShield' | 'when' | 'speedType' | 'emptyDice'
+export type EffectNeed = 'ability' | 'skill' | 'type' | 'text' | 'mode' | 'note' | 'dice' | 'proficient' | 'sense' | 'condition' | 'pb' | 'plusAbility' | 'abilities' | 'noShield' | 'when' | 'speedType' | 'emptyDice' | 'monkWeapons' | 'spell'
 /** What an effect can change, for the editor and the item card. */
 export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: EffectNeed[]; canSet?: boolean; noValue?: boolean }[] = [
   { on: 'ac', label: 'Armor class', needs: ['when'] },
@@ -30,7 +31,7 @@ export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: Effect
   { on: 'attack', label: 'Attack rolls', needs: ['when'] },
   { on: 'damage', label: 'Damage rolls', needs: ['when', 'pb'] },
   { on: 'extraDamage', label: 'Extra damage (typed)', needs: ['dice', 'type', 'proficient', 'when', 'note'], noValue: true },
-  { on: 'unarmed', label: 'Unarmed strike', needs: ['dice', 'proficient', 'emptyDice'], noValue: true },
+  { on: 'unarmed', label: 'Unarmed strike', needs: ['dice', 'proficient', 'emptyDice', 'monkWeapons'], noValue: true },
   { on: 'offhandMod', label: 'Off-hand attack adds its modifier', noValue: true },
   { on: 'offhandAny', label: 'Off-hand attack with any one-handed melee weapon', noValue: true },
   { on: 'poleStrike', label: 'Butt-end attack (d4, bonus action)', noValue: true },
@@ -38,11 +39,17 @@ export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: Effect
   { on: 'speedType', label: 'A speed equal to the walking speed', needs: ['speedType'], noValue: true },
   { on: 'deathSaveAdv', label: 'Advantage on death saves', noValue: true },
   { on: 'saveFromIncrease', label: 'Save proficiency in the ability raised', noValue: true },
+  { on: 'halfProf', label: 'Half proficiency on skill checks without proficiency', noValue: true },
+  { on: 'spellDamage', label: 'Spell damage', needs: ['spell', 'type', 'plusAbility'] },
+  { on: 'initiativeAdv', label: 'Initiative: advantage / disadvantage', needs: ['mode'], noValue: true },
+  { on: 'cantrips', label: 'More cantrips known' },
+  { on: 'restInspiration', label: 'Heroic Inspiration on each long rest', noValue: true },
+  { on: 'critRange', label: 'Critical hit on a roll of at least' },
   { on: 'spellAttack', label: 'Spell attack' },
   { on: 'spellDC', label: 'Spell save DC' },
   { on: 'skill', label: 'A skill', needs: ['skill', 'plusAbility'] },
   { on: 'skillAdv', label: 'Skill: advantage / disadvantage', needs: ['skill', 'mode'], noValue: true },
-  { on: 'speed', label: 'Speed (ft)' },
+  { on: 'speed', label: 'Speed (ft)', needs: ['when'] },
   { on: 'initiative', label: 'Initiative', needs: ['pb'] },
   { on: 'maxHp', label: 'Maximum HP' },
   { on: 'maxHpLevel', label: 'Max HP per level' },
@@ -57,7 +64,7 @@ export const SENSES = ['Darkvision', 'Blindsight', 'Tremorsense', 'Truesight']
 const MODE: Record<string, string> = { adv: 'Advantage', dis: 'Disadvantage' }
 const ABILITY_SHORT: Record<string, string> = ABILITY_UPPER
 /** An effect's limit, in words. */
-const WHEN: Record<string, string> = { melee: ' (melee)', ranged: ' (ranged)', finesseOrRanged: ' (finesse or ranged)', heavy: ' (Heavy weapons)', oneHanded: ' (one melee weapon in one hand)', thrown: ' (when thrown)', armored: ' (in armor)' }
+const WHEN: Record<string, string> = { melee: ' (melee)', ranged: ' (ranged)', finesseOrRanged: ' (finesse or ranged)', heavy: ' (Heavy weapons)', oneHanded: ' (one melee weapon in one hand)', thrown: ' (when thrown)', armored: ' (in armor)', unarmored: ' (no armor or shield)' }
 
 /**
  * A list of effects in a few words each, with the same advantage on every saving throw said once ("Advantage on
@@ -88,13 +95,16 @@ export function loadOf(s: CharacterSheet, t?: GearTotals): { carried: number; ca
   const mode = rule('carryingCapacity')
   if (mode === 'off') return undefined
   const str = t ? scoreWith(s, 'str', t) : s.abilities.str
-  const size = String(speciesSize(ownerOf(s)) ?? 'Medium')
-  const k = /large/i.test(size) ? 2 : /tiny/i.test(size) ? 0.5 : 1
+  const k = sizeLoad(s)
   const carried = weightOf(s), capacity = str * 15 * k
   if (mode === 'capacity') return { carried, capacity, state: carried > capacity ? 'over' : 'ok' }
   const light = str * 5 * k, heavy = str * 10 * k
   return { carried, capacity, light, heavy, state: carried > heavy ? 'heavy' : carried > light ? 'encumbered' : 'ok' }
 }
+/** How much more (or less) a creature of the character's size carries: Large ×2, Tiny ×½. */
+const sizeLoad = (s: CharacterSheet) => { const size = String(s.size ?? speciesSize(ownerOf(s)) ?? 'Medium'); return /large/i.test(size) ? 2 : /tiny/i.test(size) ? 0.5 : 1 }
+/** The carrying capacity (STR × 15, by size), shown even when the Ruleset doesn't check it. */
+export const capacityOf = (s: CharacterSheet, t?: GearTotals) => (t ? scoreWith(s, 'str', t) : s.abilities.str) * 15 * sizeLoad(s)
 /** An effect in a few words: "+1 AC", "STR 19", "Resistance: fire", "+2 Stealth". */
 export function describeEffect(f: GearEffect): string {
   const v = Number(f.value) || 0
@@ -102,7 +112,13 @@ export function describeEffect(f: GearEffect): string {
     case 'ac': return `${signed(v)} AC${WHEN[f.when ?? ''] ?? ''}`
     case 'acBase': return `AC ${v} + ${(f.abilities ?? []).map(a => ABILITY_SHORT[a]).join(' + ') || '—'} without armor${f.noShield ? ' or shield' : ''}`
     case 'acMin': return `AC at least ${v}`
-    case 'unarmed': return `Unarmed strike: ${f.dice || (f.fromScale ? 'the scaling die' : '1')}${f.emptyDice ? ` (${f.emptyDice} with no weapon or shield)` : ''}${f.proficient ? ', with STR or DEX' : ''}`
+    case 'unarmed': return `Unarmed strike${f.monkWeapons ? ' and Monk weapons' : ''}: ${f.dice || (f.fromScale ? 'the scaling die' : '1')}${f.emptyDice ? ` (${f.emptyDice} with no weapon or shield)` : ''}${f.proficient ? ', with STR or DEX' : ''}${f.monkWeapons ? ' (no armor or shield)' : ''}`
+    case 'halfProf': return 'Half the proficiency bonus on skill checks without proficiency'
+    case 'spellDamage': return `${v ? signed(v) : ''}${f.ability ? `${v ? ' ' : ''}+ ${ABILITY_SHORT[f.ability] ?? f.ability} modifier` : ''} to the damage of ${f.spell ? (get(f.spell)?.name ?? f.spell) : f.type ? `${f.type.toLowerCase()} spells` : 'spells'}`.trim()
+    case 'initiativeAdv': return `${MODE[f.mode ?? 'adv']} on Initiative`
+    case 'cantrips': return `${signed(v)} cantrip${Math.abs(v) === 1 ? '' : 's'} known`
+    case 'restInspiration': return 'Heroic Inspiration after each long rest'
+    case 'critRange': return `Critical hit on ${v}–20 with weapons`
     case 'offhandMod': return 'Off-hand attack adds the ability modifier'
     case 'offhandAny': return 'Off-hand attack with any one-handed melee weapon'
     case 'poleStrike': return 'Butt-end attack: d4 bludgeoning, bonus action'
@@ -118,7 +134,7 @@ export function describeEffect(f: GearEffect): string {
     case 'spellAttack': return `${signed(v)} spell attack`
     case 'spellDC': return `${signed(v)} spell save DC`
     case 'skill': return f.ability ? `${v ? signed(v) + ' and ' : '+'}${ABILITY_SHORT[f.ability]} modifier (at least 1) to ${f.skill ?? 'a skill'}` : `${signed(v)} ${f.skill ?? 'skill'}`
-    case 'speed': return `${signed(v)} ft speed`
+    case 'speed': return `${f.fromScale && f.value == null ? '+ scaling value' : signed(v)} ft speed${WHEN[f.when ?? ''] ?? ''}`
     case 'initiative': return f.pb ? `${v ? signed(v) + ' and ' : '+'}proficiency bonus to initiative` : `${signed(v)} initiative`
     case 'maxHp': return `${signed(v)} max HP`
     case 'maxHpLevel': return `${signed(v)} max HP per level`
@@ -149,7 +165,19 @@ export interface GearTotals {
   acBase: { label: string; n: number; abilities: Ability[]; noShield?: boolean }[]
   acMin: Part[]
   /** The unarmed strike's damage dice and whether it may use DEX (Martial Arts); the off-hand attack adding its modifier. */
-  unarmed?: { dice: string; dex: boolean; from: string; emptyDice?: string }
+  unarmed?: { dice: string; dex: boolean; from: string; emptyDice?: string; monkWeapons?: boolean }
+  /** Half the proficiency bonus on skill checks without proficiency (Jack of All Trades), by what gives it. */
+  halfProf?: string
+  /** More spell damage: for one spell, or a damage type's spells, or all; a number plus an ability's modifier. */
+  spellDamage: { spell?: Id; type?: string; n: number; ability?: Ability; from: string }[]
+  /** Advantage or disadvantage on Initiative. */
+  initiativeAdv: { mode: 'adv' | 'dis'; from: string }[]
+  /** More cantrips known (Magician), by what gives them. */
+  cantrips: Part[]
+  /** Heroic Inspiration on each long rest (Resourceful), by what gives it. */
+  restInspiration?: string
+  /** The lowest roll that's a critical hit with weapons (Improved Critical: 19), with what gives it. */
+  critRange?: { n: number; from: string }
   offhandMod?: string
   /** Any one-handed melee weapon for the off-hand attack; the butt-end attack; advantage on death saves (by what gives it). */
   offhandAny?: string
@@ -180,7 +208,8 @@ export interface GearTotals {
   features: { text: string; from: string }[]
   /** Advantage or disadvantage on a skill or a save (with when, for a save). */
   skillAdv: Record<string, { mode: 'adv' | 'dis'; from: string }[]>
-  saveAdv: Partial<Record<Ability, { mode: 'adv' | 'dis'; note?: string; from: string }[]>>
+  /** Advantage or disadvantage on a save, or an automatic failure ('fail': Paralyzed, Stunned, Unconscious). */
+  saveAdv: Partial<Record<Ability, { mode: 'adv' | 'dis' | 'fail'; note?: string; from: string }[]>>
   /** Typed extra damage, for one weapon's attacks or every attack. */
   extraOf: Record<Id, Extra[]>
   extraAll: Extra[]
@@ -207,10 +236,12 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
   const t: GearTotals = {
     setAbility: {}, forceAbility: {}, addAbility: {}, save: {}, saves: [], skill: {}, ac: [], acBase: [], acMin: [], speed: [], initiative: [], hitDice: [], maxHp: [], spellAttack: [], spellDC: [],
     attackAll: [], damageAll: [], attackOf: {}, damageOf: {}, resistances: [], features: [], speedTypes: [],
-    skillAdv: {}, saveAdv: {}, extraOf: {}, extraAll: [], senses: [], immunities: [], damageImmunities: [],
+    skillAdv: {}, saveAdv: {}, extraOf: {}, extraAll: [], senses: [], immunities: [], damageImmunities: [], spellDamage: [], initiativeAdv: [], cantrips: [],
   }
   const pc = ownerOf(s)
   const level = pc ? totalLevel(pc) : 1
+  // wearing armor or holding a shield: what only counts without them (Unarmored Movement) doesn't
+  const armorOn = itemsInUse(s).some(x => x.l.equipped && x.item.fields.kind === 'Armor')
   const sources = [
     ...activeGear(s).map(({ item, effects }) => ({ item, name: item.name, isWeapon: item.fields.kind === 'Weapon', effects })),
     ...speciesEffects(pc, s).map(x => ({ item: { id: '' } as Entry, name: x.name, isWeapon: false, effects: x.effects })),
@@ -227,7 +258,13 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
         case 'ac': t.ac.push(p); break
         case 'acBase': t.acBase.push({ label: name, n, abilities: f.abilities ?? [], ...(f.noShield ? { noShield: true } : {}) }); break
         case 'acMin': t.acMin.push(p); break
-        case 'unarmed': if (!t.unarmed || (f.dice ?? '') > t.unarmed.dice) t.unarmed = { dice: f.dice || '1', dex: !!f.proficient, from: name, ...(f.emptyDice ? { emptyDice: f.emptyDice } : {}) }; break
+        case 'unarmed': if (!t.unarmed || (f.dice ?? '') > t.unarmed.dice) t.unarmed = { dice: f.dice || '1', dex: !!f.proficient, from: name, ...(f.emptyDice ? { emptyDice: f.emptyDice } : {}), ...(f.monkWeapons ? { monkWeapons: true } : {}) }; break
+        case 'halfProf': t.halfProf = name; break
+        case 'spellDamage': t.spellDamage.push({ ...(f.spell ? { spell: f.spell } : {}), ...(f.type ? { type: f.type } : {}), n, ...(f.ability ? { ability: f.ability } : {}), from: name }); break
+        case 'initiativeAdv': t.initiativeAdv.push({ mode: f.mode ?? 'adv', from: name }); break
+        case 'cantrips': t.cantrips.push(p); break
+        case 'restInspiration': t.restInspiration = name; break
+        case 'critRange': if (n && (!t.critRange || n < t.critRange.n)) t.critRange = { n, from: name }; break
         case 'offhandMod': t.offhandMod = name; break
         case 'offhandAny': t.offhandAny = name; break
         case 'poleStrike': t.poleStrike = name; break
@@ -247,7 +284,7 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
         case 'damage': { const d = f.pb ? { ...p, n: n + profBonus(level) } : p; if (isWeapon) (t.damageOf[item.id] ??= []).push(d); else t.damageAll.push(d); break }
         case 'spellAttack': t.spellAttack.push(p); break
         case 'spellDC': t.spellDC.push(p); break
-        case 'speed': t.speed.push(p); break
+        case 'speed': if (f.when !== 'unarmored' || !armorOn) t.speed.push(p); break
         case 'initiative': t.initiative.push(f.pb ? { label: name, n: n + profBonus(level) } : p); break
         case 'maxHp': t.maxHp.push(p); break
         case 'hitDice': t.hitDice.push({ label: name, n, ...(f.ability ? { ability: f.ability } : {}) }); break
@@ -295,9 +332,14 @@ export function gearTotals(s: CharacterSheet | undefined): GearTotals {
   return t
 }
 
-/** Advantage and disadvantage cancel out: 'adv', 'dis' or nothing, with where each comes from. */
-export function advOf(l: { mode: 'adv' | 'dis'; note?: string; from: string }[] | undefined): { mode?: 'adv' | 'dis'; tip?: string } {
+/**
+ * Advantage and disadvantage cancel out: 'adv', 'dis' or nothing, with where each comes from. An automatic failure
+ * ('fail') wins over both: nothing else counts then.
+ */
+export function advOf(l: { mode: 'adv' | 'dis' | 'fail'; note?: string; from: string }[] | undefined): { mode?: 'adv' | 'dis' | 'fail'; tip?: string } {
   if (!l?.length) return {}
+  const fails = l.filter(x => x.mode === 'fail')
+  if (fails.length) return { mode: 'fail', tip: `Fails it automatically · ${fails.map(x => x.from).join(', ')}` }
   const adv = l.some(x => x.mode === 'adv'), dis = l.some(x => x.mode === 'dis')
   const tip = l.map(x => `${MODE[x.mode]}${x.note ? ' ' + x.note : ''} · ${x.from}`).join('\n')
   return { mode: adv && dis ? undefined : adv ? 'adv' : 'dis', tip: adv && dis ? tip + '\n(they cancel out)' : tip }

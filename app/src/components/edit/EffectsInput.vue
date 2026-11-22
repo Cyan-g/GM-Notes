@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // An item's effects (effects.ts): one row each, what it changes, the number and what it applies to.
+import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import type { GearEffect } from '../../model/types'
 import { EFFECT_KINDS, SENSES, describeEffect, type EffectNeed } from '../../effects'
@@ -7,6 +8,7 @@ import { ABILITIES, ABILITY_KEYS, CONDITIONS, SKILLS } from '../../model/dnd'
 import { TYPES } from '../../model/schema'
 import { fieldOptions } from '../../store'
 import { inputValue as val } from '../../dom'
+import EntryPicker from './EntryPicker.vue'
 
 const model = defineModel<GearEffect[] | undefined>()
 /** On a feature (not gear): an effect can take its number or dice from the feature's scaling value. */
@@ -19,7 +21,7 @@ const conditions = CONDITIONS
 
 /** What each kind of input fills in when it first shows. */
 const FIELD_OF: Record<EffectNeed, keyof GearEffect> = {
-  ability: 'ability', skill: 'skill', type: 'type', text: 'text', mode: 'mode', note: 'note', dice: 'dice', proficient: 'proficient', sense: 'sense', condition: 'condition', pb: 'pb', plusAbility: 'ability', abilities: 'abilities', noShield: 'noShield', when: 'when', speedType: 'speedType', emptyDice: 'emptyDice',
+  ability: 'ability', skill: 'skill', type: 'type', text: 'text', mode: 'mode', note: 'note', dice: 'dice', proficient: 'proficient', sense: 'sense', condition: 'condition', pb: 'pb', plusAbility: 'ability', abilities: 'abilities', noShield: 'noShield', when: 'when', speedType: 'speedType', emptyDice: 'emptyDice', monkWeapons: 'monkWeapons', spell: 'spell',
 }
 function put(i: number, patch: Partial<GearEffect>) {
   const l = list.value.map(x => ({ ...x }))
@@ -54,50 +56,51 @@ const remove = (i: number) => { const l = [...list.value]; l.splice(i, 1); model
 <template>
   <div class="effects-input">
     <div v-for="(f, i) in list" :key="i" class="effect-row">
-      <select :value="f.on" aria-label="What it changes" @change="put(i, { on: val($event) as GearEffect['on'] })">
+      <Dropdown compact :value="f.on" aria-label="What it changes" @change="put(i, { on: val($event) as GearEffect['on'] })">
         <option v-for="k in EFFECT_KINDS" :key="k.on" :value="k.on">{{ k.label }}</option>
-      </select>
-      <select v-if="needs(f, 'mode')" :value="f.mode" aria-label="Advantage or disadvantage" @change="put(i, { mode: val($event) as 'adv' | 'dis' })">
+      </Dropdown>
+      <Dropdown compact v-if="needs(f, 'mode')" :value="f.mode" aria-label="Advantage or disadvantage" @change="put(i, { mode: val($event) as 'adv' | 'dis' })">
         <option value="adv">advantage</option>
         <option value="dis">disadvantage</option>
-      </select>
-      <select v-if="needs(f, 'ability')" :value="f.ability" aria-label="Ability" @change="put(i, { ability: val($event) as GearEffect['ability'] })">
+      </Dropdown>
+      <Dropdown compact v-if="needs(f, 'ability')" :value="f.ability" aria-label="Ability" @change="put(i, { ability: val($event) as GearEffect['ability'] })">
         <option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.label }}</option>
-      </select>
-      <select v-if="needs(f, 'plusAbility')" :value="f.ability ?? ''" aria-label="Plus an ability's modifier" @change="put(i, { ability: (val($event) || undefined) as GearEffect['ability'] })">
+      </Dropdown>
+      <Dropdown compact v-if="needs(f, 'plusAbility')" :value="f.ability ?? ''" aria-label="Plus an ability's modifier" @change="put(i, { ability: (val($event) || undefined) as GearEffect['ability'] })">
         <option value="">no ability</option>
         <option v-for="a in ABILITIES" :key="a.key" :value="a.key">+ {{ a.label }} modifier</option>
-      </select>
-      <select v-if="needs(f, 'skill')" :value="f.skill" aria-label="Skill" @change="put(i, { skill: val($event) })">
+      </Dropdown>
+      <Dropdown compact v-if="needs(f, 'skill')" :value="f.skill" aria-label="Skill" @change="put(i, { skill: val($event) })">
         <option v-for="s in SKILLS" :key="s.name" :value="s.name">{{ s.name }}</option>
-      </select>
+      </Dropdown>
+      <EntryPicker v-if="needs(f, 'spell')" class="effect-spell" :model-value="f.spell ?? null" :types="['spell']" no-create placeholder="any spell" @update:model-value="v => put(i, { spell: v ?? undefined })" />
       <input v-if="needs(f, 'dice')" class="effect-value" :value="f.dice ?? ''" placeholder="2 or 1d6" aria-label="Extra damage" @change="put(i, { dice: val($event).trim() })" />
-      <select v-if="needs(f, 'type')" :value="f.type ?? ''" aria-label="Damage type" @change="put(i, { type: val($event) || undefined })">
+      <Dropdown compact v-if="needs(f, 'type')" :value="f.type ?? ''" aria-label="Damage type" @change="put(i, { type: val($event) || undefined })">
         <option value="">—</option>
         <option v-for="o in damageTypes" :key="o.id" :value="o.id">{{ o.label }}</option>
-      </select>
-      <select v-if="needs(f, 'speedType')" :value="f.speedType ?? 'climb'" aria-label="Speed" @change="put(i, { speedType: val($event) as GearEffect['speedType'] })">
+      </Dropdown>
+      <Dropdown compact v-if="needs(f, 'speedType')" :value="f.speedType ?? 'climb'" aria-label="Speed" @change="put(i, { speedType: val($event) as GearEffect['speedType'] })">
         <option v-for="k in ['climb', 'swim', 'fly', 'burrow']" :key="k" :value="k">{{ k }}</option>
-      </select>
+      </Dropdown>
       <input v-if="needs(f, 'emptyDice')" class="effect-value" :value="f.emptyDice ?? ''" placeholder="empty hands: 1d8" title="The die while holding no weapon or shield (Unarmed Fighting)" aria-label="Die with empty hands" @change="put(i, { emptyDice: val($event).trim() || undefined })" />
-      <select v-if="needs(f, 'sense')" :value="f.sense" aria-label="Sense" @change="put(i, { sense: val($event) })">
+      <Dropdown compact v-if="needs(f, 'sense')" :value="f.sense" aria-label="Sense" @change="put(i, { sense: val($event) })">
         <option v-for="s in SENSES" :key="s" :value="s">{{ s }}</option>
-      </select>
-      <select v-if="needs(f, 'condition')" :value="f.condition ?? ''" aria-label="Condition" @change="put(i, { condition: val($event) || undefined })">
+      </Dropdown>
+      <Dropdown compact v-if="needs(f, 'condition')" :value="f.condition ?? ''" aria-label="Condition" @change="put(i, { condition: val($event) || undefined })">
         <option value="">—</option>
         <option v-for="c in conditions" :key="c" :value="c">{{ c }}</option>
-      </select>
-      <select v-if="kindOf(f)?.canSet" :value="f.force ? 'force' : f.set ? 'set' : 'add'" aria-label="Add, raise to, or becomes" title="set to: raises a lower score (Gauntlets of Ogre Power); becomes: even when that's lower (a curse)" @change="setMode(i, val($event))">
+      </Dropdown>
+      <Dropdown compact v-if="kindOf(f)?.canSet" :value="f.force ? 'force' : f.set ? 'set' : 'add'" aria-label="Add, raise to, or becomes" title="set to: raises a lower score (Gauntlets of Ogre Power); becomes: even when that's lower (a curse)" @change="setMode(i, val($event))">
         <option value="add">add</option>
         <option value="set">set to</option>
         <option value="force">becomes</option>
-      </select>
+      </Dropdown>
       <input v-if="!kindOf(f)?.noValue" type="number" class="effect-value" :value="f.value ?? ''" aria-label="Value" @change="put(i, { value: Number(val($event)) || 0 })" />
       <span v-if="needs(f, 'abilities')" class="seg" role="group" aria-label="Plus these modifiers">
         <button v-for="a in ABILITIES" :key="a.key" type="button" :class="{ on: f.abilities?.includes(a.key as Ab) }" @click="toggleAbility(i, a.key as Ab)">{{ a.short }}</button>
       </span>
       <label v-if="needs(f, 'noShield')" class="small effect-check" title="Only without a shield (a monk's Unarmored Defense)"><input type="checkbox" :checked="!!f.noShield" @change="put(i, { noShield: ($event.target as HTMLInputElement).checked || undefined })" /> no shield</label>
-      <select v-if="needs(f, 'when')" :value="f.when ?? ''" aria-label="Only for" @change="put(i, { when: (val($event) || undefined) as GearEffect['when'] })">
+      <Dropdown compact v-if="needs(f, 'when')" :value="f.when ?? ''" aria-label="Only for" @change="put(i, { when: (val($event) || undefined) as GearEffect['when'] })">
         <option value="">always</option>
         <option v-if="f.on !== 'ac'" value="melee">melee attacks</option>
         <option v-if="f.on !== 'ac'" value="ranged">ranged attacks</option>
@@ -106,9 +109,11 @@ const remove = (i: number) => { const l = [...list.value]; l.splice(i, 1); model
         <option v-if="f.on !== 'ac'" value="oneHanded">one melee weapon in one hand</option>
         <option v-if="f.on !== 'ac'" value="thrown">thrown weapons, when thrown</option>
         <option v-if="f.on === 'ac'" value="armored">while in armor</option>
-      </select>
+        <option v-if="f.on === 'ac' || f.on === 'speed'" value="unarmored">without armor or shield</option>
+      </Dropdown>
       <label v-if="needs(f, 'proficient')" class="small effect-check" :title="f.on === 'unarmed' ? 'May use Dexterity instead of Strength (Martial Arts)' : 'Only counts while the wielder is proficient with the weapon'"><input type="checkbox" :checked="!!f.proficient" @change="put(i, { proficient: ($event.target as HTMLInputElement).checked || undefined })" /> {{ f.on === 'unarmed' ? 'STR or DEX' : 'if proficient' }}</label>
-      <label v-if="traits && ['damage', 'extraDamage', 'unarmed', 'attack'].includes(f.on)" class="small effect-check" title="The number or dice is the feature's scaling value (Rage Damage, Sneak Attack, Martial Arts)"><input type="checkbox" :checked="!!f.fromScale" @change="put(i, { fromScale: ($event.target as HTMLInputElement).checked || undefined })" /> = scaling value</label>
+      <label v-if="needs(f, 'monkWeapons')" class="small effect-check" title="Monk weapons (Simple melee, Martial melee with Light) use it too, while no armor or shield is worn (Martial Arts)"><input type="checkbox" :checked="!!f.monkWeapons" @change="put(i, { monkWeapons: ($event.target as HTMLInputElement).checked || undefined })" /> Monk weapons too</label>
+      <label v-if="traits && ['damage', 'extraDamage', 'unarmed', 'attack', 'speed'].includes(f.on)" class="small effect-check" title="The number or dice is the feature's scaling value (Rage Damage, Sneak Attack, Martial Arts)"><input type="checkbox" :checked="!!f.fromScale" @change="put(i, { fromScale: ($event.target as HTMLInputElement).checked || undefined })" /> = scaling value</label>
       <label v-if="needs(f, 'pb')" class="small effect-check" title="Adds the proficiency bonus too (Alert)"><input type="checkbox" :checked="!!f.pb" @change="put(i, { pb: ($event.target as HTMLInputElement).checked || undefined })" /> + proficiency bonus</label>
       <input v-if="needs(f, 'note')" class="effect-text" :value="f.note ?? ''" placeholder="when, e.g. against being knocked prone" aria-label="When" @input="put(i, { note: val($event) || undefined })" />
       <input v-if="needs(f, 'text')" class="effect-text" :value="f.text ?? ''" placeholder="e.g. Darkvision 60 ft" aria-label="Feature" @input="put(i, { text: val($event) })" />

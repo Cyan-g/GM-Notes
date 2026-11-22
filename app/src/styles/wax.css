@@ -1,0 +1,119 @@
+/* Wax & Ribbon: soft paper, ribbons and seals. Rounded boxes with a soft shadow, a ribbon bookmark on the main cards,
+   short notched ribbons under headings, dotted lines to write on, a ribbon HP bar, a ribbon hanging under the open tab,
+   tag-shaped chips, wax seals for charges, death saves and ticks, a ribbon peeking out at the hovered menu row, a seal
+   on tooltips, rounded wax-coloured scrollbars. The seals' rim and pressed ring are mixed from the accent.
+   (The parts: base.css) */
+.fx[data-fx="wax"] {
+  --wx-edge: color-mix(in srgb, var(--accent) 14%, var(--line));
+  --wx-wax: var(--accent);
+  --wx-wax-light: color-mix(in srgb, var(--accent) 72%, var(--panel));
+  --wx-empty: color-mix(in srgb, var(--accent) 30%, var(--line));
+  --tail: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%);
+
+  /* frame and mark: rounded, a ribbon bookmark on the main cards */
+  --fx-frame-edge: var(--wx-edge);
+  --fx-frame-radius: 10px;
+  --fx-mark: '';
+  --fx-mark-paint: var(--wx-wax);
+  --fx-mark-clip: var(--tail);
+  --fx-small-edge: var(--wx-edge);
+  --fx-small-radius: 10px;
+  --fx-scroller-edge: var(--wx-edge);
+
+  /* heading: a short ribbon with notched ends */
+  --fx-rule-width: min(260px, 60%);
+  --fx-rule-height: 6px;
+  --fx-rule-gap: .35rem;
+  --fx-rule-paint: var(--wx-wax);
+  --fx-rule-opacity: .85;
+  --fx-hr-opacity: .85;
+  --fx-rule-clip: polygon(0 0, 100% 0, calc(100% - 6px) 50%, 100% 100%, 0 100%, 6px 50%);
+  --fx-hr-margin: 1.5rem auto;
+
+  /* field: a dotted line to write on */
+  --fx-field-line: 1.5px dotted var(--wx-empty);
+  --fx-field-radius: 0;
+  --fx-field-paint: transparent;
+  --fx-field-focus-line: 1.5px solid var(--accent);
+
+  /* hp: a ribbon with a notched end */
+  --fx-hp-edge: transparent;
+  --fx-hp-radius: 0;
+  --fx-hp-track: color-mix(in srgb, var(--ink) 9%, var(--panel));
+  --fx-hp-clip: polygon(0 0, 100% 0, calc(100% - 8px) 50%, 100% 100%, 0 100%);
+  --fx-hp-mini-height: 9px;
+  --fx-hp-mini-track: color-mix(in srgb, var(--ink) 9%, var(--panel));
+  --fx-hp-mini-clip: polygon(0 0, 100% 0, calc(100% - 5px) 50%, 100% 100%, 0 100%);
+  --fx-hp-fill: var(--wx-wax);
+  --fx-hp-bloodied: var(--wx-wax-light);
+
+  /* tab: a ribbon hangs under the open one */
+  --fx-tab-rule: var(--wx-edge);
+  --fx-tab-bar: transparent;
+  --fx-tab-mark-left: 50%;
+  --fx-tab-mark-top: 100%;
+  --fx-tab-mark-width: 11px;
+  --fx-tab-mark-height: 13px;
+  --fx-tab-mark-margin: 1px 0 0 -5.5px;
+  --fx-tab-mark-paint: var(--wx-wax);
+  --fx-tab-mark-clip: var(--tail);
+
+  /* chip: a tag */
+  --fx-chip-radius: 0 4px 4px 0;
+  --fx-chip-clip: polygon(6px 0, 100% 0, 100% 100%, 6px 100%, 0 50%);
+
+  /* check: a ring, sealed when ticked */
+  --fx-check-size: 15px;
+  --fx-check-lift: -3px;
+  --fx-check-radius: 50%;
+  --fx-check-paint: transparent;
+  --fx-check-shadow: inset 0 0 0 1.5px var(--wx-empty);
+  --fx-check-on-paint: radial-gradient(circle, var(--panel) 0 17%, var(--wx-wax) 20%);
+  --fx-check-on-shadow: 0 0 0 1px var(--wx-wax), 1px 1px 0 1.5px color-mix(in srgb, var(--wx-wax) 22%, transparent);
+
+  /* panel, row, sep: soft menus, a ribbon peeking out at the row under the mouse, dotted separators */
+  --fx-panel-edge: var(--wx-edge);
+  --fx-panel-radius: 10px;
+  --fx-row-paint: color-mix(in srgb, var(--accent) 10%, transparent);
+  --fx-row-mark: '';
+  --fx-row-mark-left: -3px;
+  --fx-row-mark-top: 50%;
+  --fx-row-mark-width: 8px;
+  --fx-row-mark-height: 13px;
+  --fx-row-mark-shift: -7px;
+  --fx-row-mark-paint: var(--wx-wax);
+  --fx-row-mark-clip: var(--tail);
+  --fx-sep-line: 1.5px dotted var(--wx-empty);
+  --fx-sep-margin: 4px 10px;
+
+  /* th, tr: a short ribbon under the first column header */
+  --fx-th-mark: '';
+  --fx-th-mark-paint: var(--wx-wax);
+  --fx-th-mark-clip: polygon(0 0, 100% 0, calc(100% - 4px) 50%, 100% 100%, 0 100%, 4px 50%);
+  --fx-tr-paint: color-mix(in srgb, var(--accent) 7%, transparent);
+
+  /* tip: a wax seal; scroll */
+  --fx-tip-edge: var(--wx-edge);
+  --fx-tip-radius: 8px;
+  --fx-tip-indent: 1.55rem;
+  --fx-tip-mark: '';
+  --fx-tip-mark-paint: var(--wx-wax);
+  --fx-tip-mark-ring: 0 0 0 1.5px var(--wx-wax-light);
+  --fx-scroll-paint: color-mix(in srgb, var(--accent) 40%, var(--panel));
+  --fx-scroll-radius: 8px;
+  --fx-scroll-hover: var(--wx-wax);
+}
+
+/* the main cards: a soft paper shadow */
+:where(.fx[data-fx="wax"]) :where(.card, .item-card, .spell-card, .start-card) { box-shadow: 0 1px 0 var(--wx-edge), var(--shadow); }
+:where(.fx[data-fx="wax"]) select { background: var(--panel); }
+/* charges, spell slots, death saves: wax seals */
+.fx[data-fx="wax"] .pip, .fx[data-fx="wax"] .ds-box { transform: none; border: none; border-radius: 50%; width: 16px; height: 16px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--wx-empty); }
+.fx[data-fx="wax"] .pip.on, .fx[data-fx="wax"] .ds-box.on {
+  background: radial-gradient(circle, var(--wx-wax) 0 36%, var(--wx-wax-light) 38% 54%, var(--wx-wax) 57%);
+  box-shadow: 0 0 0 1.5px var(--wx-wax), 1px 1px 0 2px color-mix(in srgb, var(--wx-wax) 22%, transparent);
+}
+.fx[data-fx="wax"] .ds-box.on { background: radial-gradient(circle, currentColor 0 36%, color-mix(in srgb, currentColor 70%, var(--panel)) 38% 54%, currentColor 57%); box-shadow: 0 0 0 1.5px currentColor; }
+.fx[data-fx="wax"] .pip:hover { box-shadow: inset 0 0 0 1.5px var(--wx-wax); }
+.fx[data-fx="wax"] .pip.on:hover { box-shadow: 0 0 0 1.5px var(--wx-wax), 0 0 0 4px color-mix(in srgb, var(--wx-wax) 25%, transparent); }
+:where(.fx[data-fx="wax"]) input[type=checkbox]:not(.settings-switch input):indeterminate { background: radial-gradient(circle, var(--wx-wax-light) 0 30%, transparent 33%); }

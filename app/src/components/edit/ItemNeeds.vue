@@ -3,6 +3,7 @@
 // or only some characters, each check added on its own (a class or any spellcaster, a species, minimum scores, a
 // skill) with a note for anything else. A character who doesn't fit can't equip it, or attune to it if it needs
 // attunement (requirements.ts); heavy armor's Strength only slows (it's set with the armor).
+import Dropdown from '../Dropdown.vue'
 import { computed, ref } from 'vue'
 import type { Entry, Requirements } from '../../model/types'
 import { ABILITIES, SKILLS } from '../../model/dnd'
@@ -85,7 +86,7 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
           </template>
           <template v-else-if="c.id === 'scores'">
             <span v-for="{ x, i } in scores" :key="i" class="req-score">
-              <select :value="x.ability" aria-label="Ability" @change="setScore(i, { ability: ($event.target as HTMLSelectElement).value as any })"><option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.short }}</option></select>
+              <Dropdown :value="x.ability" aria-label="Ability" @change="setScore(i, { ability: ($event.target as HTMLSelectElement).value as any })"><option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.short }}</option></Dropdown>
               <input type="number" min="1" max="30" class="effect-value" :value="x.min" aria-label="Minimum" @change="setScore(i, { min: Number(($event.target as HTMLInputElement).value) || 13 })" />+
               <button type="button" class="link-btn" title="Remove" @click="putReq({ scores: (req.scores ?? []).filter((_, k) => k !== i) })">×</button>
             </span>

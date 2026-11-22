@@ -1,11 +1,12 @@
 // A character's conditions (their sheet's `conditions`, shared with the combat tracker) and what they do: a short rule
 // for each, the numbers they change where the sheet has them (exhaustion as the ruleset says, advantage and
 // disadvantage on saves and skills, speed 0), and hints for the rest (attack rolls, attacks against them).
-import type { CharacterSheet, Entry } from './model/types'
+import type { CharacterSheet, DeathSaveState, Entry } from './model/types'
 import type { GearTotals } from './effects'
 import { rule } from './rules'
 import { db, get, state, touch } from './store'
 import { sheetToEdit } from './sheetData'
+import { speciesTraits } from './species'
 import { watch } from 'vue'
 import { ABILITY_KEYS, SKILLS, type Ability } from './model/dnd'
 
@@ -49,7 +50,7 @@ export function applyConditions(s: CharacterSheet, t: GearTotals) {
     const r = CONDITION_RULES[c]
     if (!r) continue
     if (r.checks === 'dis') for (const { name: sk } of SKILLS) (t.skillAdv[sk] ??= []).push({ mode: 'dis', from: c })
-    if (r.saves) for (const a of r.saves.abilities) (t.saveAdv[a] ??= []).push({ mode: 'dis', from: c, ...(r.saves.mode === 'fail' ? { note: '(fails it)' } : {}) })
+    if (r.saves) for (const a of r.saves.abilities) (t.saveAdv[a] ??= []).push({ mode: r.saves.mode, from: c })
     if (r.speed0) t.speedZero ??= c
     if (r.attack) (t.attackMode ??= []).push({ mode: r.attack, from: c })
   }
@@ -72,7 +73,15 @@ export function applyConditions(s: CharacterSheet, t: GearTotals) {
 
 // ---- one list with the combat tracker ----
 /** Set a character's conditions (and exhaustion level); their combatants in the tracker get the same. */
+/** Conditions that incapacitate (they include Incapacitated). */
+export const INCAPACITATING = ['Incapacitated', 'Paralyzed', 'Petrified', 'Stunned', 'Unconscious']
 export function setConditions(pc: Entry, s: CharacterSheet, list: string[], exhaustion?: number) {
+  // incapacitated: features that end then are switched off (Rage)
+  if (list.some(c => INCAPACITATING.includes(c)) && s.species?.on?.length) {
+    const ends = new Set(speciesTraits(pc, s).filter(a => a.trait.endsIncapacitated).map(a => a.key))
+    s.species.on = s.species.on.filter(k => !ends.has(k))
+    if (!s.species.on.length) delete s.species.on
+  }
   s.conditions = list.length ? [...list] : undefined
   if (!s.conditions) delete s.conditions
   if (!list.includes('Concentrating')) dropConcentration(s)
@@ -122,6 +131,21 @@ export function endConcentration(pc: Entry, s: CharacterSheet) {
  * After a character's HP changed on their sheet: dropping to 0 knocks them unconscious and ends concentration;
  * damage while at 0 is a failed death save; back above 0 they wake up and the death saves end.
  */
+/** Death saves as they stand after a change: a third success makes the character Stable, with the boxes empty again. */
+export const settleDeathSaves = (d: DeathSaveState): DeathSaveState => (d.ok >= 3 && d.fail < 3 ? { ok: 0, fail: 0, stable: true } : d)
+/** Nothing to keep: no boxes ticked and not stable. */
+export const noDeathSaves = (d: DeathSaveState | undefined) => !d || (!d.ok && !d.fail && !d.stable)
+/** Damage at 0 HP: a failed death save (two from a critical hit), and no longer stable. */
+export const deathSaveFromDamage = (d: DeathSaveState | undefined, by = 1): DeathSaveState => ({ ok: d?.ok ?? 0, fail: Math.min(3, (d?.fail ?? 0) + by) })
+/** Massive damage: what's left after dropping to 0 HP is at least the maximum: by the rules, the character dies.
+ * The words for the note that says so (the DM decides), or nothing. */
+export function massiveDamage(name: string, hpBefore: number, damage: number, max: number | undefined): string {
+  const left = damage - Math.max(0, hpBefore)
+  return max && left > 0 && left >= max ? `Massive damage: ${left} left over at 0 HP is at least ${name}'s maximum of ${max}. By the rules, ${name} dies.` : ''
+}
+/** Dead: three failed death saves. */
+export const isDead = (d: DeathSaveState | undefined) => (d?.fail ?? 0) >= 3
+
 export function hpChanged(pc: Entry, s: CharacterSheet, before: number, after: number, damaged: boolean) {
   let list = s.conditions ?? []
   if (after <= 0 && before > 0) {
@@ -129,8 +153,7 @@ export function hpChanged(pc: Entry, s: CharacterSheet, before: number, after: n
     if (!list.includes('Unconscious')) list = [...list, 'Unconscious']
     setConditions(pc, s, list)
   } else if (after <= 0 && damaged) {
-    const d = s.deathSaves ?? { ok: 0, fail: 0 }
-    s.deathSaves = { ok: d.ok, fail: Math.min(3, d.fail + 1) }
+    s.deathSaves = deathSaveFromDamage(s.deathSaves)
   } else if (after > 0) {
     delete s.deathSaves
     if (before <= 0 && list.includes('Unconscious')) setConditions(pc, s, list.filter(x => x !== 'Unconscious'))

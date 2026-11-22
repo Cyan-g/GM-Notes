@@ -3,6 +3,7 @@
 // each, a class's grouped under its levels. A card has the level first, then what the feature is and does, then the
 // choice it asks of the player (options such as invocations fold to one row each), what happens in play (uses, a
 // switch, a scaling value) and how its spells are cast.
+import Dropdown from '../Dropdown.vue'
 import { computed, ref } from 'vue'
 import type { Trait, TraitChoice, TraitOption } from '../../model/types'
 import { choiceWords, newTraitId } from '../../species'
@@ -162,10 +163,10 @@ const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
           <label>{{ levelWord }} <input type="number" min="1" max="20" class="effect-value" :value="lv(list[i])" @change="patch(i, { level: Number(val($event)) || 1 })" /></label>
           <span v-if="forClass" class="muted small">a character gets it when their {{ levelWord.toLowerCase() }} reaches this</span>
           <label v-if="parentTraits?.length" class="small" title="This trait takes the place of the main race's: characters of this subrace don't get that one">Replaces
-            <select :value="list[i].replaces ?? ''" @change="patch(i, { replaces: val($event) || undefined })">
+            <Dropdown :value="list[i].replaces ?? ''" @change="patch(i, { replaces: val($event) || undefined })">
               <option value="">nothing (adds to them)</option>
               <option v-for="p in parentTraits" :key="p.id" :value="p.id">{{ p.name }}</option>
-            </select></label>
+            </Dropdown></label>
         </div>
         <TraitOptionFields :model-value="list[i]" :trait-level="lv(list[i])" :by-level="levelWord" @update:model-value="v => put(i, v as Trait)" />
 
@@ -173,9 +174,9 @@ const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
         <fieldset class="trait-sec">
           <legend>Choice for the player</legend>
           <div class="trait-row">
-            <select :value="list[i].choice?.kind ?? ''" aria-label="Choice for the player" @change="setChoiceKind(i, val($event))">
+            <Dropdown :value="list[i].choice?.kind ?? ''" aria-label="Choice for the player" @change="setChoiceKind(i, val($event))">
               <option v-for="c in CHOICE_KINDS" :key="c.id" :value="c.id">{{ c.label }}</option>
-            </select>
+            </Dropdown>
             <ChoiceFields v-if="list[i].choice" :model-value="list[i].choice!" @update:model-value="v => patch(i, { choice: v })" />
           </div>
           <div v-if="list[i].choice?.kind === 'option'" class="trait-options-edit">
@@ -189,9 +190,9 @@ const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
               <TraitOptionFields :model-value="o" :trait-level="lv(list[i])" :siblings="list[i].choice!.options!.map(x => ({ id: x.id, name: x.name }))" :level-word="forClass ? levelWord : 'level'" :by-level="levelWord" @update:model-value="v => setOption(i, k, v)" />
               <div v-for="(c, n) in o.choices ?? []" :key="n" class="trait-row">
                 <span class="small muted">Comes with a choice:</span>
-                <select :value="c.kind" aria-label="What's picked" @change="setSubChoice(i, k, n, newChoice(val($event) as TraitChoice['kind']))">
+                <Dropdown :value="c.kind" aria-label="What's picked" @change="setSubChoice(i, k, n, newChoice(val($event) as TraitChoice['kind']))">
                   <option v-for="ck in CHOICE_KINDS.filter(x => x.id && x.id !== 'option')" :key="ck.id" :value="ck.id">{{ ck.label }}</option>
-                </select>
+                </Dropdown>
                 <ChoiceFields with-label :model-value="c" @update:model-value="v => setSubChoice(i, k, n, v)" />
                 <button type="button" class="link-btn" title="Remove this choice" @click="setSubChoice(i, k, n, undefined)">×</button>
               </div>
@@ -211,23 +212,23 @@ const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
           <summary>In play<span v-if="playSet(list[i]).length" class="muted small">: {{ playSet(list[i]).join(', ') }}</span></summary>
           <div class="trait-row">
             <label class="small" title="Listed on the sheet in play? By default only when there's something to use or read there; one that only gives proficiencies, spells or numbers the sheet shows anyway is left out.">On the sheet
-              <select :value="list[i].onSheet ?? ''" @change="patch(i, { onSheet: (val($event) || undefined) as Trait['onSheet'] })">
+              <Dropdown :value="list[i].onSheet ?? ''" @change="patch(i, { onSheet: (val($event) || undefined) as Trait['onSheet'] })">
                 <option value="">when useful</option><option value="show">always</option><option value="hide">not in play</option>
-              </select></label>
+              </Dropdown></label>
             <label class="small" title="Switched on and off in play (Rage): its effects only count while it's on"><input type="checkbox" :checked="!!list[i].toggle" @change="patch(i, { toggle: ($event.target as HTMLInputElement).checked || undefined })" /> Switched on in play</label>
           </div>
           <div class="trait-row">
             <label class="small"><input type="checkbox" :checked="!!list[i].uses" @change="setUses(i, ($event.target as HTMLInputElement).checked)" /> Limited uses</label>
             <template v-if="list[i].uses">
-              <select :value="countKind(list[i].uses!)" aria-label="How many" @change="setUse(i, { count: val($event) === 'n' ? 1 : val($event) as Uses['count'] })">
+              <Dropdown :value="countKind(list[i].uses!)" aria-label="How many" @change="setUse(i, { count: val($event) === 'n' ? 1 : val($event) as Uses['count'] })">
                 <option v-for="c in COUNT_KINDS" :key="c.id" :value="c.id">{{ c.label }}</option>
-              </select>
+              </Dropdown>
               <input v-if="typeof list[i].uses!.count === 'number'" type="number" min="1" class="effect-value" :value="list[i].uses!.count" aria-label="Uses" @change="setUse(i, { count: Number(val($event)) || 1 })" />
               <label class="small" title="A pool: this many times the count (Lay on Hands: 5 × level)">× <input type="number" min="1" class="effect-value" :value="list[i].uses!.times ?? 1" @change="setUse(i, { times: Number(val($event)) > 1 ? Number(val($event)) : undefined })" /></label>
-              <select :value="list[i].uses!.recharge" aria-label="Back on" @change="setUse(i, { recharge: val($event) as 'short' | 'long' })">
+              <Dropdown :value="list[i].uses!.recharge" aria-label="Back on" @change="setUse(i, { recharge: val($event) as 'short' | 'long' })">
                 <option value="short">per short rest</option>
                 <option value="long">per long rest</option>
-              </select>
+              </Dropdown>
               <label v-if="list[i].uses!.recharge === 'long'" class="small" title="Given back on a short rest (Rage: 1)">short rest gives back <input type="number" min="0" class="effect-value" :value="list[i].uses!.shortBack ?? 0" @change="setUse(i, { shortBack: Number(val($event)) || undefined })" /></label>
             </template>
           </div>
@@ -247,15 +248,15 @@ const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
           <summary>Spellcasting<span v-if="castSet(list[i]).length" class="muted small">: {{ castSet(list[i]).join(', ') }}</span></summary>
           <div class="trait-row">
             <label class="small" title="The ability its spells (and its picked option's) are cast with, where a spell doesn't name one">Its spells are cast with
-              <select :value="castMode(list[i])" @change="setCastMode(i, val($event))">
+              <Dropdown :value="castMode(list[i])" @change="setCastMode(i, val($event))">
                 <option value="">what each spell says</option><option value="pick">the player's pick</option><option value="same">the same as another {{ word }}</option>
-              </select></label>
+              </Dropdown></label>
             <div v-if="castMode(list[i]) === 'pick'" class="seg wrap">
               <button v-for="ab in ABILITY_KEYS" :key="ab" type="button" :class="{ on: list[i].castWith?.among?.includes(ab) }" @click="toggleCast(i, ab)">{{ ABILITY_NAME[ab] }}</button>
             </div>
-            <select v-else-if="castMode(list[i]) === 'same'" :value="list[i].castWith?.sameAs" aria-label="As which" @change="patch(i, { castWith: { sameAs: val($event) } })">
+            <Dropdown v-else-if="castMode(list[i]) === 'same'" :value="list[i].castWith?.sameAs" aria-label="As which" @change="patch(i, { castWith: { sameAs: val($event) } })">
               <option v-for="o in list.filter(x => x.id !== list[i].id)" :key="o.id" :value="o.id">{{ o.name }}</option>
-            </select>
+            </Dropdown>
           </div>
           <div v-if="forClass || list[i].spellLists?.length" class="trait-row">
             <span class="small" title="Its class can also take spells from these lists (Magical Secrets)">Also learns from these spell lists:</span>

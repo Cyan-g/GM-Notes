@@ -50,14 +50,19 @@ function plus(dice: string, add: string, n: number): string {
  * A roll in words: its dice at the character's level (a cantrip's) and slot level (cast higher), the spellcasting
  * modifier if it adds one (its value when known), and what it is: "2d10 fire", "2d4 + 3 healing", "1d6 temp HP".
  */
-export function rollText(e: Entry, r: SpellRoll, o: { level?: number; slot?: number; mod?: number } = {}): string {
+export function rollText(e: Entry, r: SpellRoll, o: RollOptions = {}): string {
   let dice = r.dice
   if (r.cantrip && o.level) dice = times(dice, cantripTier(o.level))
   if (r.slot && o.slot && o.slot > spellLevel(e)) dice = plus(dice, r.slot, o.slot - spellLevel(e))
-  const m = r.mod ? (o.mod != null ? ` ${signed(o.mod, '−', ' ')}` : ' + mod') : ''
+  // what features add to its damage (Agonizing Blast, Elemental Affinity), on top of the spellcasting modifier
+  const add = (r.mod && o.mod != null ? o.mod : 0) + (o.add?.(r) ?? 0)
+  const m = r.mod && o.mod == null ? ' + mod' : add ? ` ${signed(add, '−', ' ')}` : ''
   const what = r.kind === 'healing' ? ' healing' : r.kind === 'tempHp' ? ' temp HP' : r.type ? ` ${r.type.toLowerCase()}` : ' damage'
   return `${dice}${m}${what}`
 }
+/** A roll's numbers: the character's level (cantrips), the slot level, the spellcasting modifier, and what features
+ * add to a roll (`add`). */
+export interface RollOptions { level?: number; slot?: number; mod?: number; add?: (r: SpellRoll) => number }
 /** How a roll grows, in words: "more dice at levels 5, 11 and 17", "+1d6 per slot level above 1st". */
 export function growthText(e: Entry, r: SpellRoll): string {
   if (r.cantrip) return 'more dice at levels 5, 11 and 17'
@@ -65,7 +70,7 @@ export function growthText(e: Entry, r: SpellRoll): string {
   return ''
 }
 /** A spell's rolls in one line ("8d6 fire · half on a save"), at the given level, slot and modifier. */
-export function rollsLine(e: Entry | undefined, o: { level?: number; slot?: number; mod?: number } = {}): string {
+export function rollsLine(e: Entry | undefined, o: RollOptions = {}): string {
   if (!e) return ''
   return rollsOf(e).map(r => [rollText(e, r, o), r.note].filter(Boolean).join(', ')).join(' · ')
 }

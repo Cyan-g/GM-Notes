@@ -3,6 +3,7 @@
 // With `editable`, pins can be added, dragged, linked and removed, and the map's scale set.
 // Measure (travel.ts): click points or pins to lay a route; it shows the distance, the travel time at a pace or in
 // a vehicle and the arrival date, and can be saved by name to show on the map again.
+import Dropdown from './Dropdown.vue'
 import AppIcon from './AppIcon.vue'
 import EntryIcon from './EntryIcon.vue'
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
@@ -304,14 +305,14 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
         <span class="muted small">{{ scalePts.length }} / 2 points</span>
         <template v-if="scalePts.length === 2">
           <input v-model="scaleIn.distance" type="number" min="0" step="any" class="travel-num" :placeholder="byTime ? 'How long' : 'Distance'" aria-label="Distance or travel time between the two points" />
-          <select v-model="scaleIn.unit" aria-label="Unit">
+          <Dropdown v-model="scaleIn.unit" aria-label="Unit">
             <option value="mi">miles</option><option value="ft">feet</option>
             <option value="hours">hours of travel</option><option value="days">days of travel</option>
-          </select>
+          </Dropdown>
           <template v-if="byTime">
-            <select v-model="scaleIn.mode" aria-label="Pace or vehicle">
+            <Dropdown v-model="scaleIn.mode" aria-label="Pace or vehicle">
               <option v-for="m in modes" :key="m.id" :value="m.id">{{ m.label }} · {{ m.mph }} mph{{ m.allDay ? ', all day' : '' }}</option>
-            </select>
+            </Dropdown>
             <span v-if="scaleMiles" class="muted small">= {{ formatDistance(scaleMiles, 'mi') }}</span>
           </template>
           <button class="primary" :disabled="!(Number(scaleIn.distance) > 0)" @click="saveScale">Save scale</button>
@@ -326,9 +327,9 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
         <h4>Measure <span class="muted small">click the map or pins to add points</span></h4>
         <p v-if="!scale" class="muted small">This map has no scale yet: <template v-if="editable">set one with <b>Set scale</b>.</template><template v-else>set one with <b>Edit pins → Set scale</b>.</template></p>
         <div class="row">
-          <select v-model="draft.mode" aria-label="Pace or vehicle">
+          <Dropdown v-model="draft.mode" aria-label="Pace or vehicle">
             <option v-for="m in modes" :key="m.id" :value="m.id">{{ m.label }} · {{ m.mph }} mph{{ m.allDay ? ', all day' : '' }}</option>
-          </select>
+          </Dropdown>
         </div>
         <ol v-if="draftLegs.length" class="travel-legs">
           <li v-for="(d, i) in draftLegs" :key="i">

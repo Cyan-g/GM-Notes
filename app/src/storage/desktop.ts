@@ -27,6 +27,27 @@ interface Bridge {
     copyTo(root: string, rel: string): Promise<boolean>
     restore(name: string): Promise<boolean>
   }
+  /** Syncing with the user's other devices: this world's changes after a point in its log, and its latest lines. */
+  sync: {
+    batch(seq: number, limit?: number): Promise<import('../devicesync/merge').SyncBatch>
+    lines(keys: string[]): Promise<Record<string, import('../devicesync/merge').Line>>
+  }
+  /** The user's other devices with the open world (electron/devices.cjs). */
+  devices: {
+    status(): Promise<DeviceStatus>
+    pairStart(): Promise<DeviceStatus>
+    pairStop(): Promise<boolean>
+    find(): Promise<{ host: string; port: number; title: string; name: string }[]>
+    join(target: string | { host: string; port: number }, code: string): Promise<string>
+    pull(id: string): Promise<{ batch: import('../devicesync/merge').SyncBatch; since: string }>
+    pulled(id: string, upTo: number, log: string): Promise<boolean>
+    file(id: string, path: string, origin?: import('../devicesync/merge').Line): Promise<boolean>
+    forget(id: string): Promise<boolean>
+    setName(name: string): Promise<DeviceStatus>
+    onStatus(cb: (s: DeviceStatus) => void): void
+    onChanged(cb: (id: string) => void): void
+    onJoinProgress(cb: (p: { label: string; done: number; total: number }) => void): void
+  }
   publish: { folder(): Promise<string | null>; pick(): Promise<string | null> }
   shared: {
     scan(): Promise<{ folder: string; worlds: { worldId: string; title: string; published: string; dataVersion: number }[] } | null>
@@ -80,6 +101,14 @@ export type DesktopRoot = 'data' | 'backup' | 'publish' | 'shared' | 'live'
 
 // ---- live sessions on the local network (electron/live.cjs) ----
 export interface LiveTarget { host: string; port: number }
+/** This device and the open world's other devices: found, talking or away; pairing, when open. */
+export interface DeviceStatus {
+  me: { id: string; name: string }
+  port: number | null
+  addresses: string[]
+  pairing: { code: string; until: number } | null
+  devices: { id: string; name: string; state: 'connected' | 'connecting' | 'away'; host: string | null; port: number | null; lastSync: string | null; clockOff: number }[]
+}
 export interface FoundSession extends LiveTarget { worldId: string; title: string }
 export type HostStatus =
   | { hosting: false }

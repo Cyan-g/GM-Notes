@@ -1,18 +1,21 @@
 <script setup lang="ts">
-// The head of an entry's page: its actions (favourite, history, card, export, edit), its picture, and under its name
+// The head of an entry's page: its actions (favourite, card, and Edit with a menu: level up, history, export, copy
+// to another world), its picture, and under its name
 // the badges (kind, status, attitude, DM only), its other names, its one-line description and the facts that belong
 // right there (entryFacts.ts).
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { Entry } from '../model/types'
 import { TYPES } from '../model/schema'
 import { playerMode, state } from '../store'
 import { printable } from '../cards'
 import { fromPlayer, isShared, sharedBy } from '../sync'
 import { removePlayerCharacter } from '../playerCharacters'
-import { currentPc, setCurrent } from '../sheet'
-import { go, hrefEntry } from '../router'
-import { printCards } from '../ui'
-import { isFavourite, toggleFavourite } from '../edit'
+import { XP_AT, currentPc, levelOf, setCurrent } from '../sheet'
+import { currentCampaign, setCurrentCampaign } from '../sessions'
+import { rule } from '../rules'
+import { go, hrefEntry, route } from '../router'
+import { printCards, ui } from '../ui'
+import { changed, createEntry, isFavourite, toggleFavourite } from '../edit'
 import { canExport } from '../transfer'
 import { describe } from '../describe'
 import { statusText } from '../npc'
@@ -51,18 +54,56 @@ const status = computed(() => (props.e.type === 'npc' ? statusText(props.e) : ''
 // inside their card.
 const lead = computed(() => (!['place', 'item', 'spell', 'feat'].includes(props.e.type) ? describe(props.e, { parent: false }) : ''))
 const facts = computed(() => factsOf(props.e))
+
+// ---- the Edit button's menu ----
+const menu = ref(false)
+const menuEl = ref<HTMLElement | null>(null)
+/** A character of one's own can level up (not a shared one, not past 20, not in a read-only world). */
+const canLevel = computed(() => props.e.type === 'pc' && !shared.value && !player.value && !state.readOnly && levelOf(props.e) < 20)
+/** Enough XP for the next level (XP rule): the menu says so, and the button shows a dot. */
+const ready = computed(() => canLevel.value && rule('experience') === 'xp' && (props.e.fields.sheet?.xp ?? 0) >= XP_AT[levelOf(props.e)])
+function pick(job: () => void) { menu.value = false; job() }
+/** An item or spell to make a variant of (a +2 version, a cursed one): a copy, opened in its editor. */
+const canVariant = computed(() => (props.e.type === 'item' || props.e.type === 'spell') && !state.readOnly && !playerMode.value)
+function variant() {
+  const x = props.e
+  const n = createEntry(x.type, `${x.name} (copy)`, JSON.parse(JSON.stringify(x.fields)))
+  n.body = String(x.body ?? '')
+  changed(n)
+  go(hrefEntry(n.id) + '/edit')
+}
+/** Level up opens on the character's sheet: on its Overview, where the sheet is. */
+function levelUp() { pick(() => { go(hrefEntry(props.e.id)); ui.levelUp = props.e.id }) }
+const outside = (ev: PointerEvent) => { if (!menuEl.value?.contains(ev.target as Node)) menu.value = false }
+const onKey = (ev: KeyboardEvent) => { if (ev.key === 'Escape') { ev.stopPropagation(); menu.value = false } }
+watch(menu, on => {
+  if (on) { document.addEventListener('pointerdown', outside, true); window.addEventListener('keydown', onKey, true) }
+  else { document.removeEventListener('pointerdown', outside, true); window.removeEventListener('keydown', onKey, true) }
+})
+onBeforeUnmount(() => { menu.value = false })
+// another page or tab: the menu closes
+watch(() => route.current, () => { menu.value = false })
 </script>
 
 <template>
   <header class="entry-head" :class="{ 'has-portrait': e.image && e.type !== 'pc' && e.type !== 'item' }">
     <div class="head-actions">
       <button class="fav-btn" :class="{ on: isFavourite(e.id) }" :title="isFavourite(e.id) ? 'Remove from favourites (F)' : 'Add to favourites (F)'" :aria-pressed="isFavourite(e.id)" @click="toggleFavourite(e.id)"><AppIcon ui="star" :class="{ off: !(isFavourite(e.id)) }" /></button>
-      <button class="export-btn" title="Earlier versions of this entry" @click="showHistory = true"><AppIcon ui="history" /> History</button>
       <button v-if="printable(e)" class="export-btn" title="Print this as a card (PDF, poker size)" @click="printCards(e.name, [{ label: 'This one', ids: [e.id] }])"><AppIcon ui="cards" /> Card</button>
-      <button v-if="canExport(e)" class="export-btn" title="Save as a file to share (someone else can import it)" @click="exporting = true"><AppIcon ui="exportFile" /> Export</button>
-      <button v-if="desktop && canExport(e)" class="export-btn" title="Copy it, with what it uses, to another of your worlds" @click="copying = true"><AppIcon ui="share" /> Copy to…</button>
-      <a v-if="!shared" class="button edit-btn" :href="hrefEntry(e.id, true)" title="Edit (E)">✎ Edit</a>
-      <span v-else class="badge shared-badge" :title="by?.title"><AppIcon ui="download" /> {{ by?.label }}</span>
+      <span v-if="shared" class="badge shared-badge" :title="by?.title"><AppIcon ui="download" /> {{ by?.label }}</span>
+      <!-- Edit, and beside it a menu: level up, history, export, copy to another world -->
+      <div ref="menuEl" class="split-btn">
+        <a v-if="!shared" class="button edit-btn" :href="hrefEntry(e.id, true)" title="Edit (E)">✎ Edit</a>
+        <button type="button" class="split-more" :class="{ alone: shared, ready }" aria-haspopup="menu" :aria-expanded="menu"
+                :title="ready ? 'More (enough XP to level up)' : canLevel ? 'Level up, history, export…' : 'History, export…'" @click="menu = !menu">{{ shared ? 'More' : '' }}<span class="split-arrow">▾</span></button>
+        <div v-if="menu" class="menu-panel head-menu" role="menu">
+          <button v-if="canLevel" type="button" class="menu-row" role="menuitem" title="Class, hit points, new features, feat and spells" @click="levelUp"><AppIcon ui="upgrade" /><span class="menu-label">Level up</span><span v-if="ready" class="menu-hint">ready</span></button>
+          <button type="button" class="menu-row" role="menuitem" title="Earlier versions of this entry" @click="pick(() => showHistory = true)"><AppIcon ui="history" /><span class="menu-label">History</span></button>
+          <button v-if="canExport(e)" type="button" class="menu-row" role="menuitem" title="Save as a file to share (someone else can import it)" @click="pick(() => exporting = true)"><AppIcon ui="exportFile" /><span class="menu-label">Export…</span></button>
+          <button v-if="desktop && canExport(e)" type="button" class="menu-row" role="menuitem" title="Copy it, with what it uses, to another of your worlds" @click="pick(() => copying = true)"><AppIcon ui="share" /><span class="menu-label">Copy to…</span></button>
+          <button v-if="canVariant" type="button" class="menu-row" role="menuitem" :title="e.type === 'item' ? 'A new item with the same fields, effects, spells and features: a +2 version, a cursed one' : 'A new spell with the same stats, rolls and text, to make a variant of it'" @click="pick(variant)"><AppIcon ui="scrolls" /><span class="menu-label">Copy as new {{ e.type }}</span></button>
+        </div>
+      </div>
       <span v-if="player?.gone" class="badge" title="Its player unlinked it from your campaign or deleted it; this is the last version they sent">no longer shared</span>
       <button v-if="player && e.type === 'pc'" class="export-btn danger" title="Remove this character from your world" @click="removeIt">Remove</button>
     </div>
@@ -80,6 +121,10 @@ const facts = computed(() => factsOf(props.e))
         <button v-if="e.type === 'pc' && !player" class="chip-toggle current-toggle" :class="{ on: currentPc?.id === e.id }" :disabled="!!state.readOnly"
                 :title="currentPc?.id === e.id ? 'The Spellbook, Workbench and Character menu use this character' : 'Use this character in the Spellbook, Workbench and Character menu'"
                 @click="setCurrent(currentPc?.id === e.id ? undefined : e.id)"><AppIcon ui="star" :class="{ off: !(currentPc?.id === e.id) }" /> {{ currentPc?.id === e.id ? 'Current character' : 'Make current' }}</button>
+        <!-- A campaign: whether Home, the Campaign menu and new characters follow it. -->
+        <button v-if="e.type === 'campaign' && !playerMode" class="chip-toggle current-toggle" :class="{ on: currentCampaign?.id === e.id && !!state.db?.meta.currentCampaign }" :disabled="!!state.readOnly"
+                :title="currentCampaign?.id === e.id && state.db?.meta.currentCampaign ? 'Home, the Campaign menu, new characters and the combat tracker follow this campaign' : 'Make this the campaign being played: Home, the Campaign menu, new characters and the combat tracker follow it'"
+                @click="setCurrentCampaign(state.db?.meta.currentCampaign === e.id ? undefined : e.id)"><AppIcon ui="star" :class="{ off: !(state.db?.meta.currentCampaign === e.id) }" /> {{ state.db?.meta.currentCampaign === e.id ? 'Current campaign' : 'Make current' }}</button>
         <span v-if="status" class="badge npc-status-badge" :class="'st-' + String(e.fields.status).toLowerCase()">{{ status }}</span>
         <AttitudeBadge :e="e" title="How they stand with the party" />
         <span v-if="e.type === 'race' && !isPlayable(e)" class="badge" :title="e.fields.notPlayable ? 'Left out of the character wizard' : 'Its main race is marked not playable, so the character wizard leaves it out'">not playable</span>

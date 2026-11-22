@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // A creature's statblock as a form: buttons and boxes instead of statblock text. The free-text parts of the
 // stored statblock ("30 ft., fly 30 ft. (hover)", "perception +5") are read into fields and written back the same way.
+import Dropdown from '../Dropdown.vue'
 import { computed, onMounted, ref } from 'vue'
 import { loadSrdMonsters, srdMonster, srdMonsterNames, withSrd } from '../../srd'
 import { fieldOptions, get, optionLabel } from '../../store'
@@ -285,11 +286,11 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
           </div>
         </div>
         <label class="sf-field"><span class="sf-label">Type</span>
-          <select :value="typeValue" @change="setType(val($event), typeParts.tags)">
+          <Dropdown :value="typeValue" @change="setType(val($event), typeParts.tags)">
             <option value="">—</option>
             <option v-for="o in TYPE_OPTIONS" :key="o.id" :value="o.id">{{ o.label }}</option>
             <option v-if="typeValue && !TYPE_OPTIONS.some(o => o.id === typeValue)" :value="typeValue">{{ typeValue }}</option>
-          </select>
+          </Dropdown>
         </label>
         <label class="sf-field"><span class="sf-label">Tags <span class="muted">(in brackets)</span></span>
           <input :value="typeParts.tags" placeholder="e.g. shapechanger" @change="setType(typeValue, val($event))" />
@@ -300,11 +301,11 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
         </label>
         <label class="sf-field"><span class="sf-label">Challenge</span>
           <span class="cf-row">
-            <select :value="sb.cr ?? ''" @change="set('cr', val($event) || undefined)">
+            <Dropdown :value="sb.cr ?? ''" @change="set('cr', val($event) || undefined)">
               <option value="">—</option>
               <option v-for="c in CRS" :key="c" :value="c">{{ c }}</option>
               <option v-if="sb.cr && !CRS.includes(sb.cr)" :value="sb.cr">{{ sb.cr }}</option>
-            </select>
+            </Dropdown>
             <span class="muted small">{{ xpFor(sb.cr) != null ? xpFor(sb.cr)!.toLocaleString() + ' XP · ' : '' }}proficiency {{ signedText(prof) }}</span>
           </span>
         </label>
@@ -425,11 +426,11 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
             <div class="seg">
               <button v-for="k in (['melee', 'ranged', 'both'] as const)" :key="k" type="button" :class="{ on: f.attack.kind === k }" @click="setAttack(i, { kind: k })">{{ k === 'both' ? 'Melee or ranged' : k[0].toUpperCase() + k.slice(1) }}</button>
             </div>
-            <label>with <select :value="f.attack.ability" @change="setAttack(i, { ability: val($event) as StatAttack['ability'] })"><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ a.toUpperCase() }} ({{ signedText(modOf(a)) }})</option></select></label>
+            <label>with <Dropdown :value="f.attack.ability" @change="setAttack(i, { ability: val($event) as StatAttack['ability'] })"><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ a.toUpperCase() }} ({{ signedText(modOf(a)) }})</option></Dropdown></label>
             <label v-if="f.attack.kind !== 'ranged'">reach <input type="number" min="5" step="5" class="effect-value" :value="f.attack.reach ?? 5" @change="setAttack(i, { reach: num(val($event)) ?? 5 })" /> ft</label>
             <label v-if="f.attack.kind !== 'melee'">range <input class="effect-value cf-range" :value="f.attack.range ?? ''" placeholder="30/120" @change="setAttack(i, { range: val($event).trim() })" /> ft</label>
             <label>damage <input class="effect-value cf-range" :value="f.attack.dice" placeholder="1d6" @change="setAttack(i, { dice: val($event).trim() || '1d6' })" /></label>
-            <select :value="f.attack.type" aria-label="Damage type" @change="setAttack(i, { type: val($event) })"><option v-for="t in DMG_TYPES" :key="t" :value="t">{{ t }}</option></select>
+            <Dropdown :value="f.attack.type" aria-label="Damage type" @change="setAttack(i, { type: val($event) })"><option v-for="t in DMG_TYPES" :key="t" :value="t">{{ t }}</option></Dropdown>
             <label title="A magic weapon's bonus to hit and damage">bonus <input type="number" class="effect-value" :value="f.attack.bonus ?? ''" placeholder="0" @change="setAttack(i, { bonus: num(val($event)) })" /></label>
             <input class="effect-text" :value="f.attack.plus ?? ''" placeholder="plus… e.g. 7 (2d6) Fire damage" @change="setAttack(i, { plus: val($event).trim() })" />
             <input class="effect-text" :value="f.attack.extra ?? ''" placeholder="and then… e.g. If the target is Large or smaller, it has the Prone condition." @change="setAttack(i, { extra: val($event).trim() })" />
@@ -447,7 +448,7 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
       <div class="cf-row"><b class="sf-label">Spellcasting</b>
         <button v-if="!sc" type="button" class="chip-btn" @click="setSc({})">＋ Spellcasting</button>
         <template v-else>
-          <label class="small">with <select :value="sc.ability" @change="setSc({ ability: val($event) as any })"><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ ABILITY_NAME[a] }}</option></select></label>
+          <label class="small">with <Dropdown :value="sc.ability" @change="setSc({ ability: val($event) as any })"><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ ABILITY_NAME[a] }}</option></Dropdown></label>
           <span class="muted small">save DC {{ 8 + prof + modOf(sc.ability) }}, {{ signedText(prof + modOf(sc.ability)) }} to hit</span>
           <label class="small"><input type="checkbox" :checked="!!sc.noMaterial" @change="setSc({ noMaterial: ($event.target as HTMLInputElement).checked || undefined })" /> no Material components</label>
           <button type="button" class="link-btn small" title="Remove its spellcasting" @click="setSc(null)">remove</button>

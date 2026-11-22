@@ -14,13 +14,18 @@ import DataImage from './DataImage.vue'
 import TraitList from './TraitList.vue'
 import { traitsOf } from '../model/traits'
 import { describeRequirements } from '../requirements'
+import { MASTERY_OF } from '../model/schema'
+import { itemNamed } from '../lookup'
 
 const props = defineProps<{ e: Entry }>()
 const f = computed(() => props.e.fields)
 /** A choice field's value as its option's label. */
+/** Its damage, or its base weapon's (a +1 Longsword written without its own dice). */
+const damage = computed(() => f.value.damage || (f.value.kind === 'Weapon' && f.value.baseWeapon ? itemNamed(String(f.value.baseWeapon))?.fields.damage : undefined))
 const L = (key: string) => fieldLabel(TYPES.item.fields.find(x => x.key === key), byKey(f.value)[key])
 const rows = computed(() => ([
-  ['Damage', [f.value.damage, f.value.damageType?.length && L('damageType').replace(/, /g, ' or ').toLowerCase()].filter(Boolean).join(' ')],
+  ['Damage', [damage.value, f.value.damageType?.length && L('damageType').replace(/, /g, ' or ').toLowerCase()].filter(Boolean).join(' ')],
+  ['Mastery', String(f.value.mastery ?? MASTERY_OF[String(f.value.baseWeapon ?? '')] ?? '')],
   ['Category', [L('weaponCategory'), L('baseWeapon')].filter(Boolean).join(' · ')],
   ['Range', f.value.range],
   ['Armor type', L('armorType')],

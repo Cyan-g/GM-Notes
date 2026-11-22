@@ -1,0 +1,27 @@
+// The money field's reading of what's typed: node tests/money.mjs
+import assert from 'node:assert'
+import { parseMoney } from '../src/money.ts'
+const cp = (t, cur) => { const r = parseMoney(t, cur); return 'cp' in r ? r.cp : r.error }
+assert.equal(cp('12'), 1200)
+assert.equal(cp('12.5'), 1250)
+assert.equal(cp('12,5'), 1250)
+assert.equal(cp('1,250 gp'), 125000)
+assert.equal(cp('1.250 gp'), 125000)
+assert.equal(cp('1,250,000'), 125000000)
+assert.equal(cp('195 sp'), 1950)
+assert.equal(cp('12 gp 7 sp 3 cp'), 1273)
+assert.equal(cp('12gp7sp'), 1270)
+assert.equal(cp('2 pp 1 ep'), 2050)
+assert.equal(cp('+5 gp', 1000), 1500)
+assert.equal(cp('-3 sp', 1000), 970)
+assert.equal(cp('−20', 3000), 1000)
+assert.equal(cp('-20 gp', 1000), 'Not enough money for that')
+assert.ok(isNaN(cp('  ')))
+assert.match(cp('lots'), /Type an amount/)
+assert.match(cp('12 7 sp'), /each its coin/)
+console.log('money: ok')
+assert.equal(cp('1,255.3 gp'), 125530)
+assert.equal(cp('1.255,3 gp'), 125530)
+assert.equal(cp('12.73 gp'), 1273)
+assert.match(cp('1.2.3'), /isn't a number/)
+console.log('money (separators): ok')

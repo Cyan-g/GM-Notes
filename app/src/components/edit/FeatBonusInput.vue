@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // A feat's ability score increase: most are "+1 to one of these" (Grappler: Strength or Dexterity; an Epic Boon: any,
 // up to 30), set here in one row; anything else in the full editor. A preview shows the player's + buttons.
+import Dropdown from '../Dropdown.vue'
 import { computed, ref } from 'vue'
 import type { AbilityBonus } from '../../model/types'
 import type { BonusChoice } from '../../abilityBonus'
@@ -43,7 +44,7 @@ const preview = ref<BonusChoice>({ picks: [] })
     <div v-if="mode === 'one'" class="cb-line">
       <div class="seg cb-toggles"><button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: among.includes(a) }" @click="toggle(a)">{{ ABILITY_SHORT[a] }}</button></div>
       <span class="muted small">{{ among.length ? '' : 'none ticked: any ability' }}</span>
-      <label class="small">max <select :value="max" @change="max = Number(($event.target as HTMLSelectElement).value); save()"><option :value="20">20</option><option :value="30">30 (Epic Boon)</option></select></label>
+      <label class="small">max <Dropdown :value="max" @change="max = Number(($event.target as HTMLSelectElement).value); save()"><option :value="20">20</option><option :value="30">30 (Epic Boon)</option></Dropdown></label>
     </div>
     <AbilityBonusInput v-else-if="mode === 'custom'" v-model="model" />
     <div v-if="model?.pick?.length || model?.orPick?.length" class="rb-preview">

@@ -9,6 +9,8 @@ import { daysSince } from '../backup'
 import { pickImport, ui } from '../ui'
 import { go } from '../router'
 import ThemeDialog from './ThemeDialog.vue'
+import { devices } from '../devicesync/devices'
+import { desktop } from '../storage/desktop'
 
 /** The short menu, open or closed; the theme dialog. */
 const open = ref<null | 'menu'>(null)
@@ -20,6 +22,8 @@ const toggle = () => { open.value = open.value ? null : 'menu' }
 defineExpose({ toggle })
 function importFile() { open.value = null; pickImport() }
 function exportWorld() { open.value = null; ui.worldExport = true }
+function myDevices() { open.value = null; ui.devices = true }
+const paired = computed(() => devices.status?.devices.length ?? 0)
 function data() { open.value = null; go('#/data') }
 const root = ref<HTMLElement | null>(null)
 
@@ -40,6 +44,7 @@ onUnmounted(() => { document.removeEventListener('pointerdown', outside); window
         <span><AppIcon ui="dice" /></span>DM mode
         <input type="checkbox" role="switch" :checked="!playerMode" :disabled="!!state.readOnly" @change="setMode(($event.target as HTMLInputElement).checked ? 'dm' : 'player')" />
       </label>
+      <button v-if="desktop?.devices && !state.db?.follow" role="menuitem" @click="myDevices"><span><AppIcon ui="link" /></span>My devices…<span class="hint">{{ paired ? `${paired} paired` : 'sync this world' }}</span></button>
       <button role="menuitem" @click="exportWorld"><span><AppIcon ui="exportFile" /></span>Export the world…<span class="hint">{{ playerMode ? 'to share' : 'for a player' }}</span></button>
       <button role="menuitem" @click="importFile"><span><AppIcon ui="importFile" /></span>Import from a file…<span class="hint">entry or world</span></button>
       <button role="menuitem" :class="{ warn: overdue }" @click="data"><span><AppIcon ui="save" /></span>Data &amp; backups

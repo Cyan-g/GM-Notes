@@ -11,10 +11,12 @@ import { ABILITY_KEYS, dieSize, mod, spellLevel, type Ability } from './model/dn
 import { EPIC_BOON_LEVEL, basicsOf, classEntry, classLabel, hitDieOf, rulesOf, subclassLevelOf, type Kit, type KitLine } from './classRules'
 import { ruleSlots } from './slots'
 import { blankSheet, emptyBook, own } from './sheetData'
-import { choiceOpen, classSpellsFrom, featGivesSave, isClassOrigin, isPlayable, raceChain, speciesGrants, speciesSpells, speciesTraits } from './species'
+import { choiceOpen, classSpellList, featGivesSave, isClassOrigin, isPlayable, raceChain, speciesEffects, speciesGrants, speciesSpells, speciesTraits, type HaveNow } from './species'
 import { PROFS_TRAIT } from './model/traits'
-import { entries, get } from './store'
-import { rule } from './rules'
+import { byType, entries, get } from './store'
+import { isShield } from './items'
+import { currentCampaign } from './sessions'
+import { bonusSources, rule } from './rules'
 import { changed, createEntry } from './edit'
 import { itemNamed } from './lookup'
 import { norm } from './model/text'
@@ -47,7 +49,13 @@ export interface Draft {
   method: ScoreMethod
   /** The base scores; for the standard array, unassigned scores are undefined. */
   base: Partial<Abilities>
-  bonusFrom: 'species' | 'background' | 'custom'
+  bonusFrom: 'species' | 'subrace' | 'background' | 'custom'
+  /** The steps looked at: one with nothing to choose is only ticked once seen (Equipment's kit A is a default, not a choice). */
+  seen?: string[]
+  /** The campaigns the character joins (unset: the running one, defaultCampaigns). */
+  campaigns?: Id[]
+  /** The picks made for each source, so going back to one finds them again. */
+  bonusChoices?: Partial<Record<'species' | 'subrace' | 'background', BonusChoice>>
   bonusChoice: BonusChoice
   custom: Partial<Abilities>
   skills: string[]
@@ -75,7 +83,7 @@ export interface Draft {
 
 export const newDraft = (): Draft => ({
   cls: '', level: 1, ownSaves: [], ownArmor: [], ownWeapons: [], ownSkillCount: 2,
-  method: 'array', base: {}, bonusFrom: rule('abilityIncrease') === 'species' ? 'species' : 'background', bonusChoice: { picks: [] }, custom: {},
+  method: 'array', base: {}, bonusFrom: bonusSources()[0], bonusChoice: { picks: [] }, custom: {},
   skills: [], tools: [], languages: ['Common'], species: {}, feats: [], hpRolls: [], classKit: 0, bgKit: 'items',
   cantrips: [], spells: [], book: [], name: '', player: '',
   looks: { gender: '', age: '', hair: '', eyes: '', skin: '', clothing: '' }, story: '',
@@ -102,6 +110,18 @@ export function draftPc(d: Draft, sheet?: CharacterSheet): Entry {
   return pc
 }
 
+/** What the draft has so far, for a choice's options: the skills, weapon proficiencies and languages picked or given. */
+export function draftHave(d: Draft): HaveNow {
+  const r = rules(d), g = speciesGrants(draftPc(d))
+  const given = (k: string) => g.filter(x => x.kind === k).map(x => x.id)
+  return {
+    skills: [...new Set([...d.skills, ...given('skill')])],
+    weapons: [...new Set([...(r ? r.weapons : d.ownWeapons), ...given('weapon')])],
+    languages: [...new Set([...d.languages, ...given('language')])],
+    classes: d.cls ? [d.cls.toLowerCase()] : [],
+  }
+}
+
 /**
  * The spells the draft already has, each with where from ("High Elf", "Magic Initiate", "Wizard"): what its species,
  * background, feats and class features give or had picked (but `skip`, the trait whose picks these are), and with
@@ -115,12 +135,25 @@ export function ownedSpells(d: Draft, opts: { skip?: string; withClass?: boolean
   return out
 }
 
-/** The ability bonus the draft takes: the species' (the subrace's, else its main race's), the background's, or custom. */
+/**
+ * The ability bonus the draft takes: the background's; the species' with its subrace's added (2014: Mountain Dwarf
+ * +2 Con +2 Str); the subrace's alone (else its main race's); or custom (none here).
+ */
 export function bonusOf(d: Draft): AbilityBonus | undefined {
   if (d.bonusFrom === 'custom') return undefined
   if (d.bonusFrom === 'background') return get(d.background)?.fields.abilityIncrease
-  for (const r of raceChain(d.race, true)) if (r.fields.abilityIncrease) return r.fields.abilityIncrease
-  return undefined
+  const chain = raceChain(d.race, true)
+  if (d.bonusFrom === 'subrace') { for (const r of chain) if (r.fields.abilityIncrease) return r.fields.abilityIncrease; return undefined }
+  return addBonuses([...chain].reverse().map(r => r.fields.abilityIncrease).filter((b): b is AbilityBonus => !!b))
+}
+/** Two increases as one: fixed parts added, picks one after the other (the first one with a choice of picks keeps it). */
+export function addBonuses(list: AbilityBonus[]): AbilityBonus | undefined {
+  if (list.length < 2) return list[0]
+  const fixed: Partial<Abilities> = {}
+  for (const b of list) for (const [a, n] of Object.entries(b.fixed ?? {})) fixed[a as keyof Abilities] = (fixed[a as keyof Abilities] ?? 0) + (n ?? 0)
+  const pick = list.flatMap(b => b.pick ?? []), orPick = list.find(b => b.orPick?.length)?.orPick
+  const max = Math.max(...list.map(b => b.max ?? 20))
+  return { ...(Object.keys(fixed).length ? { fixed } : {}), ...(pick.length ? { pick } : {}), ...(orPick ? { orPick } : {}), max, ...(list.some(b => b.note) ? { note: list.map(b => b.note).filter(Boolean).join(' ') } : {}) }
 }
 /** What the chosen bonus adds. */
 export const bonusAdds = (d: Draft): Partial<Abilities> => (d.bonusFrom === 'custom' ? d.custom : bonusApplied(bonusOf(d), d.bonusChoice))
@@ -159,22 +192,17 @@ export function hpOf(d: Draft): number {
 export function spellChoices(d: Draft): { cantrips: Entry[]; spells: Entry[]; maxLevel: number } {
   const slots = d.cls ? ruleSlots(draftPc(d)) : undefined
   const maxLevel = Math.max(slots?.slots.reduce((m, n, i) => (n ? i + 1 : m), 0) ?? 0, slots?.pact?.level ?? 0)
-  // the class's list, and any more its features open up (Magical Secrets)
-  const pc = draftPc(d)
-  const lists = new Set([d.cls, ...speciesTraits(pc).filter(a => a.active && isClassOrigin(a.race) && a.race.fields.class === d.cls).flatMap(a => a.trait.spellLists ?? [])])
-  // and the spells its subclass puts on its list (the Dusk Prince's expanded spells) or into its spellbook (the Hemomancer's)
-  const extra = new Set([...classSpellsFrom(pc, 'list', d.cls), ...classSpellsFrom(pc, 'book', d.cls)].map(x => x.spell))
-  const ofClass = entries.value.filter(e => e.type === 'spell' && ((e.fields.classes ?? []).some(c => lists.has(c)) || extra.has(e.id)))
-    .sort((a, b) => a.name.localeCompare(b.name))
-  const lvl = (e: Entry) => spellLevel(e)
-  return { cantrips: ofClass.filter(e => lvl(e) === 0), spells: ofClass.filter(e => lvl(e) >= 1 && lvl(e) <= maxLevel), maxLevel }
+  // the class's list, with what its features add (Magical Secrets, a subclass's expanded or spellbook spells)
+  return { ...(d.cls ? classSpellList(draftPc(d), d.cls, maxLevel) : { cantrips: [], spells: [] }), maxLevel }
 }
 /** How many cantrips and prepared spells (and spellbook spells) the class has at its level; undefined: no limit known. */
 export function spellCounts(d: Draft): { cantrips?: number; prepared?: number; book?: number } {
   const r = rules(d)
   if (!r) return {}
   const i = d.level - 1
-  return { cantrips: r.cantrips?.[i] ?? 0, prepared: r.prepared?.[i] ?? 0, book: r.spellbook ? r.spellbook + 2 * (d.level - 1) : undefined }
+  // more cantrips a feature gives (Magician, Thaumaturge)
+  const more = speciesEffects(draftPc(d)).flatMap(x => x.effects).filter(f => f.on === 'cantrips').reduce((n, f) => n + (Number(f.value) || 0), 0)
+  return { cantrips: (r.cantrips?.[i] ?? 0) + more, prepared: r.prepared?.[i] ?? 0, book: r.spellbook ? r.spellbook + 2 * (d.level - 1) : undefined }
 }
 export const casts = (d: Draft) => {
   const r = rules(d)
@@ -216,7 +244,10 @@ function addKitItems(d: Draft) {
     if (from === 'world' || from === 'none') continue
     const srd = from === 'srd' ? srdItemNamed(l.name)! : undefined
     const e = createEntry('item', srd?.name ?? l.name, srd ? JSON.parse(JSON.stringify(srd.fields)) : { kind: 'Adventuring Gear' })
-    if (srd?.body) { e.body = srd.body; changed(e) }
+    // plain starting gear: known to players
+    e.visibility = 'known'
+    if (srd?.body) e.body = srd.body
+    changed(e)
   }
 }
 
@@ -287,46 +318,59 @@ export const pickedLanguages = (d: Draft) => {
 
 // ---------- what's still open ----------
 
-export interface Step { id: string; label: string; open: string[] }
+/** A step: what it still needs (empty: done), and what's chosen there in a few words, for its tab. */
+export interface Step { id: string; label: string; open: string[]; chosen?: string }
 /** Each step with what it still needs (an empty list: done). */
 export function steps(d: Draft): Step[] {
   const r = rules(d), pc = draftPc(d)
   const s: Step[] = []
-  s.push({ id: 'class', label: 'Class', open: [!d.cls && 'a class', !!d.cls && d.level >= subclassLevelOf(d.cls) && !d.subclass && subclassesOf(d.cls).length ? 'a subclass' : ''].filter(Boolean) as string[] })
-  s.push({ id: 'origin', label: 'Species & background', open: [!d.race && 'a species', d.race && subracesOf(d.race).length ? 'a subrace' : '', !d.background && backgrounds().length ? 'a background' : '',
-    ...speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && choiceOpen(a)).map(a => (a.trait.name === a.race.name ? a.trait.name : `${a.trait.name} (${a.race.name})`))].filter(Boolean) as string[] })
+  const cls = classEntry(d.cls)
+  s.push({ id: 'class', label: 'Class', open: [!d.cls && 'a class'].filter(Boolean) as string[], chosen: d.cls ? `${cls ? classLabel(cls) : d.cls} ${d.level}` : '' })
+  // the subclass, once the level reaches it: a step of its own, its details beside the list
+  if (d.cls && d.level >= subclassLevelOf(d.cls)) s.push({ id: 'subclass', label: 'Subclass', open: [!d.subclass && subclassesOf(d.cls).length ? 'a subclass' : ''].filter(Boolean) as string[], chosen: get(d.subclass)?.name ?? '' })
+  // species, subrace (when the species has them) and background: a step each, with their traits' open choices
+  // (an Origin feat's with the background)
+  const kindOf = (a: ReturnType<typeof speciesTraits>[number]) => (a.race.type !== 'race' ? 'background' : a.race.fields.parent ? 'subrace' : 'species')
+  const originOpen = (kind: string) => speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && choiceOpen(a) && kindOf(a) === kind)
+    .map(a => (a.trait.name === a.race.name ? a.trait.name : `${a.trait.name} (${a.race.name})`))
+  const main = mainRace(d.race), sub = d.race && main && d.race !== main.id ? get(d.race) : undefined
+  s.push({ id: 'species', label: 'Species', open: [!d.race && 'a species', ...originOpen('species')].filter(Boolean) as string[], chosen: main?.name ?? '' })
+  if (main && subracesOf(main.id).length) s.push({ id: 'subrace', label: 'Subrace', open: [!sub && 'a subrace', ...originOpen('subrace')].filter(Boolean) as string[], chosen: sub?.name ?? '' })
+  s.push({ id: 'background', label: 'Background', open: [!d.background && backgrounds().length ? 'a background' : '', ...originOpen('background')].filter(Boolean) as string[], chosen: get(d.background)?.name ?? '' })
   const unset = ABILITY_KEYS.filter(a => d.base[a] == null).length
+  const fin = finalScores(d)
   s.push({ id: 'scores', label: 'Ability scores', open: [
     unset ? `${unset} score${unset === 1 ? '' : 's'}` : '',
     d.method === 'pointbuy' && pointsSpent(d) > POINTS ? 'too many points spent' : '',
     d.bonusFrom !== 'custom' && bonusOpen(bonusOf(d), d.bonusChoice) ? 'the bonus\'s picks' : '',
-  ].filter(Boolean) as string[] })
+  ].filter(Boolean) as string[], chosen: unset ? '' : ABILITY_KEYS.map(a => fin[a]).join(' ') })
   const skillCount = r ? r.skills.count : d.ownSkillCount
   s.push({ id: 'profs', label: 'Proficiencies', open: [
     d.skills.length < skillCount ? `${skillCount - d.skills.length} skill${skillCount - d.skills.length === 1 ? '' : 's'}` : '',
     r?.toolChoice && d.tools.length < r.toolChoice.count ? `${r.toolChoice.count - d.tools.length} ${r.toolChoice.what}` : '',
     !r && d.cls && d.ownSaves.length < 2 ? 'two saving throws' : '',
     pickedLanguages(d).length < languageRule(d).picks ? `${languageRule(d).picks - pickedLanguages(d).length} language${languageRule(d).picks - pickedLanguages(d).length === 1 ? '' : 's'}` : '',
-  ].filter(Boolean) as string[] })
+  ].filter(Boolean) as string[], chosen: d.skills.join(', ') })
   const classFeatures = speciesTraits(pc).filter(a => isClassOrigin(a.race) && a.active)
-  if (classFeatures.length) s.push({ id: 'features', label: 'Class features', open: classFeatures.filter(choiceOpen).map(a => a.trait.name) })
+  const featurePicks = classFeatures.filter(a => a.trait.choice).flatMap(a => a.picks.map(id => get(id)?.name ?? a.trait.choice?.options?.find(o => o.id === id)?.name ?? id))
+  if (classFeatures.length) s.push({ id: 'features', label: 'Class features', open: classFeatures.filter(choiceOpen).map(a => a.trait.name), chosen: featurePicks.join(', ') })
   if (featLevels(d).length) s.push({ id: 'feats', label: 'Feats', open: featLevels(d).flatMap(({ level }) => {
     const f = d.feats.find(x => x.level === level)
     if (!f?.feat) return [`a feat at level ${level}`]
     return bonusOpen(get(f.feat)?.fields.abilityIncrease, f.choice) ? [`the scores of ${get(f.feat)?.name}`] : []
-  }) })
+  }), chosen: d.feats.map(f => get(f.feat)?.name).filter(Boolean).join(', ') })
   // Level 1 takes the die's maximum: nothing to choose (the summary shows it); later levels may take a typed roll.
-  if (d.level > 1) s.push({ id: 'hp', label: 'Hit points', open: [] })
-  s.push({ id: 'gear', label: 'Equipment', open: [] })
+  if (d.level > 1) s.push({ id: 'hp', label: 'Hit points', open: [], chosen: d.cls ? `${hpOf(d)} HP` : '' })
+  s.push({ id: 'gear', label: 'Equipment', open: [], chosen: [classKitsOf(d.cls).length > 1 ? `kit ${String.fromCharCode(65 + d.classKit)}` : '', backgroundKit(d) || backgroundGold(d) ? (d.bgKit === 'items' ? 'background gear' : 'background gold') : ''].filter(Boolean).join(' · ') })
   if (d.cls && casts(d)) {
     const c = spellCounts(d)
     s.push({ id: 'spells', label: 'Spells', open: [
       c.cantrips != null && d.cantrips.length < c.cantrips ? `${c.cantrips - d.cantrips.length} cantrip${c.cantrips - d.cantrips.length === 1 ? '' : 's'}` : '',
       c.prepared != null && d.spells.length < c.prepared ? `${c.prepared - d.spells.length} spell${c.prepared - d.spells.length === 1 ? '' : 's'}` : '',
       c.book != null && d.spells.length + d.book.length < Math.min(c.book, spellChoices(d).spells.length) ? 'spellbook spells' : '',
-    ].filter(Boolean) as string[] })
+    ].filter(Boolean) as string[], chosen: [d.cantrips.length && `${d.cantrips.length} cantrip${d.cantrips.length === 1 ? '' : 's'}`, d.spells.length && `${d.spells.length} spell${d.spells.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ') })
   }
-  s.push({ id: 'details', label: 'Name & story', open: [!d.name.trim() && 'a name'].filter(Boolean) as string[] })
+  s.push({ id: 'details', label: 'Name & story', open: [!d.name.trim() && 'a name'].filter(Boolean) as string[], chosen: d.name.trim() })
   s.push({ id: 'summary', label: 'Summary', open: [] })
   return s
 }
@@ -342,8 +386,36 @@ export const mainRace = (id: Id | undefined): Entry | undefined => raceChain(id,
 
 // ---------- making it ----------
 
-/** The finished sheet. */
-function draftSheet(d: Draft): CharacterSheet {
+/**
+ * What a new character wears and holds from the kits: the first body armor, a shield, and the weapons (a two-handed
+ * one stays in the pack when there's a shield). The rest stays in the pack.
+ */
+export function equipStarting(lines: InventoryLine[]) {
+  const of = (l: InventoryLine) => get(l.item)
+  const armor = lines.find(l => { const e = of(l); return e?.fields.kind === 'Armor' && !isShield(e) && e.fields.armorType !== 'Clothing' })
+  const shield = lines.find(l => { const e = of(l); return !!e && isShield(e) })
+  if (armor) armor.equipped = true
+  if (shield) shield.equipped = true
+  for (const l of lines) {
+    const e = of(l)
+    if (e?.fields.kind !== 'Weapon') continue
+    if (shield && (e.fields.properties ?? []).some(p => /two-handed/i.test(p))) continue
+    l.equipped = true
+  }
+}
+/**
+ * The campaigns a new character joins unless the player picks others: the running one with the most sessions, else
+ * (no campaign marked Running) the one with the most sessions, as the home page shows it.
+ */
+export function defaultCampaigns(): Id[] {
+  const sessions = (id: Id) => (byType.value.get('session') ?? []).filter(x => x.fields.campaign === id).length
+  const all = (byType.value.get('campaign') ?? []).filter(c => !['Finished', 'One-shot'].includes(String(c.fields.status ?? ''))).sort((a, b) => sessions(b.id) - sessions(a.id))
+  const pick = currentCampaign.value ?? all.find(c => c.fields.status === 'Running') ?? all.find(c => sessions(c.id) > 0)
+  return pick ? [pick.id] : []
+}
+
+/** The finished sheet (also what checks on the draft read: scores, proficiencies). */
+export function draftSheet(d: Draft): CharacterSheet {
   const r = rules(d), s = blankSheet()
   s.abilities = finalScores(d)
   s.saves = r ? [...r.saves] : [...d.ownSaves]
@@ -355,8 +427,8 @@ function draftSheet(d: Draft): CharacterSheet {
     for (const a of ABILITY_KEYS) if (plus[a] && !s.saves.includes(a)) s.saves.push(a)
   }
   s.skills = Object.fromEntries(d.skills.map(k => [k, 1 as const]))
+  // full HP: no current HP is the maximum (with what species, subclass and gear add on the sheet)
   s.maxHp = hpOf(d)
-  s.hp = s.maxHp
   if (d.size) s.size = d.size
   // Tools by name become the world's Tool items where it has them, else a line of their own.
   const toolIds: Id[] = [], other: string[] = []
@@ -375,6 +447,7 @@ function draftSheet(d: Draft): CharacterSheet {
     if (same) same.qty += qty
     else inventory.push({ item: id, qty })
   }
+  equipStarting(inventory)
   s.inventory = inventory
   if (kits.money) s.money = kits.money
   // The Origin feat and the feats taken at their levels.
@@ -412,6 +485,7 @@ export async function makeCharacter(d: Draft): Promise<Entry> {
     classLevels: d.cls ? draftPc(d).fields.classLevels : undefined,
     ...(d.race ? { race: d.race } : {}),
     ...(d.background ? { background: d.background } : {}),
+    ...((d.campaigns ?? defaultCampaigns()).length ? { campaigns: [...(d.campaigns ?? defaultCampaigns())] } : {}),
     ...looks,
     sheet: draftSheet(d),
   }

@@ -12,7 +12,8 @@ const lit = computed(() => {
   const k = Math.cos(2 * Math.PI * p)   // 1 new, 0 quarter, -1 full
   const rx = Math.abs(k) * R
   const side = waxing ? 1 : 0           // which half circle is lit (sweep flag)
-  const bulge = k > 0 ? side : 1 - side // the inner edge bulges into the lit half or out of it
+  // the inner edge: near new moon (k > 0) it curves back over the lit half (a crescent), near full out of it (gibbous)
+  const bulge = k > 0 ? 1 - side : side
   return `M12 2 A ${R} ${R} 0 0 ${side} 12 22 A ${rx} ${R} 0 0 ${bulge} 12 2 Z`
 })
 </script>

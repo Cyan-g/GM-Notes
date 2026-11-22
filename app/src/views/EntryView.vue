@@ -36,6 +36,7 @@ import StatblockView from '../components/Statblock.vue'
 import MembersCard from '../components/MembersCard.vue'
 import SessionSide from '../components/SessionSide.vue'
 import CampaignSessions from '../components/CampaignSessions.vue'
+import CampaignParty from '../components/CampaignParty.vue'
 import RaceMembers from '../components/RaceMembers.vue'
 import RelationCards from '../components/RelationCards.vue'
 import AddToTracker from '../components/AddToTracker.vue'
@@ -184,16 +185,8 @@ function leaveCampaign(pc: Entry) {
   if (rest.length) pc.fields.campaigns = rest; else delete pc.fields.campaigns
   changed(pc)
 }
-/** A new item like this one, to make a variant of it (opened in its editor). */
-function copyItem() {
-  const x = e.value!
-  const n = createEntry(x.type, `${x.name} (copy)`, JSON.parse(JSON.stringify(x.fields)))
-  n.body = String(x.body ?? '')
-  changed(n)
-  go(hrefEntry(n.id) + '/edit')
-}
-const campaignNotes = computed(() => e.value?.type === 'campaign'
-  ? entries.value.filter(n => (n.type === 'note' && n.fields.campaign === e.value!.id) || (n.type === 'pc' && ((n.fields.campaigns) ?? []).includes(e.value!.id))) : [])
+// its notes (the characters are in the party at the top)
+const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.value.filter(n => n.type === 'note' && n.fields.campaign === e.value!.id) : [])
 </script>
 
 <template>
@@ -216,11 +209,11 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
     <CompanionsTab v-else-if="onPals" :pc="e" />
     <div v-else class="entry-grid">
       <div class="entry-main">
+        <CampaignParty v-if="e.type === 'campaign'" :campaign="e" />
 
         <!-- An item's card takes the main two thirds; its recipe is the first card on the right (as when editing). -->
         <div v-if="e.type === 'item'" class="item-top">
           <ItemCard :e="e" />
-          <div v-if="!state.readOnly && !playerMode" class="copy-row"><button type="button" class="chip-btn" title="A new item with the same fields, effects, spells and features: a +2 version, a cursed one" @click="copyItem">Copy as new item</button></div>
         </div>
         <!-- A scroll shows the spell it holds. -->
         <section v-if="scrollSpell" class="scroll-spell">
@@ -229,7 +222,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         </section>
         <SpellCard v-if="e.type === 'spell'" :e="e" />
         <UpcastTable v-if="e.type === 'spell'" :e="e" />
-        <div v-if="e.type === 'spell' && !state.readOnly && !playerMode" class="copy-row"><button type="button" class="chip-btn" title="A new spell with the same stats, rolls and text, to make a variant of it" @click="copyItem">Copy as new spell</button></div>
+
         <CharacterSheet v-if="e.type === 'pc'" :pc="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
         <AddToTracker v-if="statblock && e.type === 'creature' && !state.readOnly && !playerMode" :id="e.id" />
@@ -276,7 +269,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         </section>
         <CampaignSessions v-if="e.type === 'campaign'" :campaign="e" />
         <section v-if="campaignNotes.length">
-          <h2>Characters & notes</h2>
+          <h2>Notes</h2>
           <ul class="plain"><li v-for="n in campaignNotes" :key="n.id"><EntryLink :id="n.id" icon /></li></ul>
         </section>
 

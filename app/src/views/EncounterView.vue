@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // An encounter is something you prepare and then run, so it has one page that is both view and editor:
-// where and when, who fights on the party's side, and the creatures. No text, picture or relations.
+// where and when, who fights on the party's side, the creatures (with how hard they are for the party), and notes
+// (tactics, terrain, treasure). No picture or relations.
 import TypeIcon from '../components/TypeIcon.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
@@ -10,7 +11,8 @@ import { get } from '../store'
 import { changed, deleteEntry, isFavourite, toggleFavourite } from '../edit'
 import HistoryDialog from '../components/HistoryDialog.vue'
 import { go, hrefList } from '../router'
-import { lineInfo } from '../encounter'
+import { difficulty, lineInfo } from '../encounter'
+import { levelOf } from '../sheet'
 import { loadEncounter, partyOf } from '../tracker'
 import FieldInput from '../components/edit/FieldInput.vue'
 
@@ -33,6 +35,9 @@ const lines = computed(() => (e.value?.fields.creatures) ?? [])
 const count = computed(() => lines.value.reduce((s, l) => s + l.count, 0))
 const xp = computed(() => lines.value.reduce((s, l) => s + (lineInfo(l).xp ?? 0) * l.count, 0))
 const unknownXp = computed(() => lines.value.some(l => lineInfo(l).xp == null))
+/** How hard it is for the party: its own, else the campaign's (2024 XP budgets). */
+const partyPcs = computed(() => (party.value.length ? party.value.map(id => get(id)).filter((p): p is NonNullable<typeof p> => !!p) : campaignParty.value))
+const hard = computed(() => difficulty(xp.value, partyPcs.value.map(p => levelOf(p))))
 
 function setName(v: string) { if (v.trim()) { e.value!.name = v.trim(); changed(e.value!) } }
 function run() { loadEncounter(props.id); go('#/tracker') }
@@ -77,7 +82,14 @@ function remove() {
           <span><AppIcon ui="skull" /> Creatures</span>
           <span class="muted small">{{ count }} creature{{ count === 1 ? '' : 's' }} · {{ xp.toLocaleString() }} XP<template v-if="unknownXp"> · some without stats</template></span>
         </h3>
+        <p v-if="hard && xp" class="small enc-difficulty" :class="hard.label.toLowerCase().replace(' ', '-')"
+           :title="`XP budgets for ${partyPcs.map(p => `${p.name} (${levelOf(p)})`).join(', ')}: Low ${hard.low}, Moderate ${hard.moderate}, High ${hard.high} (2024)`">
+          <b>{{ hard.label }}</b> for {{ partyPcs.length }} character{{ partyPcs.length === 1 ? '' : 's' }} (levels {{ partyPcs.map(p => levelOf(p)).join(', ') }}) · budgets {{ hard.low }} / {{ hard.moderate }} / {{ hard.high }}</p>
         <FieldInput :def="field('creatures')" :entry="e" />
+      </section>
+      <section class="card enc-notes">
+        <h3>Notes <span class="muted small">tactics, terrain, read-aloud text, treasure</span></h3>
+        <FieldInput :def="field('notes')" :entry="e" />
       </section>
     </div>
   </article>

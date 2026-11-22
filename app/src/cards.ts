@@ -56,7 +56,7 @@ export interface Card {
   school?: string
   rarity?: string
   title: string
-  /** "3rd-level evocation", "Magical Melee (Quarterstaff) · rare". */
+  /** "Level 3 Evocation", "Magical Melee (Quarterstaff) · rare". */
   sub: string
   /** The item's picture (a data path), shown small beside the title. */
   image?: string

@@ -27,6 +27,7 @@ function pageName(r: Route): string {
     case 'atlas': return r.tab === 'timeline' ? 'Timeline' : 'Atlas'
     case 'orgs': return 'Organizations'
     case 'data': return 'Data'
+    case 'styles': return 'Styles'
     case 'lists': return 'Lists'
     case 'rules': return 'Ruleset'
     case 'wizard': return 'New character'

@@ -3,6 +3,7 @@
 // world's name at the top left, and on the start screen.
 import AppIcon from './AppIcon.vue'
 import LiveJoin from './LiveJoin.vue'
+import DeviceJoin from './DeviceJoin.vue'
 import { onMounted, ref } from 'vue'
 import { forgetWorld, joinLive, joinWorld, loadWorlds, moveWorld, newWorld, openWorldFolder, switchWorld, worlds } from '../worlds'
 import { desktop } from '../storage/desktop'
@@ -17,6 +18,7 @@ const found = ref<{ folder: string; worlds: { worldId: string; title: string; pu
 async function scan() { found.value = await desktop!.shared.scan() }
 /** Join: a DM's live session on this network. */
 const joiningLive = ref(false)
+const joiningDevice = ref(false)
 const busy = ref('')
 async function moving(w: import('../worlds').KnownWorld) {
   if (!confirm(`Move “${w.title}” into GM Notes' own folder?\n\nIt's copied there with its pictures, files and backups, then the app uses the copy. The old folder is renamed “… (moved to GM Notes)” and kept, so you can delete it yourself once all is well.`)) return
@@ -50,6 +52,7 @@ async function create() {
       <button type="button" @click="naming = false">Cancel</button>
       <p class="muted small">It's kept in GM Notes' own folder{{ worlds.worldsDir ? ` (${worlds.worldsDir})` : '' }}; ⚙ → Data shows it.</p>
     </form>
+    <DeviceJoin v-else-if="joiningDevice" @cancel="joiningDevice = false" />
     <div v-else-if="joiningLive" class="world-join">
       <p class="small"><b>Join a live session</b>: your DM hosts it from their GM Notes on this network.</p>
       <LiveJoin @chosen="(s, code) => joinLive(s, code)" @cancel="joiningLive = false" />
@@ -69,8 +72,9 @@ async function create() {
       <button type="button" @click="naming = true">＋ New world…</button>
       <button type="button" title="A world your DM publishes in a shared folder (e.g. Google Drive)" @click="scan"><AppIcon ui="download" /> Join a shared world…</button>
       <button type="button" title="Your DM's live session on this network (same Wi-Fi)" @click="joiningLive = true"><AppIcon ui="share" /> Join a live session…</button>
+      <button v-if="desktop?.devices" type="button" title="A world of yours on another computer, kept in sync with it" @click="joiningDevice = true"><AppIcon ui="link" /> Join from my other device…</button>
     </div>
     <!-- worlds live in GM Notes' own folder; one kept elsewhere (a USB stick, a synced folder) is rare -->
-    <p v-if="!naming && !joiningLive && !found" class="muted small world-elsewhere">A world kept somewhere else (a USB stick, a synced folder)? <button type="button" class="link-btn small" @click="openWorldFolder">Open it from its folder…</button></p>
+    <p v-if="!naming && !joiningLive && !joiningDevice && !found" class="muted small world-elsewhere">A world kept somewhere else (a USB stick, a synced folder)? <button type="button" class="link-btn small" @click="openWorldFolder">Open it from its folder…</button></p>
   </div>
 </template>

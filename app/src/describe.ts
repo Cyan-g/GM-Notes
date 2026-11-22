@@ -5,7 +5,6 @@ import { fieldLabel, formatDate, get, state } from './store'
 import { classText, totalLevel } from './model/classes'
 import { abilityBonusText } from './abilityBonus'
 import { ageText } from './npc'
-import { ord } from './model/dnd'
 import { stripSecrets } from './model/text'
 
 const name = (id: unknown) => get(id as string)?.name
@@ -22,7 +21,7 @@ export function describe(e: Entry, { parent = true } = {}): string {
     case 'organization': return join(L(e, 'orgType'), parent && f.parent && `part of ${name(f.parent)}`, f.seat && `seat: ${name(f.seat)}`)
     case 'place': return join(L(e, 'placeType'), parent && f.parent && `in ${name(f.parent)}`)
     case 'item': return join([L(e, 'rarity'), f.magical && !f.rarity ? 'magical' : '', f.subtype || L(e, 'kind')].filter(Boolean).join(' '), f.attunement && 'requires attunement')
-    case 'spell': return f.level === 'Cantrip' ? join(`${L(e, 'school') ?? ''} cantrip`.trim()) : join(f.level ? `${ord(String(f.level))}-level ${String(L(e, 'school') ?? '').toLowerCase()}`.trim() : L(e, 'school'))
+    case 'spell': return f.level === 'Cantrip' ? join(`${L(e, 'school') ?? ''} cantrip`.trim()) : join(f.level ? `Level ${f.level} ${String(L(e, 'school') ?? '')}`.trim() : L(e, 'school'))
     case 'creature': {
       const sb = f.statblock as Statblock | undefined
       return join([sb?.size, L(e, 'creatureType') ?? sb?.creatureType].filter(Boolean).join(' '), sb?.cr && `CR ${sb.cr}`)

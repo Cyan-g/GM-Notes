@@ -6,21 +6,23 @@
 // On the Edit page (`build`) it also opens what's set when building the character: classes and their levels
 // (multiclassing), max HP, AC, speed, scores, proficiencies, spellcasting and features.
 // Hit dice come from the classes, one pool per die size, each spent on its own.
+import Dropdown from './Dropdown.vue'
 import { useReadOnly } from '../composables/useReadOnly'
 import AppIcon from './AppIcon.vue'
 import ConditionIcon from './ConditionIcon.vue'
-import { computed, onBeforeUnmount, ref } from 'vue'
-import type { CharacterSheet, ClassLine, Entry, Id, Proficiencies } from '../model/types'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import type { CharacterSheet, ClassLine, DeathSaveState, Entry, Id, Proficiencies } from '../model/types'
 import { byType, get, listOptions, setList, state } from '../store'
 import { CLASS_DIE, DICE, classText, classesOf } from '../model/classes'
 import { dieOf } from '../classRules'
 import { changed } from '../edit'
 import { hrefEntry, hrefTab } from '../router'
 import {
-  armorClass, attacks, canAttune, canEquip, castingAbility, hitDiceOf, initiative, levelOf, maxHpOf, passivePerception, profsOf, saveBonus,
-  skillBonus, skillLevel, speedOf, baseSpeed, otherSpeeds, longRest, shortRest,
+  armorClass, attacks, baseMaxHp, canAttune, canEquip, castingAbility, conHpPart, hitDiceOf, initiative, levelOf, maxHpOf, passivePerception, setMaxHp, profsOf, saveBonus,
+  skillBonus, skillLevel, speedOf, baseSpeed, otherSpeeds, longRest, shortRest, restSummary,
 } from '../sheet'
 import { profsToEdit, sheetOrBlank, sheetToEdit } from '../sheetData'
+import { noteUndo, restoreSheet, snapSheet } from '../undoNote'
 import { ABILITIES, SKILLS, concentrationDc, dieSize, mod, profBonus, signed, type Ability } from '../model/dnd'
 import { advOf, breakdown, concentrationAdv, deathSaveAdv, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../effects'
 import { chargesLeft, setCharges, type RegainRoll } from '../items'
@@ -36,7 +38,11 @@ import ActiveSpellsCard from './ActiveSpellsCard.vue'
 import ConditionsBar from './ConditionsBar.vue'
 import DeathSaves from './DeathSaves.vue'
 import LevelUpModal from './LevelUpModal.vue'
-import { endConcentration, hpChanged } from '../conditions'
+import ChoicesModal from './ChoicesModal.vue'
+import ShortRestModal from './ShortRestModal.vue'
+import { isShared } from '../sync'
+import { XP_AT } from '../sheet'
+import { endConcentration, hpChanged, isDead, massiveDamage, noDeathSaves, settleDeathSaves } from '../conditions'
 import { featOfFeature, originFeatOf, picksLeft, speciesEffects, speciesExpertise, speciesGrants, speciesSizes, speciesTraits } from '../species'
 import { ui } from '../ui'
 
@@ -70,9 +76,17 @@ const tipOf = (total: number, parts: Part[], fmt = signed) => breakdown(`${fmt(t
 /** Advantage or disadvantage from gear on a skill or a save (they cancel out). */
 const skillAdv = (name: string) => advOf(gt.value.skillAdv[name])
 const saveAdv = (a: Ability) => advOf(gt.value.saveAdv[a])
+const initAdv = computed(() => advOf(gt.value.initiativeAdv))
 const saveParts = (a: Ability) => [...gt.value.saves, ...(gt.value.save[a] ?? [])]
 const initTotal = computed(() => initiative(s.value))
 const maxHp = computed(() => maxHpOf(s.value))
+/** What max HP is made of beyond the number set: a CON change since, and gear or features. */
+/** Damage the character resists or is immune to right now (Rage, a species, a ring), for the line under Damage / heal. */
+const resists = computed(() => {
+  const r = [...new Set(gt.value.resistances.map(x => x.type.toLowerCase()))], im = [...new Set((gt.value.damageImmunities ?? []).map(x => String((x as { type?: string }).type ?? x).toLowerCase()))]
+  return [r.length && `Resistant to ${r.join(', ')}: halve it`, im.length && `immune to ${im.join(', ')}`].filter(Boolean).join('; ')
+})
+const hpParts = computed(() => [conHpPart(s.value), ...gt.value.maxHp].filter(p => !!p))
 const castMod = computed(() => (cast.value ? mod(scoreOf(cast.value)) : 0))
 const spellDC = computed(() => 8 + prof.value + castMod.value + sum(gt.value.spellDC))
 const spellAtk = computed(() => prof.value + castMod.value + sum(gt.value.spellAttack))
@@ -180,10 +194,17 @@ function hit(ev: Event) {
       let dmg = -n
       const soak = Math.min(x.tempHp ?? 0, dmg)
       if (soak) { x.tempHp = (x.tempHp ?? 0) - soak || undefined; dmg -= soak }
+      // massive damage: said, not done (the DM decides)
+      const massive = massiveDamage(props.pc.name, hp, dmg, maxHp.value)
+      if (massive) noteUndo(massive)
       hp = Math.max(0, hp - dmg)
       // still standing and concentrating: a CON save to keep it
-      if ((hp > 0 || !maxHp.value) && x.conditions?.includes('Concentrating')) concDc.value = concentrationDc(-n)
-    } else hp = maxHp.value != null ? Math.min(maxHp.value, hp + n) : hp + n
+      if ((hp > 0 || !maxHp.value) && x.conditions?.includes('Concentrating')) concDc.value = concentrationDc(-n, rule('concentrationCap') === '2014' ? Infinity : 30)
+    } else {
+      // three failed death saves: dead; healing brings them back only if the player or DM says so (a revivify)
+      if (isDead(x.deathSaves) && !window.confirm(`${props.pc.name} is dead (three failed death saves). Heal them anyway?`)) return
+      hp = maxHp.value != null ? Math.min(maxHp.value, hp + n) : hp + n
+    }
     x.hp = hp
     if (maxHp.value) hpChanged(props.pc, x, before, hp, n < 0)
   })
@@ -200,9 +221,21 @@ function setHpNow(ev: Event) {
 const concDc = ref<number | null>(null)
 const concDone = (kept: boolean) => { if (!kept) edit(x => endConcentration(props.pc, x)); concDc.value = null }
 const dying = computed(() => !build.value && !!maxHp.value && (s.value.hp ?? maxHp.value) <= 0)
-const setSaves = (d: { ok: number; fail: number }) => edit(x => { if (d.ok || d.fail) x.deathSaves = d; else delete x.deathSaves })
-const rest = () => { if (!ro.value) rolls.value = longRest(props.pc) }
-const short = () => { if (!ro.value) rolls.value = shortRest(props.pc) }
+const setSaves = (d: DeathSaveState) => edit(x => { if (noDeathSaves(d)) delete x.deathSaves; else x.deathSaves = settleDeathSaves(d) })
+// a rest says what it gave back, with Undo (a stray click at the table)
+function restNow(kind: 'short' | 'long') {
+  if (ro.value) return
+  const before = snapSheet(props.pc)
+  rolls.value = kind === 'long' ? longRest(props.pc) : shortRest(props.pc)
+  const what = restSummary(props.pc, before, kind)
+  noteUndo(what, () => { restoreSheet(props.pc, before)(); rolls.value = []; resting.value = '' })
+  // a short rest: the panel for spending Hit Dice, with what came back
+  if (kind === 'short') resting.value = what
+}
+/** The short-rest panel, open with what the rest gave back. */
+const resting = ref('')
+const rest = () => restNow('long')
+const short = () => restNow('short')
 /** Item charges a rest gives back by a dice roll: the player rolls and types the number. */
 const rolls = ref<RegainRoll[]>([])
 function addCharges(r: RegainRoll, v: string) {
@@ -234,10 +267,16 @@ const setProfs = (k: Exclude<keyof Proficiencies, 'other'>, v: string[]) => edit
 const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
 const castLabel = computed(() => (s.value.spellAbility ? s.value.spellAbility.toUpperCase() : cast.value ? `${cast.value.toUpperCase()} (class)` : 'None'))
 /** Experience needed for each level (1…20), the same in 2014 and 2024. */
-const XP_AT = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
 const xpNext = computed(() => XP_AT[level.value])
 const sizes = computed(() => speciesSizes(props.pc))
 const leveling = ref(false)
+/** The "to pick" window: the choices still to make, on the sheet. */
+const choosing = ref(false)
+/** Level up from the Level tile: a character of one's own, below 20, not while editing; with XP, "ready" shows. */
+const canLevelUp = computed(() => !ro.value && !build.value && !isShared(props.pc) && classes.value.length > 0 && level.value < 20)
+const levelReady = computed(() => canLevelUp.value && rule('experience') === 'xp' && (s.value.xp ?? 0) >= (XP_AT[level.value] ?? Infinity))
+// Level up is in the Edit button's menu (EntryHeader): it asks for this character's dialog
+watch(() => ui.levelUp, id => { if (id && id === props.pc.id) { leveling.value = true; ui.levelUp = null } }, { immediate: true })
 const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
 
 // ---- building: the hit points the dice give on average (the player may have rolled instead; their call) ----
@@ -271,17 +310,17 @@ onBeforeUnmount(() => {
       <h4>Classes <span v-if="classes.length" class="muted small">level {{ level }}</span><button class="link-btn" :disabled="!classOptions('').length" @click="addClass">＋ Class</button></h4>
       <p v-if="!classes.length" class="muted small">No class yet: the level below counts on its own.</p>
       <div v-for="(l, i) in classes" :key="i" class="cs-class-row">
-        <select :value="l.class" :aria-label="`Class ${i + 1}`" @change="setClass(i, ($event.target as HTMLSelectElement).value)">
+        <Dropdown :value="l.class" :aria-label="`Class ${i + 1}`" @change="setClass(i, ($event.target as HTMLSelectElement).value)">
           <option v-for="o in classOptions(l.class)" :key="o.id" :value="o.id">{{ o.label }}</option>
-        </select>
+        </Dropdown>
         <label class="small">Level <input type="number" min="1" max="20" :value="l.level" @change="setClassLevel(i, num($event))" /></label>
-        <select :value="l.subclass ?? ''" :aria-label="`Subclass of class ${i + 1}`" :disabled="!subclassesOf(l.class).length && !l.subclass" @change="setSubclass(i, ($event.target as HTMLSelectElement).value)">
+        <Dropdown :value="l.subclass ?? ''" :aria-label="`Subclass of class ${i + 1}`" :disabled="!subclassesOf(l.class).length && !l.subclass" @change="setSubclass(i, ($event.target as HTMLSelectElement).value)">
           <option value="">{{ subclassesOf(l.class).length ? 'Subclass…' : 'No subclasses' }}</option>
           <option v-for="sc in subclassesOf(l.class)" :key="sc.id" :value="sc.id">{{ sc.name }}</option>
-        </select>
-        <select v-if="!CLASS_DIE[l.class]" :value="dieOf(l)" title="This class's hit die" @change="setDie(i, ($event.target as HTMLSelectElement).value)">
+        </Dropdown>
+        <Dropdown v-if="!CLASS_DIE[l.class]" :value="dieOf(l)" title="This class's hit die" @change="setDie(i, ($event.target as HTMLSelectElement).value)">
           <option v-for="d in DICE" :key="d" :value="d">{{ d }}</option>
-        </select>
+        </Dropdown>
         <span v-else class="muted small" title="The class's hit die">{{ dieOf(l) }}</span>
         <button class="link-btn x" title="Remove this class" @click="setClasses(x => x.splice(i, 1))">✕</button>
       </div>
@@ -293,8 +332,8 @@ onBeforeUnmount(() => {
     <PcPortrait v-if="!build" :pc="pc" />
     <div class="cs-top-right">
     <LevelUpModal v-if="leveling" :pc="pc" :s="s" @close="leveling = false" />
-    <!-- the character's conditions (shared with the combat tracker), with what they do -->
-    <ConditionsBar v-if="!build" :pc="pc" :s="s" />
+    <ChoicesModal v-if="choosing" :pc="pc" :s="s" @close="choosing = false" />
+    <ShortRestModal v-if="resting" :pc="pc" :s="s" :summary="resting" @close="resting = ''" />
     <!-- the strip at the top: the numbers looked at most -->
     <!-- building: what the sheet works out, in one line; below it, what's set by hand -->
     <div v-if="build" class="cs-build">
@@ -303,26 +342,26 @@ onBeforeUnmount(() => {
       </p>
       <div class="cs-set">
         <label v-if="!classes.length"><span>Level</span><input type="number" min="1" max="20" :value="pc.fields.level ?? ''" placeholder="1" @change="setLevel" /></label>
-        <label v-if="!classes.length"><span>Hit die</span><select :value="s.hitDie || 'd8'" @change="edit(x => x.hitDie = ($event.target as HTMLSelectElement).value)"><option v-for="d in DICE" :key="d" :value="d">{{ d }}</option></select></label>
+        <label v-if="!classes.length"><span>Hit die</span><Dropdown :value="s.hitDie || 'd8'" @change="edit(x => x.hitDie = ($event.target as HTMLSelectElement).value)"><option v-for="d in DICE" :key="d" :value="d">{{ d }}</option></Dropdown></label>
         <div class="cs-set-hp">
-          <label><span>Max HP</span><input type="number" :value="s.maxHp ?? ''" :placeholder="avgHp ? String(avgHp) : 'max'" title="Maximum HP" @change="edit(x => x.maxHp = num($event))" /></label>
-          <small v-if="avgHp && s.maxHp !== avgHp" class="muted" :title="avgText">average {{ avgHp }} <button type="button" class="link-btn" @click="edit(x => x.maxHp = avgHp)">use it</button></small>
+          <label><span>Max HP</span><input type="number" :value="baseMaxHp(s) ?? ''" :placeholder="avgHp ? String(avgHp) : 'max'" title="Maximum HP" @change="edit(x => setMaxHp(x, num($event)))" /></label>
+          <small v-if="avgHp && baseMaxHp(s) !== avgHp" class="muted" :title="avgText">average {{ avgHp }} <button type="button" class="link-btn" @click="edit(x => setMaxHp(x, avgHp))">use it</button></small>
         </div>
         <label><span>AC</span><input type="number" :value="s.acOverride ?? ''" :placeholder="`auto (${ac.ac})`" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></label>
         <label><span>Speed</span><input :value="ft(s.speed)" :placeholder="ft(baseSpeed(s) ?? 30)" @change="edit(x => x.speed = feet($event))" /></label>
-        <label v-if="sizes.length > 1" title="The species lets the player pick its size"><span>Size</span><select :value="s.size && sizes.includes(s.size) ? s.size : sizes[0]" @change="edit(x => x.size = ($event.target as HTMLSelectElement).value === sizes[0] ? undefined : ($event.target as HTMLSelectElement).value)"><option v-for="z in sizes" :key="z" :value="z">{{ z }}</option></select></label>
+        <label v-if="sizes.length > 1" title="The species lets the player pick its size"><span>Size</span><Dropdown :value="s.size && sizes.includes(s.size) ? s.size : sizes[0]" @change="edit(x => x.size = ($event.target as HTMLSelectElement).value === sizes[0] ? undefined : ($event.target as HTMLSelectElement).value)"><option v-for="z in sizes" :key="z" :value="z">{{ z }}</option></Dropdown></label>
       </div>
     </div>
     <div v-else class="cs-strip">
       <label v-if="!classes.length" class="cs-stat"><span>Level</span><input type="number" min="1" max="20" :value="pc.fields.level ?? ''" placeholder="1" :disabled="locked" @change="setLevel" /></label>
-      <div v-else class="cs-stat" :title="classLabel"><span>Level</span><b v-flash.neutral="level">{{ level }}</b></div>
+      <div v-else class="cs-stat" :title="classLabel"><span>Level</span><b v-flash.neutral="level">{{ level }}</b>
+        <button v-if="canLevelUp" type="button" class="chip-btn cs-levelup" :class="{ primary: levelReady }" :title="levelReady ? 'Enough XP for the next level' : 'Class, hit points, new features, choices, feat and spells'" @click="leveling = true">Level up</button></div>
       <div class="cs-stat"><span>Proficiency</span><b v-flash="prof">{{ signed(prof) }}</b></div>
       <div class="cs-stat cs-ac tip" :class="{ warn: ac.untrained.length }" :data-tip="ac.from + (ac.untrained.length ? ` — not proficient with ${ac.untrained.join(', ')}: disadvantage on STR and DEX rolls, no spellcasting` : '')"><span>Armor class<template v-if="ac.untrained.length"> <AppIcon ui="warning" /></template></span><b v-flash="ac.ac" :class="{ 'gear-mod': gt.ac.length }">{{ ac.ac }}</b>
         <input v-if="build" class="cs-mini" type="number" :value="s.acOverride ?? ''" placeholder="auto" title="Type an AC to use instead of the worked-out one" @change="edit(x => x.acOverride = num($event))" /></div>
       <label class="cs-stat" :class="{ tip: gt.speed.length }" :data-tip="breakdown(`${ft(baseSpeed(s) ?? 30)} without gear`, gt.speed)"><span :class="{ 'gear-mod': gt.speed.length }">Speed</span><input v-flash="locked ? speedOf(s) : s.speed" :value="(locked ? speedOf(s) : ft(s.speed)) ?? ''" :placeholder="ft(baseSpeed(s) ?? 30)" :disabled="locked" @change="edit(x => x.speed = feet($event))" /><small v-if="otherSpeeds(s)" class="muted cs-speeds">{{ otherSpeeds(s) }}</small></label>
-      <label v-if="build && sizes.length > 1" class="cs-stat" title="The species lets the player pick its size"><span>Size</span><select :value="s.size && sizes.includes(s.size) ? s.size : sizes[0]" @change="edit(x => x.size = ($event.target as HTMLSelectElement).value === sizes[0] ? undefined : ($event.target as HTMLSelectElement).value)"><option v-for="z in sizes" :key="z" :value="z">{{ z }}</option></select></label>
+      <label v-if="build && sizes.length > 1" class="cs-stat" title="The species lets the player pick its size"><span>Size</span><Dropdown :value="s.size && sizes.includes(s.size) ? s.size : sizes[0]" @change="edit(x => x.size = ($event.target as HTMLSelectElement).value === sizes[0] ? undefined : ($event.target as HTMLSelectElement).value)"><option v-for="z in sizes" :key="z" :value="z">{{ z }}</option></Dropdown></label>
       <label v-if="rule('experience') === 'xp'" class="cs-stat cs-xp" :title="xpNext ? `Level ${level + 1} at ${xpNext.toLocaleString()} XP` : 'Highest level'"><span>XP</span><input v-flash="s.xp ?? 0" type="number" min="0" :value="s.xp ?? ''" placeholder="0" :disabled="ro" @change="edit(x => x.xp = num($event) || undefined)" /><small v-if="xpNext" class="muted">/ {{ xpNext.toLocaleString() }}</small></label>
-      <button v-if="!build && !ro && level < 20" class="cs-stat cs-lvlup" :class="{ ready: rule('experience') === 'xp' && xpNext && (s.xp ?? 0) >= xpNext }" title="Level up: class, hit points, new features, feat and spells" @click="leveling = true"><span>Level up</span><b>↑</b></button>
       <button v-if="!build && rule('inspiration') !== 'off'" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" :title="inspirationTip" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>{{ rule('inspiration') === 'heroic' ? 'Heroic Inspiration' : 'Inspiration' }}</span><b><AppIcon ui="star" :class="{ off: !(s.inspiration) }" /></b></button>
     </div>
 
@@ -335,15 +374,15 @@ onBeforeUnmount(() => {
             <input v-flash="s.hp ?? maxHp" class="cs-hp-now" type="number" :value="s.hp ?? maxHp ?? ''" placeholder="now" :disabled="ro" title="Current HP" @change="setHpNow" />
             <span class="muted">/</span>
           </template>
-          <span :class="{ tip: gt.maxHp.length && !build, 'gear-mod': gt.maxHp.length && !build }" :data-tip="build ? undefined : breakdown(`${s.maxHp ?? 0} without gear`, gt.maxHp)"><input v-flash="build ? s.maxHp : maxHp" type="number" :value="(build ? s.maxHp : maxHp) ?? ''" :placeholder="'max'" :disabled="locked" title="Maximum HP" @change="edit(x => x.maxHp = num($event))" /></span>
-          <template v-if="!build">
-            <span class="muted small">temp</span>
-            <input v-flash="s.tempHp ?? 0" type="number" :value="s.tempHp ?? ''" placeholder="0" :disabled="ro" title="Temporary HP" @change="edit(x => x.tempHp = num($event) || undefined)" />
-          </template>
+          <span :class="{ tip: hpParts.length && !build, 'gear-mod': gt.maxHp.length && !build }" :data-tip="build ? undefined : breakdown(`${s.maxHp ?? 0} set`, hpParts)"><input v-flash="build ? baseMaxHp(s) : maxHp" type="number" :value="(build ? baseMaxHp(s) : maxHp) ?? ''" :placeholder="'max'" :disabled="locked" title="Maximum HP" @change="edit(x => setMaxHp(x, num($event)))" /></span>
+          <label v-if="!build" class="cs-hp-temp"><span class="muted small">temp</span>
+            <input v-flash="s.tempHp ?? 0" type="number" :value="s.tempHp ?? ''" placeholder="0" :disabled="ro" title="Temporary HP" @change="edit(x => x.tempHp = num($event) || undefined)" /></label>
         </div>
         <div v-if="maxHp && !build" class="cs-hp-bar"><i :style="{ width: Math.min(100, Math.round(100 * (s.hp ?? maxHp) / maxHp)) + '%' }" /></div>
       </div>
-      <label v-if="!build" class="cs-hp-change"><span class="cs-label">Damage / heal</span><input placeholder="−7 or +5" :disabled="ro" @keydown.enter="hit" @change="hit" /></label>
+      <label v-if="!build" class="cs-hp-change"><span class="cs-label">Damage / heal</span><input placeholder="−7 or +5" :disabled="ro" @keydown.enter="hit" @change="hit" />
+        <!-- what the sheet knows the character resists or is immune to: said, the player halves it -->
+        <small v-if="resists" class="muted cs-resist" :title="resists">{{ resists }}</small></label>
       <DeathSaves v-if="dying" :saves="s.deathSaves ?? { ok: 0, fail: 0 }" :adv="deathSaveAdv(gt)" :ro="ro" @set="setSaves" @nat20="edit(x => { const b = x.hp ?? 0; x.hp = 1; hpChanged(pc, x, b, 1, false) })" />
       <div v-if="concDc != null && s.conditions?.includes('Concentrating')" class="cs-conc-check">
         <span>Concentration: <b>CON save DC {{ concDc }}</b><template v-if="concentrationAdv(gt)">, {{ concentrationAdv(gt) }}</template></span>
@@ -352,6 +391,8 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <div class="cs-hp cs-dice">
+      <!-- the character's conditions (shared with the combat tracker), with what they do -->
+      <ConditionsBar v-if="!build" class="cs-dice-conds" :pc="pc" :s="s" />
       <div class="cs-hitdice">
         <span class="cs-label">Hit dice</span>
         <div v-for="p in pools" :key="p.die" class="cs-hp-row">
@@ -360,14 +401,14 @@ onBeforeUnmount(() => {
             <span class="muted">/ {{ p.total }}</span>
           </template>
           <span v-else>{{ p.total }} ×</span>
-          <select v-if="build && !classes.length" class="cs-die" :value="s.hitDie || 'd8'" title="Hit die" @change="edit(x => x.hitDie = ($event.target as HTMLSelectElement).value)">
+          <Dropdown v-if="build && !classes.length" class="cs-die" :value="s.hitDie || 'd8'" title="Hit die" @change="edit(x => x.hitDie = ($event.target as HTMLSelectElement).value)">
             <option v-for="d in DICE" :key="d" :value="d">{{ d }}</option>
-          </select>
+          </Dropdown>
           <b v-else class="cs-die-label">{{ p.die }}</b>
         </div>
       </div>
       <div v-if="!build" class="cs-rests">
-        <button class="cs-rest" :disabled="ro" title="Features, pact slots and item spells that recharge on a short rest come back. Spend Hit Dice by counting them down here" @click="short">Short rest</button>
+        <button class="cs-rest" :disabled="ro" title="Features, pact slots and item spells that recharge on a short rest come back; then spend Hit Dice" @click="short">Short rest</button>
         <div v-if="rolls.length" class="cs-regain">
           <div v-for="r in rolls" :key="r.i" class="cs-regain-row small">Roll <b>{{ r.dice }}</b> for {{ r.name }}'s charges:
             <input type="number" min="0" class="effect-value" placeholder="?" @keydown.enter="addCharges(r, ($event.target as HTMLInputElement).value)" @change="addCharges(r, ($event.target as HTMLInputElement).value)" />
@@ -402,7 +443,7 @@ onBeforeUnmount(() => {
             <p v-if="!skillsOf(a.key).length" class="cs-noskill">no skills</p>
           </div>
           <!-- what else scales with it, at the bottom: initiative (DEX), passive perception (WIS) -->
-          <div v-if="a.key === 'dex'" class="cs-foot tip" :data-tip="tipOf(initTotal, gt.initiative) ?? 'Initiative: DEX modifier plus any bonus'"><span>Initiative</span><b v-flash="initTotal" :class="{ 'gear-mod': gt.initiative.length }">{{ signed(initTotal) }}</b></div>
+          <div v-if="a.key === 'dex'" class="cs-foot tip" :data-tip="tipOf(initTotal, gt.initiative) ?? 'Initiative: DEX modifier plus any bonus'"><span>Initiative</span><i v-if="initAdv.tip" class="cs-adv tip" :class="initAdv.mode" :data-tip="initAdv.tip">{{ initAdv.mode ?? '±' }}</i><b v-flash="initTotal" :class="{ 'gear-mod': gt.initiative.length }">{{ signed(initTotal) }}</b></div>
           <div v-else-if="a.key === 'wis'" class="cs-foot" title="Passive perception: 10 + Perception"><span>Passive perception</span><b v-flash="passivePerception(s, prof)">{{ passivePerception(s, prof) }}</b></div>
         </div>
       </section>
@@ -412,10 +453,10 @@ onBeforeUnmount(() => {
         <template v-if="build">
         <h4>Spellcasting</h4>
         <div class="cs-cast">
-          <select v-if="build" :value="s.spellAbility ?? ''" @change="edit(x => x.spellAbility = (($event.target as HTMLSelectElement).value || undefined) as Ability | undefined)">
+          <Dropdown v-if="build" :value="s.spellAbility ?? ''" @change="edit(x => x.spellAbility = (($event.target as HTMLSelectElement).value || undefined) as Ability | undefined)">
             <option value="">{{ cast && !s.spellAbility ? `${cast.toUpperCase()} (class)` : 'None' }}</option>
             <option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.short }}</option>
-          </select>
+          </Dropdown>
           <span v-else>{{ castLabel }}</span>
           <template v-if="cast"><span>Save DC <b v-flash="spellDC" :class="{ 'gear-mod tip': gt.spellDC.length }" :data-tip="tipOf(spellDC, gt.spellDC, String)">{{ spellDC }}</b></span><span>Attack <b v-flash="spellAtk" :class="{ 'gear-mod tip': gt.spellAttack.length }" :data-tip="tipOf(spellAtk, gt.spellAttack)">{{ signed(spellAtk) }}</b></span></template>
           <a :href="hrefTab(pc.id, 'spellbook')" class="small">Spellbook →</a>
@@ -444,14 +485,14 @@ onBeforeUnmount(() => {
     <!-- features and traits: in play right below the abilities, the uses on them clicked often -->
     <section class="cs-features">
       <h4>Features &amp; traits <button v-if="build" class="link-btn" @click="addFeature">＋ Add</button>
-        <a v-if="!build && openChoices && !ro" class="sp-open small" :href="hrefEntry(pc.id, true)" :title="`${openChoices} pick${openChoices === 1 ? '' : 's'} still to make, on the Edit page`" @click="ui.scrollTo = 'choices'">{{ openChoices }} to pick ✎</a></h4>
+        <button v-if="!build && openChoices && !ro" type="button" class="link-btn sp-open small" :title="`${openChoices} pick${openChoices === 1 ? '' : 's'} still to make`" @click="choosing = true">{{ openChoices }} to pick ✎</button></h4>
       <template v-if="build">
         <label v-if="background || s.originFeat !== undefined" class="cs-origin"><span>Origin feat</span>
-          <select :value="originValue" @change="setOrigin(($event.target as HTMLSelectElement).value)">
+          <Dropdown :value="originValue" @change="setOrigin(($event.target as HTMLSelectElement).value)">
             <option value="">{{ bgFeat ? `${bgFeat.name}${background?.fields.originFeatNote ? ` (${background.fields.originFeatNote})` : ''}: from ${background?.name}` : `none from ${background?.name ?? 'the background'}` }}</option>
             <option v-for="f in originFeats" :key="f.id" :value="f.id">{{ f.name }} instead</option>
             <option value="none">None</option>
-          </select>
+          </Dropdown>
           <small class="muted">{{ originValue === '' ? 'The background\'s; pick another if the DM allows it' : originValue === 'none' ? 'No Origin feat' : 'Instead of the background\'s' }}</small>
         </label>
         <div v-for="(f, i) in s.features" :key="i" class="cs-feature">

@@ -1,6 +1,6 @@
 // What the top menu bar shows: links to pages and tables only, never single entries (those are reached from their
 // tables, search and links). The one exception is the Campaign menu's "Latest session" shortcut.
-import { nextSessionNo, sessionsOf } from './sessions'
+import { currentCampaign, nextSessionFields, nextSessionNo, sessionsOf } from './sessions'
 import { SCHEMA } from './model/schema'
 import type { Entry, EntryType } from './model/types'
 import { computed } from 'vue'
@@ -59,12 +59,10 @@ const dashOf = (r: Route) => (r.name === 'dashboard' ? r.id : undefined)
 
 /** The campaign being played (the one with the most sessions) and its latest session. */
 function playing() {
-  const sessions = byType.value.get('session') ?? []
-  const camps = (byType.value.get('campaign') ?? []).map(c => ({ c, s: sessions.filter(x => x.fields.campaign === c.id) })).sort((a, b) => b.s.length - a.s.length)
-  const top = camps[0]
-  if (!top?.s.length) return undefined
-  const latest = sessionsOf(top.c.id).at(-1)!
-  return { campaign: top.c, latest, next: nextSessionNo(top.c.id) }
+  const c = currentCampaign.value
+  if (!c) return undefined
+  const latest = sessionsOf(c.id).at(-1)
+  return latest ? { campaign: c, latest, next: nextSessionNo(c.id) } : undefined
 }
 /** The latest session and a new one, at the top of the Campaign menu. */
 function sessionNodes(): MenuNode[] {
@@ -72,7 +70,7 @@ function sessionNodes(): MenuNode[] {
   if (!p) return []
   return [
     { label: 'Latest session', typeIcon: 'session', href: hrefEntry(p.latest.id), hint: p.latest.name },
-    { label: 'New session…', icon: '＋', hint: p.campaign.name, action: () => newEntry('session', { campaign: p.campaign.id, number: p.next, date: { ...state.db!.meta.today } }) },
+    { label: 'New session…', icon: '＋', hint: p.campaign.name, action: () => newEntry('session', nextSessionFields(p.campaign.id)) },
     SEP,
   ]
 }
@@ -87,6 +85,7 @@ export const MENUS: TopMenu[] = [
     items: () => playerMode.value ? [...sessionNodes(), typeLink('campaign')] : [
       ...sessionNodes(),
       typeLink('campaign'),
+      typeLink('session'),
       { label: 'Combat', uiIcon: 'combat', href: '#/tracker', hint: state.db?.tracker?.round ? `R${state.db.tracker.round}` : undefined },
       typeLink('encounter'),
       typeLink('pc'),
@@ -125,7 +124,8 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'Crafting',
-    home: '#/crafting',
+    // a player's title opens their Workbench; the DM's, the recipes
+    get home() { return playerMode.value ? '#/crafting' : hrefDashboard('crafting', 'Recipes') },
     owns: r => dashOf(r) === 'crafting' || r.name === 'crafting' || (r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
     items: () => [
       { label: 'Workbench', uiIcon: 'workbench', href: '#/crafting', hint: benchKnown() != null ? `${benchKnown()} recipes` : undefined },
@@ -138,8 +138,8 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'Archive',
-    owns: r => dashOf(r) === 'armory' || r.name === 'lists' || r.name === 'rules' || (['item', 'creature', 'deity', 'race', 'background', 'class', 'feat', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? '')))),
-    // The item tables (crafting kinds are in the Crafting menu), every kind of entry kept for reference, the dropdown lists.
+    owns: r => dashOf(r) === 'armory' || (['item', 'creature', 'deity', 'race', 'background', 'class', 'feat', 'subclass', 'writing', 'note'].includes(typeOf(r) ?? '') && !(r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? '')))),
+    // The item tables (crafting kinds are in the Crafting menu), every kind of entry kept for reference.
     items: () => [
       viewLink('armory', 'Weapons', 'weapons', kindCount('Weapon')),
       viewLink('armory', 'Armor', 'armor', kindCount('Armor')),
@@ -147,9 +147,16 @@ export const MENUS: TopMenu[] = [
       viewLink('armory', 'Other items', 'otherItems'),
       SEP,
       ...(['creature', 'deity', 'race', 'background', 'class', 'subclass', 'feat', 'writing', 'note'] as EntryType[]).map(typeLink),
-      SEP,
-      { label: 'Lists', uiIcon: 'lists', href: '#/lists', hint: 'dropdown options' },
+    ],
+  },
+  {
+    // How the game works in this world: the ruleset's presets and optional rules, and the dropdown lists.
+    title: 'Ruleset',
+    home: '#/rules',
+    owns: r => r.name === 'rules' || r.name === 'lists',
+    items: () => [
       { label: 'Ruleset', uiIcon: 'scales', href: '#/rules', hint: 'optional rules, presets' },
+      { label: 'Lists', uiIcon: 'lists', href: '#/lists', hint: 'dropdown options' },
     ],
   },
   {

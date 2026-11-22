@@ -23,12 +23,17 @@ export const sheetOf = (pc: Entry): CharacterSheet | undefined =>
   pc.fields.sheet ? own({ ...blankSheet(), ...(pc.fields.sheet) }, pc) : undefined
 /** A PC's sheet for reading, blank if never filled in: still theirs, so their species and classes count on it. */
 export const sheetOrBlank = (pc: Entry): CharacterSheet => sheetOf(pc) ?? own(blankSheet(), pc)
+/** What's done to a sheet before any change (sheet.ts: note the CON max HP was made with). */
+let beforeEdit: ((s: CharacterSheet) => void) | undefined
+export const onSheetEdit = (fn: (s: CharacterSheet) => void) => { beforeEdit = fn }
 /** A PC's stored sheet for changing: created, or completed, as needed. */
 export function sheetToEdit(pc: Entry): CharacterSheet {
   const s = (pc.fields.sheet ??= {} as CharacterSheet) as Partial<CharacterSheet>
   const blank = blankSheet() as unknown as Record<string, unknown>
   for (const k of ['abilities', 'saves', 'skills', 'inventory', 'features']) if ((s as Record<string, unknown>)[k] == null) (s as Record<string, unknown>)[k] = blank[k]
-  return own(s as CharacterSheet, pc)
+  const out = own(s as CharacterSheet, pc)
+  beforeEdit?.(out)
+  return out
 }
 
 // ---- proficiencies ----
@@ -42,6 +47,35 @@ export function profsToEdit(s: CharacterSheet): Proficiencies {
 
 /** A spellbook with nothing in it: no slots at any of the nine levels, no spells. */
 export const emptyBook = (): Spellbook => ({ slots: Array.from({ length: 9 }, () => ({ max: 0, used: 0 })), known: [], prepared: [], always: [] })
+
+// ---- putting an item to use ----
+/**
+ * Equip or attune one of a line's items. On a stack (4 Daggers) one comes off onto a line of its own and the rest stay
+ * in the pack; taking it off puts it back on a stack of the same item, if there is one (without a name or note of its
+ * own). Returns the index of the line that changed.
+ */
+export function setInUse(s: CharacterSheet, i: number, key: 'equipped' | 'attuned', on: boolean): number {
+  const l = s.inventory[i]
+  if (!l) return i
+  if (on) {
+    if (l[key]) return i
+    // a stack: one of them is put to use, on a line of its own
+    if (l.qty > 1 && !l.equipped && !l.attuned) {
+      l.qty -= 1
+      s.inventory.push({ item: l.item, qty: 1, [key]: true })
+      return s.inventory.length - 1
+    }
+    l[key] = true
+    return i
+  }
+  delete l[key]
+  // back in the pack: onto the stack of the same item, if any
+  if (!l.equipped && !l.attuned && l.item && !l.label && !l.note && l.charges == null && !l.used?.length) {
+    const j = s.inventory.findIndex((x, k) => k !== i && x.item === l.item && !x.equipped && !x.attuned && !x.label && !x.note && x.charges == null)
+    if (j >= 0) { s.inventory[j].qty += l.qty; s.inventory.splice(i, 1); return j > i ? j - 1 : j }
+  }
+  return i
+}
 
 // ---- changing it ----
 /** Change a PC's sheet and mark the PC as changed (nothing happens in a tab that doesn't save). */

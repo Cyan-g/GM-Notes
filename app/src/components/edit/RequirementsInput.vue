@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // An item's requirements (requirements.ts): minimum scores, classes or any spellcaster, races, skill
 // proficiencies and a note. Empty parts are left out, and nothing at all clears the field.
+import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import type { Requirements } from '../../model/types'
 import { ABILITIES, SKILLS } from '../../model/dnd'
@@ -31,9 +32,9 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
     <div class="req-row">
       <span class="req-label">Scores</span>
       <span v-for="(x, i) in scores" :key="i" class="req-score">
-        <select :value="x.ability" aria-label="Ability" @change="setScore(i, { ability: ($event.target as HTMLSelectElement).value as any })">
+        <Dropdown :value="x.ability" aria-label="Ability" @change="setScore(i, { ability: ($event.target as HTMLSelectElement).value as any })">
           <option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.short }}</option>
-        </select>
+        </Dropdown>
         <input type="number" min="1" max="30" class="effect-value" :value="x.min" aria-label="Minimum" @change="setScore(i, { min: Number(($event.target as HTMLInputElement).value) || 10 })" />
         <button type="button" class="link-btn" title="Remove" @click="put({ scores: scores.filter((_, k) => k !== i) })">×</button>
       </span>

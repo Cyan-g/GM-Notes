@@ -3,24 +3,33 @@
 // Metamagic, a lineage) and feats (a Fighting Style) show as the picks made and a Choose button; the list to tick opens
 // in a dialog, each option with its text, a prerequisite level it names and a filter. Skills, languages, tools, spells
 // and weapons are dropdowns right here. A count says how many are picked. Used on the Edit page and in the wizard.
-// Weapons to master show their mastery in the dropdown, what each picked one's mastery does, and while picks are
-// left, what every mastery does (the Lists page's notes).
+// Weapons to master show their mastery in the dropdown, and what it does (the Lists page's note) on hover: over an
+// option in the open list, and over the dropdown for the weapon picked.
+import Dropdown from './Dropdown.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { TraitOption } from '../model/types'
-import { choiceCandidates, choiceCount, choiceWords, type ActiveTrait } from '../species'
+import { choiceCount, choiceOffer, choiceWords, type ActiveTrait, type HaveNow } from '../species'
+import { categoryOf } from '../sheet'
 import { get, listOptions } from '../store'
 import { MASTERY_OF } from '../model/schema'
 import MarkdownView from './MarkdownView.vue'
+import { renderInline } from '../markdown'
 import EntryLink from './EntryLink.vue'
 import TraitChips from './TraitChips.vue'
 
-/** `owned`: the spells the character has already, with where from, marked in a spell pick's dropdown (the wizard). */
-const props = defineProps<{ a: ActiveTrait; disabled?: boolean; owned?: Map<string, string[]> }>()
+/**
+ * `owned`: the spells the character has already, with where from, marked in a spell pick's dropdown (the wizard).
+ * `have`: what the character has (skills, weapon proficiencies, languages): Expertise, weapon mastery and languages
+ * offer only what fits, and a skill they have already is marked.
+ */
+const props = defineProps<{ a: ActiveTrait; disabled?: boolean; owned?: Map<string, string[]>; have?: HaveNow }>()
 const hasIt = (id: string) => (c.value.kind === 'spell' ? props.owned?.get(id)?.join(', ') : undefined)
 const emit = defineEmits<{ pick: [picks: string[]] }>()
 const c = computed(() => props.a.trait.choice!)
 const n = computed(() => choiceCount(props.a))
-const options = computed(() => choiceCandidates(c.value))
+const options = computed(() => choiceOffer(c.value, props.have, props.a.picks, w => categoryOf(w), w => MASTERY_OF[w]))
+/** A skill (or skill or tool) pick the character has already: marked, picking it gives nothing new. */
+const hadSkill = (id: string) => (['skill', 'skillTool'].includes(c.value.kind) && props.have?.skills.includes(id) && !props.a.picks.includes(id) ? ' ✓ has it' : '')
 const words = computed(() => choiceWords(c.value, n.value))
 const picked = computed(() => props.a.picks.filter(Boolean).length)
 const full = computed(() => picked.value >= n.value)
@@ -37,18 +46,11 @@ const mastery = computed(() => c.value.kind === 'mastery')
 const ruleOf = (m: string) => listOptions('weaponMastery').find(o => o.id === m)?.note
 /** The weapon's name with its mastery: "Longsword (Sap)". */
 const weaponLabel = (o: { id: string; label: string }) => (mastery.value && MASTERY_OF[o.id] ? `${o.label} (${MASTERY_OF[o.id]})` : o.label)
-/** The picked weapons with their mastery and its rule. */
-const mastered = computed(() => (mastery.value ? props.a.picks.filter(Boolean).map(id => {
-  const m = MASTERY_OF[id]
-  return { id, label: options.value.find(o => o.id === id)?.label ?? id, mastery: m, rule: m ? ruleOf(m) : undefined }
-}) : []))
-/** Every mastery the weapons on offer have, with its rule and the weapons that have it. */
-const allMasteries = computed(() => {
-  if (!mastery.value) return []
-  const by = new Map<string, string[]>()
-  for (const o of options.value) { const m = MASTERY_OF[o.id]; if (m) by.set(m, [...(by.get(m) ?? []), o.label]) }
-  return [...by].sort(([a], [b]) => a.localeCompare(b)).map(([name, weapons]) => ({ name, rule: ruleOf(name), weapons }))
-})
+/** A weapon's mastery and what it does, for its hover tip: "Sap: If you hit a creature …". */
+const masteryTip = (id: string | undefined) => {
+  const m = mastery.value && id ? MASTERY_OF[id] : undefined
+  return m ? `${m}: ${ruleOf(m) ?? ''}`.replace(/: $/, '') : undefined
+}
 
 // ---- a list to tick (options and feats) ----
 const listed = computed(() => c.value.kind === 'option' || c.value.kind === 'feat')
@@ -84,6 +86,9 @@ watch(open, v => (v ? window.addEventListener('keydown', onKey, true) : window.r
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 function toggle(id: string) {
   if (props.disabled) return
+  // an option whose level or other option isn't there yet can't be taken (one taken already can be given up)
+  const r = rows.value.find(x => x.id === id)
+  if (r && lacking(r) && !props.a.picks.includes(id)) return
   const now = props.a.picks.filter(Boolean)
   if (now.includes(id)) return emit('pick', now.filter(x => x !== id))
   if (n.value === 1) return emit('pick', [id])
@@ -102,7 +107,7 @@ function toggle(id: string) {
     <!-- all picked: their names on one line (Change… shows what each does); still picking: each with what it does -->
     <p v-if="listed && full && pickedRows.length" class="sp-picked-line small">{{ pickedRows.map(r => r.label).join(' · ') }}</p>
     <ul v-else-if="listed && pickedRows.length" class="sp-picked">
-      <li v-for="r in pickedRows" :key="r.id"><b>{{ r.label }}</b> <span v-if="r.text" class="muted small">{{ lead(r.text) }}</span></li>
+      <li v-for="r in pickedRows" :key="r.id"><b>{{ r.label }}</b> <span v-if="r.text" class="muted small" v-html="renderInline(lead(r.text))" /></li>
     </ul>
 
     <Teleport v-if="listed && open" to="body">
@@ -122,12 +127,13 @@ function toggle(id: string) {
       </div>
     <div class="sp-optlist" role="group" :aria-label="a.trait.name">
       <label v-for="r in shown" :key="r.id" class="sp-opt" :class="{ on: a.picks.includes(r.id), off: !a.picks.includes(r.id) && full && n > 1, early: !!lacking(r) }" :title="lacking(r) ? `Can't be taken yet: ${lacking(r)}` : undefined">
-        <input :type="n === 1 ? 'radio' : 'checkbox'" :name="a.key" :checked="a.picks.includes(r.id)" :disabled="disabled || (!a.picks.includes(r.id) && full && n > 1)" @change="toggle(r.id)" />
+        <input :type="n === 1 ? 'radio' : 'checkbox'" :name="a.key" :checked="a.picks.includes(r.id)" :disabled="disabled || (!a.picks.includes(r.id) && ((full && n > 1) || !!lacking(r)))" @change="toggle(r.id)" />
         <span class="sp-opt-body">
           <span class="sp-opt-head"><b>{{ r.label }}</b>
             <span v-if="r.prereq || r.needs || r.needOption" class="sp-prereq" :class="{ lacking: !!lacking(r) }" :title="lacking(r) || 'Prerequisite'">{{ r.prereq ?? [r.needs && `Level ${r.needs}+`, r.needOption && rows.find(x => x.id === r.needOption)?.label].filter(Boolean).join(', ') }}</span>
             <TraitChips v-if="r.option" :t="r.option" no-grants /></span>
-          <span v-if="r.text" class="muted small sp-opt-lead">{{ lead(r.text) }}</span>
+          <span v-if="lacking(r) && !a.picks.includes(r.id)" class="small sp-opt-lacks">Not yet: {{ lacking(r) }}</span>
+          <span v-if="r.text" class="muted small sp-opt-lead" v-html="renderInline(lead(r.text))" />
           <details v-if="r.text.length > lead(r.text).length + 2" class="sp-opt-more" @click.stop><summary class="small">more</summary><MarkdownView class="small" :source="r.text" /></details>
         </span>
       </label>
@@ -140,22 +146,11 @@ function toggle(id: string) {
 
     <!-- everything else: one dropdown per pick -->
     <div v-if="!listed" class="sp-pick-selects">
-      <select v-for="k in n" :key="k" :value="a.picks[k - 1] ?? ''" :disabled="disabled" :aria-label="`${a.trait.name}: pick ${k}`" @change="set(k - 1, ($event.target as HTMLSelectElement).value)">
+      <Dropdown v-for="k in n" :key="k" :value="a.picks[k - 1] ?? ''" :disabled="disabled" :aria-label="`${a.trait.name}: pick ${k}`" :data-tip="masteryTip(a.picks[k - 1])" @change="set(k - 1, ($event.target as HTMLSelectElement).value)">
         <option value="">—</option>
-        <option v-for="o in options" :key="o.id" :value="o.id" :disabled="a.picks.includes(o.id) && a.picks[k - 1] !== o.id">{{ weaponLabel(o) }}{{ hasIt(o.id) ? ` ✓ has it: ${hasIt(o.id)}` : '' }}</option>
-      </select>
+        <option v-for="o in options" :key="o.id" :value="o.id" :disabled="a.picks.includes(o.id) && a.picks[k - 1] !== o.id" :data-tip="masteryTip(o.id)">{{ weaponLabel(o) }}{{ hasIt(o.id) ? ` ✓ has it: ${hasIt(o.id)}` : '' }}{{ hadSkill(o.id) }}</option>
+      </Dropdown>
       <template v-if="c.kind === 'spell'"><span v-for="id in a.picks" :key="id"><EntryLink :id="id" /><span v-if="hasIt(id)" class="wz-had small" :title="`Already has it: ${hasIt(id)}`">✓ also from {{ hasIt(id) }}</span></span></template>
     </div>
-    <template v-if="mastery">
-      <ul v-if="mastered.length" class="sp-masteries small">
-        <li v-for="w in mastered" :key="w.id"><b>{{ w.label }}</b><template v-if="w.mastery"> · <b>{{ w.mastery }}</b><span v-if="w.rule" class="muted">: {{ w.rule }}</span></template></li>
-      </ul>
-      <details v-if="allMasteries.length" class="sp-mastery-list small" :open="!full && !disabled">
-        <summary>What each mastery does</summary>
-        <dl>
-          <template v-for="m in allMasteries" :key="m.name"><dt>{{ m.name }}</dt><dd><span v-if="m.rule">{{ m.rule }}</span> <span class="muted">({{ m.weapons.join(', ') }})</span></dd></template>
-        </dl>
-      </details>
-    </template>
   </div>
 </template>

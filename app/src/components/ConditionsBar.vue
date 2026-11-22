@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // At the top of the play sheet: the conditions the character has (the same list as their combatant's in the tracker),
-// each with its icon and ✕, more from the menu, the exhaustion level as the ruleset counts it, and a line on what each
-// one does. The sheet's numbers already count what they change (conditions.ts); the lines say the rest.
+// each with its icon and ✕, more from the menu, and the exhaustion level as the ruleset counts it. What each one does
+// shows when the mouse is on its chip. The sheet's numbers already count what they change (conditions.ts).
+import Dropdown from './Dropdown.vue'
 import { useReadOnly } from '../composables/useReadOnly'
 import { computed } from 'vue'
 import type { CharacterSheet, Entry } from '../model/types'
@@ -28,14 +29,14 @@ function add(ev: Event) {
 const remove = (x: string) => set(list.value.filter(y => y !== x), x === 'Exhaustion' ? 0 : undefined)
 const step = (d: number) => set(list.value, Math.max(1, Math.min(6, level.value + d)))
 
-/** What each condition does, the exhaustion line as the active ruleset has it. */
-const lines = computed(() => list.value.map(x => ({ name: x, text: x === 'Exhaustion' ? `Level ${level.value} (${rule('exhaustion')} rules): ${exhaustionText(level.value)}` : CONDITION_RULES[x]?.text ?? '' })))
+/** What a condition does (exhaustion: at its level, as the active ruleset has it), for its chip's tooltip. */
+const what = (x: string) => (x === 'Exhaustion' ? `Level ${level.value} (${rule('exhaustion')} rules): ${exhaustionText(level.value)}` : CONDITION_RULES[x]?.text ?? '')
 </script>
 
 <template>
   <div class="cs-conds" :class="{ empty: !list.length }">
     <div class="conds">
-      <span v-for="x in list" :key="x" class="cond-chip">
+      <span v-for="x in list" :key="x" class="cond-chip" :class="{ tip: !!what(x) }" :data-tip="what(x) ? `${x}: ${what(x)}` : undefined">
         <ConditionIcon :name="x" />{{ x }}
         <span v-if="x === 'Exhaustion'" class="cs-exh">
           <button type="button" class="cond-x" :disabled="ro || level <= 1" title="One level less" @click="step(-1)">−</button>
@@ -44,13 +45,10 @@ const lines = computed(() => list.value.map(x => ({ name: x, text: x === 'Exhaus
         </span>
         <button type="button" class="cond-x" :disabled="ro" :title="`Remove ${x}`" @click="remove(x)">×</button>
       </span>
-      <select v-if="!ro" class="cond-add" aria-label="Add a condition" @change="add">
+      <Dropdown v-if="!ro" class="cond-add" aria-label="Add a condition" @change="add">
         <option value="">＋ Condition</option>
         <option v-for="x in missing" :key="x" :value="x">{{ x }}</option>
-      </select>
+      </Dropdown>
     </div>
-    <ul v-if="lines.length" class="cs-cond-lines small">
-      <li v-for="l in lines" :key="l.name"><b>{{ l.name }}</b> <span class="muted">{{ l.text }}</span></li>
-    </ul>
   </div>
 </template>

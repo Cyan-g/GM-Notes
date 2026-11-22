@@ -4,6 +4,7 @@
 // changes. Dates follow their month when months are moved or one before them is removed. Dates in a removed last
 // month keep its number (adding a month back brings them back), dates in another removed month keep only their
 // year, and days past a shortened month's end stay as they are; saving lists those first.
+import Dropdown from '../components/Dropdown.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { computed, reactive, ref } from 'vue'
 import type { Calendar, Database, WorldDate } from '../model/types'
@@ -204,10 +205,10 @@ function save() {
           <button type="button" :disabled="ro" @click="cal.months.push({ name: `Month ${cal.months.length + 1}`, days: 30 }); mark()">＋ Month</button>
         </p>
         <label class="cal-edit-row">Leap day (every 4 years, except every 100, except every 400) in
-          <select v-model="cal.leapMonth" :disabled="ro">
+          <Dropdown v-model="cal.leapMonth" :disabled="ro">
             <option :value="undefined">no month: no leap years</option>
             <option v-for="(m, i) in cal.months" :key="i" :value="i + 1">{{ m.name }}</option>
-          </select>
+          </Dropdown>
         </label>
       </section>
 
@@ -227,9 +228,9 @@ function save() {
         </table>
         <p class="cal-edit-row"><button type="button" :disabled="ro" @click="cal.weekdays.push(`Day ${cal.weekdays.length + 1}`); mark()">＋ Weekday</button></p>
         <label class="cal-edit-row">Today, {{ formatDate(today) }}, is a
-          <select v-model="todayWeekday" :disabled="ro">
+          <Dropdown v-model="todayWeekday" :disabled="ro">
             <option v-for="(w, i) in cal.weekdays" :key="i" :value="i">{{ w }}</option>
-          </select>
+          </Dropdown>
         </label>
       </section>
 
@@ -243,10 +244,10 @@ function save() {
               <td><input v-model="m.name" :disabled="ro" :aria-label="`Name of moon ${i + 1}`" /></td>
               <td><input v-model.number="m.cycle" class="num" type="number" min="0.1" step="any" :disabled="ro" :aria-label="`Cycle of ${m.name}`" /></td>
               <td>
-                <select :value="phases[i].picked ?? ''" :disabled="ro" :aria-label="`Phase of ${m.name} today`" @change="phases[i].picked = ($event.target as HTMLSelectElement).value === '' ? null : Number(($event.target as HTMLSelectElement).value)">
+                <Dropdown :value="phases[i].picked ?? ''" :disabled="ro" :aria-label="`Phase of ${m.name} today`" @change="phases[i].picked = ($event.target as HTMLSelectElement).value === '' ? null : Number(($event.target as HTMLSelectElement).value)">
                   <option value="">{{ PHASES[eighth(phases[i].exact)] }} (as it is)</option>
                   <option v-for="(p, k) in PHASES" :key="k" :value="k">{{ p }}</option>
-                </select>
+                </Dropdown>
               </td>
               <td><button type="button" class="link-btn x" :disabled="ro" title="Remove this moon" @click="removeMoon(i); mark()">✕</button></td>
             </tr>
@@ -283,10 +284,10 @@ function save() {
               <td><input v-model="h.name" :disabled="ro" :aria-label="`Name of holiday ${i + 1}`" /></td>
               <td><input v-model.number="h.day" class="num" type="number" min="1" :max="cal.months[h.month - 1]?.days" :disabled="ro" :aria-label="`Day of ${h.name}`" /></td>
               <td>
-                <select v-model="h.month" :disabled="ro" :aria-label="`Month of ${h.name}`">
+                <Dropdown v-model="h.month" :disabled="ro" :aria-label="`Month of ${h.name}`">
                   <option v-for="(m, k) in cal.months" :key="k" :value="k + 1">{{ m.name }}</option>
                   <option v-if="!cal.months[h.month - 1]" :value="h.month">Pick a month (its month was removed)</option>
-                </select>
+                </Dropdown>
               </td>
               <td><input v-model="h.note" :disabled="ro" :aria-label="`Note on ${h.name}`" /></td>
               <td><button type="button" class="link-btn x" :disabled="ro" title="Remove this holiday" @click="cal.holidays.splice(i, 1); mark()">✕</button></td>

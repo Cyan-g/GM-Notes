@@ -25,14 +25,18 @@ import AtlasView from './views/AtlasView.vue'
 import OrgsView from './views/OrgsView.vue'
 import MapPage from './views/MapPage.vue'
 import DataView from './views/DataView.vue'
+import StylesView from './views/StylesView.vue'
 import ListsView from './views/ListsView.vue'
 import RulesetView from './views/RulesetView.vue'
 import CharacterWizard from './views/CharacterWizard.vue'
 import NewEntryDialog from './components/NewEntryDialog.vue'
 import ImportDialog from './components/ImportDialog.vue'
 import ExportDialog from './components/ExportDialog.vue'
+import DevicesDialog from './components/DevicesDialog.vue'
+import SyncNotice from './components/SyncNotice.vue'
 import LinkPreview from './components/LinkPreview.vue'
 import TipLayer from './components/TipLayer.vue'
+import UndoNote from './components/UndoNote.vue'
 import StartScreen from './components/StartScreen.vue'
 import PublishDialog from './components/PublishDialog.vue'
 import { checkShared, isShared, syncStatus } from './sync'
@@ -127,6 +131,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <AtlasView v-else-if="route.current.name === 'atlas'" :tab="route.current.tab" />
       <OrgsView v-else-if="route.current.name === 'orgs'" />
       <DataView v-else-if="route.current.name === 'data'" />
+      <StylesView v-else-if="route.current.name === 'styles'" />
       <ListsView v-else-if="route.current.name === 'lists'" />
       <RulesetView v-else-if="route.current.name === 'rules'" />
       <CharacterWizard v-else-if="route.current.name === 'wizard'" />
@@ -141,9 +146,12 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
     <NewEntryDialog v-model="ui.newOpen" :type="ui.newType" :fields="ui.newFields" />
     <ImportDialog v-model="ui.importPlan" />
     <ExportDialog v-model="ui.worldExport" />
+    <DevicesDialog v-if="ui.devices" @close="ui.devices = false" />
+    <SyncNotice />
     <PublishDialog v-model="ui.publishOpen" />
     <LinkPreview />
     <TipLayer />
+    <UndoNote />
   </div>
 
   <StartScreen v-model:ready="ready" />

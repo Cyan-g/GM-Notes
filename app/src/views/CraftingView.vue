@@ -11,13 +11,14 @@ import { activeBench, currentPc } from '../sheet'
 import type { Entry as PcEntry } from '../model/types'
 import { CRAFTING_RULE, craftingTime, recipeCost } from '../crafting'
 import EntryLink from '../components/EntryLink.vue'
+import { noteUndo } from '../undoNote'
 import EntryPicker from '../components/edit/EntryPicker.vue'
 
 /** On a character's page (their tab) it's theirs; on its own page, the current character's or the world's. */
 const props = defineProps<{ pc?: PcEntry }>()
 const owner = computed(() => props.pc ?? currentPc.value)
 const c = computed(() => activeBench(props.pc))
-const message = ref('')
+
 
 // ---- proficiencies: the Tool items ----
 // With a current character these are the tool proficiencies on their sheet, changed only there; the recipes show
@@ -50,13 +51,16 @@ const known = computed(() => c.value.known.map(id => get(id)).filter((e): e is E
   .sort((a, b) => toolName(a).localeCompare(toolName(b)) || a.name.localeCompare(b.name)))
 const lines = (e: Entry) => (e.fields.recipe) ?? []
 const proficient = (e: Entry) => !e.fields.craftingType || c.value.tools.includes(e.fields.craftingType)
+/** Whether the character carries the tool (crafting needs it at hand; said, not blocked). */
+const carries = (tool: Id) => !!owner.value?.fields.sheet?.inventory?.some(l => l.item === tool && l.qty > 0)
 const enough = (e: Entry) => lines(e).every(l => have(l.item) >= (l.amount || 1))
 const canCraft = (e: Entry) => proficient(e) && enough(e) && lines(e).length > 0
 function craft(e: Entry) {
   if (!canCraft(e)) return
   for (const l of lines(e)) addTo('pouch', l.item, -(l.amount || 1))
   addTo('made', e.id, 1)
-  message.value = `Crafted ${e.name}.`
+  // said where it's seen (the note at the bottom), with where it went
+  noteUndo(`Crafted ${e.name}: it's in ${owner.value?.name ?? 'the'}${owner.value ? "'s" : ''} inventory`)
 }
 const learnable = computed(() => (byType.value.get('item') ?? []).filter(e => (e.fields.recipe)?.length).map(e => e.id))
 function learn(id: Id) { if (!c.value.known.includes(id)) c.value.setKnown([...c.value.known, id]) }
@@ -66,9 +70,9 @@ const ingredientIds = computed(() => (byType.value.get('item') ?? []).filter(e =
 
 <template>
   <div class="workbench">
-    <header class="list-head">
-      <h1 v-if="!pc"><span class="icon"><AppIcon ui="workbench" /></span>Workbench<span v-if="owner" class="head-of">of <EntryLink :id="owner.id" /></span></h1>
-      <span v-if="message" class="ok small">{{ message }}</span>
+    <!-- on a character's own tab the tab is the heading: no empty header line under it -->
+    <header v-if="!pc" class="list-head">
+      <h1><span class="icon"><AppIcon ui="workbench" /></span>Workbench<span v-if="owner" class="head-of">of <EntryLink :id="owner.id" /></span></h1>
     </header>
 
     <div class="wb-grid">
@@ -80,7 +84,10 @@ const ingredientIds = computed(() => (byType.value.get('item') ?? []).filter(e =
             <tbody>
               <tr v-for="e in known" :key="e.id" :class="{ ready: canCraft(e) }">
                 <td><EntryLink :id="e.id" icon /></td>
-                <td :class="{ missing: !proficient(e) }" :title="proficient(e) ? '' : 'You are not proficient with this tool'"><EntryLink v-if="e.fields.craftingType" :id="e.fields.craftingType" /><template v-else>—</template></td>
+                <td :class="{ missing: !proficient(e) }"><EntryLink v-if="e.fields.craftingType" :id="e.fields.craftingType" /><template v-else>—</template>
+                  <!-- what's missing, in words: the proficiency (it can't be crafted), or the tool itself (said, not blocked) -->
+                  <div v-if="!proficient(e)" class="small wb-why">needs {{ toolName(e) }} proficiency</div>
+                  <div v-else-if="owner && e.fields.craftingType && !carries(e.fields.craftingType)" class="small muted wb-why" :title="`By the rules, crafting needs the tool at hand: ${toolName(e)} isn't in ${owner.name}'s inventory`">no {{ toolName(e) }} carried</div></td>
                 <td>
                   <span v-for="l in lines(e)" :key="l.item" class="wb-need" :class="{ short: have(l.item) < (l.amount || 1) }">
                     <EntryLink :id="l.item" /> <span v-flash="have(l.item)" class="muted">{{ have(l.item) }}/{{ l.amount || 1 }}</span>

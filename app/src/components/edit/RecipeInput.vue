@@ -22,11 +22,11 @@ function add(id: string) { emit('update:modelValue', [...lines.value, { item: id
 </script>
 
 <template>
-  <table class="mini edit-table">
+  <table class="mini edit-table recipe-table">
     <thead><tr><th>Ingredient</th><th class="num">Amount</th><th class="num">Cost</th><th /></tr></thead>
     <tbody>
       <tr v-for="(l, i) in lines" :key="i">
-        <td><EntryPicker :model-value="l.item" :types="['item']" @update:model-value="v => v ? update(i, { item: v }) : remove(i)" /></td>
+        <td><EntryPicker :model-value="l.item" :types="['item']" no-clear @update:model-value="v => v ? update(i, { item: v }) : remove(i)" /></td>
         <td class="num"><input type="number" min="0" step="1" class="short" :value="l.amount" @change="update(i, { amount: Number(($event.target as HTMLInputElement).value) || 0 })" /></td>
         <td class="num">{{ formatMoney((price(l.item) ?? 0) * l.amount) }}</td>
         <td><button type="button" class="x" title="Remove" @click="remove(i)">×</button></td>

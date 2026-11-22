@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // A sortable, filterable table of entries. For the DM, a "Known" column switches entries between known to players
 // and DM only, one by one or every row shown at once (asking first when that's many).
+import Dropdown from './Dropdown.vue'
 import { printable } from '../cards'
 import AppIcon from './AppIcon.vue'
 import { activeSpellbook, currentPc } from '../sheet'
@@ -167,17 +168,17 @@ defineExpose({ count: computed(() => shown.value.length) })
       <input v-model="q" type="search" placeholder="Filter by name…" />
       <label v-for="{ f, values } in facetDefs" :key="f.key" class="facet">
         <span>{{ f.label }}</span>
-        <select v-model="chosen[f.key]">
+        <Dropdown v-model="chosen[f.key]">
           <option value="">All</option>
           <option v-for="v in values" :key="v" :value="v">{{ v }}</option>
-        </select>
+        </Dropdown>
       </label>
       <label v-if="groupCols.length" class="facet">
         <span>Group by</span>
-        <select v-model="groupBy">
+        <Dropdown v-model="groupBy">
           <option value="">Nothing</option>
           <option v-for="c in groupCols" :key="c.key" :value="c.key">{{ c.label }}</option>
-        </select>
+        </Dropdown>
       </label>
       <span class="muted small">{{ shown.length === base.length ? `${shown.length} shown` : `${shown.length} of ${base.length} shown` }}</span>
       <button v-if="cardRows.length" type="button" class="link-btn small" :title="`Print the ${cardRows.length} shown as cards (PDF, poker size, nine a page)`" @click="printShown"><AppIcon ui="cards" /> Print as cards</button>
@@ -190,7 +191,7 @@ defineExpose({ count: computed(() => shown.value.length) })
             <th v-for="c in columns" :key="c.key" class="sortable" :class="['col-' + c.key.replace('@', ''), { num: c.kind === 'money' || c.field?.kind === 'money' }]" :title="c.key === '@concRitual' ? 'Concentration · Ritual' : `Sort by ${c.label.toLowerCase()}`" @click="sortBy(c.key)">{{ c.label }}{{ arrow(c.key) }}</th>
             <th v-if="spells" class="book-col" />
             <th v-if="knownCol" class="known-col" :title="allKnown ? 'All shown are known to players; untick to make them DM only' : 'Tick to make every row shown known to players'">
-              <label><input type="checkbox" :checked="allKnown" :indeterminate="someKnown && !allKnown" :aria-label="'Known to players: every row shown'" @change="setAllKnown(($event.target as HTMLInputElement).checked, $event)" /> Known</label>
+              <label><input type="checkbox" :checked="allKnown" :indeterminate="someKnown && !allKnown" :aria-label="'Known to players: every row shown'" @change="setAllKnown(($event.target as HTMLInputElement).checked, $event)" /> Players see</label>
             </th>
           </tr>
         </thead>

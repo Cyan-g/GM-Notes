@@ -11,8 +11,9 @@ export interface DashView {
   facets?: string[]
   sort?: { key: string; dir: 1 | -1 }
   limit?: number
-  /** Type the "New" button creates in this view. */
+  /** Type the "New" button creates in this view, and the fields it starts with (Weapons: kind Weapon). */
   creates?: EntryType
+  createFields?: Record<string, unknown>
 }
 export interface Dashboard {
   id: string; title: string; icon: string; views: DashView[]
@@ -35,9 +36,9 @@ export const DASHBOARDS: Dashboard[] = [
   },
   {
     id: 'armory', title: 'Armory', icon: '⚔️', uiIcon: 'weapons', views: [
-      { name: 'Weapons', filter: kind('Weapon'), cols: ['weaponCategory', 'subtype', 'damage', 'damageType', 'properties', 'magical', 'value'], facets: ['weaponCategory', 'damageType', 'magical'], sort: { key: 'subtype', dir: 1 }, creates: 'item' },
-      { name: 'Armor', filter: kind('Armor'), cols: ['armorType', 'slot', 'subtype', '@armorClass', 'magical', 'value', 'summary'], facets: ['armorType', 'slot', 'magical'], sort: { key: 'slot', dir: 1 }, creates: 'item' },
-      { name: 'Tools', filter: kind('Tool'), cols: ['tool', 'value', 'weight', 'summary'], facets: ['tool'], sort: { key: 'tool', dir: 1 }, creates: 'item' },
+      { name: 'Weapons', filter: kind('Weapon'), cols: ['weaponCategory', 'subtype', 'damage', 'damageType', 'properties', 'magical', 'value'], facets: ['weaponCategory', 'damageType', 'magical'], sort: { key: 'subtype', dir: 1 }, creates: 'item', createFields: { kind: 'Weapon' } },
+      { name: 'Armor', filter: kind('Armor'), cols: ['armorType', 'slot', 'subtype', '@armorClass', 'magical', 'value', 'summary'], facets: ['armorType', 'slot', 'magical'], sort: { key: 'slot', dir: 1 }, creates: 'item', createFields: { kind: 'Armor' } },
+      { name: 'Tools', filter: kind('Tool'), cols: ['tool', 'value', 'weight', 'summary'], facets: ['tool'], sort: { key: 'tool', dir: 1 }, creates: 'item', createFields: { kind: 'Tool' } },
       { name: 'Other items', filter: e => e.type === 'item' && !['Weapon', 'Armor', 'Tool', 'Ingredient', 'Potion', 'Poison', 'Scroll'].includes(String(e.fields.kind ?? '')), cols: ['kind', 'subtype', 'magical', 'value', 'summary'], facets: ['kind', 'magical'], sort: { key: 'kind', dir: 1 }, creates: 'item' },
       { name: 'Everything by value', filter: is('item'), cols: ['kind', 'subtype', 'value'], facets: ['kind'], sort: { key: 'value', dir: -1 } },
     ],
@@ -53,7 +54,7 @@ export const DASHBOARDS: Dashboard[] = [
   {
     id: 'people', title: 'People', icon: '👥', uiIcon: 'overview', views: [
       { name: 'All NPCs', filter: is('npc'), cols: ['race', '@lives-in', '@member', '@aliases'], facets: ['race', '@lives-in', '@member'], creates: 'npc' },
-      { name: 'Player characters', filter: is('pc'), cols: ['player', 'race', '@classes', '@level', 'campaigns'], creates: 'pc' },
+      { name: 'Player characters', filter: is('pc'), cols: ['player', '@classes', '@level', '@ac', '@maxHp', '@passives', '@spellDc', 'campaigns'], facets: ['campaigns'], creates: 'pc' },
       { name: 'Organizations', filter: is('organization'), cols: ['orgType', 'parent', 'seat', '@members'], facets: ['orgType'], creates: 'organization' },
     ],
   },

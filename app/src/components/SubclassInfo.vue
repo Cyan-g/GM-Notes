@@ -2,6 +2,7 @@
 // At the top of a subclass's page and its Edit page: which class it belongs to (a link; a picker when editing), the
 // level the class chooses it at and the levels its features come at, its tagline, a warning with fixes when features
 // come before the class can choose a subclass, and "Copy as new subclass" to start a homebrew one from it.
+import Dropdown from './Dropdown.vue'
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { traitsOf } from '../model/traits'
@@ -54,10 +55,10 @@ function copy() {
     <div class="si-line">
       <template v-if="edit">
         <label class="si-class">Subclass of
-          <select :value="cls" @change="setClass(($event.target as HTMLSelectElement).value)">
+          <Dropdown :value="cls" @change="setClass(($event.target as HTMLSelectElement).value)">
             <option value="">No class yet…</option>
             <option v-for="o in listOptions('class')" :key="o.id" :value="o.id">{{ o.label }}</option>
-          </select></label>
+          </Dropdown></label>
       </template>
       <template v-else-if="cls">Subclass of <EntryLink v-if="classPage" :id="classPage.id" /><b v-else>{{ label }}</b></template>
       <template v-if="cls"> · chosen at {{ label }} level {{ at }}</template>

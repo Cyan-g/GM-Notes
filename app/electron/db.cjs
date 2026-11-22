@@ -8,6 +8,7 @@
 const { DatabaseSync } = require('node:sqlite')
 const fs = require('node:fs')
 const path = require('node:path')
+const crypto = require('node:crypto')
 
 const FILE = 'dndesk.sqlite'
 /** A changed entry's previous version is kept at most this often, so typing doesn't store every keystroke. */
@@ -16,6 +17,16 @@ const HISTORY_EVERY_MS = 10 * 60 * 1000
 const HISTORY_KEEP = 40
 /** What's kept as plain settings: the world's meta data and the play state. */
 const PLAY_KEYS = ['tracker', 'spellbook', 'crafting', 'follow', 'playerNotes']
+/**
+ * Settings that belong to this copy of the world, not to the world, so they're never logged for other devices:
+ * `follow` (a player's link to their DM's world), and in meta the look (theme, printed cards), DM or player mode, this
+ * computer's sharing set-up, when it last saved, made a backup copy or published, and the character it has open.
+ */
+const LOCAL_PLAY = new Set(['follow'])
+const LOCAL_META = new Set(['theme', 'cardStyle', 'mode', 'sharing', 'edited', 'externalBackup', 'lastPublished', 'currentCharacter'])
+/** Pictures and attached files are logged; backups and anything else in the folder are not. */
+const LOGGED_FILE = /^(images|files)\/[^/\\]+$/
+const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS settings (
@@ -60,6 +71,17 @@ CREATE TABLE IF NOT EXISTS history (
   data    TEXT NOT NULL CHECK (json_valid(data))
 );
 CREATE INDEX IF NOT EXISTS history_entry ON history(entry, saved);
+-- What changed, for syncing with the user's other devices: one row per thing (an entry, a relation, a setting, a picture
+-- or file), its latest change only. The sequence number only grows, so a device asks "everything after N".
+CREATE TABLE IF NOT EXISTS changes (
+  seq    INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind   TEXT NOT NULL CHECK (kind IN ('entry', 'relation', 'setting', 'file')),
+  key    TEXT NOT NULL,
+  op     TEXT NOT NULL CHECK (op IN ('put', 'delete')),
+  at     TEXT NOT NULL,
+  device TEXT NOT NULL,
+  UNIQUE (kind, key)
+);
 `
 
 const j = v => (v == null ? null : JSON.stringify(v))
@@ -82,14 +104,18 @@ function rowToRelation(r) {
 
 class WorldDb {
   /** Open (or create) the database in a data folder. */
-  constructor(dir, { readOnly = false } = {}) {
+  /** `device`: this computer's ID, written with each change made here (see the changes table). */
+  constructor(dir, { readOnly = false, device = 'unknown' } = {}) {
     this.file = path.join(dir, FILE)
     this.readOnly = readOnly
+    this.device = device
     this.db = new DatabaseSync(this.file, { readOnly })
     if (!readOnly) {
       // A rollback journal (not WAL): at rest the database is this one file, safe to copy or carry on a stick.
       this.db.exec('PRAGMA journal_mode = DELETE; PRAGMA synchronous = FULL;')
       this.db.exec(SCHEMA)
+      // The log's own ID: a device that synced with an earlier log (before a restore, say) starts over from the top.
+      if (!this.setting('changeLog')) this.setSetting('changeLog', crypto.randomUUID())
     }
     this.db.exec('PRAGMA foreign_keys = ON;')
   }
@@ -147,17 +173,22 @@ class WorldDb {
       const old = this.db.prepare('SELECT * FROM entries WHERE id = ?')
       const lastHist = this.db.prepare('SELECT max(saved) AS t FROM history WHERE entry = ?')
       const addHist = this.db.prepare('INSERT INTO history(entry, saved, deleted, data) VALUES (?, ?, ?, ?)')
+      // One line per changed thing in the changes table (its earlier line goes). `c.origin` says, for changes that came
+      // from another device, which one and when ("entry:<id>" → { device, at }); everything else is this device's, now.
+      const logRow = this.db.prepare('INSERT OR REPLACE INTO changes(kind, key, op, at, device) VALUES (?, ?, ?, ?, ?)')
+      const log = (kind, key, op) => { const o = c.origin?.[`${kind}:${key}`]; logRow.run(kind, key, op, o?.at ?? now, o?.device ?? this.device) }
       const keep = id => {
         // Only the newest HISTORY_KEEP versions of an entry are kept.
         this.db.prepare('DELETE FROM history WHERE entry = ? AND rowid NOT IN (SELECT rowid FROM history WHERE entry = ? ORDER BY saved DESC LIMIT ?)').run(id, id, HISTORY_KEEP)
       }
-      for (const id of c.relRemove ?? []) this.db.prepare('DELETE FROM relations WHERE id = ?').run(id)
+      for (const id of c.relRemove ?? []) { this.db.prepare('DELETE FROM relations WHERE id = ?').run(id); log('relation', id, 'delete') }
       for (const id of c.remove ?? []) {
         const r = old.get(id)
         if (!r) continue
         addHist.run(id, now, 1, JSON.stringify(rowToEntry(r)))
         keep(id)
         this.db.prepare('DELETE FROM entries WHERE id = ?').run(id)
+        log('entry', id, 'delete')
       }
       const up = this.db.prepare(`INSERT INTO entries(id, type, name, aliases, tags, fields, body, visibility, image, files, created, updated)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -173,18 +204,87 @@ class WorldDb {
           if (force.has(e.id) || !t || Date.parse(now) - Date.parse(t) > HISTORY_EVERY_MS) { addHist.run(e.id, now, 0, JSON.stringify(rowToEntry(r))); keep(e.id) }
         }
         up.run(e.id, e.type, e.name, j(e.aliases ?? []), j(e.tags ?? []), j(e.fields ?? {}), e.body ?? '', e.visibility, e.image ?? null, j(e.files), e.created, e.updated)
+        log('entry', e.id, 'put')
       }
       const rel = this.db.prepare(`INSERT INTO relations(id, a, b, kind, role, date_from, date_to, note, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET a = excluded.a, b = excluded.b, kind = excluded.kind, role = excluded.role, date_from = excluded.date_from,
           date_to = excluded.date_to, note = excluded.note, visibility = excluded.visibility`)
-      for (const r of c.relUpsert ?? []) rel.run(r.id, r.a, r.b, r.kind, r.role ?? null, j(r.from), j(r.to), r.note ?? null, r.visibility)
+      for (const r of c.relUpsert ?? []) { rel.run(r.id, r.a, r.b, r.kind, r.role ?? null, j(r.from), j(r.to), r.note ?? null, r.visibility); log('relation', r.id, 'put') }
       if (c.version != null) this.setSetting('version', c.version)
-      if (c.meta) this.setSetting('meta', c.meta)
-      for (const [k, v] of Object.entries(c.play ?? {})) if (PLAY_KEYS.includes(k)) this.setSetting(k, v)
+      // the world's settings: each top-level part of meta that changed, and each play setting that changed
+      if (c.meta) {
+        const was = this.setting('meta') ?? {}
+        for (const k of new Set([...Object.keys(was), ...Object.keys(c.meta)])) {
+          if (!LOCAL_META.has(k) && !same(was[k], c.meta[k])) log('setting', `meta.${k}`, c.meta[k] == null ? 'delete' : 'put')
+        }
+        this.setSetting('meta', c.meta)
+      }
+      for (const [k, v] of Object.entries(c.play ?? {})) {
+        if (!PLAY_KEYS.includes(k)) continue
+        if (!LOCAL_PLAY.has(k) && !same(this.setting(k), v)) log('setting', k, v == null ? 'delete' : 'put')
+        this.setSetting(k, v)
+      }
       this.setSetting('rev', rev + 1)
       return rev + 1
     })
   }
+
+  /** A picture or file in images/ or files/ was written or removed (by this device, or as `origin` says). */
+  logFile(rel, op, origin) {
+    if (this.readOnly || !LOGGED_FILE.test(rel)) return
+    this.db.prepare('INSERT OR REPLACE INTO changes(kind, key, op, at, device) VALUES (?, ?, ?, ?, ?)')
+      .run('file', rel, op, origin?.at ?? new Date().toISOString(), origin?.device ?? this.device)
+  }
+  /** The log's ID and its last sequence number. */
+  logState() {
+    return { log: this.setting('changeLog'), seq: this.db.prepare('SELECT max(seq) AS n FROM changes').get().n ?? 0 }
+  }
+  /** What changed after sequence number `seq` (oldest first), at most `limit` lines. */
+  changesSince(seq = 0, limit = 5000) {
+    return this.db.prepare('SELECT seq, kind, key, op, at, device FROM changes WHERE seq > ? ORDER BY seq LIMIT ?').all(seq, limit)
+  }
+  /**
+   * What changed after `seq`, for another device: each thing as it is now (an entry, a relation, a setting's value; a
+   * picture or file by its path only), at most `limit` lines. An entry a relation in the batch points to comes along
+   * when it changed again later (so the relation never arrives before its entry). `upTo` is the next `seq` to ask from.
+   */
+  changeBatch(seq = 0, limit = 2000) {
+    const rows = this.changesSince(seq, limit)
+    const upTo = rows.length ? rows[rows.length - 1].seq : seq
+    const more = !!this.db.prepare('SELECT 1 FROM changes WHERE seq > ? LIMIT 1').get(upTo)
+    const entryRow = this.db.prepare('SELECT * FROM entries WHERE id = ?'), relRow = this.db.prepare('SELECT * FROM relations WHERE id = ?')
+    const line = this.db.prepare("SELECT seq, kind, key, op, at, device FROM changes WHERE kind = 'entry' AND key = ?")
+    const have = new Set(rows.map(r => `${r.kind}:${r.key}`))
+    for (const r of rows.slice()) {
+      if (r.kind !== 'relation' || r.op !== 'put') continue
+      const x = relRow.get(r.key)
+      for (const id of x ? [x.a, x.b] : []) {
+        const l = line.get(id)
+        if (l && l.seq > upTo && !have.has(`entry:${id}`)) { rows.push(l); have.add(`entry:${id}`) }
+      }
+    }
+    const meta = this.setting('meta') ?? {}
+    const items = rows.map(r => {
+      const item = { kind: r.kind, key: r.key, op: r.op, at: r.at, device: r.device }
+      if (r.op !== 'put') return item
+      if (r.kind === 'entry') { const x = entryRow.get(r.key); if (x) item.value = rowToEntry(x); else item.op = 'delete' }
+      else if (r.kind === 'relation') { const x = relRow.get(r.key); if (x) item.value = rowToRelation(x); else item.op = 'delete' }
+      else if (r.kind === 'setting') item.value = r.key.startsWith('meta.') ? meta[r.key.slice(5)] ?? null : this.setting(r.key) ?? null
+      return item
+    })
+    return { log: this.setting('changeLog'), device: this.device, upTo, more, items }
+  }
+  /** This copy's latest change to each of `keys` ("entry:<id>", "setting:meta.today" …): when and on which device. */
+  linesOf(keys) {
+    const q = this.db.prepare('SELECT at, device FROM changes WHERE kind = ? AND key = ?')
+    const out = {}
+    for (const k of keys) { const i = k.indexOf(':'); const r = q.get(k.slice(0, i), k.slice(i + 1)); if (r) out[k] = { at: r.at, device: r.device } }
+    return out
+  }
+  /** A fresh, empty log of its own (a copy just made from another device's world). */
+  startOwnLog() { if (!this.readOnly) { this.db.prepare('DELETE FROM changes').run(); this.newLog() } }
+  /** A new log ID (after the database was replaced by a backup): other devices then sync everything again. */
+  newLog() { if (!this.readOnly) this.setSetting('changeLog', crypto.randomUUID()) }
 
   /** Earlier versions of an entry (newest first), including the last one if it was deleted. */
   history(id) {

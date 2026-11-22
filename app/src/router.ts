@@ -16,6 +16,7 @@ export type Route =
   | { name: 'atlas'; tab?: 'timeline' }
   | { name: 'orgs' }
   | { name: 'data' }
+  | { name: 'styles' }
   | { name: 'lists' }
   | { name: 'rules' }
   | { name: 'wizard' }
@@ -34,6 +35,7 @@ function parse(): Route {
   if (kind === 'atlas') return { name: 'atlas', tab: arg === 'timeline' ? 'timeline' : undefined }
   if (kind === 'organizations') return { name: 'orgs' }
   if (kind === 'data') return { name: 'data' }
+  if (kind === 'styles') return { name: 'styles' }
   if (kind === 'lists') return { name: 'lists' }
   if (kind === 'rules') return { name: 'rules' }
   if (kind === 'new-character') return { name: 'wizard' }

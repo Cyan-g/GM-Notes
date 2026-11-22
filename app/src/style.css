@@ -760,8 +760,9 @@ table.grid.wb-recipes th:nth-last-child(2) { width: 7.5em; }
 .atlas-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 1rem; align-items: start; }
 @media (max-width: 1000px) { .atlas-grid { grid-template-columns: 1fr; } }
 .atlas-main, .atlas-side { display: grid; gap: 1rem; }
+.atlas-maps { grid-column: 1 / -1; }
+.map-tile-none { display: flex; align-items: center; justify-content: center; aspect-ratio: 4 / 3; background: var(--chip); border-radius: 6px; }
 .atlas .card h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
-.atlas .card h3 select { font: 13px var(--sans); }
 .atlas-today { font: 600 1.25rem var(--serif); margin: 0 0 .6rem; }
 .map-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .8rem; }
 .map-tile { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel-2); color: var(--ink); text-decoration: none; transition: transform .12s, box-shadow .12s; }
@@ -1029,6 +1030,31 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 
 /* initiative strip: current turn in the middle; earlier turns fade out to the left, upcoming ones to the right */
 .init-strip:not(.empty) { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); overflow: hidden; align-items: center; }
+/* the tracker's statblock panel: a third column beside the sides on a wide screen */
+.sides.with-panel { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(320px, .9fr); }
+@media (max-width: 1199px) { .sides.with-panel { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .stat-panel { display: none; } }
+.stat-panel { position: sticky; top: calc(var(--bar-h, 52px) + .5rem); align-self: start; max-height: calc(100vh - var(--bar-h, 52px) - 1.5rem); overflow: auto; padding: .7rem .9rem; }
+.stat-panel-head { display: flex; align-items: baseline; gap: .6rem; }
+.stat-panel-head .x { margin-left: auto; }
+/* encounters: a typed HP or AC stands out from the statblock's; how hard it is; lines that match a creature */
+.edit-table input.overridden { color: var(--accent); font-weight: 600; }
+.enc-difficulty { margin: -.2rem 0 .6rem; }
+.enc-difficulty.high b, .enc-difficulty.beyond-high b { color: var(--accent); }
+.enc-match { margin: 0 0 .4rem; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.enc-notes { grid-column: 1 / -1; }
+.cond-on { font-size: 11px; color: var(--muted); margin-left: .25rem; }
+.cond-on-input { width: 7rem; font-size: 11px; padding: 0 .25rem; margin-left: .25rem; }
+/* compact cards: one row per fighter (name and numbers, HP, conditions) */
+.fighter.compact { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; padding: .3rem .5rem; margin-bottom: .35rem; }
+/* the name line (with the small ＋ for a condition at its end), then HP; conditions in effect on a line of their own */
+.fighter.compact .fighter-head { flex: 1 1 0; margin: 0; min-width: 12rem; order: 1; }
+.fighter.compact .fighter-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 11rem; }
+.fighter.compact .conds { flex: 0 0 auto; margin: 0; order: 2; }
+.fighter.compact .hp-row { flex: 1 1 15rem; margin: 0; order: 3; }
+.fighter.compact .conds:has(.cond-chip) { flex: 1 1 100%; order: 4; }
+.fighter.compact > :not(.fighter-head, .conds, .hp-row) { order: 5; }
+.fighter.compact .cond-add { width: 3.2rem; min-width: 3.2rem !important; }
+.fighter.compact .cc-legendary, .fighter.compact .conc-check { flex: 1 1 100%; margin: 0; }
 .init-side { display: flex; gap: .4rem; align-items: stretch; overflow: hidden; min-width: 0; }
 .init-side.left { justify-content: flex-end; -webkit-mask-image: linear-gradient(to right, transparent, #000 3rem); mask-image: linear-gradient(to right, transparent, #000 3rem); }
 .init-side.right { justify-content: flex-start; -webkit-mask-image: linear-gradient(to left, transparent, #000 3rem); mask-image: linear-gradient(to left, transparent, #000 3rem); }
@@ -1079,7 +1105,7 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 /* ---------- character sheet (a PC's page) ---------- */
 .char-sheet { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
 .char-sheet h4 { display: flex; align-items: baseline; gap: .6rem; margin: 0 0 .5rem; font: 600 1rem var(--serif); font-variant: small-caps; letter-spacing: .04em; color: var(--accent); }
-.char-sheet input, .char-sheet select, .char-sheet textarea { font: inherit; }
+.char-sheet input, .char-sheet textarea { font: inherit; }
 .char-sheet input:disabled, .char-sheet textarea:disabled, .char-sheet select:disabled { background: transparent; border-color: transparent; color: inherit; opacity: 1; }
 /* the top: portrait, then the stat cards and the HP / hit dice cards beside it */
 .cs-top { display: grid; gap: .6rem; }
@@ -1088,7 +1114,7 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .cs-top.with-portrait.no-portrait { grid-template-columns: 120px minmax(0, 1fr); }
 .no-portrait .pc-portrait-empty { aspect-ratio: auto; min-height: 120px; font-size: .8rem; padding: .6rem; }
 .no-portrait .pc-portrait-icon { font-size: 2rem; }
-.cs-skill span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-skill > span:not(.cs-dot) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cs-hp-row { flex-wrap: wrap; }
 @media (max-width: 640px) { .cs-top.with-portrait { grid-template-columns: 1fr; } }
 .cs-top-right { display: grid; gap: .5rem; }
@@ -1146,7 +1172,7 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .cs-short { font-weight: 700; font-size: 12px; letter-spacing: .05em; color: var(--muted); }
 .cs-mod { font: 600 1.15rem var(--serif); text-align: center; }
 .cs-ab-head input { width: 100%; text-align: center; padding: .1rem; }
-.cs-skill { display: grid; grid-template-columns: 1em 2em 1fr; align-items: baseline; gap: .25rem; border: none; background: none; padding: 0 .2rem; line-height: 1.45; border-radius: 6px; text-align: left; font-size: 12.5px; cursor: pointer; color: var(--ink-2); }
+.cs-skill { display: grid; grid-template-columns: 1em 2em minmax(0, 1fr) auto; align-items: baseline; gap: .25rem; border: none; background: none; padding: 0 .2rem; line-height: 1.45; border-radius: 6px; text-align: left; font-size: 12.5px; cursor: pointer; color: var(--ink-2); }
 .cs-skill:hover:not(:disabled) { background: var(--chip); }
 .char-sheet .cs-skill:disabled, .char-sheet .chip-toggle.on:disabled { opacity: 1; cursor: default; }
 .cs-classes { padding: .7rem .9rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
@@ -1333,6 +1359,8 @@ h1 .icon svg.gi { color: var(--accent); }
   background: var(--panel); color: var(--ink); border: 1px solid var(--line); box-shadow: var(--shadow);
   font: 400 13px/1.45 var(--sans, inherit); pointer-events: none; white-space: pre-line;
 }
+/* it's a popover (in the top layer, over open dropdown lists): none of the popover's own placement */
+.tip-layer[popover] { inset: auto; margin: 0; overflow: visible; }
 .choice-list { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
 .choice-list .chip .link-btn { margin-left: .25rem; }
 .choice-add { width: auto; min-width: 11rem; }
@@ -1416,11 +1444,12 @@ h1 .icon svg.gi { color: var(--accent); }
 .if-wide { margin-top: .7rem; display: flex; flex-direction: column; gap: .25rem; }
 .if-bools { margin-top: .7rem; }
 .if-add { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 1rem; }
-/* One line per effect or spell. */
-.item-form .effect-row { flex-wrap: nowrap; }
-.item-form .effect-row > .picker { flex: 0 0 15rem; }
+/* One row per effect or spell: its inputs on a line (wrapping in a narrow column), what it does in words under them,
+   whole (not cut off). */
+.item-form .effect-row { flex-wrap: wrap; row-gap: .2rem; }
+.item-form .effect-row > .picker { flex: 0 1 15rem; min-width: 10rem; }
 .item-form .effect-row select { flex: 0 0 auto; }
-.item-form .effect-row .effect-say { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-form .effect-row .effect-say { flex: 1 0 100%; min-width: 0; white-space: normal; font-size: 12px; color: var(--muted); }
 .item-form .effects-input > .picker { width: 15rem; }
 @media (max-width: 700px) { .item-form .effect-row { flex-wrap: wrap; } }
 /* Text under the card: a quiet line while it's empty. */
@@ -1434,6 +1463,10 @@ h1 .icon svg.gi { color: var(--accent); }
 .cs-adv { font-style: normal; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; margin-left: auto; padding: 0 .35em; border-radius: 6px; background: var(--chip); color: var(--ink-2); }
 .cs-adv.adv { color: #3c8d4f; }
 .cs-adv.dis { color: #b33; }
+.cs-adv.fail { color: #fff; background: #b33; }
+/* an option or feat whose prerequisite isn't met yet */
+.sp-opt-lacks { display: block; color: var(--accent); }
+.wz-ch-row.off { opacity: .55; }
 .effect-check { display: inline-flex; align-items: center; gap: .25rem; white-space: nowrap; }
 /* Rows take the full width so a feature's text (or a save's "when") can grow into it. */
 .effects-input > .effect-row { align-self: stretch; }
@@ -1688,10 +1721,6 @@ button.live-tag { cursor: pointer; }
 .grid .known-col input { width: auto; margin: 0; }
 /* weapons to master: what each picked weapon's mastery does, and the list of all of them */
 .sp-masteries { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; gap: .2rem; }
-.sp-mastery-list { margin-top: .4rem; }
-.sp-mastery-list dl { display: grid; grid-template-columns: max-content 1fr; gap: .25rem .7rem; margin: .4rem 0 0; }
-.sp-mastery-list dt { font-weight: 600; }
-.sp-mastery-list dd { margin: 0; }
 .char-sheet > .feature-choices { padding: .7rem .9rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
 .sp-given { margin-top: .3rem; }
 .sp-given > summary { cursor: pointer; list-style: none; }
@@ -1699,7 +1728,7 @@ button.live-tag { cursor: pointer; }
 .link-like { color: var(--link); }
 .sp-grants { display: flex; flex-wrap: wrap; gap: .35rem .6rem; margin-top: .35rem; }
 .sp-grant { display: inline-flex; align-items: center; gap: .3rem; }
-.sp-grant select { width: auto; padding-top: 1px; padding-bottom: 1px; }
+.sp-grant select { width: auto; }
 .sp-grant.swapped select { border-color: var(--accent); }
 .equipment-input .effect-row input:not(.effect-value) { flex: 1; }
 .sp-open { margin-left: .5rem; color: var(--accent); font: 600 12px var(--sans); text-transform: none; letter-spacing: 0; }
@@ -1737,10 +1766,12 @@ button.live-tag { cursor: pointer; }
 .trait-among .seg { margin-top: .3rem; }
 
 /* ---------- the character creation wizard (CharacterWizard.vue) ---------- */
-.wizard-grid { display: grid; grid-template-columns: 14rem minmax(0, 1fr); gap: 1rem; align-items: start; }
-.wizard-steps { display: grid; gap: .15rem; position: sticky; top: 4.5rem; padding: .5rem; }
-.wz-step { display: flex; align-items: center; gap: .5rem; text-align: left; background: none; border: 0; padding: .4rem .5rem; border-radius: 6px; color: inherit; cursor: pointer; }
-.wz-step small { margin-left: auto; }
+.wizard-grid { display: block; }
+/* the steps: a bar across the top of the creator, in the sticky head with the step's title */
+.wizard-top { position: sticky; top: var(--bar-h); z-index: 3; margin: -.8rem -1rem .6rem; background: var(--panel); border-bottom: 1px solid var(--line); border-radius: 12px 12px 0 0; }
+.wizard-steps { display: flex; flex-wrap: wrap; gap: .15rem .2rem; padding: .45rem .6rem .35rem; border-bottom: 1px solid var(--line); }
+.wz-step { position: relative; display: flex; align-items: center; gap: .4rem; text-align: left; background: none; border: 0; padding: .3rem .55rem .3rem .4rem; border-radius: 6px; color: inherit; cursor: pointer; font-size: 14px; white-space: nowrap; }
+.wz-open-count { min-width: 1.1rem; padding: 0 .3rem; border-radius: 999px; background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); font-size: 11px; font-weight: 600; text-align: center; }
 .wz-step:hover { background: var(--hover, rgba(127, 127, 127, .12)); }
 .wz-step.on { background: color-mix(in srgb, var(--accent) 18%, transparent); font-weight: 600; }
 .wz-dot { display: inline-grid; place-items: center; width: 1.4rem; height: 1.4rem; border-radius: 50%; border: 1px solid var(--line); font-size: 12px; flex: none; }
@@ -1787,13 +1818,9 @@ button.live-tag { cursor: pointer; }
 .wz-score b { font-size: 1.3rem; }
 .wz-make { margin-top: .6rem; }
 /* the step's title with Back and Next, kept in view under the top bar while the step scrolls */
-.wizard-head { position: sticky; top: var(--bar-h); z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: -.8rem -1rem .4rem; padding: .6rem 1rem; background: var(--panel); border-bottom: 1px solid var(--line); border-radius: 12px 12px 0 0; }
+.wizard-head { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; padding: .5rem 1rem; }
 .wizard-head h2 { margin: 0; }
 .wz-nav { margin-left: auto; display: flex; gap: .5rem; }
-@media (max-width: 760px) {
-  .wizard-grid { grid-template-columns: 1fr; }
-  .wizard-steps { position: static; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); }
-}
 /* A table shown as a tree (DataTable's tree): ▸/▾ before each row with children. */
 .tree-toggle { width: 1.2rem; padding: 0; margin-right: .25rem; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 12px; }
 .tree-toggle.none { cursor: default; }
@@ -1970,7 +1997,7 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .speeds-input input[type=number] { width: 4rem; }
 .speeds-note { flex-basis: 100%; }
 .inherit-hint { display: block; margin-top: .15rem; }
-.race-bonus { border: 1px solid var(--line); border-radius: 10px; padding: .5rem .8rem; margin-bottom: 1rem; }
+.race-bonus { border: 1px solid var(--line); border-radius: 10px; padding: .5rem .8rem; margin-bottom: 1rem; background: var(--panel); }
 .race-bonus h4 { margin: 0 0 .3rem; }
 .race-bonus .rb-preview { margin-top: .5rem; }
 .cs-speeds { display: block; font-size: 11px; text-align: center; }
@@ -2101,7 +2128,7 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .npc-secret-view { margin: .6rem 0 0; font-size: 14px; white-space: pre-line; }
 .rel-quick { margin-bottom: .4rem; }
 .rel-quick button { font-size: 12px; padding: .25em .6em; }
-.rel-quick select { font-size: 12px; padding: .2em .4em; width: auto; }
+.rel-quick select { width: auto; }
 .rel-edit > .rel-add { grid-template-columns: minmax(0, 1fr); margin-bottom: .8rem; padding-bottom: .8rem; border-bottom: 1px solid var(--line); }
 table.grid tr.group-row td { background: var(--panel-2); font-family: var(--serif); font-weight: 600; color: var(--accent); padding-top: .5rem; }
 .npc-form + .field-label { margin-top: 1.2rem; }
@@ -2170,11 +2197,11 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .if-charges label { display: flex; align-items: center; gap: .3rem; }
 .if-charges input { width: 4.5rem; padding: .25rem .4rem; }
 .if-charges input.if-amount { width: 7rem; }
-.if-charges select { width: auto; padding: .25rem .4rem; }
+.if-charges select { width: auto; }
 .if-written { margin: 0 0 .5rem; }
 .if-spells { width: 100%; margin-bottom: .4rem; table-layout: fixed; }
 .if-spells td { padding: .2rem .25rem; vertical-align: middle; }
-.if-spells select { width: 100%; padding: .25rem .3rem; }
+.if-spells select { width: 100%; }
 .if-spells input.effect-value { width: 3.2rem; }
 .if-spells th:nth-child(2) { width: 8.6rem; }
 .if-spells th:nth-child(3), .if-spells th:nth-child(4) { width: 3.6rem; }
@@ -2213,90 +2240,14 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .ck-foot > .picker { flex: 1 1 12rem; }
 .ck-foot label { display: flex; align-items: center; gap: .3rem; }
 /* an attack's extra damage (Sneak Attack), a line of its own under the damage */
-.cs-attacks .atk-dmg { white-space: nowrap; }
-.cs-attacks .atk-extra { display: block; color: var(--muted); white-space: nowrap; }
-
-/* ---------- Illuminated: an optional style (Theme menu), drawn only in the theme's own colours ---------- */
-/* Gilded double rules and scrolled corners on cards and the sheet's boxes, ornamented rules under headings,
-   inked underlines for fields, and HP bars in the accent colour with quarter marks. Zero-specificity :where() keeps
-   every component's own layout (position, radius) winning where it sets one. */
-:root.fl-illuminated {
-  --gild: var(--accent);
-  --gild-soft: color-mix(in srgb, var(--accent) 50%, var(--line));
-  --fl-tl: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cg transform='translate%280 0%29'%3E%3Cpath d='M1 13V5Q1 1 5 1h8M4 9q0-5 5-5' fill='none' stroke='%23000' stroke-width='1.2'/%3E%3Ccircle cx='4' cy='4' r='1.3'/%3E%3C/g%3E%3C/svg%3E"); --fl-tr: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cg transform='translate%2814 0%29 scale%28-1 1%29'%3E%3Cpath d='M1 13V5Q1 1 5 1h8M4 9q0-5 5-5' fill='none' stroke='%23000' stroke-width='1.2'/%3E%3Ccircle cx='4' cy='4' r='1.3'/%3E%3C/g%3E%3C/svg%3E"); --fl-bl: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cg transform='translate%280 14%29 scale%281 -1%29'%3E%3Cpath d='M1 13V5Q1 1 5 1h8M4 9q0-5 5-5' fill='none' stroke='%23000' stroke-width='1.2'/%3E%3Ccircle cx='4' cy='4' r='1.3'/%3E%3C/g%3E%3C/svg%3E"); --fl-br: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cg transform='translate%2814 14%29 scale%28-1 -1%29'%3E%3Cpath d='M1 13V5Q1 1 5 1h8M4 9q0-5 5-5' fill='none' stroke='%23000' stroke-width='1.2'/%3E%3Ccircle cx='4' cy='4' r='1.3'/%3E%3C/g%3E%3C/svg%3E");
-  --fl-diamond: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0L7 5L5 10L3 5Z'/%3E%3Ccircle cx='1' cy='5' r='.8'/%3E%3Ccircle cx='9' cy='5' r='.8'/%3E%3C/svg%3E");
-}
-:where(:root.fl-illuminated) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .char-sheet > .feature-choices) {
-  position: relative; border-color: var(--gild-soft); border-radius: 3px;
-  outline: 1px solid color-mix(in srgb, var(--gild-soft) 70%, transparent); outline-offset: -5px;
-}
-:where(:root.fl-illuminated) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .char-sheet > .feature-choices)::before {
-  content: ''; position: absolute; inset: 2px; pointer-events: none; background: var(--gild);
-  -webkit-mask: var(--fl-tl) top left / 14px no-repeat, var(--fl-tr) top right / 14px no-repeat, var(--fl-bl) bottom left / 14px no-repeat, var(--fl-br) bottom right / 14px no-repeat;
-          mask: var(--fl-tl) top left / 14px no-repeat, var(--fl-tr) top right / 14px no-repeat, var(--fl-bl) bottom left / 14px no-repeat, var(--fl-br) bottom right / 14px no-repeat;
-}
-/* dialogs and tables scroll: the double rule only */
-:where(:root.fl-illuminated) :where(.modal, .table-wrap, .theme-panel) {
-  border-color: var(--gild-soft); outline: 1px solid color-mix(in srgb, var(--gild-soft) 70%, transparent); outline-offset: -5px;
-}
-/* headings: a rule fading out at both ends with a lozenge in the middle */
-:root.fl-illuminated :is(.md h1, .md h2, .entry-main h2) { border-bottom: none; padding-bottom: 0; }
-:root.fl-illuminated :is(.md h1, .md h2, .entry-main h2)::after, :root.fl-illuminated .md hr {
-  content: ''; display: block; height: 10px; margin-top: .3rem; border: none; background: var(--gild);
-  -webkit-mask: var(--fl-diamond) center / 10px no-repeat, linear-gradient(90deg, transparent, #000 12%, #000 calc(50% - 9px), transparent calc(50% - 8px), transparent calc(50% + 8px), #000 calc(50% + 9px), #000 88%, transparent) center / 100% 1px no-repeat;
-          mask: var(--fl-diamond) center / 10px no-repeat, linear-gradient(90deg, transparent, #000 12%, #000 calc(50% - 9px), transparent calc(50% - 8px), transparent calc(50% + 8px), #000 calc(50% + 9px), #000 88%, transparent) center / 100% 1px no-repeat;
-}
-:root.fl-illuminated .md hr { margin: 1.5rem 0; }
-/* fields: an inked underline, gilded on focus */
-:where(:root.fl-illuminated) input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file]), :where(:root.fl-illuminated) select, :where(:root.fl-illuminated) textarea {
-  border-color: transparent; border-bottom-color: var(--gild-soft); border-radius: 2px;
-  background: color-mix(in srgb, var(--panel) 65%, var(--bg));
-}
-:where(:root.fl-illuminated) :is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file]), select, textarea):focus { outline: none; border-bottom-color: var(--gild); box-shadow: 0 1px 0 var(--gild); }
-/* HP bars: the accent, hatched when bloodied, with marks at each quarter */
-:root.fl-illuminated .hp-bar { border-color: var(--gild-soft); border-radius: 2px; }
-:root.fl-illuminated .hp-fill { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 70%, var(--panel)), var(--accent)); }
-:root.fl-illuminated .hp-bar.bloodied .hp-fill { background: repeating-linear-gradient(135deg, var(--accent) 0 6px, color-mix(in srgb, var(--accent) 55%, var(--panel)) 6px 10px); }
-:root.fl-illuminated .hp-bar.down .hp-fill { background: var(--muted); }
-:root.fl-illuminated .hp-bar::after, :root.fl-illuminated .cs-hp-bar::after {
-  content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(90deg, transparent calc(25% - .5px), var(--gild-soft) 0 calc(25% + .5px), transparent 0 calc(50% - .5px), var(--gild-soft) 0 calc(50% + .5px), transparent 0 calc(75% - .5px), var(--gild-soft) 0 calc(75% + .5px), transparent 0);
-}
-:root.fl-illuminated .cs-hp-bar { position: relative; height: 7px; border-radius: 1px; border: 1px solid var(--gild-soft); background: color-mix(in srgb, var(--ink) 8%, var(--panel)); }
-:root.fl-illuminated .cs-hp-bar i { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 70%, var(--panel)), var(--accent)); }
-
-/* Illuminated, the small things: charges and slots set like jewels, plaques for badges and chips, a gilt hairline on
-   the small cards and tiles, and checkboxes with a lozenge for a tick. */
-:root.fl-illuminated .pip { border-width: 1.5px; background: color-mix(in srgb, var(--accent) 8%, transparent); }
-:root.fl-illuminated .pip.on { background: var(--accent); box-shadow: inset 0 0 0 2px var(--panel); }
-:root.fl-illuminated .pip.on:hover { box-shadow: inset 0 0 0 2px var(--panel), 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
-:root.fl-illuminated .ds-box.on { box-shadow: inset 0 0 0 2px var(--panel); }
-:where(:root.fl-illuminated) :where(.chip, .badge, .chip-btn, .chip-toggle, .tag-ritual) {
-  border-radius: 4px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
-}
-:where(:root.fl-illuminated) :where(.cs-stat, .cs-ability, .tool, .feat-card, .trait-option-card, .slot-row) {
-  border-color: var(--gild-soft); border-radius: 4px;
-  outline: 1px solid color-mix(in srgb, var(--gild-soft) 45%, transparent); outline-offset: -3px;
-}
-:where(:root.fl-illuminated) input[type=checkbox]:not(.settings-switch input) {
-  appearance: none; -webkit-appearance: none; display: inline-grid; place-content: center; flex: none;
-  width: 14px; height: 14px; margin: 0 .2em; padding: 0; vertical-align: -2px; cursor: pointer;
-  border: 1px solid var(--gild-soft); border-radius: 2px; background: color-mix(in srgb, var(--panel) 65%, var(--bg));
-}
-:where(:root.fl-illuminated) input[type=checkbox]:not(.settings-switch input)::after {
-  content: ''; width: 6px; height: 6px; background: var(--on-accent); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); transform: scale(0); transition: transform .12s;
-}
-:where(:root.fl-illuminated) input[type=checkbox]:not(.settings-switch input):checked { background: var(--accent); border-color: var(--accent); }
-:where(:root.fl-illuminated) input[type=checkbox]:not(.settings-switch input):checked::after { transform: scale(1); }
-:where(:root.fl-illuminated) input[type=checkbox]:not(.settings-switch input):indeterminate::after { transform: scale(1); background: var(--accent); }
-:where(:root.fl-illuminated) input[type=checkbox]:not(.settings-switch input):focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 1px; }
-:where(:root.fl-illuminated) input[type=checkbox]:disabled { opacity: .5; cursor: default; }
-:where(:root.fl-illuminated) input[type=radio] { accent-color: var(--accent); }
-
-/* Illuminated tabs: a gilt rule under the row and a small lozenge on the open tab's bar */
-:root.fl-illuminated .tabs { border-bottom-color: var(--gild-soft); }
-:root.fl-illuminated .tabs a.on { position: relative; }
-:root.fl-illuminated .tabs a.on::after { content: ''; position: absolute; left: 50%; bottom: -5px; width: 8px; height: 8px; margin-left: -4px; background: var(--accent); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+/* damage: each hand's on its own line (versatile), never wider than the column */
+.cs-attacks .atk-dmg { display: block; white-space: nowrap; }
+.cs-attacks .atk-extra { display: block; color: var(--muted); }
+.cs-attacks { width: 100%; }
+.atk-cols > div { min-width: 0; }
+.atk-cols.solo { grid-template-columns: 1fr; }
+.atk-notes { margin: -.3rem 0 .6rem; }
+.atk-slot .pip { width: 11px; height: 11px; margin: 2px; border-width: 1.5px; }
 
 /* ---------- the theme dialog: the big choices left, fine-tuning and a preview right ---------- */
 .theme-dialog-back { background: rgb(0 0 0 / .18); }
@@ -2313,144 +2264,220 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .pips-inline { display: inline-flex; gap: .1rem; }
 .theme-sample .small-btn { font-size: 13px; padding: .3em .8em; margin-left: auto; }
 
-/* ---------- Runecarved: an optional style (Theme menu), as if cut in stone; only the theme's own colours ---------- */
-/* Chamfered corners (painted in the colour under the box, so nothing inside is clipped), engraved fields, a notched
-   HP bar, hexagonal charges and gems, pointed chips and a carved slash for a tick. */
-:root.fl-runecarved {
-  --rc-edge: color-mix(in srgb, var(--ink) 24%, var(--panel));
-  --rc-cut: color-mix(in srgb, var(--panel) 55%, var(--bg));
-  --rc-gem: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 12'%3E%3Cpath d='M4 0L8 3.5V8.5L4 12L0 8.5V3.5Z'/%3E%3C/svg%3E");
-}
-:where(:root.fl-runecarved) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .char-sheet > .feature-choices) {
-  position: relative; border-radius: 0; border-color: var(--rc-edge);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 7%, transparent), var(--shadow);
-}
-:where(:root.fl-runecarved) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .char-sheet > .feature-choices)::before {
-  content: ''; position: absolute; inset: -1px; pointer-events: none; background: linear-gradient(135deg, var(--rc-under, var(--bg)) 9px, var(--rc-edge) 9px 10px, transparent 10px) top left / 13px 13px no-repeat, linear-gradient(225deg, var(--rc-under, var(--bg)) 9px, var(--rc-edge) 9px 10px, transparent 10px) top right / 13px 13px no-repeat, linear-gradient(45deg, var(--rc-under, var(--bg)) 9px, var(--rc-edge) 9px 10px, transparent 10px) bottom left / 13px 13px no-repeat, linear-gradient(315deg, var(--rc-under, var(--bg)) 9px, var(--rc-edge) 9px 10px, transparent 10px) bottom right / 13px 13px no-repeat;
-}
-:where(:root.fl-runecarved) :where(.cs-stat, .cs-ability, .tool, .slot-row) { position: relative; border-radius: 0; border-color: var(--rc-edge); }
-:where(:root.fl-runecarved) :where(.cs-stat, .cs-ability, .tool, .slot-row)::before {
-  content: ''; position: absolute; inset: -1px; pointer-events: none; background: linear-gradient(135deg, var(--rc-under, var(--bg)) 5px, var(--rc-edge) 5px 6px, transparent 6px) top left / 9px 9px no-repeat, linear-gradient(225deg, var(--rc-under, var(--bg)) 5px, var(--rc-edge) 5px 6px, transparent 6px) top right / 9px 9px no-repeat, linear-gradient(45deg, var(--rc-under, var(--bg)) 5px, var(--rc-edge) 5px 6px, transparent 6px) bottom left / 9px 9px no-repeat, linear-gradient(315deg, var(--rc-under, var(--bg)) 5px, var(--rc-edge) 5px 6px, transparent 6px) bottom right / 9px 9px no-repeat;
-}
-/* boxes that sit on a card rather than on the page */
-:root.fl-runecarved :is(.card, .modal, .cs-hp, .theme-sample) :is(.tool, .slot-row, .card) { --rc-under: var(--panel); }
-:where(:root.fl-runecarved) :where(.modal, .table-wrap, .feat-card, .trait-option-card, .theme-panel) { border-radius: 2px; border-color: var(--rc-edge); }
-/* headings: a rule with a gem in the middle */
-:root.fl-runecarved :is(.md h1, .md h2, .entry-main h2) { border-bottom: none; padding-bottom: 0; letter-spacing: .06em; }
-:root.fl-runecarved :is(.md h1, .md h2, .entry-main h2)::after, :root.fl-runecarved .md hr {
-  content: ''; display: block; height: 12px; margin-top: .3rem; border: none; background: var(--accent);
-  -webkit-mask: var(--rc-gem) center / 8px 12px no-repeat, linear-gradient(90deg, #000 calc(50% - 8px), transparent calc(50% - 7px), transparent calc(50% + 7px), #000 calc(50% + 8px)) center / 100% 1px no-repeat;
-          mask: var(--rc-gem) center / 8px 12px no-repeat, linear-gradient(90deg, #000 calc(50% - 8px), transparent calc(50% - 7px), transparent calc(50% + 7px), #000 calc(50% + 8px)) center / 100% 1px no-repeat;
-}
-:root.fl-runecarved :is(.md h1, .md h2, .entry-main h2)::after { opacity: .85; }
-:root.fl-runecarved .md hr { margin: 1.5rem 0; }
-/* fields: engraved into the panel, one corner cut */
-:where(:root.fl-runecarved) :is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file]), select, textarea) {
-  border-color: transparent; border-radius: 0; background: var(--rc-cut);
-  box-shadow: inset 0 2px 3px color-mix(in srgb, var(--bg) 70%, transparent), inset 0 -1px 0 var(--rc-edge);
-  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
-}
-:where(:root.fl-runecarved) :is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file]), select, textarea):focus { outline: none; box-shadow: inset 0 2px 3px color-mix(in srgb, var(--bg) 70%, transparent), inset 0 -2px 0 var(--accent); }
-/* HP bars: ten notches */
-:root.fl-runecarved .hp-bar, :root.fl-runecarved .cs-hp-bar { position: relative; border-radius: 0; border-color: var(--rc-edge); background: var(--rc-cut); }
-:root.fl-runecarved .cs-hp-bar { height: 8px; }
-:root.fl-runecarved .hp-fill, :root.fl-runecarved .cs-hp-bar i { background: var(--accent); }
-:root.fl-runecarved .hp-bar.bloodied .hp-fill { background: color-mix(in srgb, var(--accent) 60%, var(--rc-cut)); }
-:root.fl-runecarved .hp-bar.down .hp-fill { background: var(--muted); }
-:root.fl-runecarved .hp-bar::after, :root.fl-runecarved .cs-hp-bar::after {
-  content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), var(--panel) calc(10% - 2px) 10%);
-}
-/* tabs: a bar with slanted ends under the open one */
-:root.fl-runecarved .tabs { border-bottom-color: var(--rc-edge); }
-:root.fl-runecarved .tabs a { border-radius: 0; }
-:root.fl-runecarved .tabs a.on { position: relative; border-bottom-color: transparent; }
-:root.fl-runecarved .tabs a.on::after { content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 3px; background: var(--accent); clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 100%, 0 100%); }
-/* chips and badges: pointed ends */
-:where(:root.fl-runecarved) :where(.chip, .badge, .chip-btn, .chip-toggle, .tag-ritual) { border-radius: 0; clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0 50%); padding-left: .8em; padding-right: .8em; }
-/* charges and slots: hexagons, death saves too */
-:root.fl-runecarved .pip { transform: none; border: none; border-radius: 0; width: 15px; height: 17px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: color-mix(in srgb, var(--accent) 22%, var(--rc-cut)); }
-:root.fl-runecarved .pip.on { background: var(--accent); }
-:root.fl-runecarved .pip:hover { box-shadow: none; filter: brightness(1.15); }
-:root.fl-runecarved .ds-box { border-radius: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); border: none; background: color-mix(in srgb, currentColor 25%, transparent); }
-:root.fl-runecarved .ds-box.on { background: currentColor; }
-/* checkboxes: an engraved square, ticked with a carved slash */
-:where(:root.fl-runecarved) input[type=checkbox]:not(.settings-switch input) {
-  appearance: none; -webkit-appearance: none; display: inline-grid; place-content: center; flex: none;
-  width: 14px; height: 14px; margin: 0 .2em; padding: 0; vertical-align: -2px; cursor: pointer; border: none; border-radius: 0;
-  background: var(--rc-cut); box-shadow: inset 0 0 0 1px var(--rc-edge), inset 0 2px 2px color-mix(in srgb, var(--bg) 70%, transparent);
-}
-:where(:root.fl-runecarved) input[type=checkbox]:not(.settings-switch input)::after {
-  content: ''; width: 10px; height: 2.5px; background: var(--accent); transform: rotate(-35deg) scale(0); transition: transform .12s;
-}
-:where(:root.fl-runecarved) input[type=checkbox]:not(.settings-switch input):checked::after { transform: rotate(-35deg) scale(1); }
-:where(:root.fl-runecarved) input[type=checkbox]:not(.settings-switch input):indeterminate::after { transform: scale(.7); }
-:where(:root.fl-runecarved) input[type=checkbox]:not(.settings-switch input):focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 1px; }
-:where(:root.fl-runecarved) input[type=checkbox]:disabled { opacity: .5; cursor: default; }
-:where(:root.fl-runecarved) input[type=radio] { accent-color: var(--accent); }
-/* buttons: square corners to match */
-:where(:root.fl-runecarved) :where(button, a.button):not(.pip, .ds-box, .chip-btn, .chip-toggle, .x, .link-btn) { border-radius: 2px; }
+/* ---------- My devices: syncing a world with the user's other computers ---------- */
+.devices-dialog { width: min(640px, 100%); }
+.devices-dialog h4 { font: 600 1rem var(--serif); font-variant: small-caps; letter-spacing: .04em; color: var(--accent); margin: 1rem 0 .4rem; }
+.dev-me input { width: 16em; margin-left: .3rem; }
+.dev-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; }
+.dev-list li { display: flex; align-items: center; gap: .6rem; padding: .4rem .6rem; border: 1px solid var(--line); border-radius: 8px; }
+.dev-name { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.dev-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+.dev-dot.connected { background: #4caf50; }
+.dev-dot.connecting { background: color-mix(in srgb, var(--accent) 60%, var(--muted)); }
+.dev-pairing { padding: .6rem .8rem; border: 1px dashed var(--accent); border-radius: 10px; }
+.dev-code { font: 700 2rem ui-monospace, Consolas, monospace; letter-spacing: .12em; margin: .3rem 0; user-select: all; color: var(--accent); }
+.dev-join label { display: flex; align-items: center; gap: .4rem; margin: .25rem 0; }
+.dev-found { display: flex; flex-direction: column; }
+.dev-code-input { font-family: ui-monospace, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; width: 10em; }
+.sync-chip { display: inline-flex; align-items: center; gap: .3rem; font-size: 12px; padding: .2em .65em; border-radius: 999px; color: var(--muted); white-space: nowrap; }
+.sync-chip.live { color: var(--ink); border-color: color-mix(in srgb, #4caf50 55%, var(--line)); }
+.sync-chip.err { border-color: var(--accent); }
+.sync-notice { position: fixed; right: 16px; bottom: 16px; z-index: 45; width: min(380px, calc(100vw - 32px)); padding: .7rem .9rem; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; box-shadow: 0 12px 40px rgb(0 0 0 / .25); }
+.sync-notice p { margin: 0 0 .3rem; }
+.sync-notice ul { margin: 0 0 .5rem; padding-left: 1.1rem; }
 
-/* ---------- Wax & Ribbon: an optional style (Theme menu), soft paper, ribbons and seals; only the theme's colours ---------- */
-/* Rounded boxes with a soft shadow, a ribbon bookmark on the main cards, short notched ribbons under headings, dotted
-   lines to write on, a ribbon HP bar, a ribbon hanging under the open tab, tag-shaped chips, and wax seals for
-   charges, death saves and ticked checkboxes. The seals' rim and pressed ring are mixed from the accent. */
-:root.fl-wax {
-  --wx-edge: color-mix(in srgb, var(--accent) 14%, var(--line));
-  --wx-wax: var(--accent);
-  --wx-wax-light: color-mix(in srgb, var(--accent) 72%, var(--panel));
-  --wx-empty: color-mix(in srgb, var(--accent) 30%, var(--line));
+/* ---------- the style gallery (#/styles) ---------- */
+.sg-pick { display: flex; gap: 1rem; margin: .5rem 0 1rem; }
+.sg-grid { display: grid; gap: .8rem; align-items: start; }
+.sg-col { font: 600 1rem var(--serif); color: var(--accent); }
+.sg-row { display: flex; flex-direction: column; font: 600 1rem var(--serif); padding-top: .6rem; }
+.sg-cell { display: flex; flex-direction: column; gap: .6rem; padding: .7rem; border-radius: 10px; min-width: 0; }
+.sg-card { display: flex; flex-direction: column; gap: .5rem; }
+.sg-card .md h2 { margin: 0; }
+.sg-card .tabs { margin-bottom: 0; }
+.sg-line { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; }
+.sg-line input:not([type=checkbox]) { flex: 1; min-width: 6rem; }
+.sg-hp { height: 26px; flex: none; }
+.sg-hp .hp-text { font-size: 13px; }
+.sg-pips, .sg-ds .ds-row { display: inline-flex; align-items: center; gap: .15rem; }
+.sg-stats { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; }
+.sg-static { position: static !important; }
+.sg-pop { align-items: flex-start; }
+.sg-pop .menu-panel { min-width: 9rem; }
+.sg-table { box-shadow: none; }
+
+/* ---------- the dropdown (components/Dropdown.vue): one look for every list to choose from ----------
+   The same text, height, arrow and open list everywhere; `compact` for dense rows. The list is drawn by the page
+   (customizable select) in Plain too, so it matches the search pickers' lists; the styles add their touches
+   (styles/base.css: field and picker). styles/selects.ts keeps each one as wide as its longest option. */
+select.dd { appearance: base-select; display: inline-flex; align-items: center; gap: .4em; font: 400 15px/1.35 var(--sans); padding: .4em .55em .4em .65em; color: var(--ink); cursor: pointer; }
+select.dd.compact { font-size: 13px; padding: .2em .4em .2em .5em; border-radius: 6px; }
+select.dd::picker-icon { color: var(--muted); font-size: .8em; transition: rotate .15s; }
+select.dd:open::picker-icon { rotate: 180deg; }
+select.dd:disabled { cursor: default; }
+select.dd::picker(select) {
+  appearance: base-select; margin: 2px 0; padding: 4px; max-height: min(320px, 60vh); color: var(--ink); background: var(--panel);
+  border: 1px solid var(--fx-panel-edge, var(--line)); border-radius: var(--fx-panel-radius, 10px);
+  outline: var(--fx-panel-outline, none); outline-offset: var(--fx-panel-outline-offset, 0);
+  box-shadow: 0 2px 4px rgb(0 0 0 / .08), 0 10px 32px rgb(0 0 0 / .22);
 }
-:where(:root.fl-wax) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .char-sheet > .feature-choices, .cs-stat, .cs-ability, .tool, .slot-row, .feat-card, .trait-option-card) { border-color: var(--wx-edge); border-radius: 10px; }
-:where(:root.fl-wax) :where(.card, .item-card, .spell-card, .start-card) { position: relative; box-shadow: 0 1px 0 var(--wx-edge), var(--shadow); }
-:where(:root.fl-wax) :where(.card, .item-card, .spell-card, .start-card)::before {
-  content: ''; position: absolute; top: -1px; right: 18px; width: 12px; height: 26px; pointer-events: none;
-  background: var(--wx-wax); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%); opacity: .9;
+select.dd option { position: relative; padding: .32rem .6rem .32rem .5rem; border-radius: 6px; background: transparent; color: var(--ink-2); font-size: 14px; }
+select.dd.compact option { font-size: 13px; padding: .25rem .5rem .25rem .45rem; }
+select.dd option::checkmark { color: var(--accent); }
+select.dd option:checked { color: var(--ink); font-weight: 600; }
+select.dd option:disabled { color: var(--muted); }
+select.dd optgroup { font-weight: 600; color: var(--muted); font-size: 12px; }
+select.dd option:is(:hover, :focus-visible) { background: var(--fx-row-paint, var(--chip)); box-shadow: var(--fx-row-shadow, none); color: var(--ink); outline: none; }
+select.dd option:is(:hover, :focus-visible)::before {
+  content: var(--fx-row-mark, none); position: absolute; left: var(--fx-row-mark-left, 0); top: var(--fx-row-mark-top, 4px); bottom: var(--fx-row-mark-bottom, auto);
+  width: var(--fx-row-mark-width, 4px); height: var(--fx-row-mark-height, auto); margin-top: var(--fx-row-mark-shift, 0); background: var(--fx-row-mark-paint, var(--accent)); clip-path: var(--fx-row-mark-clip, none);
 }
-:where(:root.fl-wax) :where(.modal, .table-wrap, .theme-panel) { border-color: var(--wx-edge); }
-/* headings: a short ribbon with notched ends */
-:root.fl-wax :is(.md h1, .md h2, .entry-main h2) { border-bottom: none; padding-bottom: 0; }
-:root.fl-wax :is(.md h1, .md h2, .entry-main h2)::after, :root.fl-wax .md hr {
-  content: ''; display: block; width: min(260px, 60%); height: 6px; margin-top: .35rem; border: none; background: var(--wx-wax); opacity: .85;
-  clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 50%, 100% 100%, 0 100%, 6px 50%);
+
+/* ---------- the search pickers (EntryPicker): typed into, but they look like the dropdown ---------- */
+.picker-value, .picker input { font: 400 15px/1.35 var(--sans); }
+.picker-value { display: inline-flex; align-items: center; gap: .4em; }
+.picker-value::after { content: '▾'; margin-left: auto; padding-left: .4em; color: var(--muted); font-size: .8em; }
+.picker-list li { font-size: 14px; }
+
+/* ---------- an entry's Edit button with its menu (EntryHeader): level up, history, export, copy to ---------- */
+.split-btn { position: relative; display: inline-flex; }
+.split-btn .edit-btn { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.split-more { position: relative; border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: -1px; padding-left: .5em; padding-right: .55em; }
+.split-more.alone { border-radius: 8px; margin-left: 0; display: inline-flex; gap: .35em; align-items: center; }
+.split-arrow { color: var(--muted); font-size: .85em; }
+.split-more[aria-expanded="true"] .split-arrow { color: var(--accent); }
+/* enough XP to level up: a dot on the menu button */
+.split-more.ready::after { content: ''; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.head-menu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 30; min-width: 12rem; }
+.head-menu .menu-row { gap: .5rem; }
+/* the conditions sit in the Hit dice card, on a row of their own */
+.cs-dice .cs-dice-conds { flex-basis: 100%; margin: 0; }
+.cs-dice .cs-dice-conds.empty { margin: 0; }
+
+/* ---------- saved themes in the theme dialog ---------- */
+.saved-theme { position: relative; cursor: pointer; }
+.saved-actions { position: absolute; top: 2px; right: 4px; display: none; gap: .1rem; }
+.saved-theme:hover .saved-actions, .saved-theme:focus-within .saved-actions { display: flex; }
+.saved-name-input { font: 600 13px var(--serif); padding: .1em .3em; min-width: 0; }
+.saved-buttons { display: inline-flex; gap: .7rem; font-variant: normal; letter-spacing: 0; }
+.saved-new { display: flex; gap: .4rem; margin: 0 0 .5rem; }
+.saved-new input { flex: 1; }
+
+/* ---------- the creator: the subclass step (list beside the chosen one's page), and the folding parts of a page ---------- */
+.wz-subclass-step { display: grid; grid-template-columns: minmax(13rem, 18rem) minmax(0, 1fr); gap: 1rem; align-items: start; }
+@media (max-width: 760px) { .wz-subclass-step { grid-template-columns: 1fr; } }
+.wz-sub-list { display: grid; gap: .4rem; position: sticky; top: calc(var(--bar-h) + 4.5rem); max-height: calc(100vh - var(--bar-h) - 6rem); overflow-y: auto; }
+.wz-sub-list .wz-tile.shown { border-style: dashed; border-color: var(--accent); }
+.wz-sub-detail .wz-page { margin-top: 0; padding-top: 0; border-top: none; }
+.wz-fold { margin: .4rem 0; }
+.wz-fold > summary { cursor: pointer; font: 600 1.05rem var(--serif); color: var(--accent); padding: .3rem 0; list-style: none; }
+.wz-fold > summary::-webkit-details-marker { display: none; }
+.wz-fold > summary::before { content: '▸'; display: inline-block; width: 1.1em; color: var(--muted); transition: rotate .15s; }
+.wz-fold[open] > summary::before { rotate: 90deg; }
+
+/* ---------- the creator's choosing (WzChooser): a list on the left, the one looked at beside it ---------- */
+.wz-chooser { display: grid; grid-template-columns: minmax(13rem, 17rem) minmax(0, 1fr); gap: 1.2rem; align-items: start;
+  /* at least the window's height, so the list stays under the steps bar even when the details are short */
+  min-height: calc(100vh - var(--bar-h) - 2rem); }
+@media (max-width: 760px) { .wz-chooser { grid-template-columns: 1fr; } }
+.wz-ch-side { position: sticky; top: calc(var(--bar-h) + var(--wz-top, 7rem) + .5rem); display: flex; flex-direction: column; gap: .4rem; max-height: calc(100vh - var(--bar-h) - var(--wz-top, 7rem) - 6rem); min-height: 0; }
+.wz-ch-top { margin: 0; }
+.wz-ch-side .wz-filter { width: 100%; margin: 0; }
+.wz-ch-list { position: relative; overflow-y: auto; min-height: 0; border: 1px solid var(--line); border-radius: 10px; padding: 4px; outline: none; }
+.wz-ch-list:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent); }
+.wz-ch-group { font: 600 12px var(--serif); font-variant: small-caps; letter-spacing: .04em; color: var(--accent); padding: .45rem .5rem .15rem; }
+.wz-ch-row { display: flex; align-items: baseline; gap: .35rem; padding: .32rem .5rem; border-radius: 6px; cursor: pointer; font-size: 14px; color: var(--ink-2); }
+.wz-ch-row:hover { background: var(--chip); color: var(--ink); }
+.wz-ch-row.shown { background: color-mix(in srgb, var(--accent) 9%, transparent); color: var(--ink); box-shadow: inset 2px 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+.wz-ch-row.on { color: var(--ink); font-weight: 600; }
+.wz-ch-row.on.shown { box-shadow: inset 2px 0 0 var(--accent); }
+.wz-ch-tick { flex: none; width: .9em; color: var(--accent); font-weight: 700; }
+.wz-ch-label { flex: 1; min-width: 0; }
+.wz-ch-mark { margin-left: .35rem; color: var(--muted); font-weight: 400; }
+.wz-ch-hint { flex: none; color: var(--muted); font-size: 12px; font-weight: 400; white-space: nowrap; }
+.wz-ch-empty { padding: .4rem .5rem; margin: 0; }
+.wz-ch-detail { min-width: 0; }
+.wz-ch-detail .wz-page { margin-top: 0; padding-top: 0; border-top: none; }
+.wz-ch-hint-line { margin: 0 0 .4rem; }
+.wz-need-line { color: var(--accent); margin: 0 0 .4rem; }
+.wz-at-level { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; margin: 0 0 .5rem; }
+.wz-bg-gives { margin: 0 0 .5rem; }
+.wz-feat-levels { margin-bottom: .8rem; flex-wrap: wrap; }
+.wz-spell-pick { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .6rem; }
+
+/* each step's tab says what's chosen there, under its name */
+.wz-step-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.wz-step-text > span { display: inline-flex; align-items: center; gap: .3rem; }
+.wz-chosen { max-width: 9.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 11px; font-weight: 400; }
+.wz-step.on .wz-chosen { color: var(--ink-2); }
+
+/* the money field, with the reason when it refuses what's typed */
+.money-field { display: inline-flex; flex-direction: column; gap: .15rem; vertical-align: top; }
+.money-error { color: var(--accent); font-size: 11.5px; max-width: 16rem; line-height: 1.3; }
+
+/* the note after a rest or a removed spell, with Undo (UndoNote.vue) */
+.undo-note {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 46; display: flex; align-items: center; gap: .7rem;
+  max-width: min(640px, calc(100vw - 32px)); padding: .5rem .6rem .5rem .9rem; background: var(--panel); border: 1px solid var(--line);
+  border-left: 4px solid var(--accent); border-radius: 10px; box-shadow: 0 12px 40px rgb(0 0 0 / .25);
 }
-:root.fl-wax .md hr { margin: 1.5rem auto; }
-/* fields: a dotted line to write on */
-:where(:root.fl-wax) :is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file]), select, textarea) {
-  border-color: transparent; border-bottom: 1.5px dotted var(--wx-empty); border-radius: 0; background: transparent;
-}
-:where(:root.fl-wax) :is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file]), select, textarea):focus { outline: none; border-bottom-style: solid; border-bottom-color: var(--accent); }
-:where(:root.fl-wax) select { background: var(--panel); }
-/* HP bars: a ribbon with a notched end */
-:root.fl-wax .hp-bar, :root.fl-wax .cs-hp-bar { border: none; border-radius: 0; background: color-mix(in srgb, var(--ink) 9%, var(--panel)); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 50%, 100% 100%, 0 100%); }
-:root.fl-wax .cs-hp-bar { height: 9px; clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 50%, 100% 100%, 0 100%); }
-:root.fl-wax .hp-fill, :root.fl-wax .cs-hp-bar i { background: var(--wx-wax); }
-:root.fl-wax .hp-bar.bloodied .hp-fill { background: var(--wx-wax-light); }
-:root.fl-wax .hp-bar.down .hp-fill { background: var(--muted); }
-/* tabs: a ribbon hangs under the open one */
-:root.fl-wax .tabs { border-bottom-color: var(--wx-edge); }
-:root.fl-wax .tabs a.on { position: relative; border-bottom-color: transparent; }
-:root.fl-wax .tabs a.on::after { content: ''; position: absolute; left: 50%; top: 100%; width: 11px; height: 13px; margin: 1px 0 0 -5.5px; background: var(--wx-wax); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%); }
-/* chips and badges: tags */
-:where(:root.fl-wax) :where(.chip, .badge, .chip-btn, .chip-toggle, .tag-ritual) { border-radius: 0 4px 4px 0; clip-path: polygon(6px 0, 100% 0, 100% 100%, 6px 100%, 0 50%); padding-left: .95em; }
-/* charges, slots, death saves: wax seals */
-:root.fl-wax .pip, :root.fl-wax .ds-box { transform: none; border: none; border-radius: 50%; width: 16px; height: 16px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--wx-empty); }
-:root.fl-wax .pip.on, :root.fl-wax .ds-box.on {
-  background: radial-gradient(circle, var(--wx-wax) 0 36%, var(--wx-wax-light) 38% 54%, var(--wx-wax) 57%);
-  box-shadow: 0 0 0 1.5px var(--wx-wax), 1px 1px 0 2px color-mix(in srgb, var(--wx-wax) 22%, transparent);
-}
-:root.fl-wax .ds-box.on { background: radial-gradient(circle, currentColor 0 36%, color-mix(in srgb, currentColor 70%, var(--panel)) 38% 54%, currentColor 57%); box-shadow: 0 0 0 1.5px currentColor; }
-:root.fl-wax .pip:hover { box-shadow: inset 0 0 0 1.5px var(--wx-wax); }
-:root.fl-wax .pip.on:hover { box-shadow: 0 0 0 1.5px var(--wx-wax), 0 0 0 4px color-mix(in srgb, var(--wx-wax) 25%, transparent); }
-/* checkboxes: a ring, sealed when ticked */
-:where(:root.fl-wax) input[type=checkbox]:not(.settings-switch input) {
-  appearance: none; -webkit-appearance: none; flex: none; width: 15px; height: 15px; margin: 0 .2em; padding: 0; vertical-align: -3px; cursor: pointer;
-  border: none; border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 1.5px var(--wx-empty); transition: background .12s;
-}
-:where(:root.fl-wax) input[type=checkbox]:not(.settings-switch input):checked {
-  background: radial-gradient(circle, var(--panel) 0 17%, var(--wx-wax) 20%); box-shadow: 0 0 0 1px var(--wx-wax), 1px 1px 0 1.5px color-mix(in srgb, var(--wx-wax) 22%, transparent);
-}
-:where(:root.fl-wax) input[type=checkbox]:not(.settings-switch input):indeterminate { background: radial-gradient(circle, var(--wx-wax-light) 0 30%, transparent 33%); }
-:where(:root.fl-wax) input[type=checkbox]:not(.settings-switch input):focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 1px; }
-:where(:root.fl-wax) input[type=checkbox]:disabled { opacity: .5; cursor: default; }
-:where(:root.fl-wax) input[type=radio] { accent-color: var(--accent); }
+.undo-note .x { margin-left: auto; }
+/* the creator's equipment list: what the world doesn't have yet */
+.wz-new { font-size: 9px; text-transform: uppercase; letter-spacing: .04em; color: var(--accent); margin-left: .15em; }
+.wz-to-choose { color: var(--accent); }
+/* Level up on the sheet's Level tile */
+/* Cast, its ▾ for a higher slot and Free: one group, joined; only its outer corners are rounded (as the style rounds
+   them), the joins are square. The higher slots open in a small menu under it. */
+.cast-wrap { position: relative; display: inline-flex; vertical-align: middle; }
+.cast-split { display: inline-flex; vertical-align: middle; }
+.cast-split > .chip-btn:not(:first-of-type) { margin-left: -1px; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.cast-split > .chip-btn:not(:last-of-type) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.cast-split > .chip-btn:hover, .cast-split > .chip-btn:focus-visible { position: relative; z-index: 1; }
+.cast-wrap + .chip-btn, .cast-split + .chip-btn, .chip-btn + .cast-split { margin-left: .35rem; }
+.cast-more { padding: 0 .35rem; }
+/* a style that cuts a chip's ends (Runecarved's points, Wax's notch) cuts the group's, not each button's */
+.fx[data-fx] .cast-split { clip-path: var(--fx-chip-clip, none); }
+.fx[data-fx] .cast-split > .chip-btn { clip-path: none; }
+.cast-menu { position: absolute; right: 0; top: 100%; z-index: 30; min-width: 16rem; padding: .25rem; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+.cast-menu .menu-row { display: block; width: 100%; text-align: left; white-space: nowrap; }
+.cs-levelup { margin-top: .15rem; font-size: 10.5px; padding: .05rem .45rem; }
+.choices-modal { width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 64px); overflow: auto; }
+/* the short-rest panel: a row per Hit Die size */
+.short-rest { width: min(560px, calc(100vw - 32px)); }
+.sr-pool { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; padding: .35rem 0; border-top: 1px solid var(--line); }
+/* the item pop-up on the sheet: the character's own name and note for their copy */
+.iw-give { display: flex; align-items: center; gap: .4rem; margin-top: .4rem; }
+.wb-why { color: var(--accent); line-height: 1.25; }
+.wb-why.muted { color: var(--muted); }
+.item-own { display: flex; flex-wrap: wrap; gap: .4rem .8rem; margin: 0 0 .6rem; }
+.item-own label { display: flex; align-items: center; gap: .35rem; }
+.item-own input { width: 14rem; }
+.cs-hp-temp { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; }
+.cs-resist { display: block; max-width: 14rem; line-height: 1.3; margin-top: .2rem; }
+/* the spellbook: School and Range under a prepared spell's name; a spell's type (not an attack or save) dimmed */
+.sbk-sub { line-height: 1.25; }
+.sbk-check.sbk-type { color: var(--muted); }
+.sbk-columns.solo { grid-template-columns: 1fr; }
+.sbk-classlist tr.on td:first-child a { font-weight: 600; }
+/* the recipe editor: the table fits its card (the ingredient column takes what's left, the pickers shrink with it) */
+.recipe-table { width: 100%; table-layout: fixed; }
+.recipe-table th:nth-child(2), .recipe-table td:nth-child(2) { width: 5.5rem; }
+.recipe-table th:nth-child(3), .recipe-table td:nth-child(3) { width: 6rem; }
+.recipe-table th:nth-child(4), .recipe-table td:nth-child(4) { width: 2rem; }
+.recipe-table .picker, .recipe-table .picker input, .recipe-table .picker-value { width: 100%; min-width: 0; max-width: 100%; }
+.recipe-table input.short { width: 4.5rem; }
+/* the party at the top of a campaign's page */
+.cal-legend { display: flex; flex-wrap: wrap; gap: .3rem 1rem; margin: -.3rem 0 .6rem; }
+.cal-legend-item { display: inline-flex; align-items: center; gap: .35rem; }
+.cal-legend-item i { width: .8rem; height: .8rem; border-radius: 3px; display: inline-block; }
+.campaign-party { margin-bottom: 1.2rem; }
+.cp-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .6rem; }
+.cp-card { padding: .55rem .7rem; margin: 0; }
+.cp-head { display: flex; align-items: center; gap: .4rem; font-weight: 600; }
+.cp-head .x { margin-left: auto; }
+.cp-stats { display: flex; gap: .8rem; margin: .4rem 0 0; }
+.cp-stats div { display: flex; flex-direction: column; align-items: center; }
+.cp-stats dt { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.cp-stats dd { margin: 0; font: 600 1.05rem var(--serif); }
+.cp-add { display: flex; align-items: center; }
+.cp-add .picker { width: 100%; }

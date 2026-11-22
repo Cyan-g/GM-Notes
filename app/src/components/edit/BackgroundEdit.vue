@@ -3,6 +3,7 @@
 // +2/+1 or +1/+1/+1; anything else in the full editor) with a preview of the player's + buttons, its Origin feat with
 // the version it takes (a dropdown when the feat has versions), its skills and tools (all of them, or one for the
 // player to pick) and its starting equipment.
+import Dropdown from '../Dropdown.vue'
 import { computed, ref } from 'vue'
 import type { AbilityBonus, Entry } from '../../model/types'
 import { TYPES } from '../../model/schema'
@@ -77,10 +78,10 @@ function setAll(all: boolean) { if (all) props.e.fields.toolsAll = true; else de
       <h4>Origin feat</h4>
       <div class="cb-line"><FieldInput :def="def('originFeat')" :entry="e" /></div>
       <label v-if="versions.length" class="cb-line small">Which version
-        <select :value="String(e.fields.originFeatNote ?? '')" @change="setNote(($event.target as HTMLSelectElement).value)">
+        <Dropdown :value="String(e.fields.originFeatNote ?? '')" @change="setNote(($event.target as HTMLSelectElement).value)">
           <option value="">the player picks</option>
           <option v-for="v in versions" :key="v" :value="v">{{ v }}</option>
-        </select></label>
+        </Dropdown></label>
       <label v-else-if="feat" class="cb-line small" title="Shown after the feat's name on the sheet">Note on the feat <input :value="String(e.fields.originFeatNote ?? '')" placeholder="optional" @change="setNote(($event.target as HTMLInputElement).value)" /></label>
       <FeatCard v-if="feat" :e="feat" title class="bg-feat" />
     </section>

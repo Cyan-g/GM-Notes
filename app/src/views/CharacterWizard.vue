@@ -4,13 +4,16 @@
 // character. Uses what the world has: its classes, species, backgrounds, feats, spells and items. Each step is its
 // own component (components/wizard); this is the frame around them. Back and Next sit at the top of the step and stay
 // there while it scrolls; Next lights up once the step has nothing open.
-import { computed, ref, watch } from 'vue'
-import { resetWizard, steps, wizard } from '../wizard'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { resetWizard, steps, wizard, type Step } from '../wizard'
 import { subclassLevelOf } from '../classRules'
 import { newBlankEntry } from '../ui'
 import AppIcon from '../components/AppIcon.vue'
 import WzClassStep from '../components/wizard/WzClassStep.vue'
-import WzOriginStep from '../components/wizard/WzOriginStep.vue'
+import WzSubclassStep from '../components/wizard/WzSubclassStep.vue'
+import WzSpeciesStep from '../components/wizard/WzSpeciesStep.vue'
+import WzSubraceStep from '../components/wizard/WzSubraceStep.vue'
+import WzBackgroundStep from '../components/wizard/WzBackgroundStep.vue'
 import WzScoresStep from '../components/wizard/WzScoresStep.vue'
 import WzProfsStep from '../components/wizard/WzProfsStep.vue'
 import WzFeaturesStep from '../components/wizard/WzFeaturesStep.vue'
@@ -24,12 +27,20 @@ import WzSummaryStep from '../components/wizard/WzSummaryStep.vue'
 const d = computed(() => wizard.d)
 const all = computed(() => steps(d.value))
 const step = computed(() => all.value.find(s => s.id === wizard.step) ?? all.value[0])
+// a step is ticked when nothing's open there and it was looked at (or something was chosen there); the summary never
+watch(() => step.value.id, id => { if (!(wizard.d.seen ?? []).includes(id)) wizard.d.seen = [...(wizard.d.seen ?? []), id] }, { immediate: true })
+const isDone = (s: Step, i: number) => !s.open.length && i < all.value.length - 1 && ((wizard.d.seen ?? []).includes(s.id) || !!s.chosen && !['gear', 'hp'].includes(s.id))
 const at = computed(() => all.value.findIndex(s => s.id === step.value.id))
 const move = (by: number) => { const s = all.value[at.value + by]; if (s) { wizard.step = s.id; window.scrollTo(0, 0) } }
 // A level below the subclass's level has no subclass.
 watch(() => d.value.level, () => { if (d.value.level < subclassLevelOf(d.value.cls)) wizard.d.subclass = undefined })
 /** The Spells step's name filter. */
 const spellFilter = ref('')
+// the sticky top's height (the steps may take two rows): the choice lists below stay clear of it
+const top = ref<HTMLElement | null>(null)
+let sizer: ResizeObserver | undefined
+onMounted(() => { if (top.value) { sizer = new ResizeObserver(() => { document.documentElement.style.setProperty('--wz-top', `${top.value?.offsetHeight ?? 0}px`) }); sizer.observe(top.value) } })
+onBeforeUnmount(() => sizer?.disconnect())
 function startOver() { if (confirm('Clear everything chosen so far?')) resetWizard() }
 </script>
 
@@ -42,14 +53,18 @@ function startOver() { if (confirm('Clear everything chosen so far?')) resetWiza
     </header>
 
     <div class="wizard-grid">
-      <nav class="card wizard-steps">
-        <button v-for="(s, i) in all" :key="s.id" type="button" class="wz-step" :class="{ on: s.id === step.id, done: !s.open.length && i < all.length - 1 }" @click="wizard.step = s.id">
-          <span class="wz-dot">{{ s.open.length ? i + 1 : '✓' }}</span>{{ s.label }}
-          <small v-if="s.open.length" class="muted">{{ s.open.length }} open</small>
-        </button>
-      </nav>
-
       <section class="card wizard-body">
+        <!-- the steps across the top, and the step's title with Back and Next: they stay in view together -->
+        <div ref="top" class="wizard-top">
+        <nav class="wizard-steps" aria-label="Steps">
+          <button v-for="(s, i) in all" :key="s.id" type="button" class="wz-step" :class="{ on: s.id === step.id, done: isDone(s, i) }"
+                  :aria-current="s.id === step.id ? 'step' : undefined" :title="s.open.length ? `Still to choose: ${s.open.join(', ')}` : undefined" @click="wizard.step = s.id">
+            <span class="wz-dot">{{ isDone(s, i) ? '✓' : i + 1 }}</span>
+            <span class="wz-step-text"><span>{{ s.label }}</span>
+              <small v-if="s.open.length" class="wz-chosen wz-to-choose">{{ s.open.length }} to choose</small>
+              <small v-else-if="s.chosen" class="wz-chosen" :title="s.chosen">{{ s.chosen }}</small></span>
+          </button>
+        </nav>
         <div class="wizard-head">
           <h2>{{ step.label }}</h2>
           <span class="wz-nav">
@@ -58,10 +73,14 @@ function startOver() { if (confirm('Clear everything chosen so far?')) resetWiza
                     :title="step.open.length ? `Still to choose here: ${step.open.join(', ')} (you can come back to it)` : undefined" @click="move(1)">Next: {{ all[at + 1].label }} →</button>
           </span>
         </div>
+        </div>
         <p v-if="step.open.length" class="wz-open small">Still to choose: {{ step.open.join(', ') }}</p>
 
         <WzClassStep v-if="step.id === 'class'" />
-        <WzOriginStep v-else-if="step.id === 'origin'" />
+        <WzSubclassStep v-else-if="step.id === 'subclass'" />
+        <WzSpeciesStep v-else-if="step.id === 'species'" />
+        <WzSubraceStep v-else-if="step.id === 'subrace'" />
+        <WzBackgroundStep v-else-if="step.id === 'background'" />
         <WzScoresStep v-else-if="step.id === 'scores'" />
         <WzProfsStep v-else-if="step.id === 'profs'" />
         <WzFeaturesStep v-else-if="step.id === 'features'" />

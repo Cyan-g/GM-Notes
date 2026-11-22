@@ -2476,3 +2476,54 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .sync-notice { position: fixed; right: 16px; bottom: 16px; z-index: 45; width: min(380px, calc(100vw - 32px)); padding: .7rem .9rem; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; box-shadow: 0 12px 40px rgb(0 0 0 / .25); }
 .sync-notice p { margin: 0 0 .3rem; }
 .sync-notice ul { margin: 0 0 .5rem; padding-left: 1.1rem; }
+
+/* ---------- the styles in menus, pick lists, list tables, tooltips and scrollbars ----------
+   Only edges, markers and colour: no size, spacing or layout changes, so nothing moves or gets in the way. */
+
+/* Illuminated: a gilt double rule round menus and tooltips, a gold mark on the row under the mouse, ✦ separators,
+   small-capital column headers over a double rule, slim gold scrollbars */
+:where(:root.fl-illuminated) :where(.menu-panel, .settings-list, .picker-list, .qs, .link-preview) { border-color: var(--gild-soft); border-radius: 3px; outline: 1px solid color-mix(in srgb, var(--gild-soft) 60%, transparent); outline-offset: -4px; }
+:root.fl-illuminated :is(.menu-row:hover, .menu-row.open, .settings-list button:hover, .picker-list li.sel, .qs li.sel) { background: color-mix(in srgb, var(--accent) 12%, transparent); box-shadow: inset 2px 0 0 var(--accent); }
+:root.fl-illuminated .menu-panel hr { height: 8px; border: none; margin: 2px 8px; background: var(--accent);
+  -webkit-mask: var(--fl-diamond) center / 8px no-repeat, linear-gradient(90deg, transparent, #000 20%, #000 calc(50% - 7px), transparent calc(50% - 6px), transparent calc(50% + 6px), #000 calc(50% + 7px), #000 80%, transparent) center / 100% 1px no-repeat;
+          mask: var(--fl-diamond) center / 8px no-repeat, linear-gradient(90deg, transparent, #000 20%, #000 calc(50% - 7px), transparent calc(50% - 6px), transparent calc(50% + 6px), #000 calc(50% + 7px), #000 80%, transparent) center / 100% 1px no-repeat; opacity: .8; }
+:root.fl-illuminated table.grid th { font-variant: small-caps; letter-spacing: .03em; box-shadow: inset 0 -1px 0 var(--gild-soft), inset 0 -3px 0 var(--panel-2), inset 0 -4px 0 var(--gild-soft); }
+:root.fl-illuminated table.grid tr:hover td { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+:root.fl-illuminated table.grid tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+:root.fl-illuminated .tip-layer { border-color: var(--gild-soft); border-radius: 3px; outline: 1px solid color-mix(in srgb, var(--gild-soft) 60%, transparent); outline-offset: -4px; }
+:root.fl-illuminated ::-webkit-scrollbar { width: 10px; height: 10px; }
+:root.fl-illuminated ::-webkit-scrollbar-track { background: transparent; }
+:root.fl-illuminated ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--accent) 55%, var(--panel)); border: 3px solid transparent; border-radius: 6px; background-clip: padding-box; }
+:root.fl-illuminated ::-webkit-scrollbar-thumb:hover { background-color: var(--accent); }
+
+/* Runecarved: square, bevelled menus, a notched mark on the row under the mouse, chiselled separators, column
+   headers sunk into the panel, cut-corner tooltips, squared stone scrollbars */
+:where(:root.fl-runecarved) :where(.menu-panel, .settings-list, .picker-list, .qs, .link-preview) { border-color: var(--rc-edge); border-radius: 2px; box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 8%, transparent), 0 10px 30px rgb(0 0 0 / .25); }
+:where(:root.fl-runecarved) :where(.menu-row, .settings-list button, .picker-list li, .qs li) { position: relative; border-radius: 0; }
+:root.fl-runecarved :is(.menu-row:hover, .menu-row.open, .settings-list button:hover, .picker-list li.sel, .qs li.sel) { background: color-mix(in srgb, var(--ink) 7%, var(--panel)); }
+:root.fl-runecarved :is(.menu-row:hover, .menu-row.open, .settings-list button:hover, .picker-list li.sel, .qs li.sel)::before { content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 4px; background: var(--accent); clip-path: polygon(0 0, 100% 25%, 100% 75%, 0 100%); }
+:root.fl-runecarved .menu-panel hr { border: none; height: 1px; margin: 5px 8px; background: repeating-linear-gradient(90deg, var(--rc-edge) 0 6px, transparent 6px 9px); }
+:root.fl-runecarved table.grid th { font-variant: small-caps; letter-spacing: .05em; background: var(--rc-cut); box-shadow: inset 0 2px 3px color-mix(in srgb, var(--bg) 60%, transparent), inset 0 -1px 0 var(--rc-edge); }
+:root.fl-runecarved table.grid tr:hover td { background: color-mix(in srgb, var(--ink) 6%, var(--panel)); }
+:root.fl-runecarved table.grid tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+:root.fl-runecarved .tip-layer { border-color: var(--rc-edge); border-radius: 0; clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px); }
+:root.fl-runecarved ::-webkit-scrollbar { width: 10px; height: 10px; }
+:root.fl-runecarved ::-webkit-scrollbar-track { background: transparent; }
+:root.fl-runecarved ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 28%, var(--panel)); border: 2px solid transparent; background-clip: padding-box; }
+:root.fl-runecarved ::-webkit-scrollbar-thumb:hover { background-color: var(--accent); }
+
+/* Wax & Ribbon: soft paper menus, a ribbon peeking out at the row under the mouse, dotted separators, a short ribbon
+   under the first column header, tooltips with a wax seal, rounded wax-coloured scrollbars */
+:where(:root.fl-wax) :where(.menu-panel, .settings-list, .picker-list, .qs, .link-preview) { border-color: var(--wx-edge); border-radius: 10px; }
+:where(:root.fl-wax) :where(.menu-row, .settings-list button, .picker-list li, .qs li) { position: relative; }
+:root.fl-wax :is(.menu-row:hover, .menu-row.open, .settings-list button:hover, .picker-list li.sel, .qs li.sel) { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+:root.fl-wax :is(.menu-row:hover, .menu-row.open, .settings-list button:hover, .picker-list li.sel, .qs li.sel)::before { content: ''; position: absolute; left: -3px; top: 50%; width: 8px; height: 13px; margin-top: -7px; background: var(--wx-wax); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%); }
+:root.fl-wax .menu-panel hr { border: none; border-top: 1.5px dotted var(--wx-empty); margin: 4px 10px; }
+:root.fl-wax table.grid th:first-child::after { content: ''; position: absolute; left: .8rem; bottom: 2px; width: 3.2em; height: 4px; background: var(--wx-wax); opacity: .85; clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 50%, 100% 100%, 0 100%, 4px 50%); }
+:root.fl-wax table.grid tr:hover td { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+:root.fl-wax .tip-layer { border-color: var(--wx-edge); border-radius: 8px; padding-left: 1.55rem; }
+:root.fl-wax .tip-layer::before { content: ''; position: absolute; left: .55rem; top: .7rem; width: 7px; height: 7px; border-radius: 50%; background: var(--wx-wax); box-shadow: 0 0 0 1.5px var(--wx-wax-light); }
+:root.fl-wax ::-webkit-scrollbar { width: 10px; height: 10px; }
+:root.fl-wax ::-webkit-scrollbar-track { background: transparent; }
+:root.fl-wax ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--accent) 40%, var(--panel)); border: 2px solid transparent; border-radius: 8px; background-clip: padding-box; }
+:root.fl-wax ::-webkit-scrollbar-thumb:hover { background-color: var(--wx-wax); }

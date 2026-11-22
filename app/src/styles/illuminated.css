@@ -1,0 +1,113 @@
+/* Illuminated: like a manuscript. Gilded double rules and scrolled corners on cards, a rule with a lozenge under
+   headings, inked underlines for fields, HP bars in the accent with marks at each quarter, charges set like jewels,
+   plaques for chips, a lozenge for a tick, gold marks on hovered rows, slim gold scrollbars. (The parts: base.css) */
+.fx[data-fx="illuminated"] {
+  --gild: var(--accent);
+  --gild-soft: color-mix(in srgb, var(--accent) 50%, var(--line));
+  --gild-rule: 1px solid color-mix(in srgb, var(--gild-soft) 70%, transparent);
+  --lozenge: url(./ornaments/lozenge.svg);
+
+  /* frame: a double rule and a scrolled corner in each corner */
+  --fx-frame-edge: var(--gild-soft);
+  --fx-frame-radius: 3px;
+  --fx-frame-outline: var(--gild-rule);
+  --fx-frame-outline-offset: -5px;
+  --fx-frame-ornament: '';
+  --fx-frame-ornament-inset: 2px;
+  --fx-frame-ornament-paint: var(--gild);
+  --fx-frame-ornament-mask: url(./ornaments/corner-tl.svg) top left / 14px no-repeat, url(./ornaments/corner-tr.svg) top right / 14px no-repeat,
+    url(./ornaments/corner-bl.svg) bottom left / 14px no-repeat, url(./ornaments/corner-br.svg) bottom right / 14px no-repeat;
+  --fx-small-edge: var(--gild-soft);
+  --fx-small-radius: 4px;
+  --fx-small-outline: 1px solid color-mix(in srgb, var(--gild-soft) 45%, transparent);
+  --fx-small-outline-offset: -3px;
+  --fx-scroller-edge: var(--gild-soft);
+
+  /* heading: a rule fading out at both ends, a lozenge in the middle */
+  --fx-rule-height: 10px;
+  --fx-rule-paint: var(--gild);
+  --fx-rule-mask: var(--lozenge) center / 10px no-repeat,
+    linear-gradient(90deg, transparent, #000 12%, #000 calc(50% - 9px), transparent calc(50% - 8px), transparent calc(50% + 8px), #000 calc(50% + 9px), #000 88%, transparent) center / 100% 1px no-repeat;
+
+  /* field: an inked underline, gilded on focus */
+  --fx-field-line: 1px solid var(--gild-soft);
+  --fx-field-radius: 2px;
+  --fx-field-paint: color-mix(in srgb, var(--panel) 65%, var(--bg));
+  --fx-field-focus-line: 1px solid var(--gild);
+  --fx-field-focus-shadow: 0 1px 0 var(--gild);
+
+  /* hp: the accent, hatched when bloodied, a mark at each quarter */
+  --fx-hp-edge: var(--gild-soft);
+  --fx-hp-radius: 2px;
+  --fx-hp-mini-height: 7px;
+  --fx-hp-mini-track: color-mix(in srgb, var(--ink) 8%, var(--panel));
+  --fx-hp-fill: linear-gradient(180deg, color-mix(in srgb, var(--accent) 70%, var(--panel)), var(--accent));
+  --fx-hp-bloodied: repeating-linear-gradient(135deg, var(--accent) 0 6px, color-mix(in srgb, var(--accent) 55%, var(--panel)) 6px 10px);
+  --fx-hp-marks: '';
+  --fx-hp-marks-paint: linear-gradient(90deg, transparent calc(25% - .5px), var(--gild-soft) 0 calc(25% + .5px), transparent 0 calc(50% - .5px),
+    var(--gild-soft) 0 calc(50% + .5px), transparent 0 calc(75% - .5px), var(--gild-soft) 0 calc(75% + .5px), transparent 0);
+
+  /* tab: a gilt rule, a lozenge on the open tab's bar */
+  --fx-tab-rule: var(--gild-soft);
+  --fx-tab-mark-left: 50%;
+  --fx-tab-mark-bottom: -5px;
+  --fx-tab-mark-width: 8px;
+  --fx-tab-mark-height: 8px;
+  --fx-tab-mark-margin: 0 0 0 -4px;
+  --fx-tab-mark-clip: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+
+  /* chip: a plaque with a gilt hairline */
+  --fx-chip-radius: 4px;
+  --fx-chip-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+
+  /* check: a gilt square, a lozenge for a tick */
+  --fx-check-size: 14px;
+  --fx-check-lift: -2px;
+  --fx-check-border: 1px solid var(--gild-soft);
+  --fx-check-radius: 2px;
+  --fx-check-paint: color-mix(in srgb, var(--panel) 65%, var(--bg));
+  --fx-check-on-paint: var(--accent);
+  --fx-check-on-edge: var(--accent);
+  --fx-tick: '';
+  --fx-tick-width: 6px;
+  --fx-tick-height: 6px;
+  --fx-tick-paint: var(--on-accent);
+  --fx-tick-clip: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+
+  /* panel, row, sep: a double rule round menus, a gold mark on the row under the mouse, a lozenge between groups */
+  --fx-panel-edge: var(--gild-soft);
+  --fx-panel-radius: 3px;
+  --fx-panel-outline: 1px solid color-mix(in srgb, var(--gild-soft) 60%, transparent);
+  --fx-panel-outline-offset: -4px;
+  --fx-row-paint: color-mix(in srgb, var(--accent) 12%, transparent);
+  --fx-row-shadow: inset 2px 0 0 var(--accent);
+  --fx-sep-height: 8px;
+  --fx-sep-margin: 2px 8px;
+  --fx-sep-paint: var(--accent);
+  --fx-sep-opacity: .8;
+  --fx-sep-mask: var(--lozenge) center / 8px no-repeat,
+    linear-gradient(90deg, transparent, #000 20%, #000 calc(50% - 7px), transparent calc(50% - 6px), transparent calc(50% + 6px), #000 calc(50% + 7px), #000 80%, transparent) center / 100% 1px no-repeat;
+
+  /* th, tr: small capitals over a double rule, a gold mark on the hovered row */
+  --fx-th-case: small-caps;
+  --fx-th-spacing: .03em;
+  --fx-th-shadow: inset 0 -1px 0 var(--gild-soft), inset 0 -3px 0 var(--panel-2), inset 0 -4px 0 var(--gild-soft);
+  --fx-tr-paint: color-mix(in srgb, var(--accent) 7%, transparent);
+  --fx-tr-mark: inset 2px 0 0 var(--accent);
+
+  /* tip, scroll */
+  --fx-tip-edge: var(--gild-soft);
+  --fx-tip-radius: 3px;
+  --fx-scroll-paint: color-mix(in srgb, var(--accent) 55%, var(--panel));
+  --fx-scroll-gap: 3px;
+  --fx-scroll-radius: 6px;
+}
+
+/* the HP bar on the sheet gets a gilt edge (it has none of its own) */
+.fx[data-fx="illuminated"] .cs-hp-bar { border: 1px solid var(--gild-soft); border-radius: 1px; }
+/* charges and spell slots set like jewels; death saves too */
+.fx[data-fx="illuminated"] .pip { border-width: 1.5px; background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.fx[data-fx="illuminated"] .pip.on { background: var(--accent); box-shadow: inset 0 0 0 2px var(--panel); }
+.fx[data-fx="illuminated"] .pip.on:hover { box-shadow: inset 0 0 0 2px var(--panel), 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+.fx[data-fx="illuminated"] .ds-box.on { box-shadow: inset 0 0 0 2px var(--panel); }
+:where(.fx[data-fx="illuminated"]) input[type=checkbox]:not(.settings-switch input):indeterminate::after { transform: scale(1); background: var(--accent); }

@@ -139,7 +139,12 @@ export function applyTheme() {
   root.style.setProperty('--serif', font.css)
   const text = TEXT_FONTS.find(f => f.id === s.textFont) ?? TEXT_FONTS[0]
   root.style.setProperty('--sans', text.css)
-  for (const f of FLOURISHES) root.classList.toggle(`fl-${f.id}`, (s.flourish ?? 'plain') === f.id && f.id !== 'plain')
+  // the decorative style (styles/): class "fx" and data-fx="<style>" on <html>; Plain has neither. The style gallery
+  // (#/styles) shows every style in boxes of its own, so the window stays plain while it's open.
+  const gallery = location.hash.startsWith('#/styles')
+  const fx = !gallery && FLOURISHES.some(f => f.id === s.flourish && f.id !== 'plain') ? s.flourish! : ''
+  root.classList.toggle('fx', !!fx)
+  if (fx) root.dataset.fx = fx; else delete root.dataset.fx
   // The browser's own UI (address bar on phones) follows the background.
   let meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null
   if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.append(meta) }

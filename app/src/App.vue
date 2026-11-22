@@ -25,6 +25,7 @@ import AtlasView from './views/AtlasView.vue'
 import OrgsView from './views/OrgsView.vue'
 import MapPage from './views/MapPage.vue'
 import DataView from './views/DataView.vue'
+import StylesView from './views/StylesView.vue'
 import ListsView from './views/ListsView.vue'
 import RulesetView from './views/RulesetView.vue'
 import CharacterWizard from './views/CharacterWizard.vue'
@@ -129,6 +130,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <AtlasView v-else-if="route.current.name === 'atlas'" :tab="route.current.tab" />
       <OrgsView v-else-if="route.current.name === 'orgs'" />
       <DataView v-else-if="route.current.name === 'data'" />
+      <StylesView v-else-if="route.current.name === 'styles'" />
       <ListsView v-else-if="route.current.name === 'lists'" />
       <RulesetView v-else-if="route.current.name === 'rules'" />
       <CharacterWizard v-else-if="route.current.name === 'wizard'" />

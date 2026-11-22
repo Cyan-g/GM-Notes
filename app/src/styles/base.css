@@ -1,0 +1,155 @@
+/*
+ * Decorative styles (Theme → Style): what each part of the app looks like is written once here, and a style is
+ * mostly a set of the --fx-… variables below (styles/<name>.css), plus what only it does.
+ *
+ * A style applies inside any element with class "fx" and data-fx="<style>": the whole window (theme.ts sets them on
+ * <html>), or one box of the style gallery. ".fx[data-fx]" weighs as much as ":root" plus a class did before.
+ *
+ * Only what every style sets, or what has a neutral default (none, transparent, the part's own look), is taken over
+ * here: a variable a style leaves unset falls back to that, never to nothing. Everything else stays in the style's
+ * file. The colours always come from the theme (--accent, --panel, --line …).
+ *
+ * The parts:
+ *   frame      cards and the character sheet's boxes          small    stat and ability boxes, tiles, feat cards
+ *   mark       the main cards (a bookmark, Wax & Ribbon)      scroller dialogs and tables (they scroll: no ornaments)
+ *   heading    headings and rules in notes                    field    text fields, dropdowns, text areas
+ *   hp         HP bars (tracker and sheet)                    tab      the open tab
+ *   chip       chips and badges                               check    checkboxes
+ *   panel      menus, pick lists, search, link previews       row      the row under the mouse in those
+ *   sep        menu separators                                th / tr  list tables' headers and hovered rows
+ *   tip        tooltips                                       scroll   scrollbars
+ */
+
+/* ---------- frame: cards and the sheet's boxes ---------- */
+:where(.fx[data-fx]) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .char-sheet > .feature-choices) {
+  position: relative; border-color: var(--fx-frame-edge); border-radius: var(--fx-frame-radius);
+  outline: var(--fx-frame-outline, none); outline-offset: var(--fx-frame-outline-offset, 0);
+}
+/* an ornament over the whole box (corners): only when the style gives one */
+:where(.fx[data-fx]) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .char-sheet > .feature-choices)::before {
+  content: var(--fx-frame-ornament, none); position: absolute; inset: var(--fx-frame-ornament-inset, 0); pointer-events: none;
+  background: var(--fx-frame-ornament-paint, none); -webkit-mask: var(--fx-frame-ornament-mask, none); mask: var(--fx-frame-ornament-mask, none);
+}
+/* the colour under a box, for ornaments that paint over its corners: the page, or a card it sits on */
+.fx[data-fx] :is(.card, .modal, .cs-hp, .theme-sample) :is(.tool, .slot-row, .card) { --fx-under: var(--panel); }
+
+/* ---------- mark: something on the main cards only ---------- */
+:where(.fx[data-fx]) :where(.card, .item-card, .spell-card, .start-card)::after {
+  content: var(--fx-mark, none); position: absolute; top: -1px; right: 18px; width: 12px; height: 26px; pointer-events: none;
+  background: var(--fx-mark-paint, none); clip-path: var(--fx-mark-clip, none); opacity: .9;
+}
+
+/* ---------- small: stat and ability boxes, tiles, spell slot rows, feat and option cards ---------- */
+:where(.fx[data-fx]) :where(.cs-stat, .cs-ability, .tool, .slot-row, .feat-card, .trait-option-card) {
+  border-color: var(--fx-small-edge); border-radius: var(--fx-small-radius);
+  outline: var(--fx-small-outline, none); outline-offset: var(--fx-small-outline-offset, 0);
+}
+:where(.fx[data-fx]) :where(.cs-stat, .cs-ability, .tool, .slot-row) { position: relative; }
+:where(.fx[data-fx]) :where(.cs-stat, .cs-ability, .tool, .slot-row)::before {
+  content: var(--fx-small-ornament, none); position: absolute; inset: -1px; pointer-events: none; background: var(--fx-small-ornament-paint, none);
+}
+
+/* ---------- scroller: dialogs and tables (they scroll, so no ornaments over them) ---------- */
+:where(.fx[data-fx]) :where(.modal, .table-wrap, .theme-panel) {
+  border-color: var(--fx-scroller-edge); outline: var(--fx-frame-outline, none); outline-offset: var(--fx-frame-outline-offset, 0);
+}
+
+/* ---------- heading: headings and rules in notes ---------- */
+.fx[data-fx] :is(.md h1, .md h2, .entry-main h2) { border-bottom: none; padding-bottom: 0; }
+.fx[data-fx] :is(.md h1, .md h2, .entry-main h2)::after, .fx[data-fx] .md hr {
+  content: ''; display: block; width: var(--fx-rule-width, auto); height: var(--fx-rule-height); margin-top: var(--fx-rule-gap, .3rem); border: none;
+  background: var(--fx-rule-paint); -webkit-mask: var(--fx-rule-mask, none); mask: var(--fx-rule-mask, none); clip-path: var(--fx-rule-clip, none);
+}
+.fx[data-fx] :is(.md h1, .md h2, .entry-main h2)::after { opacity: var(--fx-rule-opacity, 1); }
+.fx[data-fx] .md hr { margin: var(--fx-hr-margin, 1.5rem 0); opacity: var(--fx-hr-opacity, 1); }
+
+/* ---------- field: text fields, dropdowns, text areas ---------- */
+:where(.fx[data-fx]) :is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file]), select, textarea) {
+  border-color: transparent; border-bottom: var(--fx-field-line); border-radius: var(--fx-field-radius); background: var(--fx-field-paint);
+  box-shadow: var(--fx-field-shadow, none); clip-path: var(--fx-field-clip, none);
+}
+:where(.fx[data-fx]) :is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file]), select, textarea):focus {
+  outline: none; border-bottom: var(--fx-field-focus-line); box-shadow: var(--fx-field-focus-shadow, none);
+}
+
+/* ---------- hp: HP bars in the tracker and on the sheet ---------- */
+.fx[data-fx] .hp-bar { border-color: var(--fx-hp-edge); border-radius: var(--fx-hp-radius); background: var(--fx-hp-track, color-mix(in srgb, var(--ink) 10%, var(--panel))); clip-path: var(--fx-hp-clip, none); }
+.fx[data-fx] .cs-hp-bar { position: relative; height: var(--fx-hp-mini-height); border-radius: var(--fx-hp-radius); background: var(--fx-hp-mini-track); clip-path: var(--fx-hp-mini-clip, none); }
+.fx[data-fx] :is(.hp-fill, .cs-hp-bar i) { background: var(--fx-hp-fill); }
+.fx[data-fx] .hp-bar.bloodied .hp-fill { background: var(--fx-hp-bloodied); }
+.fx[data-fx] .hp-bar.down .hp-fill { background: var(--muted); }
+/* marks over the bar (quarters, notches): only when the style gives them */
+.fx[data-fx] :is(.hp-bar, .cs-hp-bar)::after { content: var(--fx-hp-marks, none); position: absolute; inset: 0; pointer-events: none; background: var(--fx-hp-marks-paint, none); }
+
+/* ---------- tab: the open tab's mark ---------- */
+.fx[data-fx] .tabs { border-bottom-color: var(--fx-tab-rule); }
+.fx[data-fx] .tabs a.on { position: relative; border-bottom-color: var(--fx-tab-bar, var(--accent)); }
+.fx[data-fx] .tabs a.on::after {
+  content: ''; position: absolute; left: var(--fx-tab-mark-left); right: var(--fx-tab-mark-right, auto); top: var(--fx-tab-mark-top, auto); bottom: var(--fx-tab-mark-bottom, auto);
+  width: var(--fx-tab-mark-width); height: var(--fx-tab-mark-height); margin: var(--fx-tab-mark-margin, 0); background: var(--fx-tab-mark-paint, var(--accent)); clip-path: var(--fx-tab-mark-clip);
+}
+
+/* ---------- chip: chips and badges ---------- */
+:where(.fx[data-fx]) :where(.chip, .badge, .chip-btn, .chip-toggle, .tag-ritual) {
+  border-radius: var(--fx-chip-radius); box-shadow: var(--fx-chip-shadow, none); clip-path: var(--fx-chip-clip, none);
+}
+
+/* ---------- check: checkboxes (not the switches in the settings menu) ---------- */
+:where(.fx[data-fx]) input[type=checkbox]:not(.settings-switch input) {
+  appearance: none; -webkit-appearance: none; display: inline-grid; place-content: center; flex: none; margin: 0 .2em; padding: 0; cursor: pointer;
+  width: var(--fx-check-size); height: var(--fx-check-size); vertical-align: var(--fx-check-lift);
+  border: var(--fx-check-border, none); border-radius: var(--fx-check-radius); background: var(--fx-check-paint); box-shadow: var(--fx-check-shadow, none);
+}
+/* the tick: drawn by the style (a lozenge, a slash), shown when checked */
+:where(.fx[data-fx]) input[type=checkbox]:not(.settings-switch input)::after {
+  content: var(--fx-tick, none); width: var(--fx-tick-width, 0); height: var(--fx-tick-height, 0); background: var(--fx-tick-paint, none);
+  clip-path: var(--fx-tick-clip, none); transform: var(--fx-tick-off, scale(0)); transition: transform .12s;
+}
+:where(.fx[data-fx]) input[type=checkbox]:not(.settings-switch input):checked {
+  background: var(--fx-check-on-paint, var(--fx-check-paint)); border-color: var(--fx-check-on-edge, transparent); box-shadow: var(--fx-check-on-shadow, var(--fx-check-shadow, none));
+}
+:where(.fx[data-fx]) input[type=checkbox]:not(.settings-switch input):checked::after { transform: var(--fx-tick-on, scale(1)); }
+:where(.fx[data-fx]) input[type=checkbox]:not(.settings-switch input):focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 1px; }
+:where(.fx[data-fx]) input[type=checkbox]:disabled { opacity: .5; cursor: default; }
+:where(.fx[data-fx]) input[type=radio] { accent-color: var(--accent); }
+
+/* ---------- panel and row: menus, pick lists, the search box, link previews; the row under the mouse ---------- */
+:where(.fx[data-fx]) :where(.menu-panel, .settings-list, .picker-list, .qs, .link-preview) {
+  border-color: var(--fx-panel-edge); border-radius: var(--fx-panel-radius); outline: var(--fx-panel-outline, none); outline-offset: var(--fx-panel-outline-offset, 0);
+}
+:where(.fx[data-fx]) :where(.menu-row, .settings-list button, .picker-list li, .qs li) { position: relative; }
+.fx[data-fx] :is(.menu-row:hover, .menu-row.open, .settings-list button:hover, .picker-list li.sel, .qs li.sel) { background: var(--fx-row-paint); box-shadow: var(--fx-row-shadow, none); }
+.fx[data-fx] :is(.menu-row:hover, .menu-row.open, .settings-list button:hover, .picker-list li.sel, .qs li.sel)::before {
+  content: var(--fx-row-mark, none); position: absolute; left: var(--fx-row-mark-left, 0); top: var(--fx-row-mark-top, 4px); bottom: var(--fx-row-mark-bottom, auto);
+  width: var(--fx-row-mark-width, 4px); height: var(--fx-row-mark-height, auto); margin-top: var(--fx-row-mark-shift, 0); background: var(--fx-row-mark-paint, var(--accent)); clip-path: var(--fx-row-mark-clip, none);
+}
+
+/* ---------- sep: menu separators ---------- */
+.fx[data-fx] .menu-panel hr {
+  border: none; border-top: var(--fx-sep-line, none); height: var(--fx-sep-height, 0); margin: var(--fx-sep-margin, 4px 6px);
+  background: var(--fx-sep-paint, none); -webkit-mask: var(--fx-sep-mask, none); mask: var(--fx-sep-mask, none); opacity: var(--fx-sep-opacity, 1);
+}
+
+/* ---------- th and tr: list tables' column headers and the row under the mouse ---------- */
+.fx[data-fx] table.grid th { font-variant: var(--fx-th-case, normal); letter-spacing: var(--fx-th-spacing, normal); background: var(--fx-th-paint, var(--panel-2)); box-shadow: var(--fx-th-shadow, none); }
+.fx[data-fx] table.grid th:first-child::after {
+  content: var(--fx-th-mark, none); position: absolute; left: .8rem; bottom: 2px; width: 3.2em; height: 4px; background: var(--fx-th-mark-paint, none); opacity: .85; clip-path: var(--fx-th-mark-clip, none);
+}
+.fx[data-fx] table.grid tr:hover td { background: var(--fx-tr-paint); }
+.fx[data-fx] table.grid tr:hover td:first-child { box-shadow: var(--fx-tr-mark, none); }
+
+/* ---------- tip: tooltips ---------- */
+.fx[data-fx] .tip-layer {
+  border-color: var(--fx-tip-edge); border-radius: var(--fx-tip-radius); outline: var(--fx-panel-outline, none); outline-offset: var(--fx-panel-outline-offset, 0);
+  clip-path: var(--fx-tip-clip, none); padding-left: var(--fx-tip-indent, .6rem);
+}
+.fx[data-fx] .tip-layer::before {
+  content: var(--fx-tip-mark, none); position: absolute; left: .55rem; top: .7rem; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--fx-tip-mark-paint, none); box-shadow: var(--fx-tip-mark-ring, none);
+}
+
+/* ---------- scroll: scrollbars ---------- */
+.fx[data-fx] ::-webkit-scrollbar { width: 10px; height: 10px; }
+.fx[data-fx] ::-webkit-scrollbar-track { background: transparent; }
+.fx[data-fx] ::-webkit-scrollbar-thumb { background: var(--fx-scroll-paint); border: var(--fx-scroll-gap, 2px) solid transparent; border-radius: var(--fx-scroll-radius); background-clip: padding-box; }
+.fx[data-fx] ::-webkit-scrollbar-thumb:hover { background-color: var(--fx-scroll-hover, var(--accent)); }

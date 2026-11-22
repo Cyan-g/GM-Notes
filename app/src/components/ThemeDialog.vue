@@ -94,7 +94,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true))
             </div>
           </section>
         </div>
-        <p class="small muted">Saved with the world, so it looks the same on every computer.</p>
+        <p class="small muted">Saved with the world, so it looks the same on every computer. <a href="#/styles" @click="emit('close')">Compare styles</a> side by side.</p>
       </div>
     </div>
   </Teleport>

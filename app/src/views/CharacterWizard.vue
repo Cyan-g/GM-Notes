@@ -4,7 +4,7 @@
 // character. Uses what the world has: its classes, species, backgrounds, feats, spells and items. Each step is its
 // own component (components/wizard); this is the frame around them. Back and Next sit at the top of the step and stay
 // there while it scrolls; Next lights up once the step has nothing open.
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { resetWizard, steps, wizard } from '../wizard'
 import { subclassLevelOf } from '../classRules'
 import { newBlankEntry } from '../ui'
@@ -32,6 +32,11 @@ const move = (by: number) => { const s = all.value[at.value + by]; if (s) { wiza
 watch(() => d.value.level, () => { if (d.value.level < subclassLevelOf(d.value.cls)) wizard.d.subclass = undefined })
 /** The Spells step's name filter. */
 const spellFilter = ref('')
+// the sticky top's height (the steps may take two rows): the choice lists below stay clear of it
+const top = ref<HTMLElement | null>(null)
+let sizer: ResizeObserver | undefined
+onMounted(() => { if (top.value) { sizer = new ResizeObserver(() => { document.documentElement.style.setProperty('--wz-top', `${top.value?.offsetHeight ?? 0}px`) }); sizer.observe(top.value) } })
+onBeforeUnmount(() => sizer?.disconnect())
 function startOver() { if (confirm('Clear everything chosen so far?')) resetWizard() }
 </script>
 
@@ -44,14 +49,15 @@ function startOver() { if (confirm('Clear everything chosen so far?')) resetWiza
     </header>
 
     <div class="wizard-grid">
-      <nav class="card wizard-steps">
-        <button v-for="(s, i) in all" :key="s.id" type="button" class="wz-step" :class="{ on: s.id === step.id, done: !s.open.length && i < all.length - 1 }" @click="wizard.step = s.id">
-          <span class="wz-dot">{{ s.open.length ? i + 1 : '✓' }}</span>{{ s.label }}
-          <small v-if="s.open.length" class="muted">{{ s.open.length }} open</small>
-        </button>
-      </nav>
-
       <section class="card wizard-body">
+        <!-- the steps across the top, and the step's title with Back and Next: they stay in view together -->
+        <div ref="top" class="wizard-top">
+        <nav class="wizard-steps" aria-label="Steps">
+          <button v-for="(s, i) in all" :key="s.id" type="button" class="wz-step" :class="{ on: s.id === step.id, done: !s.open.length && i < all.length - 1 }"
+                  :aria-current="s.id === step.id ? 'step' : undefined" :title="s.open.length ? `Still to choose: ${s.open.join(', ')}` : undefined" @click="wizard.step = s.id">
+            <span class="wz-dot">{{ s.open.length ? i + 1 : '✓' }}</span>{{ s.label }}<small v-if="s.open.length" class="wz-open-count">{{ s.open.length }}</small>
+          </button>
+        </nav>
         <div class="wizard-head">
           <h2>{{ step.label }}</h2>
           <span class="wz-nav">
@@ -59,6 +65,7 @@ function startOver() { if (confirm('Clear everything chosen so far?')) resetWiza
             <button v-if="at < all.length - 1" type="button" :class="{ primary: !step.open.length }"
                     :title="step.open.length ? `Still to choose here: ${step.open.join(', ')} (you can come back to it)` : undefined" @click="move(1)">Next: {{ all[at + 1].label }} →</button>
           </span>
+        </div>
         </div>
         <p v-if="step.open.length" class="wz-open small">Still to choose: {{ step.open.join(', ') }}</p>
 

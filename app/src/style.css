@@ -1736,10 +1736,12 @@ button.live-tag { cursor: pointer; }
 .trait-among .seg { margin-top: .3rem; }
 
 /* ---------- the character creation wizard (CharacterWizard.vue) ---------- */
-.wizard-grid { display: grid; grid-template-columns: 14rem minmax(0, 1fr); gap: 1rem; align-items: start; }
-.wizard-steps { display: grid; gap: .15rem; position: sticky; top: 4.5rem; padding: .5rem; }
-.wz-step { display: flex; align-items: center; gap: .5rem; text-align: left; background: none; border: 0; padding: .4rem .5rem; border-radius: 6px; color: inherit; cursor: pointer; }
-.wz-step small { margin-left: auto; }
+.wizard-grid { display: block; }
+/* the steps: a bar across the top of the creator, in the sticky head with the step's title */
+.wizard-top { position: sticky; top: var(--bar-h); z-index: 3; margin: -.8rem -1rem .6rem; background: var(--panel); border-bottom: 1px solid var(--line); border-radius: 12px 12px 0 0; }
+.wizard-steps { display: flex; flex-wrap: wrap; gap: .15rem .2rem; padding: .45rem .6rem .35rem; border-bottom: 1px solid var(--line); }
+.wz-step { position: relative; display: flex; align-items: center; gap: .4rem; text-align: left; background: none; border: 0; padding: .3rem .55rem .3rem .4rem; border-radius: 6px; color: inherit; cursor: pointer; font-size: 14px; white-space: nowrap; }
+.wz-open-count { min-width: 1.1rem; padding: 0 .3rem; border-radius: 999px; background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); font-size: 11px; font-weight: 600; text-align: center; }
 .wz-step:hover { background: var(--hover, rgba(127, 127, 127, .12)); }
 .wz-step.on { background: color-mix(in srgb, var(--accent) 18%, transparent); font-weight: 600; }
 .wz-dot { display: inline-grid; place-items: center; width: 1.4rem; height: 1.4rem; border-radius: 50%; border: 1px solid var(--line); font-size: 12px; flex: none; }
@@ -1786,13 +1788,9 @@ button.live-tag { cursor: pointer; }
 .wz-score b { font-size: 1.3rem; }
 .wz-make { margin-top: .6rem; }
 /* the step's title with Back and Next, kept in view under the top bar while the step scrolls */
-.wizard-head { position: sticky; top: var(--bar-h); z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: -.8rem -1rem .4rem; padding: .6rem 1rem; background: var(--panel); border-bottom: 1px solid var(--line); border-radius: 12px 12px 0 0; }
+.wizard-head { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; padding: .5rem 1rem; }
 .wizard-head h2 { margin: 0; }
 .wz-nav { margin-left: auto; display: flex; gap: .5rem; }
-@media (max-width: 760px) {
-  .wizard-grid { grid-template-columns: 1fr; }
-  .wizard-steps { position: static; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); }
-}
 /* A table shown as a tree (DataTable's tree): ▸/▾ before each row with children. */
 .tree-toggle { width: 1.2rem; padding: 0; margin-right: .25rem; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 12px; }
 .tree-toggle.none { cursor: default; }
@@ -2342,9 +2340,11 @@ select.dd option:is(:hover, :focus-visible)::before {
 .wz-fold[open] > summary::before { rotate: 90deg; }
 
 /* ---------- the creator's choosing (WzChooser): a list on the left, the one looked at beside it ---------- */
-.wz-chooser { display: grid; grid-template-columns: minmax(13rem, 17rem) minmax(0, 1fr); gap: 1.2rem; align-items: start; }
+.wz-chooser { display: grid; grid-template-columns: minmax(13rem, 17rem) minmax(0, 1fr); gap: 1.2rem; align-items: start;
+  /* at least the window's height, so the list stays under the steps bar even when the details are short */
+  min-height: calc(100vh - var(--bar-h) - 2rem); }
 @media (max-width: 760px) { .wz-chooser { grid-template-columns: 1fr; } }
-.wz-ch-side { position: sticky; top: calc(var(--bar-h) + 4.5rem); display: flex; flex-direction: column; gap: .4rem; max-height: calc(100vh - var(--bar-h) - 6rem); min-height: 0; }
+.wz-ch-side { position: sticky; top: calc(var(--bar-h) + var(--wz-top, 7rem) + .5rem); display: flex; flex-direction: column; gap: .4rem; max-height: calc(100vh - var(--bar-h) - var(--wz-top, 7rem) - 6rem); min-height: 0; }
 .wz-ch-top { margin: 0; }
 .wz-ch-side .wz-filter { width: 100%; margin: 0; }
 .wz-ch-list { position: relative; overflow-y: auto; min-height: 0; border: 1px solid var(--line); border-radius: 10px; padding: 4px; outline: none; }

@@ -404,15 +404,14 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
               <td>{{ [e.fields.concentration && 'C', e.fields.ritual && 'R'].filter(Boolean).join(' ') }}</td>
               <td class="sbk-actions">
                 <span v-if="spellLevel(e) && given.get(e.id)?.how === 'atWill' && onlyGiven(e.id)" class="muted small" title="Cast without a spell slot">at will</span>
-                <span v-else-if="spellLevel(e)" class="cast-split">
-                  <button class="chip-btn" :disabled="!canCast(e)" :title="canCast(e) ? 'Spend a slot of this level (or the next free higher one)' : 'No slot left for this level'" @click="cast(e)">Cast</button><button v-if="higher(e).length" class="chip-btn cast-more" :aria-expanded="upcastOf === e.id" title="Cast with a higher slot" @click="upcastOf = upcastOf === e.id ? null : e.id">▾</button>
+                <span v-else-if="spellLevel(e)" class="cast-wrap"><span class="cast-split">
+                  <button class="chip-btn" :disabled="!canCast(e)" :title="canCast(e) ? 'Spend a slot of this level (or the next free higher one)' : 'No slot left for this level'" @click="cast(e)">Cast</button><button v-if="higher(e).length" class="chip-btn cast-more" :aria-expanded="upcastOf === e.id" title="Cast with a higher slot" @click="upcastOf = upcastOf === e.id ? null : e.id">▾</button><button v-if="freeFor(e)" class="chip-btn" :title="freeTip(e)" @click="castFree(e)">Free</button></span>
                   <span v-if="upcastOf === e.id" class="cast-menu" role="menu">
                     <button v-for="r in higher(e)" :key="r.key" type="button" class="menu-row" role="menuitem" @click="cast(e, r)">
                       <b>{{ r.kind === 'pact' ? 'Pact ' : '' }}{{ ORD[r.level] }}</b> <span class="muted small">({{ r.max - r.used }} left)</span> <span class="small">{{ rollsAt(e, r.level) }}</span>
                     </button>
                   </span>
                 </span>
-                <button v-if="spellLevel(e) && freeFor(e)" class="chip-btn" :title="freeTip(e)" @click="castFree(e)">Free</button>
                 <button v-if="caster && e.fields.concentration && !switchable(e)" class="chip-btn sbk-on" :class="{ on: concentrating(e) }" :aria-pressed="concentrating(e)" :title="concentrating(e) ? 'Concentrating on it. Click to end it' : 'Concentrate on it: any other concentration spell ends'" @click="toggleConc(e)">{{ concentrating(e) ? 'Concentrating' : 'Concentrate' }}</button>
                 <button v-if="switchable(e)" class="chip-btn sbk-on" :class="{ on: on(e) }" :aria-pressed="on(e)" :title="on(e) ? 'Active: the sheet counts its effects. Click to end it' : 'Switch it on: the sheet counts its effects until you end it or take a long rest'" @click="toggleOn(e)">{{ on(e) ? 'Active' : 'On' }}</button>
               </td>
@@ -475,8 +474,7 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
       <template #actions>
         <button v-if="!isPrepared(shown)" class="chip-btn" @click="prepare(shown!)">Prepare</button>
         <template v-else>
-          <button v-if="shownEntry && spellLevel(shownEntry)" class="chip-btn" :disabled="!canCast(shownEntry)" @click="cast(shownEntry)">Cast</button>
-          <button v-if="shownEntry && spellLevel(shownEntry) && freeFor(shownEntry)" class="chip-btn" :title="freeTip(shownEntry)" @click="castFree(shownEntry)">Free</button>
+          <span v-if="shownEntry && spellLevel(shownEntry)" class="cast-split"><button class="chip-btn" :disabled="!canCast(shownEntry)" @click="cast(shownEntry)">Cast</button><button v-if="freeFor(shownEntry)" class="chip-btn" :title="freeTip(shownEntry)" @click="castFree(shownEntry)">Free</button></span>
           <button class="chip-btn" @click="unprepare(shown!)">Unprepare</button>
         </template>
       </template>

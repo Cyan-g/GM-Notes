@@ -2398,10 +2398,18 @@ select.dd option:is(:hover, :focus-visible)::before {
 .wz-new { font-size: 9px; text-transform: uppercase; letter-spacing: .04em; color: var(--accent); margin-left: .15em; }
 .wz-to-choose { color: var(--accent); }
 /* Level up on the sheet's Level tile */
-/* Cast and its ▾ for a higher slot, with the slots in a small menu under it */
-.cast-split { position: relative; display: inline-flex; }
-.cast-split .chip-btn:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.cast-more { border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: -1px; padding: 0 .35rem; }
+/* Cast, its ▾ for a higher slot and Free: one group, joined; only its outer corners are rounded (as the style rounds
+   them), the joins are square. The higher slots open in a small menu under it. */
+.cast-wrap { position: relative; display: inline-flex; vertical-align: middle; }
+.cast-split { display: inline-flex; vertical-align: middle; }
+.cast-split > .chip-btn:not(:first-of-type) { margin-left: -1px; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.cast-split > .chip-btn:not(:last-of-type) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.cast-split > .chip-btn:hover, .cast-split > .chip-btn:focus-visible { position: relative; z-index: 1; }
+.cast-wrap + .chip-btn, .cast-split + .chip-btn, .chip-btn + .cast-split { margin-left: .35rem; }
+.cast-more { padding: 0 .35rem; }
+/* a style that cuts a chip's ends (Runecarved's points, Wax's notch) cuts the group's, not each button's */
+.fx[data-fx] .cast-split { clip-path: var(--fx-chip-clip, none); }
+.fx[data-fx] .cast-split > .chip-btn { clip-path: none; }
 .cast-menu { position: absolute; right: 0; top: 100%; z-index: 30; min-width: 16rem; padding: .25rem; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
 .cast-menu .menu-row { display: block; width: 100%; text-align: left; white-space: nowrap; }
 .cs-levelup { margin-top: .15rem; font-size: 10.5px; padding: .05rem .45rem; }

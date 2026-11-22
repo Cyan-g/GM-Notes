@@ -1860,6 +1860,9 @@ button.live-tag { cursor: pointer; }
 .wz-cs-abilities .cs-skill:disabled { cursor: default; }
 .wz-cs-abilities .cs-skill.can { color: var(--ink); }
 .wz-cs-abilities .cs-skill:not(.can):not(.on):disabled { opacity: .6; }
+.wz-score-src { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .7rem; }
+.wz-src-label { font-size: 13px; color: var(--muted); }
+.wz-src-label + .seg + .wz-src-label { margin-left: 1rem; }
 .wz-bonus-src { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; margin: .6rem 0 .3rem; }
 .wz-bonus-pick { display: inline-flex; align-items: center; gap: .25rem; }
 .wz-bonus-pick b { min-width: 1.8em; text-align: center; }
@@ -2496,6 +2499,8 @@ select.dd:disabled { cursor: default; }
 select.dd::picker(select) {
   /* a long list scrolls inside it, and it never runs off a small window */
   appearance: base-select; margin: 2px 0; padding: 4px; max-height: min(320px, 60vh); overflow-y: auto; overscroll-behavior: contain; color: var(--ink); background: var(--panel);
+  /* below the field, above only when it doesn't fit there (not wherever there's more room) */
+  position-area: block-end span-inline-end; position-try-order: normal; position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
   border: 1px solid var(--fx-panel-edge, var(--line)); border-radius: var(--fx-panel-radius, 10px);
   outline: var(--fx-panel-outline, none); outline-offset: var(--fx-panel-outline-offset, 0);
   box-shadow: 0 2px 4px rgb(0 0 0 / .08), 0 10px 32px rgb(0 0 0 / .22);

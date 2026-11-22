@@ -93,10 +93,18 @@ const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20
 </script>
 
 <template>
-  <div class="seg">
+  <!-- the two choices side by side: where the scores come from, and where the bonus comes from -->
+  <div class="wz-score-src">
+    <span class="wz-src-label">Scores</span>
+    <div class="seg">
     <button type="button" :class="{ on: d.method === 'array' }" @click="setMethod('array')">Standard array</button>
     <button type="button" :class="{ on: d.method === 'pointbuy' }" @click="setMethod('pointbuy')">Point buy</button>
     <button type="button" :class="{ on: d.method === 'typed' }" @click="setMethod('typed')">Typed in</button>
+    </div>
+    <span class="wz-src-label">Bonus</span>
+    <div class="seg">
+      <button v-for="x in sources" :key="x" type="button" :class="{ on: d.bonusFrom === x }" :disabled="x === 'subrace' && !hasSubrace && d.bonusFrom !== 'subrace'" :title="x === 'subrace' && !hasSubrace ? 'Only with a subrace' : undefined" @click="setBonusFrom(x)">{{ LABEL[x] }}</button>
+    </div>
   </div>
   <div class="wz-guide">
     <p v-if="d.method === 'array'"><b>Standard array:</b> six set numbers, 15, 14, 13, 12, 10 and 8. Give each to one score, using each number once. The quickest way, and every character gets the same total.</p>
@@ -106,20 +114,15 @@ const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20
       <p :class="{ 'wz-bad': pointsSpent(d) > POINTS }"><b>{{ POINTS - pointsSpent(d) }}</b> of {{ POINTS }} points left.</p>
     </template>
     <p v-else><b>Typed in:</b> scores rolled at the table (usually 4d6 six times, dropping the lowest die of each) or agreed with your DM. Type each one in.</p>
-    <p>Then the <b>bonus</b> (its column in the table) adds to these (in the 2024 rules from the background: +2 and +1, or +1 to three scores; no score above 20 at creation). Every 2 points over 10 is +1 to the modifier, which is what the dice use.</p>
-    <p v-if="priorities" class="wz-priority">★ {{ priorities }} Then <b>Constitution</b> (hit points, concentration) and <b>Dexterity</b> (AC, initiative) help every class.</p>
-  </div>
-  <div class="wz-bonus-src">
-    <span class="small">Bonus from</span>
-    <div class="seg">
-      <button v-for="x in sources" :key="x" type="button" :class="{ on: d.bonusFrom === x }" :disabled="x === 'subrace' && !hasSubrace && d.bonusFrom !== 'subrace'" :title="x === 'subrace' && !hasSubrace ? 'Only with a subrace' : undefined" @click="setBonusFrom(x)">{{ LABEL[x] }}</button>
-    </div>
-    <span class="muted small">
+    <p><b>Bonus:</b>
+      <span>
       <template v-if="d.bonusFrom === 'background'">{{ d.background ? abilityBonusText(get(d.background)?.fields.abilityIncrease) || 'This background gives none.' : 'Choose a background first.' }}</template>
       <template v-else-if="d.bonusFrom === 'species' || d.bonusFrom === 'subrace'">{{ d.race ? speciesBonusText || 'This species gives none.' : 'Choose a species first.' }}</template>
       <template v-else>Type the bonus for each score in its column.</template>
       <template v-if="bonus && d.bonusFrom !== 'custom'"> · place them with − and + in the Bonus column<template v-if="spread.cap.value !== 20"> (up to {{ spread.cap.value }})</template>.</template>
-    </span>
+      </span>
+      Every 2 points over 10 is +1 to the modifier, which is what the dice use.</p>
+    <p v-if="priorities" class="wz-priority">★ {{ priorities }} Then <b>Constitution</b> (hit points, concentration) and <b>Dexterity</b> (AC, initiative) help every class.</p>
   </div>
   <table class="wz-scores">
     <thead><tr><th /><th>Base</th><th :class="{ 'wz-todo': bonusLeft }">Bonus<span v-if="bonusLeft" class="wz-left wz-th-left">{{ spread.points.value - spread.spent.value }} left</span></th><th v-if="featLevels(d).length">Feats</th><th>Score</th><th>Mod</th><th class="wz-does-h">What it does now</th></tr></thead>

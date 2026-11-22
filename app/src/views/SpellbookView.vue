@@ -77,10 +77,28 @@ const canCast = (e: Entry) => {
   return lvl > 0 && !!slotFor(rows.value, lvl)
 }
 // ---- spells from the items the character uses (items.ts): cast for charges, once per rest, at will, or prepared ----
-const granted = computed(() => (owner.value ? grantedSpells(sheetOf(owner.value)) : []))
+const allGranted = computed(() => (owner.value ? grantedSpells(sheetOf(owner.value)) : []))
+/** Ready without a limit: always prepared (cast with the character's own slots) or at will. */
+const unlimited = (how: string) => how === 'prepared' || how === 'atWill'
+/** The bottom list: what items give with a limit (charges, once per rest). */
+const granted = computed(() => allGranted.value.filter(g => !unlimited(g.spell.how)))
 /** Spells from the character's species (species.ts): at will, once per rest, or always prepared. */
 // spells on the class list or in the book for free aren't cast from the feature: they're learned or prepared as usual
-const innate = computed(() => (owner.value ? speciesSpells(owner.value, sheetOf(owner.value)).filter(x => x.spell.how !== 'list' && x.spell.how !== 'book') : []))
+const allInnate = computed(() => (owner.value ? speciesSpells(owner.value, sheetOf(owner.value)).filter(x => x.spell.how !== 'list' && x.spell.how !== 'book') : []))
+/** The bottom list: what species and features give with a limit (once per rest). */
+const innate = computed(() => allInnate.value.filter(x => !unlimited(x.spell.how)))
+/**
+ * Spells a feature or an item keeps ready without a limit, by spell: they're in Prepared spells as always prepared
+ * (not counted against the limit), with where they come from; at-will ones are cast without a slot.
+ */
+const given = computed(() => {
+  const m = new Map<Id, { from: string; how: string; ability?: Ability }>()
+  for (const x of allInnate.value) if (unlimited(x.spell.how) && !m.has(x.spell.spell)) m.set(x.spell.spell, { from: x.from, how: x.spell.how, ability: x.spell.ability })
+  for (const g of allGranted.value) if (unlimited(g.spell.how) && !m.has(g.spell.spell)) m.set(g.spell.spell, { from: g.item.name, how: g.spell.how })
+  return m
+})
+/** Given by a feature or item, and not also prepared by hand. */
+const onlyGiven = (id: Id) => given.value.has(id) && !book.value.always.includes(id) && !book.value.prepared.includes(id)
 /** Spells a feature puts in the spellbook for free (the Hemomancer's): known, with where they come from. */
 const freeKnown = computed(() => new Map((owner.value ? classSpellsFrom(owner.value, 'book', '', sheetOf(owner.value)) : []).map(x => [x.spell, x.from])))
 /**
@@ -130,7 +148,9 @@ function toggleAlways(id: Id) {
 const spells = (ids: Id[]) => ids.map(id => get(id)).filter((e): e is Entry => !!e)
   .sort((a, b) => spellLevel(a) - spellLevel(b) || a.name.localeCompare(b.name))
 const knownList = computed(() => spells([...book.value.known, ...[...freeKnown.value.keys()].filter(id => !book.value.known.includes(id))]))
-const preparedList = computed(() => spells([...book.value.always, ...book.value.prepared]))
+const preparedList = computed(() => spells([...new Set([...book.value.always, ...book.value.prepared, ...given.value.keys()])]))
+/** Always prepared: by hand, or given by a feature or item. */
+const alwaysCount = computed(() => new Set([...book.value.always, ...[...given.value.keys()].filter(id => !book.value.prepared.includes(id))]).size)
 /** What the spell rolls, at the caster's level and with their spellcasting modifier (a trait's spell: its own ability). */
 function rolls(e: Entry | undefined, ability?: Ability) {
   if (!e) return ''
@@ -301,25 +321,28 @@ const full = computed(() => book.value.preparedMax != null && book.value.prepare
       <div class="sbk-col">
       <section class="card sbk-list drop-zone" :class="{ over: over === 'prepared' }"
                @dragover="dragOver($event, 'prepared')" @dragleave.self="over = null" @drop.prevent="drop('prepared')">
-        <h3>Prepared spells <span class="muted small" :class="{ over: full }">{{ book.prepared.length }}<template v-if="book.preparedMax != null"> / {{ book.preparedMax }}</template><template v-if="book.always.length"> + {{ book.always.length }} always</template></span></h3>
+        <h3>Prepared spells <span class="muted small" :class="{ over: full }">{{ book.prepared.length }}<template v-if="book.preparedMax != null"> / {{ book.preparedMax }}</template><template v-if="alwaysCount"> + {{ alwaysCount }} always</template></span></h3>
         <table v-if="preparedList.length" class="grid">
           <thead><tr><th>Spell</th><th>Level</th><th>School</th><th>Casting time</th><th>Range</th><th>Duration</th><th>Attack / save</th><th title="Concentration · Ritual">C/R</th><th></th></tr></thead>
           <tbody>
-            <tr v-for="e in preparedList" :key="e.id" :class="{ dragging: dragging?.id === e.id }" draggable="true"
-                title="Drag back to Known spells to unprepare" @dragstart="dragStart($event, e.id, 'prepared')" @dragend="dragEnd">
+            <tr v-for="e in preparedList" :key="e.id" :class="{ dragging: dragging?.id === e.id }" :draggable="!onlyGiven(e.id)"
+                :title="onlyGiven(e.id) ? `Always prepared: from ${given.get(e.id)!.from}` : 'Drag back to Known spells to unprepare'" @dragstart="dragStart($event, e.id, 'prepared')" @dragend="dragEnd">
               <td>
-                <button class="link-btn always" :class="{ on: book.always.includes(e.id) }" :title="alwaysTitle(e.id)" @click="toggleAlways(e.id)"><AppIcon ui="star" /></button>
+                <button v-if="onlyGiven(e.id)" class="link-btn always on" disabled :title="`Always prepared: from ${given.get(e.id)!.from}`"><AppIcon ui="star" /></button>
+                <button v-else class="link-btn always" :class="{ on: book.always.includes(e.id) }" :title="alwaysTitle(e.id)" @click="toggleAlways(e.id)"><AppIcon ui="star" /></button>
                 <a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a> <span v-if="e.fields.ritual" class="tag-ritual" title="A ritual: it can be cast in 10 more minutes without a spell slot">ritual</span>
+                <span v-if="given.has(e.id)" class="muted small sbk-from" :title="given.get(e.id)!.how === 'atWill' ? 'At will: no slot needed' : 'Always prepared: cast with your own spell slots'"> · {{ given.get(e.id)!.from }}</span>
               </td>
               <td>{{ levelLabel(e) }}</td>
               <td>{{ optionLabel('spell.school', e.fields.school) }}</td>
               <td>{{ e.fields.castingTime ?? '' }}</td>
               <td class="sbk-range">{{ e.fields.range ?? '' }}</td>
               <td>{{ e.fields.duration ?? '' }}</td>
-              <td class="sbk-check">{{ check(e) }}<div v-if="rolls(e)" class="sbk-rolls">{{ rolls(e) }}</div></td>
+              <td class="sbk-check">{{ check(e, given.get(e.id)?.ability) }}<div v-if="rolls(e, given.get(e.id)?.ability)" class="sbk-rolls">{{ rolls(e, given.get(e.id)?.ability) }}</div></td>
               <td>{{ [e.fields.concentration && 'C', e.fields.ritual && 'R'].filter(Boolean).join(' ') }}</td>
               <td class="sbk-actions">
-                <button v-if="spellLevel(e)" class="chip-btn" :disabled="!canCast(e)" :title="canCast(e) ? 'Spend a slot of this level (or the next free higher one)' : 'No slot left for this level'" @click="cast(e)">Cast</button>
+                <span v-if="spellLevel(e) && given.get(e.id)?.how === 'atWill' && onlyGiven(e.id)" class="muted small" title="Cast without a spell slot">at will</span>
+                <button v-else-if="spellLevel(e)" class="chip-btn" :disabled="!canCast(e)" :title="canCast(e) ? 'Spend a slot of this level (or the next free higher one)' : 'No slot left for this level'" @click="cast(e)">Cast</button>
                 <button v-if="caster && e.fields.concentration && !switchable(e)" class="chip-btn sbk-on" :class="{ on: concentrating(e) }" :aria-pressed="concentrating(e)" :title="concentrating(e) ? 'Concentrating on it. Click to end it' : 'Concentrate on it: any other concentration spell ends'" @click="toggleConc(e)">{{ concentrating(e) ? 'Concentrating' : 'Concentrate' }}</button>
                 <button v-if="switchable(e)" class="chip-btn sbk-on" :class="{ on: on(e) }" :aria-pressed="on(e)" :title="on(e) ? 'Active: the sheet counts its effects. Click to end it' : 'Switch it on: the sheet counts its effects until you end it or take a long rest'" @click="toggleOn(e)">{{ on(e) ? 'Active' : 'On' }}</button>
               </td>

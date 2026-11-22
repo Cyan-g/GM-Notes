@@ -14,7 +14,7 @@ import { unmet } from './requirements'
 import { setConditions } from './conditions'
 import { rule } from './rules'
 import { castingOf, hitDicePools } from './classRules'
-import { restSpecies, speciesExpertise, speciesGrants, speciesSize, speciesSkills, speciesSpeed, speciesSpeeds, speciesTraits, type HaveNow } from './species'
+import { restSpecies, speciesExpertise, speciesGrants, speciesSize, speciesSkills, speciesSpeed, speciesSpeeds, speciesTraits, toolKindOf, type HaveNow } from './species'
 import { blankProfs, emptyBook, onSheetEdit, ownerOf, profsToEdit, sheetOf, sheetOrBlank, sheetToEdit, stackItem } from './sheetData'
 import { SKILLS, mod, profBonus, signed, type Ability } from './model/dnd'
 import { changed } from './edit'
@@ -80,9 +80,9 @@ export function proficientWith(s: CharacterSheet | undefined, e: Entry): boolean
   }
   if (e.fields.kind === 'Tool' || e.fields.kind === 'Instrument') {
     if (p.tools.includes(e.id)) return true
-    // one particular item of a kind ("Elmar's Lyre", subtype "Instrument (Lyre)"): proficiency in the kind covers it
-    const kind = String(e.fields.subtype ?? '').match(/\(([^)]+)\)\s*$/)?.[1]?.trim().toLowerCase()
-    if (kind && p.tools.some(t => (get(t)?.name ?? t).trim().toLowerCase() === kind)) return true
+    // one particular item of a kind ("Elmar's Lyre", of Type Lyre): proficiency in the kind covers it
+    const kind = toolKindOf(e)
+    if (kind && kind.id !== e.id && (p.tools.includes(kind.id) || p.tools.some(t => (get(t)?.name ?? t).trim().toLowerCase() === kind.name.trim().toLowerCase()))) return true
     return e.fields.kind === 'Tool' ? false : undefined
   }
   return undefined

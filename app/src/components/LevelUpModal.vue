@@ -19,7 +19,7 @@ import { SKILLS, mod, signed, ABILITY_KEYS, ORD } from '../model/dnd'
 import { itemNamed } from '../lookup'
 import { rule } from '../rules'
 import { gearTotals, scoreWith } from '../effects'
-import { backgroundOf, choiceOpen, featBonusFor, featGivesSave, featOfFeature, speciesTraits } from '../species'
+import { backgroundOf, choiceOpen, featBonusFor, featGivesSave, featOfFeature, speciesTraits, isToolKind } from '../species'
 import { traitsOf } from '../model/traits'
 import { unmet } from '../requirements'
 import { changed } from '../edit'
@@ -122,7 +122,7 @@ function addSkill(ev: Event) {
   if (el.value && mcSkills.value.length < (mc.value?.skills ?? 0)) mcSkills.value = [...mcSkills.value, el.value]
   el.value = ''
 }
-const instruments = computed(() => entries.value.filter(e => e.type === 'item' && ['Tool', 'Instrument'].includes(String(e.fields.kind))).sort((a, b) => a.name.localeCompare(b.name)))
+const instruments = computed(() => entries.value.filter(isToolKind).sort((a, b) => a.name.localeCompare(b.name)))
 const gains = computed(() => (mc.value ? [...mc.value.armor.map(x => (x === 'Shield' ? 'Shields' : `${x} armor`)), ...mc.value.weapons.map(x => `${x} weapons`), ...mc.value.tools.map(t => get(t)?.name ?? t)] : []))
 const pickFeat = (id: string) => { feat.value = id; choice.value = { picks: [] } }
 

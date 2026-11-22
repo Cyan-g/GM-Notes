@@ -227,6 +227,8 @@ export const SCHEMA = [
       { key: 'kind', label: 'Kind', kind: 'select', options: ITEM_KINDS, fixed: ['Weapon', 'Armor', 'Tool', 'Potion', 'Poison', 'Ingredient', 'Scroll', 'Other'] },
       { key: 'spell', label: 'Spell', kind: 'ref', to: ['spell'], when: { field: 'kind', is: ['Scroll'] } },
       { key: 'subtype', label: 'Subtype', kind: 'text' },
+      // the kind of tool or instrument it is (Elmar's Lyre: Lyre; Lyre itself: Lyre): what proficiency covers it
+      { key: 'toolType', label: 'Type', kind: 'ref', to: ['item'], pick: { field: 'kind', is: ['Tool', 'Instrument'] }, when: { field: 'kind', is: ['Tool', 'Instrument'] } },
       { key: 'rarity', label: 'Rarity', kind: 'select', options: ['Common', 'Uncommon', 'Rare', 'Very rare', 'Legendary', 'Artifact'] },
       { key: 'magical', label: 'Magical', kind: 'bool' },
       { key: 'attunement', label: 'Requires attunement', kind: 'bool' },

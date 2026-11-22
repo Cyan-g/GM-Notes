@@ -11,6 +11,7 @@ import { DICE } from '../../model/classes'
 import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from '../../model/schema'
 import { entries, get } from '../../store'
 import { itemNamed } from '../../lookup'
+import { isToolKind } from '../../species'
 import ProfChips from '../ProfChips.vue'
 import ClassKitsInput from './ClassKitsInput.vue'
 import { SKILLS, ABILITY_KEYS, ABILITY_SHORT } from '../../model/dnd'
@@ -55,7 +56,7 @@ const num = (ev: Event) => { const v = (ev.target as HTMLInputElement).value.tri
 const mc = computed(() => cur.value.multiclass ?? { primary: [], armor: [], weapons: [], tools: [] })
 const setMc = (patch: Partial<NonNullable<ClassBasics['multiclass']>>) => set('multiclass', { ...mc.value, ...patch })
 /** The world's tools and instruments (its Tool items), offered as the class's tool proficiencies. */
-const toolItems = computed(() => entries.value.filter(e => e.type === 'item' && ['Tool', 'Instrument'].includes(String(e.fields.kind))).map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label)))
+const toolItems = computed(() => entries.value.filter(isToolKind).map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label)))
 /** Tools stored by name (the built-in SRD values) shown as the world's item of that name, where it has one. */
 const toolIds = (l?: string[]) => (l ?? []).map(t => (get(t)?.type === 'item' ? t : itemNamed(t)?.id ?? t))
 const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 'standard' : '')

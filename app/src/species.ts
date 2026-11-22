@@ -526,8 +526,19 @@ export const newTraitId = () => Math.random().toString(36).slice(2, 8)
  */
 export function isToolKind(e: Entry): boolean {
   if (e.type !== 'item' || (e.fields.kind !== 'Tool' && e.fields.kind !== 'Instrument')) return false
+  if (e.fields.toolType) return e.fields.toolType === e.id
+  // no Type set: its subtype says ("Instrument (Lyre)")
   const of = String(e.fields.subtype ?? '').match(/\(([^)]+)\)\s*$/)?.[1]
   return !of || of.trim().toLowerCase() === e.name.trim().toLowerCase()
+}
+/** The kind a tool or instrument is (Elmar's Lyre → Lyre), itself for a kind; undefined: not one, or its kind isn't in the world. */
+export function toolKindOf(e: Entry | undefined): Entry | undefined {
+  if (!e || e.type !== 'item' || (e.fields.kind !== 'Tool' && e.fields.kind !== 'Instrument')) return undefined
+  if (isToolKind(e)) return e
+  const t = get(e.fields.toolType)
+  if (t && isToolKind(t)) return t
+  const of = String(e.fields.subtype ?? '').match(/\(([^)]+)\)\s*$/)?.[1]?.trim().toLowerCase()
+  return of ? Object.values(state.db?.entries ?? {}).find(x => isToolKind(x) && x.name.trim().toLowerCase() === of) : undefined
 }
 /** The candidates for a grant or a choice of a kind: id and label. */
 export function grantOptions(kind: TraitGrant['kind']): { id: string; label: string }[] {
@@ -552,7 +563,11 @@ export function choiceCandidates(c: TraitChoice): { id: string; label: string }[
   else if (c.kind === 'feat') all = Object.values(state.db?.entries ?? {}).filter(e => e.type === 'feat' && (!c.category || e.fields.category === c.category))
     .map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label))
   else all = grantOptions(c.kind)
-  return c.among?.length ? c.among.map(id => all.find(o => o.id === id) ?? { id, label: id }) : all
+  // a tool choice's list naming particular items ("Elmar's Lyre") offers their kinds (Lyre), each once
+  const among = c.among?.length && (c.kind === 'tool' || c.kind === 'skillTool')
+    ? [...new Set(c.among.map(id => { const e = get(id); return e?.type === 'item' ? toolKindOf(e)?.id ?? id : id }))] : c.among
+  const list = among?.length ? among.map(id => all.find(o => o.id === id) ?? { id, label: get(id)?.name ?? id }) : all
+  return c.kind === 'tool' ? [...list].sort((a, b) => a.label.localeCompare(b.label)) : list
 }
 /** What a character has, for filtering and marking a choice's options: skills they're proficient in, weapon
  * proficiencies (categories or base weapons), languages. */

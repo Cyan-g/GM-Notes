@@ -4683,7 +4683,8 @@
    "tags": [],
    "fields": {
     "kind": "Tool",
-    "value": 2500
+    "value": 2500,
+    "toolType": "alchemy-kit"
    },
    "body": "",
    "visibility": "known",
@@ -4782,7 +4783,8 @@
    "fields": {
     "kind": "Instrument",
     "weight": 6,
-    "value": 3000
+    "value": 3000,
+    "toolType": "bagpipes"
    },
    "created": "2026-11-20T00:00:00.000Z",
    "updated": "2026-11-20T00:00:00.000Z"
@@ -4917,7 +4919,8 @@
    "tags": [],
    "fields": {
     "kind": "Tool",
-    "value": 2000
+    "value": 2000,
+    "toolType": "brewers-supplies"
    },
    "body": "",
    "visibility": "known",
@@ -4951,7 +4954,8 @@
    "fields": {
     "kind": "Tool",
     "value": 1000,
-    "weight": 5
+    "weight": 5,
+    "toolType": "calligraphers-supplies"
    },
    "body": "",
    "visibility": "known",
@@ -5246,7 +5250,8 @@
    "tags": [],
    "fields": {
     "kind": "Tool",
-    "value": 10
+    "value": 10,
+    "toolType": "dice-set"
    },
    "body": "",
    "visibility": "known",
@@ -5261,7 +5266,8 @@
    "tags": [],
    "fields": {
     "kind": "Tool",
-    "value": 100
+    "value": 100,
+    "toolType": "dragonchess-set"
    },
    "body": "",
    "visibility": "known",
@@ -5323,7 +5329,8 @@
    "fields": {
     "kind": "Instrument",
     "weight": 3,
-    "value": 600
+    "value": 600,
+    "toolType": "drum"
    },
    "created": "2026-11-20T00:00:00.000Z",
    "updated": "2026-11-20T00:00:00.000Z"
@@ -5339,7 +5346,8 @@
    "fields": {
     "kind": "Instrument",
     "weight": 10,
-    "value": 2500
+    "value": 2500,
+    "toolType": "dulcimer"
    },
    "created": "2026-11-20T00:00:00.000Z",
    "updated": "2026-11-20T00:00:00.000Z"
@@ -5431,7 +5439,8 @@
    "fields": {
     "kind": "Instrument",
     "weight": 1,
-    "value": 200
+    "value": 200,
+    "toolType": "flute"
    },
    "created": "2026-11-20T00:00:00.000Z",
    "updated": "2026-11-20T00:00:00.000Z"
@@ -5696,7 +5705,8 @@
    "tags": [],
    "fields": {
     "kind": "Tool",
-    "value": 2500
+    "value": 2500,
+    "toolType": "herbalism-kit"
    },
    "body": "",
    "visibility": "known",
@@ -5751,7 +5761,8 @@
    "fields": {
     "kind": "Instrument",
     "weight": 2,
-    "value": 300
+    "value": 300,
+    "toolType": "horn"
    },
    "created": "2026-11-20T00:00:00.000Z",
    "updated": "2026-11-20T00:00:00.000Z"
@@ -5790,7 +5801,8 @@
    "tags": [],
    "fields": {
     "kind": "Tool",
-    "value": 2500
+    "value": 2500,
+    "toolType": "jewelers-tools"
    },
    "body": "",
    "visibility": "known",
@@ -5962,7 +5974,8 @@
    "fields": {
     "kind": "Instrument",
     "weight": 2,
-    "value": 3500
+    "value": 3500,
+    "toolType": "lute"
    },
    "created": "2026-11-20T00:00:00.000Z",
    "updated": "2026-11-20T00:00:00.000Z"
@@ -5978,7 +5991,8 @@
    "fields": {
     "kind": "Instrument",
     "weight": 2,
-    "value": 3000
+    "value": 3000,
+    "toolType": "lyre"
    },
    "created": "2026-11-20T00:00:00.000Z",
    "updated": "2026-11-20T00:00:00.000Z"
@@ -6013,7 +6027,8 @@
    "tags": [],
    "fields": {
     "kind": "Tool",
-    "value": 1000
+    "value": 1000,
+    "toolType": "masons-tools"
    },
    "body": "",
    "visibility": "known",
@@ -6127,7 +6142,8 @@
    "fields": {
     "kind": "Instrument",
     "weight": 2,
-    "value": 1200
+    "value": 1200,
+    "toolType": "pan-flute"
    },
    "created": "2026-11-20T00:00:00.000Z",
    "updated": "2026-11-20T00:00:00.000Z"
@@ -6238,7 +6254,8 @@
    "tags": [],
    "fields": {
     "kind": "Tool",
-    "value": 50
+    "value": 50,
+    "toolType": "playing-card-set"
    },
    "body": "",
    "visibility": "known",
@@ -6252,7 +6269,8 @@
    "aliases": [],
    "tags": [],
    "fields": {
-    "kind": "Tool"
+    "kind": "Tool",
+    "toolType": "poisoners-kit"
    },
    "body": "",
    "visibility": "known",
@@ -6476,7 +6494,8 @@
    "fields": {
     "kind": "Instrument",
     "weight": 1,
-    "value": 200
+    "value": 200,
+    "toolType": "shawm"
    },
    "created": "2026-11-20T00:00:00.000Z",
    "updated": "2026-11-20T00:00:00.000Z"
@@ -6611,7 +6630,8 @@
    "tags": [],
    "fields": {
     "kind": "Tool",
-    "value": 2000
+    "value": 2000,
+    "toolType": "smiths-tools"
    },
    "body": "",
    "visibility": "known",
@@ -6718,7 +6738,8 @@
    "fields": {
     "kind": "Tool",
     "value": 2500,
-    "weight": 1
+    "weight": 1,
+    "toolType": "thieves-tools"
    },
    "body": "",
    "visibility": "known",
@@ -6733,7 +6754,8 @@
    "tags": [],
    "fields": {
     "kind": "Tool",
-    "value": 100
+    "value": 100,
+    "toolType": "three-dragon-ante-set"
    },
    "body": "",
    "visibility": "known",
@@ -6798,7 +6820,8 @@
    "fields": {
     "kind": "Instrument",
     "weight": 1,
-    "value": 3000
+    "value": 3000,
+    "toolType": "viol"
    },
    "created": "2026-11-20T00:00:00.000Z",
    "updated": "2026-11-20T00:00:00.000Z"

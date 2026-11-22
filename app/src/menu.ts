@@ -125,7 +125,8 @@ export const MENUS: TopMenu[] = [
   },
   {
     title: 'Crafting',
-    home: '#/crafting',
+    // a player's title opens their Workbench; the DM's, the recipes
+    get home() { return playerMode.value ? '#/crafting' : hrefDashboard('crafting', 'Recipes') },
     owns: r => dashOf(r) === 'crafting' || r.name === 'crafting' || (r.name === 'entry' && CRAFT_KINDS.includes(String(get(r.id)?.fields.kind ?? ''))),
     items: () => [
       { label: 'Workbench', uiIcon: 'workbench', href: '#/crafting', hint: benchKnown() != null ? `${benchKnown()} recipes` : undefined },

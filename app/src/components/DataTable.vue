@@ -191,7 +191,7 @@ defineExpose({ count: computed(() => shown.value.length) })
             <th v-for="c in columns" :key="c.key" class="sortable" :class="['col-' + c.key.replace('@', ''), { num: c.kind === 'money' || c.field?.kind === 'money' }]" :title="c.key === '@concRitual' ? 'Concentration · Ritual' : `Sort by ${c.label.toLowerCase()}`" @click="sortBy(c.key)">{{ c.label }}{{ arrow(c.key) }}</th>
             <th v-if="spells" class="book-col" />
             <th v-if="knownCol" class="known-col" :title="allKnown ? 'All shown are known to players; untick to make them DM only' : 'Tick to make every row shown known to players'">
-              <label><input type="checkbox" :checked="allKnown" :indeterminate="someKnown && !allKnown" :aria-label="'Known to players: every row shown'" @change="setAllKnown(($event.target as HTMLInputElement).checked, $event)" /> Known</label>
+              <label><input type="checkbox" :checked="allKnown" :indeterminate="someKnown && !allKnown" :aria-label="'Known to players: every row shown'" @change="setAllKnown(($event.target as HTMLInputElement).checked, $event)" /> Players see</label>
             </th>
           </tr>
         </thead>

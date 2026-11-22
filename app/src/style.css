@@ -2420,6 +2420,8 @@ select.dd option:is(:hover, :focus-visible)::before {
 .sr-pool { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; padding: .35rem 0; border-top: 1px solid var(--line); }
 /* the item pop-up on the sheet: the character's own name and note for their copy */
 .iw-give { display: flex; align-items: center; gap: .4rem; margin-top: .4rem; }
+.wb-why { color: var(--accent); line-height: 1.25; }
+.wb-why.muted { color: var(--muted); }
 .item-own { display: flex; flex-wrap: wrap; gap: .4rem .8rem; margin: 0 0 .6rem; }
 .item-own label { display: flex; align-items: center; gap: .35rem; }
 .item-own input { width: 14rem; }
@@ -2430,3 +2432,10 @@ select.dd option:is(:hover, :focus-visible)::before {
 .sbk-check.sbk-type { color: var(--muted); }
 .sbk-columns.solo { grid-template-columns: 1fr; }
 .sbk-classlist tr.on td:first-child a { font-weight: 600; }
+/* the recipe editor: the table fits its card (the ingredient column takes what's left, the pickers shrink with it) */
+.recipe-table { width: 100%; table-layout: fixed; }
+.recipe-table th:nth-child(2), .recipe-table td:nth-child(2) { width: 5.5rem; }
+.recipe-table th:nth-child(3), .recipe-table td:nth-child(3) { width: 6rem; }
+.recipe-table th:nth-child(4), .recipe-table td:nth-child(4) { width: 2rem; }
+.recipe-table .picker, .recipe-table .picker input, .recipe-table .picker-value { width: 100%; min-width: 0; max-width: 100%; }
+.recipe-table input.short { width: 4.5rem; }

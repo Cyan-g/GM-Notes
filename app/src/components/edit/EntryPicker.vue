@@ -23,6 +23,8 @@ const props = withDefaults(defineProps<{
   freeText?: string
   /** No "＋ Create" row: only existing entries (and the free text, if offered). */
   noCreate?: boolean
+  /** No × to clear the pick (a table row with its own remove button). */
+  noClear?: boolean
 }>(), { modelValue: null, add: false })
 const emit = defineEmits<{ 'update:modelValue': [string | null]; pick: [string]; text: [string] }>()
 
@@ -106,7 +108,7 @@ function blur() { setTimeout(() => { editing.value = false; q.value = '' }, 150)
         <template v-if="current"><span class="icon"><EntryIcon :e="current" /></span>{{ current.name }}</template>
         <span v-else class="muted">{{ placeholder || 'Choose…' }}</span>
       </button>
-      <button v-if="modelValue" type="button" class="x" title="Clear" @click="emit('update:modelValue', null)">×</button>
+      <button v-if="modelValue && !noClear" type="button" class="x" title="Clear" @click="emit('update:modelValue', null)">×</button>
     </div>
     <template v-else>
       <input ref="input" v-model="q" :placeholder="placeholder || 'Type a name…'" @keydown="key" @blur="blur" @focus="editing = true" @input="editing = true" />

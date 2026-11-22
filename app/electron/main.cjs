@@ -4,6 +4,7 @@
 const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require('electron')
 const fs = require('node:fs')
 const crypto = require('node:crypto')
+const os = require('node:os')
 const path = require('node:path')
 const { WorldDb, convertFromJson } = require('./db.cjs')
 const { createLive } = require('./live.cjs')
@@ -33,6 +34,11 @@ function writeConfig(c) {
   fs.writeFileSync(configFile(), JSON.stringify(c, null, 1))
 }
 let config = {}
+/** This computer's ID and name, for syncing a world with the user's other devices (made once, kept in config). */
+function device() {
+  if (!config.deviceId) { config.deviceId = crypto.randomUUID(); config.deviceName ??= os.hostname(); writeConfig(config) }
+  return config.deviceId
+}
 
 /** The folders the pages may use: the data folder and the folder backups are copied to. */
 const ROOTS = { data: 'dataDir', backup: 'backupDir' }
@@ -82,7 +88,7 @@ ipcMain.handle('fs:write', async (_e, root, rel, bytes) => {
   fs.writeFileSync(tmp, Buffer.from(bytes))
   // A virus scanner or sync tool briefly holding the old file makes the swap fail on Windows: try a few times.
   for (let attempt = 1; ; attempt++) {
-    try { fs.renameSync(tmp, f); return true } catch (err) {
+    try { fs.renameSync(tmp, f); if (root === 'data') openWorld().logFile(String(rel), 'put'); return true } catch (err) {
       if (attempt >= 5 || !['EPERM', 'EBUSY', 'EACCES'].includes(err.code)) { try { fs.unlinkSync(tmp) } catch {} throw err }
       await new Promise(r => setTimeout(r, 200 * attempt))
     }
@@ -92,7 +98,7 @@ ipcMain.handle('fs:list', (_e, root, rel) => {
   try { return fs.readdirSync(inside(root, rel)) } catch { return [] }
 })
 ipcMain.handle('fs:remove', (_e, root, rel) => {
-  try { fs.unlinkSync(inside(root, rel)) } catch {}
+  try { fs.unlinkSync(inside(root, rel)); if (root === 'data') openWorld().logFile(String(rel), 'delete') } catch {}
   return true
 })
 
@@ -134,7 +140,7 @@ const handleTimed = (channel, fn) => ipcMain.handle(channel, timed(channel, fn))
 
 let world = null
 function openWorld() {
-  if (!world) world = new WorldDb(rootDir('data'))
+  if (!world) world = new WorldDb(rootDir('data'), { device: device() })
   return world
 }
 function closeWorld() { live.stopAll(); world?.close(); world = null }
@@ -435,6 +441,8 @@ handleTimed('db:restore', (_e, name) => {
   openWorld().copyTo(inside('data', `backups/before-restore-${stamp()}.sqlite`))
   closeWorld()
   fs.copyFileSync(src, path.join(dir, 'dndesk.sqlite'))
+  // the restored database's change log is an old one: a new ID, so other devices sync everything again
+  openWorld().newLog()
   return true
 })
 

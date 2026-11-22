@@ -369,6 +369,7 @@ export const SCHEMA = [
       { key: 'location', label: 'Where', kind: 'ref', to: ['place'] },
       { key: 'party', label: 'Party', kind: 'refs', to: ['pc'] },
       { key: 'creatures', label: 'Creatures', kind: 'combatants', group: 'Creatures' },
+      { key: 'notes', label: 'Notes', kind: 'longtext' },
     ],
   },
   {

@@ -579,6 +579,10 @@ export interface Combatant {
   rounds?: Record<string, number>
   /** Concentration saves still to roll (their DCs), from damage taken while concentrating. */
   concChecks?: number[]
+  /** Fighting in its lair: its legendary actions (and resistance) use the lair counts. */
+  inLair?: boolean
+  /** What they're concentrating on, in a few words (a creature's Hold Person); a character's is on their sheet. */
+  concOn?: string
   /** Death saving throws of a party member at 0 HP. */
   deathSaves?: DeathSaveState
   /** Legendary actions used since the start of its last turn. */

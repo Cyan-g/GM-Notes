@@ -1028,6 +1028,31 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 
 /* initiative strip: current turn in the middle; earlier turns fade out to the left, upcoming ones to the right */
 .init-strip:not(.empty) { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); overflow: hidden; align-items: center; }
+/* the tracker's statblock panel: a third column beside the sides on a wide screen */
+.sides.with-panel { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(320px, .9fr); }
+@media (max-width: 1199px) { .sides.with-panel { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .stat-panel { display: none; } }
+.stat-panel { position: sticky; top: calc(var(--bar-h, 52px) + .5rem); align-self: start; max-height: calc(100vh - var(--bar-h, 52px) - 1.5rem); overflow: auto; padding: .7rem .9rem; }
+.stat-panel-head { display: flex; align-items: baseline; gap: .6rem; }
+.stat-panel-head .x { margin-left: auto; }
+/* encounters: a typed HP or AC stands out from the statblock's; how hard it is; lines that match a creature */
+.edit-table input.overridden { color: var(--accent); font-weight: 600; }
+.enc-difficulty { margin: -.2rem 0 .6rem; }
+.enc-difficulty.high b, .enc-difficulty.beyond-high b { color: var(--accent); }
+.enc-match { margin: 0 0 .4rem; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.enc-notes { grid-column: 1 / -1; }
+.cond-on { font-size: 11px; color: var(--muted); margin-left: .25rem; }
+.cond-on-input { width: 7rem; font-size: 11px; padding: 0 .25rem; margin-left: .25rem; }
+/* compact cards: one row per fighter (name and numbers, HP, conditions) */
+.fighter.compact { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; padding: .3rem .5rem; margin-bottom: .35rem; }
+/* the name line (with the small ＋ for a condition at its end), then HP; conditions in effect on a line of their own */
+.fighter.compact .fighter-head { flex: 1 1 0; margin: 0; min-width: 12rem; order: 1; }
+.fighter.compact .fighter-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 11rem; }
+.fighter.compact .conds { flex: 0 0 auto; margin: 0; order: 2; }
+.fighter.compact .hp-row { flex: 1 1 15rem; margin: 0; order: 3; }
+.fighter.compact .conds:has(.cond-chip) { flex: 1 1 100%; order: 4; }
+.fighter.compact > :not(.fighter-head, .conds, .hp-row) { order: 5; }
+.fighter.compact .cond-add { width: 3.2rem; min-width: 3.2rem !important; }
+.fighter.compact .cc-legendary, .fighter.compact .conc-check { flex: 1 1 100%; margin: 0; }
 .init-side { display: flex; gap: .4rem; align-items: stretch; overflow: hidden; min-width: 0; }
 .init-side.left { justify-content: flex-end; -webkit-mask-image: linear-gradient(to right, transparent, #000 3rem); mask-image: linear-gradient(to right, transparent, #000 3rem); }
 .init-side.right { justify-content: flex-start; -webkit-mask-image: linear-gradient(to left, transparent, #000 3rem); mask-image: linear-gradient(to left, transparent, #000 3rem); }

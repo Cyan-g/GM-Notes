@@ -26,9 +26,10 @@ const hasPrereq = computed(() => f.value.level || requires.value.length || f.val
       <span v-if="source && f.source" class="muted small">from <EntryLink :id="f.source" /></span>
     </div>
     <p v-if="hasPrereq" class="feat-line"><b>Prerequisite:</b>
-      <template v-if="f.level"> Level {{ f.level }}+</template><template v-if="f.level && (requires.length || f.prerequisite)">,</template>
-      <template v-for="(id, i) in requires" :key="id"><template v-if="i">, </template> <EntryLink :id="id" /></template><template v-if="requires.length && f.prerequisite">,</template>
-      <template v-if="f.prerequisite"> {{ f.prerequisite }}</template><template v-else-if="checked">{{ f.level || requires.length ? ',' : '' }} {{ checked }}</template>
+      <!-- the spaces are in the expressions: the template compiler drops a line's leading space -->
+      <template v-if="f.level">{{ ' ' }}Level {{ f.level }}+</template><template v-if="f.level && (requires.length || f.prerequisite)">,</template>
+      <template v-for="(id, i) in requires" :key="id"><template v-if="i">,</template>{{ ' ' }}<EntryLink :id="id" /></template><template v-if="requires.length && f.prerequisite">,</template>
+      <template v-if="f.prerequisite">{{ ' ' + f.prerequisite }}</template><template v-else-if="checked">{{ (f.level || requires.length ? ',' : '') + ' ' + checked }}</template>
     </p>
     <p v-if="f.repeatable" class="feat-line"><b>Repeatable:</b> it can be taken more than once.</p>
     <p v-if="f.abilityIncrease" class="feat-line"><b>Ability score increase:</b> {{ abilityBonusText(f.abilityIncrease) }}</p>

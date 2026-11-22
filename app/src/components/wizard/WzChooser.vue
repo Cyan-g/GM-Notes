@@ -17,6 +17,8 @@ const isPicked = (id: string) => (Array.isArray(props.picked) ? props.picked.inc
 /** The one looked at: the last clicked or moved to; else the (first) picked one; else the first. */
 const looked = ref<string | undefined>(Array.isArray(props.picked) ? props.picked[0] : props.picked ?? undefined)
 const shown = computed(() => props.items.find(x => x.id === looked.value) ?? props.items.find(x => isPicked(x.id)) ?? props.items[0])
+/** The row looked at is marked once something is looked at or picked: before that, nothing looks chosen. */
+const marked = computed(() => !!looked.value || props.items.some(x => isPicked(x.id)))
 // another single choice picked elsewhere (or reset): look at it
 watch(() => props.picked, p => { if (typeof p === 'string' && p) looked.value = p })
 
@@ -53,7 +55,7 @@ const rows = computed(() => props.items.map((x, i) => ({ x, head: x.group && x.g
         <template v-for="{ x, head } in rows" :key="x.id">
           <div v-if="head" class="wz-ch-group">{{ head }}</div>
           <div :id="`wzc-${x.id}`" :data-id="x.id" class="wz-ch-row" role="option" :aria-selected="isPicked(x.id)" :title="x.title"
-               :class="{ on: isPicked(x.id), shown: shown?.id === x.id, off: x.off && !isPicked(x.id) }" @click="click(x)">
+               :class="{ on: isPicked(x.id), shown: shown?.id === x.id && marked, off: x.off && !isPicked(x.id) }" @click="click(x)">
             <span class="wz-ch-tick" aria-hidden="true">{{ isPicked(x.id) ? '✓' : '' }}</span>
             <span class="wz-ch-label">{{ x.label }}<small v-if="x.mark" class="wz-ch-mark">{{ x.mark }}</small></span>
             <small v-if="x.hint" class="wz-ch-hint">{{ x.hint }}</small>

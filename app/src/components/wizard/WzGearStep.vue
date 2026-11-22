@@ -19,6 +19,8 @@ const linesFrom = (from: ReturnType<typeof kitLineSource>) => taken.value.items.
 const fromSrd = computed(() => linesFrom('srd'))
 const asNew = computed(() => linesFrom('new'))
 const unchosen = computed(() => linesFrom('none'))
+const MARK: Record<string, string> = { srd: 'SRD', new: 'new', none: 'not picked' }
+const SOURCE: Record<string, string> = { srd: 'Added to this world from the SRD when the character is made', new: 'Made as a new item with just its name', none: 'Nothing picked for it yet: left out' }
 const bgKit = computed(() => backgroundKit(d.value))
 const bgGold = computed(() => backgroundGold(d.value))
 /** The background kit's lines the player picks an item for (Wayfarer: a gaming set of their choice). */
@@ -50,10 +52,10 @@ function setPick(i: number, id: string) { wizard.d.kitPicks = { ...(wizard.d.kit
         </Dropdown></label>
     </p>
   </template>
+  <!-- everything the character gets, in one list; what the world doesn't have yet is marked -->
   <h3>Goes into the inventory</h3>
-  <p class="small"><template v-for="(l, i) in taken.items.filter(x => x.item ?? itemNamed(x.name))" :key="i"><template v-if="i">, </template>{{ l.amount ? l.amount + ' × ' : '' }}<EntryLink :id="(l.item ?? itemNamed(l.name)!.id)" /></template>
-    <template v-if="taken.money">{{ taken.items.some(x => x.item ?? itemNamed(x.name)) ? '; ' : '' }}{{ formatMoney(taken.money) }}</template></p>
-  <p v-if="fromSrd.length" class="small">Added to this world from the SRD when the character is made: {{ fromSrd.join(', ') }}.</p>
-  <p v-if="asNew.length" class="small">Not in this world or the SRD, so made as new items with just their name (fill them in on their pages): {{ asNew.join(', ') }}.</p>
-  <p v-if="unchosen.length" class="small warn-text">Left out, as nothing was picked for it: {{ unchosen.join(', ') }}. Pick it under Proficiencies, or add it on the sheet.</p>
+  <p class="small"><template v-for="(l, i) in taken.items" :key="i"><template v-if="i">, </template>{{ l.amount ? l.amount + ' × ' : '' }}<EntryLink v-if="kitLineSource(l) === 'world'" :id="(l.item ?? itemNamed(l.name)!.id)" /><template v-else>{{ l.name }}<sup class="wz-new" :title="SOURCE[kitLineSource(l)]">{{ MARK[kitLineSource(l)] }}</sup></template></template>
+    <template v-if="taken.money">{{ taken.items.length ? '; ' : '' }}{{ formatMoney(taken.money) }}</template></p>
+  <p v-if="fromSrd.length || asNew.length" class="small muted"><template v-if="fromSrd.length"><sup class="wz-new">SRD</sup> added to this world from the SRD when the character is made. </template><template v-if="asNew.length"><sup class="wz-new">new</sup> not in this world or the SRD: made with just its name (fill it in on its page).</template></p>
+  <p v-if="unchosen.length" class="small warn-text">Left out, as nothing was picked for it: {{ unchosen.join(', ') }}. Pick it on the Background step, or add it on the sheet.</p>
 </template>

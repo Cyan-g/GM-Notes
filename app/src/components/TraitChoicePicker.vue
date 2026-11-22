@@ -13,6 +13,7 @@ import { categoryOf } from '../sheet'
 import { get, listOptions } from '../store'
 import { MASTERY_OF } from '../model/schema'
 import MarkdownView from './MarkdownView.vue'
+import { renderInline } from '../markdown'
 import EntryLink from './EntryLink.vue'
 import TraitChips from './TraitChips.vue'
 
@@ -106,7 +107,7 @@ function toggle(id: string) {
     <!-- all picked: their names on one line (Change… shows what each does); still picking: each with what it does -->
     <p v-if="listed && full && pickedRows.length" class="sp-picked-line small">{{ pickedRows.map(r => r.label).join(' · ') }}</p>
     <ul v-else-if="listed && pickedRows.length" class="sp-picked">
-      <li v-for="r in pickedRows" :key="r.id"><b>{{ r.label }}</b> <span v-if="r.text" class="muted small">{{ lead(r.text) }}</span></li>
+      <li v-for="r in pickedRows" :key="r.id"><b>{{ r.label }}</b> <span v-if="r.text" class="muted small" v-html="renderInline(lead(r.text))" /></li>
     </ul>
 
     <Teleport v-if="listed && open" to="body">
@@ -132,7 +133,7 @@ function toggle(id: string) {
             <span v-if="r.prereq || r.needs || r.needOption" class="sp-prereq" :class="{ lacking: !!lacking(r) }" :title="lacking(r) || 'Prerequisite'">{{ r.prereq ?? [r.needs && `Level ${r.needs}+`, r.needOption && rows.find(x => x.id === r.needOption)?.label].filter(Boolean).join(', ') }}</span>
             <TraitChips v-if="r.option" :t="r.option" no-grants /></span>
           <span v-if="lacking(r) && !a.picks.includes(r.id)" class="small sp-opt-lacks">Not yet: {{ lacking(r) }}</span>
-          <span v-if="r.text" class="muted small sp-opt-lead">{{ lead(r.text) }}</span>
+          <span v-if="r.text" class="muted small sp-opt-lead" v-html="renderInline(lead(r.text))" />
           <details v-if="r.text.length > lead(r.text).length + 2" class="sp-opt-more" @click.stop><summary class="small">more</summary><MarkdownView class="small" :source="r.text" /></details>
         </span>
       </label>

@@ -7,6 +7,8 @@ import type { Entry } from '../model/types'
 import { classLabel } from '../classRules'
 import { traitsOf } from '../model/traits'
 import { hrefEntry } from '../router'
+import { formatMoney, get } from '../store'
+import { abilityBonusText } from '../abilityBonus'
 import MarkdownView from './MarkdownView.vue'
 import ClassOverview from './ClassOverview.vue'
 import RaceGlance from './RaceGlance.vue'
@@ -15,6 +17,23 @@ import TraitList from './TraitList.vue'
 /** `level`: a class's or subclass's features up to it come first, as a line ("At level 3: …"). */
 const props = defineProps<{ e: Entry; title?: string; level?: number }>()
 const traits = computed(() => traitsOf(props.e))
+// a description that's only the source line ("Source: System Reference Document 5.2.1") isn't one
+const hasLore = computed(() => !!props.e.body.trim() && !/^\*?\s*source:[^\n]*\*?$/i.test(props.e.body.trim()))
+/** A subrace's main race's traits it keeps. */
+const inherited = computed(() => {
+  const p = props.e.type === 'race' ? get(props.e.fields.parent as string | undefined) : undefined
+  if (!p) return []
+  const replaced = new Set(traits.value.map(t => t.replaces).filter(Boolean))
+  return traitsOf(p).filter(t => !replaced.has(t.id))
+})
+const parentName = computed(() => get(props.e.fields.parent as string | undefined)?.name ?? '')
+/** A background's equipment in words: the items and coins, or the coins instead. */
+const equipmentText = computed(() => {
+  const eq = props.e.fields.equipment
+  if (!eq) return ''
+  const items = (eq.items ?? []).map(l => `${l.amount && l.amount > 1 ? l.amount + ' × ' : ''}${l.item ? get(l.item)?.name ?? l.name ?? l.item : l.name ?? (l.among?.length ? 'one of ' + l.among.map(id => get(id)?.name ?? id).join(', ') : '?')}`).join(', ')
+  return [items && `${items}${eq.money ? ` and ${formatMoney(eq.money)}` : ''}`, eq.instead && `or ${formatMoney(eq.instead)}`].filter(Boolean).join(' ')
+})
 const isClass = computed(() => props.e.type === 'class' || props.e.type === 'subclass')
 /** A class's or subclass's features up to the chosen level, and the next one after it. */
 const upTo = computed(() => (isClass.value && props.level ? traits.value.filter(t => (t.level ?? 1) <= props.level!) : []))
@@ -40,7 +59,15 @@ function toggled(part: string, ev: Event) {
       <span v-if="!upTo.length" class="muted">nothing yet</span>
       <span v-if="next" class="muted"> · next: {{ next.name }} ({{ next.level }})</span>
     </p>
-    <details v-if="e.body.trim()" class="wz-fold" :open="isOpen('lore')" @toggle="toggled('lore', $event)">
+    <!-- a background's facts: the abilities its increase goes to, skills, tool, Origin feat, equipment -->
+    <dl v-if="e.type === 'background'" class="facts wz-bg-facts small">
+      <template v-if="e.fields.abilityIncrease"><dt>Ability scores</dt><dd>{{ abilityBonusText(e.fields.abilityIncrease) }}</dd></template>
+      <template v-if="e.fields.skillProfs?.length"><dt>Skills</dt><dd>{{ e.fields.skillProfs.join(', ') }}</dd></template>
+      <template v-if="e.fields.toolProfs?.length"><dt>Tool</dt><dd>{{ e.fields.toolProfs.map(t => get(t)?.name ?? t).join(', ') }}</dd></template>
+      <template v-if="e.fields.originFeat"><dt>Origin feat</dt><dd>{{ get(e.fields.originFeat)?.name ?? e.fields.originFeat }}</dd></template>
+      <template v-if="e.fields.equipment"><dt>Equipment</dt><dd>{{ equipmentText }}</dd></template>
+    </dl>
+    <details v-if="hasLore" class="wz-fold" :open="isOpen('lore')" @toggle="toggled('lore', $event)">
       <summary>{{ e.type === 'race' ? 'About them' : 'Description' }}</summary>
       <MarkdownView :source="e.body" />
     </details>
@@ -53,5 +80,7 @@ function toggled(part: string, ev: Event) {
       <summary>{{ isClass ? 'Features' : 'Traits' }} <span class="muted small">{{ traits.length }}</span></summary>
       <TraitList :traits="traits" :by-level="isClass ? classLabel(e) : undefined" :lineage="e.type === 'race' && e.fields.parent ? e.name : undefined" />
     </details>
+    <!-- a subrace also has its main race's traits (but those it replaces): named, they're on that race's page -->
+    <p v-if="inherited.length" class="small wz-inherited"><b>Also from {{ parentName }}:</b>{{ ' ' }}<span v-for="t in inherited" :key="t.id" class="chip" :title="(t.text ?? '').slice(0, 300)">{{ t.name }}</span></p>
   </section>
 </template>

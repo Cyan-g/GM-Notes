@@ -3,7 +3,7 @@
 // above it, a ✓ by those the character already has from elsewhere), and the spell looked at beside it as its card.
 // Clicking a cantrip takes it, clicking a spell prepares it, up to the class's limits; a wizard also puts further
 // spells in the spellbook, from the buttons by the card.
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { Entry, Id } from '../../model/types'
 import { ownedSpells, spellChoices, spellCounts, wizard } from '../../wizard'
 import { ORD } from '../../model/dnd'
@@ -21,10 +21,14 @@ const counts = computed(() => spellCounts(d.value))
 const spellFilter = defineModel<string>('filter', { default: '' })
 const shown = (list: Entry[]) => { const q = spellFilter.value.trim().toLowerCase(); return q ? list.filter(e => e.name.toLowerCase().includes(q)) : list }
 const isCantrip = (id: Id) => sc.value.cantrips.some(e => e.id === id)
+/** Why the last pick did nothing (everything of its kind taken), for the line above the list. */
+const full = ref('')
 function toggleSpell(key: 'cantrips' | 'spells' | 'book', id: Id, max?: number) {
   const l = d.value[key]
-  if (l.includes(id)) { wizard.d[key] = l.filter(x => x !== id); return }
-  if (max != null && l.length >= max) return
+  if (l.includes(id)) { wizard.d[key] = l.filter(x => x !== id); full.value = ''; return }
+  // all taken: say so (nothing happens otherwise)
+  if (max != null && l.length >= max) { full.value = `${max} of ${max} ${key === 'cantrips' ? 'cantrips' : key === 'book' ? 'spellbook spells' : 'prepared spells'} taken: take one back to choose another.`; return }
+  full.value = ''
   if (key === 'spells') wizard.d.book = d.value.book.filter(x => x !== id)
   if (key === 'book') wizard.d.spells = d.value.spells.filter(x => x !== id)
   wizard.d[key] = [...l, id]
@@ -52,6 +56,7 @@ function pick(id: Id) { if (isCantrip(id)) toggleSpell('cantrips', id, counts.va
         <template v-if="sc.maxLevel"> · to {{ ORD[sc.maxLevel] }}</template>
         <template v-if="counts.book != null"> · book {{ d.spells.length + d.book.length }} / {{ counts.book }}</template>
       </p>
+      <p v-if="full" class="small wz-need-line" role="status">{{ full }}</p>
       <input v-model="spellFilter" class="wz-filter" placeholder="Filter by name…" aria-label="Filter the spells by name" />
     </template>
     <template #detail="{ item, picked: on }">

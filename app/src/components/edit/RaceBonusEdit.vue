@@ -8,7 +8,7 @@ import type { FieldDef } from '../../model/schema'
 import { abilityBonusText, type BonusChoice } from '../../abilityBonus'
 import { ABILITY_KEYS } from '../../model/dnd'
 import { get } from '../../store'
-import { rule } from '../../rules'
+import { bonusSources } from '../../rules'
 import FieldInput from './FieldInput.vue'
 import SpreadPicker from '../SpreadPicker.vue'
 
@@ -17,17 +17,20 @@ const bonus = computed(() => props.e.fields.abilityIncrease)
 const parent = computed(() => get(props.e.fields.parent))
 const TEN = Object.fromEntries(ABILITY_KEYS.map(a => [a, 10])) as Record<(typeof ABILITY_KEYS)[number], number>
 const preview = ref<BonusChoice>({ picks: [] })
-const RULE: Record<string, string> = {
-  choice: 'The wizard offers it, or the background’s, as the player chooses (Ruleset).',
-  background: 'The Ruleset gives the background’s increase instead, so this one isn’t offered.',
-  species: 'The Ruleset gives this increase (not the background’s) to new characters.',
-}
+/** What the creator does with it, as the Ruleset's switches say. */
+const ruleText = computed(() => {
+  const on = bonusSources()
+  if (!on.includes('species') && !on.includes('subrace')) return 'The Ruleset offers no species increase in the creator (the background’s or a typed one instead).'
+  return props.e.fields.parent
+    ? `${on.includes('species') ? 'The creator adds it to its main race’s' : ''}${on.includes('species') && on.includes('subrace') ? ', or offers it alone' : on.includes('subrace') ? 'The creator offers it alone' : ''} (Ruleset).`
+    : 'The creator offers it, with a subrace’s added (Ruleset).'
+})
 </script>
 
 <template>
   <section class="race-bonus">
     <h4>Ability score increase</h4>
-    <p class="muted small">{{ RULE[rule('abilityIncrease')] }}<template v-if="parent && !bonus && parent.fields.abilityIncrease"> Without its own, it has {{ parent.name }}'s: {{ abilityBonusText(parent.fields.abilityIncrease) }}.</template></p>
+    <p class="muted small">{{ ruleText }}<template v-if="parent && !bonus && parent.fields.abilityIncrease"> Without its own, it has {{ parent.name }}'s: {{ abilityBonusText(parent.fields.abilityIncrease) }}.</template></p>
     <FieldInput :def="def" :entry="e" />
     <div v-if="bonus?.pick?.length || bonus?.orPick?.length" class="rb-preview">
       <span class="muted small">What the player sees (on scores of 10):</span>

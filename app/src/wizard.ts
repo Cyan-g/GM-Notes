@@ -13,8 +13,9 @@ import { ruleSlots } from './slots'
 import { blankSheet, emptyBook, own } from './sheetData'
 import { choiceOpen, classSpellsFrom, featGivesSave, isClassOrigin, isPlayable, raceChain, speciesEffects, speciesGrants, speciesSpells, speciesTraits, type HaveNow } from './species'
 import { PROFS_TRAIT } from './model/traits'
-import { entries, get } from './store'
-import { rule } from './rules'
+import { byType, entries, get } from './store'
+import { isShield } from './items'
+import { bonusSources, rule } from './rules'
 import { changed, createEntry } from './edit'
 import { itemNamed } from './lookup'
 import { norm } from './model/text'
@@ -47,7 +48,13 @@ export interface Draft {
   method: ScoreMethod
   /** The base scores; for the standard array, unassigned scores are undefined. */
   base: Partial<Abilities>
-  bonusFrom: 'species' | 'background' | 'custom'
+  bonusFrom: 'species' | 'subrace' | 'background' | 'custom'
+  /** The steps looked at: one with nothing to choose is only ticked once seen (Equipment's kit A is a default, not a choice). */
+  seen?: string[]
+  /** The campaigns the character joins (unset: the running one, defaultCampaigns). */
+  campaigns?: Id[]
+  /** The picks made for each source, so going back to one finds them again. */
+  bonusChoices?: Partial<Record<'species' | 'subrace' | 'background', BonusChoice>>
   bonusChoice: BonusChoice
   custom: Partial<Abilities>
   skills: string[]
@@ -75,7 +82,7 @@ export interface Draft {
 
 export const newDraft = (): Draft => ({
   cls: '', level: 1, ownSaves: [], ownArmor: [], ownWeapons: [], ownSkillCount: 2,
-  method: 'array', base: {}, bonusFrom: rule('abilityIncrease') === 'species' ? 'species' : 'background', bonusChoice: { picks: [] }, custom: {},
+  method: 'array', base: {}, bonusFrom: bonusSources()[0], bonusChoice: { picks: [] }, custom: {},
   skills: [], tools: [], languages: ['Common'], species: {}, feats: [], hpRolls: [], classKit: 0, bgKit: 'items',
   cantrips: [], spells: [], book: [], name: '', player: '',
   looks: { gender: '', age: '', hair: '', eyes: '', skin: '', clothing: '' }, story: '',
@@ -127,12 +134,25 @@ export function ownedSpells(d: Draft, opts: { skip?: string; withClass?: boolean
   return out
 }
 
-/** The ability bonus the draft takes: the species' (the subrace's, else its main race's), the background's, or custom. */
+/**
+ * The ability bonus the draft takes: the background's; the species' with its subrace's added (2014: Mountain Dwarf
+ * +2 Con +2 Str); the subrace's alone (else its main race's); or custom (none here).
+ */
 export function bonusOf(d: Draft): AbilityBonus | undefined {
   if (d.bonusFrom === 'custom') return undefined
   if (d.bonusFrom === 'background') return get(d.background)?.fields.abilityIncrease
-  for (const r of raceChain(d.race, true)) if (r.fields.abilityIncrease) return r.fields.abilityIncrease
-  return undefined
+  const chain = raceChain(d.race, true)
+  if (d.bonusFrom === 'subrace') { for (const r of chain) if (r.fields.abilityIncrease) return r.fields.abilityIncrease; return undefined }
+  return addBonuses([...chain].reverse().map(r => r.fields.abilityIncrease).filter((b): b is AbilityBonus => !!b))
+}
+/** Two increases as one: fixed parts added, picks one after the other (the first one with a choice of picks keeps it). */
+export function addBonuses(list: AbilityBonus[]): AbilityBonus | undefined {
+  if (list.length < 2) return list[0]
+  const fixed: Partial<Abilities> = {}
+  for (const b of list) for (const [a, n] of Object.entries(b.fixed ?? {})) fixed[a as keyof Abilities] = (fixed[a as keyof Abilities] ?? 0) + (n ?? 0)
+  const pick = list.flatMap(b => b.pick ?? []), orPick = list.find(b => b.orPick?.length)?.orPick
+  const max = Math.max(...list.map(b => b.max ?? 20))
+  return { ...(Object.keys(fixed).length ? { fixed } : {}), ...(pick.length ? { pick } : {}), ...(orPick ? { orPick } : {}), max, ...(list.some(b => b.note) ? { note: list.map(b => b.note).filter(Boolean).join(' ') } : {}) }
 }
 /** What the chosen bonus adds. */
 export const bonusAdds = (d: Draft): Partial<Abilities> => (d.bonusFrom === 'custom' ? d.custom : bonusApplied(bonusOf(d), d.bonusChoice))
@@ -230,7 +250,10 @@ function addKitItems(d: Draft) {
     if (from === 'world' || from === 'none') continue
     const srd = from === 'srd' ? srdItemNamed(l.name)! : undefined
     const e = createEntry('item', srd?.name ?? l.name, srd ? JSON.parse(JSON.stringify(srd.fields)) : { kind: 'Adventuring Gear' })
-    if (srd?.body) { e.body = srd.body; changed(e) }
+    // plain starting gear: known to players
+    e.visibility = 'known'
+    if (srd?.body) e.body = srd.body
+    changed(e)
   }
 }
 
@@ -369,6 +392,34 @@ export const mainRace = (id: Id | undefined): Entry | undefined => raceChain(id,
 
 // ---------- making it ----------
 
+/**
+ * What a new character wears and holds from the kits: the first body armor, a shield, and the weapons (a two-handed
+ * one stays in the pack when there's a shield). The rest stays in the pack.
+ */
+export function equipStarting(lines: InventoryLine[]) {
+  const of = (l: InventoryLine) => get(l.item)
+  const armor = lines.find(l => { const e = of(l); return e?.fields.kind === 'Armor' && !isShield(e) && e.fields.armorType !== 'Clothing' })
+  const shield = lines.find(l => { const e = of(l); return !!e && isShield(e) })
+  if (armor) armor.equipped = true
+  if (shield) shield.equipped = true
+  for (const l of lines) {
+    const e = of(l)
+    if (e?.fields.kind !== 'Weapon') continue
+    if (shield && (e.fields.properties ?? []).some(p => /two-handed/i.test(p))) continue
+    l.equipped = true
+  }
+}
+/**
+ * The campaigns a new character joins unless the player picks others: the running one with the most sessions, else
+ * (no campaign marked Running) the one with the most sessions, as the home page shows it.
+ */
+export function defaultCampaigns(): Id[] {
+  const sessions = (id: Id) => (byType.value.get('session') ?? []).filter(x => x.fields.campaign === id).length
+  const all = (byType.value.get('campaign') ?? []).filter(c => !['Finished', 'One-shot'].includes(String(c.fields.status ?? ''))).sort((a, b) => sessions(b.id) - sessions(a.id))
+  const pick = all.find(c => c.fields.status === 'Running') ?? all.find(c => sessions(c.id) > 0)
+  return pick ? [pick.id] : []
+}
+
 /** The finished sheet (also what checks on the draft read: scores, proficiencies). */
 export function draftSheet(d: Draft): CharacterSheet {
   const r = rules(d), s = blankSheet()
@@ -402,6 +453,7 @@ export function draftSheet(d: Draft): CharacterSheet {
     if (same) same.qty += qty
     else inventory.push({ item: id, qty })
   }
+  equipStarting(inventory)
   s.inventory = inventory
   if (kits.money) s.money = kits.money
   // The Origin feat and the feats taken at their levels.
@@ -439,6 +491,7 @@ export async function makeCharacter(d: Draft): Promise<Entry> {
     classLevels: d.cls ? draftPc(d).fields.classLevels : undefined,
     ...(d.race ? { race: d.race } : {}),
     ...(d.background ? { background: d.background } : {}),
+    ...((d.campaigns ?? defaultCampaigns()).length ? { campaigns: [...(d.campaigns ?? defaultCampaigns())] } : {}),
     ...looks,
     sheet: draftSheet(d),
   }

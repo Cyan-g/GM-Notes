@@ -14,10 +14,11 @@ import WizardPage from '../WizardPage.vue'
 import WzChooser, { type ChooserItem } from './WzChooser.vue'
 
 const { d, r, classes } = useDraft()
+// the world's classes first; one it has no page for (a class made by hand) after them, in a group of its own
 const items = computed<ChooserItem[]>(() => classes.value.map(c => {
-  const cr = rules({ ...d.value, cls: c.id })
-  return { id: c.id, label: c.label, hint: cr ? `${dieOfDraft({ ...d.value, cls: c.id, die: undefined })} · ${cr.saves.map(a => ABILITY_SHORT[a]).join(' ')}` : 'by hand' }
-}))
+  const cr = rules({ ...d.value, cls: c.id }), page = classEntry(c.id)
+  return { id: c.id, label: c.label, hint: cr ? `${dieOfDraft({ ...d.value, cls: c.id, die: undefined })} · ${cr.saves.map(a => ABILITY_SHORT[a]).join(' ')}` : 'by hand', ...(page ? {} : { group: 'Not in this world: by hand' }) }
+}).sort((a, b) => Number(!!a.group) - Number(!!b.group)))
 /** Another class: what was picked for the old one goes. */
 function setClass(cls: string) {
   if (cls === d.value.cls) return

@@ -36,12 +36,19 @@ const offered = computed(() => (props.suggest ?? []).filter(o => !has(o.id)))
 
 const toggle = (id: string) => emit('change', has(id) ? props.values.filter(x => x !== id) : [...props.values, id])
 const remove = (id: string) => emit('change', props.values.filter(x => x !== id))
+/** The only one, if there's exactly one. */
+const one = <T,>(l: T[]) => (l.length === 1 ? l[0] : undefined)
 function add() {
   const raw = typed.value.trim()
   if (!raw) return
   const low = raw.toLowerCase()
+  // the best match: the name itself, else the one suggestion it starts (or else is part of); only a name that matches
+  // nothing is new ("Elv" is Elvish, never a language called "Elv")
   const found = all.value.find(o => o.label.toLowerCase() === low)
-  const id = found?.id ?? props.create?.(raw)
+    ?? one(offered.value.filter(o => o.label.toLowerCase().startsWith(low)))
+    ?? one(offered.value.filter(o => o.label.toLowerCase().includes(low)))
+  const matches = offered.value.some(o => o.label.toLowerCase().includes(low))
+  const id = found?.id ?? (matches ? undefined : props.create?.(raw))
   if (!id) return
   if (!has(id)) emit('change', [...props.values, id])
   typed.value = ''

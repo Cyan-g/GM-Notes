@@ -2388,3 +2388,6 @@ select.dd option:is(:hover, :focus-visible)::before {
   border-left: 4px solid var(--accent); border-radius: 10px; box-shadow: 0 12px 40px rgb(0 0 0 / .25);
 }
 .undo-note .x { margin-left: auto; }
+/* the creator's equipment list: what the world doesn't have yet */
+.wz-new { font-size: 9px; text-transform: uppercase; letter-spacing: .04em; color: var(--accent); margin-left: .15em; }
+.wz-to-choose { color: var(--accent); }

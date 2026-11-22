@@ -20,7 +20,7 @@ const main = computed(() => mainRace(d.value.race))
 /** A species' line: its size and walking speed, and how many subraces it has. */
 function raceLine(x: Entry): string {
   const sp = x.fields.speeds as { walk?: number } | undefined
-  return [x.fields.size, sp?.walk != null && `${sp.walk} ft`, subracesOf(x.id).length && `${subracesOf(x.id).length} subraces`].filter(Boolean).join(' · ')
+  return [x.fields.size, sp?.walk != null && `${sp.walk} ft`, subracesOf(x.id).length && `${subracesOf(x.id).length} subrace${subracesOf(x.id).length === 1 ? '' : 's'}`].filter(Boolean).join(' · ')
 }
 const items = computed<ChooserItem[]>(() => species().map(x => ({ id: x.id, label: x.name, hint: raceLine(x) })))
 /** Another species (its subrace, if one was picked, goes with the old one). */

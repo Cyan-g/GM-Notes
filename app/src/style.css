@@ -1332,6 +1332,8 @@ h1 .icon svg.gi { color: var(--accent); }
   background: var(--panel); color: var(--ink); border: 1px solid var(--line); box-shadow: var(--shadow);
   font: 400 13px/1.45 var(--sans, inherit); pointer-events: none; white-space: pre-line;
 }
+/* it's a popover (in the top layer, over open dropdown lists): none of the popover's own placement */
+.tip-layer[popover] { inset: auto; margin: 0; overflow: visible; }
 .choice-list { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
 .choice-list .chip .link-btn { margin-left: .25rem; }
 .choice-add { width: auto; min-width: 11rem; }
@@ -1687,10 +1689,6 @@ button.live-tag { cursor: pointer; }
 .grid .known-col input { width: auto; margin: 0; }
 /* weapons to master: what each picked weapon's mastery does, and the list of all of them */
 .sp-masteries { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; gap: .2rem; }
-.sp-mastery-list { margin-top: .4rem; }
-.sp-mastery-list dl { display: grid; grid-template-columns: max-content 1fr; gap: .25rem .7rem; margin: .4rem 0 0; }
-.sp-mastery-list dt { font-weight: 600; }
-.sp-mastery-list dd { margin: 0; }
 .char-sheet > .feature-choices { padding: .7rem .9rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
 .sp-given { margin-top: .3rem; }
 .sp-given > summary { cursor: pointer; list-style: none; }

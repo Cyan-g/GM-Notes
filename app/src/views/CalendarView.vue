@@ -4,7 +4,8 @@ import MoonPhase from '../components/MoonPhase.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { computed, ref, watch } from 'vue'
 import type { Entry, WorldDate } from '../model/types'
-import { db, entries, formatDate, touch } from '../store'
+import { db, entries, formatDate, get, touch } from '../store'
+import { campaignColor, currentCampaign, nextSessionFields } from '../sessions'
 import { addDays, eraOf, eraShort, monthDays, moonMark, weekday } from '../calendar'
 import { go } from '../router'
 import { newEntry } from '../ui'
@@ -63,8 +64,14 @@ const selected = ref<number | null>(null)
 watch(() => [year.value, month.value], () => { selected.value = same(today.value, year.value, month.value) ? today.value.day ?? null : null }, { immediate: true })
 const selDate = computed<WorldDate | null>(() => (selected.value ? { year: year.value, month: month.value, day: selected.value } : null))
 
-const colorOf = (e: Entry) => e.type === 'session' ? db().meta.eventCategories.find(c => c.name === 'Session')?.color
+// a session in its campaign's colour (one each, so two campaigns' sessions on a day can be told apart)
+const colorOf = (e: Entry) => e.type === 'session' ? campaignColor(e.fields.campaign) ?? db().meta.eventCategories.find(c => c.name === 'Session')?.color
   : db().meta.eventCategories.find(c => c.name === e.fields.category)?.color
+/** The campaigns with sessions this month, for the legend: the current one first. */
+const campaignsShown = computed(() => {
+  const ids = [...new Set([...items.value.byDay.values()].flat().filter(e => e.type === 'session' && e.fields.campaign).map(e => String(e.fields.campaign)))]
+  return ids.map(id => get(id)).filter((c): c is Entry => !!c).sort((a, b) => Number(b.id === currentCampaign.value?.id) - Number(a.id === currentCampaign.value?.id) || a.name.localeCompare(b.name))
+})
 
 // ---- moving today ----
 function setToday(d: WorldDate) {
@@ -86,9 +93,10 @@ const yearInput = (v: string) => { const y = Number(v); if (v.trim() && !Number.
         <button title="Previous month" @click="shift(-1)">‹</button>
         <button @click="go(href(today.year, today.month ?? 1))">Today</button>
         <button title="Next month" @click="shift(1)">›</button>
-        <a v-if="!db().follow" class="chip-btn" href="#/calendar/edit" title="Months, weekdays, moons, eras, holidays and the timeline's colours"><AppIcon ui="cog" /> Edit calendar</a>
+        <a v-if="!db().follow" class="button" href="#/calendar/edit" title="Months, weekdays, moons, eras, holidays and the timeline's colours"><AppIcon ui="cog" /> Edit calendar</a>
       </div>
     </header>
+    <p v-if="campaignsShown.length > 1" class="small cal-legend"><span v-for="c in campaignsShown" :key="c.id" class="cal-legend-item"><i :style="{ background: campaignColor(c.id) }" /> {{ c.name }}</span></p>
 
     <div class="card today-bar">
       <span>Today in the world: <b>{{ weekday(cal, today) >= 0 ? cal.weekdays[weekday(cal, today)] + ', ' : '' }}{{ formatDate(today) }}</b></span>
@@ -131,7 +139,7 @@ const yearInput = (v: string) => { const y = Number(v); if (v.trim() && !Number.
         <p v-if="!(items.byDay.get(selected!)?.length) && !holidays.some(h => h.day === selected)" class="muted small">Nothing on this day.</p>
         <div class="day-actions">
           <button @click="newEntry('event', { date: selDate, category: 'Historical Events' })">＋ Event</button>
-          <button @click="newEntry('session', { date: selDate })">＋ Session</button>
+          <button @click="newEntry('session', { ...(currentCampaign ? nextSessionFields(currentCampaign.id) : {}), date: selDate })">＋ Session</button>
           <button v-if="!same(today, selDate.year, selDate.month!, selDate.day)" @click="setToday(selDate)">Make this today</button>
         </div>
       </aside>

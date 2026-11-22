@@ -13,6 +13,7 @@ import { dateRange, factRelations, relationEnded as ended } from '../entryFacts'
 import AppIcon from './AppIcon.vue'
 import EntryLink from './EntryLink.vue'
 import ItemWhere from './ItemWhere.vue'
+import { membersOf } from '../sessions'
 
 const props = defineProps<{ e: Entry }>()
 
@@ -51,9 +52,10 @@ const mentions = computed(() => {
   const soldAt = x.type === 'item' ? shopsSelling(x).map(s => s.s) : []
   const carriedBy = x.type === 'item' ? carriersOf(x).map(c => c.p) : []
   const members = x.type === 'race' ? raceMembers(x) : []
-  const kids = new Set([...children, ...usedIn.value, ...soldAt, ...members, ...knownBy.value, ...carriedBy].map(c => c.id))
+  const party = x.type === 'campaign' ? membersOf(x.id) : []
+  const kids = new Set([...children, ...usedIn.value, ...soldAt, ...members, ...knownBy.value, ...carriedBy, ...party].map(c => c.id))
   return [...(backlinks.value.get(x.id) ?? [])].map(get).filter((m): m is Entry => !!m && !related.has(m.id) && !kids.has(m.id) && !hiddenFromPlayers(m))
-    .sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name))
+    .sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name, undefined, { numeric: true }))
 })
 </script>
 

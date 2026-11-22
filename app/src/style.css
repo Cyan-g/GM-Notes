@@ -760,6 +760,8 @@ table.grid.wb-recipes th:nth-last-child(2) { width: 7.5em; }
 .atlas-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 1rem; align-items: start; }
 @media (max-width: 1000px) { .atlas-grid { grid-template-columns: 1fr; } }
 .atlas-main, .atlas-side { display: grid; gap: 1rem; }
+.atlas-maps { grid-column: 1 / -1; }
+.map-tile-none { display: flex; align-items: center; justify-content: center; aspect-ratio: 4 / 3; background: var(--chip); border-radius: 6px; }
 .atlas .card h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
 .atlas-today { font: 600 1.25rem var(--serif); margin: 0 0 .6rem; }
 .map-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .8rem; }
@@ -2464,3 +2466,18 @@ select.dd option:is(:hover, :focus-visible)::before {
 .recipe-table th:nth-child(4), .recipe-table td:nth-child(4) { width: 2rem; }
 .recipe-table .picker, .recipe-table .picker input, .recipe-table .picker-value { width: 100%; min-width: 0; max-width: 100%; }
 .recipe-table input.short { width: 4.5rem; }
+/* the party at the top of a campaign's page */
+.cal-legend { display: flex; flex-wrap: wrap; gap: .3rem 1rem; margin: -.3rem 0 .6rem; }
+.cal-legend-item { display: inline-flex; align-items: center; gap: .35rem; }
+.cal-legend-item i { width: .8rem; height: .8rem; border-radius: 3px; display: inline-block; }
+.campaign-party { margin-bottom: 1.2rem; }
+.cp-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .6rem; }
+.cp-card { padding: .55rem .7rem; margin: 0; }
+.cp-head { display: flex; align-items: center; gap: .4rem; font-weight: 600; }
+.cp-head .x { margin-left: auto; }
+.cp-stats { display: flex; gap: .8rem; margin: .4rem 0 0; }
+.cp-stats div { display: flex; flex-direction: column; align-items: center; }
+.cp-stats dt { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.cp-stats dd { margin: 0; font: 600 1.05rem var(--serif); }
+.cp-add { display: flex; align-items: center; }
+.cp-add .picker { width: 100%; }

@@ -32,7 +32,7 @@ const pageType = computed<EntryType | undefined>(() => (route.current.name === '
 
 watch(open, async v => {
   if (!v) return
-  name.value = ''
+  name.value = props.type === 'session' && props.fields?.number != null ? `Session ${props.fields.number}` : ''
   inPlace.value = true
   const want = props.type ?? pageType.value
   if (want && types.value.includes(want)) type.value = want

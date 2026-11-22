@@ -4,8 +4,8 @@
 import { computed } from 'vue'
 import type { Entry, EntryType } from '../model/types'
 import { TYPES } from '../model/schema'
-import { byType, formatDate, get, hiddenFromPlayers, playerMode, state } from '../store'
-import { weekday } from '../calendar'
+import { byType, formatDate, get, hiddenFromPlayers, playerMode, state, touch } from '../store'
+import { dayNumber, weekday } from '../calendar'
 import { newEntry } from '../ui'
 import EntryLink from './EntryLink.vue'
 import { sessionsOf } from '../sessions'
@@ -21,6 +21,12 @@ const date = computed(() => {
   const wd = cal ? cal.weekdays[weekday(cal, d)] : ''
   return `${wd ? wd + ', ' : ''}${formatDate(d)}`
 })
+/** Whether the session is dated after today in the world. */
+const later = computed(() => {
+  const d = props.e.fields.date, t = state.db?.meta.today, cal = state.db?.meta.calendar
+  return !!(d?.year != null && t && cal && dayNumber(cal, { year: d.year, month: d.month ?? 1, day: d.day ?? 1 }) > dayNumber(cal, t))
+})
+function setToday() { const d = props.e.fields.date; if (d && state.db) { state.db.meta.today = { year: d.year, month: d.month ?? 1, day: d.day ?? 1 }; touch() } }
 const players = computed(() => ((props.e.fields.players ?? []) as string[]).filter(id => get(id)))
 const pager = computed(() => {
   const c = props.e.fields.campaign
@@ -57,13 +63,16 @@ const encounters = computed(() => {
     .filter((x): x is Entry => x?.type === 'encounter' && !own.includes(x))
   return [...own, ...inText]
 })
-const newEncounter = () => newEntry('encounter', { session: props.e.id, ...(props.e.fields.campaign ? { campaign: props.e.fields.campaign } : {}) })
+// a new encounter for this session: its campaign, and the characters present as the party
+const newEncounter = () => newEntry('encounter', { session: props.e.id, ...(props.e.fields.campaign ? { campaign: props.e.fields.campaign } : {}), ...(players.value.length ? { party: [...players.value] } : {}) })
 </script>
 
 <template>
   <div class="card session-facts">
     <dl>
-      <template v-if="date"><dt>In the world</dt><dd>{{ date }}</dd></template>
+      <template v-if="date"><dt>In the world</dt><dd>{{ date }}
+        <!-- dated after today in the world: move today to it -->
+        <button v-if="later && !state.readOnly && !playerMode" type="button" class="link-btn small" :title="`Today in the world is ${formatDate(state.db?.meta.today)}`" @click="setToday">Set today to this date</button></dd></template>
       <template v-if="e.fields.playedOn"><dt>Played on</dt><dd>{{ e.fields.playedOn }}</dd></template>
       <template v-if="players.length"><dt>Present</dt><dd><span class="chips"><EntryLink v-for="id in players" :key="id" :id="id" class="chip" /></span></dd></template>
     </dl>

@@ -3,10 +3,10 @@
 import type { AbilityBonus, Entry, EntryType, RecipeLine, RelationKind, Statblock, WorldDate } from './model/types'
 import { craftingMinutes, craftingTime, recipeCost } from './crafting'
 import { SCHEMA, TYPES, byKey, type FieldDef } from './model/schema'
-import { dateKey, entries, fieldLabel, fieldOptions, get, relatedIds, state } from './store'
+import { dateKey, entries, fieldLabel, fieldOptions, formatDate, get, relatedIds, state } from './store'
 import { classText, totalLevel } from './model/classes'
 import { listKeyOf } from './model/lists'
-import { sessionNo } from './sessions'
+import { membersOf, sessionNo, sessionsOf } from './sessions'
 import { abilityBonusText } from './abilityBonus'
 import { describeRequirements } from './requirements'
 import { statsOf } from './encounter'
@@ -61,6 +61,10 @@ const COMPUTED: Record<string, Omit<Col, 'key'>> = {
   '@worships': { label: 'Worships', value: e => current(e, 'worships', true), sort: e => nameOf(current(e, 'worships', true)[0]), kind: 'ids' },
   '@members': { label: 'Members', value: e => current(e, 'member', false).length, sort: e => -current(e, 'member', false).length, kind: 'text' },
   '@classes': { label: 'Classes', value: e => classText(e, state.db?.meta, id => get(id)?.name), sort: e => classText(e, state.db?.meta).toLowerCase() || '~', kind: 'text' },
+  // a campaign at a glance: how many sessions, the last one's date in the world, its characters
+  '@sessions': { label: 'Sessions', value: e => (e.type === 'campaign' ? sessionsOf(e.id).length : ''), sort: e => (e.type === 'campaign' ? -sessionsOf(e.id).length : 0), kind: 'text' },
+  '@lastPlayed': { label: 'Last session', value: e => (e.type === 'campaign' ? formatDate(sessionsOf(e.id).at(-1)?.fields.date) : ''), sort: e => (e.type === 'campaign' ? -(sessionsOf(e.id).length) : 0), kind: 'text' },
+  '@party': { label: 'Party', value: e => (e.type === 'campaign' ? membersOf(e.id).map(p => p.id) : []), sort: e => (e.type === 'campaign' ? -membersOf(e.id).length : 0), kind: 'ids' },
   '@level': { label: 'Level', value: e => (e.type === 'pc' ? totalLevel(e) : ''), sort: e => (e.type === 'pc' ? -totalLevel(e) : 0), kind: 'text' },
   '@cr': { label: 'CR', value: e => statsOf(e)?.cr, sort: e => { const cr = statsOf(e)?.cr; return cr ? crNum(cr) : 999 }, kind: 'text' },
   '@recipeCost': { label: 'Ingredients', value: e => recipeCost(e), sort: e => recipeCost(e) ?? -1, kind: 'money' },

@@ -34,7 +34,7 @@ export interface MergePlan {
 }
 
 /** Settings that belong to one copy, never taken from another device (the sender doesn't send them either). */
-const LOCAL_META = new Set(['theme', 'cardStyle', 'mode', 'sharing', 'edited', 'externalBackup', 'lastPublished', 'currentCharacter'])
+const LOCAL_META = new Set(['theme', 'cardStyle', 'mode', 'sharing', 'edited', 'externalBackup', 'lastPublished', 'currentCharacter', 'currentCampaign'])
 const PLAY = new Set(['tracker', 'spellbook', 'crafting', 'playerNotes'])
 
 /** Whether change `a` is newer than `b`. */

@@ -36,6 +36,7 @@ import StatblockView from '../components/Statblock.vue'
 import MembersCard from '../components/MembersCard.vue'
 import SessionSide from '../components/SessionSide.vue'
 import CampaignSessions from '../components/CampaignSessions.vue'
+import CampaignParty from '../components/CampaignParty.vue'
 import RaceMembers from '../components/RaceMembers.vue'
 import RelationCards from '../components/RelationCards.vue'
 import AddToTracker from '../components/AddToTracker.vue'
@@ -184,8 +185,8 @@ function leaveCampaign(pc: Entry) {
   if (rest.length) pc.fields.campaigns = rest; else delete pc.fields.campaigns
   changed(pc)
 }
-const campaignNotes = computed(() => e.value?.type === 'campaign'
-  ? entries.value.filter(n => (n.type === 'note' && n.fields.campaign === e.value!.id) || (n.type === 'pc' && ((n.fields.campaigns) ?? []).includes(e.value!.id))) : [])
+// its notes (the characters are in the party at the top)
+const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.value.filter(n => n.type === 'note' && n.fields.campaign === e.value!.id) : [])
 </script>
 
 <template>
@@ -208,6 +209,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
     <CompanionsTab v-else-if="onPals" :pc="e" />
     <div v-else class="entry-grid">
       <div class="entry-main">
+        <CampaignParty v-if="e.type === 'campaign'" :campaign="e" />
 
         <!-- An item's card takes the main two thirds; its recipe is the first card on the right (as when editing). -->
         <div v-if="e.type === 'item'" class="item-top">
@@ -267,7 +269,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign'
         </section>
         <CampaignSessions v-if="e.type === 'campaign'" :campaign="e" />
         <section v-if="campaignNotes.length">
-          <h2>Characters & notes</h2>
+          <h2>Notes</h2>
           <ul class="plain"><li v-for="n in campaignNotes" :key="n.id"><EntryLink :id="n.id" icon /></li></ul>
         </section>
 

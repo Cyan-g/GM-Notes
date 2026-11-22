@@ -348,6 +348,11 @@ export const SCHEMA = [
       { key: 'summary', label: 'Summary', kind: 'longtext' },
       // where its party is now (set from the place's page)
       { key: 'partyAt', label: 'The party is at', kind: 'ref', to: ['place'] },
+      // characters a player shares (read-only here), put in the party from the campaign's page; one's own characters
+      // name their campaigns themselves
+      { key: 'members', label: "Players' characters", kind: 'refs', to: ['pc'] },
+      // its sessions' colour on the calendar (empty: one of the palette's)
+      { key: 'color', label: 'Colour on the calendar', kind: 'text' },
     ],
   },
   {

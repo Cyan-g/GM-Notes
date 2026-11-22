@@ -628,6 +628,8 @@ export interface Database {
     links?: { label: string; url: string }[]
     /** The character whose spellbook, recipes and inventory the Spellbook and Workbench use. */
     currentCharacter?: Id
+    /** The campaign being played: Home, the Campaign menu, a new character and the tracker's party follow it. */
+    currentCampaign?: Id
     /** Who this world is for. Player mode trims the app to spells, crafting and maps and hides DM-only text. */
     mode?: 'dm' | 'player'
     /** The dropdown lists as changed on the Lists page (model/lists.ts); a list never changed isn't stored. */

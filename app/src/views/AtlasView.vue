@@ -87,18 +87,6 @@ const seat = (o: Entry) => o.fields.seat
           <Sunburst :id="root.id" :key="root.id" :max="640" :rings="3" />
         </section>
 
-        <section class="card">
-          <h3>Maps <span class="muted small">{{ maps.length }}</span></h3>
-          <div class="map-gallery">
-            <a v-for="m in maps" :key="m.p.id" class="map-tile" :href="hrefMap(m.p.id)" :title="`Open the map of ${m.p.name}`">
-              <DataImage :path="m.p.fields.map" :alt="m.p.name" />
-              <span class="map-tile-text">
-                <b>{{ m.p.name }}</b>
-                <span class="muted small">{{ m.path.slice(1).join(' › ') || m.path.join(' › ') }}<template v-if="m.pins"> · {{ m.pins }} pins</template></span>
-              </span>
-            </a>
-          </div>
-        </section>
       </div>
 
       <aside class="atlas-side">
@@ -130,6 +118,20 @@ const seat = (o: Entry) => o.fields.seat
           </ul>
         </section>
       </aside>
+      <!-- the maps below both columns, the whole width -->
+      <section class="card atlas-maps">
+        <h3>Maps <span class="muted small">{{ maps.length }}</span></h3>
+        <div class="map-gallery">
+          <a v-for="m in maps" :key="m.p.id" class="map-tile" :href="hrefMap(m.p.id)" :title="`Open the map of ${m.p.name}`">
+            <DataImage v-if="m.p.fields.map" :path="m.p.fields.map" :alt="m.p.name" />
+            <span v-else class="map-tile-none muted small">no picture</span>
+            <span class="map-tile-text">
+              <b>{{ m.p.name }}</b>
+              <span class="muted small">{{ m.path.slice(1).join(' › ') || m.path.join(' › ') }}<template v-if="m.pins"> · {{ m.pins }} pins</template></span>
+            </span>
+          </a>
+        </div>
+      </section>
     </div>
   </div>
 </template>

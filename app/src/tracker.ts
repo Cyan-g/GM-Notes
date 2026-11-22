@@ -9,6 +9,7 @@ import { sheetOf, sheetToEdit } from './sheetData'
 import { changed } from './edit'
 import { isShared } from './sync'
 import { rule } from './rules'
+import { membersOf } from './sessions'
 import { deathSaveFromDamage, isDead, massiveDamage, noDeathSaves, settleDeathSaves } from './conditions'
 import { noteUndo } from './undoNote'
 
@@ -101,8 +102,7 @@ export function loadEncounter(id: Id, replace = true) {
 
 /** The player characters of a campaign, or every PC when there's no campaign. */
 export function partyOf(campaign?: Id): Entry[] {
-  const pcs = byType.value.get('pc') ?? []
-  return campaign ? pcs.filter(p => ((p.fields.campaigns) ?? []).includes(campaign)) : pcs
+  return campaign ? membersOf(campaign) : byType.value.get('pc') ?? []
 }
 
 export function addPlayers(pcs: Entry[]) {

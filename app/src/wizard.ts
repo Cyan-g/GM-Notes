@@ -15,6 +15,7 @@ import { choiceOpen, classSpellList, featGivesSave, isClassOrigin, isPlayable, r
 import { PROFS_TRAIT } from './model/traits'
 import { byType, entries, get } from './store'
 import { isShield } from './items'
+import { currentCampaign } from './sessions'
 import { bonusSources, rule } from './rules'
 import { changed, createEntry } from './edit'
 import { itemNamed } from './lookup'
@@ -409,7 +410,7 @@ export function equipStarting(lines: InventoryLine[]) {
 export function defaultCampaigns(): Id[] {
   const sessions = (id: Id) => (byType.value.get('session') ?? []).filter(x => x.fields.campaign === id).length
   const all = (byType.value.get('campaign') ?? []).filter(c => !['Finished', 'One-shot'].includes(String(c.fields.status ?? ''))).sort((a, b) => sessions(b.id) - sessions(a.id))
-  const pick = all.find(c => c.fields.status === 'Running') ?? all.find(c => sessions(c.id) > 0)
+  const pick = currentCampaign.value ?? all.find(c => c.fields.status === 'Running') ?? all.find(c => sessions(c.id) > 0)
   return pick ? [pick.id] : []
 }
 

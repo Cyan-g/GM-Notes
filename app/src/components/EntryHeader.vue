@@ -11,6 +11,7 @@ import { printable } from '../cards'
 import { fromPlayer, isShared, sharedBy } from '../sync'
 import { removePlayerCharacter } from '../playerCharacters'
 import { XP_AT, currentPc, levelOf, setCurrent } from '../sheet'
+import { currentCampaign, setCurrentCampaign } from '../sessions'
 import { rule } from '../rules'
 import { go, hrefEntry, route } from '../router'
 import { printCards, ui } from '../ui'
@@ -120,6 +121,10 @@ watch(() => route.current, () => { menu.value = false })
         <button v-if="e.type === 'pc' && !player" class="chip-toggle current-toggle" :class="{ on: currentPc?.id === e.id }" :disabled="!!state.readOnly"
                 :title="currentPc?.id === e.id ? 'The Spellbook, Workbench and Character menu use this character' : 'Use this character in the Spellbook, Workbench and Character menu'"
                 @click="setCurrent(currentPc?.id === e.id ? undefined : e.id)"><AppIcon ui="star" :class="{ off: !(currentPc?.id === e.id) }" /> {{ currentPc?.id === e.id ? 'Current character' : 'Make current' }}</button>
+        <!-- A campaign: whether Home, the Campaign menu and new characters follow it. -->
+        <button v-if="e.type === 'campaign' && !playerMode" class="chip-toggle current-toggle" :class="{ on: currentCampaign?.id === e.id && !!state.db?.meta.currentCampaign }" :disabled="!!state.readOnly"
+                :title="currentCampaign?.id === e.id && state.db?.meta.currentCampaign ? 'Home, the Campaign menu, new characters and the combat tracker follow this campaign' : 'Make this the campaign being played: Home, the Campaign menu, new characters and the combat tracker follow it'"
+                @click="setCurrentCampaign(state.db?.meta.currentCampaign === e.id ? undefined : e.id)"><AppIcon ui="star" :class="{ off: !(state.db?.meta.currentCampaign === e.id) }" /> {{ state.db?.meta.currentCampaign === e.id ? 'Current campaign' : 'Make current' }}</button>
         <span v-if="status" class="badge npc-status-badge" :class="'st-' + String(e.fields.status).toLowerCase()">{{ status }}</span>
         <AttitudeBadge :e="e" title="How they stand with the party" />
         <span v-if="e.type === 'race' && !isPlayable(e)" class="badge" :title="e.fields.notPlayable ? 'Left out of the character wizard' : 'Its main race is marked not playable, so the character wizard leaves it out'">not playable</span>

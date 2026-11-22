@@ -7,6 +7,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Combatant, Id, Statblock } from '../model/types'
 import { byType, get, touch } from '../store'
 import { newCombatantId, statsOf } from '../encounter'
+import { currentCampaign } from '../sessions'
 import { addCombatant, addEntryToTracker, addPlayers, clearTracker, isParty, loadEncounter, nextTurn, partyOf, rollInitiative, sortByInitiative, fighterStats, tracker } from '../tracker'
 import { hrefEntry } from '../router'
 import EntryLink from '../components/EntryLink.vue'
@@ -18,7 +19,7 @@ const t = computed(() => tracker())
 const selected = ref<string | null>(null)
 const encounter = computed(() => get(t.value.encounter))
 const campaigns = computed(() => byType.value.get('campaign') ?? [])
-const partyCampaign = ref<string>((encounter.value?.fields.campaign) ?? '')
+const partyCampaign = ref<string>((encounter.value?.fields.campaign) ?? currentCampaign.value?.id ?? '')
 
 function load(id: string | null) {
   if (!id) return

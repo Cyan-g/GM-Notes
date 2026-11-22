@@ -44,7 +44,8 @@ const LABELS: Record<Quick, string> = { castingTime: 'Casting time', range: 'Ran
 const PLACEHOLDER: Record<Quick, string> = { castingTime: 'Action', range: '60 feet', duration: 'Instantaneous' }
 /** A reaction says when it's taken. */
 const isReaction = computed(() => /^reaction/i.test(String(f.value.castingTime ?? '')))
-const durationText = computed(() => [f.value.concentration && 'Concentration, up to', f.value.duration].filter(Boolean).join(' '))
+// "up to" only once: a duration typed as "up to 1 minute" keeps its own
+const durationText = computed(() => [f.value.concentration && (/^\s*up to/i.test(String(f.value.duration ?? '')) ? 'Concentration,' : 'Concentration, up to'), f.value.duration].filter(Boolean).join(' '))
 
 // Material: 'yes' means "needs materials" without saying which.
 const hasM = computed(() => !!f.value.material)

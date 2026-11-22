@@ -192,6 +192,11 @@ export interface ClassBasics {
   prepared?: number[]
   /** Spellbook spells at level 1 (two more each level after). */
   spellbook?: number
+  /**
+   * Where its spells are prepared from: its class list, changed after a long rest (Cleric, Druid, Paladin); its class
+   * list, one swapped when it gains a level (Bard, Ranger, Sorcerer, Warlock); or a spellbook (Wizard).
+   */
+  spellSource?: 'list' | 'swap' | 'book'
   /** Starting equipment: the options (A, B…), each items (the world's, or by name) and coins. */
   equipment?: Equipment[]
   featLevels?: number[]

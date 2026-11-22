@@ -106,6 +106,12 @@ const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 's
           </tbody>
         </table>
       </div>
+      <label class="cb-line"><span class="muted small">Prepares its spells from</span>
+        <Dropdown :value="cur.spellSource ?? (cur.spellbook ? 'book' : 'list')" aria-label="Where it prepares its spells from" @change="set('spellSource', ($event.target as HTMLSelectElement).value as ClassBasics['spellSource'])">
+          <option value="list">its class list, changed after a long rest (Cleric, Druid, Paladin)</option>
+          <option value="swap">its class list, one swapped when it gains a level (Bard, Sorcerer, Warlock)</option>
+          <option value="book">a spellbook (Wizard)</option>
+        </Dropdown></label>
       <label class="cb-line"><span class="muted small">Spellbook spells at level 1 (+2 a level)</span><input class="cb-num" type="number" min="0" :value="cur.spellbook ?? ''" placeholder="none" @change="set('spellbook', num($event) ?? 0)" /></label>
     </template>
 

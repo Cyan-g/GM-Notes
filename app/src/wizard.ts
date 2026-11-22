@@ -11,7 +11,7 @@ import { ABILITY_KEYS, dieSize, mod, spellLevel, type Ability } from './model/dn
 import { EPIC_BOON_LEVEL, basicsOf, classEntry, classLabel, hitDieOf, rulesOf, subclassLevelOf, type Kit, type KitLine } from './classRules'
 import { ruleSlots } from './slots'
 import { blankSheet, emptyBook, own } from './sheetData'
-import { choiceOpen, classSpellsFrom, featGivesSave, isClassOrigin, isPlayable, raceChain, speciesEffects, speciesGrants, speciesSpells, speciesTraits, type HaveNow } from './species'
+import { choiceOpen, classSpellList, featGivesSave, isClassOrigin, isPlayable, raceChain, speciesEffects, speciesGrants, speciesSpells, speciesTraits, type HaveNow } from './species'
 import { PROFS_TRAIT } from './model/traits'
 import { byType, entries, get } from './store'
 import { isShield } from './items'
@@ -191,15 +191,8 @@ export function hpOf(d: Draft): number {
 export function spellChoices(d: Draft): { cantrips: Entry[]; spells: Entry[]; maxLevel: number } {
   const slots = d.cls ? ruleSlots(draftPc(d)) : undefined
   const maxLevel = Math.max(slots?.slots.reduce((m, n, i) => (n ? i + 1 : m), 0) ?? 0, slots?.pact?.level ?? 0)
-  // the class's list, and any more its features open up (Magical Secrets)
-  const pc = draftPc(d)
-  const lists = new Set([d.cls, ...speciesTraits(pc).filter(a => a.active && isClassOrigin(a.race) && a.race.fields.class === d.cls).flatMap(a => a.trait.spellLists ?? [])])
-  // and the spells its subclass puts on its list (the Dusk Prince's expanded spells) or into its spellbook (the Hemomancer's)
-  const extra = new Set([...classSpellsFrom(pc, 'list', d.cls), ...classSpellsFrom(pc, 'book', d.cls)].map(x => x.spell))
-  const ofClass = entries.value.filter(e => e.type === 'spell' && ((e.fields.classes ?? []).some(c => lists.has(c)) || extra.has(e.id)))
-    .sort((a, b) => a.name.localeCompare(b.name))
-  const lvl = (e: Entry) => spellLevel(e)
-  return { cantrips: ofClass.filter(e => lvl(e) === 0), spells: ofClass.filter(e => lvl(e) >= 1 && lvl(e) <= maxLevel), maxLevel }
+  // the class's list, with what its features add (Magical Secrets, a subclass's expanded or spellbook spells)
+  return { ...(d.cls ? classSpellList(draftPc(d), d.cls, maxLevel) : { cantrips: [], spells: [] }), maxLevel }
 }
 /** How many cantrips and prepared spells (and spellbook spells) the class has at its level; undefined: no limit known. */
 export function spellCounts(d: Draft): { cantrips?: number; prepared?: number; book?: number } {

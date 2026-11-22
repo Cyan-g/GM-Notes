@@ -2419,3 +2419,8 @@ select.dd option:is(:hover, :focus-visible)::before {
 .sr-pool { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; padding: .35rem 0; border-top: 1px solid var(--line); }
 .cs-hp-temp { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; }
 .cs-resist { display: block; max-width: 14rem; line-height: 1.3; margin-top: .2rem; }
+/* the spellbook: School and Range under a prepared spell's name; a spell's type (not an attack or save) dimmed */
+.sbk-sub { line-height: 1.25; }
+.sbk-check.sbk-type { color: var(--muted); }
+.sbk-columns.solo { grid-template-columns: 1fr; }
+.sbk-classlist tr.on td:first-child a { font-weight: 600; }

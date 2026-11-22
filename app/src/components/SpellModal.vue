@@ -3,7 +3,7 @@
 import TypeIcon from './TypeIcon.vue'
 import { computed, onMounted, onUnmounted } from 'vue'
 import type { Id } from '../model/types'
-import { get } from '../store'
+import { get, playerMode } from '../store'
 import { hrefEntry } from '../router'
 import SpellCard from './SpellCard.vue'
 
@@ -24,7 +24,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true))
         <span class="spacer" />
         <slot name="actions" />
         <a class="button" :href="hrefEntry(e.id)" @click="emit('close')">Open page</a>
-        <a class="button" :href="hrefEntry(e.id, true)" title="Edit" @click="emit('close')">✎</a>
+        <a v-if="!playerMode" class="button" :href="hrefEntry(e.id, true)" title="Edit" @click="emit('close')">✎</a>
         <button class="x" title="Close (Esc)" @click="emit('close')">×</button>
       </header>
       <SpellCard :e="e" />

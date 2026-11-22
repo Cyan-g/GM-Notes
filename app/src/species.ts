@@ -430,6 +430,18 @@ export function classSpellsFrom(pc: Entry | undefined, how: 'list' | 'book', cls
   return speciesTraits(pc, s).filter(a => a.active && (!cls || !isClassOrigin(a.race) || a.race.fields.class === cls))
     .flatMap(a => (a.trait.spells ?? []).filter(x => x.how === how && (x.from ?? 1) <= a.level && get(x.spell)).map(x => ({ spell: x.spell, from: a.trait.name })))
 }
+/**
+ * A class's spells for a character: its list (and the lists and spells its features add, Magical Secrets, a
+ * subclass's expanded spells) up to `maxLevel`, cantrips apart.
+ */
+export function classSpellList(pc: Entry, cls: string, maxLevel: number, s?: CharacterSheet): { cantrips: Entry[]; spells: Entry[] } {
+  const lists = new Set([cls, ...speciesTraits(pc, s).filter(a => a.active && isClassOrigin(a.race) && a.race.fields.class === cls).flatMap(a => a.trait.spellLists ?? [])])
+  const extra = new Set([...classSpellsFrom(pc, 'list', cls, s), ...classSpellsFrom(pc, 'book', cls, s)].map(x => x.spell))
+  const ofClass = entries.value.filter(e => e.type === 'spell' && ((e.fields.classes ?? []).some(c => lists.has(c)) || extra.has(e.id)))
+    .sort((a, b) => a.name.localeCompare(b.name))
+  const lvl = (e: Entry) => (e.fields.level === 'Cantrip' ? 0 : Number(e.fields.level) || 0)
+  return { cantrips: ofClass.filter(e => lvl(e) === 0), spells: ofClass.filter(e => lvl(e) >= 1 && lvl(e) <= maxLevel) }
+}
 /** Cast a once-per-rest species spell, or give it back. */
 export function useSpeciesSpell(s: CharacterSheet, key: string, back = false) {
   const st = edit(s), l = new Set(st.spellsUsed ?? [])

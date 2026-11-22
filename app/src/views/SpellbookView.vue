@@ -13,8 +13,10 @@ import { ORD, mod, spellLevel, type Ability } from '../model/dnd'
 import { activeEffectsOf, isActive, rollsLine, toggleActive } from '../spells'
 import { endConcentration, startConcentration } from '../conditions'
 import { castFromItem, grantedSpells, restItems, unuse, type GrantedSpell } from '../items'
-import { classSpellsFrom, restSpecies, speciesSpells, speciesTraits, spendUse, usesLeft, usesMax, useSpeciesSpell, type SpeciesSpell } from '../species'
+import { classSpellList, classSpellsFrom, restSpecies, speciesSpells, speciesTraits, spendUse, usesLeft, usesMax, useSpeciesSpell, type SpeciesSpell } from '../species'
 import { classesOf } from '../model/classes'
+import { basicsOf, casterOf, spellSourceOf } from '../classRules'
+import { gearTotals, sum } from '../effects'
 import { restSlots, setSlotCount, slotFor, slotRows, useSlot, type SlotRow } from '../slots'
 import type { Entry as PcEntry } from '../model/types'
 import EntryLink from '../components/EntryLink.vue'
@@ -286,6 +288,62 @@ function openSpell(ev: MouseEvent, id: Id) {
   shown.value = id
 }
 const levelLabel = (e: Entry) => (spellLevel(e) ? ORD[spellLevel(e)] : 'Cantrip')
+/** A casting time in a word or two ("reaction", "bonus action", "1 minute"); the trigger is on hover. */
+const shortCast = (t: unknown) => String(t ?? '').split(',')[0].trim()
+/** Whether the Attack / save column shows an attack or save (else the spell's type, dimmed). */
+const isCheck = (e: Entry) => e.fields.spellType === 'Attack' || e.fields.spellType === 'Saving throw'
+
+// ---- where the spells come from: each class's list (Cleric, Bard…) or a spellbook (Wizard), as the class says ----
+const lines = computed(() => (owner.value ? classesOf(owner.value).filter(l => casterOf(l.class) !== 'none') : []))
+const listClasses = computed(() => lines.value.filter(l => spellSourceOf(l.class) !== 'book'))
+const bookClasses = computed(() => lines.value.filter(l => spellSourceOf(l.class) === 'book'))
+/** The spellbook (Known spells) is shown for a Wizard, the world's book, and a character without classes. */
+const showBook = computed(() => !owner.value || !classesKnown.value || bookClasses.value.length > 0)
+/** The highest spell level the slots reach. */
+const maxLevel = computed(() => Math.max(0, ...rows.value.filter(r => r.max > 0).map(r => r.level)))
+const classList = computed(() => {
+  const pc = owner.value
+  if (!pc) return { cantrips: [] as Entry[], spells: [] as Entry[] }
+  const all = listClasses.value.map(l => classSpellList(pc, l.class, maxLevel.value, sheetOf(pc)))
+  const uniq = (l: Entry[]) => [...new Map(l.map(e => [e.id, e])).values()].sort((a, b) => spellLevel(a) - spellLevel(b) || a.name.localeCompare(b.name))
+  return { cantrips: uniq(all.flatMap(x => x.cantrips)), spells: uniq(all.flatMap(x => x.spells)) }
+})
+const classQ = ref('')
+const classShown = computed(() => {
+  const q = classQ.value.trim().toLowerCase(), f = (l: Entry[]) => (q ? l.filter(e => e.name.toLowerCase().includes(q)) : l)
+  return [...f(classList.value.cantrips), ...f(classList.value.spells)]
+})
+/** The spells a Wizard can add to the book: their class list up to the slots they have. */
+const bookOffer = computed(() => {
+  const pc = owner.value, b = bookClasses.value[0]
+  if (!pc || !b) return undefined
+  const l = classSpellList(pc, b.class, maxLevel.value, sheetOf(pc))
+  return [...l.cantrips, ...l.spells].map(e => e.id)
+})
+/** Cantrips known now, and how many the classes (and features: Magician) give. */
+const cantripsKnown = computed(() => book.value.known.filter(id => get(id)?.fields.level === 'Cantrip').length)
+const cantripsMax = computed(() => {
+  const pc = owner.value
+  if (!pc) return undefined
+  const n = lines.value.reduce((t, l) => t + (basicsOf(l.class).cantrips?.[Math.min(20, l.level) - 1] ?? 0), 0)
+  const more = sum(gearTotals(sheetOf(pc)).cantrips)
+  return n + more || undefined
+})
+const isKnownCantrip = (id: Id) => book.value.known.includes(id)
+function learnCantrip(id: Id) {
+  const b = book.value
+  if (b.known.includes(id)) { b.known = b.known.filter(x => x !== id); b.always = b.always.filter(x => x !== id); b.prepared = b.prepared.filter(x => x !== id) }
+  else { b.known.push(id); if (!b.always.includes(id)) b.always.push(id) }
+  touch()
+}
+/** Prepare a class-list spell, or unprepare it (it leaves the list of known spells too: the class list is the source). */
+function togglePrepared(id: Id) {
+  if (isPrepared(id)) { unprepare(id); if (!bookClasses.value.length) { book.value.known = book.value.known.filter(x => x !== id); touch() } }
+  else prepare(id)
+}
+/** No casting class and no slots (a Drow Rogue): the caster cards are left out; species and feature spells remain. */
+const noCasting = computed(() => !!owner.value && classesKnown.value && !lines.value.length && !rows.value.some(r => r.max > 0))
+const SOURCE_HINT: Record<string, string> = { list: 'changed after a long rest', swap: 'one swapped when it gains a level' }
 /** The known spells matching the search box. */
 const knownQ = ref('')
 const knownShown = computed(() => { const q = knownQ.value.trim().toLowerCase(); return q ? knownList.value.filter(e => e.name.toLowerCase().includes(q)) : knownList.value })
@@ -300,11 +358,12 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
         <button v-if="hasShort" title="Pact slots and once-per-short-rest item spells back" @click="shortRest"><AppIcon ui="shortRest" /> Short rest</button>
         <button :title="owner ? 'Full HP, every spell slot and half the hit dice back' : 'Every spell slot back'" @click="rest"><AppIcon ui="longRest" /> {{ owner ? 'Long rest' : 'Restore spell slots' }}</button>
         <button title="Print these spells as cards (PDF, poker size)" :disabled="!knownList.length" @click="printCards(`${owner?.name ?? 'Spellbook'} spells`, [{ label: 'Prepared', ids: preparedList.map(e => e.id) }, { label: 'Known', ids: knownList.map(e => e.id) }])"><AppIcon ui="cards" /> Cards</button>
-        <button @click="newEntry('spell')">＋ New spell</button>
+        <button v-if="!playerMode" @click="newEntry('spell')">＋ New spell</button>
       </div>
     </header>
 
-    <div class="sbk-top">
+    <!-- a character with no casting class and no slots: only what species and features give (below) -->
+    <div v-if="!noCasting" class="sbk-top">
       <section class="card sbk-stats">
         <h3>Spellcasting
           <span v-if="fromSheet" class="muted small" title="From the character sheet">{{ fromSheet.ability.toUpperCase() }}</span>
@@ -320,6 +379,7 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
           <label><span>Save DC</span><input type="number" :value="book.saveDC" @change="setNum('saveDC', ($event.target as HTMLInputElement).value)" /></label>
         </template>
         <label><span>Prepared</span><b v-flash.neutral="preparedCount" :class="{ over: full }">{{ preparedCount }}</b> / <input type="number" min="0" :value="book.preparedMax" @change="setNum('preparedMax', ($event.target as HTMLInputElement).value)" /></label>
+        <label v-if="cantripsMax"><span>Cantrips</span><b :class="{ over: cantripsKnown > cantripsMax }">{{ cantripsKnown }}</b> / {{ cantripsMax }}</label>
       </section>
 
       <section class="card sbk-slots">
@@ -349,8 +409,33 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
       </section>
     </div>
 
-    <div class="sbk-columns">
-      <section class="card sbk-list drop-zone" :class="{ over: over === 'known' }"
+    <p v-if="noCasting && !preparedList.length && !granted.length && !innate.length" class="muted">{{ owner?.name }} has no spells: none of their classes casts, and nothing they have gives a spell.</p>
+    <div class="sbk-columns" :class="{ solo: noCasting }">
+      <!-- a class that prepares from its list (Cleric, Bard, Warlock…): the list, with Learn and Prepare -->
+      <section v-if="listClasses.length" class="card sbk-list sbk-classlist">
+        <h3>Class spells <span class="muted small">{{ listClasses.map(l => `${l.class}: ${SOURCE_HINT[spellSourceOf(l.class)]}`).join(' · ') }}</span>
+          <input v-model="classQ" class="sbk-search" type="search" placeholder="Find…" aria-label="Find a spell on the class list" />
+        </h3>
+        <div class="sbk-scroll">
+        <table class="grid">
+          <thead><tr><th>Spell</th><th>Level</th><th></th></tr></thead>
+          <tbody>
+            <tr v-for="e in classShown" :key="e.id" :class="{ on: e.fields.level === 'Cantrip' ? isKnownCantrip(e.id) : isPrepared(e.id) }">
+              <td><a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a> <span v-if="e.fields.ritual" class="tag-ritual" title="A ritual: it can be cast in 10 more minutes without a spell slot">ritual</span></td>
+              <td>{{ levelLabel(e) }}</td>
+              <td class="sbk-actions">
+                <span v-if="given.has(e.id)" class="muted small" :title="`Always prepared: from ${given.get(e.id)!.from}`">always</span>
+                <button v-else-if="e.fields.level === 'Cantrip'" class="chip-btn" :class="{ on: isKnownCantrip(e.id) }" :aria-pressed="isKnownCantrip(e.id)" @click="learnCantrip(e.id)">{{ isKnownCantrip(e.id) ? '✓ Known' : 'Learn' }}</button>
+                <button v-else class="chip-btn" :class="{ on: isPrepared(e.id) }" :aria-pressed="isPrepared(e.id)" @click="togglePrepared(e.id)">{{ isPrepared(e.id) ? '✓ Prepared' : 'Prepare' }}</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-if="!classShown.length" class="muted small">{{ classQ ? 'No spell by that name.' : 'The world has no spells for this class (a spell\'s Classes field lists who can cast it).' }}</p>
+        </div>
+      </section>
+
+      <section v-if="showBook" class="card sbk-list drop-zone" :class="{ over: over === 'known' }"
                @dragover="dragOver($event, 'known')" @dragleave.self="over = null" @drop.prevent="drop('known')">
         <h3>Known spells <span class="muted small">{{ knownList.length }}</span>
           <input v-if="knownList.length > 1" v-model="knownQ" class="sbk-search" type="search" placeholder="Find…" aria-label="Find a known spell" />
@@ -367,7 +452,7 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
               <td class="sbk-actions">
                 <span v-if="freeKnown.has(e.id)" class="muted small" :title="`In the spellbook for free, from ${freeKnown.get(e.id)}`">{{ freeKnown.get(e.id) }}</span>
                 <span v-if="isPrepared(e.id)" class="muted small">prepared</span>
-                <span v-else class="drag-handle" aria-hidden="true">⠿</span>
+                <button v-else-if="e.fields.level !== 'Cantrip'" class="chip-btn" title="Prepare it (or drag it to Prepared spells)" @click="prepare(e.id)">Prepare</button>
                 <button v-if="!freeKnown.has(e.id)" class="link-btn x" title="Remove from the spellbook" @click="forget(e.id)">✕</button>
               </td>
             </tr>
@@ -376,16 +461,16 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
         <p v-if="!knownShown.length" class="muted small">No known spell matches.</p>
         </div>
         <p v-else class="muted small">No spells in the book yet.</p>
-        <EntryPicker add :types="['spell']" :exclude="book.known" :no-create="playerMode" placeholder="Add a spell to the book…" @pick="learn" />
+        <EntryPicker add :types="['spell']" :exclude="book.known" :only="bookOffer" :no-create="playerMode" :placeholder="bookOffer ? `Add a ${bookClasses[0].class} spell to the book…` : 'Add a spell to the book…'" @pick="learn" />
       </section>
 
       <!-- the right-hand column: prepared spells, then the spells the character's items grant -->
       <div class="sbk-col">
-      <section class="card sbk-list drop-zone" :class="{ over: over === 'prepared' }"
+      <section v-if="!noCasting || preparedList.length" class="card sbk-list drop-zone" :class="{ over: over === 'prepared' }"
                @dragover="dragOver($event, 'prepared')" @dragleave.self="over = null" @drop.prevent="drop('prepared')">
         <h3>Prepared spells <span class="muted small" :class="{ over: full }" title="Cantrips and always-prepared spells don't count">{{ preparedCount }}<template v-if="book.preparedMax != null"> / {{ book.preparedMax }}</template><template v-if="alwaysCount"> + {{ alwaysCount }} always</template></span></h3>
         <table v-if="preparedList.length" class="grid">
-          <thead><tr><th>Spell</th><th>Level</th><th>School</th><th>Casting time</th><th>Range</th><th>Duration</th><th>Attack / save</th><th title="Concentration · Ritual">C/R</th><th></th></tr></thead>
+          <thead><tr><th>Spell</th><th>Level</th><th>Casting time</th><th>Duration</th><th>Attack / save</th><th title="Concentration · Ritual">C/R</th><th></th></tr></thead>
           <tbody>
             <tr v-for="e in preparedList" :key="e.id" :class="{ dragging: dragging?.id === e.id }" :draggable="!onlyGiven(e.id)"
                 :title="onlyGiven(e.id) ? `Always prepared: from ${given.get(e.id)!.from}` : 'Drag back to Known spells to unprepare'" @dragstart="dragStart($event, e.id, 'prepared')" @dragend="dragEnd">
@@ -394,13 +479,12 @@ const full = computed(() => book.value.preparedMax != null && preparedCount.valu
                 <button v-else class="link-btn always" :class="{ on: book.always.includes(e.id) }" :title="alwaysTitle(e.id)" @click="toggleAlways(e.id)"><AppIcon ui="star" /></button>
                 <a :href="hrefEntry(e.id)" class="spell-link" @click="openSpell($event, e.id)">{{ e.name }}</a> <span v-if="e.fields.ritual" class="tag-ritual" title="A ritual: it can be cast in 10 more minutes without a spell slot">ritual</span>
                 <span v-if="given.has(e.id)" class="muted small sbk-from" :title="given.get(e.id)!.how === 'atWill' ? 'At will: no slot needed' : 'Always prepared: cast with your own spell slots'"> · {{ given.get(e.id)!.from }}</span>
+                <div class="sbk-sub muted small">{{ [optionLabel('spell.school', e.fields.school), e.fields.range].filter(Boolean).join(' · ') }}</div>
               </td>
               <td>{{ levelLabel(e) }}</td>
-              <td>{{ optionLabel('spell.school', e.fields.school) }}</td>
-              <td>{{ e.fields.castingTime ?? '' }}</td>
-              <td class="sbk-range">{{ e.fields.range ?? '' }}</td>
+              <td :title="String(e.fields.castingTime ?? '')">{{ shortCast(e.fields.castingTime) }}</td>
               <td>{{ e.fields.duration ?? '' }}</td>
-              <td class="sbk-check">{{ check(e, given.get(e.id)?.ability) }}<div v-if="rolls(e, given.get(e.id)?.ability)" class="sbk-rolls">{{ rolls(e, given.get(e.id)?.ability) }}</div></td>
+              <td class="sbk-check" :class="{ 'sbk-type': !isCheck(e) }">{{ check(e, given.get(e.id)?.ability) }}<div v-if="rolls(e, given.get(e.id)?.ability)" class="sbk-rolls">{{ rolls(e, given.get(e.id)?.ability) }}</div></td>
               <td>{{ [e.fields.concentration && 'C', e.fields.ritual && 'R'].filter(Boolean).join(' ') }}</td>
               <td class="sbk-actions">
                 <span v-if="spellLevel(e) && given.get(e.id)?.how === 'atWill' && onlyGiven(e.id)" class="muted small" title="Cast without a spell slot">at will</span>

@@ -44,25 +44,26 @@ const untrained = (x: { e?: Entry }) => proficientWith(sheetOf(props.pc), x.e!) 
 const unfit = (x: { l: InventoryLine; e?: Entry }) => blockedFor(props.pc, { ...x.l, equipped: undefined, attuned: undefined }, x.e?.fields.attunement ? 'attuned' : 'equipped')
 const slots = computed(() => Array.from({ length: Math.max(ATTUNE_SLOTS, attuned.value.length) }, (_, i) => attuned.value[i]))
 
-// ---- dragging: from the inventory onto the equipped list or the attunement slots, or between them ----
-const over = ref<'' | 'equipped' | 'attuned'>('')
-/** Whether the dragged line can go into a zone. */
-const fits = (zone: 'equipped' | 'attuned') => {
+// ---- dragging: an item from the inventory dropped anywhere on this card is put to use ----
+const over = ref(false)
+/** Whether the dragged line can be put to use: worn or wielded, or attuned (an item that needs it). */
+const fits = () => {
   const l = draggedLine(props.pc)
-  if (!l || dragged.from === zone) return false
-  return zone === 'equipped' ? canEquip(l) || (!canEquip(l) && canAttune(l)) : canAttune(l)
+  return !!l && dragged.from === 'inventory' && (canEquip(l) || canAttune(l))
 }
-function onDragOver(ev: DragEvent, zone: 'equipped' | 'attuned') { if (fits(zone)) { ev.preventDefault(); over.value = zone } }
+function onDragOver(ev: DragEvent) { if (fits()) { ev.preventDefault(); over.value = true } }
+/** Left the card itself (not just moved onto one of its children). */
+function onDragLeave(ev: DragEvent) { if (!(ev.currentTarget as Element).contains(ev.relatedTarget as Node | null)) over.value = false }
 /** Why the last drop was refused (the item's requirements), shown for a few seconds. */
 const refused = ref('')
 let refusedTimer: ReturnType<typeof setTimeout> | undefined
-function onDrop(ev: DragEvent, zone: 'equipped' | 'attuned') {
-  over.value = ''
-  if (!fits(zone)) return
+function onDrop(ev: DragEvent) {
+  over.value = false
+  if (!fits()) return
   ev.preventDefault()
   const i = dragged.i
   const l = sheetOf(props.pc)?.inventory[i]
-  const why = l && (blockedFor(props.pc, l, 'equipped') ?? blockedFor(props.pc, l, 'attuned'))
+  const why = l && ((canEquip(l) && blockedFor(props.pc, l, 'equipped')) || (canAttune(l) && blockedFor(props.pc, l, 'attuned')))
   if (why) {
     refused.value = why
     clearTimeout(refusedTimer); refusedTimer = setTimeout(() => (refused.value = ''), 5000)
@@ -71,10 +72,9 @@ function onDrop(ev: DragEvent, zone: 'equipped' | 'attuned') {
   }
   editSheet(props.pc, x => {
     const l = x.inventory[i]
-    // Dropped on Equipped: worn or wielded; a ring or amulet (nothing to wield) is attuned instead.
-    // Armor dropped on the attunement slots stays worn as well.
-    if (zone === 'equipped' && canEquip(l)) l.equipped = true
-    else l.attuned = true
+    // worn or wielded if it can be; attuned too if it needs attunement (a ring, a staff, magic armor)
+    if (canEquip(l)) l.equipped = true
+    if (canAttune(l)) l.attuned = true
   })
   endDrag()
 }
@@ -87,9 +87,8 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
 </script>
 
 <template>
-  <div class="card equipped-card">
+  <div class="card equipped-card drop-zone" :class="{ 'drop-over': over }" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop">
     <h3>Equipped <button v-if="lines.length" type="button" class="link-btn small push-right" title="Print these items as cards (PDF, poker size)" @click="printItems"><AppIcon ui="cards" /> Cards</button></h3>
-    <div class="drop-zone" :class="{ 'drop-over': over === 'equipped' }" @dragover="onDragOver($event, 'equipped')" @dragleave="over = ''" @drop="onDrop($event, 'equipped')">
     <ul v-if="worn.length || wielded.length || other.length" class="rel">
       <li v-for="x in [...worn, ...wielded, ...other]" :key="x.i" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'equipped')" @dragend="endDrag">
         <button class="link-btn cs-item" @click="shown = x.i">{{ x.e!.name }}</button>
@@ -99,12 +98,11 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
         <button v-if="!ro" class="link-btn eq-off" :title="`Take off ${x.e!.name} (it stays in the inventory)`" @click="off(x.i, 'equipped')">Unequip</button>
       </li>
     </ul>
-    <p v-else class="muted small">Nothing worn or wielded. Drag weapons, armor and other gear here from the inventory.</p>
-    </div>
+    <p v-else class="muted small">Nothing worn or wielded. Drag weapons, armor and other gear onto this card from the inventory.</p>
 
     <p v-if="refused" class="error small">Can't: {{ refused }}.</p>
     <h4>Attunement <span v-flash.neutral="attuned.length" class="muted small">{{ attuned.length }} / {{ ATTUNE_SLOTS }}</span></h4>
-    <ol class="attune-slots drop-zone" :class="{ 'drop-over': over === 'attuned' }" @dragover="onDragOver($event, 'attuned')" @dragleave="over = ''" @drop="onDrop($event, 'attuned')">
+    <ol class="attune-slots">
       <li v-for="(x, n) in slots" :key="n" :class="{ empty: !x, over: n >= ATTUNE_SLOTS }">
         <button v-if="x" class="link-btn cs-item" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'attuned')" @dragend="endDrag" @click="shown = x.i">{{ x.e!.name }}</button>
         <span v-else class="muted small">empty</span>

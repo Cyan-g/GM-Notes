@@ -47,19 +47,22 @@ const shownLine = computed(() => (shown.value != null ? s.value.inventory[shown.
 const over = ref(false)
 const droppable = computed(() => { const l = draggedLine(props.pc); return !!l && dragged.from !== 'inventory' })
 function onDragOver(ev: DragEvent) { if (droppable.value) { ev.preventDefault(); over.value = true } }
+/** Left the card itself (not just moved onto one of its rows). */
+function onDragLeave(ev: DragEvent) { if (!(ev.currentTarget as Element).contains(ev.relatedTarget as Node | null)) over.value = false }
 function onDrop(ev: DragEvent) {
   over.value = false
   if (!droppable.value) return
   ev.preventDefault()
-  const i = dragged.i, from = dragged.from
-  edit(x => { if (from === 'attuned') x.inventory[i].attuned = undefined; else x.inventory[i].equipped = undefined })
+  // back in the bag: no longer worn, wielded or attuned
+  const i = dragged.i
+  edit(x => { x.inventory[i].equipped = undefined; x.inventory[i].attuned = undefined })
   endDrag()
 }
 </script>
 
 <template>
   <section class="cs-inventory card" :class="{ 'cs-inv-side': side, 'drop-over': over }"
-           @dragover="onDragOver" @dragleave="over = false" @drop="onDrop">
+           @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop">
     <component :is="'h3'">Inventory <span v-flash.neutral="weight" class="muted small" :title="load ? loadTip : undefined">{{ load ? `${round(load.carried)} / ${round(load.capacity)} lb` : weight ? `${round(weight)} lb, with what's equipped` : '' }}</span></component>
     <p v-if="load && load.state !== 'ok'" class="warn-note small">{{ load.state === 'over' ? `Over the carrying capacity (${round(load.capacity)} lb): the DM decides what that means.` : load.state === 'encumbered' ? `Encumbered (over ${round(load.light!)} lb): −10 ft speed.` : `Heavily encumbered (over ${round(load.heavy!)} lb): −20 ft speed, disadvantage on ability checks, attack rolls and STR, DEX and CON saves.` }}</p>
     <table class="cs-inv">

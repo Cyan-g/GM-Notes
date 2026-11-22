@@ -10,7 +10,7 @@ import Dropdown from './Dropdown.vue'
 import { useReadOnly } from '../composables/useReadOnly'
 import AppIcon from './AppIcon.vue'
 import ConditionIcon from './ConditionIcon.vue'
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { CharacterSheet, ClassLine, Entry, Id, Proficiencies } from '../model/types'
 import { byType, get, listOptions, setList, state } from '../store'
 import { CLASS_DIE, DICE, classText, classesOf } from '../model/classes'
@@ -37,6 +37,7 @@ import ActiveSpellsCard from './ActiveSpellsCard.vue'
 import ConditionsBar from './ConditionsBar.vue'
 import DeathSaves from './DeathSaves.vue'
 import LevelUpModal from './LevelUpModal.vue'
+import { XP_AT } from '../sheet'
 import { endConcentration, hpChanged } from '../conditions'
 import { featOfFeature, originFeatOf, picksLeft, speciesEffects, speciesExpertise, speciesGrants, speciesSizes, speciesTraits } from '../species'
 import { ui } from '../ui'
@@ -235,10 +236,11 @@ const setProfs = (k: Exclude<keyof Proficiencies, 'other'>, v: string[]) => edit
 const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
 const castLabel = computed(() => (s.value.spellAbility ? s.value.spellAbility.toUpperCase() : cast.value ? `${cast.value.toUpperCase()} (class)` : 'None'))
 /** Experience needed for each level (1…20), the same in 2014 and 2024. */
-const XP_AT = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
 const xpNext = computed(() => XP_AT[level.value])
 const sizes = computed(() => speciesSizes(props.pc))
 const leveling = ref(false)
+// Level up is in the Edit button's menu (EntryHeader): it asks for this character's dialog
+watch(() => ui.levelUp, id => { if (id && id === props.pc.id) { leveling.value = true; ui.levelUp = null } }, { immediate: true })
 const SKILL_LEVEL: Record<number, string> = { 1: 'Proficient', 2: 'Expertise' }
 
 // ---- building: the hit points the dice give on average (the player may have rolled instead; their call) ----
@@ -294,8 +296,6 @@ onBeforeUnmount(() => {
     <PcPortrait v-if="!build" :pc="pc" />
     <div class="cs-top-right">
     <LevelUpModal v-if="leveling" :pc="pc" :s="s" @close="leveling = false" />
-    <!-- the character's conditions (shared with the combat tracker), with what they do -->
-    <ConditionsBar v-if="!build" :pc="pc" :s="s" />
     <!-- the strip at the top: the numbers looked at most -->
     <!-- building: what the sheet works out, in one line; below it, what's set by hand -->
     <div v-if="build" class="cs-build">
@@ -323,7 +323,6 @@ onBeforeUnmount(() => {
       <label class="cs-stat" :class="{ tip: gt.speed.length }" :data-tip="breakdown(`${ft(baseSpeed(s) ?? 30)} without gear`, gt.speed)"><span :class="{ 'gear-mod': gt.speed.length }">Speed</span><input v-flash="locked ? speedOf(s) : s.speed" :value="(locked ? speedOf(s) : ft(s.speed)) ?? ''" :placeholder="ft(baseSpeed(s) ?? 30)" :disabled="locked" @change="edit(x => x.speed = feet($event))" /><small v-if="otherSpeeds(s)" class="muted cs-speeds">{{ otherSpeeds(s) }}</small></label>
       <label v-if="build && sizes.length > 1" class="cs-stat" title="The species lets the player pick its size"><span>Size</span><Dropdown :value="s.size && sizes.includes(s.size) ? s.size : sizes[0]" @change="edit(x => x.size = ($event.target as HTMLSelectElement).value === sizes[0] ? undefined : ($event.target as HTMLSelectElement).value)"><option v-for="z in sizes" :key="z" :value="z">{{ z }}</option></Dropdown></label>
       <label v-if="rule('experience') === 'xp'" class="cs-stat cs-xp" :title="xpNext ? `Level ${level + 1} at ${xpNext.toLocaleString()} XP` : 'Highest level'"><span>XP</span><input v-flash="s.xp ?? 0" type="number" min="0" :value="s.xp ?? ''" placeholder="0" :disabled="ro" @change="edit(x => x.xp = num($event) || undefined)" /><small v-if="xpNext" class="muted">/ {{ xpNext.toLocaleString() }}</small></label>
-      <button v-if="!build && !ro && level < 20" class="cs-stat cs-lvlup" :class="{ ready: rule('experience') === 'xp' && xpNext && (s.xp ?? 0) >= xpNext }" title="Level up: class, hit points, new features, feat and spells" @click="leveling = true"><span>Level up</span><b>↑</b></button>
       <button v-if="!build && rule('inspiration') !== 'off'" class="cs-stat cs-insp" :class="{ on: s.inspiration }" :disabled="ro" :title="inspirationTip" @click="edit(x => x.inspiration = !x.inspiration || undefined)"><span>{{ rule('inspiration') === 'heroic' ? 'Heroic Inspiration' : 'Inspiration' }}</span><b><AppIcon ui="star" :class="{ off: !(s.inspiration) }" /></b></button>
     </div>
 
@@ -353,6 +352,8 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <div class="cs-hp cs-dice">
+      <!-- the character's conditions (shared with the combat tracker), with what they do -->
+      <ConditionsBar v-if="!build" class="cs-dice-conds" :pc="pc" :s="s" />
       <div class="cs-hitdice">
         <span class="cs-label">Hit dice</span>
         <div v-for="p in pools" :key="p.die" class="cs-hp-row">

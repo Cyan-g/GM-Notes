@@ -2304,3 +2304,18 @@ select.dd option:is(:hover, :focus-visible)::before {
 .picker-value { display: inline-flex; align-items: center; gap: .4em; }
 .picker-value::after { content: '▾'; margin-left: auto; padding-left: .4em; color: var(--muted); font-size: .8em; }
 .picker-list li { font-size: 14px; }
+
+/* ---------- an entry's Edit button with its menu (EntryHeader): level up, history, export, copy to ---------- */
+.split-btn { position: relative; display: inline-flex; }
+.split-btn .edit-btn { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.split-more { position: relative; border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: -1px; padding-left: .5em; padding-right: .55em; }
+.split-more.alone { border-radius: 8px; margin-left: 0; display: inline-flex; gap: .35em; align-items: center; }
+.split-arrow { color: var(--muted); font-size: .85em; }
+.split-more[aria-expanded="true"] .split-arrow { color: var(--accent); }
+/* enough XP to level up: a dot on the menu button */
+.split-more.ready::after { content: ''; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.head-menu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 30; min-width: 12rem; }
+.head-menu .menu-row { gap: .5rem; }
+/* the conditions sit in the Hit dice card, on a row of their own */
+.cs-dice .cs-dice-conds { flex-basis: 100%; margin: 0; }
+.cs-dice .cs-dice-conds.empty { margin: 0; }

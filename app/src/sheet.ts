@@ -383,6 +383,9 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
   return out
 }
 
+/** The XP that reaches each next level (index: the level now); 2024 rules. */
+export const XP_AT = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
+
 /** What the initiative tracker takes from a PC: AC, HP and the DEX for initiative. */
 export function trackerStats(pc: Entry) {
   const s = sheetOf(pc)

@@ -1970,7 +1970,7 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .speeds-input input[type=number] { width: 4rem; }
 .speeds-note { flex-basis: 100%; }
 .inherit-hint { display: block; margin-top: .15rem; }
-.race-bonus { border: 1px solid var(--line); border-radius: 10px; padding: .5rem .8rem; margin-bottom: 1rem; }
+.race-bonus { border: 1px solid var(--line); border-radius: 10px; padding: .5rem .8rem; margin-bottom: 1rem; background: var(--panel); }
 .race-bonus h4 { margin: 0 0 .3rem; }
 .race-bonus .rb-preview { margin-top: .5rem; }
 .cs-speeds { display: block; font-size: 11px; text-align: center; }

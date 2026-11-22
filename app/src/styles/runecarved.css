@@ -110,7 +110,7 @@
 }
 
 /* frames: a light top edge as if carved */
-:where(.fx[data-fx="runecarved"]) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .char-sheet > .feature-choices) {
+:where(.fx[data-fx="runecarved"]) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .race-bonus, .char-sheet > .feature-choices) {
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 7%, transparent), var(--shadow);
 }
 :where(.fx[data-fx="runecarved"]) :where(.modal, .table-wrap, .theme-panel) { border-radius: 2px; }

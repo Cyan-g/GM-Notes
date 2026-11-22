@@ -21,12 +21,12 @@
  */
 
 /* ---------- frame: cards and the sheet's boxes ---------- */
-:where(.fx[data-fx]) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .char-sheet > .feature-choices) {
+:where(.fx[data-fx]) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .race-bonus, .char-sheet > .feature-choices) {
   position: relative; border-color: var(--fx-frame-edge); border-radius: var(--fx-frame-radius);
   outline: var(--fx-frame-outline, none); outline-offset: var(--fx-frame-outline-offset, 0);
 }
 /* an ornament over the whole box (corners): only when the style gives one */
-:where(.fx[data-fx]) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .char-sheet > .feature-choices)::before {
+:where(.fx[data-fx]) :where(.card, .item-card, .spell-card, .start-card, .cs-hp, .cs-classes, .pc-notes, .cs-inventory, .cs-features, .player-notes, .race-glance, .race-bonus, .char-sheet > .feature-choices)::before {
   content: var(--fx-frame-ornament, none); position: absolute; inset: var(--fx-frame-ornament-inset, 0); pointer-events: none;
   background: var(--fx-frame-ornament-paint, none); -webkit-mask: var(--fx-frame-ornament-mask, none); mask: var(--fx-frame-ornament-mask, none);
 }

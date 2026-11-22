@@ -4,6 +4,7 @@
 // skills sit under their abilities with the numbers they come to (as the sheet works them out), and what picking one
 // would make it.
 import { computed } from 'vue'
+import type { Entry } from '../../model/types'
 import { languageRule, pickedLanguages, wizard } from '../../wizard'
 import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, SKILLS } from '../../model/dnd'
 import { grantOptions, isToolKind } from '../../species'
@@ -27,7 +28,16 @@ const skillsOf = (a: Ability) => skills.value.filter(x => x.ability === a)
 const skillsLeft = computed(() => Math.max(0, skillCount.value - d.value.skills.length))
 /** Whether a skill can be picked now: on the class's list, not given already, with a pick left. */
 const canPick = (k: string) => skillFrom.value.includes(k) && !grantedSkills.value.has(k) && (d.value.skills.includes(k) || skillsLeft.value > 0)
-const toolItems = computed(() => entries.value.filter(e => isToolKind(e) && (!/instrument/i.test(r.value?.toolChoice?.what ?? '') || e.fields.kind === 'Instrument')).map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label)))
+/** An artisan's tool kind (Smith's Tools, Calligrapher's Supplies, Cook's Utensils), not Thieves' Tools, a kit or a game set. */
+const artisan = (e: { name: string }) => /(supplies|tools|utensils)$/i.test(e.name.trim()) && !/thieves|navigator/i.test(e.name)
+/** What the class's tool choice offers, from its words: musical instruments, artisan's tools, or both ("artisan's tools
+ * or musical instrument", a Monk's); kinds only (Lyre, not Elmar's Lyre). Words naming neither: every tool and instrument. */
+function offers(e: Entry): boolean {
+  const what = r.value?.toolChoice?.what ?? '', inst = /instrument/i.test(what), art = /artisan/i.test(what), tool = /tool|kit|supplies/i.test(what)
+  if (!inst && !art && !tool) return true
+  return (inst && e.fields.kind === 'Instrument') || (art && e.fields.kind === 'Tool' && artisan(e)) || (tool && !art && e.fields.kind === 'Tool')
+}
+const toolItems = computed(() => entries.value.filter(e => isToolKind(e) && offers(e)).map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label)))
 const languages = computed(() => listOptions('language'))
 const langRule = computed(() => languageRule(d.value))
 const picked = computed(() => pickedLanguages(d.value))

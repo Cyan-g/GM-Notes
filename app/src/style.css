@@ -1831,6 +1831,28 @@ button.live-tag { cursor: pointer; }
 @keyframes wz-flash { 0% { outline-color: var(--accent); outline-width: 4px; } 100% { outline-width: 2px; } }
 .wz-next-open { margin-right: .4rem; }
 .wz-ch-intro { padding: 2rem 1rem; max-width: 40rem; }
+/* the Spells step: level tabs, filters, the level's spells as tiles; the card of the one looked at beside them */
+.wz-area:has(> .wz-spells) { overflow: hidden; display: flex; flex-direction: column; padding-bottom: 0; }
+.wz-area:has(> .wz-spells) > * { flex: none; }
+.wz-area > .wz-spells { flex: 1; min-height: 0; }
+.wz-spells { display: grid; grid-template-columns: minmax(0, 1fr) minmax(17rem, 23rem); gap: 1.2rem; height: 100%; }
+.wz-sp-main { display: flex; flex-direction: column; gap: .45rem; min-height: 0; }
+.wz-sp-main > * { flex: none; }
+.wz-sp-main .wz-ch-top { margin: 0; }
+.wz-sp-tabs { flex-wrap: wrap; }
+.wz-sp-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; }
+.wz-sp-filters .wz-filter { width: 14rem; margin: 0; }
+.wz-sp-grid { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: .35rem; align-content: start; padding: .35rem; margin-bottom: 1rem; border-radius: 10px; }
+.wz-sp-tile { display: grid; gap: .1rem; text-align: left; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink-2); cursor: pointer; min-width: 0; }
+.wz-sp-tile:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); color: var(--ink); }
+.wz-sp-tile.looked { background: color-mix(in srgb, var(--accent) 10%, var(--panel)); box-shadow: inset 2px 0 0 var(--accent); color: var(--ink); }
+.wz-sp-tile.on { border-color: var(--accent); color: var(--ink); }
+.wz-sp-tile.on .wz-sp-name { font-weight: 700; }
+.wz-sp-name { font-size: 14px; font-weight: 600; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wz-sp-tick { display: inline-block; width: 1em; color: var(--accent); }
+.wz-sp-facts { font-size: 11.5px; color: var(--muted); padding-left: 1em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wz-sp-tile.had .wz-sp-name::after { content: ' ✓'; color: var(--muted); font-weight: 400; }
+@media (max-width: 760px) { .wz-spells { grid-template-columns: 1fr; height: auto; } .wz-sp-grid { max-height: 60vh; } }
 /* the sheet's ability cards in the creator (WzAbilityCards): six in a row where there's room */
 .wz-cs-abilities { grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr)); grid-auto-rows: auto; padding: .2rem; margin: .4rem 0 .8rem; }
 .wz-cs-score { justify-self: end; min-width: 2.4em; padding: 0 .3em; border: 1px solid var(--line); border-radius: 6px; font-size: 12.5px; text-align: center; color: var(--ink-2); }

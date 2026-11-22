@@ -243,6 +243,44 @@ class WorldDb {
   changesSince(seq = 0, limit = 5000) {
     return this.db.prepare('SELECT seq, kind, key, op, at, device FROM changes WHERE seq > ? ORDER BY seq LIMIT ?').all(seq, limit)
   }
+  /**
+   * What changed after `seq`, for another device: each thing as it is now (an entry, a relation, a setting's value; a
+   * picture or file by its path only), at most `limit` lines. An entry a relation in the batch points to comes along
+   * when it changed again later (so the relation never arrives before its entry). `upTo` is the next `seq` to ask from.
+   */
+  changeBatch(seq = 0, limit = 2000) {
+    const rows = this.changesSince(seq, limit)
+    const upTo = rows.length ? rows[rows.length - 1].seq : seq
+    const more = !!this.db.prepare('SELECT 1 FROM changes WHERE seq > ? LIMIT 1').get(upTo)
+    const entryRow = this.db.prepare('SELECT * FROM entries WHERE id = ?'), relRow = this.db.prepare('SELECT * FROM relations WHERE id = ?')
+    const line = this.db.prepare("SELECT seq, kind, key, op, at, device FROM changes WHERE kind = 'entry' AND key = ?")
+    const have = new Set(rows.map(r => `${r.kind}:${r.key}`))
+    for (const r of rows.slice()) {
+      if (r.kind !== 'relation' || r.op !== 'put') continue
+      const x = relRow.get(r.key)
+      for (const id of x ? [x.a, x.b] : []) {
+        const l = line.get(id)
+        if (l && l.seq > upTo && !have.has(`entry:${id}`)) { rows.push(l); have.add(`entry:${id}`) }
+      }
+    }
+    const meta = this.setting('meta') ?? {}
+    const items = rows.map(r => {
+      const item = { kind: r.kind, key: r.key, op: r.op, at: r.at, device: r.device }
+      if (r.op !== 'put') return item
+      if (r.kind === 'entry') { const x = entryRow.get(r.key); if (x) item.value = rowToEntry(x); else item.op = 'delete' }
+      else if (r.kind === 'relation') { const x = relRow.get(r.key); if (x) item.value = rowToRelation(x); else item.op = 'delete' }
+      else if (r.kind === 'setting') item.value = r.key.startsWith('meta.') ? meta[r.key.slice(5)] ?? null : this.setting(r.key) ?? null
+      return item
+    })
+    return { log: this.setting('changeLog'), device: this.device, upTo, more, items }
+  }
+  /** This copy's latest change to each of `keys` ("entry:<id>", "setting:meta.today" …): when and on which device. */
+  linesOf(keys) {
+    const q = this.db.prepare('SELECT at, device FROM changes WHERE kind = ? AND key = ?')
+    const out = {}
+    for (const k of keys) { const i = k.indexOf(':'); const r = q.get(k.slice(0, i), k.slice(i + 1)); if (r) out[k] = { at: r.at, device: r.device } }
+    return out
+  }
   /** A new log ID (after the database was replaced by a backup): other devices then sync everything again. */
   newLog() { if (!this.readOnly) this.setSetting('changeLog', crypto.randomUUID()) }
 

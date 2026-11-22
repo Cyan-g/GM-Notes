@@ -27,6 +27,11 @@ interface Bridge {
     copyTo(root: string, rel: string): Promise<boolean>
     restore(name: string): Promise<boolean>
   }
+  /** Syncing with the user's other devices: this world's changes after a point in its log, and its latest lines. */
+  sync: {
+    batch(seq: number, limit?: number): Promise<import('../devicesync/merge').SyncBatch>
+    lines(keys: string[]): Promise<Record<string, import('../devicesync/merge').Line>>
+  }
   publish: { folder(): Promise<string | null>; pick(): Promise<string | null> }
   shared: {
     scan(): Promise<{ folder: string; worlds: { worldId: string; title: string; published: string; dataVersion: number }[] } | null>

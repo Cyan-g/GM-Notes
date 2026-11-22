@@ -425,6 +425,9 @@ ipcMain.handle('worlds:moved', (_e, title) => {
   remember(worldId, title, rootDir('data'))
   return true
 })
+// syncing with the user's other devices (src/sync): this world's changes after a point, and its own latest lines
+handleTimed('sync:batch', (_e, seq, limit) => openWorld().changeBatch(Number(seq) || 0, Number(limit) || 2000))
+handleTimed('sync:lines', (_e, keys) => openWorld().linesOf(Array.isArray(keys) ? keys.map(String) : []))
 handleTimed('db:history', (_e, id) => openWorld().history(id))
 handleTimed('db:deleted', () => openWorld().deleted())
 /** A copy of the database: an automatic backup in data/backups, or into the backup folder. */

@@ -17,6 +17,8 @@ export interface Changes {
   relRemove: string[]
   /** Entries whose replaced version is kept in the history even if one was kept a moment ago. */
   keep?: Id[]
+  /** Changes that came from another device: which one made each and when ("entry:<id>" → line), for the change log. */
+  origin?: Record<string, { at: string; device: string }>
 }
 export interface Loaded {
   empty?: true; data?: Database; rev?: number; converted?: { entries: number; relations: number }

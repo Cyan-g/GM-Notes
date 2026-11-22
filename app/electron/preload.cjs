@@ -22,6 +22,10 @@ contextBridge.exposeInMainWorld('dndesk', {
     copyTo: (root, rel) => ipcRenderer.invoke('db:copy-to', root, rel),
     restore: name => ipcRenderer.invoke('db:restore', name),
   },
+  sync: {
+    batch: (seq, limit) => ipcRenderer.invoke('sync:batch', seq, limit),
+    lines: keys => ipcRenderer.invoke('sync:lines', keys),
+  },
   publish: {
     folder: () => ipcRenderer.invoke('publish:folder'),
     pick: () => ipcRenderer.invoke('publish:pick'),

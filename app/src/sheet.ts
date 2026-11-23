@@ -202,14 +202,22 @@ export function setMaxHp(s: CharacterSheet, n: number | undefined) {
 }
 // Before a sheet changes, note the CON its max HP was made with, so a change of CON from now on is followed.
 onSheetEdit(s => { if (s.maxHp != null && s.hpCon == null) s.hpCon = conModOf(s) })
-/** The species' other speeds, in words: "swim 30 ft, fly 30 ft (hover)". */
+/** A speed with what changes Speed: gear and features (+10 ft), exhaustion, encumbrance, and conditions that halve it or
+ *  stop the character. Every speed changes alike (walking, swimming, flying…). */
+function changedSpeed(base: number, t: ReturnType<typeof gearTotals>): number {
+  if (t.speedZero) return 0
+  const n = Math.max(0, base + sum(t.speed))
+  return t.speedHalf ? Math.floor(n / 2) : n
+}
+/** The species' other speeds, in words: "swim 30 ft, fly 30 ft (hover)", changed like the walking speed. */
 export function otherSpeeds(s: CharacterSheet): string {
-  const sp = speciesSpeeds(ownerOf(s))
-  const walk = parseInt(speedOf(s) ?? '30') || 0
+  const sp = speciesSpeeds(ownerOf(s)), t = gearTotals(s)
   // a feat's speed equal to the walking one (Athlete's climb), where the species gives less
+  const walk = baseSpeed(s) ?? 30
   const given: Partial<Record<string, number>> = {}
-  for (const x of gearTotals(s).speedTypes) given[x.type] = walk
-  return (['swim', 'fly', 'climb', 'burrow'] as const).filter(k => sp[k] || given[k]).map(k => `${k} ${Math.max(sp[k] ?? 0, given[k] ?? 0)} ft${k === 'fly' && sp.hover ? ' (hover)' : ''}`).join(', ')
+  for (const x of t.speedTypes) given[x.type] = walk
+  return (['swim', 'fly', 'climb', 'burrow'] as const).filter(k => sp[k] || given[k])
+    .map(k => `${k} ${changedSpeed(Math.max(sp[k] ?? 0, given[k] ?? 0), t)} ft${k === 'fly' && sp.hover ? ' (hover)' : ''}`).join(', ')
 }
 /** The walking speed before gear, in feet: typed on the sheet, else the species', else nothing (30 is assumed). */
 export function baseSpeed(s: CharacterSheet): number | undefined {
@@ -219,10 +227,8 @@ export function baseSpeed(s: CharacterSheet): number | undefined {
 export function speedOf(s: CharacterSheet): string | undefined {
   const t = gearTotals(s), add = sum(t.speed), base = baseSpeed(s)
   // a condition (Grappled, Restrained…) or exhaustion stops the character, or halves their speed
-  if (t.speedZero) return '0 ft'
-  if (!add && !t.speedHalf) return base != null ? `${base} ft` : undefined
-  const n = Math.max(0, (base ?? 30) + add)
-  return `${t.speedHalf ? Math.floor(n / 2) : n} ft`
+  if (!t.speedZero && !add && !t.speedHalf) return base != null ? `${base} ft` : undefined
+  return `${changedSpeed(base ?? 30, t)} ft`
 }
 /** What a character has now, for a choice's options (species.ts choiceOffer). */
 export function haveNow(s: CharacterSheet): HaveNow {

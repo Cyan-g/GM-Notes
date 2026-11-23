@@ -23,7 +23,7 @@ import {
 } from '../sheet'
 import { profsToEdit, sheetOrBlank, sheetToEdit } from '../sheetData'
 import { noteUndo, restoreSheet, snapSheet } from '../undoNote'
-import { ABILITIES, SKILLS, concentrationDc, dieSize, mod, profBonus, signed, type Ability } from '../model/dnd'
+import { ABILITIES, ABILITY_NAME, SKILLS, concentrationDc, dieSize, mod, profBonus, signed, type Ability } from '../model/dnd'
 import { advOf, breakdown, concentrationAdv, deathSaveAdv, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../effects'
 import { chargesLeft, setCharges, type RegainRoll } from '../items'
 import ProfChips from './ProfChips.vue'
@@ -40,6 +40,8 @@ import DeathSaves from './DeathSaves.vue'
 import LevelUpModal from './LevelUpModal.vue'
 import ChoicesModal from './ChoicesModal.vue'
 import ShortRestModal from './ShortRestModal.vue'
+import SkillGrid from './SkillGrid.vue'
+import { freeFrame } from '../skillFrames'
 import WildShapeCard from './WildShapeCard.vue'
 import { isShared } from '../sync'
 import { XP_AT } from '../sheet'
@@ -188,6 +190,8 @@ function setOrigin(v: string) {
     if (before) x.features = x.features.filter(f => featOfFeature(f)?.id !== before)
   })
 }
+/** Editing: any skill, ○ → ● → ◉ (a given one only switches expertise); playing, or read-only here: none. */
+const sheetFrame = computed(() => (build.value && !locked.value ? freeFrame({ cycle: cycleSkill, title: skillTitle }) : undefined))
 const skillMark = (name: string) => ({ 1: '●', 2: '◉' } as Record<number, string>)[(build.value ? buildLevel(name) : skillLevel(s.value, name)) ?? 0] ?? '○'
 
 /** Damage or healing typed into the HP box: "-7" or "+5"; temp HP soaks damage first. */
@@ -433,30 +437,24 @@ onBeforeUnmount(() => {
     </div>
     <!-- abilities, then attacks, spellcasting and proficiencies, in the same column -->
     <div class="cs-grid">
-      <!-- one card per ability: score, modifier, saving throw and the skills that use it -->
-      <section class="cs-abilities">
-        <div v-for="a in ABILITIES" :key="a.key" class="cs-ability">
-          <!-- name, modifier and the score in its box -->
-          <div class="cs-ab-head">
-            <span class="cs-short" :title="a.label">{{ a.short }}</span>
-            <b v-flash="mod(scoreOf(a.key))" class="cs-mod" :class="{ 'gear-mod': scoreTip(a.key), tip: scoreTip(a.key) }" :data-tip="scoreTip(a.key)">{{ signed(mod(scoreOf(a.key))) }}</b>
-            <input v-flash="scoreOf(a.key)" class="cs-score" type="number" min="1" max="30" :value="locked ? scoreOf(a.key) : s.abilities[a.key]" :disabled="locked" :title="scoreTip(a.key) ? undefined : `${a.label} score`" @change="edit(x => x.abilities[a.key] = num($event) ?? 10)" />
-          </div>
-          <!-- the saving throw, on its own band apart from the skills -->
-          <button class="cs-skill cs-save" :class="{ on: s.saves.includes(a.key) }" :disabled="locked" :title="build ? `${a.label} saving throw: click for proficiency` : `${a.label} saving throw`" @click="toggleSave(a.key)">
-            <span class="cs-dot">{{ s.saves.includes(a.key) ? '●' : '○' }}</span><b v-flash="saveBonus(s, a.key, prof)" :class="{ 'gear-mod': saveParts(a.key).length, tip: saveParts(a.key).length }" :data-tip="tipOf(saveBonus(s, a.key, prof), saveParts(a.key))">{{ signed(saveBonus(s, a.key, prof)) }}</b><span>Saving throw</span><i v-if="saveAdv(a.key).tip" class="cs-adv tip" :class="saveAdv(a.key).mode" :data-tip="saveAdv(a.key).tip">{{ saveAdv(a.key).mode ?? '±' }}</i>
+      <!-- one card per ability: score, modifier, saving throw and the skills that use it (SkillGrid, as everywhere);
+           editing, any skill cycles ○ → ● → ◉ (the free frame) -->
+      <SkillGrid :s="s" :prof="prof" :frame="sheetFrame" :from="n => grantedSkill(n)" :level-of="n => (build ? buildLevel(n) : skillLevel(s, n))"
+                 :bonus-tip="n => (gt.skill[n]?.length ? tipOf(skillBonus(s, n, prof), gt.skill[n] ?? []) : undefined)">
+        <template #mod="{ a }"><b v-flash="mod(scoreOf(a))" class="cs-mod" :class="{ 'gear-mod': scoreTip(a), tip: scoreTip(a) }" :data-tip="scoreTip(a)">{{ signed(mod(scoreOf(a))) }}</b></template>
+        <template #score="{ a }"><input v-flash="scoreOf(a)" class="cs-score" type="number" min="1" max="30" :value="locked ? scoreOf(a) : s.abilities[a]" :disabled="locked" :title="scoreTip(a) ? undefined : `${ABILITY_NAME[a]} score`" @change="edit(x => x.abilities[a] = num($event) ?? 10)" /></template>
+        <template #save="{ a }">
+          <button class="cs-skill cs-save" :class="{ on: s.saves.includes(a) }" :disabled="locked" :title="build ? `${ABILITY_NAME[a]} saving throw: click for proficiency` : `${ABILITY_NAME[a]} saving throw`" @click="toggleSave(a)">
+            <span class="cs-dot">{{ s.saves.includes(a) ? '●' : '○' }}</span><b v-flash="saveBonus(s, a, prof)" :class="{ 'gear-mod': saveParts(a).length, tip: saveParts(a).length }" :data-tip="tipOf(saveBonus(s, a, prof), saveParts(a))">{{ signed(saveBonus(s, a, prof)) }}</b><span>Saving throw</span><i v-if="saveAdv(a).tip" class="cs-adv tip" :class="saveAdv(a).mode" :data-tip="saveAdv(a).tip">{{ saveAdv(a).mode ?? '±' }}</i>
           </button>
-          <div class="cs-skills">
-            <button v-for="sk in skillsOf(a.key)" :key="sk.name" class="cs-skill" :class="{ on: build ? buildLevel(sk.name) : s.skills[sk.name], given: build && grantedSkill(sk.name) }" :disabled="locked" :title="build ? skillTitle(sk.name) : SKILL_LEVEL[s.skills[sk.name] ?? 0] ?? ''" @click="cycleSkill(sk.name)">
-              <span class="cs-dot">{{ skillMark(sk.name) }}</span><b v-flash="skillBonus(s, sk.name, prof)" :class="{ 'gear-mod': gt.skill[sk.name]?.length, tip: gt.skill[sk.name]?.length }" :data-tip="tipOf(skillBonus(s, sk.name, prof), gt.skill[sk.name] ?? [])">{{ signed(skillBonus(s, sk.name, prof)) }}</b><span>{{ sk.name }}</span><i v-if="skillAdv(sk.name).tip" class="cs-adv tip" :class="skillAdv(sk.name).mode" :data-tip="skillAdv(sk.name).tip">{{ skillAdv(sk.name).mode ?? '±' }}</i>
-            </button>
-            <p v-if="!skillsOf(a.key).length" class="cs-noskill">no skills</p>
-          </div>
-          <!-- what else scales with it, at the bottom: initiative (DEX), passive perception (WIS) -->
-          <div v-if="a.key === 'dex'" class="cs-foot tip" :data-tip="tipOf(initTotal, gt.initiative) ?? 'Initiative: DEX modifier plus any bonus'"><span>Initiative</span><i v-if="initAdv.tip" class="cs-adv tip" :class="initAdv.mode" :data-tip="initAdv.tip">{{ initAdv.mode ?? '±' }}</i><b v-flash="initTotal" :class="{ 'gear-mod': gt.initiative.length }">{{ signed(initTotal) }}</b></div>
-          <div v-else-if="a.key === 'wis'" class="cs-foot" title="Passive perception: 10 + Perception"><span>Passive perception</span><b v-flash="passivePerception(s, prof)">{{ passivePerception(s, prof) }}</b></div>
-        </div>
-      </section>
+        </template>
+        <template #extra="{ name }"><i v-if="skillAdv(name).tip" class="cs-adv tip" :class="skillAdv(name).mode" :data-tip="skillAdv(name).tip">{{ skillAdv(name).mode ?? '±' }}</i></template>
+        <!-- what else scales with it, at the bottom: initiative (DEX), passive perception (WIS) -->
+        <template #foot="{ a }">
+          <div v-if="a === 'dex'" class="cs-foot tip" :data-tip="tipOf(initTotal, gt.initiative) ?? 'Initiative: DEX modifier plus any bonus'"><span>Initiative</span><i v-if="initAdv.tip" class="cs-adv tip" :class="initAdv.mode" :data-tip="initAdv.tip">{{ initAdv.mode ?? '±' }}</i><b v-flash="initTotal" :class="{ 'gear-mod': gt.initiative.length }">{{ signed(initTotal) }}</b></div>
+          <div v-else-if="a === 'wis'" class="cs-foot" title="Passive perception: 10 + Perception"><span>Passive perception</span><b v-flash="passivePerception(s, prof)">{{ passivePerception(s, prof) }}</b></div>
+        </template>
+      </SkillGrid>
 
       <!-- attacks, spellcasting, proficiencies -->
       <section class="cs-side">

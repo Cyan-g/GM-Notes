@@ -5,11 +5,17 @@ import { computed } from 'vue'
 import { draftHave, ownedSpells, wizard } from '../../wizard'
 import { choiceOpen, isClassOrigin, scaleAt, setPicks as setTraitPicks, speciesTraits, type ActiveTrait } from '../../species'
 import { useDraft } from '../../composables/useDraft'
+import { useDraftSheet } from '../../composables/useDraftSheet'
+import { skillSources } from '../../species'
+import { get } from '../../store'
 import EntryLink from '../EntryLink.vue'
 import TraitChoicePicker from '../TraitChoicePicker.vue'
 import MarkdownView from '../MarkdownView.vue'
 
 const { d, pc } = useDraft()
+// the skill grid of a skill choice: the character as the sheet will be, and where its skills come from
+const draftNow = useDraftSheet()
+const sources = computed(() => skillSources(draftNow.pc.value, draftNow.sheet.value, get(draftNow.d.value.cls)?.name ?? 'the class'))
 /** The class's and subclass's features at the chosen level, by where they come from. */
 const classFeatures = computed(() => speciesTraits(pc.value).filter(a => isClassOrigin(a.race) && a.active))
 const featureGroups = computed(() => [...new Map(classFeatures.value.map(a => [a.race.id, a.race])).values()].map(r => ({ r, list: classFeatures.value.filter(a => a.race.id === r.id) })))
@@ -28,7 +34,7 @@ const pickFeature = (a: ActiveTrait, picks: string[]) => { const holder = { spec
           <span v-if="scaleAt(a)" class="chip">{{ a.trait.scale!.label }} {{ scaleAt(a) }}</span></summary>
         <MarkdownView v-if="a.trait.text" class="small" :source="a.trait.text" />
       </details>
-      <TraitChoicePicker v-if="a.trait.choice" :a="a" :have="draftHave(d)" :owned="a.trait.choice.kind === 'spell' ? ownedSpells(d, { skip: a.key, withClass: true }) : undefined" @pick="p => pickFeature(a, p)" />
+      <TraitChoicePicker v-if="a.trait.choice" :a="a" :sheet="draftNow.sheet.value" :prof="draftNow.prof.value" :from="(x: string) => sources.get(x)" :have="draftHave(d)" :owned="a.trait.choice.kind === 'spell' ? ownedSpells(d, { skip: a.key, withClass: true }) : undefined" @pick="p => pickFeature(a, p)" />
     </div>
     <p v-if="g.list.some(bookkeeping)" class="muted small">Also at this level (worked out by the sheet and the Spellbook): {{ g.list.filter(bookkeeping).map(a => a.trait.name).join(', ') }}.</p>
   </template>

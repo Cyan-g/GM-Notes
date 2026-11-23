@@ -5,18 +5,20 @@
 // Choices the new features ask for show up in the sheet's Choices card afterwards, as always.
 import Dropdown from './Dropdown.vue'
 import HitDieChoice from './HitDieChoice.vue'
+import SkillGrid from './SkillGrid.vue'
+import { pickFrame } from '../skillFrames'
 import { computed, ref } from 'vue'
 import type { CharacterSheet, ClassLine, Entry, Spellbook } from '../model/types'
 import { classesOf, totalLevel } from '../model/classes'
 import { EPIC_BOON_LEVEL, basicsOf, hitDieOf, multiclassOf, rulesOf, subclassLevelOf, dieOf, classEntry } from '../classRules'
 import { bonusApplied, bonusOpen, type BonusChoice } from '../abilityBonus'
 import { byType, entries, get, listOptions } from '../store'
-import { castingAbility, maxHpOf } from '../sheet'
+import { castingAbility, maxHpOf, skillLevel } from '../sheet'
 import { classSlotsAt } from '../slots'
 import MarkdownView from './MarkdownView.vue'
 import FeatureChoices from './FeatureChoices.vue'
 import { editSheet, profsToEdit, sheetToEdit } from '../sheetData'
-import { SKILLS, mod, signed, ABILITY_KEYS, ORD } from '../model/dnd'
+import { SKILLS, mod, signed, ABILITY_KEYS, ORD, profBonus } from '../model/dnd'
 import { itemNamed } from '../lookup'
 import { rule } from '../rules'
 import { gearTotals, scoreWith } from '../effects'
@@ -117,12 +119,16 @@ const prereqs = computed(() => {
 const allowAnyway = ref(false)
 const mcSkills = ref<string[]>([])
 const mcInstrument = ref('')
-const skillList = computed(() => { const from = rulesOf(cls.value)?.skills.from ?? []; return (from.length ? from : SKILLS.map(x => x.name)).filter(x => !props.s.skills[x] && !mcSkills.value.includes(x)) })
-function addSkill(ev: Event) {
-  const el = ev.target as HTMLSelectElement
-  if (el.value && mcSkills.value.length < (mc.value?.skills ?? 0)) mcSkills.value = [...mcSkills.value, el.value]
-  el.value = ''
-}
+/** The new class's skills on the skill grid: only its list, its count; the picks show as they'll be. */
+const mcFrame = computed(() => {
+  const from = rulesOf(cls.value)?.skills.from ?? []
+  const f = pickFrame({
+    candidates: from.length ? from : SKILLS.map(x => x.name), picked: mcSkills.value, count: mc.value?.skills ?? 0, prof: profBonus(newLevel.value),
+    levelOf: n => skillLevel(props.s, n),
+    toggle: n => { mcSkills.value = mcSkills.value.includes(n) ? mcSkills.value.filter(x => x !== n) : [...mcSkills.value, n] },
+  })
+  return { ...f, level: (n: string) => (mcSkills.value.includes(n) ? Math.max(1, skillLevel(props.s, n)) : undefined) }
+})
 const instruments = computed(() => entries.value.filter(isToolKind).sort((a, b) => a.name.localeCompare(b.name)))
 const gains = computed(() => (mc.value ? [...mc.value.armor.map(x => (x === 'Shield' ? 'Shields' : `${x} armor`)), ...mc.value.weapons.map(x => `${x} weapons`), ...mc.value.tools.map(t => get(t)?.name ?? t)] : []))
 const pickFeat = (id: string) => { feat.value = id; choice.value = { picks: [] } }
@@ -271,12 +277,8 @@ function apply() {
           <p v-if="!multiclassOf(cls)" class="small muted">{{ label(cls) }} has no multiclassing rules here; add its proficiencies on the Edit page.</p>
           <p v-else class="small">Gains: {{ gains.join(', ') || 'no armor, weapon or tool proficiencies' }}</p>
           <div v-if="mc?.skills" class="lu-pick">
-            <span class="small">Skill ({{ mcSkills.length }}/{{ mc.skills }}):</span>
-            <Dropdown v-if="mcSkills.length < mc.skills" aria-label="Skill" @change="addSkill">
-              <option value="">＋ Skill</option>
-              <option v-for="x in skillList" :key="x" :value="x">{{ x }}</option>
-            </Dropdown>
-            <span v-for="x in mcSkills" :key="x" class="chip">{{ x }} <button class="link-btn" title="Take it back" @click="mcSkills = mcSkills.filter(y => y !== x)">×</button></span>
+            <span class="small">Skill{{ mc.skills === 1 ? '' : 's' }} from {{ cls }} ({{ mcSkills.length }}/{{ mc.skills }}):</span>
+            <SkillGrid compact no-saves :s="s" :prof="profBonus(newLevel)" :frame="mcFrame" :class="{ 'wz-todo': mcSkills.length < mc.skills }" />
           </div>
           <div v-if="mc?.instruments" class="lu-pick">
             <span class="small">Musical instrument:</span>

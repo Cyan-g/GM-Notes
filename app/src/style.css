@@ -1831,6 +1831,27 @@ button.live-tag { cursor: pointer; }
 @keyframes wz-flash { 0% { outline-color: var(--accent); outline-width: 4px; } 100% { outline-width: 2px; } }
 .wz-next-open { margin-right: .4rem; }
 .wz-ch-intro { padding: 2rem 1rem; max-width: 40rem; }
+/* the skill grid (SkillGrid): the same everywhere; what the frame lets change is bright, the rest shown but quiet */
+.skill-grid .cs-skill[aria-disabled=true] { cursor: default; }
+.skill-grid .cs-skill[aria-disabled=true]:hover { background: none; }
+.skill-grid .cs-skill.can { color: var(--ink); }
+.skill-grid .cs-skill.off:not(.on) { opacity: .5; }
+.skill-grid .cs-skill.sg-picked { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--ink); }
+.skill-grid .cs-skill.sg-selected { outline: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 20%, transparent); }
+.skill-grid .cs-skill.sg-back { opacity: .8; font-style: italic; }
+.sg-then { color: var(--accent); font-size: .9em; white-space: nowrap; }
+/* compact: a choice's grid, the level-up's; a line per skill, as many columns as fit */
+.sg-wrap.compact { flex-basis: 100%; width: 100%; container-type: inline-size; }
+.skill-grid.compact { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; gap: .3rem; margin: .35rem 0; }
+@container (min-width: 27rem) { .skill-grid.compact { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@container (min-width: 54rem) { .skill-grid.compact { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.skill-grid.compact .cs-ability { padding: .15rem .25rem .2rem; }
+.skill-grid.compact .cs-ab-head { gap: .25rem; }
+.skill-grid.compact .cs-mod { font-size: .95rem; }
+.skill-grid.compact .cs-skill { font-size: 12px; line-height: 1.35; grid-template-columns: .9em 1.8em minmax(0, 1fr) auto; padding: 0 .15rem; }
+.skill-grid.compact .cs-skills { padding-top: .1rem; }
+.skill-grid.compact .cs-noskill { font-size: 11px; margin: .1rem 0; }
+.sp-chips { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: .25rem; margin: .3rem 0; }
 /* the header: the step's title, the level, what's still to choose here, Back and Next */
 .wizard-head .wz-nav { margin-left: auto; }
 .wz-head-level { display: inline-flex; align-items: center; gap: .35rem; font-size: 13px; color: var(--muted); }
@@ -1860,12 +1881,12 @@ button.live-tag { cursor: pointer; }
 .wz-sp-tile.had .wz-sp-name::after { content: ' ✓'; color: var(--muted); font-weight: 400; }
 @media (max-width: 760px) { .wz-spells { grid-template-columns: 1fr; height: auto; } .wz-sp-grid { max-height: 60vh; } }
 /* the sheet's ability cards in the creator (WzAbilityCards): six in a row where there's room */
-.wz-cs-abilities { grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr)); grid-auto-rows: auto; padding: .2rem; margin: .4rem 0 .8rem; }
-.wz-cs-score { justify-self: end; min-width: 2.4em; padding: 0 .3em; border: 1px solid var(--line); border-radius: 6px; font-size: 12.5px; text-align: center; color: var(--ink-2); }
-.wz-cs-abilities .cs-skill { grid-template-columns: 1em 2em minmax(0, 1fr) auto; font-size: 13px; }
-.wz-cs-abilities .cs-skill:disabled { cursor: default; }
-.wz-cs-abilities .cs-skill.can { color: var(--ink); }
-.wz-cs-abilities .cs-skill:not(.can):not(.on):disabled { opacity: .6; }
+.wizard-page .sg-wrap { container-type: inline-size; }
+.wizard-page .skill-grid:not(.compact) { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; padding: .2rem; margin: .4rem 0 .8rem; }
+@container (min-width: 40rem) { .wizard-page .skill-grid:not(.compact) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@container (min-width: 76rem) { .wizard-page .skill-grid:not(.compact) { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.sg-score { justify-self: end; min-width: 2.4em; padding: 0 .3em; border: 1px solid var(--line); border-radius: 6px; font-size: 12.5px; text-align: center; color: var(--ink-2); }
+.wizard-page .skill-grid .cs-skill { grid-template-columns: 1em 2em minmax(0, 1fr) auto; font-size: 13px; }
 .wz-score-src { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .7rem; }
 .wz-src-label { font-size: 13px; color: var(--muted); }
 .wz-src-label + .seg + .wz-src-label { margin-left: 1rem; }

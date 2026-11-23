@@ -540,6 +540,13 @@ export function toolKindOf(e: Entry | undefined): Entry | undefined {
   const of = String(e.fields.subtype ?? '').match(/\(([^)]+)\)\s*$/)?.[1]?.trim().toLowerCase()
   return of ? Object.values(state.db?.entries ?? {}).find(x => isToolKind(x) && x.name.trim().toLowerCase() === of) : undefined
 }
+/** Where each skill a character is proficient in comes from: what gives it (Acolyte, Human: Skillful), else the sheet. */
+export function skillSources(pc: Entry | undefined, s: CharacterSheet | undefined, rest = 'the class or the sheet'): Map<string, string> {
+  const m = new Map<string, string>()
+  for (const g of speciesGrants(pc, s)) if (g.kind === 'skill' && !m.has(g.id)) m.set(g.id, g.from)
+  for (const [k, v] of Object.entries(s?.skills ?? {})) if (v && !m.has(k)) m.set(k, rest)
+  return m
+}
 /** The candidates for a grant or a choice of a kind: id and label. */
 export function grantOptions(kind: TraitGrant['kind']): { id: string; label: string }[] {
   switch (kind) {

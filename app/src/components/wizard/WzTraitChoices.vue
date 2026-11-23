@@ -11,12 +11,17 @@ import { get } from '../../store'
 import { choiceOpen, isClassOrigin, setCastAbility, sourceTag, speciesTraits, takenByOthers, type ActiveTrait } from '../../species'
 import { renderInline } from '../../markdown'
 import { useDraft } from '../../composables/useDraft'
+import { useDraftSheet } from '../../composables/useDraftSheet'
+import { skillSources } from '../../species'
 import { inputValue as val } from '../../dom'
 import TraitChoicePicker from '../TraitChoicePicker.vue'
 import MarkdownView from '../MarkdownView.vue'
 
 const props = defineProps<{ which: 'species' | 'subrace' | 'background' | 'feat'; feat?: string; via?: string }>()
 const { d, pc } = useDraft()
+// the skill grid of a skill choice: the character as the sheet will be, and where its skills come from
+const draftNow = useDraftSheet()
+const sources = computed(() => skillSources(draftNow.pc.value, draftNow.sheet.value, get(draftNow.d.value.cls)?.name ?? 'the class'))
 const all = computed(() => speciesTraits(pc.value))
 const kindOf = (a: ActiveTrait) => (a.race.type !== 'race' ? 'background' : a.race.fields.parent ? 'subrace' : 'species')
 const inFeats = (a: ActiveTrait) => a.race.type === 'feat' || a.trait.choice?.kind === 'feat'
@@ -39,7 +44,7 @@ const setCast = (a: ActiveTrait, ab: string) => { const holder = { species: { ..
     <b>{{ a.trait.name }}</b> <span class="feat-tag" :class="'tag-' + a.race.type">{{ sourceTag(a) }}</span>
     <details v-if="(a.trait.text ?? '').length > 220" class="small wz-rules"><summary>Rules</summary><MarkdownView :source="a.trait.text!" /></details>
     <p v-else-if="a.trait.text" class="small md" v-html="renderInline(a.trait.text)" />
-    <TraitChoicePicker v-if="a.trait.choice" :a="a" :taken="takenByOthers(all, a)" :have="draftHave(d)" :owned="a.trait.choice.kind === 'spell' ? ownedSpells(d, { skip: a.key, withClass: true }) : undefined" @pick="p => setPicks(a, p)" />
+    <TraitChoicePicker v-if="a.trait.choice" :a="a" :sheet="draftNow.sheet.value" :prof="draftNow.prof.value" :from="(x: string) => sources.get(x)" :taken="takenByOthers(all, a)" :have="draftHave(d)" :owned="a.trait.choice.kind === 'spell' ? ownedSpells(d, { skip: a.key, withClass: true }) : undefined" @pick="p => setPicks(a, p)" />
     <label v-if="a.trait.castWith?.among?.length" class="small wz-cast">Casts its spells with
       <Dropdown :value="a.cast ?? ''" @change="setCast(a, val($event))">
         <option value="">Choose…</option>

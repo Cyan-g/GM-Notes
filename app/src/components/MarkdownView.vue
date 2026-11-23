@@ -41,7 +41,10 @@ async function resolveFiles() {
 // up its row. The app never rolls: the players and the DM do. ----
 function rangeOf(cell: string): [number, number] | undefined {
   const m = cell.replace(/\s/g, '').match(/^(\d+)(?:[-–—](\d+))?\+?$/)
-  return m ? [Number(m[1]), Number(m[2] ?? (cell.includes('+') ? 1e9 : m[1]))] : undefined
+  if (!m) return undefined
+  // a d100 table's "00" is 100 ("97–00", or "00" alone)
+  const hundred = (s: string) => (/^0+$/.test(s) && s.length > 1 ? 100 : Number(s))
+  return [hundred(m[1]), m[2] != null ? hundred(m[2]) : cell.includes('+') ? 1e9 : hundred(m[1])]
 }
 function rollTables() {
   const el = root.value
@@ -51,6 +54,7 @@ function rollTables() {
     if (!/^(roll|\d*d\d+)$/i.test(head) || table.previousElementSibling?.classList.contains('roll-pick')) continue
     const box = document.createElement('div')
     box.className = 'roll-pick'
+    table.classList.add('roll-table')
     box.innerHTML = '<label>Rolled <input type="number" min="1" placeholder="#" title="Type what was rolled: its row lights up" /></label>'
     const input = box.querySelector('input')!
     input.addEventListener('input', () => {

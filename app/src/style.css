@@ -2400,6 +2400,7 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .roll-pick label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: .4rem; }
 .roll-pick input { width: 4.5rem; padding: .15rem .4rem; }
 .md tr.rolled td { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--ink); }
+.md table.roll-table td:first-child { white-space: nowrap; }
 .outline-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .15rem; max-height: 22rem; overflow: auto; }
 .outline-list li.sub { padding-left: 1rem; font-size: 13px; }
 .outline-list .link-btn { text-align: left; }

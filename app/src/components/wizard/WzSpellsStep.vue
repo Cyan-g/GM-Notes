@@ -11,7 +11,6 @@ import { ownedSpells, spellChoices, spellCounts, wizard } from '../../wizard'
 import { ORD } from '../../model/dnd'
 import { rollsOf, saveText } from '../../spells'
 import { get } from '../../store'
-import { hrefEntry } from '../../router'
 import { useDraft } from '../../composables/useDraft'
 import EntryLink from '../EntryLink.vue'
 import SpellCard from '../SpellCard.vue'
@@ -184,7 +183,7 @@ function pick(id: Id) {
           <button v-else type="button" class="chip-btn" :class="{ on: d.spells.includes(lookedEntry.id), primary: !d.spells.includes(lookedEntry.id) }" @click="toggleSpell('spells', lookedEntry.id, counts.prepared)">{{ d.spells.includes(lookedEntry.id) ? '✓ Prepared' : 'Prepare it' }}</button>
           <span v-if="hasIt(lookedEntry.id)" class="small muted">Already has it: {{ hasIt(lookedEntry.id) }}</span>
         </div>
-        <h3 class="wz-page-head">{{ lookedEntry.name }} <a :href="hrefEntry(lookedEntry.id)" class="small" title="Its own page">open its page</a></h3>
+        <h3 class="wz-page-head">{{ lookedEntry.name }}</h3>
         <SpellCard :e="lookedEntry" />
       </template>
       <div v-else class="wz-ch-intro">

@@ -7,7 +7,6 @@ import { computed, ref } from 'vue'
 import type { Entry } from '../model/types'
 import { classLabel } from '../classRules'
 import { traitsOf } from '../model/traits'
-import { hrefEntry } from '../router'
 import { formatMoney, get } from '../store'
 import { abilityBonusText } from '../abilityBonus'
 import MarkdownView from './MarkdownView.vue'
@@ -16,7 +15,7 @@ import RaceGlance from './RaceGlance.vue'
 import TraitList from './TraitList.vue'
 
 /** `level`: a class's or subclass's features up to it come first, as a line ("At level 3: …"). */
-const props = defineProps<{ e: Entry; title?: string; level?: number }>()
+const props = defineProps<{ e: Entry; title?: string; level?: number; /** In a pop-up: no heading of its own. */ bare?: boolean }>()
 const traits = computed(() => traitsOf(props.e))
 // a description that's only the source line ("Source: System Reference Document 5.2.1") isn't one
 const hasLore = computed(() => !!props.e.body.trim() && !/^\*?\s*source:[^\n]*\*?$/i.test(props.e.body.trim()))
@@ -53,7 +52,7 @@ function toggled(part: string, ev: Event) {
 
 <template>
   <section class="wz-page">
-    <h3 class="wz-page-head">{{ title ?? e.name }} <a :href="hrefEntry(e.id)" class="small" target="_self" title="Its own page">open its page</a></h3>
+    <h3 v-if="!bare" class="wz-page-head">{{ title ?? e.name }}</h3>
     <p v-if="upTo.length || next" class="wz-at-level small">
       <b>At level {{ level }}:</b>
       <span v-for="t in upTo" :key="t.id" class="chip" :title="(t.text ?? '').slice(0, 300)">{{ t.name }}</span>

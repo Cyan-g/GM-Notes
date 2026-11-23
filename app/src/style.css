@@ -1831,6 +1831,12 @@ button.live-tag { cursor: pointer; }
 @keyframes wz-flash { 0% { outline-color: var(--accent); outline-width: 4px; } 100% { outline-width: 2px; } }
 .wz-next-open { margin-right: .4rem; }
 .wz-ch-intro { padding: 2rem 1rem; max-width: 40rem; }
+/* the header: the step's title, the level, what's still to choose here, Back and Next */
+.wizard-head .wz-nav { margin-left: auto; }
+.wz-head-level { display: inline-flex; align-items: center; gap: .35rem; font-size: 13px; color: var(--muted); }
+.wz-head-level input { width: 4rem; }
+.wz-head-open { color: var(--accent); max-width: 34rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry-modal { width: min(52rem, 94vw); max-height: 88vh; overflow-y: auto; }
 /* the Spells step: level tabs, filters, the level's spells as tiles; the card of the one looked at beside them */
 .wz-area:has(> .wz-spells) { overflow: hidden; display: flex; flex-direction: column; padding-bottom: 0; }
 .wz-area:has(> .wz-spells) > * { flex: none; }

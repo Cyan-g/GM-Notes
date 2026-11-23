@@ -8,7 +8,7 @@
     "build": "vue-tsc --noEmit && vite build",
     "desktop": "npm run build && electron .",
     "dist": "npm run build && electron-builder --publish never -c.directories.output=%LOCALAPPDATA%/GM-Notes-build",
-    "release": "npm run build && electron-builder --publish always",
+    "release": "npm run build && electron-builder --publish never",
     "seed": "jiti scripts/seed.ts"
   },
   "dependencies": {
@@ -64,12 +64,24 @@
     },
     "mac": {
       "target": [
-        "dmg",
-        "zip"
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "universal"
+          ]
+        }
       ],
       "category": "public.app-category.role-playing-games",
       "icon": "build/icon.png",
-      "identity": null
+      "identity": "-",
+      "hardenedRuntime": false,
+      "artifactName": "GM-Notes-${version}-${arch}-mac.${ext}"
     },
     "dmg": {
       "artifactName": "GM-Notes-${version}-${arch}.${ext}"

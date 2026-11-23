@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // An organization's standing with the party, and once added: where else it is, what it's after, its secret and
 // what joining gives. Its type, parent and seat are in the Details card beside it.
+import LinkTextarea from './LinkTextarea.vue'
 import { computed } from 'vue'
 import type { Entry } from '../../model/types'
 import { TYPES, byKey } from '../../model/schema'
@@ -12,7 +13,6 @@ import AttitudePicker from './AttitudePicker.vue'
 import PartRow from './PartRow.vue'
 import AddPartsBar from './AddPartsBar.vue'
 import { inputValue as val } from '../../dom'
-import { grow, vGrow } from '../../directives/grow'
 
 const props = defineProps<{ entry: Entry }>()
 const f = computed(() => props.entry.fields)
@@ -39,7 +39,7 @@ const { shown, addable, open, close } = useParts(PARTS, k => !isEmpty(byKey(f.va
     </div>
     <div class="npc-roleplay">
       <PartRow v-for="k in shown" :key="k" :label="def(k).label" :dm-only="k === 'secret'" @remove="close(k)">
-        <textarea v-if="k === 'goals' || k === 'secret'" v-grow rows="1" :value="(f[k] as string) ?? ''" :placeholder="HINT[k]" @input="grow($event.target as HTMLTextAreaElement)" @change="set(k, val($event).trim())" />
+        <LinkTextarea v-if="k === 'goals' || k === 'secret'" grow rows="1" :value="(f[k] as string) ?? ''" :placeholder="HINT[k]" @change="set(k, val($event).trim())" />
         <FieldInput v-else :def="def(k)" :entry="entry" />
       </PartRow>
       <AddPartsBar class="npc-add" :parts="addable" :label="k => def(k).label" :title="k => TITLE[k]" @add="open" />

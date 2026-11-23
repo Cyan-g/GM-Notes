@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // An NPC's who-they-are line (occupation, attitude to the party, status) and how to play them. The roleplay parts
 // show once added: an NPC with only a name isn't a page of empty boxes.
+import LinkTextarea from './LinkTextarea.vue'
 import { computed } from 'vue'
 import type { Entry } from '../../model/types'
 import { TYPES } from '../../model/schema'
@@ -14,7 +15,6 @@ import AttitudePicker from './AttitudePicker.vue'
 import PartRow from './PartRow.vue'
 import AddPartsBar from './AddPartsBar.vue'
 import { inputValue as val } from '../../dom'
-import { grow, vGrow } from '../../directives/grow'
 
 const props = defineProps<{ entry: Entry }>()
 const f = computed(() => props.entry.fields)
@@ -62,7 +62,7 @@ const { shown, addable, open, close } = useParts(PARTS, k => !isEmpty(f.value[k]
     <div class="npc-roleplay">
       <PartRow v-for="k in shown" :key="k" :label="label(k)" :dm-only="k === 'secret'" @remove="close(k)">
         <ListInput v-if="k === 'personality'" :model-value="f.personality ?? []" :options="traits" :placeholder="HINT[k]" @update:model-value="v => set('personality', v)" />
-        <textarea v-else v-grow rows="1" :value="f[k] ?? ''" :placeholder="HINT[k]" @input="grow($event.target as HTMLTextAreaElement)" @change="set(k, val($event).trim())" />
+        <LinkTextarea v-else grow rows="1" :value="f[k] ?? ''" :placeholder="HINT[k]" @change="set(k, val($event).trim())" />
       </PartRow>
       <AddPartsBar class="npc-add" :parts="addable" :label="label" :lead="shown.length ? undefined : 'How to play them:'" @add="open" />
     </div>

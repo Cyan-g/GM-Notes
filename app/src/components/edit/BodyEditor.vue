@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Markdown editor: typing [[ suggests entries, pasted or dropped pictures are saved to data/images.
+import LinkTextarea from './LinkTextarea.vue'
 import AppIcon from '../AppIcon.vue'
 import TypeIcon from '../TypeIcon.vue'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
@@ -12,7 +13,9 @@ import MarkdownView from '../MarkdownView.vue'
 const props = defineProps<{ modelValue: string; hint?: string; compact?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [string] }>()
 
-const ta = ref<HTMLTextAreaElement>()
+const lt = ref<InstanceType<typeof LinkTextarea>>()
+/** The text box (LinkTextarea's textarea). */
+const ta = computed(() => lt.value?.el)
 const mode = ref<'write' | 'split' | 'preview'>(window.innerWidth > 1300 ? 'split' : 'write')
 const busy = ref('')
 
@@ -164,7 +167,7 @@ async function onPick(ev: Event) {
     </div>
     <div class="be-panes">
       <div v-show="mode !== 'preview'" class="be-write">
-        <textarea ref="ta" :value="modelValue" spellcheck="true" placeholder="Write here. Type [[ to link to another entry."
+        <LinkTextarea ref="lt" :value="modelValue" spellcheck="true" placeholder="Write here. Type [[ to link to another entry."
           @input="onInput" @keydown="onKey" @blur="ac = null" @paste="onPaste" @drop="onDrop" @dragover.prevent />
         <ul v-if="ac && results.length" class="picker-list ac" :style="{ top: ac.top + 'px', left: ac.left + 'px' }">
           <li v-for="(e, i) in results" :key="e.id" :class="{ sel: i === sel }" @mousedown.prevent="insertLink(i)" @mousemove="sel = i">

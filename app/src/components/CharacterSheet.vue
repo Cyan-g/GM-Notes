@@ -6,6 +6,7 @@
 // On the Edit page (`build`) it also opens what's set when building the character: classes and their levels
 // (multiclassing), max HP, AC, speed, scores, proficiencies, spellcasting and features.
 // Hit dice come from the classes, one pool per die size, each spent on its own.
+import LinkTextarea from './edit/LinkTextarea.vue'
 import Dropdown from './Dropdown.vue'
 import { useReadOnly, useReadOnlyShared } from '../composables/useReadOnly'
 import AppIcon from './AppIcon.vue'
@@ -505,7 +506,7 @@ onBeforeUnmount(() => {
         </label>
         <div v-for="(f, i) in s.features" :key="i" class="cs-feature">
           <input :value="f.name" placeholder="Name, e.g. Bardic Inspiration (d6)" @change="edit(x => x.features[i].name = ($event.target as HTMLInputElement).value)" />
-          <textarea rows="2" :value="f.text" placeholder="What it does" @change="edit(x => x.features[i].text = ($event.target as HTMLTextAreaElement).value)" />
+          <LinkTextarea rows="2" :value="f.text" placeholder="What it does" @change="edit(x => x.features[i].text = ($event.target as HTMLTextAreaElement).value)" />
           <button class="link-btn" title="Remove" @click="edit(x => x.features.splice(i, 1))">✕</button>
         </div>
       </template>

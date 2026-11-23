@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // The wizard's name and story step: the character's name, its player (in the DM's world), its looks and its story.
+import LinkTextarea from '../edit/LinkTextarea.vue'
 import { computed } from 'vue'
 import { byType, get, playerMode } from '../../store'
 import { defaultCampaigns, wizard } from '../../wizard'
@@ -40,7 +41,7 @@ const dropCampaign = (id: string) => { wizard.d.campaigns = chosen.value.filter(
     </section>
     <section class="card wz-story">
       <h3>Story</h3>
-      <textarea :value="d.story" placeholder="Where they come from, what they want… (Markdown)" aria-label="Story" @input="wizard.d.story = val($event)" />
+      <LinkTextarea :value="d.story" placeholder="Where they come from, what they want… (Markdown)" aria-label="Story" @input="wizard.d.story = val($event)" />
     </section>
   </div>
 </template>

@@ -2769,3 +2769,17 @@ select.dd option:is(:hover, :focus-visible)::before {
 .sbk-m.needed { color: var(--accent); border-color: var(--accent); }
 .sbk-m.cost { color: var(--ink); border-color: var(--ink-2); }
 .sbk-focus b { font-size: 13px; font-weight: 500; }
+/* LinkTextarea: the text drawn behind a see-through textarea, with its links and secret blocks marked (no padding or
+   weight on the marks: the letters have to line up with the textarea's) */
+.lt-wrap { position: relative; display: block; min-width: 0; }
+.lt-back { position: absolute; z-index: 0; overflow: hidden; box-sizing: border-box; white-space: pre-wrap; overflow-wrap: break-word; color: var(--ink); background: var(--panel); pointer-events: none; }
+.lt-ta { position: relative; z-index: 1; background: transparent !important; color: transparent !important; caret-color: var(--ink); }
+.lt-ta::placeholder { color: var(--muted); }
+.lt-ta::selection { color: transparent; background: color-mix(in srgb, var(--accent) 30%, transparent); }
+.lt-back .lt-link { color: var(--link); background: color-mix(in srgb, var(--link) 14%, transparent); border-radius: 3px; }
+.lt-back .lt-link.missing { color: var(--muted); background: none; text-decoration: underline dashed; }
+.lt-back .lt-web { color: var(--link); text-decoration: underline; }
+.lt-back .lt-secret { background: var(--secret-bg); box-shadow: 0 0 0 1px var(--secret-line); }
+.lt-hint { position: absolute; right: .5rem; bottom: .4rem; z-index: 2; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: .05rem .5rem; border-radius: 999px; font-size: 11px; background: var(--chip); color: var(--ink-2); pointer-events: none; }
+.lt-hint.missing { color: var(--muted); }
+.feat-edit .lt-wrap { grid-column: 1 / -1; }

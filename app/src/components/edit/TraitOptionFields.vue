@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The parts a species trait and each option of its choice share: name, text, effects (as on gear), the proficiencies
 // and languages it grants, and the spells it gives.
+import LinkTextarea from './LinkTextarea.vue'
 import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import type { TraitGrant, TraitOption, TraitSpell } from '../../model/types'
@@ -73,7 +74,7 @@ const removeSpell = (i: number) => put({ spells: spells.value.filter((_, k) => k
         <option v-for="o in siblings.filter(x => x.id !== model.id)" :key="o.id" :value="o.id">{{ o.name }}</option>
       </Dropdown></label>
     </div>
-    <label class="trait-text"><span>Text</span><textarea :rows="rows(model.text)" :value="model.text ?? ''" placeholder="What it says (shown on the sheet)" @input="put({ text: val($event) })" /></label>
+    <label class="trait-text"><span>Text</span><LinkTextarea :rows="rows(model.text)" :value="model.text ?? ''" placeholder="What it says (shown on the sheet)" @input="put({ text: val($event) })" /></label>
     <div class="trait-part"><span class="trait-label">Effects</span><EffectsInput traits :model-value="model.effects" @update:model-value="v => put({ effects: v })" /></div>
     <div class="trait-part">
       <span class="trait-label">Grants</span>

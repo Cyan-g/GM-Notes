@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // A creature's statblock as a form: buttons and boxes instead of statblock text. The free-text parts of the
 // stored statblock ("30 ft., fly 30 ft. (hover)", "perception +5") are read into fields and written back the same way.
+import LinkTextarea from './LinkTextarea.vue'
 import Dropdown from '../Dropdown.vue'
 import { computed, onMounted, ref } from 'vue'
 import { loadSrdMonsters, srdMonster, srdMonsterNames, withSrd } from '../../srd'
@@ -16,7 +17,6 @@ import { attackText, statProblems } from '../../creatures'
 import { ABILITY_KEYS, ABILITY_NAME, CONDITIONS, SKILLS as SKILL_LIST, crProf, mod, signed, type Ability } from '../../model/dnd'
 import type { StatAttack } from '../../model/types'
 import { inputValue as val } from '../../dom'
-import { grow, vGrow } from '../../directives/grow'
 
 const props = defineProps<{ entry: Entry }>()
 const sb = computed<Statblock>(() => (props.entry.fields.statblock) ?? {})
@@ -437,7 +437,7 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
           </div>
           <p class="muted small cf-attack-line">{{ attackText(sb, f.attack) }}</p>
         </template>
-        <textarea v-else v-grow :value="f.text" rows="2" :placeholder="tab === 'actions' ? ATTACK : 'What it does'" @input="grow($event.target as HTMLTextAreaElement)" @change="setFeat(i, { text: val($event) })" />
+        <LinkTextarea v-else grow :value="f.text" rows="2" :placeholder="tab === 'actions' ? ATTACK : 'What it does'" @change="setFeat(i, { text: val($event) })" />
       </div>
       <p v-if="!feats(tab).length" class="muted small">None yet.</p>
       <button type="button" class="chip-btn" @click="addFeat">＋ Add {{ FEATS.find(x => x[0] === tab)![1].toLowerCase().replace(/s$/, '') }}</button>

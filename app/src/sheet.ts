@@ -2,7 +2,7 @@
 // rules: modifiers, proficiency bonus, saves, skills, armor class, attacks and spellcasting; and what's done with it
 // (the current character, the Workbench, equipping and dragging inventory lines, rests).
 import { computed, reactive } from 'vue'
-import { restSlots } from './slots'
+import { THIRD, restSlots } from './slots'
 import { classesOf, totalLevel } from './model/classes'
 import type { CharacterSheet, Crafting, Entry, GearEffect, Id, InventoryLine, Proficiencies, Spellbook, SpellRoll } from './model/types'
 import { MARTIAL_WEAPONS, MASTERY_OF, SIMPLE_WEAPONS } from './model/schema'
@@ -276,7 +276,12 @@ export function castingAbility(pc: Entry, s: CharacterSheet): Ability | undefine
   if (s.spellAbility) return s.spellAbility
   // The highest level class that casts.
   const lines = [...classesOf(pc)].sort((a, b) => (Number(b.level) || 0) - (Number(a.level) || 0))
-  for (const l of lines) { const a = castingOf(l.class); if (a) return a }
+  for (const l of lines) {
+    const a = castingOf(l.class)
+    if (a) return a
+    // a Fighter or Rogue who casts through their subclass (Eldritch Knight, Arcane Trickster): Wizard spells, with INT
+    if ((l.class === 'Fighter' || l.class === 'Rogue') && THIRD.test(get(l.subclass)?.name ?? '')) return 'int'
+  }
   return undefined
 }
 

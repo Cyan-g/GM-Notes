@@ -459,7 +459,11 @@ export function swappableSpells(a: ActiveTrait, s?: CharacterSheet): { key: stri
  */
 export function classSpellsFrom(pc: Entry | undefined, how: 'list' | 'book', cls = '', s?: CharacterSheet): { spell: Id; from: string }[] {
   return speciesTraits(pc, s).filter(a => a.active && (!cls || !isClassOrigin(a.race) || a.race.fields.class === cls))
-    .flatMap(a => (a.trait.spells ?? []).filter(x => x.how === how && (x.from ?? 1) <= a.level && get(x.spell)).map(x => ({ spell: x.spell, from: a.trait.name })))
+    .flatMap(a => [
+      ...(a.trait.spells ?? []).filter(x => x.how === how && (x.from ?? 1) <= a.level && get(x.spell)).map(x => ({ spell: x.spell, from: a.trait.name })),
+      // spells the player picked in a spell choice of that kind (a Wizard's Abjuration Savant: free in the spellbook)
+      ...(a.trait.choice?.kind === 'spell' && a.trait.choice.spell?.how === how ? a.picks.filter(id => get(id)).map(spell => ({ spell, from: a.trait.name })) : []),
+    ])
 }
 /**
  * A class's spells for a character: its list (and the lists and spells its features add, Magical Secrets, a

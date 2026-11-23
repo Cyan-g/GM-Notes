@@ -53,7 +53,6 @@ const rows = computed(() => props.items.map((x, i) => ({ x, head: x.group && x.g
   <div class="wz-chooser">
     <div class="wz-ch-side">
       <slot name="top" />
-      <span v-if="need" class="wz-left wz-ch-left">{{ needText ?? 'Pick one' }}</span>
       <div ref="list" class="wz-ch-list" :class="{ 'wz-todo': need }" role="listbox" tabindex="0" :aria-label="label" :aria-activedescendant="shown ? `wzc-${shown.id}` : undefined" @keydown="key">
         <template v-for="{ x, head } in rows" :key="x.id">
           <div v-if="head" class="wz-ch-group">{{ head }}</div>

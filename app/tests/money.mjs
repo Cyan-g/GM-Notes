@@ -25,3 +25,18 @@ assert.equal(cp('1.255,3 gp'), 125530)
 assert.equal(cp('12.73 gp'), 1273)
 assert.match(cp('1.2.3'), /isn't a number/)
 console.log('money (separators): ok')
+import { formatCoins, coinCount, cleanCurrency, mainWorth, STANDARD_CURRENCY as STD } from '../src/money.ts'
+assert.equal(formatCoins(1273, STD), '12 gp 7 sp 3 cp')
+assert.equal(formatCoins(150000, STD), '1,500 gp')
+assert.equal(formatCoins(0, STD), '0 cp')
+assert.equal(formatCoins(-50, STD), '−5 sp')
+assert.equal(coinCount(1273, STD), 22)
+// Shadowdark-like, and a world with a smaller base: 4 bits = 1 cp
+const SD = cleanCurrency({ coins: [{ abbr: 'bit', name: 'bit', per: 1 }, { abbr: 'cp', name: 'copper', per: 4 }, { abbr: 'sp', name: 'silver', per: 10 }, { abbr: 'gp', name: 'gold', per: 20 }], main: 'gp' })
+assert.equal(mainWorth(SD), 800)
+const sd = (t, cur) => { const r = parseMoney(t, cur, SD); return 'cp' in r ? r.cp : r.error }
+assert.equal(sd('2'), 1600)
+assert.equal(sd('1 gp 3 sp 2 cp 1 bit'), 800 + 120 + 8 + 1)
+assert.equal(formatCoins(929, SD), '1 gp 3 sp 2 cp 1 bit')
+assert.match(sd('5 ep'), /coins: bit, cp, sp, gp/)
+console.log('money (currency): ok')

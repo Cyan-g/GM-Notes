@@ -8,6 +8,7 @@ import type { Combatant, Id, Statblock } from '../model/types'
 import { byType, get, playerMode, touch } from '../store'
 import { newCombatantId, statsOf } from '../encounter'
 import { currentCampaign } from '../sessions'
+import { rule } from '../rules'
 import { addCombatant, addEntryToTracker, addPlayers, clearTracker, isParty, loadEncounter, nextTurn, partyOf, rollInitiative, sortByInitiative, fighterStats, tracker } from '../tracker'
 import { hrefEntry } from '../router'
 import EntryLink from '../components/EntryLink.vue'
@@ -16,6 +17,12 @@ import StatblockView from '../components/Statblock.vue'
 import CombatantCard from '../components/CombatantCard.vue'
 
 const t = computed(() => tracker())
+/** What Roll for monsters does, by the Ruleset's initiative. */
+const ROLL_TIP: Record<string, string> = {
+  each: 'Roll d20 + Dex for every monster without an initiative',
+  kind: 'Roll one d20 per kind of monster (each adds its Dex) for those without an initiative',
+  side: 'Roll one d20 for the enemies (plus their best Dex): they act together',
+}
 const selected = ref<string | null>(null)
 const encounter = computed(() => get(t.value.encounter))
 const campaigns = computed(() => byType.value.get('campaign') ?? [])
@@ -139,7 +146,7 @@ function clearAll() { if (confirm('Clear the tracker? The monsters go; player ch
       <span v-if="encounter" class="muted"><EntryLink :id="encounter.id" icon /></span>
       <span class="spacer" />
       <button v-if="t.combatants.length" :aria-pressed="compact" :class="{ on: compact }" title="One row per fighter, so the whole fight fits on the screen" @click="toggleCompact">Compact</button>
-      <button v-if="t.combatants.length" title="Roll d20 + Dex for every monster without an initiative" @click="rollInitiative()"><AppIcon ui="dice" /> Roll for monsters</button>
+      <button v-if="t.combatants.length" :title="ROLL_TIP[rule('initiative')] ?? ROLL_TIP.each" @click="rollInitiative()"><AppIcon ui="dice" /> Roll for monsters</button>
       <button v-if="t.combatants.length" class="danger" title="End the fight: monsters go, player characters stay, keeping the HP on their sheets" @click="clearAll">Clear</button>
       <div class="cal-nav">
         <button title="Previous turn (P)" :disabled="t.turn < 0" @click="nextTurn(-1)">◀</button>

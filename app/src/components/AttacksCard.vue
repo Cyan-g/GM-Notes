@@ -7,7 +7,8 @@ import type { Entry, Id } from '../model/types'
 import { byType, get, listOptions } from '../store'
 import { attacks, castingAbility, levelOf, profsOf, spellDamageAdd, spellStats } from '../sheet'
 import { sheetOrBlank } from '../sheetData'
-import { ORD, mod, profBonus, signed, type Ability } from '../model/dnd'
+import { ORD, critDamage, mod, profBonus, signed, type Ability } from '../model/dnd'
+import { rule } from '../rules'
 import { speciesSpells, speciesTraits } from '../species'
 import { slotRows, useSlot, type SlotRow } from '../slots'
 import { editSheet, emptyBook } from '../sheetData'
@@ -55,6 +56,8 @@ const cantrips = computed(() => {
 })
 const armorTypes = computed(() => listOptions('item.armorType').filter(o => o.id !== 'Clothing'))
 const tools = computed(() => (byType.value.get('item') ?? []).filter(e => e.fields.kind === 'Tool').map(e => ({ id: e.id, label: e.name })))
+/** A damage line's critical hit, as the Ruleset counts it (dice doubled, or the maximum plus a roll). */
+const crit = (dmg: string) => critDamage(dmg, rule('crits') === 'max' ? 'max' : 'double')
 const shown = ref<Id | null>(null)
 const ro = useReadOnly()
 // ---- the Spells column: only for someone with spells; slots to spend; a lineage's own casting ability ----
@@ -96,7 +99,7 @@ const none = (k: 'armor' | 'weapons' | 'tools' | 'languages') => !profs.value[k]
               <span v-if="a.tag" class="muted small"> · {{ a.tag }}</span>
             </td>
             <td><b v-flash="a.toHit" :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td>
-            <td><span v-for="(part, j) in a.damage.split(' / ')" :key="j" v-flash="a.damage" class="atk-dmg">{{ part }}</span> <span class="muted small">{{ a.type }}</span>
+            <td><span v-for="(part, j) in a.damage.split(' / ')" :key="j" v-flash="a.damage" class="atk-dmg" :class="{ tip: !!crit(part) }" :data-tip="crit(part) ? `Critical hit: ${crit(part)}` : undefined">{{ part }}</span> <span class="muted small">{{ a.type }}</span>
               <span v-if="a.note" class="atk-extra small">{{ a.note }}</span>
               <span v-for="(x, j) in a.extras ?? []" :key="j" class="atk-extra small">{{ x }}</span></td>
           </tr>

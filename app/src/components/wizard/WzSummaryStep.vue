@@ -11,6 +11,8 @@ import { armorClass, initiative, passivePerception, setCurrent, skillLevel, spee
 import { formatMoney, get, listOptions, playerMode } from '../../store'
 import { go, hrefEntry } from '../../router'
 import { useDraft } from '../../composables/useDraft'
+import SkillGrid from '../SkillGrid.vue'
+import { useDraftSheet } from '../../composables/useDraftSheet'
 
 // ---- the character as it will be: its sheet, worked out ----
 const preview = computed(() => { const sh = draftSheet(d.value); draftPc(d.value, sh); return sh })
@@ -29,6 +31,7 @@ const campaignNames = computed(() => (d.value.campaigns ?? defaultCampaigns()).m
 /** What the steps still need, all of them. */
 const props = defineProps<{ open: string[] }>()
 const { d, r, classes, scores, grantedSkills, taken } = useDraft()
+const draftNow = useDraftSheet()
 /** How the hit points are worked out (there's no hit points step at level 1). */
 const hpHow = computed(() => {
   const con = signed(mod(scores.value.con)), die = dieOfDraft(d.value)
@@ -49,9 +52,8 @@ async function create() {
 <template>
   <p class="wz-sum-head"><b>{{ d.name || 'Unnamed' }}</b>, level {{ d.level }} {{ classes.find(c => c.id === d.cls)?.label ?? 'no class' }}<template v-if="d.subclass"> ({{ get(d.subclass)?.name }})</template>
     <template v-if="d.race"> · {{ get(d.race)?.name }}</template><template v-if="d.background"> · {{ get(d.background)?.name }}</template></p>
-  <div class="wz-sum-scores">
-    <span v-for="a in ABILITY_KEYS" :key="a" class="wz-score"><small>{{ ABILITY_SHORT[a].toUpperCase() }}</small><b>{{ scores[a] }}</b><small>{{ signed(mod(scores[a])) }}</small></span>
-  </div>
+  <!-- the scores, saves and skills as the sheet will show them -->
+  <SkillGrid :s="draftNow.sheet.value" :prof="draftNow.prof.value" class="wz-sum-cards" />
   <p class="small"><b>HP</b> {{ hpOf(d) }} <span class="muted">({{ hpHow }})</span> · <b>Hit dice</b> {{ d.level }}{{ dieOfDraft(d) }} · <b>Saves</b> {{ (r ? r.saves : d.ownSaves).map(a => ABILITY_SHORT[a]).join(', ') || '—' }}</p>
   <p class="small"><b>AC</b> {{ armorClass(preview).ac }} · <b>Speed</b> {{ speedOf(preview) ?? '30 ft' }} · <b>Initiative</b> {{ signed(initiative(preview)) }} · <b>Passive Perception</b> {{ passivePerception(preview, prof) }}</p>
   <p class="small"><b>Skills</b> {{ [...d.skills, ...grantedSkills.keys()].sort().join(', ') || '—' }}<template v-if="expertise"> · <b>Expertise</b> {{ expertise }}</template></p>

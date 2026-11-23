@@ -10,6 +10,7 @@ import { TYPES, MASTERY_OF, byKey, type FieldDef } from '../../model/schema'
 import { changed, setField, toggleField } from '../../edit'
 import { formatMoney } from '../../store'
 import { parseRegain, worksWhileOf } from '../../items'
+import { mainCoin, rule } from '../../rules'
 import { itemNamed } from '../../lookup'
 import { useParts } from '../../composables/useParts'
 import FieldInput from './FieldInput.vue'
@@ -20,7 +21,8 @@ import { inputValue as val } from '../../dom'
 const props = defineProps<{ entry: Entry }>()
 const f = computed(() => byKey(props.entry.fields))
 const shown = (d: FieldDef) => !d.when || d.when.is.includes(String(f.value[d.when.field] ?? ''))
-const fields = computed(() => TYPES.item.fields.filter(d => shown(d) && d.key !== 'summary' && d.kind !== 'recipe'))
+// an item's inventory slots only matter while the Ruleset counts slots
+const fields = computed(() => TYPES.item.fields.filter(d => shown(d) && d.key !== 'summary' && d.kind !== 'recipe' && (d.key !== 'slots' || rule('carryingCapacity') === 'slots')))
 const fieldOf = (k: string) => fields.value.find(d => d.key === k)
 
 /** What it gives, each with what it's for. */
@@ -67,11 +69,11 @@ const acHint = computed(() => ({ Light: '+ Dex', Medium: '+ Dex (max 2)', Heavy:
 // ---- rarity: the usual price (2024 rules; consumables half) ----
 const PRICE: Record<string, number> = { Common: 100, Uncommon: 400, Rare: 4000, 'Very rare': 40000, Legendary: 200000 }
 const consumable = computed(() => ['Potion', 'Scroll', 'Poison'].includes(String(f.value.kind ?? '')))
-const usualPrice = computed(() => { const p = PRICE[String(f.value.rarity ?? '')]; return p ? (consumable.value ? p / 2 : p) * 100 : undefined })
+const usualPrice = computed(() => { const p = PRICE[String(f.value.rarity ?? '')]; return p ? (consumable.value ? p / 2 : p) * mainCoin() : undefined })
 function setRarity(v: string) {
   if (v) f.value.rarity = v; else delete f.value.rarity
   const p = PRICE[v]
-  if (p && f.value.value == null) f.value.value = (consumable.value ? p / 2 : p) * 100
+  if (p && f.value.value == null) f.value.value = (consumable.value ? p / 2 : p) * mainCoin()
   changed(props.entry)
 }
 
@@ -127,6 +129,8 @@ function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete
           <small v-if="usualPrice" class="muted">usual price {{ formatMoney(usualPrice) }}{{ consumable ? ' (consumable: half)' : '' }}</small>
           <small v-else-if="f.rarity === 'Artifact'" class="muted">priceless</small></label>
       </div>
+      <!-- a basic that's a list of options: the spellcasting focus types it is -->
+      <label v-for="d in wide(basics)" :key="d.key" class="sheet-field if-wide" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>
       <div v-if="bools(basics).length" class="seg wrap if-bools">
         <button v-for="d in bools(basics)" :key="d.key" type="button" :class="{ on: !!f[d.key] }" @click="toggleBool(d.key)">{{ d.label }}</button>
       </div>

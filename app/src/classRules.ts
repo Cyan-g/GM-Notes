@@ -73,7 +73,7 @@ export const CLASS_RULES: Record<string, ClassRules> = {
     saves: ['int', 'wis'], skills: { count: 2, from: ['Arcana', 'Animal Handling', 'Insight', 'Medicine', 'Nature', 'Perception', 'Religion', 'Survival'] },
     armor: ['Light', 'Shield'], weapons: ['Simple'], tools: ['Herbalism Kit'],
     cantrips: by([[1, 2], [4, 3], [10, 4]]), prepared: FULL_PREP, featLevels: FEATS,
-    equipment: [kit(9, 'Leather Armor', 'Shield', 'Sickle', 'Druidic Focus (Quarterstaff)', "Explorer's Pack", 'Herbalism Kit'), kit(50)],
+    equipment: [kit(9, 'Leather Armor', 'Shield', 'Sickle', 'Quarterstaff', "Explorer's Pack", 'Herbalism Kit'), kit(50)],
   },
   Fighter: {
     saves: ['str', 'con'], skills: { count: 2, from: ['Acrobatics', 'Animal Handling', 'Athletics', 'History', 'Insight', 'Intimidation', 'Persuasion', 'Perception', 'Survival'] },
@@ -124,7 +124,7 @@ export const CLASS_RULES: Record<string, ClassRules> = {
     saves: ['int', 'wis'], skills: { count: 2, from: ['Arcana', 'History', 'Insight', 'Investigation', 'Medicine', 'Nature', 'Religion'] },
     armor: [], weapons: ['Simple'], tools: [],
     cantrips: by([[1, 3], [4, 4], [10, 5]]), prepared: list('4 5 6 7 9 10 11 12 14 15 16 16 17 18 19 21 22 23 24 25'), spellbook: 6, featLevels: FEATS,
-    equipment: [kit(5, ['Dagger', 2], 'Arcane Focus (Quarterstaff)', 'Robe', 'Spellbook', "Scholar's Pack"), kit(55)],
+    equipment: [kit(5, ['Dagger', 2], 'Quarterstaff', 'Robe', 'Spellbook', "Scholar's Pack"), kit(55)],
   },
 }
 
@@ -168,6 +168,11 @@ const CASTER: Record<string, ClassBasics['caster']> = {
 const SPELL_SOURCE: Record<string, NonNullable<ClassBasics['spellSource']>> = {
   Wizard: 'book', Bard: 'swap', Ranger: 'swap', Sorcerer: 'swap', Warlock: 'swap', Cleric: 'list', Druid: 'list', Paladin: 'list', Artificer: 'list',
 }
+/** The spellcasting focus each SRD class can use (2024). */
+const FOCUS: Record<string, NonNullable<ClassBasics['focus']>> = {
+  Bard: 'Instrument', Cleric: 'Holy symbol', Druid: 'Druidic focus', Paladin: 'Holy symbol', Ranger: 'Druidic focus',
+  Sorcerer: 'Arcane focus', Warlock: 'Arcane focus', Wizard: 'Arcane focus',
+}
 const CASTING: Record<string, Ability> = {
   Artificer: 'int', Wizard: 'int', Bard: 'cha', Paladin: 'cha', Sorcerer: 'cha', Warlock: 'cha', Cleric: 'wis', Druid: 'wis', Ranger: 'wis',
 }
@@ -176,7 +181,7 @@ export function builtInBasics(cls: string): ClassBasics {
   const r = CLASS_RULES[cls]
   return {
     hitDie: CLASS_DIE[cls] ?? 'd8', caster: CASTER[cls] ?? 'none', ...(CASTING[cls] ? { casting: CASTING[cls] } : {}),
-    ...(SPELL_SOURCE[cls] ? { spellSource: SPELL_SOURCE[cls] } : {}),
+    ...(SPELL_SOURCE[cls] ? { spellSource: SPELL_SOURCE[cls] } : {}), ...(FOCUS[cls] ? { focus: FOCUS[cls] } : {}),
     subclassLevel: SUBCLASS_LEVEL, featLevels: r?.featLevels ?? FEATS,
     ...(r ? { saves: r.saves, skills: r.skills, armor: r.armor, weapons: r.weapons, tools: r.tools } : {}),
     ...(r?.cantrips ? { cantrips: r.cantrips } : {}), ...(r?.prepared ? { prepared: r.prepared } : {}), ...(r?.spellbook ? { spellbook: r.spellbook } : {}),
@@ -194,6 +199,8 @@ export const subclassLevelOf = (cls: string | undefined) => (cls ? basicsOf(cls)
 export const multiclassOf = (cls: string): Multiclass | undefined => basicsOf(cls).multiclass
 export const casterOf = (cls: string) => basicsOf(cls).caster ?? 'none'
 export const castingOf = (cls: string): Ability | undefined => basicsOf(cls).casting
+/** The spellcasting focus a class can use (Wizard: an arcane focus; Bard: a musical instrument). */
+export const focusTypeOf = (cls: string) => basicsOf(cls).focus
 /** Where a class prepares its spells from: as its basics say, else a spellbook if it has one, else its class list. */
 export const spellSourceOf = (cls: string): NonNullable<ClassBasics['spellSource']> => { const b = basicsOf(cls); return b.spellSource ?? (b.spellbook ? 'book' : 'list') }
 /** A class line's hit die: its own, else its class's. */

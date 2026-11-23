@@ -4,8 +4,14 @@
 // measured once the system's way and kept at least that wide. Every dropdown (components/Dropdown.vue), every style.
 const MARK = 'fxWidth'
 
+/** Whether a dropdown's list is open: measuring it then would close it (it switches the field's mode for a moment). */
+function isOpen(el: HTMLSelectElement): boolean {
+  try { return el.matches(':open') } catch { return el.matches(':focus') }
+}
 /** Measure one dropdown the system's way; keep that as its smallest width if it sizes itself to its options. */
 function size(el: HTMLSelectElement) {
+  // open: measured once it closes
+  if (isOpen(el)) { el.addEventListener('change', () => later(el), { once: true }); el.addEventListener('blur', () => later(el), { once: true }); return }
   const s = el.style
   const keep = { appearance: s.appearance, width: s.width, minWidth: s.minWidth }
   if (el.dataset[MARK]) s.minWidth = ''
@@ -46,7 +52,13 @@ export function startSelectSizing() {
     }
   }).observe(document.body, { childList: true, subtree: true, characterData: true })
   new MutationObserver(all).observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-fx'] })
-  // one that was hidden when it came (a closed fold): measured when pointed at
-  document.addEventListener('pointerover', e => { const el = (e.target as Element).closest?.('select'); if (el && !el.dataset[MARK] && !el.style.minWidth) later(el) })
+  // one that was hidden when it came (a closed fold): measured when pointed at, never while its list is open (the
+  // pointer over its options would close it)
+  document.addEventListener('pointerover', e => {
+    const t = e.target as Element
+    if (t.closest?.('option')) return
+    const el = t.closest?.('select')
+    if (el && !el.dataset[MARK] && !el.style.minWidth && !isOpen(el)) later(el)
+  })
   all()
 }

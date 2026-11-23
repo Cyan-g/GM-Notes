@@ -4,27 +4,31 @@
 // the feat (or Ability Score Improvement) at the class's feat levels, and how many more spells the class gets.
 // Choices the new features ask for show up in the sheet's Choices card afterwards, as always.
 import Dropdown from './Dropdown.vue'
+import HitDieChoice from './HitDieChoice.vue'
+import { hpGain, hpMode } from '../hitPoints'
+import SkillGrid from './SkillGrid.vue'
+import { pickFrame } from '../skillFrames'
 import { computed, ref } from 'vue'
 import type { CharacterSheet, ClassLine, Entry, Spellbook } from '../model/types'
 import { classesOf, totalLevel } from '../model/classes'
 import { EPIC_BOON_LEVEL, basicsOf, hitDieOf, multiclassOf, rulesOf, subclassLevelOf, dieOf, classEntry } from '../classRules'
 import { bonusApplied, bonusOpen, type BonusChoice } from '../abilityBonus'
 import { byType, entries, get, listOptions } from '../store'
-import { castingAbility, maxHpOf } from '../sheet'
+import { castingAbility, maxHpOf, skillLevel, spellStats } from '../sheet'
 import { classSlotsAt } from '../slots'
 import MarkdownView from './MarkdownView.vue'
 import FeatureChoices from './FeatureChoices.vue'
 import { editSheet, profsToEdit, sheetToEdit } from '../sheetData'
-import { SKILLS, mod, signed, ABILITY_KEYS, ORD } from '../model/dnd'
+import { SKILLS, mod, signed, ABILITY_KEYS, ORD, profBonus } from '../model/dnd'
 import { itemNamed } from '../lookup'
-import { rule } from '../rules'
+import { featsAllowed, isAsiFeat, levelCap, rule } from '../rules'
 import { gearTotals, scoreWith } from '../effects'
-import { backgroundOf, choiceOpen, featBonusFor, featGivesSave, featOfFeature, speciesTraits } from '../species'
+import { backgroundOf, choiceOpen, featBonusFor, featGivesSave, featOfFeature, speciesTraits, isToolKind } from '../species'
 import { traitsOf } from '../model/traits'
 import { unmet } from '../requirements'
 import { changed } from '../edit'
 import { renderInline } from '../markdown'
-import SpreadPicker from './SpreadPicker.vue'
+import FeatScoreTable from './FeatScoreTable.vue'
 import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ pc: Entry; s: CharacterSheet }>()
@@ -45,10 +49,10 @@ const newLevel = computed(() => (line.value?.level ?? 0) + 1)
 const die = computed(() => (line.value ? dieOf(line.value) : cls.value ? hitDieOf(cls.value) : props.s.hitDie || 'd8'))
 const size = computed(() => Number(die.value.replace(/\D/g, '')) || 8)
 const con = computed(() => mod(scoreWith(props.s, 'con', gearTotals(props.s))))
-const how = ref<'avg' | 'roll'>('avg')
-const roll = ref<number | null>(null)
-const rolled = computed(() => (how.value === 'avg' ? size.value / 2 + 1 : roll.value))
-const gain = computed(() => (rolled.value == null || rolled.value < 1 || rolled.value > size.value ? null : Math.max(1, rolled.value + con.value)))
+/** The roll (HitDieChoice): undefined the average, null rolled but not typed yet. */
+const roll = ref<number | null | undefined>(undefined)
+/** What the level adds, as the Ruleset counts it (hitPoints.ts); null while a roll is missing. */
+const gain = computed(() => hpGain(hpMode(), roll.value, size.value, con.value))
 
 // ---- subclass and features ----
 const subclasses = computed(() => (byType.value.get('subclass') ?? []).filter(e => e.fields.class === cls.value).sort((a, b) => a.name.localeCompare(b.name)))
@@ -83,7 +87,8 @@ function lacks(f: Entry): string {
 const KINDS = ['Epic Boon', 'General Feat', 'Origin Feat', 'Fighting Style', 'Other']
 const KIND_LABEL: Record<string, string> = { 'Epic Boon': 'Epic Boons', 'General Feat': 'General feats', 'Origin Feat': 'Origin feats', 'Fighting Style': 'Fighting styles', Other: 'Other' }
 const featGroups = computed(() => {
-  const all = entries.value.filter(e => e.type === 'feat').sort((a, b) => a.name.localeCompare(b.name))
+  // the Ruleset's "Ability Score Improvement only": that feat alone
+  const all = entries.value.filter(e => e.type === 'feat' && (featsAllowed() || isAsiFeat(e.name))).sort((a, b) => a.name.localeCompare(b.name))
   const kinds = boon.value ? KINDS : KINDS.filter(k => k !== 'Epic Boon')
   const kindOf = (f: Entry) => (KINDS.includes(String(f.fields.category)) ? String(f.fields.category) : 'Other')
   return kinds.map(k => ({ kind: k, label: KIND_LABEL[k], list: all.filter(f => kindOf(f) === k) })).filter(g => g.list.length)
@@ -93,6 +98,9 @@ const feat = ref('')
 const choice = ref<BonusChoice>({ picks: [] })
 const featBonus = computed(() => featBonusFor(get(feat.value || undefined), props.s.saves))
 /** The scores as they are now on the sheet (before what the increase adds). */
+/** What the scores feed now, for the feat's table: hit points, the spellcasting. */
+const castNow = computed(() => castingAbility(props.pc, props.s))
+const spellNow = computed(() => (castNow.value ? spellStats(props.pc, castNow.value) : undefined))
 const baseScores = computed(() => Object.fromEntries(ABILITY_KEYS.map(a => [a, props.s.abilities[a] ?? 10])) as Record<(typeof ABILITY_KEYS)[number], number>)
 
 // ---- multiclassing: the scores it asks for, and what the new class brings ----
@@ -116,13 +124,17 @@ const prereqs = computed(() => {
 const allowAnyway = ref(false)
 const mcSkills = ref<string[]>([])
 const mcInstrument = ref('')
-const skillList = computed(() => { const from = rulesOf(cls.value)?.skills.from ?? []; return (from.length ? from : SKILLS.map(x => x.name)).filter(x => !props.s.skills[x] && !mcSkills.value.includes(x)) })
-function addSkill(ev: Event) {
-  const el = ev.target as HTMLSelectElement
-  if (el.value && mcSkills.value.length < (mc.value?.skills ?? 0)) mcSkills.value = [...mcSkills.value, el.value]
-  el.value = ''
-}
-const instruments = computed(() => entries.value.filter(e => e.type === 'item' && ['Tool', 'Instrument'].includes(String(e.fields.kind))).sort((a, b) => a.name.localeCompare(b.name)))
+/** The new class's skills on the skill grid: only its list, its count; the picks show as they'll be. */
+const mcFrame = computed(() => {
+  const from = rulesOf(cls.value)?.skills.from ?? []
+  const f = pickFrame({
+    candidates: from.length ? from : SKILLS.map(x => x.name), picked: mcSkills.value, count: mc.value?.skills ?? 0, prof: profBonus(newLevel.value),
+    levelOf: n => skillLevel(props.s, n),
+    toggle: n => { mcSkills.value = mcSkills.value.includes(n) ? mcSkills.value.filter(x => x !== n) : [...mcSkills.value, n] },
+  })
+  return { ...f, level: (n: string) => (mcSkills.value.includes(n) ? Math.max(1, skillLevel(props.s, n)) : undefined) }
+})
+const instruments = computed(() => entries.value.filter(isToolKind).sort((a, b) => a.name.localeCompare(b.name)))
 const gains = computed(() => (mc.value ? [...mc.value.armor.map(x => (x === 'Shield' ? 'Shields' : `${x} armor`)), ...mc.value.weapons.map(x => `${x} weapons`), ...mc.value.tools.map(t => get(t)?.name ?? t)] : []))
 const pickFeat = (id: string) => { feat.value = id; choice.value = { picks: [] } }
 
@@ -168,7 +180,7 @@ const phase = ref<'level' | 'choices'>('level')
 // ---- what's still missing ----
 const open = computed(() => [
   !cls.value && 'a class',
-  gain.value == null && (how.value === 'roll' ? (roll.value != null ? `a roll from 1 to ${size.value} (${roll.value} isn't one)` : `a roll from 1 to ${size.value}`) : 'hit points'),
+  gain.value == null && (roll.value != null ? `a roll from 1 to ${size.value} (${roll.value} isn't one)` : `a roll from 1 to ${size.value}`),
   needsSub.value && !sub.value && 'a subclass',
   featDue.value && !feat.value && (boon.value ? 'an Epic Boon' : 'a feat'),
   featDue.value && feat.value && bonusOpen(featBonus.value, choice.value) > 0 && 'the feat’s ability scores',
@@ -178,7 +190,7 @@ const open = computed(() => [
 ].filter(Boolean) as string[])
 
 function apply() {
-  if (open.value.length || total.value >= 20) return
+  if (open.value.length || total.value >= levelCap()) return
   const pc = props.pc
   // what was picked, taken before the class line changes (the dialog's numbers follow the class level)
   const hp = gain.value!, takeFeat = featDue.value && feat.value ? get(feat.value) : undefined, epic = boon.value
@@ -270,12 +282,8 @@ function apply() {
           <p v-if="!multiclassOf(cls)" class="small muted">{{ label(cls) }} has no multiclassing rules here; add its proficiencies on the Edit page.</p>
           <p v-else class="small">Gains: {{ gains.join(', ') || 'no armor, weapon or tool proficiencies' }}</p>
           <div v-if="mc?.skills" class="lu-pick">
-            <span class="small">Skill ({{ mcSkills.length }}/{{ mc.skills }}):</span>
-            <Dropdown v-if="mcSkills.length < mc.skills" aria-label="Skill" @change="addSkill">
-              <option value="">＋ Skill</option>
-              <option v-for="x in skillList" :key="x" :value="x">{{ x }}</option>
-            </Dropdown>
-            <span v-for="x in mcSkills" :key="x" class="chip">{{ x }} <button class="link-btn" title="Take it back" @click="mcSkills = mcSkills.filter(y => y !== x)">×</button></span>
+            <span class="small">Skill{{ mc.skills === 1 ? '' : 's' }} from {{ cls }} ({{ mcSkills.length }}/{{ mc.skills }}):</span>
+            <SkillGrid compact no-saves :s="s" :prof="profBonus(newLevel)" :frame="mcFrame" :class="{ 'wz-todo': mcSkills.length < mc.skills }" />
           </div>
           <div v-if="mc?.instruments" class="lu-pick">
             <span class="small">Musical instrument:</span>
@@ -289,12 +297,7 @@ function apply() {
 
       <section>
         <h3>Hit points</h3>
-        <div class="lu-hp">
-          <label><input v-model="how" type="radio" value="avg" /> Average: {{ size / 2 + 1 }} {{ signed(con) }} CON</label>
-          <label><input v-model="how" type="radio" value="roll" /> Rolled {{ die }}:
-            <input v-model.number="roll" type="number" min="1" :max="size" class="lu-roll" placeholder="?" :aria-label="`What the ${die} showed`" @focus="how = 'roll'" @input="how = 'roll'" /> {{ signed(con) }} CON</label>
-          <b v-if="gain != null" class="lu-gain">+{{ gain }} HP</b>
-        </div>
+        <HitDieChoice v-model="roll" :die="die" :con="con" />
       </section>
 
       <section v-if="needsSub">
@@ -326,7 +329,8 @@ function apply() {
           </optgroup>
         </Dropdown>
         <p v-if="feat" class="small"><EntryLink :id="feat" /><template v-if="get(feat)?.fields.prerequisite"> · <i>{{ get(feat)?.fields.prerequisite }}</i></template> <span class="muted" v-html="renderInline(String(get(feat)?.fields.summary ?? '').replace(/\s*\*?Source:[^*]*\*?\s*$/, ''))" /></p>
-        <SpreadPicker v-if="featBonus" :key="feat" v-model="choice" :bonus="featBonus" :scores="baseScores" />
+        <FeatScoreTable v-if="featBonus" :key="feat" v-model="choice" :bonus="featBonus" :before="baseScores" :s="s" :prof="profBonus(total)" :level="total"
+                        :hp="maxHpOf(s)" :casting="castNow" :spell="spellNow" :primary="multiclassOf(cls)?.primary" />
       </section>
 
       <section v-if="spells">

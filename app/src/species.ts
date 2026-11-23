@@ -75,6 +75,10 @@ export interface ActiveTrait {
   picks: string[]
   /** The ability picked for its spells (its castWith), if any yet. */
   cast?: Ability
+  /** A feat's: where it comes from ("origin": the background's or the one picked instead; else the choice's name). */
+  via?: string
+  /** A repeatable feat taken more than once: which time this is (2, 3…; the first has none). */
+  inst?: number
 }
 /** Every trait of the character's species and background, in order (main race first, background last), with what's chosen and whether it counts yet. */
 export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): ActiveTrait[] {
@@ -83,22 +87,23 @@ export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): Active
   const lin = lineage(pc), subrace = lin.length > 1 ? lin.at(-1)! : undefined, bg = backgroundOf(pc)
   // a subrace's trait can take the place of its main race's (Wood Elf's speed): that one is left out
   const replaced = new Set(lin.flatMap(r => traitsOf(r).map(t => t.replaces).filter((x): x is string => !!x)))
-  const build = ({ from: race, level }: { from: Entry; level: number }) => traitsOf(race).filter(t => !(lin.includes(race) && replaced.has(t.id))).flatMap(trait => {
-    const key = traitKey(race, trait)
+  const build = ({ from: race, level, via, inst }: { from: Entry; level: number; via?: string; inst?: number }) => traitsOf(race).filter(t => !(lin.includes(race) && replaced.has(t.id))).flatMap(trait => {
+    // a repeatable feat's second time (Magic Initiate from the background and from Versatile) keeps its own picks
+    const key = inst ? `${race.id}#${inst}.${trait.id}` : traitKey(race, trait)
     // a lineage the subrace stands for (a High Elf has the High Elf lineage) is picked unless the player picked another
     const auto = subrace && race !== subrace && lin.includes(race) && trait.choice?.kind === 'option' ? subraceOption(trait.choice, subrace.name, race.name)
-      : race.type === 'feat' && trait.choice?.kind === 'option' && sheet?.originFeat === undefined && bg?.fields.originFeat === race.id && bg.fields.originFeatNote
+      : race.type === 'feat' && !inst && via === 'origin' && trait.choice?.kind === 'option' && (sheet?.originFeat === undefined || sheet.originFeat === bg?.fields.originFeat) && bg?.fields.originFeat === race.id && bg.fields.originFeatNote
         ? trait.choice.options?.find(o => o.name.toLowerCase() === String(bg.fields.originFeatNote).trim().toLowerCase()) : undefined
     const picks = st.picks?.[key]?.length ? st.picks[key] : auto ? [auto.id] : []
     const options = trait.choice?.kind === 'option'
       ? picks.map(id => trait.choice!.options?.find(o => o.id === id)).filter((o): o is TraitOption => !!o) : []
-    const cw = trait.castWith, cast = cw ? st.abilities?.[cw.sameAs ? `${race.id}.${cw.sameAs}` : key] : undefined
-    const a: ActiveTrait = { key, trait, race, level, active: (trait.level ?? 1) <= level, option: options[0], options, picks, ...(cast ? { cast } : {}) }
+    const cw = trait.castWith, cast = cw ? st.abilities?.[cw.sameAs ? `${inst ? `${race.id}#${inst}` : race.id}.${cw.sameAs}` : key] : undefined
+    const a: ActiveTrait = { key, trait, race, level, active: (trait.level ?? 1) <= level, option: options[0], options, picks, ...(cast ? { cast } : {}), ...(via ? { via } : {}), ...(inst ? { inst } : {}) }
     // the choices a picked option brings, each as a trait of its own (picked and listed like any other)
     const sub = options.flatMap(o => (o.choices ?? []).filter(c => c.kind !== 'option').map((choice, n): ActiveTrait => {
       const k = `${key}.${o.id}.c${n}`
       return {
-        key: k, race, level, active: a.active, options: [], picks: st.picks?.[k] ?? [], ...(cast ? { cast } : {}),
+        key: k, race, level, active: a.active, options: [], picks: st.picks?.[k] ?? [], ...(cast ? { cast } : {}), ...(via ? { via } : {}), ...(inst ? { inst } : {}),
         trait: { id: `${trait.id}.${o.id}.c${n}`, name: choice.label ? `${o.name}: ${choice.label}` : o.name, level: trait.level, choice, sub: true } as Trait,
       }
     }))
@@ -107,12 +112,24 @@ export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): Active
   const base = origins(pc).flatMap(build)
   // the feats the character has: the background's Origin feat, those on the sheet, and those picked (a Fighting Style)
   const total = totalLevel(pc)
-  return [...base, ...featsOf(pc, sheet, base).flatMap(f => build({ from: f, level: total })), ...itemsWithFeatures(sheet).flatMap(i => build({ from: i, level: total }))]
+  return [...base, ...featsOf(pc, sheet, base).flatMap(f => build({ from: f.e, level: total, via: f.via, inst: f.inst })), ...itemsWithFeatures(sheet).flatMap(i => build({ from: i, level: total }))]
+}
+/** Where a feat comes from, in words: "your Origin feat", "your Versatile feat". */
+export const featVia = (a: ActiveTrait) => (a.via === 'origin' ? 'your Origin feat' : a.via && a.via !== 'sheet' ? `your ${a.via}` : 'the other one')
+/**
+ * A repeatable feat's options its other times took (Magic Initiate's Cleric list, taken by the Origin feat): a
+ * different one each time, as the rules say. Option id → where it's taken.
+ */
+export function takenByOthers(all: ActiveTrait[], a: ActiveTrait): Map<string, string> {
+  const m = new Map<string, string>()
+  if (a.race.type !== 'feat' || !a.race.fields.repeatable || a.trait.choice?.kind !== 'option') return m
+  for (const o of all) if (o.key !== a.key && o.race.id === a.race.id && o.trait.id === a.trait.id) for (const p of o.picks) m.set(p, featVia(o))
+  return m
 }
 /** The feats a character has: the background's Origin feat, those on the sheet and those picked in a choice. */
 export function featsOfCharacter(pc: Entry): Entry[] {
   const s = pc.fields.sheet as CharacterSheet | undefined
-  return featsOf(pc, s, origins(pc).flatMap(o => traitsOf(o.from).map(trait => ({ key: traitKey(o.from, trait), trait, race: o.from, level: o.level, active: (trait.level ?? 1) <= o.level, options: [], picks: stateOf(s).picks?.[traitKey(o.from, trait)] ?? [] } as ActiveTrait))))
+  return featsOf(pc, s, origins(pc).flatMap(o => traitsOf(o.from).map(trait => ({ key: traitKey(o.from, trait), trait, race: o.from, level: o.level, active: (trait.level ?? 1) <= o.level, options: [], picks: stateOf(s).picks?.[traitKey(o.from, trait)] ?? [] } as ActiveTrait)))).map(f => f.e)
 }
 /** The items whose features count, each once: those in use, and those carried that can't be equipped or attuned. */
 function itemsWithFeatures(s: CharacterSheet | undefined): Entry[] {
@@ -143,13 +160,27 @@ export function originFeatOf(pc: Entry | undefined, s?: CharacterSheet): Entry |
   return f?.type === 'feat' ? f : undefined
 }
 /** The character's feats, each once: the Origin feat, the sheet's feature lines that are feats, and picked feats. */
-function featsOf(pc: Entry, s: CharacterSheet | undefined, traits: ActiveTrait[]): Entry[] {
-  const ids = [
-    originFeatOf(pc, s)?.id,
-    ...(s?.features ?? []).map(f => featOfFeature(f)?.id),
-    ...traits.filter(a => a.active && a.trait.choice?.kind === 'feat').flatMap(a => a.picks),
+function featsOf(pc: Entry, s: CharacterSheet | undefined, traits: ActiveTrait[]): { e: Entry; via: string; inst?: number }[] {
+  // where each comes from: the Origin feat, and the feats picked in a choice (Versatile, a Fighting Style)
+  const from: { id?: string; via: string }[] = [
+    { id: originFeatOf(pc, s)?.id, via: 'origin' },
+    ...traits.filter(a => a.active && a.trait.choice?.kind === 'feat').flatMap(a => a.picks.map(id => ({ id, via: a.trait.name }))),
   ]
-  return [...new Set(ids)].map(id => get(id)).filter((e): e is Entry => e?.type === 'feat')
+  // a feat line on the sheet counts where the sources above don't already (a made character lists its Origin feat too)
+  const lines = new Map<string, number>()
+  for (const f of s?.features ?? []) { const id = featOfFeature(f)?.id; if (id) lines.set(id, (lines.get(id) ?? 0) + 1) }
+  for (const [id, n] of lines) for (let k = from.filter(x => x.id === id).length; k < n; k++) from.push({ id, via: 'sheet' })
+  // a feat counts once, unless it's repeatable (Magic Initiate): then each time, with its own picks
+  const out: { e: Entry; via: string; inst?: number }[] = [], times = new Map<string, number>()
+  for (const x of from) {
+    const e = get(x.id)
+    if (e?.type !== 'feat') continue
+    const n = (times.get(e.id) ?? 0) + 1
+    if (n > 1 && !e.fields.repeatable) continue
+    times.set(e.id, n)
+    out.push({ e, via: x.via, ...(n > 1 ? { inst: n } : {}) })
+  }
+  return out
 }
 /**
  * The option of a choice a subrace stands for, if exactly one: "High Elf" is the High Elf lineage, "Black Dragonborn"
@@ -392,7 +423,7 @@ export function speciesSpells(pc: Entry | undefined, s?: CharacterSheet): Specie
     const lists: [string, TraitSpell[] | undefined, string][] = [[a.key, a.trait.spells, a.trait.name]]
     for (const o of a.options) lists.push([`${a.key}.${o.id}`, o.spells, o.name])
     const c = a.trait.choice, swaps = stateOf(s ?? (pc.fields.sheet as CharacterSheet | undefined)).swaps ?? {}
-    if (c?.kind === 'spell' && c.spell) lists.push([`${a.key}.p`, a.picks.map(spell => ({ spell, how: c.spell!.how, ability: c.spell!.ability })), a.trait.name])
+    if (c?.kind === 'spell' && c.spell) lists.push([`${a.key}.p`, a.picks.map(spell => ({ spell, how: c.spell!.how, ability: c.spell!.ability, ...(c.spell!.prepared ? { prepared: true } : {}) })), a.trait.name])
     for (const [base, list, from] of lists) {
       (list ?? []).forEach((x, k) => {
         const key = `${base}.s${k}`
@@ -489,6 +520,33 @@ export const spellLabel = (x: TraitSpell) => `${get(x.spell)?.name ?? '?'} (${HO
 export const newTraitId = () => Math.random().toString(36).slice(2, 8)
 
 // ---- what a grant or a choice can be ----
+/**
+ * A kind of tool or instrument a character can be proficient in (Lyre, Smith's Tools), not one particular item of a
+ * kind ("Elmar's Lyre", subtype "Instrument (Lyre)": proficiency in Lyre covers it).
+ */
+export function isToolKind(e: Entry): boolean {
+  if (e.type !== 'item' || (e.fields.kind !== 'Tool' && e.fields.kind !== 'Instrument')) return false
+  if (e.fields.toolType) return e.fields.toolType === e.id
+  // no Type set: its subtype says ("Instrument (Lyre)")
+  const of = String(e.fields.subtype ?? '').match(/\(([^)]+)\)\s*$/)?.[1]
+  return !of || of.trim().toLowerCase() === e.name.trim().toLowerCase()
+}
+/** The kind a tool or instrument is (Elmar's Lyre → Lyre), itself for a kind; undefined: not one, or its kind isn't in the world. */
+export function toolKindOf(e: Entry | undefined): Entry | undefined {
+  if (!e || e.type !== 'item' || (e.fields.kind !== 'Tool' && e.fields.kind !== 'Instrument')) return undefined
+  if (isToolKind(e)) return e
+  const t = get(e.fields.toolType)
+  if (t && isToolKind(t)) return t
+  const of = String(e.fields.subtype ?? '').match(/\(([^)]+)\)\s*$/)?.[1]?.trim().toLowerCase()
+  return of ? Object.values(state.db?.entries ?? {}).find(x => isToolKind(x) && x.name.trim().toLowerCase() === of) : undefined
+}
+/** Where each skill a character is proficient in comes from: what gives it (Acolyte, Human: Skillful), else the sheet. */
+export function skillSources(pc: Entry | undefined, s: CharacterSheet | undefined, rest = 'the class or the sheet'): Map<string, string> {
+  const m = new Map<string, string>()
+  for (const g of speciesGrants(pc, s)) if (g.kind === 'skill' && !m.has(g.id)) m.set(g.id, g.from)
+  for (const [k, v] of Object.entries(s?.skills ?? {})) if (v && !m.has(k)) m.set(k, rest)
+  return m
+}
 /** The candidates for a grant or a choice of a kind: id and label. */
 export function grantOptions(kind: TraitGrant['kind']): { id: string; label: string }[] {
   switch (kind) {
@@ -497,7 +555,7 @@ export function grantOptions(kind: TraitGrant['kind']): { id: string; label: str
     case 'weapon': return [...listOptions('item.weaponCategory'), ...listOptions('item.baseWeapon')]
     case 'language': return listOptions('language')
     // tools, and musical instruments (tools a character can be proficient with too: a Bard's, Musician's)
-    case 'tool': return Object.values(state.db?.entries ?? {}).filter(e => e.type === 'item' && (e.fields.kind === 'Tool' || e.fields.kind === 'Instrument'))
+    case 'tool': return Object.values(state.db?.entries ?? {}).filter(isToolKind)
       .map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label))
   }
 }
@@ -512,7 +570,11 @@ export function choiceCandidates(c: TraitChoice): { id: string; label: string }[
   else if (c.kind === 'feat') all = Object.values(state.db?.entries ?? {}).filter(e => e.type === 'feat' && (!c.category || e.fields.category === c.category))
     .map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label))
   else all = grantOptions(c.kind)
-  return c.among?.length ? c.among.map(id => all.find(o => o.id === id) ?? { id, label: id }) : all
+  // a tool choice's list naming particular items ("Elmar's Lyre") offers their kinds (Lyre), each once
+  const among = c.among?.length && (c.kind === 'tool' || c.kind === 'skillTool')
+    ? [...new Set(c.among.map(id => { const e = get(id); return e?.type === 'item' ? toolKindOf(e)?.id ?? id : id }))] : c.among
+  const list = among?.length ? among.map(id => all.find(o => o.id === id) ?? { id, label: get(id)?.name ?? id }) : all
+  return c.kind === 'tool' ? [...list].sort((a, b) => a.label.localeCompare(b.label)) : list
 }
 /** What a character has, for filtering and marking a choice's options: skills they're proficient in, weapon
  * proficiencies (categories or base weapons), languages. */

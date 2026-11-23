@@ -9,7 +9,11 @@ import Dropdown from './Dropdown.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { TraitOption } from '../model/types'
 import { choiceCount, choiceOffer, choiceWords, type ActiveTrait, type HaveNow } from '../species'
-import { categoryOf } from '../sheet'
+import { categoryOf, skillLevel } from '../sheet'
+import { SKILLS } from '../model/dnd'
+import { pickFrame } from '../skillFrames'
+import type { CharacterSheet } from '../model/types'
+import SkillGrid from './SkillGrid.vue'
 import { get, listOptions } from '../store'
 import { MASTERY_OF } from '../model/schema'
 import MarkdownView from './MarkdownView.vue'
@@ -22,7 +26,14 @@ import TraitChips from './TraitChips.vue'
  * `have`: what the character has (skills, weapon proficiencies, languages): Expertise, weapon mastery and languages
  * offer only what fits, and a skill they have already is marked.
  */
-const props = defineProps<{ a: ActiveTrait; disabled?: boolean; owned?: Map<string, string[]>; have?: HaveNow }>()
+const props = defineProps<{
+  a: ActiveTrait; disabled?: boolean; owned?: Map<string, string[]>; have?: HaveNow
+  /** Options another time of the same repeatable feat took: id → where. */
+  taken?: Map<string, string>
+  /** The character's sheet (as it is with the picks made), its proficiency bonus and where its skills come from:
+   * skill and expertise choices show the skill grid (SkillGrid) with only this choice's picks changeable. */
+  sheet?: CharacterSheet; prof?: number; from?: (name: string) => string | undefined
+}>()
 const hasIt = (id: string) => (c.value.kind === 'spell' ? props.owned?.get(id)?.join(', ') : undefined)
 const emit = defineEmits<{ pick: [picks: string[]] }>()
 const c = computed(() => props.a.trait.choice!)
@@ -33,8 +44,35 @@ const hadSkill = (id: string) => (['skill', 'skillTool'].includes(c.value.kind) 
 const words = computed(() => choiceWords(c.value, n.value))
 const picked = computed(() => props.a.picks.filter(Boolean).length)
 const full = computed(() => picked.value >= n.value)
+/** A skill or tool choice made already shows as a line ("Perception · Change"); open, it's the grid or chips again
+ * and stays open while picking. */
+const folded = ref(full.value)
+watch(() => props.a.key, () => { folded.value = full.value })
 
-// ---- dropdowns (skills, languages, tools, spells, weapons) ----
+// ---- skills and expertise: the skill grid, only this choice's picks changeable ----
+const SKILL_NAMES = new Set(SKILLS.map(x => x.name))
+const grid = computed(() => !!props.sheet && ['skill', 'expertise', 'skillTool'].includes(c.value.kind))
+/** Pick or take back one (a choice of one: the new one replaces the old). */
+function toggleId(id: string) {
+  if (props.disabled) return
+  const now = props.a.picks.filter(Boolean)
+  if (now.includes(id)) return emit('pick', now.filter(x => x !== id))
+  if (n.value === 1) return emit('pick', [id])
+  if (now.length < n.value) emit('pick', [...now, id])
+}
+const frame = computed(() => (grid.value && !props.disabled ? pickFrame({
+  candidates: options.value.map(o => o.id).filter(id => SKILL_NAMES.has(id)), picked: props.a.picks.filter(Boolean),
+  count: n.value === 1 ? props.a.picks.filter(Boolean).length + 1 : n.value, prof: props.prof ?? 2,
+  levelOf: x => skillLevel(props.sheet!, x), had: props.from, expertise: c.value.kind === 'expertise', orExpertise: !!c.value.orExpertise,
+  toggle: toggleId,
+}) : undefined))
+// ---- tools and languages (and a skill-or-tool's tools): chips to tick ----
+const chipKinds = computed(() => ['tool', 'language'].includes(c.value.kind) || (c.value.kind === 'skillTool' && grid.value))
+const chipOptions = computed(() => options.value.filter(o => c.value.kind !== 'skillTool' || !SKILL_NAMES.has(o.id)))
+/** One the character has already (a language they speak). */
+const hadChip = (id: string) => !props.a.picks.includes(id) && !!(c.value.kind === 'language' ? props.have?.languages.includes(id) : props.sheet?.proficiencies?.tools.includes(id))
+
+// ---- dropdowns (spells, weapons, and skills where there's no sheet to show) ----
 function set(slot: number, id: string) {
   const picks = [...props.a.picks]
   picks[slot] = id
@@ -72,7 +110,7 @@ const shown = computed(() => {
   return q ? rows.value.filter(r => r.label.toLowerCase().includes(q) || r.text.toLowerCase().includes(q)) : rows.value
 })
 /** What a row still lacks: the level, or the option it needs picked first. */
-const lacking = (r: Row) => [r.needs && r.needs > props.a.level && `needs level ${r.needs} (now ${props.a.level})`, r.needOption && !props.a.picks.includes(r.needOption) && `needs ${rows.value.find(x => x.id === r.needOption)?.label ?? 'another option'} first`].filter(Boolean).join('; ')
+const lacking = (r: Row) => [props.taken?.has(r.id) && `taken by ${props.taken.get(r.id)} (a different one each time)`, r.needs && r.needs > props.a.level && `needs level ${r.needs} (now ${props.a.level})`, r.needOption && !props.a.picks.includes(r.needOption) && `needs ${rows.value.find(x => x.id === r.needOption)?.label ?? 'another option'} first`].filter(Boolean).join('; ')
 /** The first sentence, shown on the row; the rest folds away. */
 const lead = (t: string) => t.match(/^[^.!?]*[.!?]/)?.[0] ?? t
 /** The picks made, by name, for the line under the trait. */
@@ -144,8 +182,17 @@ function toggle(id: string) {
     </div>
     </Teleport>
 
+    <p v-if="(grid || chipKinds) && folded && full" class="sp-picked-line small">{{ pickedRows.map(r => r.label).join(' · ') }}
+      <button v-if="!disabled" type="button" class="link-btn" @click="folded = false">Change</button></p>
+    <!-- skills and expertise: the skill grid -->
+    <SkillGrid v-else-if="grid" compact no-saves :s="sheet!" :prof="prof ?? 2" :frame="frame" :from="from" />
+    <!-- tools and languages: chips -->
+    <div v-if="chipKinds && !(folded && full)" class="sp-chips">
+      <button v-for="o in chipOptions" :key="o.id" type="button" class="chip-btn" :class="{ on: a.picks.includes(o.id) }" :aria-pressed="a.picks.includes(o.id)"
+              :disabled="disabled || (!a.picks.includes(o.id) && (hadChip(o.id) || (full && n > 1)))" :title="hadChip(o.id) ? 'Known already' : ''" @click="toggleId(o.id)">{{ o.label }}<small v-if="hadChip(o.id)" class="muted"> ✓</small></button>
+    </div>
     <!-- everything else: one dropdown per pick -->
-    <div v-if="!listed" class="sp-pick-selects">
+    <div v-if="!listed && !grid && !chipKinds" class="sp-pick-selects">
       <Dropdown v-for="k in n" :key="k" :value="a.picks[k - 1] ?? ''" :disabled="disabled" :aria-label="`${a.trait.name}: pick ${k}`" :data-tip="masteryTip(a.picks[k - 1])" @change="set(k - 1, ($event.target as HTMLSelectElement).value)">
         <option value="">—</option>
         <option v-for="o in options" :key="o.id" :value="o.id" :disabled="a.picks.includes(o.id) && a.picks[k - 1] !== o.id" :data-tip="masteryTip(o.id)">{{ weaponLabel(o) }}{{ hasIt(o.id) ? ` ✓ has it: ${hasIt(o.id)}` : '' }}{{ hadSkill(o.id) }}</option>

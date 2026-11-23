@@ -6,10 +6,14 @@
 // title with Back and Next stay at its top, the step scrolls below them (a list and its details each on their own),
 // and the character so far is beside it (WzStats; a strip in a narrow window). What's still to pick is outlined in
 // accent (.wz-todo), and "Next open pick" goes to the first one. Next lights up once the step has nothing open.
+// With nothing chosen yet it opens on a start page: the guide, or straight to a blank sheet with just a name.
 import { computed, ref, watch } from 'vue'
-import { resetWizard, steps, wizard, type Step } from '../wizard'
+import { draftEmpty, makeBlankCharacter, resetWizard, steps, wizard, type Step } from '../wizard'
 import { subclassLevelOf } from '../classRules'
-import { newBlankEntry } from '../ui'
+import { levelCap } from '../rules'
+import { playerMode } from '../store'
+import { setCurrent } from '../sheet'
+import { go, hrefEntry } from '../router'
 import AppIcon from '../components/AppIcon.vue'
 import WzClassStep from '../components/wizard/WzClassStep.vue'
 import WzSubclassStep from '../components/wizard/WzSubclassStep.vue'
@@ -26,6 +30,7 @@ import WzSpellsStep from '../components/wizard/WzSpellsStep.vue'
 import WzStoryStep from '../components/wizard/WzStoryStep.vue'
 import WzSummaryStep from '../components/wizard/WzSummaryStep.vue'
 import WzStats from '../components/wizard/WzStats.vue'
+import EntryModal from '../components/EntryModal.vue'
 
 const d = computed(() => wizard.d)
 const all = computed(() => steps(d.value))
@@ -47,22 +52,68 @@ function nextOpen() {
 }
 /** The steps that show the character's numbers themselves: no panel beside them. */
 const stats = computed(() => !['scores', 'profs', 'summary'].includes(step.value.id))
+/** A link to an entry clicked in the creator: shown in a pop-up, the creator stays (a new tab or window still opens the page). */
+const popup = ref<string | null>(null)
+function linkClick(ev: MouseEvent) {
+  if (ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return
+  const a = (ev.target as HTMLElement).closest?.('a[href^="#/e/"]') as HTMLAnchorElement | null
+  if (!a) return
+  const id = decodeURIComponent(a.getAttribute('href')!.split('/')[2] ?? '')
+  if (!id) return
+  ev.preventDefault()
+  popup.value = id
+}
+// A draft above the Ruleset's highest level comes down to it.
+watch(levelCap, c => { if (wizard.d.level > c) wizard.d.level = c }, { immediate: true })
 // A level below the subclass's level has no subclass.
 watch(() => d.value.level, () => { if (d.value.level < subclassLevelOf(d.value.cls)) wizard.d.subclass = undefined })
 /** The Spells step's name filter. */
 const spellFilter = ref('')
 function startOver() { if (confirm('Clear everything chosen so far?')) resetWizard() }
+// ---- the start page ----
+const starting = computed(() => !wizard.started && draftEmpty(d.value))
+const blankName = ref('')
+function startGuide() { wizard.started = true; wizard.step = 'class' }
+function makeBlank() {
+  const e = makeBlankCharacter(blankName.value)
+  if (playerMode.value) setCurrent(e.id)
+  blankName.value = ''
+  go(hrefEntry(e.id, true))
+}
 </script>
 
 <template>
-  <div class="wizard-page">
+  <div class="wizard-page" @click="linkClick">
+    <EntryModal v-if="popup" :id="popup" @close="popup = null" />
     <header class="list-head">
       <h1><span class="icon"><AppIcon type="pc" /></span>New character</h1>
-      <span class="muted small">Step by step; every step can be changed until the character is made.
-        <button class="link-btn" @click="newBlankEntry('pc')">Make a blank one instead</button> · <button class="link-btn" @click="startOver">Start over</button></span>
+      <span v-if="!starting" class="muted small">Step by step; every step can be changed until the character is made.
+        <button class="link-btn" @click="startOver">Start over</button></span>
     </header>
 
-    <div class="wizard-grid">
+    <!-- the start page: the guide, or a blank sheet with just a name -->
+    <div v-if="starting" class="wz-start">
+      <section class="card wz-start-card">
+        <h2>Guided</h2>
+        <p>Step by step through class, species, background, ability scores, proficiencies, features, feats, equipment and spells.
+          The world's rules apply, every choice says what it does, and what's still open is marked.</p>
+        <p class="muted small">Every step can be changed until the character is made.</p>
+        <span class="spacer" />
+        <button type="button" class="primary" @click="startGuide">Start the guide →</button>
+      </section>
+      <section class="card wz-start-card">
+        <h2>Straight to the sheet</h2>
+        <p>A blank character sheet with just a name. Fill in class, scores, skills and the rest yourself on its Edit page;
+          no rules check what goes in.</p>
+        <span class="spacer" />
+        <form class="wz-start-blank" @submit.prevent="makeBlank">
+          <input v-model="blankName" type="text" placeholder="Name" aria-label="The character's name" />
+          <button type="submit">Make the sheet</button>
+        </form>
+      </section>
+    </div>
+
+    <div v-else class="wizard-grid">
       <section class="card wizard-body">
         <!-- the steps across the top, and the step's title with Back and Next: they stay in view together -->
         <div class="wizard-top">
@@ -76,8 +127,12 @@ function startOver() { if (confirm('Clear everything chosen so far?')) resetWiza
               <small v-else-if="s.chosen && !(isDone(s, i) && s.id !== step.id)" class="wz-chosen">{{ s.chosen }}</small></span>
           </button>
         </nav>
+        <!-- the step's title, the level (it changes what most steps offer) and what's still to choose here -->
         <div class="wizard-head">
           <h2>{{ step.label }}</h2>
+          <label class="wz-head-level" title="The character's level: what the class gives, its spells, feats and hit points follow it">Level
+            <input type="number" min="1" :max="levelCap()" :value="d.level" @change="wizard.d.level = Math.min(levelCap(), Math.max(1, Number(($event.target as HTMLInputElement).value) || 1))" /></label>
+          <span v-if="step.open.length" class="wz-head-open small" :title="`Still to choose here: ${step.open.join(', ')}`">Still to choose: {{ step.open.join(', ') }}</span>
           <span class="wz-nav">
             <button v-if="step.open.length" type="button" class="link-btn wz-next-open" :title="`Still to choose here: ${step.open.join(', ')}`" @click="nextOpen">Next open pick ↓</button>
             <button type="button" :disabled="!at" @click="move(-1)">← Back</button>
@@ -89,7 +144,6 @@ function startOver() { if (confirm('Clear everything chosen so far?')) resetWiza
         <WzStats v-if="stats" strip class="wz-strip-only" />
         <div class="wz-main" :class="{ 'with-stats': stats }">
         <div ref="area" class="wz-area">
-        <p v-if="step.open.length" class="wz-open small">Still to choose: {{ step.open.join(', ') }}</p>
 
         <WzClassStep v-if="step.id === 'class'" />
         <WzSubclassStep v-else-if="step.id === 'subclass'" />

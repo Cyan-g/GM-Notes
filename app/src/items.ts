@@ -1,5 +1,7 @@
 // Items: what they do while in use (their effects, spells and charges, and when they count), what's carried and its
 // weight, where an item is (the characters carrying it, the shops selling it) and what a shop asks for it.
+import { currency, rule } from './rules'
+import { coinCount } from './money'
 import type { CharacterSheet, Entry, GearEffect, InventoryLine, ItemSpell, Regain, StockLine } from './model/types'
 import { byType, get } from './store'
 import { ord } from './model/dnd'
@@ -21,6 +23,34 @@ export const shopsSelling = (item: Entry) => (byType.value.get('place') ?? []).f
   const l = ((s.fields.stock as StockLine[] | undefined) ?? []).find(x => x.item === item.id)
   return l ? [{ s, price: shopPrice(s, l), stock: l.stock }] : []
 })
+
+// ---- spellcasting focuses ----
+/** The kinds of spellcasting focus an item can be (its Focus field); a class uses one of them, or a musical instrument. */
+export const FOCUS_TYPES = ['Arcane focus', 'Druidic focus', 'Holy symbol'] as const
+export type FocusType = (typeof FOCUS_TYPES)[number] | 'Instrument'
+/** The focus types an item is (its Focus field: one or several, a quarterstaff both arcane and druidic), else a
+ * musical instrument (a Bard's), else none. Any kind of item can be one, whatever else it is (a shield with an emblem). */
+export function focusesOf(item: Entry | undefined): FocusType[] {
+  const f = item?.fields.focus, list = Array.isArray(f) ? f : typeof f === 'string' ? [f] : []
+  const out = list.filter(x => (FOCUS_TYPES as readonly string[]).includes(x)) as FocusType[]
+  return out.length ? out : item?.fields.kind === 'Instrument' ? ['Instrument'] : []
+}
+/** The focus types an item's Focus field gives, in words for its tags ("Arcane focus, Druidic focus"). */
+export const focusText = (item: Entry | undefined) => focusesOf(item).filter(x => x !== 'Instrument').join(', ')
+/** A component pouch stands in for materials without a cost, like a focus, for any caster. */
+export const isComponentPouch = (item: Entry | undefined) => !!item && /component pouch/i.test(item.name)
+/** A spell's materials have a cost (or are used up): no focus or pouch replaces them. */
+export const materialCosts = (material: unknown) => typeof material === 'string' && /\d[\d,]*\+?\s*(gp|sp|cp|pp|ep)\b|\bworth\b|\bconsume/i.test(material)
+/** The focuses (and pouches) a character carries that suit the focus types given (their classes'). */
+export function focusesCarried(s: CharacterSheet, types: FocusType[]): Entry[] {
+  const out: Entry[] = []
+  for (const l of s.inventory ?? []) {
+    const e = get(l.item)
+    if (!e || l.qty <= 0 || out.includes(e)) continue
+    if (focusesOf(e).some(f => types.includes(f)) || isComponentPouch(e)) out.push(e)
+  }
+  return out
+}
 
 // ---- what an item does, and when ----
 /** An item's effects. */
@@ -168,3 +198,16 @@ export function restItems(s: CharacterSheet, kind: 'short' | 'long'): RegainRoll
 // ---- what's carried ----
 /** Total weight carried, in lb. */
 export const weightOf = (s: CharacterSheet) => s.inventory.reduce((n, l) => n + (Number(get(l.item)?.fields.weight) || 0) * (l.qty || 0), 0)
+  + (rule('coinWeight') === 'on' ? coinCount(s.money ?? 0, currency()) / 50 : 0)
+/** The inventory slots one of an item takes (the Ruleset's inventory slots): its own number; else an item under a
+ * pound takes its weight (20 arrows of 0.05 lb share one slot), an ingredient in the crafting pouch none, and the rest 1. */
+export function slotsOfItem(e: Entry | undefined): number {
+  if (e?.fields.slots != null && Number.isFinite(Number(e.fields.slots))) return Number(e.fields.slots)
+  if (e?.fields.kind === 'Ingredient') return 0
+  const w = Number(e?.fields.weight)
+  return w > 0 && w < 1 ? w : 1
+}
+/** The slots a character's gear takes: each item's slots times how many, rounded up; with coin weight on, every 100
+ * coins after the first 100 take one. */
+export const slotsUsed = (s: CharacterSheet) => Math.ceil(s.inventory.reduce((n, l) => n + slotsOfItem(get(l.item)) * (l.qty || 0), 0)
+  + (rule('coinWeight') === 'on' ? Math.max(0, Math.ceil((coinCount(s.money ?? 0, currency()) - 100) / 100)) : 0))

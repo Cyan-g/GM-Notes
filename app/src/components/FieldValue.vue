@@ -15,7 +15,7 @@ import StockTable from './StockTable.vue'
 import EncounterTable from './EncounterTable.vue'
 import RanksTable from './RanksTable.vue'
 import { renderInline } from '../markdown'
-import { CRAFTING_RULE, craftingTime } from '../crafting'
+import { craftingRule, craftingTime } from '../crafting'
 import { describeEffect } from '../effects'
 import { howCast } from '../items'
 import type { GearEffect, ItemSpell } from '../model/types'
@@ -84,7 +84,7 @@ ${entry.body ?? ''}`" />
       </tbody>
       <tfoot>
         <tr><td colspan="3">Ingredient cost{{ recipe.known ? '' : ' (some prices unknown)' }}</td><td class="num">{{ formatMoney(recipe.total) }}</td></tr>
-        <tr class="craft-time" :title="CRAFTING_RULE"><td colspan="3"><AppIcon ui="timeline" /> Crafting time</td><td class="num">{{ craftingTime(entry.fields.value) || '—' }}</td></tr>
+        <tr class="craft-time" :title="craftingRule()"><td colspan="3"><AppIcon ui="timeline" /> Crafting time</td><td class="num">{{ craftingTime(entry.fields.value) || '—' }}</td></tr>
       </tfoot>
     </table>
   </template>

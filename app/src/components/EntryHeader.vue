@@ -12,7 +12,7 @@ import { fromPlayer, isShared, sharedBy } from '../sync'
 import { removePlayerCharacter } from '../playerCharacters'
 import { XP_AT, currentPc, levelOf, setCurrent } from '../sheet'
 import { currentCampaign, setCurrentCampaign } from '../sessions'
-import { rule } from '../rules'
+import { levelCap, rule } from '../rules'
 import { go, hrefEntry, route } from '../router'
 import { printCards, ui } from '../ui'
 import { changed, createEntry, isFavourite, toggleFavourite } from '../edit'
@@ -31,6 +31,7 @@ import HistoryDialog from './HistoryDialog.vue'
 import DataImage from './DataImage.vue'
 import AttitudeBadge from './AttitudeBadge.vue'
 import DmOnlyBadge from './DmOnlyBadge.vue'
+import { focusText } from '../items'
 
 const props = defineProps<{ e: Entry }>()
 const def = computed(() => TYPES[props.e.type])
@@ -59,7 +60,7 @@ const facts = computed(() => factsOf(props.e))
 const menu = ref(false)
 const menuEl = ref<HTMLElement | null>(null)
 /** A character of one's own can level up (not a shared one, not past 20, not in a read-only world). */
-const canLevel = computed(() => props.e.type === 'pc' && !shared.value && !player.value && !state.readOnly && levelOf(props.e) < 20)
+const canLevel = computed(() => props.e.type === 'pc' && !shared.value && !player.value && !state.readOnly && levelOf(props.e) < levelCap())
 /** Enough XP for the next level (XP rule): the menu says so, and the button shows a dot. */
 const ready = computed(() => canLevel.value && rule('experience') === 'xp' && (props.e.fields.sheet?.xp ?? 0) >= XP_AT[levelOf(props.e)])
 function pick(job: () => void) { menu.value = false; job() }
@@ -117,6 +118,7 @@ watch(() => route.current, () => { menu.value = false })
       <h1><span class="icon"><EntryIcon :e="e" /></span>{{ e.name }}</h1>
       <div class="sub">
         <span class="badge">{{ (e.type === 'place' && e.fields.placeType) || (e.type === 'item' && e.fields.kind) || def.label }}</span>
+        <span v-if="e.type === 'item' && focusText(e)" class="badge" title="A spellcasting focus: a caster of a class that uses it can hold it instead of materials without a cost">{{ focusText(e) }}</span>
         <!-- A character: whether the Spellbook, Workbench and Character menu use them. -->
         <button v-if="e.type === 'pc' && !player" class="chip-toggle current-toggle" :class="{ on: currentPc?.id === e.id }" :disabled="!!state.readOnly"
                 :title="currentPc?.id === e.id ? 'The Spellbook, Workbench and Character menu use this character' : 'Use this character in the Spellbook, Workbench and Character menu'"

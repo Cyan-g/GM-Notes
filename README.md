@@ -10,8 +10,9 @@ GM Notes is a desktop app for Windows and macOS. Each world lives in its own fol
 files and backups.
 
 - **Install:** on Windows, `GM-Notes-Setup-<version>.exe` installs for your user and updates itself (a bar offers
-  *Restart and update*). On macOS the app isn't signed, so open it the first time with right-click → *Open*; a bar
-  says when a new version is out.
+  *Restart and update*). On macOS, `GM-Notes-<version>-universal.dmg` runs on Apple Silicon and Intel Macs. It's
+  signed ad hoc, not by an Apple Developer ID, so the first start says Apple couldn't verify it: click *Done*, then
+  *Open Anyway* in System Settings → Privacy & Security (once). A bar says when a new version is out.
 - **First start:** choose a folder. An empty one gets a new world, starting either with the SRD 5.2.1 content (spells,
   feats, species, backgrounds, tools, the dropdown lists and a standard calendar; shown as *D&D 5e*), empty, or from
   an exported world file. Then pick *I'm the DM* or *I'm a player* (⚙ → *DM mode* switches later).
@@ -164,8 +165,9 @@ npm run seed       # rebuild the starting world from ../data (or a folder given 
   builds on the local disk because the packager needs finer file times.
 
 **Releasing:** raise `version` in `app/package.json`, commit, tag (`v1.2.3`) and push both.
-`.github/workflows/release.yml` builds the Windows installer and the Mac `.dmg`/`.zip` into a draft release and
-publishes it, which is where the apps look for updates. A tag uses the workflow as it was in that commit.
+`.github/workflows/release.yml` builds the Windows installer and the universal Mac `.dmg`/`.zip`, uploads them
+into a draft release and publishes it once all of them are there (a missing one fails the run and leaves the draft),
+which is where the apps look for updates. A tag uses the workflow as it was in that commit.
 
 ## Credits
 

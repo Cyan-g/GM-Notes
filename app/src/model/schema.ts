@@ -227,11 +227,18 @@ export const SCHEMA = [
       { key: 'kind', label: 'Kind', kind: 'select', options: ITEM_KINDS, fixed: ['Weapon', 'Armor', 'Tool', 'Potion', 'Poison', 'Ingredient', 'Scroll', 'Other'] },
       { key: 'spell', label: 'Spell', kind: 'ref', to: ['spell'], when: { field: 'kind', is: ['Scroll'] } },
       { key: 'subtype', label: 'Subtype', kind: 'text' },
+      // the kind of tool or instrument it is (Elmar's Lyre: Lyre; Lyre itself: Lyre): what proficiency covers it
+      { key: 'toolType', label: 'Type', kind: 'ref', to: ['item'], pick: { field: 'kind', is: ['Tool', 'Instrument'] }, when: { field: 'kind', is: ['Tool', 'Instrument'] } },
+      // A spellcasting focus it is, whatever its kind (a quarterstaff that's an arcane focus, a shield with an emblem).
+      // One or several (a quarterstaff: arcane and druidic); a single one from before is read the same (items.ts focusesOf).
+      { key: 'focus', label: 'Spellcasting focus', kind: 'list', options: ['Arcane focus', 'Druidic focus', 'Holy symbol'], fixed: ['Arcane focus', 'Druidic focus', 'Holy symbol'], when: { field: 'kind', is: ['Weapon', 'Armor', 'Tome', 'Ring', 'Accessory', 'Adventuring Gear', 'Other'] } },
       { key: 'rarity', label: 'Rarity', kind: 'select', options: ['Common', 'Uncommon', 'Rare', 'Very rare', 'Legendary', 'Artifact'] },
       { key: 'magical', label: 'Magical', kind: 'bool' },
       { key: 'attunement', label: 'Requires attunement', kind: 'bool' },
       { key: 'value', label: 'Value', kind: 'money' },
       { key: 'weight', label: 'Weight', kind: 'weight' },
+      // Inventory slots one of it takes, where the Ruleset counts slots (empty: 1, or its weight under a pound; 0.05: twenty share a slot).
+      { key: 'slots', label: 'Inventory slots', kind: 'number' },
       { key: 'summary', label: 'Short description', kind: 'longtext' },
       { key: 'weaponCategory', label: 'Weapon category', kind: 'select', options: WEAPON_CATEGORIES, fixed: WEAPON_CATEGORIES, when: W, group: 'Weapon' },
       { key: 'baseWeapon', label: 'Base weapon', kind: 'select', options: [...SIMPLE_WEAPONS, ...MARTIAL_WEAPONS].sort(), when: W, group: 'Weapon' },

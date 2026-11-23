@@ -3,7 +3,8 @@
 import TypeIcon from './TypeIcon.vue'
 import { computed, onMounted, onUnmounted } from 'vue'
 import type { Id } from '../model/types'
-import { get } from '../store'
+import { formatMoney, get } from '../store'
+import { mainCoin } from '../rules'
 import { spellLevel } from '../model/dnd'
 import { hrefEntry } from '../router'
 import ItemCard from './ItemCard.vue'
@@ -33,7 +34,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true))
       </header>
       <slot name="own" />
       <ItemCard :e="e" />
-      <p v-if="e.fields.kind === 'Scroll' && spell" class="small muted">A Wizard can copy {{ spell.name }} into their spellbook: 2 hours and 50 gp per spell level ({{ spellLevel(spell) ? `${2 * spellLevel(spell)} hours, ${50 * spellLevel(spell)} gp` : 'a cantrip: not copied' }}).</p>
+      <p v-if="e.fields.kind === 'Scroll' && spell" class="small muted">A Wizard can copy {{ spell.name }} into their spellbook: 2 hours and {{ formatMoney(50 * mainCoin()) }} per spell level ({{ spellLevel(spell) ? `${2 * spellLevel(spell)} hours, ${formatMoney(50 * mainCoin() * spellLevel(spell))}` : 'a cantrip: not copied' }}).</p>
       <SpellCard v-if="spell" :e="spell" />
       <MarkdownView v-if="e.body" :source="e.body" class="item-modal-text" />
     </div>

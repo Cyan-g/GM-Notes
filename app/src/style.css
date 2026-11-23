@@ -664,10 +664,20 @@ input.init { width: 4em; }
 .pip:hover { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
 .slot-left { font-size: 12px; color: var(--muted); }
 .slot-max { width: 4em; text-align: center; padding: .2em; }
-.sbk-list { margin-bottom: 1rem; overflow-x: auto; }
+/* the spell tables never scroll sideways: squeezed, they drop their least important columns first (the name stays) */
+.sbk-list { margin-bottom: 1rem; overflow-x: clip; container-type: inline-size; }
+.sbk-list .grid { width: 100%; }
+.sbk-list .grid td:first-child { white-space: normal; overflow-wrap: anywhere; }
+.sbk-list .grid td.sbk-actions { white-space: nowrap; }
+@container (max-width: 860px) { .sbk-t-prep :is(th, td):nth-child(6), .sbk-t-inn :is(th, td):nth-child(6) { display: none; } }
+@container (max-width: 760px) { .sbk-t-prep :is(th, td):nth-child(4), .sbk-t-inn :is(th, td):nth-child(5) { display: none; } }
+@container (max-width: 660px) { .sbk-t-prep :is(th, td):nth-child(3), .sbk-t-inn :is(th, td):nth-child(3) { display: none; } }
+@container (max-width: 560px) { .sbk-t-prep :is(th, td):nth-child(2), .sbk-t-inn :is(th, td):nth-child(2) { display: none; } }
+@container (max-width: 440px) { .sbk-t-prep :is(th, td):nth-child(5), .sbk-t-inn :is(th, td):nth-child(7) { display: none; } }
+@container (max-width: 300px) { .sbk-t-short :is(th, td):nth-child(2) { display: none; } }
 .sbk-list table { margin-bottom: .6rem; }
 /* a spell's name and its range stay on one line (the table scrolls sideways when narrow) */
-.sbk-list .grid td:first-child, .sbk-list .grid td.sbk-range { white-space: nowrap; }
+.sbk-list .grid td.sbk-range { white-space: nowrap; }
 .sbk-check { white-space: nowrap; color: var(--ink); font-weight: 500; }
 .sbk-actions { white-space: nowrap; text-align: right; }
 .sbk-actions .chip-btn { font-size: 12px; padding: .15em .7em; }
@@ -1789,6 +1799,14 @@ button.live-tag { cursor: pointer; }
 .wizard-page { display: flex; flex-direction: column; height: calc(100vh - var(--bar-h) - 2.7rem); }
 .wizard-page > .list-head { flex: none; }
 .wizard-page .wizard-grid { flex: 1; min-height: 0; }
+.wz-start { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; max-width: 60rem; margin: 1.5rem auto 0; width: 100%; align-items: stretch; }
+.wz-start-card { display: flex; flex-direction: column; gap: .4rem; padding: 1.4rem 1.5rem; }
+.wz-start-card h2 { margin: 0 0 .2rem; }
+.wz-start-card p { margin: 0; }
+.wz-start-card .spacer { flex: 1; min-height: .6rem; }
+.wz-start-card > button { align-self: flex-start; }
+.wz-start-blank { display: flex; gap: .5rem; }
+.wz-start-blank input { flex: 1; min-width: 0; }
 .wizard-body { height: 100%; margin: 0; padding-bottom: 0; display: flex; flex-direction: column; overflow: hidden; }
 .wz-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.2rem; }
 .wz-main.with-stats { grid-template-columns: minmax(0, 1fr) 16.5rem; }
@@ -1821,6 +1839,75 @@ button.live-tag { cursor: pointer; }
 @keyframes wz-flash { 0% { outline-color: var(--accent); outline-width: 4px; } 100% { outline-width: 2px; } }
 .wz-next-open { margin-right: .4rem; }
 .wz-ch-intro { padding: 2rem 1rem; max-width: 40rem; }
+/* the skill grid (SkillGrid): the same everywhere; what the frame lets change is bright, the rest shown but quiet */
+.skill-grid .cs-skill[aria-disabled=true] { cursor: default; }
+.skill-grid .cs-skill[aria-disabled=true]:hover { background: none; }
+.skill-grid .cs-skill.can { color: var(--ink); }
+.skill-grid .cs-skill.off:not(.on) { opacity: .5; }
+/* where something can be picked, what's locked is grey (the accent is for what can change here) */
+.skill-grid .cs-skill.off.on { color: var(--ink-2); }
+.skill-grid .cs-skill.off.on .cs-dot, .skill-grid .cs-save.sg-lock.on .cs-dot { color: var(--muted); }
+.skill-grid .cs-save.sg-lock.on { background: var(--chip); }
+.skill-grid .cs-skill.sg-picked { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--ink); }
+.skill-grid .cs-skill.sg-selected { outline: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 20%, transparent); }
+.skill-grid .cs-skill.sg-back { opacity: .8; font-style: italic; }
+.sg-then { color: var(--accent); font-size: .9em; white-space: nowrap; }
+/* compact: a choice's grid, the level-up's; a line per skill, as many columns as fit */
+.sg-wrap.compact { flex-basis: 100%; width: 100%; container-type: inline-size; }
+.skill-grid.compact { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; gap: .3rem; margin: .35rem 0; }
+@container (min-width: 27rem) { .skill-grid.compact { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@container (min-width: 54rem) { .skill-grid.compact { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.skill-grid.compact .cs-ability { padding: .15rem .25rem .2rem; }
+.skill-grid.compact .cs-ab-head { gap: .25rem; }
+.skill-grid.compact .cs-mod { font-size: .95rem; }
+.skill-grid.compact .cs-skill { font-size: 12px; line-height: 1.35; grid-template-columns: .9em 1.8em minmax(0, 1fr) auto; padding: 0 .15rem; }
+.skill-grid.compact .cs-skills { padding-top: .1rem; }
+.skill-grid.compact .cs-noskill { font-size: 11px; margin: .1rem 0; }
+.sp-chips { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: .25rem; margin: .3rem 0; }
+/* the header: the step's title, the level, what's still to choose here, Back and Next */
+.wizard-head .wz-nav { margin-left: auto; }
+.wz-head-level { display: inline-flex; align-items: center; gap: .35rem; font-size: 13px; color: var(--muted); }
+.wz-head-level input { width: 4rem; }
+.wz-head-open { color: var(--accent); max-width: 34rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry-modal { width: min(52rem, 94vw); max-height: 88vh; overflow-y: auto; }
+/* the Spells step: level tabs, filters, the level's spells as tiles; the card of the one looked at beside them */
+.wz-area:has(> .wz-spells) { overflow: hidden; display: flex; flex-direction: column; padding-bottom: 0; }
+.wz-area:has(> .wz-spells) > * { flex: none; }
+.wz-area > .wz-spells { flex: 1; min-height: 0; }
+.wz-spells { display: grid; grid-template-columns: minmax(0, 1fr) minmax(17rem, 23rem); gap: 1.2rem; height: 100%; }
+.wz-sp-main { display: flex; flex-direction: column; gap: .45rem; min-height: 0; }
+.wz-sp-main > * { flex: none; }
+.wz-sp-main .wz-ch-top { margin: 0; }
+.wz-sp-tabs { flex-wrap: wrap; }
+.wz-sp-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; }
+.wz-sp-filters .wz-filter { width: 14rem; margin: 0; }
+.wz-sp-grid { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: .35rem; align-content: start; padding: .35rem; margin-bottom: 1rem; border-radius: 10px; }
+.wz-sp-tile { display: grid; gap: .1rem; text-align: left; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink-2); cursor: pointer; min-width: 0; }
+.wz-sp-tile:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); color: var(--ink); }
+.wz-sp-tile.looked { background: color-mix(in srgb, var(--accent) 10%, var(--panel)); box-shadow: inset 2px 0 0 var(--accent); color: var(--ink); }
+.wz-sp-tile.on { border-color: var(--accent); color: var(--ink); }
+.wz-sp-tile.on .wz-sp-name { font-weight: 700; }
+.wz-sp-name { font-size: 14px; font-weight: 600; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wz-sp-tick { display: inline-block; width: 1em; color: var(--accent); }
+.wz-sp-facts { font-size: 11.5px; color: var(--muted); padding-left: 1em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wz-sp-tile.had .wz-sp-name::after { content: ' ✓'; color: var(--muted); font-weight: 400; }
+@media (max-width: 760px) { .wz-spells { grid-template-columns: 1fr; height: auto; } .wz-sp-grid { max-height: 60vh; } }
+/* the sheet's ability cards in the creator (WzAbilityCards): six in a row where there's room */
+.wizard-page .sg-wrap { container-type: inline-size; }
+.wizard-page .skill-grid:not(.compact) { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; padding: .2rem; margin: .4rem 0 .8rem; }
+@container (min-width: 40rem) { .wizard-page .skill-grid:not(.compact) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@container (min-width: 76rem) { .wizard-page .skill-grid:not(.compact) { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.sg-score { justify-self: end; min-width: 2.4em; padding: 0 .3em; border: 1px solid var(--line); border-radius: 6px; font-size: 12.5px; text-align: center; color: var(--ink-2); }
+.wizard-page .skill-grid .cs-skill { grid-template-columns: 1em 2em minmax(0, 1fr) auto; font-size: 13px; }
+.wz-score-src { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .7rem; }
+.wz-src-label { font-size: 13px; color: var(--muted); }
+.wz-src-label + .seg + .wz-src-label { margin-left: 1rem; }
+.wz-bonus-src { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; margin: .6rem 0 .3rem; }
+.wz-bonus-pick { display: inline-flex; align-items: center; gap: .25rem; }
+.wz-bonus-pick b { min-width: 1.8em; text-align: center; }
+.wz-th-left { margin-left: .35rem; vertical-align: middle; }
+.wz-feat-pointer { margin: .5rem 0; padding: .4rem .6rem; border: 1px dashed var(--line); border-radius: 8px; }
+.wz-feat-fixed { display: grid; gap: .5rem; }
 /* the ability scores step's guidance, and what each score feeds */
 .wz-guide { max-width: 60rem; margin: .6rem 0; display: grid; gap: .35rem; font-size: 14px; }
 .wz-guide p { margin: 0; }
@@ -1907,6 +1994,13 @@ button.live-tag { cursor: pointer; }
 .wz-choice select { width: auto; }
 .wz-choice.open { box-shadow: inset 3px 0 0 var(--accent); }
 .wz-scores { border-collapse: collapse; margin: .6rem 0; }
+/* ScoreTable: a score with points not on the sheet yet in accent; a row the choice can't change grey */
+.wz-scores .st-up { color: var(--accent); }
+.wz-scores tr.st-dim > th, .wz-scores tr.st-dim > td:not(.wz-does) { color: var(--muted); }
+.wz-scores tr.st-dim .wz-does { opacity: .6; }
+.fst { margin: .3rem 0 .6rem; }
+.fst > p { margin: 0; display: flex; gap: .4rem; align-items: baseline; flex-wrap: wrap; }
+.fst .wz-scores { margin-top: .3rem; }
 .wz-scores th, .wz-scores td { padding: .25rem .6rem; text-align: center; }
 .wz-scores tbody th { text-align: left; font-weight: 500; }
 .wz-scores select, .wz-scores input { width: 5rem; }
@@ -2339,6 +2433,8 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .item-where .iw-sub { margin: .4rem 0 .2rem; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .item-where .chip-btn { margin-top: .5rem; }
 /* the entry picker's list floats over the page (EntryPicker): fixed at its input, above dialogs too */
+.picker-caret { position: absolute; right: .6rem; top: 50%; translate: 0 -50%; color: var(--muted); font-size: .8em; pointer-events: none; }
+.picker-dd { padding-right: 1.8rem; cursor: pointer; }
 .picker-list.floating { position: fixed; right: auto; z-index: 2000; margin: 0; min-width: 0; }
 /* ---- the wizard: the picked class's or species' page under the choices; the subrace as its own choice ---- */
 .wz-page { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
@@ -2447,7 +2543,10 @@ select.dd::picker-icon { color: var(--muted); font-size: .8em; transition: rotat
 select.dd:open::picker-icon { rotate: 180deg; }
 select.dd:disabled { cursor: default; }
 select.dd::picker(select) {
-  appearance: base-select; margin: 2px 0; padding: 4px; max-height: min(320px, 60vh); color: var(--ink); background: var(--panel);
+  /* a long list scrolls inside it, and it never runs off a small window */
+  appearance: base-select; margin: 2px 0; padding: 4px; max-height: min(320px, 60vh); overflow-y: auto; overscroll-behavior: contain; color: var(--ink); background: var(--panel);
+  /* below the field, above only when it doesn't fit there (not wherever there's more room) */
+  position-area: block-end span-inline-end; position-try-order: normal; position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
   border: 1px solid var(--fx-panel-edge, var(--line)); border-radius: var(--fx-panel-radius, 10px);
   outline: var(--fx-panel-outline, none); outline-offset: var(--fx-panel-outline-offset, 0);
   box-shadow: 0 2px 4px rgb(0 0 0 / .08), 0 10px 32px rgb(0 0 0 / .22);
@@ -2501,6 +2600,13 @@ select.dd option:is(:hover, :focus-visible)::before {
 .wz-sub-list .wz-tile.shown { border-style: dashed; border-color: var(--accent); }
 .wz-sub-detail .wz-page { margin-top: 0; padding-top: 0; border-top: none; }
 .wz-fold { margin: .4rem 0; }
+/* a background's facts: a label column and a value column, a line each */
+.facts.wz-bg-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: .3rem 1.2rem; align-items: baseline; margin: .2rem 0 .8rem; }
+.wz-bg-facts dt { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.wz-bg-facts dd { margin: 0; font-size: 14px; }
+/* a species' facts at the top right, the lore and traits flowing beside them */
+.wz-race-glance { float: right; width: min(19rem, 45%); margin: 0 0 1rem 1.2rem; }
+.wz-page::after { content: ''; display: block; clear: both; }
 .wz-fold > summary { cursor: pointer; font: 600 1.05rem var(--serif); color: var(--accent); padding: .3rem 0; list-style: none; }
 .wz-fold > summary::-webkit-details-marker { display: none; }
 .wz-fold > summary::before { content: '▸'; display: inline-block; width: 1.1em; color: var(--muted); transition: rotate .15s; }
@@ -2532,6 +2638,26 @@ select.dd option:is(:hover, :focus-visible)::before {
 .wz-ch-hint { flex: none; color: var(--muted); font-size: 12px; font-weight: 400; white-space: nowrap; }
 .wz-ch-empty { padding: .4rem .5rem; margin: 0; }
 .wz-ch-detail { min-width: 0; }
+.wz-hp input[type=radio] { width: auto; margin: 0; }
+.wz-hp .lu-hp { gap: .3rem 1.2rem; }
+.wz-hp td { padding: .35rem .6rem; }
+/* the row looked at opens into the details beside it: one card, no border between them, its left end rounded like a
+   tab; the list's scrollbar sits on its left so nothing comes between the row and the card */
+.wz-chooser { gap: 0; --wz-open: color-mix(in srgb, var(--accent) 6%, var(--panel)); }
+.wz-ch-side { position: relative; z-index: 1; margin-right: -1px; }
+.wz-ch-list { border-right: none; border-radius: 10px 0 0 10px; padding: 4px 0 4px 4px; direction: rtl; }
+.wz-ch-list > * { direction: ltr; }
+.wz-ch-row { border: 1px solid transparent; border-right: none; border-radius: 8px 0 0 8px; }
+.wz-ch-row:hover { background: var(--chip); }
+.wz-ch-row.shown, .wz-ch-row.on.shown { background: var(--wz-open); border-color: var(--line); box-shadow: none; }
+.wz-ch-row.on.shown .wz-ch-tick { color: var(--accent); }
+.wz-ch-detail { height: calc(100% - 1rem); padding: .8rem 1rem 1.2rem; border: 1px solid var(--line); border-radius: 10px; background: var(--wz-open); }
+@media (max-width: 760px) {
+  .wz-ch-side { margin-right: 0; }
+  .wz-ch-list { border-right: 1px solid var(--line); border-radius: 10px; padding: 4px; direction: ltr; }
+  .wz-ch-row { border-radius: 6px; border-right: 1px solid transparent; }
+  .wz-ch-detail { height: auto; margin-top: .6rem; }
+}
 .wz-ch-detail .wz-page { margin-top: 0; padding-top: 0; border-top: none; }
 .wz-ch-hint-line { margin: 0 0 .4rem; }
 .wz-need-line { color: var(--accent); margin: 0 0 .4rem; }
@@ -2637,3 +2763,25 @@ select.dd option:is(:hover, :focus-visible)::before {
 .cp-stats dd { margin: 0; font: 600 1.05rem var(--serif); }
 .cp-add { display: flex; align-items: center; }
 .cp-add .picker { width: 100%; }
+/* the spellbook's M mark: materials a carried focus covers (muted), that it doesn't have yet (accent), with a cost (bold) */
+.sbk-m { margin-left: .3rem; font-size: 11px; font-weight: 600; padding: 0 .25rem; border-radius: 4px; border: 1px solid var(--line); }
+.sbk-m.covered { color: var(--muted); }
+.sbk-m.needed { color: var(--accent); border-color: var(--accent); }
+.sbk-m.cost { color: var(--ink); border-color: var(--ink-2); }
+.sbk-focus b { font-size: 13px; font-weight: 500; }
+/* LinkTextarea: the text drawn behind a see-through textarea, with its links and secret blocks marked (no padding or
+   weight on the marks: the letters have to line up with the textarea's) */
+.lt-wrap { position: relative; display: block; min-width: 0; }
+.lt-back { position: absolute; z-index: 0; overflow: hidden; box-sizing: border-box; white-space: pre-wrap; overflow-wrap: break-word; color: var(--ink); background: var(--panel); pointer-events: none; }
+.lt-ta { position: relative; z-index: 1; background: transparent !important; color: transparent !important; caret-color: var(--ink); }
+.lt-ta::placeholder { color: var(--muted); }
+.lt-ta::selection { color: transparent; background: color-mix(in srgb, var(--accent) 30%, transparent); }
+.lt-back .lt-link { color: var(--link); background: color-mix(in srgb, var(--link) 14%, transparent); border-radius: 3px; }
+.lt-back .lt-link.missing { color: var(--muted); background: none; text-decoration: underline dashed; }
+.lt-back .lt-web { color: var(--link); text-decoration: underline; }
+.lt-back .lt-secret { background: var(--secret-bg); box-shadow: 0 0 0 1px var(--secret-line); }
+.lt-hint { position: absolute; right: .5rem; bottom: .4rem; z-index: 2; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: .05rem .5rem; border-radius: 999px; font-size: 11px; background: var(--chip); color: var(--ink-2); pointer-events: none; }
+.lt-hint.missing { color: var(--muted); }
+.feat-edit .lt-wrap { grid-column: 1 / -1; }
+.rs-number { display: flex; align-items: center; gap: .6rem; margin-top: .4rem; }
+.rs-number input { width: 6rem; }

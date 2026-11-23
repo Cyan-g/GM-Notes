@@ -5,7 +5,7 @@ import { computed } from 'vue'
 import type { RecipeLine } from '../../model/types'
 import { formatMoney, get } from '../../store'
 import EntryPicker from './EntryPicker.vue'
-import { CRAFTING_RULE, craftingTime } from '../../crafting'
+import { craftingRule, craftingTime } from '../../crafting'
 
 const props = defineProps<{ modelValue?: RecipeLine[]; itemValue?: number }>()
 const emit = defineEmits<{ 'update:modelValue': [RecipeLine[]] }>()
@@ -35,7 +35,7 @@ function add(id: string) { emit('update:modelValue', [...lines.value, { item: id
     </tbody>
     <tfoot>
       <tr><td colspan="2">Ingredient cost</td><td class="num">{{ formatMoney(total) }}</td><td /></tr>
-      <tr class="craft-time" :title="CRAFTING_RULE"><td colspan="2"><AppIcon ui="timeline" /> Crafting time <span v-if="!itemValue" class="muted small">(set the item's value)</span></td><td class="num">{{ craftingTime(itemValue) || '—' }}</td><td /></tr>
+      <tr class="craft-time" :title="craftingRule()"><td colspan="2"><AppIcon ui="timeline" /> Crafting time <span v-if="!itemValue" class="muted small">(set the item's value)</span></td><td class="num">{{ craftingTime(itemValue) || '—' }}</td><td /></tr>
     </tfoot>
   </table>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Edits a 5e statblock. Basic numbers are always visible; the rest folds open.
+import LinkTextarea from './LinkTextarea.vue'
 import { computed } from 'vue'
 import type { Abilities, Feature, Statblock } from '../../model/types'
 import { ABILITY_KEYS, mod, signed, type Ability } from '../../model/dnd'
@@ -65,7 +66,7 @@ const hasMore = computed(() => TEXTS.some(([k]) => sb.value[k]) || FEATS.some(([
         <div v-for="(f, i) in feats(k)" :key="i" class="feat-edit">
           <input :value="f.name" placeholder="Name" @change="setFeat(k, i, { name: ($event.target as HTMLInputElement).value })" />
           <button type="button" class="x" title="Remove" @click="removeFeat(k, i)">×</button>
-          <textarea rows="2" :value="f.text" placeholder="What it does" @change="setFeat(k, i, { text: ($event.target as HTMLTextAreaElement).value })" />
+          <LinkTextarea rows="2" :value="f.text" placeholder="What it does" @change="setFeat(k, i, { text: ($event.target as HTMLTextAreaElement).value })" />
         </div>
         <button type="button" class="link-btn" @click="addFeat(k)">＋ Add {{ label.toLowerCase().replace(/s$/, '') }}</button>
       </div>

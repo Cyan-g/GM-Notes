@@ -9,6 +9,8 @@ import { checkDatabase, type Problem } from './validate'
 import { defaultCalendar, formatYear } from './calendar'
 import { DATA_VERSION, OLDEST_VERSION, upgrade } from './migrations'
 import { BACKUP_DIR, backupsToDelete, stampOf } from './backupNames'
+import { formatCoins } from './money'
+import { currency } from './rules'
 
 /** The play state (the fight, the world's own spellbook and workbench): saved like the rest, but not a "world edit". */
 const PLAY_KEYS = ['tracker', 'spellbook', 'crafting', 'follow', 'playerNotes'] as const
@@ -366,14 +368,8 @@ export function placePath(id: Id): Entry[] {
 
 // ---------- formatting ----------
 
-export function formatMoney(cp: unknown): string {
-  if (typeof cp !== 'number' || !isFinite(cp)) return ''
-  if (cp < 0) return '−' + formatMoney(-cp)
-  if (cp >= 100 && cp % 100 === 0) return `${(cp / 100).toLocaleString()} gp`
-  if (cp >= 100) return `${(cp / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })} gp`
-  if (cp >= 10 && cp % 10 === 0) return `${cp / 10} sp`
-  return `${cp} cp`
-}
+/** An amount (in base coins) in the world's coins: "12 gp 5 sp 3 cp" (the Ruleset's "Currency"). */
+export const formatMoney = (cp: unknown): string => formatCoins(cp, currency())
 
 export function formatDate(d: WorldDate | undefined | null): string {
   if (!d || d.year == null) return ''

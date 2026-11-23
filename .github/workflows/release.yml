@@ -1,8 +1,9 @@
 # Builds the desktop app for Windows and macOS when a version tag (v1.2.3) is pushed, and publishes the
 # installers as a GitHub release. The Windows app updates itself from these releases; the Mac app is told.
 #
-# The release is made once, as a draft, before the builds; both builds upload into it (two builds creating it at
-# the same moment made one fail), and it's published only when both are done.
+# The release is made once, as a draft, before the builds; each build uploads its own files into it with the GitHub
+# CLI (an upload that fails fails the run), and it's published only when the Windows installer and the Mac downloads
+# are all there. The Mac app is one universal build (Apple Silicon and Intel), signed ad hoc (no Apple Developer ID).
 name: Release desktop app
 
 on:
@@ -41,6 +42,7 @@ jobs:
     defaults:
       run:
         working-directory: app
+        shell: bash
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -49,13 +51,37 @@ jobs:
           cache: npm
           cache-dependency-path: app/package-lock.json
       - run: npm ci
+      # The tag and the app's version have to agree: the files are named after the version.
+      - run: |
+          V=$(node -p "require('./package.json').version")
+          [ "v$V" = "$TAG" ] || { echo "::error::Tag $TAG but package.json says $V"; exit 1; }
+          echo "V=$V" >> "$GITHUB_ENV"
       - run: npm run release
         env:
-          # The Mac build isn't signed (no Apple Developer ID); don't look for a certificate.
+          # Ad-hoc signing on the Mac (package.json); don't look for a certificate.
           CSC_IDENTITY_AUTO_DISCOVERY: false
+      # Upload exactly the files this platform makes; a missing one fails the build.
+      - run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            files=("GM-Notes-Setup-$V.exe" "GM-Notes-Setup-$V.exe.blockmap" "latest.yml")
+          else
+            files=("GM-Notes-$V-universal.dmg" "GM-Notes-$V-universal.dmg.blockmap" "GM-Notes-$V-universal-mac.zip" "GM-Notes-$V-universal-mac.zip.blockmap" "latest-mac.yml")
+          fi
+          cd release
+          ls -la
+          for f in "${files[@]}"; do [ -f "$f" ] || { echo "::error::$f wasn't built"; exit 1; }; done
+          gh release upload "$TAG" "${files[@]}" --clobber -R "$GITHUB_REPOSITORY"
 
   publish:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      # Published only with both platforms' downloads in it; otherwise it stays a draft and the run fails.
+      - run: |
+          V=${TAG#v}
+          have=$(gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name')
+          echo "$have"
+          for f in "GM-Notes-Setup-$V.exe" "latest.yml" "GM-Notes-$V-universal.dmg" "GM-Notes-$V-universal-mac.zip" "latest-mac.yml"; do
+            grep -qxF "$f" <<< "$have" || { echo "::error::$f is missing from the release"; exit 1; }
+          done
       - run: gh release edit "$TAG" -R "$GITHUB_REPOSITORY" --draft=false --latest

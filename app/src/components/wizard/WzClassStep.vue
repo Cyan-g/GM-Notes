@@ -27,11 +27,10 @@ function setClass(cls: string) {
 </script>
 
 <template>
-  <WzChooser :items="items" :picked="d.cls" label="Classes" :need="!d.cls" intro="Click a class on the left to see its hit die, saving throws, proficiencies and what it gets at each level. Clicking takes it; set the level above the list." @pick="setClass">
+  <WzChooser :items="items" :picked="d.cls" label="Classes" :need="!d.cls" intro="Click a class on the left to see its hit die, saving throws, proficiencies and what it gets at each level. Clicking takes it; set the level in the header." @pick="setClass">
     <template #top>
-      <div class="wz-row wz-ch-top">
-        <label>Level <input type="number" min="1" max="20" :value="d.level" @change="wizard.d.level = Math.min(20, Math.max(1, num($event) || 1))" /></label>
-        <label v-if="d.cls && !r">Hit die
+      <div v-if="d.cls && !r" class="wz-row wz-ch-top">
+        <label>Hit die
           <Dropdown :value="dieOfDraft(d)" @change="wizard.d.die = val($event)"><option v-for="x in DICE" :key="x" :value="x">{{ x }}</option></Dropdown>
         </label>
       </div>

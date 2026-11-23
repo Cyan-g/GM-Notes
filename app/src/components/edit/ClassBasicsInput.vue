@@ -11,6 +11,7 @@ import { DICE } from '../../model/classes'
 import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from '../../model/schema'
 import { entries, get } from '../../store'
 import { itemNamed } from '../../lookup'
+import { isToolKind } from '../../species'
 import ProfChips from '../ProfChips.vue'
 import ClassKitsInput from './ClassKitsInput.vue'
 import { SKILLS, ABILITY_KEYS, ABILITY_SHORT } from '../../model/dnd'
@@ -55,7 +56,7 @@ const num = (ev: Event) => { const v = (ev.target as HTMLInputElement).value.tri
 const mc = computed(() => cur.value.multiclass ?? { primary: [], armor: [], weapons: [], tools: [] })
 const setMc = (patch: Partial<NonNullable<ClassBasics['multiclass']>>) => set('multiclass', { ...mc.value, ...patch })
 /** The world's tools and instruments (its Tool items), offered as the class's tool proficiencies. */
-const toolItems = computed(() => entries.value.filter(e => e.type === 'item' && ['Tool', 'Instrument'].includes(String(e.fields.kind))).map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label)))
+const toolItems = computed(() => entries.value.filter(isToolKind).map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label)))
 /** Tools stored by name (the built-in SRD values) shown as the world's item of that name, where it has one. */
 const toolIds = (l?: string[]) => (l ?? []).map(t => (get(t)?.type === 'item' ? t : itemNamed(t)?.id ?? t))
 const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 'standard' : '')
@@ -111,6 +112,14 @@ const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 's
           <option value="list">its class list, changed after a long rest (Cleric, Druid, Paladin)</option>
           <option value="swap">its class list, one swapped when it gains a level (Bard, Sorcerer, Warlock)</option>
           <option value="book">a spellbook (Wizard)</option>
+        </Dropdown></label>
+      <label class="cb-line"><span class="muted small">Spellcasting focus</span>
+        <Dropdown :value="cur.focus ?? ''" aria-label="The spellcasting focus it can use" @change="set('focus', (($event.target as HTMLSelectElement).value || undefined) as ClassBasics['focus'])">
+          <option value="">none</option>
+          <option value="Arcane focus">an arcane focus (Sorcerer, Warlock, Wizard)</option>
+          <option value="Druidic focus">a druidic focus (Druid, Ranger)</option>
+          <option value="Holy symbol">a holy symbol (Cleric, Paladin)</option>
+          <option value="Instrument">a musical instrument (Bard)</option>
         </Dropdown></label>
       <label class="cb-line"><span class="muted small">Spellbook spells at level 1 (+2 a level)</span><input class="cb-num" type="number" min="0" :value="cur.spellbook ?? ''" placeholder="none" @change="set('spellbook', num($event) ?? 0)" /></label>
     </template>

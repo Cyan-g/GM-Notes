@@ -54,6 +54,29 @@ export function diceAverage(dice: string): number {
   }, 0)
 }
 
+/**
+ * A critical hit's damage from an attack's ("1d8 + 3" → "2d8 + 3"; `max` → "8 + 1d8 + 3"): the dice doubled, or their
+ * highest total plus one roll of them; numbers stay as they are, and words after it too ("one-handed"). Undefined when
+ * it has no dice.
+ */
+export function critDamage(dice: string, how: 'double' | 'max' = 'double'): string | undefined {
+  const m0 = dice.match(/^\s*([\dd+\-−\s]*\d)(.*)$/i)
+  if (!m0) return undefined
+  const parts = m0[1].replace(/\s/g, '').replace(/−/g, '-').match(/[+-]?[^+-]+/g) ?? []
+  if (!parts.some(p => /d\d/i.test(p))) return undefined
+  let top = 0
+  const terms = parts.map(p => {
+    const m = p.match(/^([+-]?)(\d*)d(\d+)$/i)
+    if (!m) return p
+    const n = Number(m[2] || 1), size = Number(m[3])
+    if (how === 'max') { top += (m[1] === '-' ? -1 : 1) * n * size; return `${m[1]}${n}d${size}` }
+    return `${m[1]}${n * 2}d${size}`
+  })
+  if (how === 'max') terms.unshift(String(top))
+  const expr = terms.map((t, i) => (i === 0 ? t.replace(/^\+/, '') : /^-/.test(t) ? ` − ${t.slice(1)}` : ` + ${t.replace(/^\+/, '')}`)).join('')
+  return expr + (m0[2].trim() ? ` ${m0[2].trim()}` : '')
+}
+
 // ---- challenge rating ----
 /** A challenge rating as a number ("1/4" → 0.25), for sorting. */
 export const crNum = (cr: string) => { const [a, b] = cr.split('/').map(Number); return b ? a / b : a }

@@ -8,15 +8,19 @@ import { useReadOnly } from '../composables/useReadOnly'
 import { computed, nextTick, onMounted, ref } from 'vue'
 import type { CharacterSheet, Entry, TraitGrant } from '../model/types'
 import { editSheet } from '../sheetData'
-import { haveNow } from '../sheet'
+import { haveNow, skillLevel } from '../sheet'
+import { profBonus } from '../model/dnd'
+import { totalLevel } from '../model/classes'
 import { state } from '../store'
 import { ui } from '../ui'
 import {
-  choiceOpen, grantOptions, hasChoices, isClassOrigin, picksLeft, setCastAbility, setPicks, setSwap, sourceTag, speciesTraits, swappableSpells,
+  choiceOpen, grantOptions, skillSources, hasChoices, isClassOrigin, picksLeft, setCastAbility, setPicks, setSwap, sourceTag, speciesTraits, swappableSpells,
   traitGrants, GRANT_KINDS, type ActiveTrait,
 } from '../species'
 import { ABILITY_NAME } from '../model/dnd'
 import TraitChoicePicker from './TraitChoicePicker.vue'
+import SkillGrid from './SkillGrid.vue'
+import { swapFrame } from '../skillFrames'
 import { inputValue as val } from '../dom'
 
 /** `openOnly`: just the choices still to make (the level-up dialog, the sheet's "to pick" window), not folded. */
@@ -32,12 +36,22 @@ const list = computed(() => {
   return [...all.filter(choiceOpen), ...all.filter(a => !choiceOpen(a))]
 })
 const shownOpen = new Set<string>(props.openOnly ? speciesTraits(props.pc, props.s).filter(a => a.active && hasChoices(a) && choiceOpen(a)).map(a => a.key) : [])
+/** The skill grid's numbers: the proficiency bonus, and where each skill comes from. */
+const prof = computed(() => profBonus(totalLevel(props.pc)))
+const sources = computed(() => skillSources(props.pc, props.s))
 const left = computed(() => list.value.reduce((n, a) => n + picksLeft(a), 0))
 function swapOptions(g: TraitGrant & { was?: string }) {
   const opts = grantOptions(g.kind)
   return [g.was ?? g.id, g.id].filter((id, i, l) => l.indexOf(id) === i && !opts.some(o => o.id === id)).map(id => ({ id, label: id })).concat(opts)
 }
 const swap = (key: string, id: string, original: string) => editSheet(props.pc, x => setSwap(x, key, id, original))
+// ---- a given skill swapped on the skill grid: click it, then the new one (a trait at a time) ----
+const swapping = ref<Record<string, string | null>>({})
+const skillGrants = (a: ActiveTrait) => traitGrants(a, props.s).filter(g => g.kind === 'skill')
+const swapGrid = (a: ActiveTrait) => swapFrame({
+  given: skillGrants(a).map(g => ({ key: g.key, id: g.id, was: g.was })), selected: swapping.value[a.key] ?? null,
+  select: k => { swapping.value = { ...swapping.value, [a.key]: k } }, swap, levelOf: n => skillLevel(props.s, n), prof: prof.value,
+})
 const pick = (a: ActiveTrait, picks: string[]) => editSheet(props.pc, x => setPicks(x, a.key, picks))
 const cast = (a: ActiveTrait, ability: string) => editSheet(props.pc, x => setCastAbility(x, a.key, ability as Parameters<typeof setCastAbility>[2]))
 const kindName = (k: string) => GRANT_KINDS.find(x => x.id === k)?.label ?? k
@@ -68,8 +82,10 @@ onMounted(async () => {
       <!-- given proficiencies: listed, with a fold to swap one -->
       <details v-if="traitGrants(a, s).length" class="sp-given small" :open="swapped(a)">
         <summary><span class="muted">Gives</span> {{ givenText(a) }} <span class="link-like">· swap…</span></summary>
+        <!-- skills: on the grid (click a given one, then the new one); the rest: a dropdown each -->
+        <SkillGrid v-if="skillGrants(a).length && !ro" compact no-saves :s="s" :prof="prof" :frame="swapGrid(a)" :from="(x: string) => sources.get(x)" />
         <div class="sp-grants">
-          <label v-for="gr in traitGrants(a, s)" :key="gr.key" class="sp-grant small" :class="{ swapped: gr.was }" :title="gr.was ? `Swapped; it gives ${nameOf({ kind: gr.kind, id: gr.was })}` : `${kindName(gr.kind)}; pick another to swap it`">
+          <label v-for="gr in traitGrants(a, s).filter(g => g.kind !== 'skill' || ro)" :key="gr.key" class="sp-grant small" :class="{ swapped: gr.was }" :title="gr.was ? `Swapped; it gives ${nameOf({ kind: gr.kind, id: gr.was })}` : `${kindName(gr.kind)}; pick another to swap it`">
             <span class="muted">{{ gr.kind === 'language' ? 'Speaks' : kindName(gr.kind) }}</span>
             <Dropdown compact :value="gr.id" :disabled="ro" @change="swap(gr.key, val($event), gr.was ?? gr.id)">
               <option v-for="o in swapOptions(gr)" :key="o.id" :value="o.id">{{ o.label }}{{ o.id === (gr.was ?? gr.id) && gr.was ? ' (given)' : '' }}</option>
@@ -92,7 +108,7 @@ onMounted(async () => {
           </Dropdown>
         </label>
       </div>
-      <TraitChoicePicker v-if="a.trait.choice" :a="a" :have="haveNow(s)" :disabled="ro" @pick="p => pick(a, p)" />
+      <TraitChoicePicker v-if="a.trait.choice" :a="a" :sheet="s" :prof="prof" :from="(x: string) => sources.get(x)" :have="haveNow(s)" :disabled="ro" @pick="p => pick(a, p)" />
     </div>
     </details>
   </section>

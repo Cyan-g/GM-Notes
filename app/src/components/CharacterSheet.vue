@@ -6,6 +6,7 @@
 // On the Edit page (`build`) it also opens what's set when building the character: classes and their levels
 // (multiclassing), max HP, AC, speed, scores, proficiencies, spellcasting and features.
 // Hit dice come from the classes, one pool per die size, each spent on its own.
+import LinkTextarea from './edit/LinkTextarea.vue'
 import Dropdown from './Dropdown.vue'
 import { useReadOnly, useReadOnlyShared } from '../composables/useReadOnly'
 import AppIcon from './AppIcon.vue'
@@ -23,7 +24,7 @@ import {
 } from '../sheet'
 import { profsToEdit, sheetOrBlank, sheetToEdit } from '../sheetData'
 import { noteUndo, restoreSheet, snapSheet } from '../undoNote'
-import { ABILITIES, SKILLS, concentrationDc, dieSize, mod, profBonus, signed, type Ability } from '../model/dnd'
+import { ABILITIES, ABILITY_NAME, SKILLS, concentrationDc, dieSize, mod, profBonus, signed, type Ability } from '../model/dnd'
 import { advOf, breakdown, concentrationAdv, deathSaveAdv, gearTotals, scoreBreakdown, scoreWith, sum, type Part } from '../effects'
 import { chargesLeft, setCharges, type RegainRoll } from '../items'
 import ProfChips from './ProfChips.vue'
@@ -33,13 +34,15 @@ import PcPortrait from './PcPortrait.vue'
 import FeatureList from './FeatureList.vue'
 import FeatureChoices from './FeatureChoices.vue'
 import UsesCard from './UsesCard.vue'
-import { rule } from '../rules'
+import { levelCap, longRestHeals, restLengths, rule } from '../rules'
 import ActiveSpellsCard from './ActiveSpellsCard.vue'
 import ConditionsBar from './ConditionsBar.vue'
 import DeathSaves from './DeathSaves.vue'
 import LevelUpModal from './LevelUpModal.vue'
 import ChoicesModal from './ChoicesModal.vue'
 import ShortRestModal from './ShortRestModal.vue'
+import SkillGrid from './SkillGrid.vue'
+import { freeFrame } from '../skillFrames'
 import WildShapeCard from './WildShapeCard.vue'
 import { isShared } from '../sync'
 import { XP_AT } from '../sheet'
@@ -188,6 +191,8 @@ function setOrigin(v: string) {
     if (before) x.features = x.features.filter(f => featOfFeature(f)?.id !== before)
   })
 }
+/** Editing: any skill, ○ → ● → ◉ (a given one only switches expertise); playing, or read-only here: none. */
+const sheetFrame = computed(() => (build.value && !locked.value ? freeFrame({ cycle: cycleSkill, title: skillTitle }) : undefined))
 const skillMark = (name: string) => ({ 1: '●', 2: '◉' } as Record<number, string>)[(build.value ? buildLevel(name) : skillLevel(s.value, name)) ?? 0] ?? '○'
 
 /** Damage or healing typed into the HP box: "-7" or "+5"; temp HP soaks damage first. */
@@ -238,9 +243,11 @@ function restNow(kind: 'short' | 'long') {
   rolls.value = kind === 'long' ? longRest(props.pc) : shortRest(props.pc)
   const what = restSummary(props.pc, before, kind)
   noteUndo(what, () => { restoreSheet(props.pc, before)(); rolls.value = []; resting.value = '' })
-  // a short rest: the panel for spending Hit Dice, with what came back
-  if (kind === 'short') resting.value = what
+  // a short rest (and a long one that heals no hit points by itself): the panel for spending Hit Dice, with what came back
+  restKind.value = kind
+  if (kind === 'short' || !longRestHeals()) resting.value = what
 }
+const restKind = ref<'short' | 'long'>('short')
 /** The short-rest panel, open with what the rest gave back. */
 const resting = ref('')
 const rest = () => restNow('long')
@@ -282,7 +289,7 @@ const leveling = ref(false)
 /** The "to pick" window: the choices still to make, on the sheet. */
 const choosing = ref(false)
 /** Level up from the Level tile: a character of one's own, below 20, not while editing; with XP, "ready" shows. */
-const canLevelUp = computed(() => !ro.value && !build.value && !isShared(props.pc) && classes.value.length > 0 && level.value < 20)
+const canLevelUp = computed(() => !ro.value && !build.value && !isShared(props.pc) && classes.value.length > 0 && level.value < levelCap())
 const levelReady = computed(() => canLevelUp.value && rule('experience') === 'xp' && (s.value.xp ?? 0) >= (XP_AT[level.value] ?? Infinity))
 // Level up is in the Edit button's menu (EntryHeader): it asks for this character's dialog
 watch(() => ui.levelUp, id => { if (id && id === props.pc.id) { leveling.value = true; ui.levelUp = null } }, { immediate: true })
@@ -342,7 +349,7 @@ onBeforeUnmount(() => {
     <div class="cs-top-right">
     <LevelUpModal v-if="leveling" :pc="pc" :s="s" @close="leveling = false" />
     <ChoicesModal v-if="choosing" :pc="pc" :s="s" @close="choosing = false" />
-    <ShortRestModal v-if="resting" :pc="pc" :s="s" :summary="resting" @close="resting = ''" />
+    <ShortRestModal v-if="resting" :pc="pc" :s="s" :summary="resting" :kind="restKind" @close="resting = ''" />
     <!-- the strip at the top: the numbers looked at most -->
     <!-- building: what the sheet works out, in one line; below it, what's set by hand -->
     <div v-if="build" class="cs-build">
@@ -417,13 +424,13 @@ onBeforeUnmount(() => {
         </div>
       </div>
       <div v-if="!build" class="cs-rests">
-        <button class="cs-rest" :disabled="ro" title="Features, pact slots and item spells that recharge on a short rest come back; then spend Hit Dice" @click="short">Short rest</button>
+        <button class="cs-rest" :disabled="ro" :title="`A short rest (${restLengths().short}): features, pact slots and item spells that recharge on a short rest come back; then spend Hit Dice`" @click="short">Short rest</button>
         <div v-if="rolls.length" class="cs-regain">
           <div v-for="r in rolls" :key="r.i" class="cs-regain-row small">Roll <b>{{ r.dice }}</b> for {{ r.name }}'s charges:
             <input type="number" min="0" class="effect-value" placeholder="?" @keydown.enter="addCharges(r, ($event.target as HTMLInputElement).value)" @change="addCharges(r, ($event.target as HTMLInputElement).value)" />
             <button type="button" class="link-btn" title="Skip" @click="rolls = rolls.filter(x => x !== r)">×</button></div>
         </div>
-        <button class="cs-rest" :disabled="ro" :title="`Full HP, no temp HP, every spell slot, ${rule('hitDiceLongRest') === 'half' ? 'half your' : 'all'} Hit Dice and one exhaustion level back`" @click="rest">Long rest</button>
+        <button class="cs-rest" :disabled="ro" :title="`A long rest (${restLengths().long}): ${longRestHeals() ? 'full HP' : 'no HP by itself (spend Hit Dice)'}, no temp HP, every spell slot, ${rule('hitDiceLongRest') === 'half' ? 'half your' : 'all'} Hit Dice and one exhaustion level back`" @click="rest">Long rest</button>
       </div>
     </div>
     <!-- in play: the limited uses of features, to tick off without scrolling -->
@@ -433,30 +440,24 @@ onBeforeUnmount(() => {
     </div>
     <!-- abilities, then attacks, spellcasting and proficiencies, in the same column -->
     <div class="cs-grid">
-      <!-- one card per ability: score, modifier, saving throw and the skills that use it -->
-      <section class="cs-abilities">
-        <div v-for="a in ABILITIES" :key="a.key" class="cs-ability">
-          <!-- name, modifier and the score in its box -->
-          <div class="cs-ab-head">
-            <span class="cs-short" :title="a.label">{{ a.short }}</span>
-            <b v-flash="mod(scoreOf(a.key))" class="cs-mod" :class="{ 'gear-mod': scoreTip(a.key), tip: scoreTip(a.key) }" :data-tip="scoreTip(a.key)">{{ signed(mod(scoreOf(a.key))) }}</b>
-            <input v-flash="scoreOf(a.key)" class="cs-score" type="number" min="1" max="30" :value="locked ? scoreOf(a.key) : s.abilities[a.key]" :disabled="locked" :title="scoreTip(a.key) ? undefined : `${a.label} score`" @change="edit(x => x.abilities[a.key] = num($event) ?? 10)" />
-          </div>
-          <!-- the saving throw, on its own band apart from the skills -->
-          <button class="cs-skill cs-save" :class="{ on: s.saves.includes(a.key) }" :disabled="locked" :title="build ? `${a.label} saving throw: click for proficiency` : `${a.label} saving throw`" @click="toggleSave(a.key)">
-            <span class="cs-dot">{{ s.saves.includes(a.key) ? '●' : '○' }}</span><b v-flash="saveBonus(s, a.key, prof)" :class="{ 'gear-mod': saveParts(a.key).length, tip: saveParts(a.key).length }" :data-tip="tipOf(saveBonus(s, a.key, prof), saveParts(a.key))">{{ signed(saveBonus(s, a.key, prof)) }}</b><span>Saving throw</span><i v-if="saveAdv(a.key).tip" class="cs-adv tip" :class="saveAdv(a.key).mode" :data-tip="saveAdv(a.key).tip">{{ saveAdv(a.key).mode ?? '±' }}</i>
+      <!-- one card per ability: score, modifier, saving throw and the skills that use it (SkillGrid, as everywhere);
+           editing, any skill cycles ○ → ● → ◉ (the free frame) -->
+      <SkillGrid :s="s" :prof="prof" :frame="sheetFrame" :from="n => grantedSkill(n)" :level-of="n => (build ? buildLevel(n) : skillLevel(s, n))"
+                 :bonus-tip="n => (gt.skill[n]?.length ? tipOf(skillBonus(s, n, prof), gt.skill[n] ?? []) : undefined)">
+        <template #mod="{ a }"><b v-flash="mod(scoreOf(a))" class="cs-mod" :class="{ 'gear-mod': scoreTip(a), tip: scoreTip(a) }" :data-tip="scoreTip(a)">{{ signed(mod(scoreOf(a))) }}</b></template>
+        <template #score="{ a }"><input v-flash="scoreOf(a)" class="cs-score" type="number" min="1" max="30" :value="locked ? scoreOf(a) : s.abilities[a]" :disabled="locked" :title="scoreTip(a) ? undefined : `${ABILITY_NAME[a]} score`" @change="edit(x => x.abilities[a] = num($event) ?? 10)" /></template>
+        <template #save="{ a }">
+          <button class="cs-skill cs-save" :class="{ on: s.saves.includes(a) }" :disabled="locked" :title="build ? `${ABILITY_NAME[a]} saving throw: click for proficiency` : `${ABILITY_NAME[a]} saving throw`" @click="toggleSave(a)">
+            <span class="cs-dot">{{ s.saves.includes(a) ? '●' : '○' }}</span><b v-flash="saveBonus(s, a, prof)" :class="{ 'gear-mod': saveParts(a).length, tip: saveParts(a).length }" :data-tip="tipOf(saveBonus(s, a, prof), saveParts(a))">{{ signed(saveBonus(s, a, prof)) }}</b><span>Saving throw</span><i v-if="saveAdv(a).tip" class="cs-adv tip" :class="saveAdv(a).mode" :data-tip="saveAdv(a).tip">{{ saveAdv(a).mode ?? '±' }}</i>
           </button>
-          <div class="cs-skills">
-            <button v-for="sk in skillsOf(a.key)" :key="sk.name" class="cs-skill" :class="{ on: build ? buildLevel(sk.name) : s.skills[sk.name], given: build && grantedSkill(sk.name) }" :disabled="locked" :title="build ? skillTitle(sk.name) : SKILL_LEVEL[s.skills[sk.name] ?? 0] ?? ''" @click="cycleSkill(sk.name)">
-              <span class="cs-dot">{{ skillMark(sk.name) }}</span><b v-flash="skillBonus(s, sk.name, prof)" :class="{ 'gear-mod': gt.skill[sk.name]?.length, tip: gt.skill[sk.name]?.length }" :data-tip="tipOf(skillBonus(s, sk.name, prof), gt.skill[sk.name] ?? [])">{{ signed(skillBonus(s, sk.name, prof)) }}</b><span>{{ sk.name }}</span><i v-if="skillAdv(sk.name).tip" class="cs-adv tip" :class="skillAdv(sk.name).mode" :data-tip="skillAdv(sk.name).tip">{{ skillAdv(sk.name).mode ?? '±' }}</i>
-            </button>
-            <p v-if="!skillsOf(a.key).length" class="cs-noskill">no skills</p>
-          </div>
-          <!-- what else scales with it, at the bottom: initiative (DEX), passive perception (WIS) -->
-          <div v-if="a.key === 'dex'" class="cs-foot tip" :data-tip="tipOf(initTotal, gt.initiative) ?? 'Initiative: DEX modifier plus any bonus'"><span>Initiative</span><i v-if="initAdv.tip" class="cs-adv tip" :class="initAdv.mode" :data-tip="initAdv.tip">{{ initAdv.mode ?? '±' }}</i><b v-flash="initTotal" :class="{ 'gear-mod': gt.initiative.length }">{{ signed(initTotal) }}</b></div>
-          <div v-else-if="a.key === 'wis'" class="cs-foot" title="Passive perception: 10 + Perception"><span>Passive perception</span><b v-flash="passivePerception(s, prof)">{{ passivePerception(s, prof) }}</b></div>
-        </div>
-      </section>
+        </template>
+        <template #extra="{ name }"><i v-if="skillAdv(name).tip" class="cs-adv tip" :class="skillAdv(name).mode" :data-tip="skillAdv(name).tip">{{ skillAdv(name).mode ?? '±' }}</i></template>
+        <!-- what else scales with it, at the bottom: initiative (DEX), passive perception (WIS) -->
+        <template #foot="{ a }">
+          <div v-if="a === 'dex'" class="cs-foot tip" :data-tip="tipOf(initTotal, gt.initiative) ?? 'Initiative: DEX modifier plus any bonus'"><span>Initiative</span><i v-if="initAdv.tip" class="cs-adv tip" :class="initAdv.mode" :data-tip="initAdv.tip">{{ initAdv.mode ?? '±' }}</i><b v-flash="initTotal" :class="{ 'gear-mod': gt.initiative.length }">{{ signed(initTotal) }}</b></div>
+          <div v-else-if="a === 'wis'" class="cs-foot" title="Passive perception: 10 + Perception"><span>Passive perception</span><b v-flash="passivePerception(s, prof)">{{ passivePerception(s, prof) }}</b></div>
+        </template>
+      </SkillGrid>
 
       <!-- attacks, spellcasting, proficiencies -->
       <section class="cs-side">
@@ -507,7 +508,7 @@ onBeforeUnmount(() => {
         </label>
         <div v-for="(f, i) in s.features" :key="i" class="cs-feature">
           <input :value="f.name" placeholder="Name, e.g. Bardic Inspiration (d6)" @change="edit(x => x.features[i].name = ($event.target as HTMLInputElement).value)" />
-          <textarea rows="2" :value="f.text" placeholder="What it does" @change="edit(x => x.features[i].text = ($event.target as HTMLTextAreaElement).value)" />
+          <LinkTextarea rows="2" :value="f.text" placeholder="What it does" @change="edit(x => x.features[i].text = ($event.target as HTMLTextAreaElement).value)" />
           <button class="link-btn" title="Remove" @click="edit(x => x.features.splice(i, 1))">✕</button>
         </div>
       </template>

@@ -4,14 +4,18 @@
 // skills sit under their abilities with the numbers they come to (as the sheet works them out), and what picking one
 // would make it.
 import { computed } from 'vue'
+import type { Entry } from '../../model/types'
 import { languageRule, pickedLanguages, wizard } from '../../wizard'
 import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, SKILLS } from '../../model/dnd'
-import { grantOptions } from '../../species'
+import { grantOptions, isToolKind } from '../../species'
 import { entries, listOptions } from '../../store'
 import { useDraft } from '../../composables/useDraft'
 import { inputNumber as num } from '../../dom'
 import ProfChips from '../ProfChips.vue'
 import { useDraftSheet } from '../../composables/useDraftSheet'
+import SkillGrid from '../SkillGrid.vue'
+import { pickFrame } from '../../skillFrames'
+import { skillLevel } from '../../sheet'
 import { signed, type Ability } from '../../model/dnd'
 
 const { d, r, granted, grantedSkills } = useDraft()
@@ -21,12 +25,27 @@ function toggleSkill(k: string) {
   const l = d.value.skills
   wizard.d.skills = l.includes(k) ? l.filter(x => x !== k) : l.length < skillCount.value ? [...l, k] : l
 }
-const { abilities, skills, prof } = useDraftSheet()
+const { abilities, skills, prof, sheet } = useDraftSheet()
 const skillsOf = (a: Ability) => skills.value.filter(x => x.ability === a)
 const skillsLeft = computed(() => Math.max(0, skillCount.value - d.value.skills.length))
 /** Whether a skill can be picked now: on the class's list, not given already, with a pick left. */
+/** The class's skill picks: only its list, its count; what the species and background give stays as it is. */
+const classFrame = computed(() => pickFrame({
+  candidates: skillFrom.value, picked: d.value.skills, count: skillCount.value, prof: prof.value,
+  levelOf: n => skillLevel(sheet.value, n), had: n => grantedSkills.value.get(n), toggle: toggleSkill,
+}))
+const fromOf = (n: string) => grantedSkills.value.get(n) ?? (d.value.skills.includes(n) ? 'the class' : undefined)
 const canPick = (k: string) => skillFrom.value.includes(k) && !grantedSkills.value.has(k) && (d.value.skills.includes(k) || skillsLeft.value > 0)
-const toolItems = computed(() => entries.value.filter(e => e.type === 'item' && ['Tool', 'Instrument'].includes(String(e.fields.kind))).map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label)))
+/** An artisan's tool kind (Smith's Tools, Calligrapher's Supplies, Cook's Utensils), not Thieves' Tools, a kit or a game set. */
+const artisan = (e: { name: string }) => /(supplies|tools|utensils)$/i.test(e.name.trim()) && !/thieves|navigator/i.test(e.name)
+/** What the class's tool choice offers, from its words: musical instruments, artisan's tools, or both ("artisan's tools
+ * or musical instrument", a Monk's); kinds only (Lyre, not Elmar's Lyre). Words naming neither: every tool and instrument. */
+function offers(e: Entry): boolean {
+  const what = r.value?.toolChoice?.what ?? '', inst = /instrument/i.test(what), art = /artisan/i.test(what), tool = /tool|kit|supplies/i.test(what)
+  if (!inst && !art && !tool) return true
+  return (inst && e.fields.kind === 'Instrument') || (art && e.fields.kind === 'Tool' && artisan(e)) || (tool && !art && e.fields.kind === 'Tool')
+}
+const toolItems = computed(() => entries.value.filter(e => isToolKind(e) && offers(e)).map(e => ({ id: e.id, label: e.name })).sort((a, b) => a.label.localeCompare(b.label)))
 const languages = computed(() => listOptions('language'))
 const langRule = computed(() => languageRule(d.value))
 const picked = computed(() => pickedLanguages(d.value))
@@ -58,23 +77,9 @@ const toggleIn = (key: 'ownSaves' | 'ownArmor' | 'ownWeapons', v: string) => {
   </template>
   <p v-if="granted.length" class="small"><b>From the species and background:</b>{{ ' ' }}<template v-for="(g, i) in granted" :key="i"><template v-if="i">, </template>{{ grantOptions(g.kind).find(o => o.id === g.id)?.label ?? g.id }} <span class="muted">({{ g.from }})</span></template></p>
   <h3>Skills <span class="muted small">{{ d.skills.length }} of {{ skillCount }} picked</span></h3>
-  <p class="small muted">A skill you're proficient in adds your proficiency bonus ({{ signed(prof) }}) to its ability's modifier. Pick {{ skillCount }} from the class's list (the ones you can click); each shows what it comes to now, and → what it would with proficiency.</p>
-  <div class="wz-ab-grid" :class="{ 'wz-todo': skillsLeft > 0 }" :data-left="skillsLeft ? `${skillsLeft} left` : undefined">
-    <section v-for="x in abilities" :key="x.a" class="wz-ab-card">
-      <header><b>{{ ABILITY_NAME[x.a] }}</b><span class="wz-ab-score">{{ x.score }} <span class="muted">({{ signed(x.mod) }})</span></span></header>
-      <div class="wz-ab-save" :class="{ on: x.saveProf }">Saving throw <b>{{ signed(x.save) }}</b><span v-if="x.saveProf" class="muted small"> proficient</span></div>
-      <button v-for="s in skillsOf(x.a)" :key="s.name" type="button" class="wz-skill-row"
-              :class="{ on: d.skills.includes(s.name), given: grantedSkills.has(s.name), can: canPick(s.name) && !d.skills.includes(s.name) }"
-              :disabled="!canPick(s.name)" :aria-pressed="d.skills.includes(s.name) || grantedSkills.has(s.name)"
-              :title="grantedSkills.has(s.name) ? `Already from ${grantedSkills.get(s.name)}` : !skillFrom.includes(s.name) ? 'Not on the class list' : !canPick(s.name) ? `${skillCount} picked: take one back to pick this` : ''"
-              @click="toggleSkill(s.name)">
-        <span class="wz-skill-tick">{{ d.skills.includes(s.name) || grantedSkills.has(s.name) ? '✓' : '' }}</span>
-        <span class="wz-skill-name">{{ s.name }}<small v-if="grantedSkills.has(s.name)" class="muted"> · {{ grantedSkills.get(s.name) }}</small><small v-if="s.level === 2" class="muted"> · expertise</small></span>
-        <b>{{ signed(s.bonus) }}</b>
-        <small v-if="canPick(s.name) && !d.skills.includes(s.name) && !s.level" class="wz-skill-then">→ {{ signed(s.bonus + prof) }}</small>
-      </button>
-    </section>
-  </div>
+  <p class="small muted">○ not proficient · ● proficient · ◉ expertise. Proficiency adds {{ signed(prof) }} to the ability's modifier. Pick {{ skillCount }} from the class's list (the ones you can click, with → what proficiency makes them).</p>
+  <!-- the skills as the sheet shows them, under their abilities: ○ ● ◉ and the numbers they come to -->
+  <SkillGrid :s="sheet" :prof="prof" :frame="classFrame" :from="fromOf" :class="{ 'wz-todo': skillsLeft > 0 }" :data-left="skillsLeft ? `${skillsLeft} left` : undefined" />
   <template v-if="r?.toolChoice">
     <h3>{{ r.toolChoice.count }} {{ r.toolChoice.what }} <span class="muted small">{{ d.tools.length }} of {{ r.toolChoice.count }}</span></h3>
     <ProfChips :class="{ 'wz-todo': d.tools.length < r.toolChoice.count }" :values="d.tools" :suggest="toolItems" :create="(x: string) => x" placeholder="Add one, or type a name…" @change="v => wizard.d.tools = v.slice(0, r!.toolChoice!.count)" />

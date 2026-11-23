@@ -16,7 +16,8 @@ import { PROFS_TRAIT } from './model/traits'
 import { byType, entries, get } from './store'
 import { isShield } from './items'
 import { currentCampaign } from './sessions'
-import { bonusSources, rule } from './rules'
+import { bonusSources, rule, ruleNumber, scoreMethods } from './rules'
+import { dieAverage, dieCounted, hpFirstMode, hpMode, type HpMode } from './hitPoints'
 import { changed, createEntry } from './edit'
 import { itemNamed } from './lookup'
 import { norm } from './model/text'
@@ -25,9 +26,11 @@ import { upgradeEntries } from './migrations'
 
 export type ScoreMethod = 'array' | 'pointbuy' | 'typed'
 export const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8]
-/** Point buy: what each score costs, out of 27 points. */
-export const POINT_COST: Record<number, number> = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 }
-export const POINTS = 27
+/** Point buy: what each score costs (16 and 17 only where the Ruleset lets point buy go past 15). */
+export const POINT_COST: Record<number, number> = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9, 16: 11, 17: 13 }
+/** Point buy's points to spend and its highest score, as the Ruleset sets them (27 and 15 standard). */
+export const pointBudget = () => ruleNumber('pointBuy')
+export const pointMax = () => Math.min(17, Math.max(15, Number(rule('pointBuyMax')) || 15))
 
 /** A feat taken at a level (an Ability Score Improvement is a feat too), with its ability bonus's picks. */
 export interface FeatPick { level: number; feat?: Id; choice: BonusChoice }
@@ -65,8 +68,12 @@ export interface Draft {
   /** The species' and background's choices (species.ts). */
   species: SpeciesState
   feats: FeatPick[]
+  /** The Origin feat the player picked instead of the background's (the "Any Origin feat" rule); unset: the background's. */
+  originFeat?: Id
   /** Hit points for levels 2 and up: typed rolls; missing ones take the average. */
-  hpRolls: (number | undefined)[]
+  hpRolls: (number | null | undefined)[]
+  /** Level 1's roll, when the Ruleset has level 1 rolled (null: not typed yet). */
+  hpFirst?: number | null
   classKit: number
   bgKit: 'items' | 'money'
   /** The background kit's picks, by line (Wayfarer's gaming set of their choice). */
@@ -83,15 +90,27 @@ export interface Draft {
 
 export const newDraft = (): Draft => ({
   cls: '', level: 1, ownSaves: [], ownArmor: [], ownWeapons: [], ownSkillCount: 2,
-  method: 'array', base: {}, bonusFrom: bonusSources()[0], bonusChoice: { picks: [] }, custom: {},
+  method: scoreMethods()[0], base: {}, bonusFrom: bonusSources()[0], bonusChoice: { picks: [] }, custom: {},
   skills: [], tools: [], languages: ['Common'], species: {}, feats: [], hpRolls: [], classKit: 0, bgKit: 'items',
   cantrips: [], spells: [], book: [], name: '', player: '',
   looks: { gender: '', age: '', hair: '', eyes: '', skin: '', clothing: '' }, story: '',
 })
 
 /** The draft in progress (kept while the app is open, so leaving the wizard and coming back keeps it). */
-export const wizard = reactive({ d: newDraft(), step: 'class' })
-export function resetWizard() { wizard.d = newDraft(); wizard.step = 'class' }
+/** `started`: the guide was picked on the start page (an empty draft shows the start page until then). */
+export const wizard = reactive<{ d: Draft; step: string; featTab?: string; started?: boolean }>({ d: newDraft(), step: 'class' })
+/** Whether the player picks the Origin feat (the rule), rather than taking the background's. */
+export const pickOrigin = () => rule('originFeat') === 'any'
+/** The draft's Origin feat: the one picked (the rule allowing it), else the background's. */
+export const originOf = (d: Draft): Id | undefined => (pickOrigin() && d.originFeat ? d.originFeat : (get(d.background)?.fields.originFeat as Id | undefined) || undefined)
+export function resetWizard() { wizard.d = newDraft(); wizard.step = 'class'; wizard.started = false }
+/** Nothing chosen in the draft yet: the creator opens on its start page (the guide, or a blank sheet). */
+export const draftEmpty = (d: Draft) => !d.cls && !d.race && !d.background && !d.name.trim()
+/** A character with just a name and the running campaign: the rest is filled in on its Edit page. */
+export function makeBlankCharacter(name: string): Entry {
+  const campaigns = defaultCampaigns()
+  return createEntry('pc', name.trim() || 'New character', { level: 1, ...(campaigns.length ? { campaigns } : {}) })
+}
 
 // ---------- the parts ----------
 
@@ -103,12 +122,15 @@ export function draftPc(d: Draft, sheet?: CharacterSheet): Entry {
   const classLevels: ClassLine[] = d.cls ? [{ class: d.cls, level: d.level, ...(d.subclass ? { subclass: d.subclass } : {}), ...(d.die ? { die: d.die } : {}) }] : []
   const pc = {
     id: '__draft', type: 'pc', name: d.name || 'New character', aliases: [], tags: [], body: '', visibility: 'known',
-    fields: { classLevels, ...(d.race ? { race: d.race } : {}), ...(d.background ? { background: d.background } : {}), sheet: sheet ?? { ...blankSheet(), species: d.species } },
+    fields: { classLevels, ...(d.race ? { race: d.race } : {}), ...(d.background ? { background: d.background } : {}), sheet: sheet ?? { ...blankSheet(), species: d.species, ...originSheet(d) } },
     created: '', updated: '',
   } as unknown as Entry
   own(pc.fields.sheet as CharacterSheet, pc)
   return pc
 }
+
+/** The sheet's Origin feat for a draft: set only when the player picks it (else the background's counts). */
+const originSheet = (d: Draft) => (pickOrigin() ? { originFeat: originOf(d) ?? null } : {})
 
 /** What the draft has so far, for a choice's options: the skills, weapon proficiencies and languages picked or given. */
 export function draftHave(d: Draft): HaveNow {
@@ -180,12 +202,22 @@ export function finalScores(d: Draft): Abilities {
 
 export const pointsSpent = (d: Draft) => ABILITY_KEYS.reduce((n, a) => n + (POINT_COST[d.base[a] ?? 8] ?? 0), 0)
 
-/** Hit points: the die's maximum at level 1, then each level's roll (or the average), all with the CON modifier. */
+/** Hit points: level 1 and each level after as the Ruleset counts them (hitPoints.ts), all with the CON modifier; a
+ * roll still missing counts as the average meanwhile. */
 export function hpOf(d: Draft): number {
   const die = dieSize(dieOfDraft(d)) || 8, con = mod(finalScores(d).con)
-  let hp = die + con
-  for (let l = 2; l <= d.level; l++) hp += Math.max(1, (d.hpRolls[l - 2] ?? die / 2 + 1) + con)
+  const level = (mode: HpMode, roll: number | null | undefined) => Math.max(1, (dieCounted(mode, roll, die) ?? dieAverage(die)) + con)
+  let hp = level(hpFirstMode(), d.hpFirst)
+  for (let l = 2; l <= d.level; l++) hp += level(hpMode(), d.hpRolls[l - 2])
   return Math.max(1, hp)
+}
+/** The levels whose roll is still missing ("the roll for level 3"). */
+export function hpOpen(d: Draft): string[] {
+  const die = dieSize(dieOfDraft(d)) || 8
+  return [
+    ...(dieCounted(hpFirstMode(), d.hpFirst, die) == null ? ['the roll for level 1'] : []),
+    ...Array.from({ length: Math.max(0, d.level - 1) }, (_, i) => (dieCounted(hpMode(), d.hpRolls[i], die) == null ? [`the roll for level ${i + 2}`] : [])).flat(),
+  ]
 }
 
 /** The spells the class can pick: cantrips, and spells up to the highest level its slots reach. */
@@ -331,7 +363,9 @@ export function steps(d: Draft): Step[] {
   // species, subrace (when the species has them) and background: a step each, with their traits' open choices
   // (an Origin feat's with the background)
   const kindOf = (a: ReturnType<typeof speciesTraits>[number]) => (a.race.type !== 'race' ? 'background' : a.race.fields.parent ? 'subrace' : 'species')
-  const originOpen = (kind: string) => speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && choiceOpen(a) && kindOf(a) === kind)
+  // a feat's choices, and a choice of a feat (Versatile), are made in the Feats step
+  const inFeats = (a: ReturnType<typeof speciesTraits>[number]) => a.race.type === 'feat' || a.trait.choice?.kind === 'feat'
+  const originOpen = (kind: string) => speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && choiceOpen(a) && !inFeats(a) && kindOf(a) === kind)
     .map(a => (a.trait.name === a.race.name ? a.trait.name : `${a.trait.name} (${a.race.name})`))
   const main = mainRace(d.race), sub = d.race && main && d.race !== main.id ? get(d.race) : undefined
   s.push({ id: 'species', label: 'Species', open: [!d.race && 'a species', ...originOpen('species')].filter(Boolean) as string[], chosen: main?.name ?? '' })
@@ -341,7 +375,7 @@ export function steps(d: Draft): Step[] {
   const fin = finalScores(d)
   s.push({ id: 'scores', label: 'Ability scores', open: [
     unset ? `${unset} score${unset === 1 ? '' : 's'}` : '',
-    d.method === 'pointbuy' && pointsSpent(d) > POINTS ? 'too many points spent' : '',
+    d.method === 'pointbuy' && pointsSpent(d) > pointBudget() ? 'too many points spent' : '',
     d.bonusFrom !== 'custom' && bonusOpen(bonusOf(d), d.bonusChoice) ? 'the bonus\'s picks' : '',
   ].filter(Boolean) as string[], chosen: unset ? '' : ABILITY_KEYS.map(a => fin[a]).join(' ') })
   const skillCount = r ? r.skills.count : d.ownSkillCount
@@ -354,13 +388,21 @@ export function steps(d: Draft): Step[] {
   const classFeatures = speciesTraits(pc).filter(a => isClassOrigin(a.race) && a.active)
   const featurePicks = classFeatures.filter(a => a.trait.choice).flatMap(a => a.picks.map(id => get(id)?.name ?? a.trait.choice?.options?.find(o => o.id === id)?.name ?? id))
   if (classFeatures.length) s.push({ id: 'features', label: 'Class features', open: classFeatures.filter(choiceOpen).map(a => a.trait.name), chosen: featurePicks.join(', ') })
-  if (featLevels(d).length) s.push({ id: 'feats', label: 'Feats', open: featLevels(d).flatMap(({ level }) => {
-    const f = d.feats.find(x => x.level === level)
-    if (!f?.feat) return [`a feat at level ${level}`]
-    return bonusOpen(get(f.feat)?.fields.abilityIncrease, f.choice) ? [`the scores of ${get(f.feat)?.name}`] : []
-  }), chosen: d.feats.map(f => get(f.feat)?.name).filter(Boolean).join(', ') })
-  // Level 1 takes the die's maximum: nothing to choose (the summary shows it); later levels may take a typed roll.
-  if (d.level > 1) s.push({ id: 'hp', label: 'Hit points', open: [], chosen: d.cls ? `${hpOf(d)} HP` : '' })
+  // the Feats step: the Origin feat, the feats a trait gives (Versatile), and a feat at each level that gives one
+  const featTraits = speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && inFeats(a))
+  const origin = originOf(d)
+  if (featLevels(d).length || origin || pickOrigin() || featTraits.length) s.push({ id: 'feats', label: 'Feats', open: [
+    pickOrigin() && !origin ? 'an Origin feat' : '',
+    ...featTraits.filter(choiceOpen).map(a => (a.trait.choice?.kind === 'feat' ? `a feat for ${a.trait.name}` : a.trait.name === a.race.name ? a.trait.name : `${a.trait.name} (${a.race.name})`)),
+    ...featLevels(d).flatMap(({ level }) => {
+      const f = d.feats.find(x => x.level === level)
+      if (!f?.feat) return [`a feat at level ${level}`]
+      return bonusOpen(get(f.feat)?.fields.abilityIncrease, f.choice) ? [`the scores of ${get(f.feat)?.name}`] : []
+    }),
+  ].filter(Boolean), chosen: [get(origin)?.name, ...featTraits.filter(a => a.trait.choice?.kind === 'feat').flatMap(a => a.picks.map(id => get(id)?.name)), ...d.feats.map(f => get(f.feat)?.name)].filter(Boolean).join(', ') })
+  // Hit points as the Ruleset counts them: a level (or level 1) to be rolled without its roll typed in is still open.
+  // Level 1 alone at its maximum has nothing to choose (the summary shows it).
+  if (d.level > 1 || hpFirstMode() === 'rolled') s.push({ id: 'hp', label: 'Hit points', open: hpOpen(d), chosen: d.cls ? `${hpOf(d)} HP` : '' })
   s.push({ id: 'gear', label: 'Equipment', open: [], chosen: [classKitsOf(d.cls).length > 1 ? `kit ${String.fromCharCode(65 + d.classKit)}` : '', backgroundKit(d) || backgroundGold(d) ? (d.bgKit === 'items' ? 'background gear' : 'background gold') : ''].filter(Boolean).join(' · ') })
   if (d.cls && casts(d)) {
     const c = spellCounts(d)
@@ -417,6 +459,7 @@ export function defaultCampaigns(): Id[] {
 /** The finished sheet (also what checks on the draft read: scores, proficiencies). */
 export function draftSheet(d: Draft): CharacterSheet {
   const r = rules(d), s = blankSheet()
+  Object.assign(s, originSheet(d))
   s.abilities = finalScores(d)
   s.saves = r ? [...r.saves] : [...d.ownSaves]
   // Resilient: proficiency in the saves of the abilities the feat raised
@@ -452,14 +495,15 @@ export function draftSheet(d: Draft): CharacterSheet {
   if (kits.money) s.money = kits.money
   // The Origin feat and the feats taken at their levels.
   const feats: Feature[] = []
-  const origin = get(d.background)?.fields.originFeat
+  const origin = originOf(d)
+  if (pickOrigin()) s.originFeat = origin ?? null
   const featLine = (id: Id | undefined, note?: string) => {
     const f = get(id)
     // An Ability Score Improvement is all in the scores; nothing to list.
     if (f && /^ability score improvement$/i.test(f.name.trim())) return
     if (f) feats.push({ name: note ? `${f.name} (${note})` : f.name, text: String(f.fields.summary ?? '').trim() })
   }
-  featLine(origin, get(d.background)?.fields.originFeatNote)
+  featLine(origin, origin === get(d.background)?.fields.originFeat ? get(d.background)?.fields.originFeatNote : undefined)
   for (const f of [...d.feats].sort((a, b) => a.level - b.level)) if (featLevels(d).some(x => x.level === f.level)) featLine(f.feat)
   s.features = feats
   if (Object.keys(d.species).length) s.species = JSON.parse(JSON.stringify(d.species))

@@ -13,7 +13,7 @@ import { classesOf, totalLevel } from '../model/classes'
 import { EPIC_BOON_LEVEL, basicsOf, hitDieOf, multiclassOf, rulesOf, subclassLevelOf, dieOf, classEntry } from '../classRules'
 import { bonusApplied, bonusOpen, type BonusChoice } from '../abilityBonus'
 import { byType, entries, get, listOptions } from '../store'
-import { castingAbility, maxHpOf, skillLevel } from '../sheet'
+import { castingAbility, maxHpOf, skillLevel, spellStats } from '../sheet'
 import { classSlotsAt } from '../slots'
 import MarkdownView from './MarkdownView.vue'
 import FeatureChoices from './FeatureChoices.vue'
@@ -27,7 +27,7 @@ import { traitsOf } from '../model/traits'
 import { unmet } from '../requirements'
 import { changed } from '../edit'
 import { renderInline } from '../markdown'
-import SpreadPicker from './SpreadPicker.vue'
+import FeatScoreTable from './FeatScoreTable.vue'
 import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ pc: Entry; s: CharacterSheet }>()
@@ -96,6 +96,9 @@ const feat = ref('')
 const choice = ref<BonusChoice>({ picks: [] })
 const featBonus = computed(() => featBonusFor(get(feat.value || undefined), props.s.saves))
 /** The scores as they are now on the sheet (before what the increase adds). */
+/** What the scores feed now, for the feat's table: hit points, the spellcasting. */
+const castNow = computed(() => castingAbility(props.pc, props.s))
+const spellNow = computed(() => (castNow.value ? spellStats(props.pc, castNow.value) : undefined))
 const baseScores = computed(() => Object.fromEntries(ABILITY_KEYS.map(a => [a, props.s.abilities[a] ?? 10])) as Record<(typeof ABILITY_KEYS)[number], number>)
 
 // ---- multiclassing: the scores it asks for, and what the new class brings ----
@@ -324,7 +327,8 @@ function apply() {
           </optgroup>
         </Dropdown>
         <p v-if="feat" class="small"><EntryLink :id="feat" /><template v-if="get(feat)?.fields.prerequisite"> · <i>{{ get(feat)?.fields.prerequisite }}</i></template> <span class="muted" v-html="renderInline(String(get(feat)?.fields.summary ?? '').replace(/\s*\*?Source:[^*]*\*?\s*$/, ''))" /></p>
-        <SpreadPicker v-if="featBonus" :key="feat" v-model="choice" :bonus="featBonus" :scores="baseScores" />
+        <FeatScoreTable v-if="featBonus" :key="feat" v-model="choice" :bonus="featBonus" :before="baseScores" :s="s" :prof="profBonus(total)" :level="total"
+                        :hp="maxHpOf(s)" :casting="castNow" :spell="spellNow" :primary="multiclassOf(cls)?.primary" />
       </section>
 
       <section v-if="spells">

@@ -4,20 +4,22 @@
 // Ability Score Improvement is a feat too). Each tab: its feats as a list, the one looked at beside it as its card,
 // and for the picked one what it asks to choose (Magic Initiate's spell list and spells) and the scores it raises.
 import { computed } from 'vue'
-import { casts, draftPc, draftSheet, featLevels, finalScores, originOf, pickOrigin, wizard } from '../../wizard'
+import { bonusAdds, casts, dieOfDraft, draftPc, draftSheet, featLevels, finalScores, originOf, pickOrigin, wizard } from '../../wizard'
 import type { Entry } from '../../model/types'
 import { unmet } from '../../requirements'
 import { choiceCandidates, choiceOpen, featBonusFor, isClassOrigin, speciesTraits, type ActiveTrait } from '../../species'
-import { ABILITY_KEYS, ABILITY_NAME } from '../../model/dnd'
+import { ABILITY_KEYS, ABILITY_NAME, signed, type Ability } from '../../model/dnd'
 import { entries, get, optionLabel } from '../../store'
 import { useDraft } from '../../composables/useDraft'
-import SpreadPicker from '../SpreadPicker.vue'
+import FeatScoreTable from '../FeatScoreTable.vue'
+import { useDraftSheet } from '../../composables/useDraftSheet'
 import FeatCard from '../FeatCard.vue'
 import WzChooser, { type ChooserItem } from './WzChooser.vue'
 import WzTraitChoices from './WzTraitChoices.vue'
 import EntryLink from '../EntryLink.vue'
 
 const { d, r } = useDraft()
+const draftNow = useDraftSheet()
 const feats = computed(() => entries.value.filter(e => e.type === 'feat').sort((a, b) => a.name.localeCompare(b.name)))
 const featsFor = (boon: boolean) => {
   const want = boon ? 'Epic Boon' : 'General Feat'
@@ -86,6 +88,11 @@ function setFeatChoice(lv: number, choice: { alt?: boolean; picks: (keyof typeof
 }
 /** The scores a feat's + buttons start from: with the bonus and the feats taken before its level. */
 const scoresBefore = (lv: number) => finalScores({ ...d.value, feats: d.value.feats.filter(f => f.level < lv) }) as Record<(typeof ABILITY_KEYS)[number], number>
+/** Where a score before a feat comes from: the base, the bonus, the feats before it. */
+function beforeTip(lv: number, a: Ability) {
+  const base = d.value.base[a] ?? 10, bonus = bonusAdds(d.value)[a] ?? 0, feats = scoresBefore(lv)[a] - Math.min(20, base + bonus)
+  return [`Base ${base}`, bonus && `bonus ${signed(bonus)}`, feats && `earlier feats ${signed(feats)}`].filter(Boolean).join(' · ')
+}
 </script>
 
 <template>
@@ -132,7 +139,9 @@ const scoresBefore = (lv: number) => finalScores({ ...d.value, feats: d.value.fe
         <p v-else-if="!picked" class="small muted wz-ch-hint-line">Click {{ item.label }} on the left to take it at level {{ level!.level }}.</p>
         <div v-if="picked && get(item.id)?.fields.abilityIncrease" class="wz-choice">
           <b>Its ability increase</b>
-          <SpreadPicker :key="item.id" :bonus="featBonusFor(get(item.id), r ? r.saves : d.ownSaves)!" :scores="scoresBefore(level!.level)" :model-value="featAt(level!.level)!.choice" @update:model-value="c => setFeatChoice(level!.level, c)" />
+          <FeatScoreTable :key="item.id" :bonus="featBonusFor(get(item.id), r ? r.saves : d.ownSaves)!" :before="scoresBefore(level!.level)" :before-tip="a => beforeTip(level!.level, a)" counted
+                          :s="draftNow.sheet.value" :prof="draftNow.prof.value" :level="d.level" :primary="draftNow.primary.value.list" :hp="draftNow.hp.value" :die="dieOfDraft(d)"
+                          :casting="draftNow.casting.value" :spell="draftNow.spell.value" :model-value="featAt(level!.level)!.choice" @update:model-value="c => setFeatChoice(level!.level, c)" />
         </div>
         <WzTraitChoices v-if="picked" which="feat" :feat="item.id" via="sheet" />
         <FeatCard v-if="get(item.id)" :e="get(item.id)!" title />

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 // The wizard's ability scores step: the base scores (standard array, point buy or typed in), the bonus from the
 // background, the species or typed by hand, and what the feats add. With guidance: what each method means, which
-// scores the class leans on, and beside each score what it feeds now (its save and skills, HP, AC, initiative, the
-// spell DC), worked out as the sheet will.
+// scores the class leans on, and beside each score what it feeds now (ScoreTable: its save and skills, HP, AC,
+// initiative, the spell DC), worked out as the sheet will.
 import Dropdown from '../Dropdown.vue'
 import { computed, watchEffect } from 'vue'
 import type { Id } from '../../model/types'
@@ -16,9 +16,9 @@ import { useDraft } from '../../composables/useDraft'
 import { inputNumber as num, inputValue as val } from '../../dom'
 import { useSpread } from '../../composables/useSpread'
 import { useDraftSheet } from '../../composables/useDraftSheet'
+import ScoreTable from '../ScoreTable.vue'
 import { bonusOpen } from '../../abilityBonus'
 import { dieOfDraft } from '../../wizard'
-import type { Ability } from '../../model/dnd'
 
 const { d, scores } = useDraft()
 const bonus = computed(() => bonusOf(d.value))
@@ -62,7 +62,7 @@ const LABEL: Record<string, string> = { background: "Background's", species: "Sp
 /** The scores the + buttons start from: the base ones for the background's or species' bonus. */
 const baseScores = computed(() => Object.fromEntries(ABILITY_KEYS.map(a => [a, d.value.base[a] ?? 10])) as Record<(typeof ABILITY_KEYS)[number], number>)
 // ---- guidance ----
-const { abilities, skills, hp, ac, init, passive, spell, casting, primary } = useDraftSheet()
+const { sheet, prof, hp, spell, casting, primary } = useDraftSheet()
 /** The class's main scores, in words. */
 const priorities = computed(() => {
   const p = primary.value.list
@@ -71,24 +71,11 @@ const priorities = computed(() => {
   const why = casting.value && p.includes(casting.value) ? ` (${ABILITY_NAME[casting.value]} is its spellcasting: spell save DC and spell attacks)` : ''
   return `${d.value.cls}: ${names} first${why}.`
 })
-const isKey = (a: Ability) => primary.value.list.includes(a)
-/** What a score feeds now, besides its save and skills. */
-function feeds(a: Ability): string[] {
-  const out: string[] = []
-  if (a === 'str') out.push('melee weapon attacks and damage', 'carrying capacity')
-  if (a === 'dex') out.push(`AC ${ac.value}`, `Initiative ${signed(init.value)}`, 'ranged and finesse weapon attacks')
-  if (a === 'con' && hp.value != null) out.push(`HP ${hp.value} (the ${dieOfDraft(d.value)} + CON each level)`, 'concentration saves')
-  if (a === 'wis') out.push(`Passive Perception ${passive.value}`)
-  if (casting.value === a && spell.value) out.push(`Spell save DC ${spell.value.dc}`, `Spell attack ${signed(spell.value.attack)}`)
-  return out
-}
-const skillsOf = (a: Ability) => skills.value.filter(x => x.ability === a)
 const bonusLeft = computed(() => d.value.bonusFrom !== 'custom' && !!bonus.value && bonusOpen(bonus.value, d.value.bonusChoice) > 0)
 // ---- the bonus, placed point by point in the table (background's or species'), or typed in ----
 const spread = useSpread(computed(() => (d.value.bonusFrom !== 'custom' ? bonus.value : undefined)), baseScores, computed(() => d.value.bonusChoice), c => { wizard.d.bonusChoice = c })
 /** Points placed but not all yet: the score shows them already (the sheet counts them once all are placed). */
-const pending = (a: Ability) => (bonusLeft.value ? (spread.adds.value[a] ?? 0) + spread.fixed(a) - (adds.value[a] ?? 0) : 0)
-const shown = (a: Ability) => scores.value[a] + pending(a)
+const pending = (a: (typeof ABILITY_KEYS)[number]) => (bonusLeft.value ? (spread.adds.value[a] ?? 0) + spread.fixed(a) - (adds.value[a] ?? 0) : 0)
 const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20, (d.value.base[a] ?? 10) + (adds.value[a] ?? 0))
 </script>
 
@@ -114,7 +101,7 @@ const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20
       <p :class="{ 'wz-bad': pointsSpent(d) > POINTS }"><b>{{ POINTS - pointsSpent(d) }}</b> of {{ POINTS }} points left.</p>
     </template>
     <p v-else><b>Typed in:</b> scores rolled at the table (usually 4d6 six times, dropping the lowest die of each) or agreed with your DM. Type each one in.</p>
-    <p><b>Bonus:</b>
+    <p><b>Bonus:</b>{{ ' ' }}
       <span>
       <template v-if="d.bonusFrom === 'background'">{{ d.background ? abilityBonusText(get(d.background)?.fields.abilityIncrease) || 'This background gives none.' : 'Choose a background first.' }}</template>
       <template v-else-if="d.bonusFrom === 'species' || d.bonusFrom === 'subrace'">{{ d.race ? speciesBonusText || 'This species gives none.' : 'Choose a species first.' }}</template>
@@ -124,11 +111,10 @@ const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20
       Every 2 points over 10 is +1 to the modifier, which is what the dice use.</p>
     <p v-if="priorities" class="wz-priority">★ {{ priorities }} Then <b>Constitution</b> (hit points, concentration) and <b>Dexterity</b> (AC, initiative) help every class.</p>
   </div>
-  <table class="wz-scores">
-    <thead><tr><th /><th>Base</th><th :class="{ 'wz-todo': bonusLeft }">Bonus<span v-if="bonusLeft" class="wz-left wz-th-left">{{ spread.points.value - spread.spent.value }} left</span></th><th v-if="featLevels(d).length">Feats</th><th>Score</th><th>Mod</th><th class="wz-does-h">What it does now</th></tr></thead>
-    <tbody>
-      <tr v-for="a in ABILITY_KEYS" :key="a" :class="{ 'wz-key': isKey(a) }">
-        <th>{{ ABILITY_NAME[a] }}<span v-if="isKey(a)" class="wz-key-mark" title="One of the class's main scores"> ★</span></th>
+  <!-- the scores as the sheet will have them, with what each does (points still being placed count already) -->
+  <ScoreTable :s="sheet" :prof="prof" :level="d.level" :pending="pending" :primary="primary.list" :hp="hp" :die="dieOfDraft(d)" :casting="casting" :spell="spell">
+    <template #head><th>Base</th><th :class="{ 'wz-todo': bonusLeft }">Bonus<span v-if="bonusLeft" class="wz-left wz-th-left">{{ spread.points.value - spread.spent.value }} left</span></th><th v-if="featLevels(d).length">Feats</th></template>
+    <template #cols="{ a }">
         <td>
           <Dropdown v-if="d.method === 'array'" :class="{ 'wz-todo': d.base[a] == null }" :value="d.base[a] ?? ''" @change="setBase(a, val($event) ? Number(val($event)) : undefined)">
             <option value="">—</option>
@@ -149,14 +135,6 @@ const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20
           <template v-else>{{ adds[a] ? signed(adds[a]!) : '' }}</template>
         </td>
         <td v-if="featLevels(d).length">{{ featAdds(a) ? signed(featAdds(a)) : '' }}</td>
-        <td><b v-flash="shown(a)">{{ shown(a) }}</b></td>
-        <td>{{ signed(mod(shown(a))) }}</td>
-        <td class="wz-does">
-          <span class="wz-does-save" :class="{ on: abilities.find(x => x.a === a)?.saveProf }">Save {{ signed(abilities.find(x => x.a === a)?.save ?? 0) }}<template v-if="abilities.find(x => x.a === a)?.saveProf"> (proficient)</template></span>
-          <span v-for="x in skillsOf(a)" :key="x.name" class="wz-does-skill" :class="{ on: x.level > 0 }">{{ x.name }} {{ signed(x.bonus) }}</span>
-          <span v-for="f in feeds(a)" :key="f" class="wz-does-feed">{{ f }}</span>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+    </template>
+  </ScoreTable>
 </template>

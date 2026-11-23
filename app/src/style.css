@@ -1994,6 +1994,13 @@ button.live-tag { cursor: pointer; }
 .wz-choice select { width: auto; }
 .wz-choice.open { box-shadow: inset 3px 0 0 var(--accent); }
 .wz-scores { border-collapse: collapse; margin: .6rem 0; }
+/* ScoreTable: a score with points not on the sheet yet in accent; a row the choice can't change grey */
+.wz-scores .st-up { color: var(--accent); }
+.wz-scores tr.st-dim > th, .wz-scores tr.st-dim > td:not(.wz-does) { color: var(--muted); }
+.wz-scores tr.st-dim .wz-does { opacity: .6; }
+.fst { margin: .3rem 0 .6rem; }
+.fst > p { margin: 0; display: flex; gap: .4rem; align-items: baseline; flex-wrap: wrap; }
+.fst .wz-scores { margin-top: .3rem; }
 .wz-scores th, .wz-scores td { padding: .25rem .6rem; text-align: center; }
 .wz-scores tbody th { text-align: left; font-weight: 500; }
 .wz-scores select, .wz-scores input { width: 5rem; }

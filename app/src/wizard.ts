@@ -68,7 +68,7 @@ export interface Draft {
   /** The Origin feat the player picked instead of the background's (the "Any Origin feat" rule); unset: the background's. */
   originFeat?: Id
   /** Hit points for levels 2 and up: typed rolls; missing ones take the average. */
-  hpRolls: (number | undefined)[]
+  hpRolls: (number | null | undefined)[]
   classKit: number
   bgKit: 'items' | 'money'
   /** The background kit's picks, by line (Wayfarer's gaming set of their choice). */
@@ -378,7 +378,8 @@ export function steps(d: Draft): Step[] {
     }),
   ].filter(Boolean), chosen: [get(origin)?.name, ...featTraits.filter(a => a.trait.choice?.kind === 'feat').flatMap(a => a.picks.map(id => get(id)?.name)), ...d.feats.map(f => get(f.feat)?.name)].filter(Boolean).join(', ') })
   // Level 1 takes the die's maximum: nothing to choose (the summary shows it); later levels may take a typed roll.
-  if (d.level > 1) s.push({ id: 'hp', label: 'Hit points', open: [], chosen: d.cls ? `${hpOf(d)} HP` : '' })
+  // a level marked rolled without its roll typed in is still open
+  if (d.level > 1) s.push({ id: 'hp', label: 'Hit points', open: d.hpRolls.slice(0, d.level - 1).flatMap((r, i) => (r === null ? [`the roll for level ${i + 2}`] : [])), chosen: d.cls ? `${hpOf(d)} HP` : '' })
   s.push({ id: 'gear', label: 'Equipment', open: [], chosen: [classKitsOf(d.cls).length > 1 ? `kit ${String.fromCharCode(65 + d.classKit)}` : '', backgroundKit(d) || backgroundGold(d) ? (d.bgKit === 'items' ? 'background gear' : 'background gold') : ''].filter(Boolean).join(' · ') })
   if (d.cls && casts(d)) {
     const c = spellCounts(d)

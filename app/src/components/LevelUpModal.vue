@@ -4,6 +4,7 @@
 // the feat (or Ability Score Improvement) at the class's feat levels, and how many more spells the class gets.
 // Choices the new features ask for show up in the sheet's Choices card afterwards, as always.
 import Dropdown from './Dropdown.vue'
+import HitDieChoice from './HitDieChoice.vue'
 import { computed, ref } from 'vue'
 import type { CharacterSheet, ClassLine, Entry, Spellbook } from '../model/types'
 import { classesOf, totalLevel } from '../model/classes'
@@ -45,9 +46,9 @@ const newLevel = computed(() => (line.value?.level ?? 0) + 1)
 const die = computed(() => (line.value ? dieOf(line.value) : cls.value ? hitDieOf(cls.value) : props.s.hitDie || 'd8'))
 const size = computed(() => Number(die.value.replace(/\D/g, '')) || 8)
 const con = computed(() => mod(scoreWith(props.s, 'con', gearTotals(props.s))))
-const how = ref<'avg' | 'roll'>('avg')
-const roll = ref<number | null>(null)
-const rolled = computed(() => (how.value === 'avg' ? size.value / 2 + 1 : roll.value))
+/** The roll (HitDieChoice): undefined the average, null rolled but not typed yet. */
+const roll = ref<number | null | undefined>(undefined)
+const rolled = computed(() => (roll.value === undefined ? size.value / 2 + 1 : roll.value))
 const gain = computed(() => (rolled.value == null || rolled.value < 1 || rolled.value > size.value ? null : Math.max(1, rolled.value + con.value)))
 
 // ---- subclass and features ----
@@ -168,7 +169,7 @@ const phase = ref<'level' | 'choices'>('level')
 // ---- what's still missing ----
 const open = computed(() => [
   !cls.value && 'a class',
-  gain.value == null && (how.value === 'roll' ? (roll.value != null ? `a roll from 1 to ${size.value} (${roll.value} isn't one)` : `a roll from 1 to ${size.value}`) : 'hit points'),
+  gain.value == null && (roll.value !== undefined ? (roll.value != null ? `a roll from 1 to ${size.value} (${roll.value} isn't one)` : `a roll from 1 to ${size.value}`) : 'hit points'),
   needsSub.value && !sub.value && 'a subclass',
   featDue.value && !feat.value && (boon.value ? 'an Epic Boon' : 'a feat'),
   featDue.value && feat.value && bonusOpen(featBonus.value, choice.value) > 0 && 'the feat’s ability scores',
@@ -289,12 +290,7 @@ function apply() {
 
       <section>
         <h3>Hit points</h3>
-        <div class="lu-hp">
-          <label><input v-model="how" type="radio" value="avg" /> Average: {{ size / 2 + 1 }} {{ signed(con) }} CON</label>
-          <label><input v-model="how" type="radio" value="roll" /> Rolled {{ die }}:
-            <input v-model.number="roll" type="number" min="1" :max="size" class="lu-roll" placeholder="?" :aria-label="`What the ${die} showed`" @focus="how = 'roll'" @input="how = 'roll'" /> {{ signed(con) }} CON</label>
-          <b v-if="gain != null" class="lu-gain">+{{ gain }} HP</b>
-        </div>
+        <HitDieChoice v-model="roll" :die="die" :con="con" />
       </section>
 
       <section v-if="needsSub">

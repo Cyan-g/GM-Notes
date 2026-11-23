@@ -70,7 +70,7 @@ const COUNT_KINDS: { id: string; label: string }[] = [
 const countKind = (u: Uses) => (typeof u.count === 'number' ? 'n' : u.count)
 const setUse = (i: number, p: Partial<Uses>) => {
   const u: Uses = { ...list.value[i].uses!, ...p }
-  for (const k of ['times', 'steps', 'shortBack'] as const) if (!u[k] || (Array.isArray(u[k]) && !(u[k] as unknown[]).length)) delete u[k]
+  for (const k of ['times', 'plus', 'steps', 'shortBack'] as const) if (!u[k] || (Array.isArray(u[k]) && !(u[k] as unknown[]).length)) delete u[k]
   patch(i, { uses: u })
 }
 const setScale = (i: number, label: string, steps: [number, string][] | undefined) =>
@@ -225,6 +225,7 @@ const kindLabel = (c: TraitChoice) => choiceWords(c, c.count ?? 1)
               </Dropdown>
               <input v-if="typeof list[i].uses!.count === 'number'" type="number" min="1" class="effect-value" :value="list[i].uses!.count" aria-label="Uses" @change="setUse(i, { count: Number(val($event)) || 1 })" />
               <label class="small" title="A pool: this many times the count (Lay on Hands: 5 × level)">× <input type="number" min="1" class="effect-value" :value="list[i].uses!.times ?? 1" @change="setUse(i, { times: Number(val($event)) > 1 ? Number(val($event)) : undefined })" /></label>
+              <label class="small" title="Added to the count (Healing Light: level + 1)">+ <input type="number" min="0" class="effect-value" :value="list[i].uses!.plus ?? 0" @change="setUse(i, { plus: Number(val($event)) > 0 ? Number(val($event)) : undefined })" /></label>
               <Dropdown :value="list[i].uses!.recharge" aria-label="Back on" @change="setUse(i, { recharge: val($event) as 'short' | 'long' })">
                 <option value="short">per short rest</option>
                 <option value="long">per long rest</option>

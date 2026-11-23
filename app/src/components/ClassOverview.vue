@@ -41,7 +41,7 @@ const growing = computed(() => traits.value.flatMap((t: Trait) => [
   ...(t.scale?.steps?.length ? [{ key: t.id + 's', label: t.scale.label || t.name, value: (l: number) => at(t.scale!.steps, l) ?? '' }] : []),
   ...(t.uses?.steps?.length ? [{ key: t.id + 'u', label: `${t.name} uses`, value: (l: number) => (l >= (t.level ?? 1) ? at(t.uses!.steps!, l) ?? '' : '') }] : []),
   // uses equal to the class level (Focus Points, Sorcery Points)
-  ...(!t.uses?.steps?.length && t.uses?.count === 'level' ? [{ key: t.id + 'u', label: `${t.name} uses`, value: (l: number) => (l >= (t.level ?? 1) ? l * (t.uses!.times ?? 1) : '') }] : []),
+  ...(!t.uses?.steps?.length && t.uses?.count === 'level' ? [{ key: t.id + 'u', label: `${t.name} uses`, value: (l: number) => (l >= (t.level ?? 1) ? l * (t.uses!.times ?? 1) + (t.uses!.plus ?? 0) : '') }] : []),
 ]))
 const casts = computed(() => b.value.caster && b.value.caster !== 'none')
 const pact = computed(() => b.value.caster === 'pact')

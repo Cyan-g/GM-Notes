@@ -399,10 +399,11 @@ export interface Trait extends TraitOption {
   replaces?: string
   /**
    * Uses that come back on a rest: a number, the proficiency bonus, the level (of the class it comes from), or an
-   * ability modifier (at least 1); `times` multiplies it (Lay on Hands: 5 × level), `steps` gives the count by level.
+   * ability modifier (at least 1); `times` multiplies it (Lay on Hands: 5 × level), `plus` adds to it (Healing Light:
+   * level + 1), `steps` gives the count by level.
    * A long-rest use can give `shortBack` back on a short rest (Rage: one).
    */
-  uses?: { count: number | 'pb' | 'level' | Ability; recharge: 'short' | 'long'; times?: number; steps?: [number, number][]; shortBack?: number
+  uses?: { count: number | 'pb' | 'level' | Ability; recharge: 'short' | 'long'; times?: number; plus?: number; steps?: [number, number][]; shortBack?: number
     /** From this level on (of the class it comes from) all uses come back on a short rest too (Font of Inspiration: 5). */
     shortFrom?: number }
   /** Switched off when the character is incapacitated (Rage). */

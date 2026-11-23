@@ -1799,6 +1799,14 @@ button.live-tag { cursor: pointer; }
 .wizard-page { display: flex; flex-direction: column; height: calc(100vh - var(--bar-h) - 2.7rem); }
 .wizard-page > .list-head { flex: none; }
 .wizard-page .wizard-grid { flex: 1; min-height: 0; }
+.wz-start { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; max-width: 60rem; margin: 1.5rem auto 0; width: 100%; align-items: stretch; }
+.wz-start-card { display: flex; flex-direction: column; gap: .4rem; padding: 1.4rem 1.5rem; }
+.wz-start-card h2 { margin: 0 0 .2rem; }
+.wz-start-card p { margin: 0; }
+.wz-start-card .spacer { flex: 1; min-height: .6rem; }
+.wz-start-card > button { align-self: flex-start; }
+.wz-start-blank { display: flex; gap: .5rem; }
+.wz-start-blank input { flex: 1; min-width: 0; }
 .wizard-body { height: 100%; margin: 0; padding-bottom: 0; display: flex; flex-direction: column; overflow: hidden; }
 .wz-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.2rem; }
 .wz-main.with-stats { grid-template-columns: minmax(0, 1fr) 16.5rem; }

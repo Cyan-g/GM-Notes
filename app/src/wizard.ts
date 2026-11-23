@@ -92,12 +92,20 @@ export const newDraft = (): Draft => ({
 })
 
 /** The draft in progress (kept while the app is open, so leaving the wizard and coming back keeps it). */
-export const wizard = reactive<{ d: Draft; step: string; featTab?: string }>({ d: newDraft(), step: 'class' })
+/** `started`: the guide was picked on the start page (an empty draft shows the start page until then). */
+export const wizard = reactive<{ d: Draft; step: string; featTab?: string; started?: boolean }>({ d: newDraft(), step: 'class' })
 /** Whether the player picks the Origin feat (the rule), rather than taking the background's. */
 export const pickOrigin = () => rule('originFeat') === 'any'
 /** The draft's Origin feat: the one picked (the rule allowing it), else the background's. */
 export const originOf = (d: Draft): Id | undefined => (pickOrigin() && d.originFeat ? d.originFeat : (get(d.background)?.fields.originFeat as Id | undefined) || undefined)
-export function resetWizard() { wizard.d = newDraft(); wizard.step = 'class' }
+export function resetWizard() { wizard.d = newDraft(); wizard.step = 'class'; wizard.started = false }
+/** Nothing chosen in the draft yet: the creator opens on its start page (the guide, or a blank sheet). */
+export const draftEmpty = (d: Draft) => !d.cls && !d.race && !d.background && !d.name.trim()
+/** A character with just a name and the running campaign: the rest is filled in on its Edit page. */
+export function makeBlankCharacter(name: string): Entry {
+  const campaigns = defaultCampaigns()
+  return createEntry('pc', name.trim() || 'New character', { level: 1, ...(campaigns.length ? { campaigns } : {}) })
+}
 
 // ---------- the parts ----------
 

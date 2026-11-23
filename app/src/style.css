@@ -2786,3 +2786,28 @@ select.dd option:is(:hover, :focus-visible)::before {
 .feat-edit .lt-wrap { grid-column: 1 / -1; }
 .rs-number { display: flex; align-items: center; gap: .6rem; margin-top: .4rem; }
 .rs-number input { width: 6rem; }
+
+/* ---- a feature on its Edit page (TraitsInput, TraitOptionFields, TraitSection) ---- */
+.fhead { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .5rem 0 .4rem; }
+.fhead-lv { display: inline-flex; align-items: center; gap: .3rem; padding: .1rem .5rem; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.form-grid .fhead-lv input, .fhead-lv input { width: 3.2rem; padding: .1rem .3rem; text-align: center; }
+.form-grid .fhead input.fhead-name, .fhead-name { flex: 1; min-width: 12rem; width: auto; font-size: 1.05rem; font-weight: 600; }
+.fhead-actions { display: inline-flex; gap: .15rem; margin-left: auto; }
+.fhead-actions .link-btn { min-width: 1.6rem; text-align: center; font-size: 15px; }
+.fsec { border-top: 1px solid var(--line); padding: .45rem 0 .3rem; }
+.fsec-head { display: flex; align-items: baseline; gap: .5rem; font-size: 13px; }
+.fsec-head b { white-space: nowrap; }
+.fsec-sum { flex: 1; min-width: 0; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fsec-x { margin-left: auto; font-size: 16px; line-height: 1; }
+.fsec-body:empty { display: none; }
+.fsec-body { margin-top: .3rem; }
+.fadd { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; border-top: 1px dashed var(--line); padding-top: .45rem; margin-top: .2rem; }
+.fadd-label { font-size: 12px; color: var(--muted); margin-right: .2rem; }
+.fadd .chip-btn { font-size: 12px; }
+.form-grid .trait-row input.fnum, .trait-row input.fnum { width: 3.4rem; text-align: center; padding-left: .2rem; padding-right: .2rem; }
+.fuses { gap: .4rem; }
+.fpreview { margin: .25rem 0 0; font-size: 12px; color: var(--muted); }
+.trait-option-card .fadd { border-top-style: dotted; }
+/* an open feature card: its name and chips are in the header below, the fold row only folds it */
+.trait-card[open] > summary > * { display: none; }
+.trait-card[open] > summary::after { content: '▴ fold'; font-size: 12px; color: var(--muted); }

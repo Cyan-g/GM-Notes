@@ -39,7 +39,7 @@ const nextLevel = computed(() => newLevel.value ?? Math.min(20, (rows.value.at(-
 
 <template>
   <div class="spell-levels">
-    <div class="trait-row small">
+    <div v-if="spells.length" class="trait-row small">
       <span>Gained</span>
       <Dropdown :value="shared('how')" aria-label="How the spells are gained" @change="val($event) !== 'mixed' && setAll({ how: val($event) as TraitSpell['how'] })">
         <option v-if="shared('how') === 'mixed'" value="mixed">mixed (set per spell)</option>

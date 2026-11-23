@@ -717,7 +717,7 @@ input.init { width: 4em; }
 .sf-material { flex: 1; min-width: 10rem; }
 
 /* ---------- crafting workbench ---------- */
-.wb-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 1rem; align-items: start; }
+.wb-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 1rem; align-items: start; }
 @media (max-width: 1000px) { .wb-grid { grid-template-columns: 1fr; } }
 .wb-main, .wb-side { display: grid; gap: 1rem; }
 .workbench .card h3 { display: flex; justify-content: space-between; align-items: baseline; }

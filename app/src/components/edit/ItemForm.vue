@@ -10,7 +10,7 @@ import { TYPES, MASTERY_OF, byKey, type FieldDef } from '../../model/schema'
 import { changed, setField, toggleField } from '../../edit'
 import { formatMoney } from '../../store'
 import { parseRegain, worksWhileOf } from '../../items'
-import { rule } from '../../rules'
+import { mainCoin, rule } from '../../rules'
 import { itemNamed } from '../../lookup'
 import { useParts } from '../../composables/useParts'
 import FieldInput from './FieldInput.vue'
@@ -69,11 +69,11 @@ const acHint = computed(() => ({ Light: '+ Dex', Medium: '+ Dex (max 2)', Heavy:
 // ---- rarity: the usual price (2024 rules; consumables half) ----
 const PRICE: Record<string, number> = { Common: 100, Uncommon: 400, Rare: 4000, 'Very rare': 40000, Legendary: 200000 }
 const consumable = computed(() => ['Potion', 'Scroll', 'Poison'].includes(String(f.value.kind ?? '')))
-const usualPrice = computed(() => { const p = PRICE[String(f.value.rarity ?? '')]; return p ? (consumable.value ? p / 2 : p) * 100 : undefined })
+const usualPrice = computed(() => { const p = PRICE[String(f.value.rarity ?? '')]; return p ? (consumable.value ? p / 2 : p) * mainCoin() : undefined })
 function setRarity(v: string) {
   if (v) f.value.rarity = v; else delete f.value.rarity
   const p = PRICE[v]
-  if (p && f.value.value == null) f.value.value = (consumable.value ? p / 2 : p) * 100
+  if (p && f.value.value == null) f.value.value = (consumable.value ? p / 2 : p) * mainCoin()
   changed(props.entry)
 }
 

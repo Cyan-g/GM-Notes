@@ -3,6 +3,7 @@
 // A world without presets plays by the defaults (the "Standard" preset is made the first time something changes).
 import { computed } from 'vue'
 import { db, state, touch } from './store'
+import { STANDARD_CURRENCY, cleanCurrency, mainWorth, type Currency } from './money'
 
 export interface RuleOption { id: string; label: string; text?: string }
 export interface RuleDef {
@@ -19,6 +20,8 @@ export interface RuleDef {
   keywords?: string
   /** A number instead of options (the point buy budget, the level cap): its range, and what it counts. */
   number?: { min: number; max: number; unit?: string }
+  /** The currency editor instead of options (its value is the currency as JSON; money.ts). */
+  currency?: true
 }
 export interface RulePreset { id: string; name: string; values: Record<string, string> }
 export interface RulesMeta { presets: RulePreset[]; active: string }
@@ -46,13 +49,10 @@ export const RULES: RuleDef[] = [
     default: 'off', keywords: 'money gold coins weight purse',
   },
   {
-    id: 'electrum', group: 'Equipment', label: 'Electrum pieces',
-    text: 'Whether the purse and prices use electrum (1 ep = 5 sp).',
-    options: [
-      { id: 'on', label: 'Used', text: 'Copper, silver, electrum, gold and platinum.' },
-      { id: 'off', label: 'Not used', text: 'No electrum: the purse leaves it out.' },
-    ],
-    default: 'on', keywords: 'money ep electrum coins currency',
+    id: 'currency', group: 'Equipment', label: 'Currency',
+    text: 'The coins of the world, from the smallest up, and what each is worth in the one below it. Amounts are kept as a number of the smallest coin and shown broken into coins; the main coin is what the rules count in (crafting, prices by rarity) and what a number without a coin means.',
+    options: [], currency: true,
+    default: '', keywords: 'money coins currency gold silver copper electrum platinum gp sp cp ep pp exchange',
   },
   {
     id: 'attunementSlots', group: 'Equipment', label: 'Attunement slots',
@@ -335,7 +335,38 @@ export function scoreMethods(): ('array' | 'pointbuy' | 'typed')[] {
   return out
 }
 /** Whether a preset's rule differs from the Standard default. */
-export const changedFromDefault = (p: RulePreset, id: string) => p.values[id] != null && p.values[id] !== ruleDef(id)?.default
+export const changedFromDefault = (p: RulePreset, id: string) =>
+  id === 'currency' ? JSON.stringify(presetCurrency(p)) !== STANDARD_JSON : p.values[id] != null && p.values[id] !== ruleDef(id)?.default
+
+const STANDARD_JSON = JSON.stringify(STANDARD_CURRENCY)
+/** A currency without one of its coins: the coin above it takes over its ratio (no electrum: 1 gp = 10 sp). */
+export function withoutCoin(c: Currency, i: number): Currency {
+  if (c.coins.length < 2) return c
+  const coins = c.coins.map(x => ({ ...x }))
+  if (i === 0) coins[1].per = 1
+  else if (coins[i + 1]) coins[i + 1].per *= coins[i].per
+  const gone = coins.splice(i, 1)[0]
+  return cleanCurrency({ coins, main: c.main === gone.abbr ? (coins[Math.min(i, coins.length - 1)]).abbr : c.main })
+}
+/** A preset's currency (a world from before the currency kept its "Electrum pieces" switch: off is no electrum). */
+export function presetCurrency(p: RulePreset): Currency {
+  const raw = p.values.currency
+  if (raw) { try { return cleanCurrency(JSON.parse(raw)) } catch { /* unreadable: the standard */ } }
+  return p.values.electrum === 'off' ? withoutCoin(STANDARD_CURRENCY, STANDARD_CURRENCY.coins.findIndex(x => x.abbr === 'ep')) : STANDARD_CURRENCY
+}
+const activeCurrency = computed(() => presetCurrency(activePreset.value))
+/** The world's coins (the Ruleset's "Currency"). */
+export const currency = (): Currency => activeCurrency.value
+/** What the main coin (gold) is worth in base coins: the rules' "gp" (crafting, rarity prices) count in it. */
+export const mainCoin = () => mainWorth(currency())
+/** Set the active preset's currency (the standard one is stored as no value). */
+export function setCurrency(c: Currency) {
+  const m = meta(), p = m.presets.find(x => x.id === m.active) ?? m.presets[0]
+  const json = JSON.stringify(cleanCurrency(c))
+  delete p.values.electrum
+  if (json === STANDARD_JSON) delete p.values.currency; else p.values.currency = json
+  touch()
+}
 
 /** The stored rules, made on the first change. */
 function meta(): RulesMeta {

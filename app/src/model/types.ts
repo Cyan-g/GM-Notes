@@ -57,7 +57,7 @@ export type RelationKind =
 
 // ---------- structured field values ----------
 
-/** A money amount in copper pieces. Shown as gp/sp/cp. */
+/** A money amount: a number of the world's smallest coin (copper as standard), shown in its coins (money.ts). */
 export type Copper = number
 
 export interface RecipeLine { item: Id; amount: number }

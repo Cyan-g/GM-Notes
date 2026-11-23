@@ -3,9 +3,7 @@
 // workweek per 50 GP; and what a recipe's ingredients cost.
 import type { Entry } from './model/types'
 import { get } from './store'
-import { rule } from './rules'
-
-const CP_PER_HOUR = 50 * 100
+import { mainCoin, rule } from './rules'
 
 /** What a recipe's ingredients are worth together, in copper; undefined for an item without a recipe. */
 export const recipeCost = (e: Entry) => {
@@ -16,7 +14,7 @@ export const recipeCost = (e: Entry) => {
 
 /** Whole days of work (8 hours) or workweeks (5 such days) an item worth `valueCp` takes, by the Ruleset's pace. */
 function workUnits(valueCp: number): { n: number; unit: 'day' | 'workweek' } | undefined {
-  const pace = rule('craftingPace'), gp = valueCp / 100
+  const pace = rule('craftingPace'), gp = valueCp / mainCoin()
   if (pace === '2024') return { n: Math.max(1, Math.ceil(gp / 10)), unit: 'day' }
   if (pace === 'workweek') return { n: Math.max(1, Math.ceil(gp / 50)), unit: 'workweek' }
   return undefined
@@ -28,7 +26,7 @@ export function craftingMinutes(valueCp: unknown): number | undefined {
   if (typeof valueCp !== 'number' || !(valueCp > 0)) return undefined
   const w = workUnits(valueCp)
   if (w) return w.n * (w.unit === 'day' ? 8 : 40) * 60
-  const min = Math.max(1, Math.round((valueCp / CP_PER_HOUR) * 60))
+  const min = Math.max(1, Math.round((valueCp / (50 * mainCoin())) * 60))
   return min > 60 ? Math.round(min / 60) * 60 : min
 }
 

@@ -41,8 +41,9 @@ const blank = computed(() => onlyAbilities.value && props.sb.hp == null && props
       <div v-if="sb.srd" class="sb-srd">{{ sb.ac == null ? 'Not an SRD monster name' : 'Stats from the SRD' }}: <b>{{ sb.srd }}</b></div>
       <hr />
     </template>
-    <div class="sb-line" v-if="sb.ac != null"><b>Armor Class</b> {{ sb.ac }}<template v-if="sb.acNote"> ({{ sb.acNote }})</template></div>
-    <div class="sb-line" v-if="sb.hp != null"><b>Hit Points</b> {{ sb.hp }}<template v-if="sb.hitDice"> ({{ sb.hitDice }})</template></div>
+    <!-- a note alone when there's no number: a formula (a Ranger's beast: "13 plus your Wisdom modifier") -->
+    <div class="sb-line" v-if="sb.ac != null || sb.acNote"><b>Armor Class</b> <template v-if="sb.ac != null">{{ sb.ac }}<template v-if="sb.acNote"> ({{ sb.acNote }})</template></template><template v-else>{{ sb.acNote }}</template></div>
+    <div class="sb-line" v-if="sb.hp != null || sb.hitDice"><b>Hit Points</b> <template v-if="sb.hp != null">{{ sb.hp }}<template v-if="sb.hitDice"> ({{ sb.hitDice }})</template></template><template v-else>{{ sb.hitDice }}</template></div>
     <div class="sb-line" v-if="sb.speed"><b>Speed</b> {{ speedText(sb.speed) }}</div>
     <template v-if="sb.abilities">
       <hr v-if="!onlyAbilities" />

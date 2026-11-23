@@ -19,11 +19,10 @@ const pick = (id: string) => { wizard.d.background = id }
   <WzChooser :items="items" :picked="d.background" label="Backgrounds" :need="!d.background && items.length > 0" intro="Click a background on the left to see what it gives: ability score increases, an Origin feat, two skills, a tool and starting equipment. Clicking takes it." empty="The world has no backgrounds yet; go on without one." @pick="pick">
     <template #detail="{ item, picked }">
       <p v-if="!picked" class="small muted wz-ch-hint-line">Click {{ item.label }} on the left to take it.</p>
-      <p class="small wz-bg-gives">
-        <!-- the Origin feat: the background's (set up in Feats), or none when the player picks their own -->
-        <template v-if="pickOrigin()">Origin feat: you pick one in the Feats step · </template>
-        <template v-else-if="get(item.id)?.fields.originFeat">Origin feat <EntryLink :id="String(get(item.id)?.fields.originFeat)" /><template v-if="get(item.id)?.fields.originFeatNote"> ({{ get(item.id)?.fields.originFeatNote }})</template><template v-if="picked"> (<button type="button" class="link-btn" @click="wizard.featTab = 'origin'; wizard.step = 'feats'">set it up in Feats</button>)</template> · </template>
-        skills {{ (get(item.id)?.fields.skillProfs ?? []).join(', ') || '—' }}
+      <!-- its facts are in its page below; here only where its Origin feat is set up -->
+      <p v-if="picked && (pickOrigin() || get(item.id)?.fields.originFeat)" class="small wz-bg-gives">
+        <template v-if="pickOrigin()">Origin feat: you pick one in the Feats step.</template>
+        <template v-else>Its Origin feat, <EntryLink :id="String(get(item.id)?.fields.originFeat)" /><template v-if="get(item.id)?.fields.originFeatNote"> ({{ get(item.id)?.fields.originFeatNote }})</template>, is set up in the <button type="button" class="link-btn" @click="wizard.featTab = 'origin'; wizard.step = 'feats'">Feats step</button>.</template>
       </p>
       <WzTraitChoices v-if="picked" which="background" />
       <WizardPage v-if="get(item.id)" :e="get(item.id)!" :title="item.label" />

@@ -2560,6 +2560,13 @@ select.dd option:is(:hover, :focus-visible)::before {
 .wz-sub-list .wz-tile.shown { border-style: dashed; border-color: var(--accent); }
 .wz-sub-detail .wz-page { margin-top: 0; padding-top: 0; border-top: none; }
 .wz-fold { margin: .4rem 0; }
+/* a background's facts: a label column and a value column, a line each */
+.facts.wz-bg-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: .3rem 1.2rem; align-items: baseline; margin: .2rem 0 .8rem; }
+.wz-bg-facts dt { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.wz-bg-facts dd { margin: 0; font-size: 14px; }
+/* a species' facts at the top right, the lore and traits flowing beside them */
+.wz-race-glance { float: right; width: min(19rem, 45%); margin: 0 0 1rem 1.2rem; }
+.wz-page::after { content: ''; display: block; clear: both; }
 .wz-fold > summary { cursor: pointer; font: 600 1.05rem var(--serif); color: var(--accent); padding: .3rem 0; list-style: none; }
 .wz-fold > summary::-webkit-details-marker { display: none; }
 .wz-fold > summary::before { content: '▸'; display: inline-block; width: 1.1em; color: var(--muted); transition: rotate .15s; }

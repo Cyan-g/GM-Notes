@@ -59,6 +59,8 @@ function toggled(part: string, ev: Event) {
       <span v-if="!upTo.length" class="muted">nothing yet</span>
       <span v-if="next" class="muted"> · next: {{ next.name }} ({{ next.level }})</span>
     </p>
+    <!-- a species' facts (size, speed, senses…): small, so at the top right, the text flowing beside it -->
+    <RaceGlance v-if="e.type === 'race'" :e="e" no-actions class="wz-race-glance" />
     <!-- a background's facts: the abilities its increase goes to, skills, tool, Origin feat, equipment -->
     <dl v-if="e.type === 'background'" class="facts wz-bg-facts small">
       <template v-if="e.fields.abilityIncrease"><dt>Ability scores</dt><dd>{{ abilityBonusText(e.fields.abilityIncrease) }}</dd></template>
@@ -75,7 +77,6 @@ function toggled(part: string, ev: Event) {
       <summary>Class table</summary>
       <ClassOverview :e="e" />
     </details>
-    <RaceGlance v-else-if="e.type === 'race'" :e="e" no-actions />
     <details v-if="traits.length" class="wz-fold" :open="isOpen('features')" @toggle="toggled('features', $event)">
       <summary>{{ isClass ? 'Features' : 'Traits' }} <span class="muted small">{{ traits.length }}</span></summary>
       <TraitList :traits="traits" :by-level="isClass ? classLabel(e) : undefined" :lineage="e.type === 'race' && e.fields.parent ? e.name : undefined" />

@@ -6,6 +6,9 @@
 
 const MULT: Record<string, number> = { pp: 1000, gp: 100, ep: 50, sp: 10, cp: 1 }
 
+/** How many coins an amount is at least: the fewest gold, silver and copper pieces (for coin weight). */
+export const coinCount = (cp: number) => (cp > 0 ? Math.floor(cp / 100) + Math.floor((cp % 100) / 10) + (cp % 10) : 0)
+
 export type MoneyParse = { cp: number } | { error: string }
 
 /** A number as typed: "1,250" and "1.250" are thousands, "12,5" and "12.5" a decimal, "1,255.3" and "1.255,3" both. */
@@ -18,8 +21,9 @@ function num(raw: string): number {
   return seps.length > 1 ? NaN : Number(raw.replace(',', '.'))
 }
 
-/** Read a money field's text; `current` (copper) is what "+" and "−" change. Empty text is `{ cp: NaN }`: no amount. */
-export function parseMoney(text: string, current = 0): MoneyParse {
+/** Read a money field's text; `current` (copper) is what "+" and "−" change. Empty text is `{ cp: NaN }`: no amount.
+ *  `electrum` false (the Ruleset): "ep" isn't a coin there. */
+export function parseMoney(text: string, current = 0, electrum = true): MoneyParse {
   let t = text.trim().toLowerCase().replace(/−|–/g, '-')
   if (!t) return { cp: NaN }
   const sign = t[0] === '+' ? 1 : t[0] === '-' ? -1 : 0
@@ -28,6 +32,7 @@ export function parseMoney(text: string, current = 0): MoneyParse {
   // everything typed must be amounts
   if (!parts.length || parts.map(p => p[0]).join('') !== t) return { error: 'Type an amount like "12 gp", "12 gp 7 sp" or "+5 gp"' }
   if (parts.length > 1 && parts.some(p => !p[2])) return { error: 'With several amounts, give each its coin: "12 gp 7 sp"' }
+  if (!electrum && parts.some(p => p[2] === 'ep')) return { error: 'No electrum (ep) in this world: use gp, sp or cp' }
   let cp = 0
   for (const p of parts) {
     const n = num(p[1])

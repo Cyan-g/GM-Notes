@@ -10,6 +10,7 @@ import { TYPES, MASTERY_OF, byKey, type FieldDef } from '../../model/schema'
 import { changed, setField, toggleField } from '../../edit'
 import { formatMoney } from '../../store'
 import { parseRegain, worksWhileOf } from '../../items'
+import { rule } from '../../rules'
 import { itemNamed } from '../../lookup'
 import { useParts } from '../../composables/useParts'
 import FieldInput from './FieldInput.vue'
@@ -20,7 +21,8 @@ import { inputValue as val } from '../../dom'
 const props = defineProps<{ entry: Entry }>()
 const f = computed(() => byKey(props.entry.fields))
 const shown = (d: FieldDef) => !d.when || d.when.is.includes(String(f.value[d.when.field] ?? ''))
-const fields = computed(() => TYPES.item.fields.filter(d => shown(d) && d.key !== 'summary' && d.kind !== 'recipe'))
+// an item's inventory slots only matter while the Ruleset counts slots
+const fields = computed(() => TYPES.item.fields.filter(d => shown(d) && d.key !== 'summary' && d.kind !== 'recipe' && (d.key !== 'slots' || rule('carryingCapacity') === 'slots')))
 const fieldOf = (k: string) => fields.value.find(d => d.key === k)
 
 /** What it gives, each with what it's for. */

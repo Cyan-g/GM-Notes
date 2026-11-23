@@ -34,7 +34,7 @@ import PcPortrait from './PcPortrait.vue'
 import FeatureList from './FeatureList.vue'
 import FeatureChoices from './FeatureChoices.vue'
 import UsesCard from './UsesCard.vue'
-import { rule } from '../rules'
+import { levelCap, longRestHeals, restLengths, rule } from '../rules'
 import ActiveSpellsCard from './ActiveSpellsCard.vue'
 import ConditionsBar from './ConditionsBar.vue'
 import DeathSaves from './DeathSaves.vue'
@@ -243,9 +243,11 @@ function restNow(kind: 'short' | 'long') {
   rolls.value = kind === 'long' ? longRest(props.pc) : shortRest(props.pc)
   const what = restSummary(props.pc, before, kind)
   noteUndo(what, () => { restoreSheet(props.pc, before)(); rolls.value = []; resting.value = '' })
-  // a short rest: the panel for spending Hit Dice, with what came back
-  if (kind === 'short') resting.value = what
+  // a short rest (and a long one that heals no hit points by itself): the panel for spending Hit Dice, with what came back
+  restKind.value = kind
+  if (kind === 'short' || !longRestHeals()) resting.value = what
 }
+const restKind = ref<'short' | 'long'>('short')
 /** The short-rest panel, open with what the rest gave back. */
 const resting = ref('')
 const rest = () => restNow('long')
@@ -287,7 +289,7 @@ const leveling = ref(false)
 /** The "to pick" window: the choices still to make, on the sheet. */
 const choosing = ref(false)
 /** Level up from the Level tile: a character of one's own, below 20, not while editing; with XP, "ready" shows. */
-const canLevelUp = computed(() => !ro.value && !build.value && !isShared(props.pc) && classes.value.length > 0 && level.value < 20)
+const canLevelUp = computed(() => !ro.value && !build.value && !isShared(props.pc) && classes.value.length > 0 && level.value < levelCap())
 const levelReady = computed(() => canLevelUp.value && rule('experience') === 'xp' && (s.value.xp ?? 0) >= (XP_AT[level.value] ?? Infinity))
 // Level up is in the Edit button's menu (EntryHeader): it asks for this character's dialog
 watch(() => ui.levelUp, id => { if (id && id === props.pc.id) { leveling.value = true; ui.levelUp = null } }, { immediate: true })
@@ -347,7 +349,7 @@ onBeforeUnmount(() => {
     <div class="cs-top-right">
     <LevelUpModal v-if="leveling" :pc="pc" :s="s" @close="leveling = false" />
     <ChoicesModal v-if="choosing" :pc="pc" :s="s" @close="choosing = false" />
-    <ShortRestModal v-if="resting" :pc="pc" :s="s" :summary="resting" @close="resting = ''" />
+    <ShortRestModal v-if="resting" :pc="pc" :s="s" :summary="resting" :kind="restKind" @close="resting = ''" />
     <!-- the strip at the top: the numbers looked at most -->
     <!-- building: what the sheet works out, in one line; below it, what's set by hand -->
     <div v-if="build" class="cs-build">
@@ -422,13 +424,13 @@ onBeforeUnmount(() => {
         </div>
       </div>
       <div v-if="!build" class="cs-rests">
-        <button class="cs-rest" :disabled="ro" title="Features, pact slots and item spells that recharge on a short rest come back; then spend Hit Dice" @click="short">Short rest</button>
+        <button class="cs-rest" :disabled="ro" :title="`A short rest (${restLengths().short}): features, pact slots and item spells that recharge on a short rest come back; then spend Hit Dice`" @click="short">Short rest</button>
         <div v-if="rolls.length" class="cs-regain">
           <div v-for="r in rolls" :key="r.i" class="cs-regain-row small">Roll <b>{{ r.dice }}</b> for {{ r.name }}'s charges:
             <input type="number" min="0" class="effect-value" placeholder="?" @keydown.enter="addCharges(r, ($event.target as HTMLInputElement).value)" @change="addCharges(r, ($event.target as HTMLInputElement).value)" />
             <button type="button" class="link-btn" title="Skip" @click="rolls = rolls.filter(x => x !== r)">×</button></div>
         </div>
-        <button class="cs-rest" :disabled="ro" :title="`Full HP, no temp HP, every spell slot, ${rule('hitDiceLongRest') === 'half' ? 'half your' : 'all'} Hit Dice and one exhaustion level back`" @click="rest">Long rest</button>
+        <button class="cs-rest" :disabled="ro" :title="`A long rest (${restLengths().long}): ${longRestHeals() ? 'full HP' : 'no HP by itself (spend Hit Dice)'}, no temp HP, every spell slot, ${rule('hitDiceLongRest') === 'half' ? 'half your' : 'all'} Hit Dice and one exhaustion level back`" @click="rest">Long rest</button>
       </div>
     </div>
     <!-- in play: the limited uses of features, to tick off without scrolling -->

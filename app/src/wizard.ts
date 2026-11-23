@@ -16,7 +16,8 @@ import { PROFS_TRAIT } from './model/traits'
 import { byType, entries, get } from './store'
 import { isShield } from './items'
 import { currentCampaign } from './sessions'
-import { bonusSources, rule } from './rules'
+import { bonusSources, rule, ruleNumber, scoreMethods } from './rules'
+import { dieAverage, dieCounted, hpFirstMode, hpMode, type HpMode } from './hitPoints'
 import { changed, createEntry } from './edit'
 import { itemNamed } from './lookup'
 import { norm } from './model/text'
@@ -25,9 +26,11 @@ import { upgradeEntries } from './migrations'
 
 export type ScoreMethod = 'array' | 'pointbuy' | 'typed'
 export const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8]
-/** Point buy: what each score costs, out of 27 points. */
-export const POINT_COST: Record<number, number> = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 }
-export const POINTS = 27
+/** Point buy: what each score costs (16 and 17 only where the Ruleset lets point buy go past 15). */
+export const POINT_COST: Record<number, number> = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9, 16: 11, 17: 13 }
+/** Point buy's points to spend and its highest score, as the Ruleset sets them (27 and 15 standard). */
+export const pointBudget = () => ruleNumber('pointBuy')
+export const pointMax = () => Math.min(17, Math.max(15, Number(rule('pointBuyMax')) || 15))
 
 /** A feat taken at a level (an Ability Score Improvement is a feat too), with its ability bonus's picks. */
 export interface FeatPick { level: number; feat?: Id; choice: BonusChoice }
@@ -69,6 +72,8 @@ export interface Draft {
   originFeat?: Id
   /** Hit points for levels 2 and up: typed rolls; missing ones take the average. */
   hpRolls: (number | null | undefined)[]
+  /** Level 1's roll, when the Ruleset has level 1 rolled (null: not typed yet). */
+  hpFirst?: number | null
   classKit: number
   bgKit: 'items' | 'money'
   /** The background kit's picks, by line (Wayfarer's gaming set of their choice). */
@@ -85,7 +90,7 @@ export interface Draft {
 
 export const newDraft = (): Draft => ({
   cls: '', level: 1, ownSaves: [], ownArmor: [], ownWeapons: [], ownSkillCount: 2,
-  method: 'array', base: {}, bonusFrom: bonusSources()[0], bonusChoice: { picks: [] }, custom: {},
+  method: scoreMethods()[0], base: {}, bonusFrom: bonusSources()[0], bonusChoice: { picks: [] }, custom: {},
   skills: [], tools: [], languages: ['Common'], species: {}, feats: [], hpRolls: [], classKit: 0, bgKit: 'items',
   cantrips: [], spells: [], book: [], name: '', player: '',
   looks: { gender: '', age: '', hair: '', eyes: '', skin: '', clothing: '' }, story: '',
@@ -197,12 +202,22 @@ export function finalScores(d: Draft): Abilities {
 
 export const pointsSpent = (d: Draft) => ABILITY_KEYS.reduce((n, a) => n + (POINT_COST[d.base[a] ?? 8] ?? 0), 0)
 
-/** Hit points: the die's maximum at level 1, then each level's roll (or the average), all with the CON modifier. */
+/** Hit points: level 1 and each level after as the Ruleset counts them (hitPoints.ts), all with the CON modifier; a
+ * roll still missing counts as the average meanwhile. */
 export function hpOf(d: Draft): number {
   const die = dieSize(dieOfDraft(d)) || 8, con = mod(finalScores(d).con)
-  let hp = die + con
-  for (let l = 2; l <= d.level; l++) hp += Math.max(1, (d.hpRolls[l - 2] ?? die / 2 + 1) + con)
+  const level = (mode: HpMode, roll: number | null | undefined) => Math.max(1, (dieCounted(mode, roll, die) ?? dieAverage(die)) + con)
+  let hp = level(hpFirstMode(), d.hpFirst)
+  for (let l = 2; l <= d.level; l++) hp += level(hpMode(), d.hpRolls[l - 2])
   return Math.max(1, hp)
+}
+/** The levels whose roll is still missing ("the roll for level 3"). */
+export function hpOpen(d: Draft): string[] {
+  const die = dieSize(dieOfDraft(d)) || 8
+  return [
+    ...(dieCounted(hpFirstMode(), d.hpFirst, die) == null ? ['the roll for level 1'] : []),
+    ...Array.from({ length: Math.max(0, d.level - 1) }, (_, i) => (dieCounted(hpMode(), d.hpRolls[i], die) == null ? [`the roll for level ${i + 2}`] : [])).flat(),
+  ]
 }
 
 /** The spells the class can pick: cantrips, and spells up to the highest level its slots reach. */
@@ -360,7 +375,7 @@ export function steps(d: Draft): Step[] {
   const fin = finalScores(d)
   s.push({ id: 'scores', label: 'Ability scores', open: [
     unset ? `${unset} score${unset === 1 ? '' : 's'}` : '',
-    d.method === 'pointbuy' && pointsSpent(d) > POINTS ? 'too many points spent' : '',
+    d.method === 'pointbuy' && pointsSpent(d) > pointBudget() ? 'too many points spent' : '',
     d.bonusFrom !== 'custom' && bonusOpen(bonusOf(d), d.bonusChoice) ? 'the bonus\'s picks' : '',
   ].filter(Boolean) as string[], chosen: unset ? '' : ABILITY_KEYS.map(a => fin[a]).join(' ') })
   const skillCount = r ? r.skills.count : d.ownSkillCount
@@ -385,9 +400,9 @@ export function steps(d: Draft): Step[] {
       return bonusOpen(get(f.feat)?.fields.abilityIncrease, f.choice) ? [`the scores of ${get(f.feat)?.name}`] : []
     }),
   ].filter(Boolean), chosen: [get(origin)?.name, ...featTraits.filter(a => a.trait.choice?.kind === 'feat').flatMap(a => a.picks.map(id => get(id)?.name)), ...d.feats.map(f => get(f.feat)?.name)].filter(Boolean).join(', ') })
-  // Level 1 takes the die's maximum: nothing to choose (the summary shows it); later levels may take a typed roll.
-  // a level marked rolled without its roll typed in is still open
-  if (d.level > 1) s.push({ id: 'hp', label: 'Hit points', open: d.hpRolls.slice(0, d.level - 1).flatMap((r, i) => (r === null ? [`the roll for level ${i + 2}`] : [])), chosen: d.cls ? `${hpOf(d)} HP` : '' })
+  // Hit points as the Ruleset counts them: a level (or level 1) to be rolled without its roll typed in is still open.
+  // Level 1 alone at its maximum has nothing to choose (the summary shows it).
+  if (d.level > 1 || hpFirstMode() === 'rolled') s.push({ id: 'hp', label: 'Hit points', open: hpOpen(d), chosen: d.cls ? `${hpOf(d)} HP` : '' })
   s.push({ id: 'gear', label: 'Equipment', open: [], chosen: [classKitsOf(d.cls).length > 1 ? `kit ${String.fromCharCode(65 + d.classKit)}` : '', backgroundKit(d) || backgroundGold(d) ? (d.bgKit === 'items' ? 'background gear' : 'background gold') : ''].filter(Boolean).join(' · ') })
   if (d.cls && casts(d)) {
     const c = spellCounts(d)

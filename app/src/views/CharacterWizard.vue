@@ -10,6 +10,7 @@
 import { computed, ref, watch } from 'vue'
 import { draftEmpty, makeBlankCharacter, resetWizard, steps, wizard, type Step } from '../wizard'
 import { subclassLevelOf } from '../classRules'
+import { levelCap } from '../rules'
 import { playerMode } from '../store'
 import { setCurrent } from '../sheet'
 import { go, hrefEntry } from '../router'
@@ -62,6 +63,8 @@ function linkClick(ev: MouseEvent) {
   ev.preventDefault()
   popup.value = id
 }
+// A draft above the Ruleset's highest level comes down to it.
+watch(levelCap, c => { if (wizard.d.level > c) wizard.d.level = c }, { immediate: true })
 // A level below the subclass's level has no subclass.
 watch(() => d.value.level, () => { if (d.value.level < subclassLevelOf(d.value.cls)) wizard.d.subclass = undefined })
 /** The Spells step's name filter. */
@@ -128,7 +131,7 @@ function makeBlank() {
         <div class="wizard-head">
           <h2>{{ step.label }}</h2>
           <label class="wz-head-level" title="The character's level: what the class gives, its spells, feats and hit points follow it">Level
-            <input type="number" min="1" max="20" :value="d.level" @change="wizard.d.level = Math.min(20, Math.max(1, Number(($event.target as HTMLInputElement).value) || 1))" /></label>
+            <input type="number" min="1" :max="levelCap()" :value="d.level" @change="wizard.d.level = Math.min(levelCap(), Math.max(1, Number(($event.target as HTMLInputElement).value) || 1))" /></label>
           <span v-if="step.open.length" class="wz-head-open small" :title="`Still to choose here: ${step.open.join(', ')}`">Still to choose: {{ step.open.join(', ') }}</span>
           <span class="wz-nav">
             <button v-if="step.open.length" type="button" class="link-btn wz-next-open" :title="`Still to choose here: ${step.open.join(', ')}`" @click="nextOpen">Next open pick ↓</button>

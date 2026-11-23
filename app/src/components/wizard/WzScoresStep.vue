@@ -6,10 +6,10 @@
 import Dropdown from '../Dropdown.vue'
 import { computed, watchEffect } from 'vue'
 import type { Id } from '../../model/types'
-import { POINTS, POINT_COST, STANDARD_ARRAY, bonusAdds, bonusOf, featLevels, pointsSpent, wizard } from '../../wizard'
+import { POINT_COST, STANDARD_ARRAY, bonusAdds, bonusOf, featLevels, pointBudget, pointMax, pointsSpent, wizard } from '../../wizard'
 import { abilityBonusText } from '../../abilityBonus'
 import { ABILITY_KEYS, ABILITY_NAME, mod, signed } from '../../model/dnd'
-import { bonusSources } from '../../rules'
+import { bonusSources, scoreMethods } from '../../rules'
 import { raceChain } from '../../species'
 import { get } from '../../store'
 import { useDraft } from '../../composables/useDraft'
@@ -32,12 +32,14 @@ const arrayLeft = (a: string) => STANDARD_ARRAY.filter((n, i) => {
   return STANDARD_ARRAY.slice(0, i).filter(x => x === n).length >= usedBy
 })
 const setBase = (a: string, n: number | undefined) => { wizard.d.base = { ...wizard.d.base, [a]: n } }
-/** Whether one more point can go into a score: up to 15, with points left for it. */
-const canBuy = (a: keyof typeof ABILITY_NAME) => { const n = (d.value.base[a] ?? 8) + 1; return n <= 15 && pointsSpent(d.value) - (POINT_COST[d.value.base[a] ?? 8] ?? 0) + POINT_COST[n] <= POINTS }
+/** Point buy's points and highest score (the Ruleset's). */
+const POINTS = computed(() => pointBudget()), TOP = computed(() => pointMax())
+/** Whether one more point can go into a score: up to the highest, with points left for it. */
+const canBuy = (a: keyof typeof ABILITY_NAME) => { const n = (d.value.base[a] ?? 8) + 1; return n <= TOP.value && pointsSpent(d.value) - (POINT_COST[d.value.base[a] ?? 8] ?? 0) + POINT_COST[n] <= POINTS.value }
 const buy = (a: keyof typeof ABILITY_NAME, by: number) => {
   const n = (d.value.base[a] ?? 8) + by
-  if (n < 8 || n > 15) return
-  if (by > 0 && pointsSpent(d.value) - (POINT_COST[d.value.base[a] ?? 8] ?? 0) + POINT_COST[n] > POINTS) return
+  if (n < 8 || n > TOP.value) return
+  if (by > 0 && pointsSpent(d.value) - (POINT_COST[d.value.base[a] ?? 8] ?? 0) + POINT_COST[n] > POINTS.value) return
   setBase(a, n)
 }
 const sources = computed(() => bonusSources())
@@ -58,6 +60,10 @@ function setBonusFrom(f: typeof wizard.d.bonusFrom) {
 }
 // a source the Ruleset no longer offers: the first one it does
 watchEffect(() => { if (!sources.value.includes(d.value.bonusFrom)) setBonusFrom(sources.value[0]) })
+// the methods the Ruleset offers; a draft on one it no longer offers moves to the first that is
+const methods = computed(() => scoreMethods())
+const METHOD: Record<string, string> = { array: 'Standard array', pointbuy: 'Point buy', typed: 'Typed in' }
+watchEffect(() => { if (!methods.value.includes(d.value.method)) setMethod(methods.value[0]) })
 const LABEL: Record<string, string> = { background: "Background's", species: "Species'", subrace: "Subrace's only", custom: 'Typed in' }
 /** The scores the + buttons start from: the base ones for the background's or species' bonus. */
 const baseScores = computed(() => Object.fromEntries(ABILITY_KEYS.map(a => [a, d.value.base[a] ?? 10])) as Record<(typeof ABILITY_KEYS)[number], number>)
@@ -84,9 +90,7 @@ const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20
   <div class="wz-score-src">
     <span class="wz-src-label">Scores</span>
     <div class="seg">
-    <button type="button" :class="{ on: d.method === 'array' }" @click="setMethod('array')">Standard array</button>
-    <button type="button" :class="{ on: d.method === 'pointbuy' }" @click="setMethod('pointbuy')">Point buy</button>
-    <button type="button" :class="{ on: d.method === 'typed' }" @click="setMethod('typed')">Typed in</button>
+    <button v-for="m in methods" :key="m" type="button" :class="{ on: d.method === m }" @click="setMethod(m)">{{ METHOD[m] }}</button>
     </div>
     <span class="wz-src-label">Bonus</span>
     <div class="seg">
@@ -96,8 +100,8 @@ const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20
   <div class="wz-guide">
     <p v-if="d.method === 'array'"><b>Standard array:</b> six set numbers, 15, 14, 13, 12, 10 and 8. Give each to one score, using each number once. The quickest way, and every character gets the same total.</p>
     <template v-else-if="d.method === 'pointbuy'">
-      <p><b>Point buy:</b> every score starts at 8, and you have {{ POINTS }} points to raise them, up to 15. The higher a score, the more each step costs:</p>
-      <p class="wz-costs"><span v-for="n in [9, 10, 11, 12, 13, 14, 15]" :key="n" class="chip">{{ n }}: {{ POINT_COST[n] }} pt{{ POINT_COST[n] === 1 ? '' : 's' }}</span></p>
+      <p><b>Point buy:</b> every score starts at 8, and you have {{ POINTS }} points to raise them, up to {{ TOP }}. The higher a score, the more each step costs:</p>
+      <p class="wz-costs"><span v-for="n in [9, 10, 11, 12, 13, 14, 15, 16, 17].filter(x => x <= TOP)" :key="n" class="chip">{{ n }}: {{ POINT_COST[n] }} pt{{ POINT_COST[n] === 1 ? '' : 's' }}</span></p>
       <p :class="{ 'wz-bad': pointsSpent(d) > POINTS }"><b>{{ POINTS - pointsSpent(d) }}</b> of {{ POINTS }} points left.</p>
     </template>
     <p v-else><b>Typed in:</b> scores rolled at the table (usually 4d6 six times, dropping the lowest die of each) or agreed with your DM. Type each one in.</p>
@@ -121,7 +125,7 @@ const featAdds = (a: keyof typeof ABILITY_NAME) => scores.value[a] - Math.min(20
             <option v-for="n in [...new Set(arrayLeft(a))]" :key="n" :value="n">{{ n }}</option>
           </Dropdown>
           <span v-else-if="d.method === 'pointbuy'" class="wz-buy">
-            <button type="button" class="chip-btn" :disabled="(d.base[a] ?? 8) <= 8" @click="buy(a, -1)">−</button><b>{{ d.base[a] ?? 8 }}</b><button type="button" class="chip-btn" :disabled="!canBuy(a)" :title="(d.base[a] ?? 8) >= 15 ? '15 is the most point buy allows' : !canBuy(a) ? 'Not enough points left' : undefined" @click="buy(a, 1)">＋</button>
+            <button type="button" class="chip-btn" :disabled="(d.base[a] ?? 8) <= 8" @click="buy(a, -1)">−</button><b>{{ d.base[a] ?? 8 }}</b><button type="button" class="chip-btn" :disabled="!canBuy(a)" :title="(d.base[a] ?? 8) >= TOP ? `${TOP} is the most point buy allows` : !canBuy(a) ? 'Not enough points left' : undefined" @click="buy(a, 1)">＋</button>
           </span>
           <input v-else type="number" min="1" max="30" :class="{ 'wz-todo': d.base[a] == null }" :value="d.base[a] ?? ''" @change="setBase(a, num($event) || undefined)" />
         </td>

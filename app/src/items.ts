@@ -1,5 +1,7 @@
 // Items: what they do while in use (their effects, spells and charges, and when they count), what's carried and its
 // weight, where an item is (the characters carrying it, the shops selling it) and what a shop asks for it.
+import { rule } from './rules'
+import { coinCount } from './money'
 import type { CharacterSheet, Entry, GearEffect, InventoryLine, ItemSpell, Regain, StockLine } from './model/types'
 import { byType, get } from './store'
 import { ord } from './model/dnd'
@@ -196,3 +198,16 @@ export function restItems(s: CharacterSheet, kind: 'short' | 'long'): RegainRoll
 // ---- what's carried ----
 /** Total weight carried, in lb. */
 export const weightOf = (s: CharacterSheet) => s.inventory.reduce((n, l) => n + (Number(get(l.item)?.fields.weight) || 0) * (l.qty || 0), 0)
+  + (rule('coinWeight') === 'on' ? coinCount(s.money ?? 0) / 50 : 0)
+/** The inventory slots one of an item takes (the Ruleset's inventory slots): its own number; else an item under a
+ * pound takes its weight (20 arrows of 0.05 lb share one slot), an ingredient in the crafting pouch none, and the rest 1. */
+export function slotsOfItem(e: Entry | undefined): number {
+  if (e?.fields.slots != null && Number.isFinite(Number(e.fields.slots))) return Number(e.fields.slots)
+  if (e?.fields.kind === 'Ingredient') return 0
+  const w = Number(e?.fields.weight)
+  return w > 0 && w < 1 ? w : 1
+}
+/** The slots a character's gear takes: each item's slots times how many, rounded up; with coin weight on, every 100
+ * coins after the first 100 take one. */
+export const slotsUsed = (s: CharacterSheet) => Math.ceil(s.inventory.reduce((n, l) => n + slotsOfItem(get(l.item)) * (l.qty || 0), 0)
+  + (rule('coinWeight') === 'on' ? Math.max(0, Math.ceil((coinCount(s.money ?? 0) - 100) / 100)) : 0))

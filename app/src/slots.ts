@@ -6,6 +6,11 @@ import type { Entry, Spellbook } from './model/types'
 import { classesOf } from './model/classes'
 import { get } from './store'
 import { casterOf } from './classRules'
+import { rule } from './rules'
+
+/** A half caster's levels toward the slot table: 2024 from level 1, halved and rounded up; 2014 (the Ruleset) from
+ * level 2, rounded up alone and down in a multiclass. */
+const halfLevels = (n: number, single: boolean) => (rule('halfCasterStart') === '2014' ? (single ? (n >= 2 ? Math.ceil(n / 2) : 0) : Math.floor(n / 2)) : Math.ceil(n / 2))
 
 /** Slots by level (1st…9th) for a caster level of 1…20. */
 const TABLE: number[][] = [
@@ -44,12 +49,12 @@ export function ruleSlots(pc: Entry): RuleSlots | undefined {
   })
   const casters = kinds.filter(k => k.kind !== 'none' && k.kind !== 'warlock')
   // The 2024 rules (SRD 5.2.1): paladins and rangers cast from level 1, their levels halved and rounded up, alone or
-  // with other classes. Third casters cast from level 3 alone (rounded up), and with other classes count a third of
+  // with other classes (2014, by the Ruleset: halfLevels). Third casters cast from level 3 alone (rounded up), and with other classes count a third of
   // their levels, rounded down.
   const single = casters.length === 1
   const level = casters.reduce((sum, k) => sum + (
     k.kind === 'full' ? k.n
-      : k.kind === 'artificer' || k.kind === 'half' ? Math.ceil(k.n / 2)
+      : k.kind === 'artificer' ? Math.ceil(k.n / 2) : k.kind === 'half' ? halfLevels(k.n, single)
         : (single ? (k.n >= 3 ? Math.ceil(k.n / 3) : 0) : Math.floor(k.n / 3))
   ), 0)
   const slots = Array.from({ length: 9 }, (_, i) => TABLE[Math.min(20, level)]?.[i] ?? 0)
@@ -62,8 +67,8 @@ export function ruleSlots(pc: Entry): RuleSlots | undefined {
 /** The slots one class gives at a class level on its own (for its progression table): slots of 1st…9th level, or pact
  * slots with their level. */
 export function classSlotsAt(caster: string, n: number): { slots: number[]; pact?: { count: number; level: number } } {
-  // as the sheet counts them (above): a half caster has slots from level 1 (2024), a third caster from 3
-  const lvl = caster === 'full' ? n : caster === 'artificer' || caster === 'half' ? Math.ceil(n / 2) : caster === 'third' ? (n >= 3 ? Math.ceil(n / 3) : 0) : 0
+  // as the sheet counts them (above): a half caster from level 1 (2024) or 2 (2014, the Ruleset), a third caster from 3
+  const lvl = caster === 'full' ? n : caster === 'artificer' ? Math.ceil(n / 2) : caster === 'half' ? halfLevels(n, true) : caster === 'third' ? (n >= 3 ? Math.ceil(n / 3) : 0) : 0
   const slots = Array.from({ length: 9 }, (_, i) => TABLE[Math.min(20, lvl)]?.[i] ?? 0)
   return caster === 'pact' ? { slots, pact: { count: n >= 17 ? 4 : n >= 11 ? 3 : n >= 2 ? 2 : 1, level: Math.min(5, Math.ceil(n / 2)) } } : { slots }
 }

@@ -9,7 +9,7 @@ import type { Entry, Id, RecipeLine } from '../model/types'
 import { byType, formatMoney, get } from '../store'
 import { activeBench, currentPc } from '../sheet'
 import type { Entry as PcEntry } from '../model/types'
-import { CRAFTING_RULE, craftingTime, recipeCost } from '../crafting'
+import { craftingRule, craftingTime, recipeCost } from '../crafting'
 import EntryLink from '../components/EntryLink.vue'
 import { noteUndo } from '../undoNote'
 import EntryPicker from '../components/edit/EntryPicker.vue'
@@ -80,7 +80,7 @@ const ingredientIds = computed(() => (byType.value.get('item') ?? []).filter(e =
         <section class="card">
           <h3>Known recipes <span class="muted small">{{ known.length }}</span></h3>
           <table v-if="known.length" class="grid wb-recipes">
-            <thead><tr><th>Item</th><th>Crafted with</th><th>Ingredients</th><th class="num">Cost</th><th class="num">Value</th><th class="num" :title="CRAFTING_RULE">Time</th><th class="num">Currently in inventory</th><th></th></tr></thead>
+            <thead><tr><th>Item</th><th>Crafted with</th><th>Ingredients</th><th class="num">Cost</th><th class="num">Value</th><th class="num" :title="craftingRule()">Time</th><th class="num">Currently in inventory</th><th></th></tr></thead>
             <tbody>
               <tr v-for="e in known" :key="e.id" :class="{ ready: canCraft(e) }">
                 <td><EntryLink :id="e.id" icon /></td>

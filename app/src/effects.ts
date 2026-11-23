@@ -12,7 +12,7 @@ import { applyConditions } from './conditions'
 import { ABILITY_UPPER, SKILLS, mod, profBonus, signed, type Ability } from './model/dnd'
 import { activeEffectsOf, activeSpells } from './spells'
 import { totalLevel } from './model/classes'
-import { activeGear, itemsInUse, weightOf } from './items'
+import { activeGear, itemsInUse, slotsUsed, weightOf } from './items'
 
 /** One contribution to a number: what it comes from and how much. */
 export interface Part { label: string; n: number; when?: GearEffect['when'] }
@@ -91,15 +91,17 @@ export function describeEffects(list: GearEffect[]): string[] {
  * Large, × ½ for Tiny), or, as the encumbrance variant, over × 5 encumbered and over × 10 heavily encumbered.
  * Undefined while the rule is off.
  */
-export function loadOf(s: CharacterSheet, t?: GearTotals): { carried: number; capacity: number; state: 'ok' | 'over' | 'encumbered' | 'heavy'; light?: number; heavy?: number } | undefined {
+export function loadOf(s: CharacterSheet, t?: GearTotals): { carried: number; capacity: number; state: 'ok' | 'over' | 'encumbered' | 'heavy'; light?: number; heavy?: number; unit: 'lb' | 'slots' } | undefined {
   const mode = rule('carryingCapacity')
   if (mode === 'off') return undefined
   const str = t ? scoreWith(s, 'str', t) : s.abilities.str
+  // inventory slots: as many as the Strength score, at least 10
+  if (mode === 'slots') { const carried = slotsUsed(s), capacity = Math.max(10, str); return { carried, capacity, unit: 'slots', state: carried > capacity ? 'over' : 'ok' } }
   const k = sizeLoad(s)
   const carried = weightOf(s), capacity = str * 15 * k
-  if (mode === 'capacity') return { carried, capacity, state: carried > capacity ? 'over' : 'ok' }
+  if (mode === 'capacity') return { carried, capacity, unit: 'lb', state: carried > capacity ? 'over' : 'ok' }
   const light = str * 5 * k, heavy = str * 10 * k
-  return { carried, capacity, light, heavy, state: carried > heavy ? 'heavy' : carried > light ? 'encumbered' : 'ok' }
+  return { carried, capacity, light, heavy, unit: 'lb', state: carried > heavy ? 'heavy' : carried > light ? 'encumbered' : 'ok' }
 }
 /** How much more (or less) a creature of the character's size carries: Large ×2, Tiny ×½. */
 const sizeLoad = (s: CharacterSheet) => { const size = String(s.size ?? speciesSize(ownerOf(s)) ?? 'Medium'); return /large/i.test(size) ? 2 : /tiny/i.test(size) ? 0.5 : 1 }

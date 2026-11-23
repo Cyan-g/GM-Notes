@@ -11,6 +11,7 @@ import { choiceCandidates, choiceOpen, featBonusFor, isClassOrigin, speciesTrait
 import { ABILITY_KEYS, ABILITY_NAME, signed, type Ability } from '../../model/dnd'
 import { entries, get, optionLabel } from '../../store'
 import { useDraft } from '../../composables/useDraft'
+import { featsAllowed, isAsiFeat } from '../../rules'
 import FeatScoreTable from '../FeatScoreTable.vue'
 import { useDraftSheet } from '../../composables/useDraftSheet'
 import FeatCard from '../FeatCard.vue'
@@ -22,6 +23,8 @@ const { d, r } = useDraft()
 const draftNow = useDraftSheet()
 const feats = computed(() => entries.value.filter(e => e.type === 'feat').sort((a, b) => a.name.localeCompare(b.name)))
 const featsFor = (boon: boolean) => {
+  // the Ruleset's "Ability Score Improvement only": that feat alone, at every feat level
+  if (!featsAllowed()) return feats.value.filter(f => isAsiFeat(f.name))
   const want = boon ? 'Epic Boon' : 'General Feat'
   const of = feats.value.filter(f => f.fields.category === want)
   return of.length ? of : feats.value.filter(f => f.fields.category !== 'Origin Feat')

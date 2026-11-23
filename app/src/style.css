@@ -2783,3 +2783,5 @@ select.dd option:is(:hover, :focus-visible)::before {
 .lt-hint { position: absolute; right: .5rem; bottom: .4rem; z-index: 2; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: .05rem .5rem; border-radius: 999px; font-size: 11px; background: var(--chip); color: var(--ink-2); pointer-events: none; }
 .lt-hint.missing { color: var(--muted); }
 .feat-edit .lt-wrap { grid-column: 1 / -1; }
+.rs-number { display: flex; align-items: center; gap: .6rem; margin-top: .4rem; }
+.rs-number input { width: 6rem; }

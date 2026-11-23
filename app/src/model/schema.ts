@@ -237,6 +237,8 @@ export const SCHEMA = [
       { key: 'attunement', label: 'Requires attunement', kind: 'bool' },
       { key: 'value', label: 'Value', kind: 'money' },
       { key: 'weight', label: 'Weight', kind: 'weight' },
+      // Inventory slots one of it takes, where the Ruleset counts slots (empty: 1, or its weight under a pound; 0.05: twenty share a slot).
+      { key: 'slots', label: 'Inventory slots', kind: 'number' },
       { key: 'summary', label: 'Short description', kind: 'longtext' },
       { key: 'weaponCategory', label: 'Weapon category', kind: 'select', options: WEAPON_CATEGORIES, fixed: WEAPON_CATEGORIES, when: W, group: 'Weapon' },
       { key: 'baseWeapon', label: 'Base weapon', kind: 'select', options: [...SIMPLE_WEAPONS, ...MARTIAL_WEAPONS].sort(), when: W, group: 'Weapon' },

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// After a short rest (taken when this opens): what came back, and the Hit Dice to spend. The player rolls; they type
+// After a short rest (taken when this opens), or a long one that heals no hit points by itself (the Ruleset's slow
+// natural healing): what came back, and the Hit Dice to spend. The player rolls; they type
 // how many dice and what the dice showed, and the sheet adds the CON modifier per die, heals and counts the dice.
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { CharacterSheet, Entry } from '../model/types'
@@ -8,8 +9,10 @@ import { editSheet } from '../sheetData'
 import { hpChanged } from '../conditions'
 import { mod, signed } from '../model/dnd'
 import ArcaneRecovery from './ArcaneRecovery.vue'
+import { restLengths } from '../rules'
 
-const props = defineProps<{ pc: Entry; s: CharacterSheet; /** What the rest gave back, in words. */ summary: string }>()
+const props = defineProps<{ pc: Entry; s: CharacterSheet; /** What the rest gave back, in words. */ summary: string; kind?: 'short' | 'long' }>()
+const title = computed(() => `${props.kind === 'long' ? 'Long' : 'Short'} rest (${props.kind === 'long' ? restLengths().long : restLengths().short})`)
 const emit = defineEmits<{ close: [] }>()
 const con = computed(() => mod(score(props.s, 'con')))
 const pools = computed(() => hitDiceOf(props.pc, props.s).map(p => ({ ...p, left: p.total - p.spent })))
@@ -43,9 +46,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 <template>
   <Teleport to="body">
     <div class="modal-back" @mousedown.self="emit('close')">
-      <div class="modal short-rest" role="dialog" aria-label="Short rest">
+      <div class="modal short-rest" role="dialog" :aria-label="title">
         <header class="modal-head">
-          <h2>Short rest</h2>
+          <h2>{{ title }}</h2>
           <span class="spacer" />
           <button class="x" title="Close (Esc)" @click="emit('close')">×</button>
         </header>
@@ -60,7 +63,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
           <button type="button" class="chip-btn" :class="{ primary: gain(p.die) != null }" :disabled="gain(p.die) == null || (count[p.die] ?? 0) > p.left" @click="spend(p.die)">Heal</button>
         </div>
         <p v-if="healed.length" class="small">Healed: {{ healed.join(' · ') }}</p>
-        <ArcaneRecovery :pc="pc" :s="s" />
+        <ArcaneRecovery v-if="kind !== 'long'" :pc="pc" :s="s" />
         <footer class="lu-foot"><span class="spacer" /><button class="primary" @click="emit('close')">Done</button></footer>
       </div>
     </div>

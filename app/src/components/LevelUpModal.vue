@@ -5,6 +5,7 @@
 // Choices the new features ask for show up in the sheet's Choices card afterwards, as always.
 import Dropdown from './Dropdown.vue'
 import HitDieChoice from './HitDieChoice.vue'
+import { hpGain, hpMode } from '../hitPoints'
 import SkillGrid from './SkillGrid.vue'
 import { pickFrame } from '../skillFrames'
 import { computed, ref } from 'vue'
@@ -20,7 +21,7 @@ import FeatureChoices from './FeatureChoices.vue'
 import { editSheet, profsToEdit, sheetToEdit } from '../sheetData'
 import { SKILLS, mod, signed, ABILITY_KEYS, ORD, profBonus } from '../model/dnd'
 import { itemNamed } from '../lookup'
-import { rule } from '../rules'
+import { featsAllowed, isAsiFeat, levelCap, rule } from '../rules'
 import { gearTotals, scoreWith } from '../effects'
 import { backgroundOf, choiceOpen, featBonusFor, featGivesSave, featOfFeature, speciesTraits, isToolKind } from '../species'
 import { traitsOf } from '../model/traits'
@@ -50,8 +51,8 @@ const size = computed(() => Number(die.value.replace(/\D/g, '')) || 8)
 const con = computed(() => mod(scoreWith(props.s, 'con', gearTotals(props.s))))
 /** The roll (HitDieChoice): undefined the average, null rolled but not typed yet. */
 const roll = ref<number | null | undefined>(undefined)
-const rolled = computed(() => (roll.value === undefined ? size.value / 2 + 1 : roll.value))
-const gain = computed(() => (rolled.value == null || rolled.value < 1 || rolled.value > size.value ? null : Math.max(1, rolled.value + con.value)))
+/** What the level adds, as the Ruleset counts it (hitPoints.ts); null while a roll is missing. */
+const gain = computed(() => hpGain(hpMode(), roll.value, size.value, con.value))
 
 // ---- subclass and features ----
 const subclasses = computed(() => (byType.value.get('subclass') ?? []).filter(e => e.fields.class === cls.value).sort((a, b) => a.name.localeCompare(b.name)))
@@ -86,7 +87,8 @@ function lacks(f: Entry): string {
 const KINDS = ['Epic Boon', 'General Feat', 'Origin Feat', 'Fighting Style', 'Other']
 const KIND_LABEL: Record<string, string> = { 'Epic Boon': 'Epic Boons', 'General Feat': 'General feats', 'Origin Feat': 'Origin feats', 'Fighting Style': 'Fighting styles', Other: 'Other' }
 const featGroups = computed(() => {
-  const all = entries.value.filter(e => e.type === 'feat').sort((a, b) => a.name.localeCompare(b.name))
+  // the Ruleset's "Ability Score Improvement only": that feat alone
+  const all = entries.value.filter(e => e.type === 'feat' && (featsAllowed() || isAsiFeat(e.name))).sort((a, b) => a.name.localeCompare(b.name))
   const kinds = boon.value ? KINDS : KINDS.filter(k => k !== 'Epic Boon')
   const kindOf = (f: Entry) => (KINDS.includes(String(f.fields.category)) ? String(f.fields.category) : 'Other')
   return kinds.map(k => ({ kind: k, label: KIND_LABEL[k], list: all.filter(f => kindOf(f) === k) })).filter(g => g.list.length)
@@ -178,7 +180,7 @@ const phase = ref<'level' | 'choices'>('level')
 // ---- what's still missing ----
 const open = computed(() => [
   !cls.value && 'a class',
-  gain.value == null && (roll.value !== undefined ? (roll.value != null ? `a roll from 1 to ${size.value} (${roll.value} isn't one)` : `a roll from 1 to ${size.value}`) : 'hit points'),
+  gain.value == null && (roll.value != null ? `a roll from 1 to ${size.value} (${roll.value} isn't one)` : `a roll from 1 to ${size.value}`),
   needsSub.value && !sub.value && 'a subclass',
   featDue.value && !feat.value && (boon.value ? 'an Epic Boon' : 'a feat'),
   featDue.value && feat.value && bonusOpen(featBonus.value, choice.value) > 0 && 'the feat’s ability scores',
@@ -188,7 +190,7 @@ const open = computed(() => [
 ].filter(Boolean) as string[])
 
 function apply() {
-  if (open.value.length || total.value >= 20) return
+  if (open.value.length || total.value >= levelCap()) return
   const pc = props.pc
   // what was picked, taken before the class line changes (the dialog's numbers follow the class level)
   const hp = gain.value!, takeFeat = featDue.value && feat.value ? get(feat.value) : undefined, epic = boon.value

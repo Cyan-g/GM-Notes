@@ -133,9 +133,29 @@ export function removeCombatant(id: string) {
   touch()
 }
 
-/** Roll for everyone without an initiative (monsters by default; players usually say their own). */
+/**
+ * Roll for everyone without an initiative (monsters by default; players usually say their own), as the Ruleset says:
+ * each its own d20 + modifier; monsters of one kind (the same creature entry) sharing a d20, each with its modifier;
+ * or each side sharing one roll (a d20 + the side's best modifier), so a side acts together.
+ */
 export function rollInitiative(includePlayers = false) {
-  for (const c of tracker().combatants) if (c.init == null && (includePlayers || !c.isPlayer)) c.init = d20() + fighterStats(c).initMod
+  const how = rule('initiative'), todo = tracker().combatants.filter(c => c.init == null && (includePlayers || !c.isPlayer))
+  if (how === 'side') {
+    for (const party of [true, false]) {
+      const side = todo.filter(c => isParty(c) === party)
+      if (!side.length) continue
+      const n = d20() + Math.max(...side.map(c => fighterStats(c).initMod))
+      for (const c of side) c.init = n
+    }
+  } else {
+    const shared = new Map<string, number>()
+    for (const c of todo) {
+      const kind = how === 'kind' && !c.isPlayer && c.entry ? c.entry : undefined
+      let roll = kind ? shared.get(kind) : undefined
+      if (roll == null) { roll = d20(); if (kind) shared.set(kind, roll) }
+      c.init = roll + fighterStats(c).initMod
+    }
+  }
   sortByInitiative()
 }
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-// A character's side card: what they wear and wield, and their three attunement slots.
+// A character's side card: what they wear and wield, and their attunement slots (three, or as the Ruleset says).
 // Each item has a button to take it off (or end the attunement); it also opens in a pop-up.
+import { ruleNumber } from '../rules'
 import { useReadOnlyShared as useReadOnly } from '../composables/useReadOnly'
 import { printCards } from '../ui'
 import AppIcon from './AppIcon.vue'
@@ -15,7 +16,7 @@ import { chargesLeft, effectsOf, focusText, itemsInUse, regainText, setCharges, 
 import { describeEffect } from '../effects'
 
 const props = defineProps<{ pc: Entry }>()
-const ATTUNE_SLOTS = 3
+const ATTUNE_SLOTS = computed(() => ruleNumber('attunementSlots'))
 /** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
 const ro = useReadOnly()
 const lines = computed(() => (sheetOf(props.pc)?.inventory ?? []).map((l, i) => ({ l, i, e: get(l.item) })).filter(x => !!x.e))
@@ -42,7 +43,7 @@ function printItems() {
 const untrained = (x: { e?: Entry }) => proficientWith(sheetOf(props.pc), x.e!) === false
 /** An item in use whose requirements the character doesn't meet (e.g. a score dropped since). */
 const unfit = (x: { l: InventoryLine; e?: Entry }) => blockedFor(props.pc, { ...x.l, equipped: undefined, attuned: undefined }, x.e?.fields.attunement ? 'attuned' : 'equipped')
-const slots = computed(() => Array.from({ length: Math.max(ATTUNE_SLOTS, attuned.value.length) }, (_, i) => attuned.value[i]))
+const slots = computed(() => Array.from({ length: Math.max(ATTUNE_SLOTS.value, attuned.value.length) }, (_, i) => attuned.value[i]))
 
 // ---- dragging: an item from the inventory dropped anywhere on this card is put to use ----
 const over = ref(false)

@@ -31,7 +31,7 @@ const noWeight = computed(() => [...new Set(s.value.inventory.map(l => get(l.ite
 /** The Carrying capacity rule's view (rules.ts): carried against capacity, while the rule is on. */
 const load = computed(() => loadOf(s.value, gearTotals(s.value)))
 const round = (n: number) => Math.round(n * 10) / 10
-const loadTip = computed(() => (load.value?.light != null ? `Encumbered over ${round(load.value.light)} lb, heavily over ${round(load.value.heavy!)} lb (Strength × 5 and × 10)` : 'Carrying capacity: Strength × 15 lb'))
+const loadTip = computed(() => (load.value?.unit === 'slots' ? 'Inventory slots: as many as the Strength score, at least 10; each item takes 1 unless its page says otherwise' : load.value?.light != null ? `Encumbered over ${round(load.value.light)} lb, heavily over ${round(load.value.heavy!)} lb (Strength × 5 and × 10)` : 'Carrying capacity: Strength × 15 lb'))
 const itemOf = (i: number) => get(s.value.inventory[i]?.item)
 // Ingredients are the crafting pouch: listed apart, under the gear.
 const lines = computed(() => s.value.inventory.map((l, i) => ({ l, i, e: get(l.item) })))
@@ -87,9 +87,9 @@ function onDrop(ev: DragEvent) {
 <template>
   <section ref="root" class="cs-inventory card" :class="{ 'cs-inv-side': side, 'drop-over': over }"
            @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop">
-    <component :is="'h3'">Inventory <span v-flash.neutral="weight" class="muted small" :title="load ? loadTip : 'Carrying capacity: Strength × 15 lb (the Ruleset does not check it)'">{{ load ? `${round(load.carried)} / ${round(load.capacity)} lb` : `${round(weight)} of ${round(capacityOf(s, gearTotals(s)))} lb, with what's equipped` }}</span>
+    <component :is="'h3'">Inventory <span v-flash.neutral="weight" class="muted small" :title="load ? loadTip : 'Carrying capacity: Strength × 15 lb (the Ruleset does not check it)'">{{ load ? `${round(load.carried)} / ${round(load.capacity)} ${load.unit}` : `${round(weight)} of ${round(capacityOf(s, gearTotals(s)))} lb, with what's equipped` }}</span>
       <span v-if="noWeight.length" class="muted small tip" :data-tip="`No weight given for ${noWeight.join(', ')}: they count as 0 lb`"> · {{ noWeight.length }} without a weight</span></component>
-    <p v-if="load && load.state !== 'ok'" class="warn-note small">{{ load.state === 'over' ? `Over the carrying capacity (${round(load.capacity)} lb): the DM decides what that means.` : load.state === 'encumbered' ? `Encumbered (over ${round(load.light!)} lb): −10 ft speed.` : `Heavily encumbered (over ${round(load.heavy!)} lb): −20 ft speed, disadvantage on ability checks, attack rolls and STR, DEX and CON saves.` }}</p>
+    <p v-if="load && load.state !== 'ok'" class="warn-note small">{{ load.state === 'over' ? (load.unit === 'slots' ? `More than ${load.capacity} slots: something has to be left behind.` : `Over the carrying capacity (${round(load.capacity)} lb): the DM decides what that means.`) : load.state === 'encumbered' ? `Encumbered (over ${round(load.light!)} lb): −10 ft speed.` : `Heavily encumbered (over ${round(load.heavy!)} lb): −20 ft speed, disadvantage on ability checks, attack rolls and STR, DEX and CON saves.` }}</p>
     <table class="cs-inv">
       <tr v-for="{ l, i, e } in gear" :key="i" :draggable="!ro && !!e"
           @dragstart="startDrag($event, pc, i, 'inventory')" @dragend="endDrag">

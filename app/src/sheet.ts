@@ -12,7 +12,7 @@ import { advOf, breakdown, gearTotals, scoreWith, sum, type Part } from './effec
 import { dexCap, isShield, isWearable, isWeaponOrArmor, restItems, type RegainRoll } from './items'
 import { unmet } from './requirements'
 import { setConditions } from './conditions'
-import { rule } from './rules'
+import { longRestHeals, rule } from './rules'
 import { castingOf, hitDicePools } from './classRules'
 import { restSpecies, speciesExpertise, speciesGrants, speciesSize, speciesSkills, speciesSpeed, speciesSpeeds, speciesTraits, toolKindOf, type HaveNow } from './species'
 import { blankProfs, emptyBook, onSheetEdit, ownerOf, profsToEdit, sheetOf, sheetOrBlank, sheetToEdit, stackItem } from './sheetData'
@@ -544,12 +544,14 @@ export function shortRest(pc: Entry): RegainRoll[] {
 }
 
 /**
- * A character's long rest: full HP, no temporary HP, every spell slot back, active spells and death saves ended, one
+ * A character's long rest: full HP (or, with the Ruleset's slow natural healing, none: Hit Dice are spent instead, and
+ * a character at 0 wakes with 1), no temporary HP, every spell slot back, active spells and death saves ended, one
  * level of exhaustion off, and Hit Dice back (all of them, or half the level with at least one, as the ruleset says).
  */
 export function longRest(pc: Entry): RegainRoll[] {
   const s = sheetToEdit(pc)
-  s.hp = maxHpOf(s)
+  const max = maxHpOf(s)
+  s.hp = longRestHeals() ? max : Math.max(1, s.hp ?? max ?? 1)
   delete s.tempHp
   restSlots(s.spellbook, 'long')
   const rolls = restItems(s, 'long')

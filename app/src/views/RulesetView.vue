@@ -63,7 +63,10 @@ function remove() {
       <div v-for="r in list" :key="r.id" class="card rs-rule" :class="{ changed: changedFromDefault(activePreset, r.id) }">
         <div class="rs-head"><b>{{ r.label }}</b><span v-if="changedFromDefault(activePreset, r.id)" class="rs-mark small" title="Not as in the Standard preset">changed</span></div>
         <p class="muted small">{{ r.text }}</p>
-        <div class="rs-options" role="radiogroup" :aria-label="r.label">
+        <label v-if="r.number" class="rs-number"><input type="number" :min="r.number.min" :max="r.number.max" :value="rule(r.id)" :disabled="ro" :aria-label="r.label"
+          @change="setRule(r.id, String(Math.min(r.number.max, Math.max(r.number.min, Math.round(Number(($event.target as HTMLInputElement).value) || Number(r.default))))))" />
+          <span class="muted small">{{ r.number.unit }} · standard {{ r.default }}</span></label>
+        <div v-else class="rs-options" role="radiogroup" :aria-label="r.label">
           <label v-for="o in r.options" :key="o.id" class="rs-option" :class="{ on: rule(r.id) === o.id }">
             <input type="radio" :name="r.id" :checked="rule(r.id) === o.id" :disabled="ro" @change="setRule(r.id, o.id)" />
             <span><b>{{ o.label }}</b><span v-if="o.id === r.default" class="muted small"> · standard</span><br /><span v-if="o.text" class="muted small">{{ o.text }}</span></span>

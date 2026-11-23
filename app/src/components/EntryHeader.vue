@@ -12,7 +12,7 @@ import { fromPlayer, isShared, sharedBy } from '../sync'
 import { removePlayerCharacter } from '../playerCharacters'
 import { XP_AT, currentPc, levelOf, setCurrent } from '../sheet'
 import { currentCampaign, setCurrentCampaign } from '../sessions'
-import { rule } from '../rules'
+import { levelCap, rule } from '../rules'
 import { go, hrefEntry, route } from '../router'
 import { printCards, ui } from '../ui'
 import { changed, createEntry, isFavourite, toggleFavourite } from '../edit'
@@ -60,7 +60,7 @@ const facts = computed(() => factsOf(props.e))
 const menu = ref(false)
 const menuEl = ref<HTMLElement | null>(null)
 /** A character of one's own can level up (not a shared one, not past 20, not in a read-only world). */
-const canLevel = computed(() => props.e.type === 'pc' && !shared.value && !player.value && !state.readOnly && levelOf(props.e) < 20)
+const canLevel = computed(() => props.e.type === 'pc' && !shared.value && !player.value && !state.readOnly && levelOf(props.e) < levelCap())
 /** Enough XP for the next level (XP rule): the menu says so, and the button shows a dot. */
 const ready = computed(() => canLevel.value && rule('experience') === 'xp' && (props.e.fields.sheet?.xp ?? 0) >= XP_AT[levelOf(props.e)])
 function pick(job: () => void) { menu.value = false; job() }

@@ -4,6 +4,7 @@
 import { ref, watch } from 'vue'
 import { formatMoney } from '../../store'
 import { parseMoney } from '../../money'
+import { rule } from '../../rules'
 
 // other attributes (disabled, aria-label) go to the input, not the wrapper
 defineOptions({ inheritAttrs: false })
@@ -15,7 +16,7 @@ const error = ref('')
 watch(() => props.modelValue, v => { if (document.activeElement !== el.value) text.value = formatMoney(v) })
 
 function commit() {
-  const r = parseMoney(text.value, props.modelValue ?? 0)
+  const r = parseMoney(text.value, props.modelValue ?? 0, rule('electrum') !== 'off')
   if ('error' in r) { error.value = r.error === 'Not enough money for that' ? `${r.error}: there's ${formatMoney(props.modelValue ?? 0) || 'nothing'}` : r.error; return }
   error.value = ''
   if (isNaN(r.cp)) { emit('update:modelValue', undefined); return }

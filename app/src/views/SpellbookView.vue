@@ -12,10 +12,10 @@ import { editSheet, sheetOf } from '../sheetData'
 import { ORD, mod, spellLevel, type Ability } from '../model/dnd'
 import { activeEffectsOf, isActive, rollsLine, toggleActive } from '../spells'
 import { endConcentration, startConcentration } from '../conditions'
-import { castFromItem, grantedSpells, restItems, unuse, type GrantedSpell } from '../items'
+import { castFromItem, focusesCarried, grantedSpells, materialCosts, restItems, unuse, type FocusType, type GrantedSpell } from '../items'
 import { classSpellList, classSpellsFrom, restSpecies, speciesSpells, speciesTraits, spendUse, usesLeft, usesMax, useSpeciesSpell, type SpeciesSpell } from '../species'
 import { classesOf } from '../model/classes'
-import { basicsOf, casterOf, spellSourceOf } from '../classRules'
+import { basicsOf, casterOf, focusTypeOf, spellSourceOf } from '../classRules'
 import { gearTotals, sum } from '../effects'
 import { restSlots, setSlotCount, slotFor, slotRows, useSlot, type SlotRow } from '../slots'
 import type { Entry as PcEntry } from '../model/types'
@@ -321,6 +321,19 @@ const isCheck = (e: Entry) => e.fields.spellType === 'Attack' || e.fields.spellT
 
 // ---- where the spells come from: each class's list (Cleric, Bard…) or a spellbook (Wizard), as the class says ----
 const lines = computed(() => (owner.value ? classesOf(owner.value).filter(l => casterOf(l.class) !== 'none') : []))
+// ---- the spellcasting focus: what the classes can use, what's carried, and whether it covers a spell's materials ----
+const focusTypes = computed(() => [...new Set(lines.value.map(l => focusTypeOf(l.class)).filter(Boolean))] as FocusType[])
+const focusWords = (t: FocusType) => (t === 'Instrument' ? 'musical instrument' : t.toLowerCase())
+const focuses = computed(() => { const sh = owner.value ? sheetOf(owner.value) : undefined; return sh && focusTypes.value.length ? focusesCarried(sh, focusTypes.value) : [] })
+/** A spell's materials: whether the focus covers them, for its M mark. */
+function material(e: Entry): { tip: string; cls: string } | undefined {
+  const m = e.fields.material
+  if (!m) return undefined
+  const what = m === 'yes' ? 'Materials' : `Materials: ${m}`
+  if (materialCosts(m)) return { cls: 'cost', tip: `${what}. They have a cost or are used up: a focus doesn't replace them.` }
+  if (focuses.value.length) return { cls: 'covered', tip: `${what}. Covered by ${focuses.value.map(x => x.name).join(' or ')}.` }
+  return { cls: 'needed', tip: `${what}. ${focusTypes.value.length ? `No ${focusTypes.value.map(focusWords).join(' or ')} or component pouch carried: it needs them.` : 'No class focus here: it needs them.'}` }
+}
 const listClasses = computed(() => lines.value.filter(l => spellSourceOf(l.class) !== 'book'))
 const bookClasses = computed(() => lines.value.filter(l => spellSourceOf(l.class) === 'book'))
 /** The spellbook (Known spells) is shown for a Wizard, the world's book, and a character without classes. */
@@ -406,6 +419,8 @@ const full = computed(() => preparedLimit.value != null && preparedCount.value >
         </template>
         <label><span>Prepared</span><b v-flash.neutral="preparedCount" :class="{ over: full }">{{ preparedCount }}</b> / <input type="number" min="0" :value="book.preparedMax" :placeholder="preparedLimit != null ? String(preparedLimit) : ''" @change="setNum('preparedMax', ($event.target as HTMLInputElement).value)" /></label>
         <label v-if="cantripsMax"><span>Cantrips</span><b :class="{ over: cantripsKnown > cantripsMax }">{{ cantripsKnown }}</b> / {{ cantripsMax }}</label>
+        <!-- the focus the classes can use instead of materials without a cost, and the ones carried -->
+        <label v-if="focusTypes.length" class="sbk-focus"><span>Focus</span><b class="tip" :class="{ muted: !focuses.length }" :data-tip="`${focusTypes.map(focusWords).join(' or ')} (or a component pouch): held instead of a spell's materials that have no cost`">{{ focuses.length ? focuses.map(x => x.name).join(', ') : `no ${focusTypes.map(focusWords).join(' or ')}` }}</b></label>
       </section>
 
       <section class="card sbk-slots">
@@ -501,7 +516,7 @@ const full = computed(() => preparedLimit.value != null && preparedCount.value >
                @dragover="dragOver($event, 'prepared')" @dragleave.self="over = null" @drop.prevent="drop('prepared')">
         <h3>Prepared spells <span class="muted small" :class="{ over: full }" title="Cantrips and always-prepared spells don't count">{{ preparedCount }}<template v-if="preparedLimit != null"> / {{ preparedLimit }}</template><template v-if="alwaysCount"> + {{ alwaysCount }} always</template></span></h3>
         <table v-if="preparedList.length" class="grid sbk-t-prep">
-          <thead><tr><th>Spell</th><th>Level</th><th>Casting time</th><th>Duration</th><th>Attack / save</th><th title="Concentration · Ritual">C/R</th><th></th></tr></thead>
+          <thead><tr><th>Spell</th><th>Level</th><th>Casting time</th><th>Duration</th><th>Attack / save</th><th title="Concentration · Ritual · Material components">C/R/M</th><th></th></tr></thead>
           <tbody>
             <tr v-for="e in preparedList" :key="e.id" :class="{ dragging: dragging?.id === e.id }" :draggable="!onlyGiven(e.id) && !isCantrip(e.id)"
                 :title="isCantrip(e.id) ? 'A cantrip: always ready' : onlyGiven(e.id) ? `Always prepared: from ${given.get(e.id)!.from}` : 'Drag back to Known spells to unprepare'" @dragstart="dragStart($event, e.id, 'prepared')" @dragend="dragEnd">
@@ -517,7 +532,7 @@ const full = computed(() => preparedLimit.value != null && preparedCount.value >
               <td :title="String(e.fields.castingTime ?? '')">{{ shortCast(e.fields.castingTime) }}</td>
               <td>{{ e.fields.duration ?? '' }}</td>
               <td class="sbk-check" :class="{ 'sbk-type': !isCheck(e) }">{{ check(e, given.get(e.id)?.ability) }}<div v-if="rolls(e, given.get(e.id)?.ability)" class="sbk-rolls">{{ rolls(e, given.get(e.id)?.ability) }}</div></td>
-              <td>{{ [e.fields.concentration && 'C', e.fields.ritual && 'R'].filter(Boolean).join(' ') }}</td>
+              <td class="sbk-crm">{{ [e.fields.concentration && 'C', e.fields.ritual && 'R'].filter(Boolean).join(' ') }}<span v-if="material(e)" class="sbk-m tip" :class="material(e)!.cls" :data-tip="material(e)!.tip">M</span></td>
               <td class="sbk-actions">
                 <span v-if="spellLevel(e) && given.get(e.id)?.how === 'atWill' && onlyGiven(e.id)" class="muted small" title="Cast without a spell slot">at will</span>
                 <span v-else-if="spellLevel(e)" class="cast-wrap"><span class="cast-split">

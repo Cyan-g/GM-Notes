@@ -229,6 +229,8 @@ export const SCHEMA = [
       { key: 'subtype', label: 'Subtype', kind: 'text' },
       // the kind of tool or instrument it is (Elmar's Lyre: Lyre; Lyre itself: Lyre): what proficiency covers it
       { key: 'toolType', label: 'Type', kind: 'ref', to: ['item'], pick: { field: 'kind', is: ['Tool', 'Instrument'] }, when: { field: 'kind', is: ['Tool', 'Instrument'] } },
+      // A spellcasting focus it is, whatever its kind (a quarterstaff that's an arcane focus, a shield with an emblem).
+      { key: 'focus', label: 'Spellcasting focus', kind: 'select', options: ['Arcane focus', 'Druidic focus', 'Holy symbol'], fixed: ['Arcane focus', 'Druidic focus', 'Holy symbol'], when: { field: 'kind', is: ['Weapon', 'Armor', 'Tome', 'Ring', 'Accessory', 'Adventuring Gear', 'Other'] } },
       { key: 'rarity', label: 'Rarity', kind: 'select', options: ['Common', 'Uncommon', 'Rare', 'Very rare', 'Legendary', 'Artifact'] },
       { key: 'magical', label: 'Magical', kind: 'bool' },
       { key: 'attunement', label: 'Requires attunement', kind: 'bool' },

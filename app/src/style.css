@@ -2763,3 +2763,9 @@ select.dd option:is(:hover, :focus-visible)::before {
 .cp-stats dd { margin: 0; font: 600 1.05rem var(--serif); }
 .cp-add { display: flex; align-items: center; }
 .cp-add .picker { width: 100%; }
+/* the spellbook's M mark: materials a carried focus covers (muted), that it doesn't have yet (accent), with a cost (bold) */
+.sbk-m { margin-left: .3rem; font-size: 11px; font-weight: 600; padding: 0 .25rem; border-radius: 4px; border: 1px solid var(--line); }
+.sbk-m.covered { color: var(--muted); }
+.sbk-m.needed { color: var(--accent); border-color: var(--accent); }
+.sbk-m.cost { color: var(--ink); border-color: var(--ink-2); }
+.sbk-focus b { font-size: 13px; font-weight: 500; }

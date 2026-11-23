@@ -113,6 +113,14 @@ const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 's
           <option value="swap">its class list, one swapped when it gains a level (Bard, Sorcerer, Warlock)</option>
           <option value="book">a spellbook (Wizard)</option>
         </Dropdown></label>
+      <label class="cb-line"><span class="muted small">Spellcasting focus</span>
+        <Dropdown :value="cur.focus ?? ''" aria-label="The spellcasting focus it can use" @change="set('focus', (($event.target as HTMLSelectElement).value || undefined) as ClassBasics['focus'])">
+          <option value="">none</option>
+          <option value="Arcane focus">an arcane focus (Sorcerer, Warlock, Wizard)</option>
+          <option value="Druidic focus">a druidic focus (Druid, Ranger)</option>
+          <option value="Holy symbol">a holy symbol (Cleric, Paladin)</option>
+          <option value="Instrument">a musical instrument (Bard)</option>
+        </Dropdown></label>
       <label class="cb-line"><span class="muted small">Spellbook spells at level 1 (+2 a level)</span><input class="cb-num" type="number" min="0" :value="cur.spellbook ?? ''" placeholder="none" @change="set('spellbook', num($event) ?? 0)" /></label>
     </template>
 

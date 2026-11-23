@@ -19,7 +19,7 @@ const ATTUNE_SLOTS = 3
 /** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
 const ro = useReadOnly()
 const lines = computed(() => (sheetOf(props.pc)?.inventory ?? []).map((l, i) => ({ l, i, e: get(l.item) })).filter(x => !!x.e))
-const label = (x: { e?: Entry }) => (x.e!.fields.kind === 'Armor' ? String(x.e!.fields.slot ?? 'Armor') : String(x.e!.fields.kind ?? ''))
+const label = (x: { e?: Entry }) => (x.e!.fields.kind === 'Armor' ? String(x.e!.fields.slot ?? 'Armor') : String(x.e!.fields.kind ?? '')) + (x.e!.fields.focus ? ` · ${x.e!.fields.focus}` : '')
 const worn = computed(() => lines.value.filter(x => x.l.equipped && x.e!.fields.kind === 'Armor'))
 const wielded = computed(() => lines.value.filter(x => x.l.equipped && x.e!.fields.kind === 'Weapon'))
 /** Other things worn for their effects: a cloak, boots, a ring that needs no attunement. */

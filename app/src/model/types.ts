@@ -197,6 +197,8 @@ export interface ClassBasics {
    * list, one swapped when it gains a level (Bard, Ranger, Sorcerer, Warlock); or a spellbook (Wizard).
    */
   spellSource?: 'list' | 'swap' | 'book'
+  /** The spellcasting focus it can use instead of materials without a cost (items' Focus field; a Bard's instrument). */
+  focus?: 'Arcane focus' | 'Druidic focus' | 'Holy symbol' | 'Instrument'
   /** Starting equipment: the options (A, B…), each items (the world's, or by name) and coins. */
   equipment?: Equipment[]
   featLevels?: number[]

@@ -22,6 +22,33 @@ export const shopsSelling = (item: Entry) => (byType.value.get('place') ?? []).f
   return l ? [{ s, price: shopPrice(s, l), stock: l.stock }] : []
 })
 
+// ---- spellcasting focuses ----
+/** The kinds of spellcasting focus an item can be (its Focus field); a class uses one of them, or a musical instrument. */
+export const FOCUS_TYPES = ['Arcane focus', 'Druidic focus', 'Holy symbol'] as const
+export type FocusType = (typeof FOCUS_TYPES)[number] | 'Instrument'
+/** The focus an item is: its Focus field, else a musical instrument (a Bard's), else none. Any kind of item can be one
+ * (a quarterstaff that's an arcane focus, a shield with a holy emblem), whatever else it is. */
+export function focusOf(item: Entry | undefined): FocusType | undefined {
+  const f = item?.fields.focus
+  if (typeof f === 'string' && (FOCUS_TYPES as readonly string[]).includes(f)) return f as FocusType
+  return item?.fields.kind === 'Instrument' ? 'Instrument' : undefined
+}
+/** A component pouch stands in for materials without a cost, like a focus, for any caster. */
+export const isComponentPouch = (item: Entry | undefined) => !!item && /component pouch/i.test(item.name)
+/** A spell's materials have a cost (or are used up): no focus or pouch replaces them. */
+export const materialCosts = (material: unknown) => typeof material === 'string' && /\d[\d,]*\+?\s*(gp|sp|cp|pp|ep)\b|\bworth\b|\bconsume/i.test(material)
+/** The focuses (and pouches) a character carries that suit the focus types given (their classes'). */
+export function focusesCarried(s: CharacterSheet, types: FocusType[]): Entry[] {
+  const out: Entry[] = []
+  for (const l of s.inventory ?? []) {
+    const e = get(l.item)
+    if (!e || l.qty <= 0 || out.includes(e)) continue
+    const f = focusOf(e)
+    if ((f && types.includes(f)) || isComponentPouch(e)) out.push(e)
+  }
+  return out
+}
+
 // ---- what an item does, and when ----
 /** An item's effects. */
 export const effectsOf = (e: Entry | undefined): GearEffect[] => (Array.isArray(e?.fields.effects) ? e!.fields.effects! : [])

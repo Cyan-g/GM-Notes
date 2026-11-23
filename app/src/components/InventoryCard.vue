@@ -11,7 +11,7 @@ import { canAttune, canEquip, draggedLine, dragged, endDrag, startDrag } from '.
 import { addToInventory, editSheet, setInUse, sheetOrBlank } from '../sheetData'
 import EntryPicker from './edit/EntryPicker.vue'
 import { capacityOf, gearTotals, loadOf } from '../effects'
-import { weightOf } from '../items'
+import { focusText, weightOf } from '../items'
 import MoneyInput from './edit/MoneyInput.vue'
 import ItemModal from './ItemModal.vue'
 import { noteUndo, restoreSheet, snapSheet } from '../undoNote'
@@ -97,7 +97,7 @@ function onDrop(ev: DragEvent) {
         <td class="cs-iname">
           <button v-if="e" class="link-btn cs-item" :title="l.note || undefined" @click="shown = i">{{ l.label || e.name }}<span v-if="l.label" class="muted small"> ({{ e.name }})</span></button>
           <input v-else :data-line="i" :value="l.name ?? ''" placeholder="Name" :disabled="ro" @change="nameOther(i, $event)" @blur="dropEmpty(i)" />
-          <span v-if="e?.fields.kind && !side" class="muted small cs-kind">{{ optionLabel('item.kind', e.fields.kind) }}<template v-if="e.fields.focus"> · {{ e.fields.focus }}</template></span>
+          <span v-if="e?.fields.kind && !side" class="muted small cs-kind">{{ optionLabel('item.kind', e.fields.kind) }}<template v-if="focusText(e)"> · {{ focusText(e) }}</template></span>
         </td>
         <template v-if="!side">
           <td class="cs-toggles"><GearToggles :pc="pc" :i="i" /><button v-if="e && usedUp(e)" class="chip-toggle" :disabled="ro || !l.qty" :title="`Use one (drink, read, throw): one less`" @click="useOne(i)">Use</button></td>

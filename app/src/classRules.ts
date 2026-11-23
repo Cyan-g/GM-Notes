@@ -73,7 +73,7 @@ export const CLASS_RULES: Record<string, ClassRules> = {
     saves: ['int', 'wis'], skills: { count: 2, from: ['Arcana', 'Animal Handling', 'Insight', 'Medicine', 'Nature', 'Perception', 'Religion', 'Survival'] },
     armor: ['Light', 'Shield'], weapons: ['Simple'], tools: ['Herbalism Kit'],
     cantrips: by([[1, 2], [4, 3], [10, 4]]), prepared: FULL_PREP, featLevels: FEATS,
-    equipment: [kit(9, 'Leather Armor', 'Shield', 'Sickle', 'Druidic Focus (Quarterstaff)', "Explorer's Pack", 'Herbalism Kit'), kit(50)],
+    equipment: [kit(9, 'Leather Armor', 'Shield', 'Sickle', 'Quarterstaff', "Explorer's Pack", 'Herbalism Kit'), kit(50)],
   },
   Fighter: {
     saves: ['str', 'con'], skills: { count: 2, from: ['Acrobatics', 'Animal Handling', 'Athletics', 'History', 'Insight', 'Intimidation', 'Persuasion', 'Perception', 'Survival'] },
@@ -124,7 +124,7 @@ export const CLASS_RULES: Record<string, ClassRules> = {
     saves: ['int', 'wis'], skills: { count: 2, from: ['Arcana', 'History', 'Insight', 'Investigation', 'Medicine', 'Nature', 'Religion'] },
     armor: [], weapons: ['Simple'], tools: [],
     cantrips: by([[1, 3], [4, 4], [10, 5]]), prepared: list('4 5 6 7 9 10 11 12 14 15 16 16 17 18 19 21 22 23 24 25'), spellbook: 6, featLevels: FEATS,
-    equipment: [kit(5, ['Dagger', 2], 'Arcane Focus (Quarterstaff)', 'Robe', 'Spellbook', "Scholar's Pack"), kit(55)],
+    equipment: [kit(5, ['Dagger', 2], 'Quarterstaff', 'Robe', 'Spellbook', "Scholar's Pack"), kit(55)],
   },
 }
 

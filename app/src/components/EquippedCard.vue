@@ -11,7 +11,7 @@ import { blockedFor, canAttune, canEquip, draggedLine, dragged, endDrag, profici
 import { editSheet, setInUse, sheetOf } from '../sheetData'
 import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
-import { chargesLeft, effectsOf, itemsInUse, regainText, setCharges, spellsOf } from '../items'
+import { chargesLeft, effectsOf, focusText, itemsInUse, regainText, setCharges, spellsOf } from '../items'
 import { describeEffect } from '../effects'
 
 const props = defineProps<{ pc: Entry }>()
@@ -19,7 +19,7 @@ const ATTUNE_SLOTS = 3
 /** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
 const ro = useReadOnly()
 const lines = computed(() => (sheetOf(props.pc)?.inventory ?? []).map((l, i) => ({ l, i, e: get(l.item) })).filter(x => !!x.e))
-const label = (x: { e?: Entry }) => (x.e!.fields.kind === 'Armor' ? String(x.e!.fields.slot ?? 'Armor') : String(x.e!.fields.kind ?? '')) + (x.e!.fields.focus ? ` · ${x.e!.fields.focus}` : '')
+const label = (x: { e?: Entry }) => (x.e!.fields.kind === 'Armor' ? String(x.e!.fields.slot ?? 'Armor') : String(x.e!.fields.kind ?? '')) + (focusText(x.e) ? ` · ${focusText(x.e)}` : '')
 const worn = computed(() => lines.value.filter(x => x.l.equipped && x.e!.fields.kind === 'Armor'))
 const wielded = computed(() => lines.value.filter(x => x.l.equipped && x.e!.fields.kind === 'Weapon'))
 /** Other things worn for their effects: a cloak, boots, a ring that needs no attunement. */

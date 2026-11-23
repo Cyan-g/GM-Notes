@@ -6,6 +6,7 @@ import { classText, totalLevel } from './model/classes'
 import { abilityBonusText } from './abilityBonus'
 import { ageText } from './npc'
 import { stripSecrets } from './model/text'
+import { focusText } from './items'
 
 const name = (id: unknown) => get(id as string)?.name
 /** A choice field's value as its option's label (see model/lists.ts). */
@@ -20,7 +21,7 @@ export function describe(e: Entry, { parent = true } = {}): string {
     case 'pc': return join(classText(e, state.db?.meta, id => name(id)) || `level ${totalLevel(e)}`, f.player && `played by ${f.player}`)
     case 'organization': return join(L(e, 'orgType'), parent && f.parent && `part of ${name(f.parent)}`, f.seat && `seat: ${name(f.seat)}`)
     case 'place': return join(L(e, 'placeType'), parent && f.parent && `in ${name(f.parent)}`)
-    case 'item': return join([L(e, 'rarity'), f.magical && !f.rarity ? 'magical' : '', f.subtype || L(e, 'kind')].filter(Boolean).join(' '), typeof f.focus === 'string' && f.focus.toLowerCase(), f.attunement && 'requires attunement')
+    case 'item': return join([L(e, 'rarity'), f.magical && !f.rarity ? 'magical' : '', f.subtype || L(e, 'kind')].filter(Boolean).join(' '), focusText(e).toLowerCase(), f.attunement && 'requires attunement')
     case 'spell': return f.level === 'Cantrip' ? join(`${L(e, 'school') ?? ''} cantrip`.trim()) : join(f.level ? `Level ${f.level} ${String(L(e, 'school') ?? '')}`.trim() : L(e, 'school'))
     case 'creature': {
       const sb = f.statblock as Statblock | undefined

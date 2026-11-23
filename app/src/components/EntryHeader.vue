@@ -31,6 +31,7 @@ import HistoryDialog from './HistoryDialog.vue'
 import DataImage from './DataImage.vue'
 import AttitudeBadge from './AttitudeBadge.vue'
 import DmOnlyBadge from './DmOnlyBadge.vue'
+import { focusText } from '../items'
 
 const props = defineProps<{ e: Entry }>()
 const def = computed(() => TYPES[props.e.type])
@@ -117,7 +118,7 @@ watch(() => route.current, () => { menu.value = false })
       <h1><span class="icon"><EntryIcon :e="e" /></span>{{ e.name }}</h1>
       <div class="sub">
         <span class="badge">{{ (e.type === 'place' && e.fields.placeType) || (e.type === 'item' && e.fields.kind) || def.label }}</span>
-        <span v-if="e.type === 'item' && e.fields.focus" class="badge" title="A spellcasting focus: a caster of a class that uses it can hold it instead of materials without a cost">{{ e.fields.focus }}</span>
+        <span v-if="e.type === 'item' && focusText(e)" class="badge" title="A spellcasting focus: a caster of a class that uses it can hold it instead of materials without a cost">{{ focusText(e) }}</span>
         <!-- A character: whether the Spellbook, Workbench and Character menu use them. -->
         <button v-if="e.type === 'pc' && !player" class="chip-toggle current-toggle" :class="{ on: currentPc?.id === e.id }" :disabled="!!state.readOnly"
                 :title="currentPc?.id === e.id ? 'The Spellbook, Workbench and Character menu use this character' : 'Use this character in the Spellbook, Workbench and Character menu'"

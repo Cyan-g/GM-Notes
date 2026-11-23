@@ -127,6 +127,8 @@ function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete
           <small v-if="usualPrice" class="muted">usual price {{ formatMoney(usualPrice) }}{{ consumable ? ' (consumable: half)' : '' }}</small>
           <small v-else-if="f.rarity === 'Artifact'" class="muted">priceless</small></label>
       </div>
+      <!-- a basic that's a list of options: the spellcasting focus types it is -->
+      <label v-for="d in wide(basics)" :key="d.key" class="sheet-field if-wide" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>
       <div v-if="bools(basics).length" class="seg wrap if-bools">
         <button v-for="d in bools(basics)" :key="d.key" type="button" :class="{ on: !!f[d.key] }" @click="toggleBool(d.key)">{{ d.label }}</button>
       </div>

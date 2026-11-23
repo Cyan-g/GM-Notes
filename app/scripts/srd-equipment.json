@@ -139,7 +139,12 @@
      "Versatile"
     ],
     "weight": 4,
-    "value": 20
+    "value": 20,
+    "focus": [
+     "Arcane focus",
+     "Druidic focus"
+    ],
+    "summary": "A staff of wood; a Druid, Ranger, Sorcerer, Warlock or Wizard can use it as a Spellcasting Focus."
    }
   },
   {
@@ -689,44 +694,6 @@
    }
   },
   {
-   "name": "Arcane Focus (Quarterstaff)",
-   "fields": {
-    "kind": "Weapon",
-    "weaponCategory": "Simple",
-    "baseWeapon": "Quarterstaff",
-    "damage": "1d6/1d8",
-    "damageType": [
-     "Bludgeoning"
-    ],
-    "properties": [
-     "Versatile"
-    ],
-    "weight": 4,
-    "value": 500,
-    "summary": "A staff carved to channel arcane magic; also a Quarterstaff. A Sorcerer, Warlock or Wizard can use it as a Spellcasting Focus.",
-    "focus": "Arcane focus"
-   }
-  },
-  {
-   "name": "Druidic Focus (Quarterstaff)",
-   "fields": {
-    "kind": "Weapon",
-    "weaponCategory": "Simple",
-    "baseWeapon": "Quarterstaff",
-    "damage": "1d6/1d8",
-    "damageType": [
-     "Bludgeoning"
-    ],
-    "properties": [
-     "Versatile"
-    ],
-    "weight": 4,
-    "value": 500,
-    "summary": "A wooden staff carved to channel primal magic; also a Quarterstaff. A Druid or Ranger can use it as a Spellcasting Focus.",
-    "focus": "Druidic focus"
-   }
-  },
-  {
    "name": "Padded Armor",
    "fields": {
     "kind": "Armor",
@@ -1006,7 +973,9 @@
     "weight": 1,
     "value": 500,
     "summary": "An amulet, emblem or reliquary bejeweled or painted to channel divine magic. A Cleric or Paladin can use it as a Spellcasting Focus.",
-    "focus": "Holy symbol"
+    "focus": [
+     "Holy symbol"
+    ]
    }
   },
   {
@@ -1016,7 +985,9 @@
     "weight": 1,
     "value": 1000,
     "summary": "A crystal bejeweled or carved to channel arcane magic. A Sorcerer, Warlock or Wizard can use it as a Spellcasting Focus.",
-    "focus": "Arcane focus"
+    "focus": [
+     "Arcane focus"
+    ]
    }
   },
   {
@@ -1026,7 +997,9 @@
     "weight": 3,
     "value": 2000,
     "summary": "An orb bejeweled or carved to channel arcane magic. A Sorcerer, Warlock or Wizard can use it as a Spellcasting Focus.",
-    "focus": "Arcane focus"
+    "focus": [
+     "Arcane focus"
+    ]
    }
   },
   {
@@ -1035,14 +1008,18 @@
     "kind": "Accessory",
     "value": 100,
     "summary": "A sprig of mistletoe tied with ribbon or painted to channel primal magic. A Druid or Ranger can use it as a Spellcasting Focus.",
-    "focus": "Druidic focus"
+    "focus": [
+     "Druidic focus"
+    ]
    }
   },
   {
    "name": "Arcane Focus (rod)",
    "fields": {
     "kind": "Accessory",
-    "focus": "Arcane focus",
+    "focus": [
+     "Arcane focus"
+    ],
     "weight": 2,
     "value": 1000,
     "summary": "A rod bejeweled or carved to channel arcane magic. A Sorcerer, Warlock or Wizard can use it as a Spellcasting Focus."
@@ -1052,7 +1029,9 @@
    "name": "Arcane Focus (wand)",
    "fields": {
     "kind": "Accessory",
-    "focus": "Arcane focus",
+    "focus": [
+     "Arcane focus"
+    ],
     "weight": 1,
     "value": 1000,
     "summary": "A wand bejeweled or carved to channel arcane magic. A Sorcerer, Warlock or Wizard can use it as a Spellcasting Focus."
@@ -1062,7 +1041,9 @@
    "name": "Druidic Focus (yew wand)",
    "fields": {
     "kind": "Accessory",
-    "focus": "Druidic focus",
+    "focus": [
+     "Druidic focus"
+    ],
     "weight": 1,
     "value": 1000,
     "summary": "A wand of yew carved to channel primal magic. A Druid or Ranger can use it as a Spellcasting Focus."
@@ -1072,7 +1053,9 @@
    "name": "Holy Symbol (amulet)",
    "fields": {
     "kind": "Accessory",
-    "focus": "Holy symbol",
+    "focus": [
+     "Holy symbol"
+    ],
     "weight": 1,
     "value": 500,
     "summary": "A holy symbol on an amulet, worn or held, to channel divine magic. A Cleric or Paladin can use it as a Spellcasting Focus."
@@ -1082,7 +1065,9 @@
    "name": "Holy Symbol (emblem)",
    "fields": {
     "kind": "Accessory",
-    "focus": "Holy symbol",
+    "focus": [
+     "Holy symbol"
+    ],
     "value": 500,
     "summary": "A holy symbol borne on fabric or a Shield to channel divine magic. A Cleric or Paladin can use it as a Spellcasting Focus."
    }
@@ -1091,7 +1076,9 @@
    "name": "Holy Symbol (reliquary)",
    "fields": {
     "kind": "Accessory",
-    "focus": "Holy symbol",
+    "focus": [
+     "Holy symbol"
+    ],
     "weight": 2,
     "value": 500,
     "summary": "A holy symbol in a reliquary, held to channel divine magic. A Cleric or Paladin can use it as a Spellcasting Focus."

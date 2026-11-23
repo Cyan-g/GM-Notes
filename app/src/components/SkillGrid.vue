@@ -53,7 +53,7 @@ const locked = computed(() => !props.frame)
         <slot name="score" :a="a.key"><span class="cs-score sg-score">{{ score(s, a.key) }}</span></slot>
       </div>
       <slot v-if="!noSaves" name="save" :a="a.key">
-        <div class="cs-skill cs-save" :class="{ on: s.saves.includes(a.key) }" :title="`${a.label} saving throw${s.saves.includes(a.key) ? ' (proficient)' : ''}`">
+        <div class="cs-skill cs-save" :class="{ on: s.saves.includes(a.key), 'sg-lock': !!frame }" :title="`${a.label} saving throw${s.saves.includes(a.key) ? ' (proficient)' : ''}`">
           <span class="cs-dot">{{ s.saves.includes(a.key) ? '●' : '○' }}</span><b>{{ signed(saveBonus(s, a.key, prof)) }}</b><span>Saving throw</span>
         </div>
       </slot>

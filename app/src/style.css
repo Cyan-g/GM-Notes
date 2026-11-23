@@ -1836,6 +1836,10 @@ button.live-tag { cursor: pointer; }
 .skill-grid .cs-skill[aria-disabled=true]:hover { background: none; }
 .skill-grid .cs-skill.can { color: var(--ink); }
 .skill-grid .cs-skill.off:not(.on) { opacity: .5; }
+/* where something can be picked, what's locked is grey (the accent is for what can change here) */
+.skill-grid .cs-skill.off.on { color: var(--ink-2); }
+.skill-grid .cs-skill.off.on .cs-dot, .skill-grid .cs-save.sg-lock.on .cs-dot { color: var(--muted); }
+.skill-grid .cs-save.sg-lock.on { background: var(--chip); }
 .skill-grid .cs-skill.sg-picked { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--ink); }
 .skill-grid .cs-skill.sg-selected { outline: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 20%, transparent); }
 .skill-grid .cs-skill.sg-back { opacity: .8; font-style: italic; }

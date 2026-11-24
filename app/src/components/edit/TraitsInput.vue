@@ -9,6 +9,8 @@ import { newTraitId } from '../../species'
 import { choiceSummary } from '../../traitEditing'
 import TraitCard from './TraitCard.vue'
 import TraitChips from '../TraitChips.vue'
+import TraitSpellTable from '../TraitSpellTable.vue'
+import { wantsSpellTable } from '../../traitSpells'
 
 const model = defineModel<Trait[] | undefined>()
 const props = defineProps<{ /** The entry's type: a class's or subclass's features are grouped by level. */ entryType?: string; /** Its class, for "Warlock level". */ className?: string; /** A subclass's levels to expect features at (its class's other subclasses'): shown even while empty. */ expectedLevels?: number[]; /** A subrace's: its main races' traits, one of which a trait may replace. */ parentTraits?: { id: string; name: string }[]; /** The entry's name: a feat's feature starts with it. */ entryName?: string }>()
@@ -76,8 +78,10 @@ const othersOf = (i: number) => list.value.filter((_, k) => k !== i).map(x => ({
           <span v-if="forClass || lv(list[i]) > 1" class="lv-badge" :title="`Gained at ${levelWord.toLowerCase()} ${lv(list[i])}`">Lv {{ lv(list[i]) }}</span>
           <b>{{ list[i].name || `Unnamed ${word}` }}</b>
           <span v-if="list[i].replaces" class="chip">replaces {{ parentTraits?.find(p => p.id === list[i].replaces)?.name ?? 'a main race trait' }}</span>
-          <TraitChips :t="list[i]" />
+          <TraitChips :t="list[i]" :no-spells="forClass && wantsSpellTable(list[i].spells, lv(list[i]))" />
           <span v-if="list[i].choice" class="chip">choice: {{ choiceSummary(list[i].choice!) }}{{ list[i].choice!.steps?.length ? ', more by level' : '' }}</span>
+          <!-- spells at several levels: a small table by level instead of a row of chips -->
+          <TraitSpellTable v-if="forClass && wantsSpellTable(list[i].spells, lv(list[i]))" compact :spells="list[i].spells!" :trait-level="lv(list[i])" :level-word="levelWord" />
         </summary>
         <TraitCard :trait="list[i]" :level-word="levelWord" :short-level-word="shortLevelWord" :word="word" :for-class="forClass" :grouped="grouped"
           :can-up="canMove(pos, -1)" :can-down="canMove(pos, 1)" :parent-traits="parentTraits" :others="othersOf(i)"

@@ -16,6 +16,9 @@ export function spellsByLevel(spells: TraitSpell[] | undefined, traitLevel: numb
 /** Whether a feature's spells come at more than one level (an expanded spell list): worth a table by level. */
 export const spansLevels = (spells: TraitSpell[] | undefined, traitLevel: number) => new Set((spells ?? []).map(x => spellLevelOf(x, traitLevel))).size > 1
 
+/** Whether a feature's spells are worth a table by level: a long list, or spells at more than one level. */
+export const wantsSpellTable = (spells: TraitSpell[] | undefined, traitLevel: number) => (spells?.length ?? 0) >= 4 || spansLevels(spells, traitLevel)
+
 /** One value when every spell has it, else 'mixed' ('' when none has it). */
 export function sharedOf<K extends 'how' | 'ability'>(spells: TraitSpell[], k: K): string {
   const v = new Set(spells.map(x => x[k] ?? ''))

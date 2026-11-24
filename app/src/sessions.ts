@@ -2,6 +2,9 @@
 import type { Entry, Id } from './model/types'
 import { computed } from 'vue'
 import { byType, get, state, touch } from './store'
+import { createEntry } from './edit'
+import { carryOver } from './checklist'
+import { go, hrefEntry } from './router'
 
 /** A session's number: its Number field, else the first number in "Session 12…"; Infinity when it has none. */
 export function sessionNo(s: Entry): number {
@@ -56,5 +59,18 @@ export function nextSessionFields(campaign: Id): Record<string, unknown> {
   const party = membersOf(campaign).map(p => p.id)
   const today = state.db?.meta.today
   return { campaign, number: nextSessionNo(campaign), ...(today ? { date: { ...today } } : {}), ...(party.length ? { players: party } : {}) }
+}
+/**
+ * A campaign's next session made in one click ("＋ Session 64"): named and numbered after the last, its fields as
+ * above (`extra` on top, a date picked in the calendar), the last session's headings and open checklist items as its
+ * text, then open in edit mode.
+ */
+export function createSession(campaign: Id, extra: Record<string, unknown> = {}): Entry {
+  const fields = { ...nextSessionFields(campaign), ...extra }
+  const e = createEntry('session', `Session ${fields.number}`, fields)
+  const before = sessionsOf(campaign).filter(s => s.id !== e.id && sessionNo(s) < Number(fields.number)).at(-1)
+  if (before?.body.trim()) e.body = carryOver(before.body)
+  go(hrefEntry(e.id, true))
+  return e
 }
 export const nextSessionNo = (campaign: Id) => Math.max(0, ...sessionsOf(campaign).map(sessionNo).filter(Number.isFinite)) + 1

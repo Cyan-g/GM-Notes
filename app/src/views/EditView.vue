@@ -19,6 +19,7 @@ import BodyEditor from '../components/edit/BodyEditor.vue'
 import CharacterSheet from '../components/CharacterSheet.vue'
 import SpellForm from '../components/edit/SpellForm.vue'
 import ItemForm from '../components/edit/ItemForm.vue'
+import { recipeShown } from '../composables/recipeOpen'
 import FeatForm from '../components/edit/FeatForm.vue'
 import CreatureForm from '../components/edit/CreatureForm.vue'
 import StatblockView from '../components/Statblock.vue'
@@ -219,7 +220,7 @@ function remove() {
       </aside>
       <aside v-else-if="!noSide" class="entry-side">
         <!-- A craftable item's recipe sits first on the right, beside its stats. -->
-        <div v-for="f in e.type === 'item' ? bigFields.filter(x => x.kind !== 'speciesTraits') : []" :key="f.key" class="card side-big">
+        <div v-for="f in e.type === 'item' ? bigFields.filter(x => x.kind !== 'speciesTraits' && (x.kind !== 'recipe' || recipeShown(e!))) : []" :key="f.key" class="card side-big">
           <h3>{{ f.label }}</h3>
           <FieldInput :def="f" :entry="e" />
         </div>

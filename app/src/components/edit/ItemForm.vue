@@ -17,6 +17,7 @@ import FieldInput from './FieldInput.vue'
 import ItemNeeds from './ItemNeeds.vue'
 import AddPartsBar from './AddPartsBar.vue'
 import { inputValue as val } from '../../dom'
+import { openRecipe, recipeShown } from '../../composables/recipeOpen'
 
 const props = defineProps<{ entry: Entry }>()
 const f = computed(() => byKey(props.entry.fields))
@@ -136,7 +137,11 @@ function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete
       </div>
     </section>
 
-    <section v-for="[g, ds] in groups" :key="g" class="if-section">
+    <!-- an item that can be made but has no recipe yet: one button instead of an empty Crafting part and Recipe card -->
+    <div v-if="groups.some(([g]) => g === 'Crafting') && !recipeShown(entry)" class="if-add">
+      <button type="button" class="chip-btn" title="What it's made of, the tool it's made with, the crafting time and its effect" @click="openRecipe(entry)">＋ Recipe</button>
+    </div>
+    <section v-for="[g, ds] in groups.filter(([g]) => g !== 'Crafting' || recipeShown(entry))" :key="g" class="if-section">
       <h4>{{ g }}</h4>
       <div class="if-grid">
         <label v-for="d in short(ds)" :key="d.key" class="sheet-field" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>

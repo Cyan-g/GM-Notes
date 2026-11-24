@@ -176,10 +176,11 @@ provideSharedEditable(computed(() => e.value?.type === 'pc' && !!fromPlayer(e.va
 /** A campaign the DM shares: the player's characters in it, putting the current one in, and taking one out. */
 const campaignsOf = (pc: Entry) => (pc.fields.campaigns as Id[] | undefined) ?? []
 const myInCampaign = computed(() => (e.value?.type === 'campaign' && shared.value ? entries.value.filter(x => x.type === 'pc' && !isShared(x) && campaignsOf(x).includes(e.value!.id)) : []))
-const pcInCampaign = computed(() => !!currentPc.value && campaignsOf(currentPc.value).includes(e.value!.id))
-function joinCampaign() {
-  const pc = currentPc.value
-  if (!pc) return
+/** One's own characters not in this (DM's) campaign: the current one first. */
+const notInCampaign = computed(() => (e.value?.type === 'campaign' && shared.value
+  ? entries.value.filter(x => x.type === 'pc' && !isShared(x) && !campaignsOf(x).includes(e.value!.id)).sort((a, b) => Number(b.id === currentPc.value?.id) - Number(a.id === currentPc.value?.id) || a.name.localeCompare(b.name))
+  : []))
+function joinCampaign(pc: Entry) {
   pc.fields.campaigns = [...campaignsOf(pc), e.value!.id]
   changed(pc)
 }
@@ -245,7 +246,8 @@ const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.valu
           <FieldValue v-else-if="p.insert === 'ranks' && ranksDef" :def="ranksDef" :value="e.fields.ranks" :entry="e" />
           <div v-else-if="p.insert === 'feats'" class="feat-list"><FeatCard v-for="f in grantedFeats" :key="f.id" :e="f" title /></div>
         </template>
-        <p v-if="!e.body && !['item', 'spell', 'feat', 'creature', 'encounter', 'pc'].includes(e.type)" class="muted">No text yet<template v-if="!state.readOnly"> — <a :href="hrefEntry(e.id) + '/edit'">✎ Edit</a> to write some</template>.</p>
+        <!-- not on a campaign (its party and sessions are the page) nor on what comes from the DM (it can't be edited here) -->
+        <p v-if="!e.body && !shared && !['item', 'spell', 'feat', 'creature', 'encounter', 'pc', 'campaign'].includes(e.type)" class="muted">No text yet<template v-if="!state.readOnly"> — <a :href="hrefEntry(e.id) + '/edit'">✎ Edit</a> to write some</template>.</p>
         <PlayerNotes v-if="shared && NOTE_TYPES.includes(e.type)" :entry="e" />
 
         <ClassOverview v-if="e.type === 'class'" :e="e" />
@@ -273,8 +275,9 @@ const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.valu
           <ul v-if="myInCampaign.length" class="plain">
             <li v-for="pc in myInCampaign" :key="pc.id"><EntryLink :id="pc.id" icon /> <button type="button" class="link-btn small" title="Your DM keeps the last version, marked as no longer shared" @click="leaveCampaign(pc)">Take out</button></li>
           </ul>
-          <button v-if="currentPc && !pcInCampaign" type="button" class="chip-btn" @click="joinCampaign">＋ Put {{ currentPc.name }} in this campaign</button>
-          <p v-else-if="!currentPc" class="small muted">Make a character first (Character menu), then put it in here.</p>
+          <!-- every own character not in it yet (one the DM took out comes back the same way) -->
+          <button v-for="pc in notInCampaign" :key="pc.id" type="button" class="chip-btn join-btn" @click="joinCampaign(pc)">＋ Put {{ pc.name }} in this campaign</button>
+          <p v-if="!myInCampaign.length && !notInCampaign.length" class="small muted">Make a character first (Character menu), then put it in here.</p>
         </section>
         <CampaignSessions v-if="e.type === 'campaign'" :campaign="e" />
         <section v-if="campaignNotes.length">

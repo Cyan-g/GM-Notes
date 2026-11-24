@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // The DM desk: the campaign at hand, the tools, favourites, the regions of the world
-// with their factions, the gods, peoples and subclasses, and a few links. Everything comes from the entries.
+// with their factions, the gods, peoples (and a link to the subclasses), and a few links. Everything comes from the entries.
 import TypeIcon from '../components/TypeIcon.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { classText, classesOf, totalLevel } from '../model/classes'
@@ -16,7 +16,7 @@ import { describe } from '../describe'
 import { armorClass, maxHpOf } from '../sheet'
 import { sheetOf } from '../sheetData'
 import EntryLink from '../components/EntryLink.vue'
-import { currentCampaign, nextSessionFields, nextSessionNo, sessionsOf } from '../sessions'
+import { createSession, currentCampaign, nextSessionNo, sessionsOf } from '../sessions'
 import PartyAt from '../components/PartyAt.vue'
 
 const byName = (a: Entry, b: Entry) => a.name.localeCompare(b.name)
@@ -31,7 +31,7 @@ const campaigns = computed(() => list('campaign').map(c => {
 const current = computed(() => campaigns.value.find(x => x.c.id === currentCampaign.value?.id && x.sessions.length) ?? (campaigns.value[0]?.sessions.length ? campaigns.value[0] : undefined))
 const others = computed(() => campaigns.value.filter(x => x !== current.value))
 const nextNumber = computed(() => (current.value ? nextSessionNo(current.value.c.id) : 1))
-const newSession = () => current.value && newEntry('session', nextSessionFields(current.value.c.id))
+const newSession = () => current.value && createSession(current.value.c.id)
 const notes = computed(() => list('note').sort(byName))
 
 // ---- the desk: dashboards and tools ----
@@ -215,10 +215,8 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
       <section v-if="!playerMode" class="card">
         <h3><TypeIcon type="race" /> Races <a class="muted small" :href="hrefList('race')">all →</a></h3>
         <p class="home-inline"><span v-for="r in races" :key="r.id" class="home-tag"><EntryLink :id="r.id" /></span></p>
-        <template v-if="subclasses.length">
-          <h4>Subclasses</h4>
-          <ul class="rel compact"><li v-for="s in subclasses" :key="s.id"><EntryLink :id="s.id" /></li></ul>
-        </template>
+        <!-- the subclasses are a list of their own (dozens of them): one link, not a column down the page -->
+        <p v-if="subclasses.length" class="small"><a :href="hrefList('subclass')">{{ subclasses.length }} subclasses →</a></p>
       </section>
 
       <section class="card home-links">

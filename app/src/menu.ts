@@ -1,6 +1,6 @@
 // What the top menu bar shows: links to pages and tables only, never single entries (those are reached from their
 // tables, search and links). The one exception is the Campaign menu's "Latest session" shortcut.
-import { currentCampaign, nextSessionFields, nextSessionNo, sessionsOf } from './sessions'
+import { createSession, currentCampaign, nextSessionNo, sessionsOf } from './sessions'
 import { SCHEMA } from './model/schema'
 import type { Entry, EntryType } from './model/types'
 import { computed } from 'vue'
@@ -70,7 +70,7 @@ function sessionNodes(): MenuNode[] {
   if (!p) return []
   return [
     { label: 'Latest session', typeIcon: 'session', href: hrefEntry(p.latest.id), hint: p.latest.name },
-    { label: 'New session…', icon: '＋', hint: p.campaign.name, action: () => newEntry('session', nextSessionFields(p.campaign.id)) },
+    { label: `New session (${p.next})`, icon: '＋', hint: p.campaign.name, action: () => createSession(p.campaign.id) },
     SEP,
   ]
 }

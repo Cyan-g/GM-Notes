@@ -82,7 +82,8 @@ const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magic
         </div>
         <!-- its rules as features (with uses, choices and spells), when it has them -->
         <div v-if="features.length" class="ic-gear ic-features">
-          <div class="ic-gear-head">{{ effects.length || spells.length ? 'Features' : effectsWhen }}</div>
+          <!-- features say themselves when they work (eaten, forged): "While carried" only when it was picked -->
+          <div class="ic-gear-head">{{ effects.length || spells.length || (!f.worksWhile && worksWhileOf(e) === 'carried') ? 'Features' : effectsWhen }}</div>
           <TraitList :traits="features" :known="String(e.body ?? '')" />
         </div>
       </div>

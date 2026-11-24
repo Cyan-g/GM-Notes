@@ -3,9 +3,8 @@
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { formatDate, state } from '../store'
-import { nextSessionFields, sessionNo, sessionsOf } from '../sessions'
+import { createSession, sessionNo, sessionsOf } from '../sessions'
 import { dayNumber } from '../calendar'
-import { newEntry } from '../ui'
 import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ campaign: Entry }>()
@@ -26,7 +25,7 @@ const oddities = computed(() => {
 })
 /** A new session of this campaign, numbered after the last one. */
 function newSession() {
-  newEntry('session', nextSessionFields(props.campaign.id))
+  createSession(props.campaign.id)
 }
 </script>
 

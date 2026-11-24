@@ -139,6 +139,8 @@ function toggle(id: string) {
     <div class="sp-pick-head small">
       <span class="muted">Choose {{ n }} {{ words }}</span>
       <b class="sp-count" :class="{ done: full }">{{ picked }} of {{ n }} picked</b>
+      <!-- a "one they have" spell pick with nothing to pick from yet (no damaging Warlock cantrip in the spellbook) -->
+      <span v-if="c.kind === 'spell' && c.spell?.how === 'known' && !options.length" class="muted">none yet: add one in the Spellbook first</span>
       <button v-if="listed" type="button" class="chip-btn sp-choose" :class="{ primary: !full }" :disabled="disabled && !picked" @click="open = true">{{ disabled ? 'Show' : picked ? 'Change…' : 'Choose…' }}</button>
     </div>
     <!-- options and feats: the picks here, the list in a dialog -->

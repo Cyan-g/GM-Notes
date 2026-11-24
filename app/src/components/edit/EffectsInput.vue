@@ -30,8 +30,10 @@ function put(i: number, patch: Partial<GearEffect>) {
   const k = kindOf(f)
   for (const [n, key] of Object.entries(FIELD_OF) as [EffectNeed, keyof GearEffect][]) if (!k?.needs?.some(x => FIELD_OF[x] === key)) delete f[key]
   if (!k?.canSet) { delete f.set; delete f.force }
+  if (f.on !== 'spellDamage') delete f.picked
   if (k?.noValue) delete f.value
-  else if (f.value == null) f.value = f.on === 'sense' ? 60 : f.set ? 19 : 1
+  // spell damage often adds only an ability (Agonizing Blast: + CHA), so it starts without a number
+  else if (f.value == null && f.on !== 'spellDamage') f.value = f.on === 'sense' ? 60 : f.set ? 19 : 1
   if (needs(f, 'ability') && !f.ability) f.ability = 'str'
   if (needs(f, 'skill') && !f.skill) f.skill = SKILLS[0].name
   if (needs(f, 'mode') && !f.mode) f.mode = 'adv'
@@ -73,7 +75,9 @@ const remove = (i: number) => { const l = [...list.value]; l.splice(i, 1); model
       <Dropdown compact v-if="needs(f, 'skill')" :value="f.skill" aria-label="Skill" @change="put(i, { skill: val($event) })">
         <option v-for="s in SKILLS" :key="s.name" :value="s.name">{{ s.name }}</option>
       </Dropdown>
-      <EntryPicker v-if="needs(f, 'spell')" class="effect-spell" :model-value="f.spell ?? null" :types="['spell']" no-create placeholder="any spell" @update:model-value="v => put(i, { spell: v ?? undefined })" />
+      <EntryPicker v-if="needs(f, 'spell') && !f.picked" class="effect-spell" :model-value="f.spell ?? null" :types="['spell']" no-create placeholder="any spell" @update:model-value="v => put(i, { spell: v ?? undefined })" />
+      <!-- in an option with a "one they have" spell choice: the spell the player picks there (Agonizing Blast's cantrip) -->
+      <label v-if="needs(f, 'spell')" class="small effect-check" title="The spell the player picks with this option (add a spell choice 'one they have' to the option)"><input type="checkbox" :checked="!!f.picked" @change="put(i, { picked: ($event.target as HTMLInputElement).checked || undefined, spell: undefined })" /> the picked spell</label>
       <input v-if="needs(f, 'dice')" class="effect-value" :value="f.dice ?? ''" placeholder="2 or 1d6" aria-label="Extra damage" @change="put(i, { dice: val($event).trim() })" />
       <Dropdown compact v-if="needs(f, 'type')" :value="f.type ?? ''" aria-label="Damage type" @change="put(i, { type: val($event) || undefined })">
         <option value="">—</option>

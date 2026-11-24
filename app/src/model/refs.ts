@@ -164,15 +164,15 @@ export function mapRefs(e: Entry, to: RefMap, word: (id: Id) => string = id => i
 function mapSheet(s: CharacterSheet, to: RefMap, word: (id: Id) => string) {
   if (!s || typeof s !== 'object') return
   const ids = (a: unknown) => (Array.isArray(a) ? a.flatMap(x => { const n = typeof x === 'string' ? to(x) : null; return n == null ? [] : [n] }) : a)
-  if (Array.isArray(s.inventory)) {
-    s.inventory = s.inventory.map(l => {
-      if (!l.item) return l
-      const n = to(l.item)
-      if (n != null) return { ...l, item: n }
-      const { item, ...rest } = l
-      return { ...rest, name: rest.name ?? word(item) }
-    })
-  }
+  const lines = (list: CharacterSheet['inventory']) => list.map(l => {
+    if (!l.item) return l
+    const n = to(l.item)
+    if (n != null) return { ...l, item: n }
+    const { item, ...rest } = l
+    return { ...rest, name: rest.name ?? word(item) }
+  })
+  if (Array.isArray(s.inventory)) s.inventory = lines(s.inventory)
+  if (Array.isArray(s.treasury)) s.treasury = lines(s.treasury)
   if (s.spellbook) for (const k of ['known', 'prepared', 'always'] as const) s.spellbook[k] = ids(s.spellbook[k]) as Id[]
   if (s.crafting) s.crafting.known = ids(s.crafting.known) as Id[]
   if (s.proficiencies) s.proficiencies.tools = ids(s.proficiencies.tools) as Id[]

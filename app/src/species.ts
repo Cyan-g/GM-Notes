@@ -352,7 +352,7 @@ export function usesMax(pc: Entry, a: ActiveTrait, s: CharacterSheet | undefined
     n = Math.max(1, sh ? mod(score(sh, u.count as Ability)) : 1)
   } else n = Math.max(0, Number(u.count) || 0)
   n = byLevel(u.steps, a.level, n)
-  return n * (u.times ?? 1)
+  return n * (u.times ?? 1) + (u.plus ?? 0)
 }
 export const usesLeft = (pc: Entry, s: CharacterSheet | undefined, a: ActiveTrait, score: ScoreOf) =>
   Math.max(0, usesMax(pc, a, s, score) - (stateOf(s).used?.[a.key] ?? 0))
@@ -459,7 +459,11 @@ export function swappableSpells(a: ActiveTrait, s?: CharacterSheet): { key: stri
  */
 export function classSpellsFrom(pc: Entry | undefined, how: 'list' | 'book', cls = '', s?: CharacterSheet): { spell: Id; from: string }[] {
   return speciesTraits(pc, s).filter(a => a.active && (!cls || !isClassOrigin(a.race) || a.race.fields.class === cls))
-    .flatMap(a => (a.trait.spells ?? []).filter(x => x.how === how && (x.from ?? 1) <= a.level && get(x.spell)).map(x => ({ spell: x.spell, from: a.trait.name })))
+    .flatMap(a => [
+      ...(a.trait.spells ?? []).filter(x => x.how === how && (x.from ?? 1) <= a.level && get(x.spell)).map(x => ({ spell: x.spell, from: a.trait.name })),
+      // spells the player picked in a spell choice of that kind (a Wizard's Abjuration Savant: free in the spellbook)
+      ...(a.trait.choice?.kind === 'spell' && a.trait.choice.spell?.how === how ? a.picks.filter(id => get(id)).map(spell => ({ spell, from: a.trait.name })) : []),
+    ])
 }
 /**
  * A class's spells for a character: its list (and the lists and spells its features add, Magical Secrets, a
@@ -513,7 +517,7 @@ export function usesLabel(t: Trait): string {
   const u = t.uses
   if (!u) return ''
   const n = u.steps?.length ? u.steps.map(x => x[1]).join('–') : u.count === 'pb' ? 'PB' : u.count === 'level' ? 'level' : typeof u.count === 'string' ? `${u.count.toUpperCase()} mod` : String(u.count)
-  return `${u.times ? `${u.times} × ` : ''}${n}/${u.recharge} rest${u.shortBack ? ` (${u.shortBack} back on a short)` : ''}${u.shortFrom ? ` (short rest from level ${u.shortFrom})` : ''}`
+  return `${u.times ? `${u.times} × ` : ''}${n}${u.plus ? ` + ${u.plus}` : ''}/${u.recharge} rest${u.shortBack ? ` (${u.shortBack} back on a short)` : ''}${u.shortFrom ? ` (short rest from level ${u.shortFrom})` : ''}`
 }
 export const spellLabel = (x: TraitSpell) => `${get(x.spell)?.name ?? '?'} (${HOW_SPECIES[x.how]}${(x.from ?? 1) > 1 ? `, from ${ord(x.from!)} level` : ''})`
 /** A new id for a trait or an option. */

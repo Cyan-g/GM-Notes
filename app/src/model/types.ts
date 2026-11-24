@@ -158,6 +158,9 @@ export interface SpellRoll {
   type?: string
   mod?: boolean
   cantrip?: boolean
+  /** A cantrip that makes more of these at character levels 5, 11 and 17 instead of rolling more dice (Eldritch
+   * Blast: "beam"): what one is called. */
+  beams?: string
   slot?: string
   note?: string
 }
@@ -262,6 +265,10 @@ export interface CharacterSheet {
   spellAbility?: Ability
   inventory: InventoryLine[]
   money?: Copper
+  /** What the character keeps elsewhere (at home, in a bank, on a ship): not carried, weighed or worn (gear.ts). */
+  treasury?: InventoryLine[]
+  /** Coins kept with the treasury, apart from the purse. */
+  treasuryMoney?: Copper
   features: Feature[]
   /** The Origin feat, when not the background's: another feat's id, or null for none (a DM's ruling, or a choice). */
   originFeat?: Id | null
@@ -399,10 +406,11 @@ export interface Trait extends TraitOption {
   replaces?: string
   /**
    * Uses that come back on a rest: a number, the proficiency bonus, the level (of the class it comes from), or an
-   * ability modifier (at least 1); `times` multiplies it (Lay on Hands: 5 × level), `steps` gives the count by level.
+   * ability modifier (at least 1); `times` multiplies it (Lay on Hands: 5 × level), `plus` adds to it (Healing Light:
+   * level + 1), `steps` gives the count by level.
    * A long-rest use can give `shortBack` back on a short rest (Rage: one).
    */
-  uses?: { count: number | 'pb' | 'level' | Ability; recharge: 'short' | 'long'; times?: number; steps?: [number, number][]; shortBack?: number
+  uses?: { count: number | 'pb' | 'level' | Ability; recharge: 'short' | 'long'; times?: number; plus?: number; steps?: [number, number][]; shortBack?: number
     /** From this level on (of the class it comes from) all uses come back on a short rest too (Font of Inspiration: 5). */
     shortFrom?: number }
   /** Switched off when the character is incapacitated (Rage). */
@@ -448,6 +456,11 @@ export interface DeathSaveState { ok: number; fail: number; stable?: boolean }
 
 export interface InventoryLine {
   item?: Id; name?: string; qty: number; equipped?: boolean; attuned?: boolean
+  /** The gear slot an equipped item sits in, while the Ruleset has gear slots (gearSlots.ts); without one it's placed
+   * in the first free slot it fits. A weapon in both hands says the main hand. */
+  slot?: 'main' | 'off' | 'body' | 'head' | 'cloak' | 'hands' | 'feet'
+  /** A Versatile weapon held in two hands (gear slots): it fills both hands and deals its two-handed damage. */
+  twoHands?: boolean
   /** The character's own name for their copy of an item ("Grandfather's Blade") and a note on it ("engraved"). */
   label?: string
   note?: string
@@ -612,8 +625,12 @@ export interface PlayerShare {
   who: string
   /** When their characters last arrived. */
   received: string
-  /** Their characters: their id → the entry here; `gone` once they no longer share it (unlinked or deleted). */
-  characters: Record<Id, { id: Id; gone?: boolean }>
+  /**
+   * Their characters: their id → the entry here; `gone` once they no longer share it (unlinked or deleted);
+   * `removed`: the campaigns the DM took it out of, with when (partySync.ts). What the player sends of it is left
+   * aside until their app has taken it out too; a link they make again after that brings it back.
+   */
+  characters: Record<Id, { id: Id; gone?: boolean; removed?: Record<Id, string> }>
   /** Every entry of theirs here (the characters and what they use): their id → the entry here. */
   entries: Record<Id, Id>
 }
@@ -648,6 +665,13 @@ export interface Database {
     sharing?: { hostOnOpen?: boolean; autoSend?: boolean }
     /** Characters players sent from their worlds (playerCharacters.ts), by the player's world id. */
     fromPlayers?: Record<string, PlayerShare>
+    /** Characters the DM keeps out of what players see of the party (partySync.ts). */
+    partyHidden?: Id[]
+    /**
+     * A player's world: the DM's removals of its characters from campaigns that it has carried out (character id →
+     * campaign id → when the DM removed it), sent back so the DM knows a later link is a new one.
+     */
+    campaignRemovals?: Record<Id, Record<Id, string>>
     /** Paces and vehicles added for travel on maps (travel.ts); the 5e ones are built in. */
     travelModes?: import('../travel').TravelMode[]
     /** Colour theme and heading font (see theme.ts). */

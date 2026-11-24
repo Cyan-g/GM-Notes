@@ -2,15 +2,19 @@
 // The party at the top of a campaign's page: a card per character with what the DM looks up at the table (class and
 // level, AC, HP, passive Perception, spell save DC), and characters added or taken out right here. One's own
 // characters name their campaigns themselves; a player's shared one (read-only here) is put in the campaign's list.
+// Taking a player's character out tells their app to take it out too (partySync.ts). In a campaign players know of,
+// each character shows to the other players as an NPC, unless the DM keeps it out.
 import { computed } from 'vue'
 import type { Entry, Id } from '../model/types'
 import { playerMode, state } from '../store'
 import { changed } from '../edit'
+import { touch } from '../store'
+import { removeFromCampaign } from '../playerCharacters'
 import { membersOf } from '../sessions'
 import { classText } from '../model/classes'
 import { levelOf, partyLine } from '../sheet'
 import { sheetOf } from '../sheetData'
-import { isShared } from '../sync'
+import { fromPlayer, isShared } from '../sync'
 import EntryLink from './EntryLink.vue'
 import EntryPicker from './edit/EntryPicker.vue'
 
@@ -33,10 +37,20 @@ function add(id: Id) {
   }
 }
 function drop(p: Entry) {
-  const c = props.campaign
-  if (!confirm(`Take ${p.name} out of ${c.name}?`)) return
-  if ((c.fields.members ?? []).includes(p.id)) { c.fields.members = (c.fields.members ?? []).filter(x => x !== p.id); changed(c) }
-  if ((p.fields.campaigns ?? []).includes(c.id) && !isShared(p)) { p.fields.campaigns = (p.fields.campaigns ?? []).filter(x => x !== c.id); changed(p) }
+  const c = props.campaign, theirs = !!fromPlayer(p) && (p.fields.campaigns ?? []).includes(c.id)
+  if (!confirm(`Take ${p.name} out of ${c.name}?${theirs ? ' Its player linked it; their app takes it out too (now, or when it next connects), and they can link it again.' : ''}`)) return
+  removeFromCampaign(p, c.id)
+}
+
+// ---- what the other players see ----
+/** Whether players know of the campaign: then its characters show to them as NPCs. */
+const seen = computed(() => props.campaign.visibility === 'known')
+const hidden = (p: Entry) => (state.db?.meta.partyHidden ?? []).includes(p.id)
+function toggleHidden(p: Entry) {
+  const m = state.db!.meta, l = new Set(m.partyHidden ?? [])
+  if (l.has(p.id)) l.delete(p.id); else l.add(p.id)
+  m.partyHidden = l.size ? [...l] : undefined
+  touch()
 }
 </script>
 
@@ -53,6 +67,9 @@ function drop(p: Entry) {
           <div title="Passive Perception"><dt>Perc.</dt><dd>{{ line(p).perception }}</dd></div>
           <div v-if="line(p).spellDc" title="Spell save DC"><dt>DC</dt><dd>{{ line(p).spellDc }}</dd></div>
         </dl>
+        <button v-if="canEdit && seen" type="button" class="chip-toggle cp-party-toggle" :class="{ on: !hidden(p) }"
+                :title="hidden(p) ? 'Players don’t see this character; show it to them as an NPC' : 'Players see this character as an NPC (name, picture, species, class and level, looks and description); keep it out'"
+                @click="toggleHidden(p)">{{ hidden(p) ? 'Hidden from players' : 'Shown to players' }}</button>
       </div>
       <div v-if="canEdit" class="card cp-card cp-add">
         <EntryPicker add :types="['pc']" :exclude="party.map(p => p.id)" no-create placeholder="＋ Add a character…" @pick="add" />

@@ -58,6 +58,12 @@ export function rollText(e: Entry, r: SpellRoll, o: RollOptions = {}): string {
   const add = (r.mod && o.mod != null ? o.mod : 0) + (o.add?.(r) ?? 0)
   const m = r.mod && o.mod == null ? ' + mod' : add ? ` ${signed(add, '−', ' ')}` : ''
   const what = r.kind === 'healing' ? ' healing' : r.kind === 'tempHp' ? ' temp HP' : r.type ? ` ${r.type.toLowerCase()}` : ' damage'
+  // a cantrip that makes more beams (Eldritch Blast): how many at the character's level, each with this roll
+  if (r.beams) {
+    if (!o.level) return `${dice}${m}${what} per ${r.beams}`
+    const n = cantripTier(o.level)
+    return n > 1 ? `${n} ${r.beams}s: ${dice}${m}${what} each` : `1 ${r.beams}: ${dice}${m}${what}`
+  }
   return `${dice}${m}${what}`
 }
 /** A roll's numbers: the character's level (cantrips), the slot level, the spellcasting modifier, and what features
@@ -65,6 +71,7 @@ export function rollText(e: Entry, r: SpellRoll, o: RollOptions = {}): string {
 export interface RollOptions { level?: number; slot?: number; mod?: number; add?: (r: SpellRoll) => number }
 /** How a roll grows, in words: "more dice at levels 5, 11 and 17", "+1d6 per slot level above 1st". */
 export function growthText(e: Entry, r: SpellRoll): string {
+  if (r.beams) return `more ${r.beams}s at levels 5, 11 and 17`
   if (r.cantrip) return 'more dice at levels 5, 11 and 17'
   if (r.slot) return `+${r.slot} per slot level above ${ORD[spellLevel(e)] ?? spellLevel(e)}`
   return ''

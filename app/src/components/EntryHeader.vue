@@ -9,7 +9,7 @@ import { TYPES } from '../model/schema'
 import { playerMode, state } from '../store'
 import { printable } from '../cards'
 import { fromPlayer, isShared, sharedBy } from '../sync'
-import { removePlayerCharacter } from '../playerCharacters'
+import { removePlayerCharacter, removedFrom } from '../playerCharacters'
 import { XP_AT, currentPc, levelOf, setCurrent } from '../sheet'
 import { currentCampaign, setCurrentCampaign } from '../sessions'
 import { levelCap, rule } from '../rules'
@@ -40,6 +40,8 @@ const shared = computed(() => isShared(props.e))
 const by = computed(() => sharedBy(props.e))
 /** A player's character the DM has (sent from the player's app). */
 const player = computed(() => fromPlayer(props.e))
+/** The campaigns the DM took this player's character out of. */
+const removed = computed(() => (player.value ? removedFrom(props.e.id) : []))
 function removeIt() {
   if (!confirm(`Remove ${props.e.name} from your world? ${player.value?.gone ? 'Its player no longer shares it.' : 'While its player shares it, it comes back the next time they\'re connected.'}`)) return
   removePlayerCharacter(props.e.id)
@@ -105,6 +107,7 @@ watch(() => route.current, () => { menu.value = false })
           <button v-if="canVariant" type="button" class="menu-row" role="menuitem" :title="e.type === 'item' ? 'A new item with the same fields, effects, spells and features: a +2 version, a cursed one' : 'A new spell with the same stats, rolls and text, to make a variant of it'" @click="pick(variant)"><AppIcon ui="scrolls" /><span class="menu-label">Copy as new {{ e.type }}</span></button>
         </div>
       </div>
+      <span v-for="c in removed" :key="c" class="badge" title="You took it out of this campaign. Its player's app takes it out too; they can link it again, and then it comes back">removed from {{ state.db?.entries[c]?.name ?? 'a campaign' }}</span>
       <span v-if="player?.gone" class="badge" title="Its player unlinked it from your campaign or deleted it; this is the last version they sent">no longer shared</span>
       <button v-if="player && e.type === 'pc'" class="export-btn danger" title="Remove this character from your world" @click="removeIt">Remove</button>
     </div>

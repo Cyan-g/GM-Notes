@@ -1,14 +1,18 @@
 <script setup lang="ts">
 // The parts a species trait and each option of its choice share: name, text, effects (as on gear), the proficiencies
-// and languages it grants, and the spells it gives.
-import LinkTextarea from './LinkTextarea.vue'
+// and languages it grants, and the spells it gives. Only the parts in use show, each as a TraitSection; the others are
+// chips in the Add row at the bottom, which the feature's own parts (TraitsInput: choice, uses…) join through slots.
+import TextWithTables from './TextWithTables.vue'
 import Dropdown from '../Dropdown.vue'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { TraitGrant, TraitOption, TraitSpell } from '../../model/types'
-import { GRANT_KINDS, HOW_SPECIES, grantOptions } from '../../species'
+import { GRANT_KINDS, HOW_SPECIES, grantLabel, grantOptions } from '../../species'
 import { ABILITY_NAME } from '../../model/dnd'
 import { listOptions } from '../../store'
 import EffectsInput from './EffectsInput.vue'
+import TraitSection from './TraitSection.vue'
+import { describeEffects } from '../../effects'
+import { get } from '../../store'
 import EntryPicker from './EntryPicker.vue'
 import SpellLevelsInput from './SpellLevelsInput.vue'
 import { inputValue as val } from '../../dom'
@@ -23,6 +27,8 @@ const props = defineProps<{
   levelWord?: string
   /** A class's or subclass's feature: its spells are edited as a list by level ("Warlock level"). */
   byLevel?: string
+  /** The name is edited elsewhere (a feature card's header). */
+  noName?: boolean
 }>()
 /** The text box grows with its text: two lines when empty, up to sixteen. */
 const rows = (t?: string) => Math.min(16, Math.max(2, (t ?? '').split('\n').reduce((n, line) => n + Math.max(1, Math.ceil(line.length / 105)), 0)))
@@ -61,11 +67,25 @@ function setSpell(i: number, patch: Partial<TraitSpell>) {
 }
 const addSpell = (spell: string) => put({ spells: [...spells.value, { spell, how: 'long' }] })
 const removeSpell = (i: number) => put({ spells: spells.value.filter((_, k) => k !== i) })
+
+// ---- the parts in use, and the Add row ----
+/** Spells opened from the Add row before any is picked. */
+const spellsOpen = ref(false)
+const textBox = ref<InstanceType<typeof TextWithTables>>()
+const showSpells = computed(() => spells.value.length > 0 || spellsOpen.value)
+const effectsSummary = computed(() => describeEffects(model.value.effects ?? []).join(', '))
+const grantsSummary = computed(() => grants.value.map(grantLabel).join(', '))
+const spellsSummary = computed(() => spells.value.map(x => get(x.spell)?.name ?? '?').join(', '))
+function drop(part: 'effects' | 'grants' | 'spells', label: string) {
+  if ((model.value[part]?.length ?? 0) && !confirm(`Take the ${label} off “${model.value.name || 'this'}”?`)) return
+  if (part === 'spells') spellsOpen.value = false
+  put({ [part]: undefined })
+}
 </script>
 
 <template>
   <div class="trait-fields">
-    <label class="trait-name"><span>Name</span><input :value="model.name" placeholder="e.g. Dwarven Resilience" @input="put({ name: val($event) })" /></label>
+    <label v-if="!noName" class="trait-name"><span>Name</span><input :value="model.name" placeholder="e.g. Dwarven Resilience" @input="put({ name: val($event) })" /></label>
     <div v-if="siblings" class="trait-needs small">
       <span class="trait-label">Needs</span>
       <label>{{ levelWord ?? 'level' }} <input type="number" min="1" max="20" class="effect-value" :value="model.needs?.level ?? ''" placeholder="—" @change="setNeeds({ level: Number(val($event)) || undefined })" /></label>
@@ -74,10 +94,12 @@ const removeSpell = (i: number) => put({ spells: spells.value.filter((_, k) => k
         <option v-for="o in siblings.filter(x => x.id !== model.id)" :key="o.id" :value="o.id">{{ o.name }}</option>
       </Dropdown></label>
     </div>
-    <label class="trait-text"><span>Text</span><LinkTextarea :rows="rows(model.text)" :value="model.text ?? ''" placeholder="What it says (shown on the sheet)" @input="put({ text: val($event) })" /></label>
-    <div class="trait-part"><span class="trait-label">Effects</span><EffectsInput traits :model-value="model.effects" @update:model-value="v => put({ effects: v })" /></div>
-    <div class="trait-part">
-      <span class="trait-label">Grants</span>
+    <TextWithTables ref="textBox" :rows="rows(model.text)" :value="model.text ?? ''" aria-label="Text" placeholder="What it says (shown on the sheet)" @update="v => put({ text: v })" />
+
+    <TraitSection v-if="model.effects?.length" title="Effects" :summary="effectsSummary" @remove="drop('effects', 'effects')">
+      <EffectsInput traits :model-value="model.effects" @update:model-value="v => put({ effects: v })" />
+    </TraitSection>
+    <TraitSection v-if="grants.length" title="Proficiencies and languages" :summary="grantsSummary" @remove="drop('grants', 'proficiencies and languages')">
       <div class="effects-input">
         <div v-for="(g, i) in grants" :key="i" class="effect-row">
           <Dropdown :value="g.kind" aria-label="What kind" @change="setGrant(i, { kind: val($event) as TraitGrant['kind'] })">
@@ -89,11 +111,10 @@ const removeSpell = (i: number) => put({ spells: spells.value.filter((_, k) => k
           </Dropdown>
           <button type="button" class="link-btn" title="Remove" @click="removeGrant(i)">×</button>
         </div>
-        <button type="button" class="chip-btn" @click="addGrant">+ Proficiency or language</button>
+        <button type="button" class="chip-btn" @click="addGrant">+ Another</button>
       </div>
-    </div>
-    <div class="trait-part">
-      <span class="trait-label">Spells</span>
+    </TraitSection>
+    <TraitSection v-if="showSpells" title="Spells" :summary="spellsSummary" @remove="drop('spells', 'spells')">
       <div class="trait-spells-edit">
       <!-- a class's or subclass's feature: the spells by level, set once for the list; each spell's settings fold below -->
       <SpellLevelsInput v-if="byLevel" :model-value="model.spells" :trait-level="traitLevel ?? 1" :level-word="byLevel" @update:model-value="v => put({ spells: v })" />
@@ -118,6 +139,18 @@ const removeSpell = (i: number) => put({ spells: spells.value.filter((_, k) => k
         <EntryPicker v-if="!byLevel" add :types="['spell']" :exclude="spells.map(x => x.spell)" placeholder="Add a spell…" @pick="addSpell" />
       </component>
       </div>
+    </TraitSection>
+
+    <!-- the feature's own parts (TraitsInput): the player's choice, uses, a scaling value… -->
+    <slot name="sections" />
+
+    <div class="fadd">
+      <span class="fadd-label">Add</span>
+      <button v-if="!model.effects?.length" type="button" class="chip-btn" title="Changes a number or gives a sense, resistance, advantage… (as gear does)" @click="put({ effects: [{ on: 'ac', value: 1 }] })">+ Effect</button>
+      <button v-if="!grants.length" type="button" class="chip-btn" title="A skill, tool, weapon, armor or language it gives" @click="addGrant">+ Proficiency or language</button>
+      <button v-if="!showSpells" type="button" class="chip-btn" title="Spells it gives: at will, once per rest, always prepared…" @click="spellsOpen = true">+ Spells</button>
+      <slot name="add" />
+      <button type="button" class="chip-btn" title="A table in the text, edited as a grid (a d6 table, levels and values)" @click="textBox?.addTable()">+ Table</button>
     </div>
   </div>
 </template>

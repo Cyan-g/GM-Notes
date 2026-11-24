@@ -717,7 +717,7 @@ input.init { width: 4em; }
 .sf-material { flex: 1; min-width: 10rem; }
 
 /* ---------- crafting workbench ---------- */
-.wb-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 1rem; align-items: start; }
+.wb-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 1rem; align-items: start; }
 @media (max-width: 1000px) { .wb-grid { grid-template-columns: 1fr; } }
 .wb-main, .wb-side { display: grid; gap: 1rem; }
 .workbench .card h3 { display: flex; justify-content: space-between; align-items: baseline; }
@@ -2205,10 +2205,16 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 /* a feature's spells by level */
 .trait-spells-edit { display: grid; gap: .3rem; flex: 1; min-width: 0; }
 .spell-levels { display: grid; gap: .3rem; }
-.spell-level-row { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; padding: .3rem .4rem; border: 1px solid var(--line); border-radius: 6px; }
-.spell-level-row.new { border-style: dashed; }
-.spell-level-row .chip .link-btn { padding: 0 0 0 .25rem; }
-.spell-level-row input[type=search] { width: 12rem; }
+.spell-levels-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.spell-levels-table th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); padding: .15rem .4rem; border-bottom: 2px solid var(--line); }
+.spell-levels-table td { padding: .25rem .4rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.spell-levels-table .slt-lv { width: 5rem; }
+.form-grid .spell-levels-table .slt-lv input, .spell-levels-table .slt-lv input { width: 3.6rem; text-align: center; }
+.spell-levels-table .slt-spells { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+.spell-levels-table .chip .link-btn { padding: 0 0 0 .25rem; }
+.spell-levels-table input[type=search] { width: 12rem; }
+.spell-levels-table .slt-new td { border-bottom: 0; }
+.spell-levels-table .slt-new .slt-lv input { opacity: .75; }
 /* a race's speeds, inherited hints, its ability score increase */
 .speeds-input { display: flex; flex-wrap: wrap; gap: .3rem .7rem; align-items: center; }
 .speeds-input label { display: inline-flex; gap: .25rem; align-items: center; }
@@ -2400,6 +2406,7 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .roll-pick label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: .4rem; }
 .roll-pick input { width: 4.5rem; padding: .15rem .4rem; }
 .md tr.rolled td { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--ink); }
+.md table.roll-table td:first-child { white-space: nowrap; }
 .outline-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .15rem; max-height: 22rem; overflow: auto; }
 .outline-list li.sub { padding-left: 1rem; font-size: 13px; }
 .outline-list .link-btn { text-align: left; }
@@ -2785,3 +2792,75 @@ select.dd option:is(:hover, :focus-visible)::before {
 .feat-edit .lt-wrap { grid-column: 1 / -1; }
 .rs-number { display: flex; align-items: center; gap: .6rem; margin-top: .4rem; }
 .rs-number input { width: 6rem; }
+
+/* ---- a feature on its Edit page (TraitsInput, TraitOptionFields, TraitSection) ---- */
+.fhead { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .5rem 0 .4rem; }
+.fhead-lv { display: inline-flex; align-items: center; gap: .3rem; padding: .1rem .5rem; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.form-grid .fhead-lv input, .fhead-lv input { width: 3.2rem; padding: .1rem .3rem; text-align: center; }
+.form-grid .fhead input.fhead-name, .fhead-name { flex: 1; min-width: 12rem; width: auto; font-size: 1.05rem; font-weight: 600; }
+.fhead-actions { display: inline-flex; gap: .15rem; margin-left: auto; }
+.fhead-actions .link-btn { min-width: 1.6rem; text-align: center; font-size: 15px; }
+.fsec { border-top: 1px solid var(--line); padding: .45rem 0 .3rem; }
+.fsec-head { display: flex; align-items: baseline; gap: .5rem; font-size: 13px; }
+.fsec-head b { white-space: nowrap; }
+.fsec-sum { flex: 1; min-width: 0; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fsec-x { margin-left: auto; font-size: 16px; line-height: 1; }
+.fsec-body:empty { display: none; }
+.fsec-body { margin-top: .3rem; }
+.fadd { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; border-top: 1px dashed var(--line); padding-top: .45rem; margin-top: .2rem; }
+.fadd-label { font-size: 12px; color: var(--muted); margin-right: .2rem; }
+.fadd .chip-btn { font-size: 12px; }
+.form-grid .trait-row input.fnum, .trait-row input.fnum { width: 3.4rem; text-align: center; padding-left: .2rem; padding-right: .2rem; }
+.fuses { gap: .4rem; }
+.fpreview { margin: .25rem 0 0; font-size: 12px; color: var(--muted); }
+.trait-option-card .fadd { border-top-style: dotted; }
+/* an open feature card: its name and chips are in the header below, the fold row only folds it */
+.trait-card[open] > summary > * { display: none; }
+.trait-card[open] > summary::after { content: '▴ fold'; font-size: 12px; color: var(--muted); }
+
+/* ---- gear slots on the Equipped card (gear.ts), and the treasury under the inventory ---- */
+.inv-col { display: grid; gap: 1rem; align-content: start; }
+.gear-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; margin: .3rem 0 .5rem;
+  grid-template-areas: ". head ." "cloak body hands" "main feet off"; }
+.gslot-main { grid-area: main; } .gslot-off { grid-area: off; } .gslot-body { grid-area: body; } .gslot-head { grid-area: head; }
+.gslot-cloak { grid-area: cloak; } .gslot-hands { grid-area: hands; } .gslot-feet { grid-area: feet; }
+.gslot-body { min-height: 5rem; }
+.gslot { display: flex; flex-direction: column; gap: .15rem; min-height: 3.6rem; padding: .35rem .5rem; border: 1px dashed var(--line); border-radius: 8px; background: var(--panel-2); transition: opacity .15s, border-color .15s, background .15s; }
+.gslot.filled { border-style: solid; }
+.gslot.covered .gslot-item { opacity: .45; filter: grayscale(1); }
+.gslot.covered { border-style: dashed; }
+.gslot-name { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.gslot-item { display: flex; align-items: baseline; gap: .3rem; min-width: 0; }
+.gslot[draggable="true"], .attune-slots li[draggable="true"] { cursor: grab; }
+.gslot-item .cs-item { text-align: left; overflow-wrap: anywhere; }
+.gslot-foot { display: flex; align-items: center; gap: .4rem; margin-top: auto; }
+.gslot-foot .eq-off { font-size: 16px; line-height: 1; }
+.gear-board.dragging .gslot.lit { border: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--panel-2)); }
+.gear-board.dragging .gslot.dim { opacity: .4; }
+.gslot.over { background: color-mix(in srgb, var(--accent) 25%, var(--panel-2)) !important; }
+.cs-treasury > h3 { margin-top: 0; display: flex; gap: .5rem; align-items: baseline; }
+.seg.grip { display: inline-flex; }
+.seg.grip button { font-size: 11px; padding: .05rem .45rem; }
+
+/* ---- tables in a text box, edited as grids (TextWithTables, BodyEditor, TableGrid) ---- */
+.text-tables { display: grid; gap: .35rem; }
+.tgrid { border: 1px solid var(--line); border-radius: 8px; padding: .3rem .4rem .4rem; background: var(--panel); overflow-x: auto; }
+.tgrid table { border-collapse: collapse; width: 100%; }
+.tgrid th, .tgrid td { padding: 1px 2px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.tgrid thead tr:not(.tgrid-cols) th { border-bottom: 2px solid var(--line); }
+.tgrid .tgrid-cols th { border-bottom: 0; text-align: center; padding: 0; }
+.tgrid input { width: 100%; min-width: 4rem; border: 0; background: transparent; padding: .2rem .3rem; font: inherit; }
+.tgrid thead input { font-weight: 600; }
+.tgrid input:focus { outline: 1px solid var(--accent); background: var(--panel-2); }
+.tgrid-act { width: 1.4rem; text-align: center; }
+.tgrid-x { font-size: 14px; line-height: 1; opacity: .6; }
+.tgrid-x:hover { opacity: 1; }
+.tgrid-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .35rem; }
+.tgrid-bar .danger { margin-left: auto; }
+.be-write.with-tables { display: grid; gap: .35rem; padding: .4rem .5rem .6rem; }
+.be-write.with-tables textarea { min-height: 2.4em; border-radius: 6px; resize: none; overflow: hidden; padding: .4rem .6rem; }
+.body-editor.split .be-write.with-tables textarea { border-right: none; border-radius: 6px; }
+/* a folded feature card's spells by level: a small table on a line of its own */
+.trait-card > summary .trait-spells.compact { flex-basis: 100%; width: auto; min-width: 0; margin: .25rem 0 .1rem; font-size: 12px; }
+.trait-spells.compact th, .trait-spells.compact td { padding: .1rem .5rem; }
+.cp-party-toggle { margin-top: .4rem; font-size: 11px; }

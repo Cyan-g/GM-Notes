@@ -5,6 +5,8 @@ import { computed } from 'vue'
 import type { Trait, TraitChoice } from '../model/types'
 import { renderInline } from '../markdown'
 import { choiceCandidates, choiceWords, subraceOption, HOW_SPECIES } from '../species'
+import { wantsSpellTable } from '../traitSpells'
+import TraitSpellTable from './TraitSpellTable.vue'
 import { ABILITY_NAME } from '../model/dnd'
 import TraitChips from './TraitChips.vue'
 import EntryLink from './EntryLink.vue'
@@ -40,15 +42,9 @@ const groups = computed(() => {
   for (const t of props.traits) { const l = t.level ?? 1; by.set(l, [...(by.get(l) ?? []), t]) }
   return [...by.entries()].sort((a, b) => a[0] - b[0]).map(([level, list]) => ({ level, list }))
 })
-/** A class or subclass feature with a list of spells (Fiend Spells): shown as a table by level instead of chips. */
-const spellTable = (t: Trait) => props.byLevel != null && (t.spells?.length ?? 0) >= 4
-const spellRows = (t: Trait) => {
-  const by = new Map<number, string[]>()
-  for (const x of t.spells ?? []) { const l = Math.max(x.from ?? 1, t.level ?? 1); by.set(l, [...(by.get(l) ?? []), x.spell]) }
-  return [...by.entries()].sort((a, b) => a[0] - b[0])
-}
-/** How the listed spells are gained, when they're all gained the same way. */
-const spellsHow = (t: Trait) => { const h = new Set((t.spells ?? []).map(x => x.how)); return h.size === 1 ? HOW_SPECIES[[...h][0]] : '' }
+/** A class or subclass feature whose spells come at more than one level, or a long list of them (Fiend Spells, an
+ * expanded spell list): shown as a table with a row per level instead of chips. */
+const spellTable = (t: Trait) => props.byLevel != null && wantsSpellTable(t.spells, t.level ?? 1)
 const scale = (t: Trait) => t.scale ? `${t.scale.label}: ${t.scale.steps.map(([l, v]) => `${v} (${l})`).join(', ')}` : ''
 </script>
 
@@ -62,10 +58,7 @@ const scale = (t: Trait) => t.scale ? `${t.scale.label}: ${t.scale.steps.map(([l
         <MarkdownView v-if="multi(t.text) && !said(t.text)" class="trait-md" :source="t.text!" />
         <span v-else-if="t.text && !said(t.text)" class="md" v-html="renderInline(t.text)" />
         <TraitChips :t="t" :no-spells="spellTable(t)" />
-        <table v-if="spellTable(t)" class="grid trait-spells">
-          <thead><tr><th>{{ byLevel ? `${byLevel} level` : 'Level' }}</th><th>Spells<span v-if="spellsHow(t)" class="muted small"> ({{ spellsHow(t) }})</span></th></tr></thead>
-          <tbody><tr v-for="[l, ids] in spellRows(t)" :key="l"><td>{{ l }}</td><td><template v-for="(id, k) in ids" :key="id"><template v-if="k">, </template><EntryLink :id="id" /></template></td></tr></tbody>
-        </table>
+        <TraitSpellTable v-if="spellTable(t)" :spells="t.spells!" :trait-level="t.level ?? 1" :level-word="byLevel ? `${byLevel} level` : 'Level'" />
         <span v-if="t.scale" class="muted small trait-choice">{{ scale(t) }}</span>
         <span v-if="t.castWith" class="muted small trait-choice">{{ castText(t) }}</span>
         <span v-if="t.spellLists?.length" class="muted small trait-choice">Spells can also come from the {{ t.spellLists.join(', ') }} spell lists.</span>

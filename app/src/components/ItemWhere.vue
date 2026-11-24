@@ -30,7 +30,7 @@ function give() {
     <h3>Where it is</h3>
     <template v-if="carriers.length">
       <h4 class="iw-sub">Carried by</h4>
-      <ul class="plain"><li v-for="x in carriers" :key="x.p.id"><EntryLink :id="x.p.id" icon /> <span class="muted small">× {{ x.qty }}</span>
+      <ul class="plain"><li v-for="x in carriers" :key="x.p.id"><EntryLink :id="x.p.id" icon /> <span class="muted small"><template v-if="x.qty">× {{ x.qty }}</template><template v-if="x.qty && x.stored"> · </template><template v-if="x.stored">{{ x.stored }} in the treasury</template></span>
         <span v-if="x.attuned" class="chip small">attuned</span><span v-else-if="x.equipped" class="chip small">equipped</span></li></ul>
     </template>
     <template v-if="shops.length">

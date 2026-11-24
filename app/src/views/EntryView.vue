@@ -13,6 +13,7 @@ import SpellbookView from './SpellbookView.vue'
 import InventoryTab from '../components/InventoryTab.vue'
 import ClassOverview from '../components/ClassOverview.vue'
 import SubclassInfo from '../components/SubclassInfo.vue'
+import SubclassProgression from '../components/SubclassProgression.vue'
 import RaceGlance from '../components/RaceGlance.vue'
 import BackgroundGlance from '../components/BackgroundGlance.vue'
 import FeatInfo from '../components/FeatInfo.vue'
@@ -248,6 +249,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.valu
         <PlayerNotes v-if="shared && NOTE_TYPES.includes(e.type)" :entry="e" />
 
         <ClassOverview v-if="e.type === 'class'" :e="e" />
+        <SubclassProgression v-if="e.type === 'subclass'" :e="e" />
         <section v-for="f in e.type === 'item' ? [] : bigFields.filter(f => f.kind !== 'classBasics' && !(bodyParts.placed.has('ranks') && f.kind === 'ranks'))" :key="f.key">
           <h2>{{ e.type === 'feat' && f.kind === 'speciesTraits' ? 'On the sheet' : f.label }}</h2>
           <FieldValue :def="f" :value="byKey(e.fields)[f.key]" :entry="e" />

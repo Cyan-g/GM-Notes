@@ -19,8 +19,8 @@ const TABLE: number[][] = [
   [4, 3, 3, 3, 2, 1, 1, 1], [4, 3, 3, 3, 2, 1, 1, 1, 1], [4, 3, 3, 3, 3, 1, 1, 1, 1], [4, 3, 3, 3, 3, 2, 1, 1, 1],
   [4, 3, 3, 3, 3, 2, 2, 1, 1],
 ]
-/** Fighter and rogue subclasses that cast as a third caster. */
-const THIRD = /eldritch knight|arcane trickster/i
+/** Fighter and rogue subclasses that cast as a third caster (with Intelligence: sheet.ts castingAbility). */
+export const THIRD = /eldritch knight|arcane trickster/i
 
 export interface RuleSlots {
   /** Slots of 1st…9th level (9 numbers). */

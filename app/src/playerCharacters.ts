@@ -9,13 +9,17 @@
 // conditions, its inventory and money, and its relations. Of those, each side keeps the newer change: the player's
 // app sends its side with the character, the DM's app sends its side to that player's app (now, or when it next
 // connects). A relation to something the player can't see stays with the DM.
+//
+// The DM can take a player's character out of a campaign (partySync.ts): their app is told and takes it out too, and
+// until it has, what it sends of that character is left aside (so the old link doesn't bring it back).
 import { reactive, watch } from 'vue'
 import type { CharacterSheet, Entry, Id, PlayerShare } from './model/types'
 import { db, state, touch } from './store'
 import { applyImport, bundleOf, canExport, planExport, readImport, stable, type Bundle, type ExportOptions } from './transfer'
 import { silently } from './progress'
 import { desktop } from './storage/desktop'
-import { live, sendChanges, syncStatus, whoAmI } from './sync'
+import { carryOutRemovals, live, removalsOf, sendChanges, syncStatus, whoAmI } from './sync'
+import { pendingRemovals, relinked, type Removals } from './partySync'
 import { currentPc } from './sheet'
 import { editSheet } from './sheetData'
 import { addRelation, changed } from './edit'
@@ -132,7 +136,7 @@ async function sendCharacters() {
   try {
     const shared = new Set(d.follow.ids)
     const pcs = linkedCharacters()
-    const characters: { id: Id; bundle: Bundle; shared: SharedPayload }[] = []
+    const characters: { id: Id; bundle: Bundle; shared: SharedPayload; seen?: Removals }[] = []
     for (const pc of pcs) {
       const x = planFor(pc, shared)
       if (!x) continue
@@ -140,7 +144,9 @@ async function sendCharacters() {
       stampPc(pc, sc, SAME)
       const bundle = await silently(() => bundleOf(x.plan))
       const payload = payloadOf((pc.fields.sheet ?? {}) as CharacterSheet, sc, SAME)
-      if (lastSent.get(pc.id) !== keyOf(bundle) + stable(payload)) characters.push({ id: pc.id, bundle, shared: payload })
+      // the DM's removals from campaigns this app has carried out: a link made after them is a new one
+      const seen = d.meta.campaignRemovals?.[pc.id]
+      if (lastSent.get(pc.id) !== keyOf(bundle) + stable(payload) + stable(seen ?? null)) characters.push({ id: pc.id, bundle, shared: payload, ...(seen ? { seen } : {}) })
     }
     const ids = pcs.map(p => p.id)
     if (!characters.length && ids.join('|') === lastRoster) return
@@ -148,7 +154,7 @@ async function sendCharacters() {
     const who = String(currentPc.value?.fields.player ?? pcs.find(p => p.fields.player)?.fields.player ?? '').trim() || whoAmI()
     const r = await desktop.live.sendCharacters(JSON.stringify({ player: state.worldId, who, ids, characters }))
     if (r.ok) {
-      for (const c of characters) lastSent.set(c.id, keyOf(c.bundle) + stable(c.shared))
+      for (const c of characters) lastSent.set(c.id, keyOf(c.bundle) + stable(c.shared) + stable(c.seen ?? null))
       lastRoster = ids.join('|')
       characterSend.sent = new Date().toISOString()
       characterSend.error = ''
@@ -168,6 +174,8 @@ function receiveShared(raw: string) {
   let msg: unknown
   try { msg = JSON.parse(raw) } catch { return }
   if (!d?.follow || state.readOnly || !isObj(msg) || msg.to !== state.worldId || !Array.isArray(msg.characters)) return
+  // characters the DM took out of a campaign come out of it here too
+  if (isObj(msg.removals)) carryOutRemovals(msg.removals as Record<Id, Removals>)
   const shared = new Set(d.follow.ids)
   for (const c of msg.characters) {
     if (!isObj(c) || typeof c.id !== 'string' || !isObj(c.shared)) continue
@@ -215,6 +223,16 @@ async function receive(raw: unknown) {
   const arrived: string[] = []
   for (const c of raw.characters) {
     if (!isObj(c) || typeof c.id !== 'string' || !isObj(c.bundle)) continue
+    // taken out of a campaign by the DM: left aside until the player's app has taken it out too; linked again after
+    // that (the player's to do), the removal is over
+    const known = p.characters[c.id]
+    if (known?.removed) {
+      const seen = isObj(c.seen) ? c.seen as Removals : undefined
+      if (pendingRemovals(known.removed, seen).length) continue
+      const camps = (c.bundle.entries as Entry[] | undefined)?.find(e => isObj(e) && e.id === c.id)?.fields?.campaigns
+      for (const x of relinked(known.removed, seen, Array.isArray(camps) ? camps as Id[] : [])) delete known.removed[x]
+      if (!Object.keys(known.removed).length) delete known.removed
+    }
     // the DM's side of the shared parts, as it is before the player's copy replaces the character; none until both
     // sides have synced once (a character from before: the player's side is the newer one), nor from an app too old
     // to send its side (then the player's copy is taken as it is, as before)
@@ -247,7 +265,7 @@ async function receive(raw: unknown) {
     })
     if (isObj(c.shared)) mergeInto(pc, c.shared as unknown as SharedPayload, mapOf(p))
     if (!p.characters[c.id]) arrived.push(pc.name || 'a character')
-    p.characters[c.id] = { id }
+    p.characters[c.id] = { ...p.characters[c.id], id }
   }
   // characters no longer linked (or deleted) stay, marked
   const linked = new Set(Array.isArray(raw.ids) ? raw.ids.filter((x): x is string => typeof x === 'string') : [])
@@ -269,7 +287,8 @@ let shareTimer: number | undefined
  */
 function makeGivenKnown(pc: Entry, p: PlayerShare): string[] {
   const own = new Set(Object.values(p.entries)), named: string[] = []
-  for (const l of (pc.fields.sheet as CharacterSheet | undefined)?.inventory ?? []) {
+  const sh = pc.fields.sheet as CharacterSheet | undefined
+  for (const l of [...(sh?.inventory ?? []), ...(sh?.treasury ?? [])]) {
     const e = l.item ? db().entries[l.item] : undefined
     if (!e || own.has(e.id) || e.visibility === 'known' || !canExport(e)) continue
     e.visibility = 'known'
@@ -288,6 +307,7 @@ async function sendShared() {
     for (const [player, p] of Object.entries(d.meta.fromPlayers ?? {})) {
       const sc = dmScope(p), m = mapOf(p)
       const characters: { id: Id; shared: SharedPayload }[] = []
+      const removals = removalsOf(p)
       for (const [their, c] of Object.entries(p.characters)) {
         const pc = c.gone ? undefined : d.entries[c.id]
         // not before the player's side has come once (it's the newer one then)
@@ -296,8 +316,8 @@ async function sendShared() {
         stampPc(pc, sc, m)
         characters.push({ id: their, shared: payloadOf(pc.fields.sheet as CharacterSheet, sc, m) })
       }
-      if (!characters.length) continue
-      const text = JSON.stringify({ to: player, characters })
+      if (!characters.length && !removals) continue
+      const text = JSON.stringify({ to: player, characters, ...(removals ? { removals } : {}) })
       if (sharedSent.get(player) === text) continue
       const r = await desktop.live.sendShared(text)
       // not connected now: it goes when they connect
@@ -313,6 +333,33 @@ function shareSoon(ms: number) { clearTimeout(shareTimer); shareTimer = window.s
 // after the DM's changes (once edits pause), and to players who (re)connect
 watch(() => state.savedAt, () => { if (state.db && !state.db.follow && live.host.hosting && Object.keys(state.db.meta.fromPlayers ?? {}).length) shareSoon(1500) }, { flush: 'sync' })
 watch(() => (live.host.hosting ? live.host.players.join('|') : ''), () => { sharedSent.clear(); shareSoon(1500) })
+
+/** The player's share and their id of a character they sent, if it is one. */
+export function playerOf(id: Id): { p: PlayerShare; their: Id } | undefined {
+  for (const p of Object.values(db().meta.fromPlayers ?? {})) for (const [their, c] of Object.entries(p.characters)) if (c.id === id) return { p, their }
+  return undefined
+}
+/** The campaigns the DM took a player's character out of (none for anyone else's). */
+export function removedFrom(id: Id): Id[] { const w = playerOf(id); return w ? Object.keys(w.p.characters[w.their].removed ?? {}) : [] }
+
+/**
+ * Take a character out of a campaign. One the DM made simply leaves it; a player's leaves it here, and their app is
+ * told to take it out too (now, or when it next connects or syncs), until then what it sends of it is left aside.
+ */
+export function removeFromCampaign(pc: Entry, campaign: Id) {
+  const c = db().entries[campaign]
+  if (c && ((c.fields.members as Id[] | undefined) ?? []).includes(pc.id)) { c.fields.members = (c.fields.members as Id[]).filter(x => x !== pc.id); changed(c) }
+  const linked = ((pc.fields.campaigns as Id[] | undefined) ?? []).includes(campaign)
+  if (linked) { pc.fields.campaigns = (pc.fields.campaigns as Id[]).filter(x => x !== campaign); changed(pc) }
+  const who = playerOf(pc.id)
+  if (who && linked) {
+    const k = who.p.characters[who.their]
+    k.removed = { ...k.removed, [campaign]: new Date().toISOString() }
+    touch()
+    shareSoon(300)
+    if (db().meta.sharing?.autoSend && live.host.hosting) sendChanges()
+  }
+}
 
 /** The DM removes a player's character (its own things stay; they may be used elsewhere). */
 export function removePlayerCharacter(id: Id) {

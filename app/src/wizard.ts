@@ -17,6 +17,7 @@ import { byType, entries, get } from './store'
 import { isShield } from './items'
 import { currentCampaign } from './sessions'
 import { bonusSources, rule, ruleNumber, scoreMethods } from './rules'
+import { slotsOn } from './gear'
 import { dieAverage, dieCounted, hpFirstMode, hpMode, type HpMode } from './hitPoints'
 import { changed, createEntry } from './edit'
 import { itemNamed } from './lookup'
@@ -438,10 +439,15 @@ export function equipStarting(lines: InventoryLine[]) {
   const shield = lines.find(l => { const e = of(l); return !!e && isShield(e) })
   if (armor) armor.equipped = true
   if (shield) shield.equipped = true
+  // with gear slots, the weapons fill the free hands (a two-handed one takes both), the others stay in the pack
+  let hands = slotsOn() ? (shield ? 1 : 2) : Infinity
   for (const l of lines) {
     const e = of(l)
     if (e?.fields.kind !== 'Weapon') continue
-    if (shield && (e.fields.properties ?? []).some(p => /two-handed/i.test(p))) continue
+    const both = (e.fields.properties ?? []).some(p => /two-handed/i.test(p))
+    if (shield && both) continue
+    if ((both ? 2 : 1) > hands) continue
+    hands -= both ? 2 : 1
     l.equipped = true
   }
 }

@@ -2,7 +2,7 @@
 // rules: modifiers, proficiency bonus, saves, skills, armor class, attacks and spellcasting; and what's done with it
 // (the current character, the Workbench, equipping and dragging inventory lines, rests).
 import { computed, reactive } from 'vue'
-import { restSlots } from './slots'
+import { THIRD, restSlots } from './slots'
 import { classesOf, totalLevel } from './model/classes'
 import type { CharacterSheet, Crafting, Entry, GearEffect, Id, InventoryLine, Proficiencies, Spellbook, SpellRoll } from './model/types'
 import { MARTIAL_WEAPONS, MASTERY_OF, SIMPLE_WEAPONS } from './model/schema'
@@ -10,6 +10,7 @@ import { optionsIn } from './model/lists'
 import { db, get, listOptions, state, touch } from './store'
 import { advOf, breakdown, gearTotals, scoreWith, sum, type Part } from './effects'
 import { dexCap, isShield, isWearable, isWeaponOrArmor, restItems, type RegainRoll } from './items'
+import { overflowOf, slotsOn } from './gear'
 import { unmet } from './requirements'
 import { setConditions } from './conditions'
 import { longRestHeals, rule } from './rules'
@@ -202,14 +203,22 @@ export function setMaxHp(s: CharacterSheet, n: number | undefined) {
 }
 // Before a sheet changes, note the CON its max HP was made with, so a change of CON from now on is followed.
 onSheetEdit(s => { if (s.maxHp != null && s.hpCon == null) s.hpCon = conModOf(s) })
-/** The species' other speeds, in words: "swim 30 ft, fly 30 ft (hover)". */
+/** A speed with what changes Speed: gear and features (+10 ft), exhaustion, encumbrance, and conditions that halve it or
+ *  stop the character. Every speed changes alike (walking, swimming, flying…). */
+function changedSpeed(base: number, t: ReturnType<typeof gearTotals>): number {
+  if (t.speedZero) return 0
+  const n = Math.max(0, base + sum(t.speed))
+  return t.speedHalf ? Math.floor(n / 2) : n
+}
+/** The species' other speeds, in words: "swim 30 ft, fly 30 ft (hover)", changed like the walking speed. */
 export function otherSpeeds(s: CharacterSheet): string {
-  const sp = speciesSpeeds(ownerOf(s))
-  const walk = parseInt(speedOf(s) ?? '30') || 0
+  const sp = speciesSpeeds(ownerOf(s)), t = gearTotals(s)
   // a feat's speed equal to the walking one (Athlete's climb), where the species gives less
+  const walk = baseSpeed(s) ?? 30
   const given: Partial<Record<string, number>> = {}
-  for (const x of gearTotals(s).speedTypes) given[x.type] = walk
-  return (['swim', 'fly', 'climb', 'burrow'] as const).filter(k => sp[k] || given[k]).map(k => `${k} ${Math.max(sp[k] ?? 0, given[k] ?? 0)} ft${k === 'fly' && sp.hover ? ' (hover)' : ''}`).join(', ')
+  for (const x of t.speedTypes) given[x.type] = walk
+  return (['swim', 'fly', 'climb', 'burrow'] as const).filter(k => sp[k] || given[k])
+    .map(k => `${k} ${changedSpeed(Math.max(sp[k] ?? 0, given[k] ?? 0), t)} ft${k === 'fly' && sp.hover ? ' (hover)' : ''}`).join(', ')
 }
 /** The walking speed before gear, in feet: typed on the sheet, else the species', else nothing (30 is assumed). */
 export function baseSpeed(s: CharacterSheet): number | undefined {
@@ -219,10 +228,8 @@ export function baseSpeed(s: CharacterSheet): number | undefined {
 export function speedOf(s: CharacterSheet): string | undefined {
   const t = gearTotals(s), add = sum(t.speed), base = baseSpeed(s)
   // a condition (Grappled, Restrained…) or exhaustion stops the character, or halves their speed
-  if (t.speedZero) return '0 ft'
-  if (!add && !t.speedHalf) return base != null ? `${base} ft` : undefined
-  const n = Math.max(0, (base ?? 30) + add)
-  return `${t.speedHalf ? Math.floor(n / 2) : n} ft`
+  if (!t.speedZero && !add && !t.speedHalf) return base != null ? `${base} ft` : undefined
+  return `${changedSpeed(base ?? 30, t)} ft`
 }
 /** What a character has now, for a choice's options (species.ts choiceOffer). */
 export function haveNow(s: CharacterSheet): HaveNow {
@@ -270,7 +277,12 @@ export function castingAbility(pc: Entry, s: CharacterSheet): Ability | undefine
   if (s.spellAbility) return s.spellAbility
   // The highest level class that casts.
   const lines = [...classesOf(pc)].sort((a, b) => (Number(b.level) || 0) - (Number(a.level) || 0))
-  for (const l of lines) { const a = castingOf(l.class); if (a) return a }
+  for (const l of lines) {
+    const a = castingOf(l.class)
+    if (a) return a
+    // a Fighter or Rogue who casts through their subclass (Eldritch Knight, Arcane Trickster): Wizard spells, with INT
+    if ((l.class === 'Fighter' || l.class === 'Rogue') && THIRD.test(get(l.subclass)?.name ?? '')) return 'int'
+  }
   return undefined
 }
 
@@ -290,7 +302,12 @@ export function spellStats(pc: Entry, ability?: Ability): { attack: number; dc: 
 // ---------- what the inventory adds up to ----------
 
 // (with the name the character gave their copy: "Grandfather's Blade" on the Attacks card)
-const equipped = (s: CharacterSheet) => s.inventory.filter(l => l.equipped).map(l => { const e = get(l.item); return e && l.label ? { ...e, name: l.label } : e }).filter((e): e is Entry => !!e)
+// with gear slots, what finds no free slot (a third weapon, a shield beside a greatsword) is worn but doesn't count
+const equipped = (s: CharacterSheet) => {
+  const over = overflowOf(s)
+  return s.inventory.filter((l, i) => l.equipped && !over.has(i))
+    .map(l => { const e = get(l.item); return e && l.label ? { ...e, name: l.label } : e }).filter((e): e is Entry => !!e)
+}
 
 /**
  * Armor class from what's worn: body armor (its AC plus Dex as its armor type allows) and shields (what they add), plus the AC effects of the
@@ -409,8 +426,13 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
     // a versatile weapon held in two hands isn't "in one hand" (Dueling)
     const twoHandDmg = dmg - sum(dmgParts.filter(p => p.when === 'oneHanded'))
     // the off-hand weapon is held in one hand, and so is any weapon with a shield on: a versatile one's one-handed damage only
-    const dieList = dice.split('/').slice(0, offhand || shieldOn ? 1 : undefined)
-    const damage = dice ? dieList.map((d, i) => `${d.trim()}${plus(i === 1 ? twoHandDmg : dmg)}${dieList.length > 1 ? hands[i] ?? '' : ''}`).join(' / ') : '—'
+    let dieList = dice.split('/').slice(0, offhand || shieldOn ? 1 : undefined)
+    // with gear slots, a versatile weapon deals the damage of how it's held: in two hands (gear.ts) or one
+    const held = slotsOn() && dieList.length > 1 ? (s.inventory.some(l => l.item === e.id && l.equipped && l.twoHands) ? 1 : 0) : -1
+    if (held >= 0) dieList = [dieList[held]]
+    const damage = !dice ? '—' : held >= 0
+      ? `${dieList[0].trim()}${plus(held ? twoHandDmg : dmg)}${hands[held]}`
+      : dieList.map((d, i) => `${d.trim()}${plus(i === 1 ? twoHandDmg : dmg)}${dieList.length > 1 ? hands[i] ?? '' : ''}`).join(' / ')
     // a bonus only when thrown (Thrown Weapon Fighting): a line of its own
     const thrown = props.includes('thrown') ? allDmg.filter(p => p.when === 'thrown') : []
     const untrained = proficientWith(s, e) === false
@@ -495,16 +517,19 @@ export function blockedFor(pc: Entry, l: InventoryLine, key: 'equipped' | 'attun
   return why.length ? `${e.name} ${why.join(', ')}` : undefined
 }
 
-/** The inventory line being dragged: from the inventory, or out of the equipped or attunement list. */
-export const dragged = reactive<{ pc: Id | null; i: number; from: 'inventory' | 'equipped' | 'attuned' }>({ pc: null, i: -1, from: 'inventory' })
-export function startDrag(ev: DragEvent, pc: Entry, i: number, from: 'inventory' | 'equipped' | 'attuned') {
+/** The inventory line being dragged: from the inventory, out of the equipped or attunement list, or from the
+ * treasury (`i` is then its place in the treasury). */
+export type DragFrom = 'inventory' | 'equipped' | 'attuned' | 'treasury'
+export const dragged = reactive<{ pc: Id | null; i: number; from: DragFrom }>({ pc: null, i: -1, from: 'inventory' })
+const dragList = (s: CharacterSheet | undefined, from: DragFrom) => (from === 'treasury' ? s?.treasury : s?.inventory)
+export function startDrag(ev: DragEvent, pc: Entry, i: number, from: DragFrom) {
   Object.assign(dragged, { pc: pc.id, i, from })
-  ev.dataTransfer?.setData('text/plain', get(sheetOf(pc)?.inventory[i]?.item)?.name ?? '')
+  ev.dataTransfer?.setData('text/plain', get(dragList(sheetOf(pc), from)?.[i]?.item)?.name ?? '')
   if (ev.dataTransfer) ev.dataTransfer.effectAllowed = 'move'
 }
 export const endDrag = () => { dragged.pc = null }
 /** The line being dragged, if it belongs to this PC. */
-export const draggedLine = (pc: Entry) => (dragged.pc === pc.id ? sheetOf(pc)?.inventory[dragged.i] : undefined)
+export const draggedLine = (pc: Entry) => (dragged.pc === pc.id ? dragList(sheetOf(pc), dragged.from)?.[dragged.i] : undefined)
 
 /** A short rest: what recharges on one comes back (features, pact slots, item spells). Hit Dice are the player's to
  * spend and roll; they count them down on the sheet. */

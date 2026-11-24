@@ -8,7 +8,8 @@ import { optionLabel } from '../store'
 import type { CharacterSheet, Entry } from '../model/types'
 import { formatMoney, get, playerMode, state } from '../store'
 import { canAttune, canEquip, draggedLine, dragged, endDrag, startDrag } from '../sheet'
-import { addToInventory, editSheet, setInUse, sheetOrBlank } from '../sheetData'
+import { addToInventory, editSheet, sheetOrBlank } from '../sheetData'
+import { fromTreasury, toTreasury, unequip, wornFree } from '../gear'
 import EntryPicker from './edit/EntryPicker.vue'
 import { capacityOf, gearTotals, loadOf } from '../effects'
 import { focusText, weightOf } from '../items'
@@ -67,7 +68,7 @@ const addText = (name: string) => edit(x => { x.inventory.push({ name, qty: 1 })
 const shown = ref<number | null>(null)
 const shownLine = computed(() => (shown.value != null ? s.value.inventory[shown.value] : undefined))
 
-// ---- dropping something from the Equipped card back here takes it off ----
+// ---- dropping something from the Equipped card back here takes it off; from the treasury, takes it out ----
 const over = ref(false)
 const droppable = computed(() => { const l = draggedLine(props.pc); return !!l && dragged.from !== 'inventory' })
 function onDragOver(ev: DragEvent) { if (droppable.value) { ev.preventDefault(); over.value = true } }
@@ -77,9 +78,9 @@ function onDrop(ev: DragEvent) {
   over.value = false
   if (!droppable.value) return
   ev.preventDefault()
-  // back in the bag: no longer worn, wielded or attuned
-  const i = dragged.i
-  edit(x => { const j = setInUse(x, i, 'attuned', false); setInUse(x, j, 'equipped', false) })
+  // back in the bag: no longer worn, wielded or attuned; or out of the treasury
+  const i = dragged.i, from = dragged.from
+  edit(x => { if (from === 'treasury') fromTreasury(x, i); else unequip(x, i, true) })
   endDrag()
 }
 </script>
@@ -87,7 +88,7 @@ function onDrop(ev: DragEvent) {
 <template>
   <section ref="root" class="cs-inventory card" :class="{ 'cs-inv-side': side, 'drop-over': over }"
            @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop">
-    <component :is="'h3'">Inventory <span v-flash.neutral="weight" class="muted small" :title="load ? loadTip : 'Carrying capacity: Strength × 15 lb (the Ruleset does not check it)'">{{ load ? `${round(load.carried)} / ${round(load.capacity)} ${load.unit}` : `${round(weight)} of ${round(capacityOf(s, gearTotals(s)))} lb, with what's equipped` }}</span>
+    <component :is="'h3'">Inventory <span v-flash.neutral="weight" class="muted small" :title="load ? loadTip : 'Carrying capacity: Strength × 15 lb (the Ruleset does not check it)'">{{ load ? `${round(load.carried)} / ${round(load.capacity)} ${load.unit}` : `${round(weight)} of ${round(capacityOf(s, gearTotals(s)))} lb, ${wornFree() ? 'not counting what’s in gear slots' : 'with what’s equipped'}` }}</span>
       <span v-if="noWeight.length" class="muted small tip" :data-tip="`No weight given for ${noWeight.join(', ')}: they count as 0 lb`"> · {{ noWeight.length }} without a weight</span></component>
     <p v-if="load && load.state !== 'ok'" class="warn-note small">{{ load.state === 'over' ? (load.unit === 'slots' ? `More than ${load.capacity} slots: something has to be left behind.` : `Over the carrying capacity (${round(load.capacity)} lb): the DM decides what that means.`) : load.state === 'encumbered' ? `Encumbered (over ${round(load.light!)} lb): −10 ft speed.` : `Heavily encumbered (over ${round(load.heavy!)} lb): −20 ft speed, disadvantage on ability checks, attack rolls and STR, DEX and CON saves.` }}</p>
     <table class="cs-inv">
@@ -128,6 +129,7 @@ function onDrop(ev: DragEvent) {
         <span class="muted small">× {{ shownLine.qty }}</span>
         <GearToggles :pc="pc" :i="shown!" />
         <button v-if="usedUp(get(shownLine.item)) && !ro" class="chip-toggle" :disabled="!shownLine.qty" @click="useOne(shown!)">Use</button>
+        <button v-if="!ro" class="chip-toggle" title="Keep it elsewhere: not carried, weighed or worn" @click="edit(x => toTreasury(x, shown!)); shown = null">Store in the treasury</button>
       </template>
       <!-- the character's own copy: a name and a note of theirs (the world's item stays as it is) -->
       <template #own>

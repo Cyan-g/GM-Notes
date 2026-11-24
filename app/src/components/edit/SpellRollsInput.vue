@@ -19,7 +19,7 @@ function put(i: number, p: Partial<SpellRoll>) {
   const l = list.value.map(x => ({ ...x }))
   const r: SpellRoll = { ...l[i], ...p }
   if (r.kind !== 'damage') delete r.type
-  for (const k of ['type', 'mod', 'cantrip', 'slot', 'note'] as const) if (!r[k]) delete r[k]
+  for (const k of ['type', 'mod', 'cantrip', 'beams', 'slot', 'note'] as const) if (!r[k]) delete r[k]
   l[i] = r
   model.value = l
 }
@@ -45,8 +45,14 @@ const preview = (r: SpellRoll) => [rollText(props.spell, r), growthText(props.sp
         <button type="button" class="link-btn roll-x" title="Remove this roll" @click="remove(i)">×</button>
       </div>
       <div class="roll-line small">
-        <template v-if="cantrip || r.cantrip">
-          <label class="effect-check" title="A cantrip's dice: twice at character level 5, three times at 11, four times at 17"><input type="checkbox" :checked="!!r.cantrip" @change="put(i, { cantrip: ($event.target as HTMLInputElement).checked })" /> More dice at character levels 5, 11 and 17</label>
+        <template v-if="cantrip || r.cantrip || r.beams">
+          <!-- how a cantrip grows at character levels 5, 11 and 17: more dice (Fire Bolt), or more beams (Eldritch Blast) -->
+          <Dropdown :value="r.beams ? 'beams' : r.cantrip ? 'dice' : ''" aria-label="How it grows" @change="val($event) === 'beams' ? put(i, { beams: r.beams || 'beam', cantrip: undefined }) : put(i, { cantrip: val($event) === 'dice' || undefined, beams: undefined })">
+            <option value="dice">More dice at character levels 5, 11 and 17</option>
+            <option value="beams">More of them at character levels 5, 11 and 17</option>
+            <option value="">The same at every level</option>
+          </Dropdown>
+          <label v-if="r.beams" title="What one is called: 2 at level 5, 3 at 11, 4 at 17">called <input class="effect-value" :value="r.beams" placeholder="beam" @change="put(i, { beams: val($event).trim() || 'beam' })" /></label>
         </template>
         <label v-else>At higher levels: + <input class="effect-value roll-dice" :value="r.slot ?? ''" placeholder="1d6" @change="put(i, { slot: val($event).trim() || undefined })" /> per slot level above {{ ORD[lvl] || 'its level' }}</label>
         <input class="effect-text" :value="r.note ?? ''" placeholder="note, e.g. half on a save" aria-label="Note" @change="put(i, { note: val($event).trim() || undefined })" />

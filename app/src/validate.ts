@@ -95,8 +95,9 @@ export function checkField(f: FieldDef, v: unknown, exists?: (id: string) => Ent
     case 'sheet': {
       if (!isObj(v)) return 'should be a character sheet'
       if (v.inventory != null && !Array.isArray(v.inventory)) return 'has a broken inventory'
+      if (v.treasury != null && !Array.isArray(v.treasury)) return 'has a broken treasury'
       if (v.proficiencies != null && (!isObj(v.proficiencies) || ['armor', 'weapons', 'tools', 'languages'].some(k => (v.proficiencies as Record<string, unknown>)[k] != null && !Array.isArray((v.proficiencies as Record<string, unknown>)[k])))) return 'has broken proficiencies'
-      for (const l of (v.inventory as unknown[] | undefined) ?? []) {
+      for (const l of [...((v.inventory as unknown[] | undefined) ?? []), ...((v.treasury as unknown[] | undefined) ?? [])]) {
         if (!isObj(l) || !isNum(l.qty)) return 'has an inventory line without a quantity'
         if (l.item != null) { const bad = exists && isStr(l.item) && !exists(l.item) ? `carries "${l.item}", which doesn't exist` : !isStr(l.item) ? 'carries something that isn\'t an entry id' : undefined; if (bad) return bad }
       }

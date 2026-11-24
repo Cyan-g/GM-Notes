@@ -9,7 +9,7 @@ import { ORD, spellLevel } from '../model/dnd'
 const props = defineProps<{ e: Entry }>()
 const rolls = computed(() => rollsOf(props.e))
 const lvl = computed(() => spellLevel(props.e))
-const cantrip = computed(() => lvl.value === 0 && rolls.value.some(r => r.cantrip))
+const cantrip = computed(() => lvl.value === 0 && rolls.value.some(r => r.cantrip || r.beams))
 const upcast = computed(() => lvl.value > 0 && rolls.value.some(r => r.slot))
 const rows = computed(() => (cantrip.value
   ? [1, 5, 11, 17].map(l => ({ at: `Level ${l}${l === 1 ? '–4' : l === 5 ? '–10' : l === 11 ? '–16' : '+'}`, text: rolls.value.map(r => rollText(props.e, r, { level: l })).join(' + ') }))

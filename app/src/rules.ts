@@ -55,6 +55,24 @@ export const RULES: RuleDef[] = [
     default: '', keywords: 'money coins currency gold silver copper electrum platinum gp sp cp ep pp exchange',
   },
   {
+    id: 'gearSlots', group: 'Equipment', label: 'Gear slots',
+    text: 'Whether what a character wears and wields is limited by slot: two hands (a Two-Handed weapon takes both), body armor, head, cloak, hands and feet. Rings, amulets and other accessories are never limited.',
+    options: [
+      { id: 'off', label: 'Not limited', text: 'Anything can be equipped, as much as the player likes.' },
+      { id: 'on', label: 'Gear slots', text: 'One item per slot. Weapons go in either hand, armor by its Slot (or its armor type); a shield in the off hand.' },
+    ],
+    default: 'off', keywords: 'equipment equip slots hands armor worn wield paper doll body',
+  },
+  {
+    id: 'wornWeight', group: 'Equipment', label: 'Worn gear weight',
+    text: 'Whether what sits in a gear slot counts toward the weight carried, or the inventory slots. Only matters with gear slots.',
+    options: [
+      { id: 'counts', label: 'Counts', text: 'Worn and wielded gear weighs what it weighs.' },
+      { id: 'free', label: 'Doesn’t count', text: 'Items in gear slots don’t count toward weight or inventory slots; other gear (rings, accessories) still does.' },
+    ],
+    default: 'counts', keywords: 'weight worn armor encumbrance slots carrying capacity',
+  },
+  {
     id: 'attunementSlots', group: 'Equipment', label: 'Attunement slots',
     text: 'How many magic items a character can be attuned to at once.',
     options: [], number: { min: 1, max: 10, unit: 'items' },

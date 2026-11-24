@@ -5,7 +5,7 @@ import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
 import { get, hiddenFromPlayers, playerMode, state } from './store'
 import { hrefEntry } from './router'
-import { SECRET_BLOCK } from './model/text'
+import { SECRET_BLOCK, stripSecrets } from './model/text'
 import { entryByName } from './lookup'
 
 const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
@@ -136,4 +136,5 @@ function preprocess(src: string, keepEnd = false): string {
 /** Rendered HTML without anything that runs code; links may still open in a new window (target), pictures load lazily. */
 const clean = (html: string) => DOMPurify.sanitize(html, { ADD_ATTR: ['target', 'loading'], FORBID_TAGS: ['style', 'form', 'button', 'textarea', 'select'] })
 export const renderMarkdown = (src: string, opts: { tasks?: boolean; keepEnd?: boolean } = {}) => clean(md.render(preprocess(src || '', !!opts.keepEnd), { tasks: !!opts.tasks }))
-export const renderInline = (src: string) => clean(md.renderInline(src || ''))
+/** One line of text: a DM-only block in it (a field's :::secret) is left out, it shows only as a block on the page. */
+export const renderInline = (src: string) => clean(md.renderInline(stripSecrets(src || '').trim()))

@@ -2866,3 +2866,7 @@ select.dd option:is(:hover, :focus-visible)::before {
 .trait-card > summary .trait-spells.compact { flex-basis: 100%; width: auto; min-width: 0; margin: .25rem 0 .1rem; font-size: 12px; }
 .trait-spells.compact th, .trait-spells.compact td { padding: .1rem .5rem; }
 .cp-party-toggle { margin-top: .4rem; font-size: 11px; }
+/* A field's text with a DM-only block (FieldValue): paragraphs without the outer gaps. */
+.field-md > :first-child { margin-top: 0; }
+.field-md > :last-child { margin-bottom: 0; }
+.field-md .secret { margin: .9rem 0 .3rem; }

@@ -6,7 +6,8 @@ import { describe } from '../describe'
 import { TYPES, byKey } from '../model/schema'
 import { fieldLabel, formatMoney, get, state } from '../store'
 import { optionsIn } from '../model/lists'
-import { renderInline } from '../markdown'
+import { renderInline, renderMarkdown } from '../markdown'
+import { hasSecrets } from '../model/text'
 import { describeEffect } from '../effects'
 import { armorClassText, effectsOf, howCast, regainText, spellsOf, worksWhileOf } from '../items'
 import EntryLink from './EntryLink.vue'
@@ -64,7 +65,9 @@ const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magic
     <DataImage v-if="e.image" :path="e.image" :alt="e.name" class="ic-pic" />
     <div class="ic-body">
       <div class="ic-text">
-        <p v-if="f.summary" class="ic-summary" v-html="renderInline(f.summary)" />
+        <!-- a DM-only part of the description shows as its own block (players' copies never have it) -->
+        <div v-if="f.summary && hasSecrets(String(f.summary))" class="ic-summary field-md" v-html="renderMarkdown(String(f.summary))" />
+        <p v-else-if="f.summary" class="ic-summary" v-html="renderInline(f.summary)" />
         <p v-if="f.effect" class="ic-effect"><b>Effect.</b> <span v-html="renderInline(f.effect)" /></p>
         <div v-if="propList.length" class="chips"><span v-for="p in propList" :key="p.id" class="chip" :class="{ tip: 'note' in p && p.note }" :data-tip="'note' in p ? p.note : undefined">{{ p.label }}</span></div>
         <!-- What it does while in use: its effects, then the spells it casts, one per line. -->

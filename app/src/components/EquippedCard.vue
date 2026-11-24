@@ -177,8 +177,12 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
               <span v-if="unfit(g.x)" class="cs-untrained tip" :data-tip="unfit(g.x)"><AppIcon ui="warning" /></span>
             </span>
             <span class="gslot-foot">
-              <span v-if="twoHandsOf(g.x)" class="muted small">{{ twoHandsOf(g.x) }}</span>
-              <button v-if="!ro && canHoldTwo(g.x)" type="button" class="link-btn small" :title="g.x.l.twoHands ? 'Hold it in one hand (its one-handed damage)' : 'Hold it in both hands (its two-handed damage; the off hand empties)'" @click="holdTwo(g.x)">{{ g.x.l.twoHands ? 'One hand' : 'Two hands' }}</button>
+              <!-- a versatile weapon's grip: one hand or both (the off hand empties), the one held lit -->
+              <span v-if="canHoldTwo(g.x)" class="seg grip" role="radiogroup" aria-label="Grip">
+                <button type="button" role="radio" :aria-checked="!g.x.l.twoHands" :class="{ on: !g.x.l.twoHands }" :disabled="ro" title="Held in one hand: its one-handed damage, the off hand free" @click="g.x.l.twoHands && holdTwo(g.x)">1 hand</button>
+                <button type="button" role="radio" :aria-checked="!!g.x.l.twoHands" :class="{ on: !!g.x.l.twoHands }" :disabled="ro" title="Held in both hands: its two-handed damage; what's in the off hand goes back to the pack" @click="!g.x.l.twoHands && holdTwo(g.x)">2 hands</button>
+              </span>
+              <span v-else-if="twoHandsOf(g.x)" class="muted small">{{ twoHandsOf(g.x) }}</span>
               <button v-if="!ro" type="button" class="link-btn eq-off" :title="`Take off ${g.x.e!.name} (it stays in the inventory)`" :aria-label="`Take off ${g.x.e!.name}`" @click="off(g.x.i, 'equipped')">×</button>
             </span>
           </template>

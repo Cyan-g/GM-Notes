@@ -2833,3 +2833,5 @@ select.dd option:is(:hover, :focus-visible)::before {
 .gear-board.dragging .gslot.dim { opacity: .4; }
 .gslot.over { background: color-mix(in srgb, var(--accent) 25%, var(--panel-2)) !important; }
 .cs-treasury > h3 { margin-top: 0; display: flex; gap: .5rem; align-items: baseline; }
+.seg.grip { display: inline-flex; }
+.seg.grip button { font-size: 11px; padding: .05rem .45rem; }

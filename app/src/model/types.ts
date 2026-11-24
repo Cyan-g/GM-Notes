@@ -625,8 +625,12 @@ export interface PlayerShare {
   who: string
   /** When their characters last arrived. */
   received: string
-  /** Their characters: their id → the entry here; `gone` once they no longer share it (unlinked or deleted). */
-  characters: Record<Id, { id: Id; gone?: boolean }>
+  /**
+   * Their characters: their id → the entry here; `gone` once they no longer share it (unlinked or deleted);
+   * `removed`: the campaigns the DM took it out of, with when (partySync.ts). What the player sends of it is left
+   * aside until their app has taken it out too; a link they make again after that brings it back.
+   */
+  characters: Record<Id, { id: Id; gone?: boolean; removed?: Record<Id, string> }>
   /** Every entry of theirs here (the characters and what they use): their id → the entry here. */
   entries: Record<Id, Id>
 }
@@ -661,6 +665,13 @@ export interface Database {
     sharing?: { hostOnOpen?: boolean; autoSend?: boolean }
     /** Characters players sent from their worlds (playerCharacters.ts), by the player's world id. */
     fromPlayers?: Record<string, PlayerShare>
+    /** Characters the DM keeps out of what players see of the party (partySync.ts). */
+    partyHidden?: Id[]
+    /**
+     * A player's world: the DM's removals of its characters from campaigns that it has carried out (character id →
+     * campaign id → when the DM removed it), sent back so the DM knows a later link is a new one.
+     */
+    campaignRemovals?: Record<Id, Record<Id, string>>
     /** Paces and vehicles added for travel on maps (travel.ts); the 5e ones are built in. */
     travelModes?: import('../travel').TravelMode[]
     /** Colour theme and heading font (see theme.ts). */

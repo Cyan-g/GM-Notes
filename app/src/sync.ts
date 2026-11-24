@@ -8,8 +8,10 @@
 //   the publish for the session (and the shared folder, if the world has one) and tells the connected players, whose
 //   app reads it from the DM instead of the folder while connected. The DM can host whenever the world opens, and
 //   have changes sent on their own a few seconds after they're made.
+// - The party: the characters in campaigns players know of go out as NPCs (partySync.ts), so each player sees the
+//   others' (their own app leaves out its own); and which characters the DM took out of a campaign, for their players.
 import { computed, reactive, watch } from 'vue'
-import type { Database, Entry, Follow, Id, Relation } from './model/types'
+import type { Database, Entry, Follow, Id, PlayerShare, Relation } from './model/types'
 import { LISTS, type ListOption } from './model/lists'
 import { mapRefs } from './model/refs'
 import { backupNow, db, listOptions, save, state, touch } from './store'
@@ -19,6 +21,9 @@ import type { RulesMeta } from './rules'
 import type { TravelMode } from './travel'
 import { desktop, type HostStatus, type PlayerStatus } from './storage/desktop'
 import { clone, dataPaths, outgoingEntries, planExport, stable } from './transfer'
+import { classText, totalLevel } from './model/classes'
+import { changed } from './edit'
+import { partyNpc, toCarryOut, type Removals } from './partySync'
 
 export const PUBLISH_FORMAT = 'dndesk-publish'
 /** Entry types players can keep their own notes on (people and places). */
@@ -41,6 +46,10 @@ export interface Published {
   world: { calendar: unknown; eventCategories: unknown; today: unknown; rules?: RulesMeta | null; travelModes?: TravelMode[] | null }
   /** Data path → file name in files/. */
   files: Record<string, string>
+  /** The characters among the entries (as NPCs), with the player's world each came from: theirs stays out there. */
+  party?: { id: Id; player?: string }[]
+  /** The characters the DM took out of campaigns, by their player's world: their id → campaign → when. */
+  removals?: Record<string, Record<Id, Removals>>
 }
 
 const decode = (b: Uint8Array | null) => (b ? new TextDecoder().decode(b) : null)
@@ -92,6 +101,9 @@ export async function planPublish(since: PublishTarget = 'publish'): Promise<Pub
   if (!state.worldId) throw new Error('This world has no ID yet; reopen it in the desktop app.')
   // what players sent (their characters and their own things) stays with the DM
   const plan = planExport(null, { dmText: false, hidden: false, textLinks: false, skip: ['pc'], exclude: e => playerIndex.value.has(e.id) })!
+  // the party, as NPCs for the other players
+  const party = partyMembers()
+  plan.entries.push(...party.map(p => partyNpc(p, classText(p, db().meta, id => db().entries[id]?.name) || `Level ${totalLevel(p)}`)))
   const { entries, names } = outgoingEntries(plan)
   const ids = new Set(entries.map(e => e.id))
   const files: Record<string, string> = {}
@@ -110,7 +122,10 @@ export async function planPublish(since: PublishTarget = 'publish'): Promise<Pub
     entries, relations: plan.relations.filter(r => ids.has(r.a) && ids.has(r.b)).map(clone),
     options: Object.fromEntries(LISTS.map(l => [l.key, listOptions(l.key)])),
     names, world: clone({ calendar: m.calendar, eventCategories: m.eventCategories, today: m.today, rules: m.rules ?? null, travelModes: m.travelModes ?? null }), files,
+    party: party.map(p => ({ id: p.id, ...(playerIndex.value.get(p.id) ? { player: playerIndex.value.get(p.id)!.player } : {}) })),
   }
+  const removals = Object.fromEntries(Object.entries(m.fromPlayers ?? {}).map(([w, p]) => [w, removalsOf(p)]).filter(([, r]) => r))
+  if (Object.keys(removals).length) pub.removals = removals
   let last: Published | null = null
   try { last = JSON.parse(decode(await desktop!.read(since, 'world.json')) ?? 'null') } catch { last = null }
   const before = new Map((last?.entries ?? []).map(e => [e.id, e]))
@@ -122,6 +137,7 @@ export async function planPublish(since: PublishTarget = 'publish'): Promise<Pub
     worldChanged: !last ? [] : [
       ...WORLD_PARTS.filter(([k]) => stable(last!.world?.[k] ?? null) !== stable(pub.world[k] ?? null)).map(([, label]) => label),
       ...(stable(last.options ?? {}) !== stable(pub.options) ? ['the dropdown lists'] : []),
+      ...(stable(last.removals ?? {}) !== stable(pub.removals ?? {}) ? ['who was taken out of a campaign'] : []),
     ],
     previous: last?.published,
   }
@@ -150,7 +166,48 @@ export async function publish(p: PublishPlan, progress?: (done: number, total: n
   await save()
 }
 
+/**
+ * The characters players see as the party: every one in a campaign players know of (its own or put in it by the DM),
+ * except those the DM keeps out and those their player no longer shares.
+ */
+export function partyMembers(): Entry[] {
+  const d = db(), hidden = new Set(d.meta.partyHidden ?? [])
+  const camps = Object.values(d.entries).filter(e => e.type === 'campaign' && e.visibility === 'known')
+  const known = new Set(camps.map(c => c.id)), extra = new Set(camps.flatMap(c => (c.fields.members as Id[] | undefined) ?? []))
+  return Object.values(d.entries).filter(e => e.type === 'pc' && !hidden.has(e.id) && !playerIndex.value.get(e.id)?.gone
+    && (extra.has(e.id) || ((e.fields.campaigns as Id[] | undefined) ?? []).some(c => known.has(c))))
+}
+/** A player's characters the DM took out of campaigns: their id → campaign → when (none when there are none). */
+export function removalsOf(p: PlayerShare): Record<Id, Removals> | undefined {
+  const out = Object.fromEntries(Object.entries(p.characters).filter(([, c]) => c.removed && Object.keys(c.removed).length).map(([their, c]) => [their, { ...c.removed }]))
+  return Object.keys(out).length ? out : undefined
+}
+
 // ---------- a player's side ----------
+
+/**
+ * Take this player's characters out of the campaigns the DM took them out of (what's not done yet), remembering it's
+ * done: the DM's app leaves what this app sends of them aside until it hears so.
+ */
+export function carryOutRemovals(removals: Record<Id, Removals> | undefined) {
+  const d = db(), said: string[] = []
+  for (const [id, r] of Object.entries(removals ?? {})) {
+    const pc = d.entries[id]
+    if (!pc || pc.type !== 'pc' || d.follow?.ids.includes(id) || !r || typeof r !== 'object') continue
+    const todo = toCarryOut(r, d.meta.campaignRemovals?.[id])
+    if (!todo.length) continue
+    const camps = (pc.fields.campaigns as Id[] | undefined) ?? []
+    const out = todo.map(([c]) => c).filter(c => camps.includes(c))
+    if (out.length) {
+      pc.fields.campaigns = camps.filter(c => !out.includes(c))
+      changed(pc)
+      said.push(`${pc.name} out of ${out.map(c => d.entries[c]?.name ?? 'a campaign').join(' and ')}`)
+    }
+    d.meta.campaignRemovals = { ...d.meta.campaignRemovals, [id]: { ...d.meta.campaignRemovals?.[id], ...Object.fromEntries(todo) } }
+    touch()
+  }
+  if (said.length) syncStatus.note = `Your DM took ${said.join(', ')}. You can link it again on its Edit page.`
+}
 
 /** The DM's world: the entries players sent (playerCharacters.ts), with whose they are and whether still shared. */
 const playerIndex = computed(() => {
@@ -196,6 +253,11 @@ export async function syncNow(): Promise<SyncResult | null> {
   if (d.follow && pub.worldId !== d.follow.worldId) throw new Error(`The shared folder holds “${pub.title}”, not the world this one follows.`)
   if (pub.dataVersion > DATA_VERSION) throw new Error(`“${pub.title}” was published by a newer GM Notes (data version ${pub.dataVersion}). Update GM Notes to get it.`)
   if (d.follow?.published === pub.published) return null
+  // the party: this player's own characters stay theirs (the others' are NPCs here); and those the DM took out of a
+  // campaign come out of it
+  const own = new Set((pub.party ?? []).filter(x => x.player === state.worldId).map(x => x.id))
+  if (own.size) { pub.entries = pub.entries.filter(e => !own.has(e.id)); pub.relations = pub.relations.filter(r => !own.has(r.a) && !own.has(r.b)) }
+  if (state.worldId) carryOutRemovals(pub.removals?.[state.worldId])
   // Published by an older version: its entries are brought up to date, as the DM's world will be.
   if (pub.dataVersion < DATA_VERSION) {
     const u = upgradeEntries(pub.entries, pub.dataVersion, pub.options)

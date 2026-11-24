@@ -260,7 +260,7 @@ function apply() {
       </header>
 
       <template v-if="phase === 'choices'">
-        <FeatureChoices :pc="pc" :s="s" open-only />
+        <FeatureChoices :pc="pc" :s="s" />
         <footer class="lu-foot"><span class="muted small">These can also be made later, from "to pick" on the sheet.</span><span class="spacer" /><button class="primary" @click="emit('close')">Done</button></footer>
       </template>
       <template v-else>

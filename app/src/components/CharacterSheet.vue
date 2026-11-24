@@ -32,7 +32,6 @@ import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
 import PcPortrait from './PcPortrait.vue'
 import FeatureList from './FeatureList.vue'
-import FeatureChoices from './FeatureChoices.vue'
 import UsesCard from './UsesCard.vue'
 import { levelCap, longRestHeals, restLengths, rule } from '../rules'
 import ActiveSpellsCard from './ActiveSpellsCard.vue'
@@ -75,6 +74,9 @@ const fromGear = computed(() => {
 /** Choices the character's classes, species and background still wait for. */
 /** Picks still to make on the Edit page (invocations left, a lineage, a casting ability…). */
 const openChoices = computed(() => speciesTraits(props.pc, s.value).filter(a => a.active).reduce((n, a) => n + picksLeft(a), 0))
+/** Building: scroll to the first feature line still waiting for a pick. */
+const featuresRef = ref<HTMLElement>()
+const toFirstPick = () => featuresRef.value?.querySelector('.sp-pending')?.scrollIntoView({ block: 'center', behavior: 'smooth' })
 const scoreOf = (a: Ability) => scoreWith(s.value, a, gt.value)
 const scoreTip = (a: Ability) => scoreBreakdown(s.value, a, gt.value)
 /** A total's tooltip: what it is without gear, then each item's part. */
@@ -342,8 +344,6 @@ onBeforeUnmount(() => {
       </div>
       <p v-if="levelOver" class="error small">The class levels add up to more than 20; the sheet counts 20.</p>
     </section>
-    <!-- building: the choices the classes, species, background and feats ask for, right below the classes -->
-    <FeatureChoices v-if="build" :pc="pc" :s="s" />
     <div class="cs-top" :class="{ 'with-portrait': !build, 'no-portrait': !build && !pc.image }">
     <PcPortrait v-if="!build" :pc="pc" />
     <div class="cs-top-right">
@@ -496,8 +496,10 @@ onBeforeUnmount(() => {
 
 
     <!-- features and traits: in play right below the abilities, the uses on them clicked often -->
-    <section class="cs-features">
+    <section ref="featuresRef" class="cs-features">
       <h4>Features &amp; traits <button v-if="build" class="link-btn" @click="addFeature">＋ Add</button>
+        <!-- building: the picks still to make are in their features' lines below; this jumps to the first -->
+        <button v-if="build && openChoices && !ro" type="button" class="link-btn sp-open small" :title="`${openChoices} pick${openChoices === 1 ? '' : 's'} still to make`" @click="toFirstPick">{{ openChoices }} to pick ↓</button>
         <button v-if="!build && openChoices && !ro" type="button" class="link-btn sp-open small" :title="`${openChoices} pick${openChoices === 1 ? '' : 's'} still to make`" @click="choosing = true">{{ openChoices }} to pick ✎</button></h4>
       <template v-if="build">
         <label v-if="background || s.originFeat !== undefined" class="cs-origin"><span>Origin feat</span>
@@ -516,11 +518,10 @@ onBeforeUnmount(() => {
       </template>
       <!-- everything from the classes, species, background, the sheet and the gear, each with its source (species.ts) -->
       <FeatureList v-else :pc="pc" :s="s" :gear="fromGear" />
-      <details v-if="build" class="cs-auto-feats">
-        <summary class="small">Features that come by themselves <span class="muted">(classes, species, background, feats): no need to add them</span></summary>
-        <FeatureList :pc="pc" :s="s" :gear="fromGear" />
-      </details>
       <p v-if="build && !s.features.length" class="muted small">＋ Add is for anything else: a boon, a homebrew feature, a feat by its name.</p>
+      <!-- building: the features that come by themselves (classes, species, background, feats), each with its choices -->
+      <h5 v-if="build" class="cs-auto-head muted small">From the classes, species, background and feats</h5>
+      <FeatureList v-if="build" edit :pc="pc" :s="s" :gear="fromGear" />
     </section>
 
     <!-- the gear is on the Inventory tab; here its effects count in the numbers, and its charges are in the Uses card -->

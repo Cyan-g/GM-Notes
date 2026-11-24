@@ -21,7 +21,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
           <span class="spacer" />
           <button class="x" title="Close (Esc)" @click="emit('close')">×</button>
         </header>
-        <FeatureChoices :pc="pc" :s="s" open-only />
+        <FeatureChoices :pc="pc" :s="s" />
         <footer class="lu-foot"><span class="spacer" /><button class="primary" @click="emit('close')">Done</button></footer>
       </div>
     </div>

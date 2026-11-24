@@ -2896,3 +2896,8 @@ table.grid td.col-kind, table.grid th.col-kind { white-space: nowrap; }
 .sp-sub { margin: .4rem 0 0 .9rem; padding: .1rem 0 .1rem .7rem; border-left: 2px solid var(--line); }
 .sp-sub.sp-pending { border-left-color: var(--accent); }
 .sp-sub-head { margin-bottom: .15rem; }
+.cs-auto-head { margin: 1rem 0 .3rem; font-weight: 400; text-transform: none; letter-spacing: 0; }
+/* on the Edit page, a feature's choices under its line */
+.feature-list .sp-choice-block { margin: .1rem 0 .5rem 1.1rem; }
+.feature-list .sp-sub { margin-left: 1.1rem; }
+.feature-list .sp-sub .sp-choice-block { margin: 0 0 .3rem; }

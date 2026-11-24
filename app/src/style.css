@@ -2835,3 +2835,22 @@ select.dd option:is(:hover, :focus-visible)::before {
 .cs-treasury > h3 { margin-top: 0; display: flex; gap: .5rem; align-items: baseline; }
 .seg.grip { display: inline-flex; }
 .seg.grip button { font-size: 11px; padding: .05rem .45rem; }
+
+/* ---- tables in a text box, edited as grids (TextWithTables, BodyEditor, TableGrid) ---- */
+.text-tables { display: grid; gap: .35rem; }
+.tgrid { border: 1px solid var(--line); border-radius: 8px; padding: .3rem .4rem .4rem; background: var(--panel); overflow-x: auto; }
+.tgrid table { border-collapse: collapse; width: 100%; }
+.tgrid th, .tgrid td { padding: 1px 2px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.tgrid thead tr:not(.tgrid-cols) th { border-bottom: 2px solid var(--line); }
+.tgrid .tgrid-cols th { border-bottom: 0; text-align: center; padding: 0; }
+.tgrid input { width: 100%; min-width: 4rem; border: 0; background: transparent; padding: .2rem .3rem; font: inherit; }
+.tgrid thead input { font-weight: 600; }
+.tgrid input:focus { outline: 1px solid var(--accent); background: var(--panel-2); }
+.tgrid-act { width: 1.4rem; text-align: center; }
+.tgrid-x { font-size: 14px; line-height: 1; opacity: .6; }
+.tgrid-x:hover { opacity: 1; }
+.tgrid-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .35rem; }
+.tgrid-bar .danger { margin-left: auto; }
+.be-write.with-tables { display: grid; gap: .35rem; padding: .4rem .5rem .6rem; }
+.be-write.with-tables textarea { min-height: 2.4em; border-radius: 6px; resize: none; overflow: hidden; padding: .4rem .6rem; }
+.body-editor.split .be-write.with-tables textarea { border-right: none; border-radius: 6px; }

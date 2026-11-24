@@ -2,7 +2,7 @@
 // The parts a species trait and each option of its choice share: name, text, effects (as on gear), the proficiencies
 // and languages it grants, and the spells it gives. Only the parts in use show, each as a TraitSection; the others are
 // chips in the Add row at the bottom, which the feature's own parts (TraitsInput: choice, uses…) join through slots.
-import LinkTextarea from './LinkTextarea.vue'
+import TextWithTables from './TextWithTables.vue'
 import Dropdown from '../Dropdown.vue'
 import { computed, ref } from 'vue'
 import type { TraitGrant, TraitOption, TraitSpell } from '../../model/types'
@@ -71,6 +71,7 @@ const removeSpell = (i: number) => put({ spells: spells.value.filter((_, k) => k
 // ---- the parts in use, and the Add row ----
 /** Spells opened from the Add row before any is picked. */
 const spellsOpen = ref(false)
+const textBox = ref<InstanceType<typeof TextWithTables>>()
 const showSpells = computed(() => spells.value.length > 0 || spellsOpen.value)
 const effectsSummary = computed(() => describeEffects(model.value.effects ?? []).join(', '))
 const grantsSummary = computed(() => grants.value.map(grantLabel).join(', '))
@@ -93,7 +94,7 @@ function drop(part: 'effects' | 'grants' | 'spells', label: string) {
         <option v-for="o in siblings.filter(x => x.id !== model.id)" :key="o.id" :value="o.id">{{ o.name }}</option>
       </Dropdown></label>
     </div>
-    <LinkTextarea :rows="rows(model.text)" :value="model.text ?? ''" aria-label="Text" placeholder="What it says (shown on the sheet)" @input="put({ text: val($event) })" />
+    <TextWithTables ref="textBox" :rows="rows(model.text)" :value="model.text ?? ''" aria-label="Text" placeholder="What it says (shown on the sheet)" @update="v => put({ text: v })" />
 
     <TraitSection v-if="model.effects?.length" title="Effects" :summary="effectsSummary" @remove="drop('effects', 'effects')">
       <EffectsInput traits :model-value="model.effects" @update:model-value="v => put({ effects: v })" />
@@ -149,6 +150,7 @@ function drop(part: 'effects' | 'grants' | 'spells', label: string) {
       <button v-if="!grants.length" type="button" class="chip-btn" title="A skill, tool, weapon, armor or language it gives" @click="addGrant">+ Proficiency or language</button>
       <button v-if="!showSpells" type="button" class="chip-btn" title="Spells it gives: at will, once per rest, always prepared…" @click="spellsOpen = true">+ Spells</button>
       <slot name="add" />
+      <button type="button" class="chip-btn" title="A table in the text, edited as a grid (a d6 table, levels and values)" @click="textBox?.addTable()">+ Table</button>
     </div>
   </div>
 </template>

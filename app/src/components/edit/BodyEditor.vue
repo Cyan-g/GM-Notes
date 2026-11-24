@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// Markdown editor: typing [[ suggests entries, pasted or dropped pictures are saved to data/images.
+// Markdown editor: typing [[ suggests entries, pasted or dropped pictures are saved to data/images. Tables in the text are
+// edited as grids (TableGrid): the text around them stays text boxes, the toolbar works in the one the caret was last in.
 import LinkTextarea from './LinkTextarea.vue'
 import AppIcon from '../AppIcon.vue'
 import TypeIcon from '../TypeIcon.vue'
@@ -8,14 +9,46 @@ import { TYPES } from '../../model/schema'
 import { search } from '../../search'
 import { saveImage } from '../../edit'
 import MarkdownView from '../MarkdownView.vue'
+import TableGrid from './TableGrid.vue'
+import { NEW_TABLE, editParts, joinTables, tableText, type Part, type Table } from '../../textTables'
 
 /** `compact`: start a few lines tall and grow with the text (short descriptions), instead of a tall page. */
 const props = defineProps<{ modelValue: string; hint?: string; compact?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [string] }>()
 
 const lt = ref<InstanceType<typeof LinkTextarea>>()
-/** The text box (LinkTextarea's textarea). */
-const ta = computed(() => lt.value?.el)
+// ---- tables: the text in parts (text, tables), the text parts each a text box ----
+const parts = computed(() => editParts(props.modelValue ?? ''))
+const hasTable = computed(() => parts.value.some(p => p.kind === 'table'))
+const partBoxes = ref<Record<number, InstanceType<typeof LinkTextarea> | null>>({})
+/** The text part the caret was last in (the toolbar and pictures go there). */
+const activeK = ref(0)
+const firstText = computed(() => parts.value.findIndex(p => p.kind === 'text'))
+/** The text box (LinkTextarea's textarea): the one, or the text part last used. */
+const ta = computed(() => (hasTable.value ? (partBoxes.value[activeK.value] ?? partBoxes.value[firstText.value])?.el : lt.value?.el))
+/** Give the whole text with what's now in this text box. */
+function emitFrom(el: HTMLTextAreaElement) {
+  if (!hasTable.value) { emit('update:modelValue', el.value); return }
+  const k = Object.entries(partBoxes.value).find(([, b]) => b?.el === el)?.[0]
+  const l = [...parts.value]
+  if (k != null) l[Number(k)] = { kind: 'text', text: el.value }
+  emit('update:modelValue', joinTables(l))
+}
+function putPart(k: number, p: Part | null) {
+  const l = [...parts.value]
+  if (p) l[k] = p; else l.splice(k, 1)
+  emit('update:modelValue', joinTables(l))
+}
+const setTable = (k: number, table: Table) => putPart(k, { kind: 'table', raw: tableText(table), table })
+/** A new table where the caret is (on lines of its own), or at the end. */
+function insertTable() {
+  const el = ta.value
+  if (!el) { const v = (props.modelValue ?? '').replace(/\s+$/, ''); emit('update:modelValue', v ? `${v}\n\n${NEW_TABLE}` : NEW_TABLE); return }
+  const s = el.selectionStart, before = el.value.slice(0, s), after = el.value.slice(el.selectionEnd)
+  const pre = !before ? '' : before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n'
+  const post = !after ? '' : after.startsWith('\n\n') ? '' : after.startsWith('\n') ? '\n' : '\n\n'
+  replaceRange(s, el.selectionEnd, pre + NEW_TABLE + post)
+}
 const mode = ref<'write' | 'split' | 'preview'>(window.innerWidth > 1300 ? 'split' : 'write')
 const busy = ref('')
 
@@ -30,6 +63,7 @@ watch(() => [props.modelValue, mode.value], () => nextTick(fit))
 
 // ---- [[ autocomplete ----
 const ac = ref<{ query: string; start: number; top: number; left: number } | null>(null)
+const writePane = ref<HTMLDivElement>()
 const sel = ref(0)
 const results = computed(() => (ac.value ? (ac.value.query ? search(ac.value.query, 8) : []) : []))
 watch(results, () => { sel.value = 0 })
@@ -56,11 +90,14 @@ function caretXY(el: HTMLTextAreaElement, pos: number) {
 
 function onInput(ev: Event) {
   const el = ev.target as HTMLTextAreaElement
-  emit('update:modelValue', el.value)
+  emitFrom(el)
   const before = el.value.slice(0, el.selectionStart)
   const m = before.match(/\[\[([^\]|\n]{0,40})$/)
   if (m) {
     const xy = caretXY(el, el.selectionStart)
+    // where this text box sits in the writing pane (several with tables)
+    const box = el.getBoundingClientRect(), pane = writePane.value?.getBoundingClientRect()
+    if (pane) { xy.top += box.top - pane.top; xy.left += box.left - pane.left }
     ac.value = { query: m[1], start: el.selectionStart - m[1].length - 2, ...xy }
   } else ac.value = null
 }
@@ -83,7 +120,7 @@ function replaceRange(start: number, end: number, text: string, selectInner?: [n
   if (!document.execCommand('insertText', false, text)) {
     el.setRangeText(text, start, end, 'end')
   }
-  emit('update:modelValue', el.value)
+  emitFrom(el)
   if (selectInner) nextTick(() => el.setSelectionRange(start + selectInner[0], start + selectInner[1]))
 }
 
@@ -157,6 +194,7 @@ async function onPick(ev: Event) {
       <button type="button" title="Link to an entry (or type [[)" @click="link">[[ ]]</button>
       <button type="button" title="DM-only block" @click="secret"><AppIcon ui="padlock" /> Secret</button>
       <button type="button" title="Insert picture (or paste / drop one)" @click="fileInput?.click()"><AppIcon ui="picture" /> Picture</button>
+      <button type="button" title="A table, edited as a grid (where the caret is)" @click="insertTable">▦ Table</button>
       <input ref="fileInput" type="file" accept="image/*" multiple hidden @change="onPick" />
       <span class="muted small">{{ busy }}</span>
       <span class="be-modes">
@@ -166,9 +204,15 @@ async function onPick(ev: Event) {
       </span>
     </div>
     <div class="be-panes">
-      <div v-show="mode !== 'preview'" class="be-write">
-        <LinkTextarea ref="lt" :value="modelValue" spellcheck="true" placeholder="Write here. Type [[ to link to another entry."
+      <div v-show="mode !== 'preview'" ref="writePane" class="be-write" :class="{ 'with-tables': hasTable }">
+        <LinkTextarea v-if="!hasTable" ref="lt" :value="modelValue" spellcheck="true" placeholder="Write here. Type [[ to link to another entry."
           @input="onInput" @keydown="onKey" @blur="ac = null" @paste="onPaste" @drop="onDrop" @dragover.prevent />
+        <template v-for="(p, k) in hasTable ? parts : []" v-else :key="k">
+          <LinkTextarea v-if="p.kind === 'text'" :ref="b => (partBoxes[k] = b as InstanceType<typeof LinkTextarea> | null)" grow :rows="1" :value="p.text" spellcheck="true"
+            :placeholder="k === 0 ? 'Text above the table' : k === parts.length - 1 ? 'Text below the table' : 'Text between the tables'"
+            @focus="activeK = k" @input="onInput" @keydown="onKey" @blur="ac = null" @paste="onPaste" @drop="onDrop" @dragover.prevent />
+          <TableGrid v-else :table="p.table" @update="t => setTable(k, t)" @remove="putPart(k, null)" />
+        </template>
         <ul v-if="ac && results.length" class="picker-list ac" :style="{ top: ac.top + 'px', left: ac.left + 'px' }">
           <li v-for="(e, i) in results" :key="e.id" :class="{ sel: i === sel }" @mousedown.prevent="insertLink(i)" @mousemove="sel = i">
             <span class="icon"><TypeIcon :type="e.type" /></span>{{ e.name }} <span class="muted small">{{ TYPES[e.type].label }}</span>

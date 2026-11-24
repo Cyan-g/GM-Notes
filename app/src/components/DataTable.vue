@@ -119,7 +119,7 @@ function sortBy(k: string) {
   if (sortKey.value === k) sortDir.value *= -1
   else { sortKey.value = k; sortDir.value = 1 }
 }
-const arrow = (k: string) => (sortKey.value === k ? (sortDir.value > 0 ? ' ▲' : ' ▼') : '')
+const arrow = (k: string) => (sortKey.value === k ? (sortDir.value > 0 ? '▲' : '▼') : '')
 
 // ---- every shown spell or item as a printed card, in the order shown (the filters pick) ----
 const cardRows = computed(() => shown.value.filter(printable))
@@ -189,8 +189,8 @@ defineExpose({ count: computed(() => shown.value.length) })
       <table class="grid">
         <thead>
           <tr>
-            <th class="sortable" title="Sort by name" @click="sortBy('name')">Name{{ arrow('name') }}</th>
-            <th v-for="c in columns" :key="c.key" class="sortable" :class="['col-' + c.key.replace('@', ''), { num: c.kind === 'money' || c.field?.kind === 'money' }]" :title="c.key === '@concRitual' ? 'Concentration · Ritual' : `Sort by ${c.label.toLowerCase()}`" @click="sortBy(c.key)">{{ c.label }}{{ arrow(c.key) }}</th>
+            <th class="sortable" title="Sort by name" @click="sortBy('name')">Name<span class="sort-arrow">{{ arrow('name') }}</span></th>
+            <th v-for="c in columns" :key="c.key" class="sortable" :class="['col-' + c.key.replace('@', ''), { num: c.kind === 'money' || c.field?.kind === 'money' }]" :title="c.key === '@concRitual' ? 'Concentration · Ritual' : `Sort by ${c.label.toLowerCase()}`" @click="sortBy(c.key)">{{ c.label }}<span class="sort-arrow">{{ arrow(c.key) }}</span></th>
             <th v-if="spells" class="book-col" />
             <th v-if="knownCol" class="known-col" :title="allKnown ? 'All shown are known to players; untick to make them DM only' : 'Tick to make every row shown known to players'">
               <label><input type="checkbox" :checked="allKnown" :indeterminate="someKnown && !allKnown" :aria-label="'Known to players: every row shown'" @change="setAllKnown(($event.target as HTMLInputElement).checked, $event)" /> Players see</label>

@@ -1324,7 +1324,9 @@ table.ranks .rank-title { font-weight: 600; white-space: nowrap; }
 .edit-meta .badge.dm-only { font-size: 11px; padding: 0 .4rem; }
 th.sortable { cursor: pointer; user-select: none; }
 th.sortable:hover { color: var(--accent); }
-th.sortable:hover::after { content: ' ↕'; opacity: .5; }
+/* The arrow's room is always kept, so hovering a header doesn't widen its column and shift the table. */
+th.sortable .sort-arrow { display: inline-block; width: 1.1em; text-align: center; }
+th.sortable:hover .sort-arrow:empty::after { content: '↕'; opacity: .5; }
 .older-sessions summary { cursor: pointer; color: var(--muted); font-size: 13px; margin-bottom: .3rem; }
 .mode-tag { font-size: 11px; padding: .1rem .55rem; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; white-space: nowrap; }
 .mode-tag.player { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }

@@ -2205,10 +2205,16 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 /* a feature's spells by level */
 .trait-spells-edit { display: grid; gap: .3rem; flex: 1; min-width: 0; }
 .spell-levels { display: grid; gap: .3rem; }
-.spell-level-row { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; padding: .3rem .4rem; border: 1px solid var(--line); border-radius: 6px; }
-.spell-level-row.new { border-style: dashed; }
-.spell-level-row .chip .link-btn { padding: 0 0 0 .25rem; }
-.spell-level-row input[type=search] { width: 12rem; }
+.spell-levels-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.spell-levels-table th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); padding: .15rem .4rem; border-bottom: 2px solid var(--line); }
+.spell-levels-table td { padding: .25rem .4rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.spell-levels-table .slt-lv { width: 5rem; }
+.form-grid .spell-levels-table .slt-lv input, .spell-levels-table .slt-lv input { width: 3.6rem; text-align: center; }
+.spell-levels-table .slt-spells { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+.spell-levels-table .chip .link-btn { padding: 0 0 0 .25rem; }
+.spell-levels-table input[type=search] { width: 12rem; }
+.spell-levels-table .slt-new td { border-bottom: 0; }
+.spell-levels-table .slt-new .slt-lv input { opacity: .75; }
 /* a race's speeds, inherited hints, its ability score increase */
 .speeds-input { display: flex; flex-wrap: wrap; gap: .3rem .7rem; align-items: center; }
 .speeds-input label { display: inline-flex; gap: .25rem; align-items: center; }

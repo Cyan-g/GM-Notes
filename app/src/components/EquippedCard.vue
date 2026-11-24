@@ -161,11 +161,15 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
     <h3>Equipped <button v-if="lines.length" type="button" class="link-btn small push-right" title="Print these items as cards (PDF, poker size)" @click="printItems"><AppIcon ui="cards" /> Cards</button></h3>
     <template v-if="slotsOn()">
       <div class="gear-board" :class="{ dragging: !!dragFits }">
-        <div v-for="g in board" :key="g.id" class="gslot" :class="[`gslot-${g.id}`, { filled: !!g.x, lit: dragFits?.includes(g.id), dim: dragFits && !dragFits.includes(g.id), over: overSlot === g.id }]"
+        <div v-for="g in board" :key="g.id" class="gslot" :class="[`gslot-${g.id}`, { filled: !!g.x, covered: g.both, lit: dragFits?.includes(g.id), dim: dragFits && !dragFits.includes(g.id), over: overSlot === g.id }]"
              :draggable="!ro && !!g.x" @dragstart="g.x && startDrag($event, pc, g.x.i, 'equipped')" @dragend="endDrag(); overSlot = null"
              @dragover="onSlotOver($event, g.id)" @dragleave="overSlot = null" @drop="onSlotDrop($event, g.id)">
           <span class="gslot-name">{{ g.label }}</span>
-          <span v-if="g.both" class="muted small">{{ g.x ? nameOf(g.x) : '' }}, both hands</span>
+          <!-- the off hand of a weapon held in both hands: the same item, greyed out, the slot taken -->
+          <template v-if="g.both && g.x">
+            <span class="gslot-item"><button class="link-btn cs-item" :title="`${nameOf(g.x)} is held in both hands`" @click="shown = g.x.i">{{ nameOf(g.x) }}</button></span>
+            <span class="gslot-foot"><span class="muted small">held in both hands</span></span>
+          </template>
           <template v-else-if="g.x">
             <span class="gslot-item">
               <button class="link-btn cs-item" @click="shown = g.x.i">{{ nameOf(g.x) }}</button>

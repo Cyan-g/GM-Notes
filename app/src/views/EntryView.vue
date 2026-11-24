@@ -7,7 +7,7 @@ import { computed } from 'vue'
 import type { Entry, Id } from '../model/types'
 import { TYPES, byKey, type FieldDef } from '../model/schema'
 import { childrenOf, get, hiddenFromPlayers, placePath, playerMode, entries, state } from '../store'
-import { go, hrefEntry, hrefFamily, hrefList, hrefTab, type EntryTab } from '../router'
+import { go, hrefDashboard, hrefEntry, hrefFamily, hrefList, hrefTab, type EntryTab } from '../router'
 import type { UiIcon } from '../icons/ui'
 import SpellbookView from './SpellbookView.vue'
 import InventoryTab from '../components/InventoryTab.vue'
@@ -17,7 +17,6 @@ import SubclassProgression from '../components/SubclassProgression.vue'
 import RaceGlance from '../components/RaceGlance.vue'
 import BackgroundGlance from '../components/BackgroundGlance.vue'
 import FeatInfo from '../components/FeatInfo.vue'
-import UpcastTable from '../components/UpcastTable.vue'
 import { statsOf } from '../encounter'
 import CompanionsTab from '../components/CompanionsTab.vue'
 import CraftingView from './CraftingView.vue'
@@ -151,6 +150,17 @@ const setPart = (p: BodyPart, md: string) => { if (e.value) setBodyPart(e.value,
 const scrollSpell = computed(() => (e.value?.type === 'item' && e.value.fields.kind === 'Scroll' ? get(e.value.fields.spell) : undefined))
 const statblock = computed(() => statsOf(e.value))
 
+/** An item's breadcrumb follows the top-bar menu its table is in: "Crafting › Potions & poisons", "Archive › Weapons". */
+const ITEM_HOME: Record<string, [string, string, string]> = {
+  Ingredient: ['Crafting', 'crafting', 'Ingredients'], Potion: ['Crafting', 'crafting', 'Potions & poisons'], Poison: ['Crafting', 'crafting', 'Potions & poisons'],
+  Scroll: ['Crafting', 'crafting', 'Scrolls'], Weapon: ['Archive', 'armory', 'Weapons'], Armor: ['Archive', 'armory', 'Armor'], Tool: ['Archive', 'armory', 'Tools'],
+}
+const itemHome = computed(() => {
+  const x = e.value
+  if (x?.type !== 'item') return undefined
+  const [menu, dash, view] = ITEM_HOME[String(x.fields.kind ?? '')] ?? ['Archive', 'armory', 'Other items']
+  return { menu, view, href: hrefDashboard(dash, view) }
+})
 const crumbs = computed(() => {
   const x = e.value
   if (!x) return []
@@ -203,7 +213,8 @@ const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.valu
   </div>
   <article v-else-if="e && def" class="entry">
     <nav class="crumbs">
-      <a class="crumb-root" :href="hrefList(e.type)"><TypeIcon :type="e.type" /> {{ def.plural }}</a>
+      <template v-if="itemHome"><span class="crumb-root muted">{{ itemHome.menu }}</span><span class="sep">›</span><a :href="itemHome.href"><TypeIcon :type="e.type" /> {{ itemHome.view }}</a></template>
+      <a v-else class="crumb-root" :href="hrefList(e.type)"><TypeIcon :type="e.type" /> {{ def.plural }}</a>
       <template v-for="c in crumbs" :key="c.id"><span class="sep">›</span><EntryLink :id="c.id" /></template>
     </nav>
     <EntryHeader :e="e" />
@@ -231,8 +242,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.valu
           <h2><TypeIcon type="spell" /> <EntryLink :id="scrollSpell.id" /></h2>
           <SpellCard :e="scrollSpell" />
         </section>
-        <SpellCard v-if="e.type === 'spell'" :e="e" />
-        <UpcastTable v-if="e.type === 'spell'" :e="e" />
+        <SpellCard v-if="e.type === 'spell'" :e="e" upcast />
 
         <CharacterSheet v-if="e.type === 'pc'" :pc="e" />
         <StatblockView v-if="statblock && e.type === 'creature'" :sb="statblock" :name="e.name" class="wide" />
@@ -290,7 +300,8 @@ const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.valu
 
         <section v-if="history.length" class="history">
           <h2>Timeline</h2>
-          <TimelineChart :items="history" :focus="e.id" />
+          <!-- a chart only once there's a stretch to see; one or two events read fine as the list -->
+          <TimelineChart v-if="history.length > 2" :items="history" :focus="e.id" />
           <TimelineList :items="history" />
         </section>
 

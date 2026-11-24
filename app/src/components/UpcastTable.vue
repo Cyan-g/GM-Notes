@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Under a spell's card: what its rolls come to at each slot level it can be cast with (Fireball: 8d6 at 3rd, 9d6 at
+// In a spell's card, under its rolls: what its rolls come to at each slot level it can be cast with (Fireball: 8d6 at 3rd, 9d6 at
 // 4th…; Magic Missile: 3 darts, then 4…), or a cantrip's at character levels 1, 5, 11 and 17. Shown only when a roll grows.
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
@@ -19,6 +19,6 @@ const rows = computed(() => (cantrip.value
 <template>
   <section v-if="rows.length" class="upcast">
     <h3>{{ cantrip ? 'By character level' : 'By slot level' }}</h3>
-    <table class="grid mini"><tbody><tr v-for="r in rows" :key="r.at"><th>{{ r.at }}</th><td>{{ r.text }}</td></tr></tbody></table>
+    <table class="upcast-table"><tbody><tr v-for="r in rows" :key="r.at"><td class="up-at">{{ r.at }}</td><td>{{ r.text }}</td></tr></tbody></table>
   </section>
 </template>

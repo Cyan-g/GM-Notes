@@ -2305,6 +2305,12 @@ select option, select optgroup { background: var(--panel); color: var(--ink); }
 .upcast { margin: .8rem 0; }
 .upcast h3 { margin: 0 0 .3rem; font-size: 1rem; }
 .upcast table { width: auto; min-width: 18rem; }
+/* inside the spell's card, under its rolls: small, plain cells, not a second heading */
+.sc-data .upcast { margin: .5rem 0 0; }
+.sc-data .upcast h3 { font: inherit; font-size: .85em; color: var(--muted); margin: 0 0 .2rem; letter-spacing: 0; text-transform: none; }
+.upcast-table { border-collapse: collapse; font-size: .9em; }
+.upcast-table td { padding: .12rem .8rem .12rem 0; border-bottom: 1px solid var(--line); }
+.upcast-table td.up-at { color: var(--muted); white-space: nowrap; }
 .spell-rolls > .chip-btn { justify-self: start; }
 .sb-feat .sb-md { display: inline; }
 .sb-feat .sb-md > p:first-child { display: inline; }

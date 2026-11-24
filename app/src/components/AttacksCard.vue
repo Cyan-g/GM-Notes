@@ -99,7 +99,7 @@ const none = (k: 'armor' | 'weapons' | 'tools' | 'languages') => !profs.value[k]
               <span v-if="a.tag" class="muted small"> · {{ a.tag }}</span>
             </td>
             <td><b v-flash="a.toHit" :class="{ 'gear-mod tip': a.gear }" :data-tip="a.gear">{{ signed(a.toHit) }}</b></td>
-            <td><span v-for="(part, j) in a.damage.split(' / ')" :key="j" v-flash="a.damage" class="atk-dmg" :class="{ tip: !!crit(part) }" :data-tip="crit(part) ? `Critical hit: ${crit(part)}` : undefined">{{ part }}</span> <span class="muted small">{{ a.type }}</span>
+            <td><span v-for="(part, j) in a.damage.split(' / ')" :key="j" v-flash="a.damage" class="atk-dmg" :class="{ tip: !!crit(part) }" :data-tip="crit(part) ? `Critical hit: ${crit(part)}` : undefined">{{ part }}<span v-if="j === a.damage.split(' / ').length - 1 && a.type" class="muted small">{{ ' ' + a.type.toLowerCase() }}</span></span>
               <span v-if="a.note" class="atk-extra small">{{ a.note }}</span>
               <span v-for="(x, j) in a.extras ?? []" :key="j" class="atk-extra small">{{ x }}</span></td>
           </tr>

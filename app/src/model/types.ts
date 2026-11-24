@@ -158,6 +158,9 @@ export interface SpellRoll {
   type?: string
   mod?: boolean
   cantrip?: boolean
+  /** A cantrip that makes more of these at character levels 5, 11 and 17 instead of rolling more dice (Eldritch
+   * Blast: "beam"): what one is called. */
+  beams?: string
   slot?: string
   note?: string
 }

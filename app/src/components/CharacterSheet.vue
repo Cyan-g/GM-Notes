@@ -12,7 +12,7 @@ import { useReadOnly, useReadOnlyShared } from '../composables/useReadOnly'
 import AppIcon from './AppIcon.vue'
 import ConditionIcon from './ConditionIcon.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import type { CharacterSheet, ClassLine, DeathSaveState, Entry, Id, Proficiencies } from '../model/types'
+import type { CharacterSheet, ClassLine, DeathSaveState, Entry, Feature, Id, Proficiencies } from '../model/types'
 import { byType, get, listOptions, setList, state } from '../store'
 import { CLASS_DIE, DICE, classText, classesOf } from '../model/classes'
 import { dieOf } from '../classRules'
@@ -32,6 +32,8 @@ import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
 import PcPortrait from './PcPortrait.vue'
 import FeatureList from './FeatureList.vue'
+import MarkdownView from './MarkdownView.vue'
+import EntryLink from './EntryLink.vue'
 import UsesCard from './UsesCard.vue'
 import { levelCap, longRestHeals, restLengths, rule } from '../rules'
 import ActiveSpellsCard from './ActiveSpellsCard.vue'
@@ -283,6 +285,8 @@ const setProfs = (k: Exclude<keyof Proficiencies, 'other'>, v: string[]) => edit
 
 // ---- features ----
 const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
+/** A feat line's text to read: the one written on the sheet, else the feat's own; without the SRD's source line. */
+const featText = (f: Feature) => String(f.text?.trim() || featOfFeature(f)?.fields.summary || '').replace(/\s*\*?Source: [^*]*\*?\s*$/i, '').trim()
 const castLabel = computed(() => (s.value.spellAbility ? s.value.spellAbility.toUpperCase() : cast.value ? `${cast.value.toUpperCase()} (class)` : 'None'))
 /** Experience needed for each level (1…20), the same in 2014 and 2024. */
 const xpNext = computed(() => XP_AT[level.value])
@@ -510,10 +514,17 @@ onBeforeUnmount(() => {
           </Dropdown>
           <small class="muted">{{ originValue === '' ? 'The background\'s; pick another if the DM allows it' : originValue === 'none' ? 'No Origin feat' : 'Instead of the background\'s' }}</small>
         </label>
-        <div v-for="(f, i) in s.features" :key="i" class="cs-feature">
-          <input :value="f.name" placeholder="Name, e.g. Bardic Inspiration (d6)" @change="edit(x => x.features[i].name = ($event.target as HTMLInputElement).value)" />
-          <LinkTextarea rows="2" :value="f.text" placeholder="What it does" @change="edit(x => x.features[i].text = ($event.target as HTMLTextAreaElement).value)" />
-          <button class="link-btn" title="Remove" @click="edit(x => x.features.splice(i, 1))">✕</button>
+        <div v-for="(f, i) in s.features" :key="i" class="cs-feature" :class="{ 'cs-feature-feat': !!featOfFeature(f) }">
+          <!-- a feat of the world (Poisoner): its rules are the feat's, to read here, not to edit; only taken off -->
+          <details v-if="featOfFeature(f)" class="sp-fold">
+            <summary class="sp-head"><b><EntryLink :id="featOfFeature(f)!.id" :label="f.name" /></b> <span class="feat-tag tag-feat">feat</span></summary>
+            <MarkdownView v-if="featText(f)" class="small sp-text" :source="featText(f)" />
+          </details>
+          <template v-else>
+            <input :value="f.name" placeholder="Name, e.g. Bardic Inspiration (d6)" @change="edit(x => x.features[i].name = ($event.target as HTMLInputElement).value)" />
+            <LinkTextarea rows="2" :value="f.text" placeholder="What it does" @change="edit(x => x.features[i].text = ($event.target as HTMLTextAreaElement).value)" />
+          </template>
+          <button class="link-btn" :title="featOfFeature(f) ? 'Take this feat off the character' : 'Remove'" @click="edit(x => x.features.splice(i, 1))">✕</button>
         </div>
       </template>
       <!-- everything from the classes, species, background, the sheet and the gear, each with its source (species.ts) -->

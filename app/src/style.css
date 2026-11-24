@@ -2901,3 +2901,4 @@ table.grid td.col-kind, table.grid th.col-kind { white-space: nowrap; }
 .feature-list .sp-choice-block { margin: .1rem 0 .5rem 1.1rem; }
 .feature-list .sp-sub { margin-left: 1.1rem; }
 .feature-list .sp-sub .sp-choice-block { margin: 0 0 .3rem; }
+.cs-feature-feat { grid-template-columns: 1fr auto; align-items: start; margin-bottom: .3rem; }

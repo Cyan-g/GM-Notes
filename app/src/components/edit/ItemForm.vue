@@ -4,7 +4,7 @@
 // Below, side by side: what it gives (when it works, then its effects, spells & charges and features, each with
 // what it's for; empty ones fold into + buttons) and what it needs (attunement, and who can use it, step by step).
 import Dropdown from '../Dropdown.vue'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { Entry, Regain } from '../../model/types'
 import { TYPES, MASTERY_OF, byKey, type FieldDef } from '../../model/schema'
 import { changed, setField, toggleField } from '../../edit'
@@ -57,6 +57,8 @@ const groups = computed(() => {
   for (const d of fields.value) if (d.group && !SPECIAL.includes(d.key)) out.set(d.group, [...(out.get(d.group) ?? []), d])
   return [...out]
 })
+const focusOpen = ref(false)
+const focusShown = computed(() => focusOpen.value || !!(f.value.focus as unknown[] | undefined)?.length)
 const WIDE = ['list', 'longtext', 'effects', 'itemSpells', 'requires', 'speciesTraits']
 const short = (l: FieldDef[]) => l.filter(d => !WIDE.includes(d.kind) && d.kind !== 'bool')
 const wide = (l: FieldDef[]) => l.filter(d => WIDE.includes(d.kind))
@@ -131,7 +133,11 @@ function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete
           <small v-else-if="f.rarity === 'Artifact'" class="muted">priceless</small></label>
       </div>
       <!-- a basic that's a list of options: the spellcasting focus types it is -->
-      <label v-for="d in wide(basics)" :key="d.key" class="sheet-field if-wide" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>
+      <template v-for="d in wide(basics)" :key="d.key">
+        <!-- a spellcasting focus is rare: a button until it's one (or the button's pressed) -->
+        <button v-if="d.key === 'focus' && !focusShown" type="button" class="chip-btn if-focus-add" title="Make it an arcane focus, a druidic focus or a holy symbol" @click="focusOpen = true">＋ Spellcasting focus</button>
+        <label v-else class="sheet-field if-wide" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>
+      </template>
       <div v-if="bools(basics).length" class="seg wrap if-bools">
         <button v-for="d in bools(basics)" :key="d.key" type="button" :class="{ on: !!f[d.key] }" @click="toggleBool(d.key)">{{ d.label }}</button>
       </div>

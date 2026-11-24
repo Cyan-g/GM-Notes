@@ -233,7 +233,8 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
     <p v-if="refused" class="error small">Can't: {{ refused }}.</p>
     <p v-if="told" class="warn-note small">{{ told }}</p>
     <h4>Attunement <span v-flash.neutral="attuned.length" class="muted small">{{ attuned.length }} / {{ ATTUNE_SLOTS }}</span></h4>
-    <ol class="attune-slots">
+    <!-- the empty slots only once something carried needs attunement (they're where it's dragged to) -->
+    <ol v-if="attuned.length || lines.some(x => x.e?.fields.attunement)" class="attune-slots">
       <li v-for="(x, n) in slots" :key="n" :class="{ empty: !x, over: n >= ATTUNE_SLOTS }" :draggable="!ro && !!x" @dragstart="x && startDrag($event, pc, x.i, 'attuned')" @dragend="endDrag">
         <button v-if="x" class="link-btn cs-item" @click="shown = x.i">{{ nameOf(x) }}</button>
         <span v-else class="muted small">empty</span>

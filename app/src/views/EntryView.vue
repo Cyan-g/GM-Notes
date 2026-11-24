@@ -85,14 +85,17 @@ const tabs = computed(() => {
   const x = e.value
   if (!x) return []
   const family = { href: hrefFamily(x.id), on: onFamily.value, icon: 'family' as UiIcon, label: 'Family tree', count: familySize(x.id) }
-  if (x.type !== 'pc') return [family]
+  // an empty family tree is where family is added; where nothing can be added (the DM's entries in a player's
+  // world, a party member's copy) it's left out
+  const fam = family.count || (!state.readOnly && !isShared(x)) ? [family] : []
+  if (x.type !== 'pc') return fam
   const s = x.fields.sheet
   return [
     { href: hrefTab(x.id, 'inventory'), on: onInv.value, icon: 'otherItems' as UiIcon, label: 'Inventory', count: s?.inventory?.length },
     { href: hrefTab(x.id, 'spellbook'), on: onBook.value, icon: 'spellbook' as UiIcon, label: 'Spellbook', count: s?.spellbook?.prepared?.filter(id => get(id)?.fields.level !== 'Cantrip').length },
     { href: hrefTab(x.id, 'crafting'), on: onBench.value, icon: 'workbench' as UiIcon, label: 'Workbench', count: s?.crafting?.known?.length },
     { href: hrefTab(x.id, 'companions'), on: onPals.value, icon: 'link' as UiIcon, label: 'Companions', count: s?.companions?.length },
-    family,
+    ...fam,
   ]
 })
 
@@ -206,7 +209,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.valu
     <EntryHeader :e="e" />
 
     <MapView v-if="e.fields.map" :place="e" banner />
-    <nav v-if="hasFamily" class="tabs entry-tabs">
+    <nav v-if="hasFamily && tabs.length" class="tabs entry-tabs">
       <a :href="hrefEntry(e.id)" :class="{ on: onOverview }">Overview</a>
       <a v-for="t in tabs" :key="t.label" :href="t.href" :class="{ on: t.on }"><AppIcon :ui="t.icon" /> {{ t.label }} <span v-if="t.count" class="muted small">{{ t.count }}</span></a>
     </nav>
@@ -221,7 +224,7 @@ const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.valu
 
         <!-- An item's card takes the main two thirds; its recipe is the first card on the right (as when editing). -->
         <div v-if="e.type === 'item'" class="item-top">
-          <ItemCard :e="e" />
+          <ItemCard :e="e" in-page />
         </div>
         <!-- A scroll shows the spell it holds. -->
         <section v-if="scrollSpell" class="scroll-spell">

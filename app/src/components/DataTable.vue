@@ -34,8 +34,14 @@ const props = withDefaults(defineProps<{
   groups?: string[]
 }>(), { facets: () => [], sort: () => ({ key: 'name', dir: 1 as const }) })
 
-/** The columns, leaving out any with nothing in any row (a Player nobody filled in). */
-const columns = computed(() => props.cols.map(k => column(k, props.type)).filter(c => !props.rows.length || props.rows.some(e => !isEmpty(c.value(e)))))
+/**
+ * The columns, leaving out any with nothing in the rows shown (a Player nobody filled in; Magical while the filters
+ * show only mundane things). With no rows shown they all stay, so the headers don't jump around an empty table.
+ */
+const columns = computed(() => {
+  const rows = shown.value.length ? shown.value : props.rows
+  return props.cols.map(k => column(k, props.type)).filter(c => !rows.length || rows.some(e => !isEmpty(c.value(e))))
+})
 // ---- known to players or DM only: entries that can be shared (not characters, sessions, encounters, nor what came
 // from elsewhere and is read-only here) ----
 const shareable = (e: Entry) => e.type !== 'pc' && canExport(e) && !isShared(e)
@@ -54,7 +60,7 @@ watch(() => props.facets.join(), () => { chosen.value = {} })
 watch(facetDefs, fs => { for (const x of fs) chosen.value[x.f.key] ??= '' }, { immediate: true })
 
 const sorted = (list: Entry[], key: string, dir: number) => {
-  const col = key === 'name' ? column('name') : columns.value.find(c => c.key === key) ?? column(key)
+  const col = key === 'name' ? column('name') : column(key, props.type)
   return [...list].sort((a, b) => {
     const x = col.sort(a), y = col.sort(b)
     return (x < y ? -1 : x > y ? 1 : a.name.localeCompare(b.name, undefined, { numeric: true })) * dir

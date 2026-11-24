@@ -18,7 +18,7 @@ import { describeRequirements } from '../requirements'
 import { MASTERY_OF } from '../model/schema'
 import { itemNamed } from '../lookup'
 
-const props = defineProps<{ e: Entry }>()
+const props = defineProps<{ e: Entry; /** On its own page, under the kind badge. */ inPage?: boolean }>()
 const f = computed(() => props.e.fields)
 /** A choice field's value as its option's label. */
 /** Its damage, or its base weapon's (a +1 Longsword written without its own dice). */
@@ -61,7 +61,8 @@ const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magic
 
 <template>
   <div class="item-card" :class="'r-' + rarity">
-    <div class="ic-line">{{ kindLine }}</div>
+    <!-- on its page the kind is beside the title already: the line only when it says more ("Ammunition", "Melee (Rapier)") -->
+    <div v-if="!(inPage && kindLine.toLowerCase() === L('kind').toLowerCase())" class="ic-line">{{ kindLine }}</div>
     <DataImage v-if="e.image" :path="e.image" :alt="e.name" class="ic-pic" />
     <div class="ic-body">
       <div class="ic-text">

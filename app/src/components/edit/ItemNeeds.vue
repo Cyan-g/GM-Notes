@@ -20,6 +20,8 @@ const req = computed<Requirements>(() => f.value.requirements ?? {})
 /** Checks other than heavy armor's Strength (set with the armor). */
 const someone = computed(() => !!(req.value.classes?.length || req.value.spellcaster || req.value.races?.length || req.value.skills?.length || req.value.note || (req.value.scores ?? []).some(x => !(f.value.armorType === 'Heavy' && x.ability === 'str'))))
 const restricted = ref(someone.value)
+/** At its defaults (anyone, no attunement) it's one line until "change" opens the controls. */
+const editing = ref(!!f.value.attunement || someone.value)
 
 function putReq(p: Partial<Requirements>) {
   const n: Requirements = { ...req.value, ...p }
@@ -67,7 +69,8 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
 </script>
 
 <template>
-  <div class="feat-prereqs item-needs">
+  <p v-if="!editing" class="small item-needs-line">Anyone can use it, no attunement · <button type="button" class="link-btn" @click="editing = true">change</button></p>
+  <div v-else class="feat-prereqs item-needs">
     <label class="fp-switch"><input type="checkbox" :checked="!!f.attunement" @change="toggleAttune" /> <b>Requires attunement</b></label>
     <span class="muted small">Who can use it{{ f.attunement ? ' (attune to it)' : ' (equip it)' }}:</span>
     <div class="seg fp-mode">

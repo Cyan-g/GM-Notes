@@ -15,7 +15,7 @@ import DeathSaves from './DeathSaves.vue'
 import { applyHp, deathSavesOf, isParty, removeCombatant, fighterStats, saveRollNotes, setDeathSaves } from '../tracker'
 
 /** `compact`: one row (name, AC, HP, damage box, conditions), for a big fight on one screen. */
-const props = defineProps<{ c: Combatant; current: boolean; selected: boolean; compact?: boolean }>()
+const props = defineProps<{ c: Combatant; current: boolean; selected: boolean; compact?: boolean; /** Say how to give it stats (the first one without, not every one). */ hint?: boolean }>()
 const emit = defineEmits<{ select: []; stats: [] }>()
 const c = computed(() => props.c)
 const st = computed(() => fighterStats(c.value))
@@ -141,7 +141,7 @@ function switchSide() { c.value.side = isParty(c.value) ? 'enemy' : 'party'; tou
       <span class="muted">{{ legendary - (c.legendaryUsed ?? 0) }} left · back at the start of its turn</span>
       <label v-if="sb?.legendaryLair" class="muted" title="In its lair it has more legendary actions"><input type="checkbox" :checked="!!c.inLair" @change="toggleLair" /> in its lair</label>
     </div>
-    <p v-if="noStats" class="small muted cc-nostats" @click.stop>No stats: type its HP and AC here, or give it a statblock on its page (or one from the SRD).</p>
+    <p v-if="noStats && hint" class="small muted cc-nostats" @click.stop>No stats: type its HP and AC here, or give it a statblock on its page (or one from the SRD).</p>
     <DeathSaves v-if="dying" :saves="ds" :adv="rollNotes.death" @set="d => { setDeathSaves(c, d); touch() }" @nat20="applyHp(c, '=1')" />
 
     <div v-for="(dc, i) in c.concChecks ?? []" :key="'cc' + i" class="conc-check" @click.stop>

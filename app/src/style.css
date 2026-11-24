@@ -2874,3 +2874,7 @@ select.dd option:is(:hover, :focus-visible)::before {
 .field-md > :last-child { margin-bottom: 0; }
 .field-md .secret { margin: .9rem 0 .3rem; }
 .campaign-join .join-btn { margin: 0 .4rem .4rem 0; }
+/* An item at its defaults: the focus and "what it needs" as a button and a line (ItemForm, ItemNeeds). */
+.if-focus-add { margin: 0 .4rem .6rem 0; }
+.item-needs-line { margin: .2rem 0; color: var(--muted); }
+table.grid td.col-kind, table.grid th.col-kind { white-space: nowrap; }

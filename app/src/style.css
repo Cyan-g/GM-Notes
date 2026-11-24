@@ -2814,7 +2814,11 @@ select.dd option:is(:hover, :focus-visible)::before {
 
 /* ---- gear slots on the Equipped card (gear.ts), and the treasury under the inventory ---- */
 .inv-col { display: grid; gap: 1rem; align-content: start; }
-.gear-board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem; margin: .3rem 0 .5rem; }
+.gear-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; margin: .3rem 0 .5rem;
+  grid-template-areas: ". head ." "cloak body hands" "main feet off"; }
+.gslot-main { grid-area: main; } .gslot-off { grid-area: off; } .gslot-body { grid-area: body; } .gslot-head { grid-area: head; }
+.gslot-cloak { grid-area: cloak; } .gslot-hands { grid-area: hands; } .gslot-feet { grid-area: feet; }
+.gslot-body { min-height: 5rem; }
 .gslot { display: flex; flex-direction: column; gap: .15rem; min-height: 3.6rem; padding: .35rem .5rem; border: 1px dashed var(--line); border-radius: 8px; background: var(--panel-2); transition: opacity .15s, border-color .15s, background .15s; }
 .gslot.filled { border-style: solid; }
 .gslot-name { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }

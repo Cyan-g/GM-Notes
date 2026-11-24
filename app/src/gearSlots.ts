@@ -1,6 +1,6 @@
 // Gear slots (the Ruleset's "Gear slots"): what a character can wear and wield at once, by slot — two hands, body
-// armor, head, cloak, hands, feet. Which slots an item fits comes from its own fields (a weapon: either hand; armor:
-// its Slot, else its armor type); anything else (rings, amulets, accessories) is "other gear", unlimited. An equipped
+// armor, head, cloak, hands, feet. Which slots an item fits comes from its own fields (a weapon or a shield: either
+// hand, a shield the off hand first; other armor: its Slot, else its armor type); anything else (rings, amulets, accessories) is "other gear", unlimited. An equipped
 // line may say its slot; one that doesn't (equipped before the rule, or by a button) is placed in the first free slot
 // it fits. A Two-Handed weapon, or a Versatile one held in two hands, fills both hands.
 // No vue or store here: tests import it directly.
@@ -14,7 +14,7 @@ export const slotLabel = (id: GearSlot) => GEAR_SLOTS.find(x => x.id === id)?.la
 
 /** The item fields slots are read from. */
 export interface SlotFields { kind?: unknown; slot?: unknown; armorType?: unknown; properties?: unknown }
-const ARMOR_SLOT: Record<string, GearSlot> = { Chest: 'body', Head: 'head', Cloak: 'cloak', Gloves: 'hands', Boots: 'feet', Shield: 'off' }
+const ARMOR_SLOT: Record<string, GearSlot> = { Chest: 'body', Head: 'head', Cloak: 'cloak', Gloves: 'hands', Boots: 'feet' }
 const props = (f: SlotFields) => (Array.isArray(f.properties) ? f.properties.map(p => String(p).toLowerCase()) : [])
 
 /** The slots an item fits, best first (a weapon: the main hand, then the off hand); none for other gear. */
@@ -22,9 +22,10 @@ export function slotsFor(f: SlotFields | undefined): GearSlot[] {
   if (!f) return []
   if (f.kind === 'Weapon') return ['main', 'off']
   if (f.kind !== 'Armor') return []
+  // a shield is held: in either hand, the off hand first
+  if (f.armorType === 'Shield' || f.slot === 'Shield') return ['off', 'main']
   const s = ARMOR_SLOT[String(f.slot ?? '')]
   if (s) return [s]
-  if (f.armorType === 'Shield') return ['off']
   return ['Light', 'Medium', 'Heavy'].includes(String(f.armorType ?? '')) ? ['body'] : []
 }
 export const isTwoHanded = (f: SlotFields | undefined) => !!f && f.kind === 'Weapon' && props(f).includes('two-handed')

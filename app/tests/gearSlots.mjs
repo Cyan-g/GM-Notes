@@ -11,8 +11,8 @@ const helm = { kind: 'Armor', slot: 'Head' }
 const ring = { kind: 'Ring' }
 
 assert.deepEqual(slotsFor(sword), ['main', 'off'])
-assert.deepEqual(slotsFor(shield), ['off'])
-assert.deepEqual(slotsFor({ kind: 'Armor', slot: 'Shield' }), ['off'])
+assert.deepEqual(slotsFor(shield), ['off', 'main'])
+assert.deepEqual(slotsFor({ kind: 'Armor', slot: 'Shield' }), ['off', 'main'])
 assert.deepEqual(slotsFor(chain), ['body'])
 assert.deepEqual(slotsFor({ kind: 'Armor', slot: 'Chest', armorType: 'Light' }), ['body'])
 assert.deepEqual(slotsFor(helm), ['head'])
@@ -29,6 +29,11 @@ assert.deepEqual(p.other, [2]); assert.deepEqual(p.overflow, [])
 // a greatsword fills both hands; a shield then finds no hand
 p = placeGear([L(greatsword), L(shield)])
 assert.equal(p.at.main, 0); assert.equal(p.at.off, 0); assert.deepEqual(p.overflow, [1])
+// a shield in the main hand, a weapon in the off hand; two shields, one in each hand
+p = placeGear([L(shield, { slot: 'main' }), L(dagger)])
+assert.equal(p.at.main, 0); assert.equal(p.at.off, 1)
+p = placeGear([L(shield), L(shield)])
+assert.equal(p.at.off, 0); assert.equal(p.at.main, 1)
 
 // a line that says its slot gets it first: the dagger asked for the off hand
 p = placeGear([L(sword), L(dagger, { slot: 'off' })])

@@ -2,7 +2,7 @@
 // A campaign's sessions on its page, newest first: the last ten, the earlier ones folded away, and a new one numbered after the last.
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
-import { formatDate, state } from '../store'
+import { dmIds, formatDate, state } from '../store'
 import { createSession, sessionNo, sessionsOf } from '../sessions'
 import { dayNumber } from '../calendar'
 import EntryLink from './EntryLink.vue'
@@ -10,6 +10,8 @@ import EntryLink from './EntryLink.vue'
 const props = defineProps<{ campaign: Entry }>()
 const sessions = computed(() => sessionsOf(props.campaign.id))
 const newest = computed(() => [...sessions.value].reverse())
+/** The DM's campaign in a player's world: sessions made in it are the player's own notes. */
+const notesOnly = computed(() => dmIds.value.has(props.campaign.id))
 /** What looks wrong in the log: two sessions with one number, a session dated before the one played before it. */
 const oddities = computed(() => {
   const out: string[] = [], seen = new Map<number, string>()
@@ -33,7 +35,7 @@ function newSession() {
 <template>
   <section>
     <h2>Sessions</h2>
-    <button class="new-session" @click="newSession">+ New session</button>
+    <button class="new-session" :title="notesOnly ? 'Your own notes for a session: they stay in your world' : undefined" @click="newSession">+ {{ notesOnly ? 'My session notes' : 'New session' }}</button>
     <!-- newest first, as on home -->
     <ol v-if="sessions.length" class="plain">
       <li v-for="s in newest.slice(0, 10)" :key="s.id"><EntryLink :id="s.id" /> <span class="muted">{{ formatDate(s.fields.date) }}</span></li>

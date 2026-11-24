@@ -66,7 +66,7 @@ function toggleHidden(p: Entry) {
     <div class="cp-cards">
       <div v-for="p in party" :key="p.id" class="card cp-card">
         <div class="cp-head"><EntryLink :id="p.id" icon /><button v-if="canEdit" type="button" class="x" :title="`Take ${p.name} out of this campaign`" @click="drop(p)">×</button></div>
-        <div v-if="p.type === 'npc'" class="small muted">{{ p.fields.occupation }}<template v-if="p.fields.race"> · {{ nameOf(p.fields.race) }}</template></div>
+        <div v-if="p.type === 'npc'" class="small muted">{{ p.fields.occupation }}<template v-if="p.fields.race"> · {{ nameOf(p.fields.race) }}</template><template v-if="byKey(p.fields).playedBy"> · played by {{ byKey(p.fields).playedBy }}</template></div>
         <div v-else class="small muted">{{ classText(p, state.db?.meta) || `Level ${levelOf(p)}` }}<template v-if="p.fields.player"> · {{ p.fields.player }}</template></div>
         <dl v-if="p.type === 'pc'" class="cp-stats">
           <div><dt>AC</dt><dd>{{ line(p).ac }}</dd></div>

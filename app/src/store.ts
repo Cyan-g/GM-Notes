@@ -287,6 +287,8 @@ export async function createWorld(backend: Backend, storage: Storage, title: str
 // every entry there is to see: in player mode, only what players know (hiddenFromPlayers)
 export const entries = computed(() => { version.value; const all = state.db ? Object.values(state.db.entries) : []; return playerMode.value ? all.filter(e => !hiddenFromPlayers(e)) : all })
 
+/** In a player's world: the entries that come from the DM's published world (they're replaced by every update). */
+export const dmIds = computed(() => { version.value; return new Set(state.db?.follow?.ids ?? []) })
 export const byType = computed(() => {
   const m = new Map<EntryType, Entry[]>()
   for (const e of entries.value) {

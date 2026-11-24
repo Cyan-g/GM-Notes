@@ -390,10 +390,12 @@ onBeforeUnmount(() => {
             <input v-flash="s.hp ?? maxHp" class="cs-hp-now" type="number" :value="s.hp ?? maxHp ?? ''" placeholder="now" :disabled="roShared" title="Current HP" @change="setHpNow" />
             <span class="muted">/</span>
           </template>
-          <span :class="{ tip: hpParts.length && !build, 'gear-mod': gt.maxHp.length && !build }" :data-tip="build ? undefined : breakdown(`${s.maxHp ?? 0} set`, hpParts)"><input v-flash="build ? baseMaxHp(s) : maxHp" type="number" :value="(build ? baseMaxHp(s) : maxHp) ?? ''" :placeholder="'max'" :disabled="locked" title="Maximum HP" @change="edit(x => setMaxHp(x, num($event)))" /></span>
+          <span :class="{ tip: hpParts.length && !build, 'gear-mod': gt.maxHp.length && !build }" :data-tip="build ? undefined : breakdown(`${s.maxHp ?? 0} set`, hpParts)"><input v-flash="build ? baseMaxHp(s) : maxHp" type="number" :value="(build ? baseMaxHp(s) : maxHp) ?? ''" :placeholder="'max'" :disabled="ro || (locked && classes.length > 0)" title="Maximum HP" @change="edit(x => setMaxHp(x, num($event)))" /></span>
           <label v-if="!build" class="cs-hp-temp"><span class="muted small">temp</span>
             <input v-flash="s.tempHp ?? 0" type="number" :value="s.tempHp ?? ''" placeholder="0" :disabled="roShared" title="Temporary HP" @change="editShared(x => x.tempHp = num($event) || undefined)" /></label>
         </div>
+        <!-- no class yet: nothing to work max HP out from, so it's typed here (homebrew, other rulesets) until one is picked -->
+        <p v-if="!classes.length && !build && !ro" class="muted small cs-noclass">No class yet: pick one on the <a :href="hrefEntry(pc.id, true)">✎ Edit page</a>, or type a max HP here.</p>
         <div v-if="maxHp && !build" class="cs-hp-bar"><i :style="{ width: Math.min(100, Math.round(100 * (s.hp ?? maxHp) / maxHp)) + '%' }" /></div>
       </div>
       <label v-if="!build" class="cs-hp-change"><span class="cs-label">Damage / heal</span><input placeholder="−7 or +5" :disabled="roShared" @keydown.enter="hit" @change="hit" />

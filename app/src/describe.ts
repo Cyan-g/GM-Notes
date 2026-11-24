@@ -17,7 +17,11 @@ const join = (...parts: unknown[]) => parts.filter(p => p != null && p !== '' &&
 export function describe(e: Entry, { parent = true } = {}): string {
   const f = e.fields
   switch (e.type) {
-    case 'npc': return join(f.occupation, name(f.race), f.gender, ageText(e))
+    case 'npc': {
+      // another player's character in a player's world (sync.ts): its party and who plays it first
+      const b = byKey(f), party = ((b.partyOf as string[] | undefined) ?? []).map(name).filter(Boolean)
+      return join(party.length && `Party · ${party.join(', ')}`, b.playedBy && `played by ${b.playedBy}`, f.occupation, name(f.race), f.gender, ageText(e))
+    }
     case 'pc': return join(classText(e, state.db?.meta, id => name(id)) || `level ${totalLevel(e)}`, f.player && `played by ${f.player}`)
     case 'organization': return join(L(e, 'orgType'), parent && f.parent && `part of ${name(f.parent)}`, f.seat && `seat: ${name(f.seat)}`)
     case 'place': return join(L(e, 'placeType'), parent && f.parent && `in ${name(f.parent)}`)

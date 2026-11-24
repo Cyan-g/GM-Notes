@@ -2811,3 +2811,18 @@ select.dd option:is(:hover, :focus-visible)::before {
 /* an open feature card: its name and chips are in the header below, the fold row only folds it */
 .trait-card[open] > summary > * { display: none; }
 .trait-card[open] > summary::after { content: '▴ fold'; font-size: 12px; color: var(--muted); }
+
+/* ---- gear slots on the Equipped card (gear.ts), and the treasury under the inventory ---- */
+.inv-col { display: grid; gap: 1rem; align-content: start; }
+.gear-board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem; margin: .3rem 0 .5rem; }
+.gslot { display: flex; flex-direction: column; gap: .15rem; min-height: 3.6rem; padding: .35rem .5rem; border: 1px dashed var(--line); border-radius: 8px; background: var(--panel-2); transition: opacity .15s, border-color .15s, background .15s; }
+.gslot.filled { border-style: solid; }
+.gslot-name { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.gslot-item { display: flex; align-items: baseline; gap: .3rem; cursor: grab; min-width: 0; }
+.gslot-item .cs-item { text-align: left; overflow-wrap: anywhere; }
+.gslot-foot { display: flex; align-items: center; gap: .4rem; margin-top: auto; }
+.gslot-foot .eq-off { font-size: 16px; line-height: 1; }
+.gear-board.dragging .gslot.lit { border: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--panel-2)); }
+.gear-board.dragging .gslot.dim { opacity: .4; }
+.gslot.over { background: color-mix(in srgb, var(--accent) 25%, var(--panel-2)) !important; }
+.cs-treasury > h3 { margin-top: 0; display: flex; gap: .5rem; align-items: baseline; }

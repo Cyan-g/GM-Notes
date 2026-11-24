@@ -10,6 +10,7 @@ import { optionsIn } from './model/lists'
 import { db, get, listOptions, state, touch } from './store'
 import { advOf, breakdown, gearTotals, scoreWith, sum, type Part } from './effects'
 import { dexCap, isShield, isWearable, isWeaponOrArmor, restItems, type RegainRoll } from './items'
+import { overflowOf, slotsOn } from './gear'
 import { unmet } from './requirements'
 import { setConditions } from './conditions'
 import { longRestHeals, rule } from './rules'
@@ -301,7 +302,12 @@ export function spellStats(pc: Entry, ability?: Ability): { attack: number; dc: 
 // ---------- what the inventory adds up to ----------
 
 // (with the name the character gave their copy: "Grandfather's Blade" on the Attacks card)
-const equipped = (s: CharacterSheet) => s.inventory.filter(l => l.equipped).map(l => { const e = get(l.item); return e && l.label ? { ...e, name: l.label } : e }).filter((e): e is Entry => !!e)
+// with gear slots, what finds no free slot (a third weapon, a shield beside a greatsword) is worn but doesn't count
+const equipped = (s: CharacterSheet) => {
+  const over = overflowOf(s)
+  return s.inventory.filter((l, i) => l.equipped && !over.has(i))
+    .map(l => { const e = get(l.item); return e && l.label ? { ...e, name: l.label } : e }).filter((e): e is Entry => !!e)
+}
 
 /**
  * Armor class from what's worn: body armor (its AC plus Dex as its armor type allows) and shields (what they add), plus the AC effects of the
@@ -420,8 +426,13 @@ export function attacks(s: CharacterSheet, prof: number): Attack[] {
     // a versatile weapon held in two hands isn't "in one hand" (Dueling)
     const twoHandDmg = dmg - sum(dmgParts.filter(p => p.when === 'oneHanded'))
     // the off-hand weapon is held in one hand, and so is any weapon with a shield on: a versatile one's one-handed damage only
-    const dieList = dice.split('/').slice(0, offhand || shieldOn ? 1 : undefined)
-    const damage = dice ? dieList.map((d, i) => `${d.trim()}${plus(i === 1 ? twoHandDmg : dmg)}${dieList.length > 1 ? hands[i] ?? '' : ''}`).join(' / ') : '—'
+    let dieList = dice.split('/').slice(0, offhand || shieldOn ? 1 : undefined)
+    // with gear slots, a versatile weapon deals the damage of how it's held: in two hands (gear.ts) or one
+    const held = slotsOn() && dieList.length > 1 ? (s.inventory.some(l => l.item === e.id && l.equipped && l.twoHands) ? 1 : 0) : -1
+    if (held >= 0) dieList = [dieList[held]]
+    const damage = !dice ? '—' : held >= 0
+      ? `${dieList[0].trim()}${plus(held ? twoHandDmg : dmg)}${hands[held]}`
+      : dieList.map((d, i) => `${d.trim()}${plus(i === 1 ? twoHandDmg : dmg)}${dieList.length > 1 ? hands[i] ?? '' : ''}`).join(' / ')
     // a bonus only when thrown (Thrown Weapon Fighting): a line of its own
     const thrown = props.includes('thrown') ? allDmg.filter(p => p.when === 'thrown') : []
     const untrained = proficientWith(s, e) === false
@@ -506,16 +517,19 @@ export function blockedFor(pc: Entry, l: InventoryLine, key: 'equipped' | 'attun
   return why.length ? `${e.name} ${why.join(', ')}` : undefined
 }
 
-/** The inventory line being dragged: from the inventory, or out of the equipped or attunement list. */
-export const dragged = reactive<{ pc: Id | null; i: number; from: 'inventory' | 'equipped' | 'attuned' }>({ pc: null, i: -1, from: 'inventory' })
-export function startDrag(ev: DragEvent, pc: Entry, i: number, from: 'inventory' | 'equipped' | 'attuned') {
+/** The inventory line being dragged: from the inventory, out of the equipped or attunement list, or from the
+ * treasury (`i` is then its place in the treasury). */
+export type DragFrom = 'inventory' | 'equipped' | 'attuned' | 'treasury'
+export const dragged = reactive<{ pc: Id | null; i: number; from: DragFrom }>({ pc: null, i: -1, from: 'inventory' })
+const dragList = (s: CharacterSheet | undefined, from: DragFrom) => (from === 'treasury' ? s?.treasury : s?.inventory)
+export function startDrag(ev: DragEvent, pc: Entry, i: number, from: DragFrom) {
   Object.assign(dragged, { pc: pc.id, i, from })
-  ev.dataTransfer?.setData('text/plain', get(sheetOf(pc)?.inventory[i]?.item)?.name ?? '')
+  ev.dataTransfer?.setData('text/plain', get(dragList(sheetOf(pc), from)?.[i]?.item)?.name ?? '')
   if (ev.dataTransfer) ev.dataTransfer.effectAllowed = 'move'
 }
 export const endDrag = () => { dragged.pc = null }
 /** The line being dragged, if it belongs to this PC. */
-export const draggedLine = (pc: Entry) => (dragged.pc === pc.id ? sheetOf(pc)?.inventory[dragged.i] : undefined)
+export const draggedLine = (pc: Entry) => (dragged.pc === pc.id ? dragList(sheetOf(pc), dragged.from)?.[dragged.i] : undefined)
 
 /** A short rest: what recharges on one comes back (features, pact slots, item spells). Hit Dice are the player's to
  * spend and roll; they count them down on the sheet. */

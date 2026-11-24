@@ -1,6 +1,10 @@
 <script setup lang="ts">
 // A character's side card: what they wear and wield, and their attunement slots (three, or as the Ruleset says).
-// Each item has a button to take it off (or end the attunement); it also opens in a pop-up.
+// Each item has a button to take it off (or end the attunement); it also opens in a pop-up. With the Ruleset's gear
+// slots, what's worn and wielded is a board of slots (two hands, body, head, cloak, hands, feet; gear.ts): an item
+// dragged onto the card goes into a free slot it fits, or exactly where it's dropped (the slots it fits light up while
+// it's dragged); what's there swaps to where it came from, or goes back to the pack. Rings and other accessories are
+// "other gear", unlimited.
 import { ruleNumber } from '../rules'
 import { useReadOnlyShared as useReadOnly } from '../composables/useReadOnly'
 import { printCards } from '../ui'
@@ -9,7 +13,10 @@ import { computed, ref } from 'vue'
 import type { Entry, InventoryLine } from '../model/types'
 import { get, state } from '../store'
 import { blockedFor, canAttune, canEquip, draggedLine, dragged, endDrag, proficientWith, startDrag } from '../sheet'
-import { editSheet, setInUse, sheetOf } from '../sheetData'
+import { setInUse as rawSetInUse } from '../sheetData'
+import { editSheet, sheetOf } from '../sheetData'
+import { canTwoHand, equipInto, fitsOf, fromTreasury, gearPlacement, setInUse, setTwoHands, slotsOn } from '../gear'
+import { GEAR_SLOTS, isTwoHanded, isVersatile, type GearSlot } from '../gearSlots'
 import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
 import { chargesLeft, effectsOf, focusText, itemsInUse, regainText, setCharges, spellsOf } from '../items'
@@ -47,10 +54,13 @@ const slots = computed(() => Array.from({ length: Math.max(ATTUNE_SLOTS.value, a
 
 // ---- dragging: an item from the inventory dropped anywhere on this card is put to use ----
 const over = ref(false)
-/** Whether the dragged line can be put to use: worn or wielded, or attuned (an item that needs it). */
+/** Whether the dragged line can be put to use: worn or wielded, or attuned (an item that needs it). From a slot it
+ * can only move to another slot. */
 const fits = () => {
   const l = draggedLine(props.pc)
-  return !!l && dragged.from === 'inventory' && (canEquip(l) || canAttune(l))
+  if (!l) return false
+  if (dragged.from === 'equipped') return slotsOn() && fitsOf(l).length > 0
+  return (dragged.from === 'inventory' || dragged.from === 'treasury') && (canEquip(l) || canAttune(l))
 }
 function onDragOver(ev: DragEvent) { if (fits()) { ev.preventDefault(); over.value = true } }
 /** Left the card itself (not just moved onto one of its children). */
@@ -58,31 +68,75 @@ function onDragLeave(ev: DragEvent) { if (!(ev.currentTarget as Element).contain
 /** Why the last drop was refused (the item's requirements), shown for a few seconds. */
 const refused = ref('')
 let refusedTimer: ReturnType<typeof setTimeout> | undefined
+/** Something that happened beside what was asked ("equipped but not attuned: all slots taken"), for a few seconds. */
+const told = ref('')
+let toldTimer: ReturnType<typeof setTimeout> | undefined
+const tell = (m: string) => { if (!m) return; told.value = m; clearTimeout(toldTimer); toldTimer = setTimeout(() => (told.value = ''), 6000) }
+function refuse(why: string) {
+  refused.value = why
+  clearTimeout(refusedTimer); refusedTimer = setTimeout(() => (refused.value = ''), 5000)
+  endDrag()
+}
+/** Put the dragged line to use: into `slot` (or the first free one it fits), attuned too if it needs it. */
+function putToUse(slot?: GearSlot) {
+  const i = dragged.i, from = dragged.from
+  const l = draggedLine(props.pc)
+  const why = l && from !== 'equipped' && ((canEquip(l) && blockedFor(props.pc, l, 'equipped')) || (canAttune(l) && blockedFor(props.pc, l, 'attuned')))
+  if (why) return refuse(why)
+  let msg = ''
+  editSheet(props.pc, x => {
+    // out of the treasury first: one of it
+    const k = from === 'treasury' ? fromTreasury(x, i, 1) : i
+    const line = x.inventory[k]
+    if (!line) return
+    // worn or wielded if it can be (attuned too if it needs it: magic armor, a staff); else only attuned (a ring)
+    if (canEquip(line)) msg = equipInto(x, k, slot)
+    else if (canAttune(line)) rawSetInUse(x, k, 'attuned', true)
+  })
+  tell(msg)
+}
 function onDrop(ev: DragEvent) {
   over.value = false
   if (!fits()) return
   ev.preventDefault()
-  const i = dragged.i
-  const l = sheetOf(props.pc)?.inventory[i]
-  const why = l && ((canEquip(l) && blockedFor(props.pc, l, 'equipped')) || (canAttune(l) && blockedFor(props.pc, l, 'attuned')))
-  if (why) {
-    refused.value = why
-    clearTimeout(refusedTimer); refusedTimer = setTimeout(() => (refused.value = ''), 5000)
-    endDrag()
-    return
-  }
-  editSheet(props.pc, x => {
-    const l = x.inventory[i]
-    // worn or wielded if it can be; attuned too if it needs attunement (a ring, a staff, magic armor); one of a stack
-    const eq = canEquip(l), at = canAttune(l)
-    const j = eq ? setInUse(x, i, 'equipped', true) : i
-    if (at) setInUse(x, j, 'attuned', true)
-  })
+  putToUse()
   endDrag()
 }
 
 /** Take an item off, or end its attunement: it stays in the inventory. */
 const off = (i: number, key: 'equipped' | 'attuned') => { if (!ro.value) editSheet(props.pc, x => { setInUse(x, i, key, false) }) }
+
+// ---- the slot board (gear slots on) ----
+const place = computed(() => gearPlacement(sheetOf(props.pc)))
+const lineAt = (i: number | undefined) => (i == null ? undefined : lines.value.find(x => x.i === i))
+/** The slots in board order, with what's in each; the off hand of a weapon held in both hands says so. */
+const board = computed(() => GEAR_SLOTS.map(g => {
+  const i = place.value.at[g.id]
+  return { ...g, x: lineAt(i), both: g.id === 'off' && i != null && i === place.value.at.main }
+}))
+const otherGear = computed(() => place.value.other.map(lineAt).filter((x): x is NonNullable<typeof x> => !!x))
+const overflowed = computed(() => place.value.overflow.map(lineAt).filter((x): x is NonNullable<typeof x> => !!x))
+/** While an item of this character is dragged: the slots it fits (lit), the others dimmed. */
+const dragFits = computed<GearSlot[] | null>(() => {
+  const l = draggedLine(props.pc)
+  return l && fits() ? fitsOf(l) : null
+})
+const overSlot = ref<GearSlot | null>(null)
+function onSlotOver(ev: DragEvent, slot: GearSlot) {
+  if (!dragFits.value?.includes(slot)) return
+  ev.preventDefault(); ev.stopPropagation()
+  overSlot.value = slot; over.value = false
+}
+function onSlotDrop(ev: DragEvent, slot: GearSlot) {
+  overSlot.value = null; over.value = false
+  if (!dragFits.value?.includes(slot)) return
+  ev.preventDefault(); ev.stopPropagation()
+  putToUse(slot)
+  endDrag()
+}
+const twoHandsOf = (x: { l: InventoryLine; e?: Entry }) => isTwoHanded(x.e?.fields) ? 'two-handed' : x.l.twoHands ? 'in two hands' : ''
+const canHoldTwo = (x: { i: number; e?: Entry }) => isVersatile(x.e?.fields) && !!sheetOf(props.pc) && canTwoHand(sheetOf(props.pc)!, x.i)
+const holdTwo = (x: { i: number; l: InventoryLine }) => { if (!ro.value) editSheet(props.pc, y => setTwoHands(y, x.i, !x.l.twoHands)) }
 /** A two-handed weapon held with a shield: one of them can't be used. */
 const handsFull = computed(() => {
   const twoHanded = wielded.value.find(x => (x.e!.fields.properties ?? []).some(p => /two-handed/i.test(p)))
@@ -105,7 +159,41 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
 <template>
   <div class="card equipped-card drop-zone" :class="{ 'drop-over': over }" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop">
     <h3>Equipped <button v-if="lines.length" type="button" class="link-btn small push-right" title="Print these items as cards (PDF, poker size)" @click="printItems"><AppIcon ui="cards" /> Cards</button></h3>
-    <ul v-if="worn.length || wielded.length || other.length" class="rel">
+    <template v-if="slotsOn()">
+      <div class="gear-board" :class="{ dragging: !!dragFits }">
+        <div v-for="g in board" :key="g.id" class="gslot" :class="[`gslot-${g.id}`, { filled: !!g.x, lit: dragFits?.includes(g.id), dim: dragFits && !dragFits.includes(g.id), over: overSlot === g.id }]"
+             @dragover="onSlotOver($event, g.id)" @dragleave="overSlot = null" @drop="onSlotDrop($event, g.id)">
+          <span class="gslot-name">{{ g.label }}</span>
+          <span v-if="g.both" class="muted small">{{ g.x ? nameOf(g.x) : '' }}, both hands</span>
+          <template v-else-if="g.x">
+            <span class="gslot-item" :draggable="!ro" @dragstart="startDrag($event, pc, g.x.i, 'equipped')" @dragend="endDrag(); overSlot = null">
+              <button class="link-btn cs-item" @click="shown = g.x.i">{{ nameOf(g.x) }}</button>
+              <span v-if="untrained(g.x)" class="cs-untrained" :title="g.x.e!.fields.kind === 'Weapon' ? 'Not proficient: no proficiency bonus to hit' : 'Not proficient: disadvantage on STR and DEX rolls, no spellcasting'"><AppIcon ui="warning" /></span>
+              <span v-if="unfit(g.x)" class="cs-untrained tip" :data-tip="unfit(g.x)"><AppIcon ui="warning" /></span>
+            </span>
+            <span class="gslot-foot">
+              <span v-if="twoHandsOf(g.x)" class="muted small">{{ twoHandsOf(g.x) }}</span>
+              <button v-if="!ro && canHoldTwo(g.x)" type="button" class="link-btn small" :title="g.x.l.twoHands ? 'Hold it in one hand (its one-handed damage)' : 'Hold it in both hands (its two-handed damage; the off hand empties)'" @click="holdTwo(g.x)">{{ g.x.l.twoHands ? 'One hand' : 'Two hands' }}</button>
+              <button v-if="!ro" type="button" class="link-btn eq-off" :title="`Take off ${g.x.e!.name} (it stays in the inventory)`" :aria-label="`Take off ${g.x.e!.name}`" @click="off(g.x.i, 'equipped')">×</button>
+            </span>
+          </template>
+          <span v-else class="muted small">empty</span>
+        </div>
+      </div>
+      <p v-if="overflowed.length" class="warn-note small">No free slot for {{ overflowed.map(nameOf).join(', ') }}: worn but not counted. Drag {{ overflowed.length > 1 ? 'them' : 'it' }} onto a slot, or take {{ overflowed.length > 1 ? 'them' : 'it' }} off.</p>
+      <template v-if="otherGear.length || overflowed.length">
+        <h4>Other gear</h4>
+        <ul class="rel">
+          <li v-for="x in [...otherGear, ...overflowed]" :key="x.i" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'equipped')" @dragend="endDrag">
+            <button class="link-btn cs-item" @click="shown = x.i">{{ nameOf(x) }}</button>
+            <span v-if="unfit(x)" class="cs-untrained tip" :data-tip="unfit(x)"><AppIcon ui="warning" /></span>
+            <span class="role">{{ label(x) }}</span>
+            <button v-if="!ro" class="link-btn eq-off" :title="`Take off ${x.e!.name} (it stays in the inventory)`" @click="off(x.i, 'equipped')">Unequip</button>
+          </li>
+        </ul>
+      </template>
+    </template>
+    <ul v-else-if="worn.length || wielded.length || other.length" class="rel">
       <li v-for="x in [...worn, ...wielded, ...other]" :key="x.i" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'equipped')" @dragend="endDrag">
         <button class="link-btn cs-item" @click="shown = x.i">{{ nameOf(x) }}</button>
         <span v-if="untrained(x)" class="cs-untrained" :title="x.e!.fields.kind === 'Weapon' ? 'Not proficient: no proficiency bonus to hit' : 'Not proficient: disadvantage on STR and DEX rolls, no spellcasting'"><AppIcon ui="warning" /></span>
@@ -114,10 +202,11 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
         <button v-if="!ro" class="link-btn eq-off" :title="`Take off ${x.e!.name} (it stays in the inventory)`" @click="off(x.i, 'equipped')">Unequip</button>
       </li>
     </ul>
-    <p v-else class="muted small">Nothing worn or wielded. Drag weapons, armor and other gear onto this card from the inventory.</p>
+    <p v-else-if="!slotsOn()" class="muted small">Nothing worn or wielded. Drag weapons, armor and other gear onto this card from the inventory.</p>
 
-    <p v-if="handsFull" class="warn-note small">{{ handsFull }}</p>
+    <p v-if="handsFull && !slotsOn()" class="warn-note small">{{ handsFull }}</p>
     <p v-if="refused" class="error small">Can't: {{ refused }}.</p>
+    <p v-if="told" class="warn-note small">{{ told }}</p>
     <h4>Attunement <span v-flash.neutral="attuned.length" class="muted small">{{ attuned.length }} / {{ ATTUNE_SLOTS }}</span></h4>
     <ol class="attune-slots">
       <li v-for="(x, n) in slots" :key="n" :class="{ empty: !x, over: n >= ATTUNE_SLOTS }">

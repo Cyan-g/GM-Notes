@@ -262,6 +262,10 @@ export interface CharacterSheet {
   spellAbility?: Ability
   inventory: InventoryLine[]
   money?: Copper
+  /** What the character keeps elsewhere (at home, in a bank, on a ship): not carried, weighed or worn (gear.ts). */
+  treasury?: InventoryLine[]
+  /** Coins kept with the treasury, apart from the purse. */
+  treasuryMoney?: Copper
   features: Feature[]
   /** The Origin feat, when not the background's: another feat's id, or null for none (a DM's ruling, or a choice). */
   originFeat?: Id | null
@@ -449,6 +453,11 @@ export interface DeathSaveState { ok: number; fail: number; stable?: boolean }
 
 export interface InventoryLine {
   item?: Id; name?: string; qty: number; equipped?: boolean; attuned?: boolean
+  /** The gear slot an equipped item sits in, while the Ruleset has gear slots (gearSlots.ts); without one it's placed
+   * in the first free slot it fits. A weapon in both hands says the main hand. */
+  slot?: 'main' | 'off' | 'body' | 'head' | 'cloak' | 'hands' | 'feet'
+  /** A Versatile weapon held in two hands (gear slots): it fills both hands and deals its two-handed damage. */
+  twoHands?: boolean
   /** The character's own name for their copy of an item ("Grandfather's Blade") and a note on it ("engraved"). */
   label?: string
   note?: string

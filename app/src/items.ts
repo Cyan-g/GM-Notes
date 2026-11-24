@@ -2,6 +2,7 @@
 // weight, where an item is (the characters carrying it, the shops selling it) and what a shop asks for it.
 import { currency, rule } from './rules'
 import { coinCount } from './money'
+import { gearPlacement, wornFree } from './gear'
 import type { CharacterSheet, Entry, GearEffect, InventoryLine, ItemSpell, Regain, StockLine } from './model/types'
 import { byType, get } from './store'
 import { ord } from './model/dnd'
@@ -15,8 +16,9 @@ export function shopPrice(shop: Entry, line: StockLine): number | undefined {
 /** The characters carrying an item (by name): how many, and whether one is equipped or attuned. */
 export const carriersOf = (item: Entry) => (byType.value.get('pc') ?? []).map(p => {
   const lines = (p.fields.sheet?.inventory ?? []).filter(l => l.item === item.id && l.qty > 0)
-  return { p, qty: lines.reduce((n, l) => n + l.qty, 0), attuned: lines.some(l => l.attuned), equipped: lines.some(l => l.equipped) }
-}).filter(x => x.qty)
+  const stored = (p.fields.sheet?.treasury ?? []).filter(l => l.item === item.id).reduce((n, l) => n + (l.qty || 0), 0)
+  return { p, qty: lines.reduce((n, l) => n + l.qty, 0), stored, attuned: lines.some(l => l.attuned), equipped: lines.some(l => l.equipped) }
+}).filter(x => x.qty || x.stored)
 
 /** The shops selling an item (by name), each with its price and how many are left. */
 export const shopsSelling = (item: Entry) => (byType.value.get('place') ?? []).flatMap(s => {
@@ -197,7 +199,14 @@ export function restItems(s: CharacterSheet, kind: 'short' | 'long'): RegainRoll
 
 // ---- what's carried ----
 /** Total weight carried, in lb. */
-export const weightOf = (s: CharacterSheet) => s.inventory.reduce((n, l) => n + (Number(get(l.item)?.fields.weight) || 0) * (l.qty || 0), 0)
+/** The inventory lines that count toward weight and inventory slots: all, but what sits in a gear slot while the
+ * Ruleset's "Worn gear weight" says it doesn't count (gear.ts). The treasury never counts. */
+const counted = (s: CharacterSheet) => {
+  if (!wornFree()) return s.inventory
+  const worn = gearPlacement(s).slotOf
+  return s.inventory.filter((_, i) => !worn.has(i))
+}
+export const weightOf = (s: CharacterSheet) => counted(s).reduce((n, l) => n + (Number(get(l.item)?.fields.weight) || 0) * (l.qty || 0), 0)
   + (rule('coinWeight') === 'on' ? coinCount(s.money ?? 0, currency()) / 50 : 0)
 /** The inventory slots one of an item takes (the Ruleset's inventory slots): its own number; else an item under a
  * pound takes its weight (20 arrows of 0.05 lb share one slot), an ingredient in the crafting pouch none, and the rest 1. */
@@ -209,5 +218,5 @@ export function slotsOfItem(e: Entry | undefined): number {
 }
 /** The slots a character's gear takes: each item's slots times how many, rounded up; with coin weight on, every 100
  * coins after the first 100 take one. */
-export const slotsUsed = (s: CharacterSheet) => Math.ceil(s.inventory.reduce((n, l) => n + slotsOfItem(get(l.item)) * (l.qty || 0), 0)
+export const slotsUsed = (s: CharacterSheet) => Math.ceil(counted(s).reduce((n, l) => n + slotsOfItem(get(l.item)) * (l.qty || 0), 0)
   + (rule('coinWeight') === 'on' ? Math.max(0, Math.ceil((coinCount(s.money ?? 0, currency()) - 100) / 100)) : 0))

@@ -1,5 +1,5 @@
 // The parts of a player's character that both the DM and the player change: its vitals (HP, temporary HP, death
-// saves, conditions, exhaustion, concentration), its inventory and money, and its relations. Everything else on it
+// saves, conditions, exhaustion, concentration), its inventory, treasury and money, and its relations. Everything else on it
 // is the player's (the DM's copy is read-only). Each part carries a stamp, the time and the world of its latest change,
 // kept in the sheet (sheet.sync); each relation has its own. Either side marks what changed on its side (a fingerprint
 // tells), sends its parts over the live session, and takes the other side's where they're newer (equal times: the
@@ -25,7 +25,7 @@ export interface SharedPayload {
 
 const KEYS: Record<PartName, readonly (keyof CharacterSheet)[]> = {
   vitals: ['hp', 'tempHp', 'deathSaves', 'conditions', 'exhaustion', 'concentrating'],
-  inventory: ['inventory', 'money'],
+  inventory: ['inventory', 'money', 'treasury', 'treasuryMoney'],
 }
 export const PARTS = Object.keys(KEYS) as PartName[]
 
@@ -38,7 +38,7 @@ function partOut(s: CharacterSheet, part: PartName, m: IdMap): Record<string, un
   const v: Record<string, unknown> = {}
   for (const k of KEYS[part]) if (s[k] != null) v[k] = JSON.parse(JSON.stringify(s[k]))
   if (part === 'vitals' && typeof v.concentrating === 'string') { const id = m.out(v.concentrating); if (id) v.concentrating = id; else delete v.concentrating }
-  if (part === 'inventory' && Array.isArray(v.inventory)) v.inventory = (v.inventory as { item?: Id }[]).map(l => (l.item ? { ...l, item: m.out(l.item) ?? l.item } : l))
+  if (part === 'inventory') for (const k of ['inventory', 'treasury']) if (Array.isArray(v[k])) v[k] = (v[k] as { item?: Id }[]).map(l => (l.item ? { ...l, item: m.out(l.item) ?? l.item } : l))
   return v
 }
 /** Put a part that arrived into a sheet (IDs translated back). */
@@ -47,7 +47,7 @@ function partIn(s: CharacterSheet, part: PartName, v: Record<string, unknown>, m
   for (const k of KEYS[part]) delete x[k]
   for (const [k, val] of Object.entries(v)) if ((KEYS[part] as readonly string[]).includes(k)) x[k] = JSON.parse(JSON.stringify(val))
   if (part === 'vitals' && typeof x.concentrating === 'string') { const id = m.in(x.concentrating); if (id) x.concentrating = id; else delete x.concentrating }
-  if (part === 'inventory' && Array.isArray(x.inventory)) x.inventory = (x.inventory as { item?: Id }[]).map(l => (l.item ? { ...l, item: m.in(l.item) ?? l.item } : l))
+  if (part === 'inventory') for (const k of ['inventory', 'treasury']) if (Array.isArray(x[k])) x[k] = (x[k] as { item?: Id }[]).map(l => (l.item ? { ...l, item: m.in(l.item) ?? l.item } : l))
 }
 
 /** Put one sheet's shared parts (HP and conditions, inventory and money) into another, as they are. */

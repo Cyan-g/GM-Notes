@@ -78,7 +78,8 @@ A player character's page is its sheet for play; ✎ Edit builds it.
   line per weapon (⚠ without proficiency), spell save DC and attack, hit dice per die size, and spell slots from the
   class levels (multiclass table, pact slots, Mystic Arcanum).
 - **Play:** damage and healing, temporary HP, rests, inspiration, an inventory with drag and drop onto *Equipped*
-  (armor, weapons, three attunement slots). A number that changes glows for a moment: green up, red down.
+  (armor, weapons, attunement slots; with the Ruleset's gear slots, one item per hand, body, head, cloak, hands and
+  feet, swapped by dropping onto a slot), and a treasury for what's kept elsewhere, with coins of its own. A number that changes glows for a moment: green up, red down.
 - **Gear effects:** what an item does while worn, wielded or attuned: AC, ability scores (added, raised to or forced
   to a value), saves, attack and damage, spell attack and DC, skills, advantage, extra damage, speed, initiative, max
   HP, resistances, condition immunities, senses, features. Changed numbers get a ✦ and say where they come from.

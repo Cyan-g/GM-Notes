@@ -269,7 +269,8 @@ let shareTimer: number | undefined
  */
 function makeGivenKnown(pc: Entry, p: PlayerShare): string[] {
   const own = new Set(Object.values(p.entries)), named: string[] = []
-  for (const l of (pc.fields.sheet as CharacterSheet | undefined)?.inventory ?? []) {
+  const sh = pc.fields.sheet as CharacterSheet | undefined
+  for (const l of [...(sh?.inventory ?? []), ...(sh?.treasury ?? [])]) {
     const e = l.item ? db().entries[l.item] : undefined
     if (!e || own.has(e.id) || e.visibility === 'known' || !canExport(e)) continue
     e.visibility = 'known'

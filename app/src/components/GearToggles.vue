@@ -6,7 +6,8 @@ import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { state } from '../store'
 import { blockedFor, canAttune, canEquip } from '../sheet'
-import { editSheet, setInUse, sheetOf } from '../sheetData'
+import { editSheet, sheetOf } from '../sheetData'
+import { setInUse } from '../gear'
 
 const props = defineProps<{ pc: Entry; i: number }>()
 /** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */

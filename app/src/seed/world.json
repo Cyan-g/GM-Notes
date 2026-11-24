@@ -14123,7 +14123,8 @@
       "kind": "damage",
       "dice": "1d4 + 1",
       "type": "Force",
-      "note": "each of 3 darts, one more per slot level above 1st"
+      "beams": "dart",
+      "count": 3
      }
     ]
    },
@@ -16154,7 +16155,8 @@
       "kind": "damage",
       "dice": "2d6",
       "type": "Fire",
-      "note": "each of 3 rays, one more per slot level above 2nd"
+      "beams": "ray",
+      "count": 3
      }
     ]
    },

@@ -53,24 +53,34 @@ function plus(dice: string, add: string, n: number): string {
 export function rollText(e: Entry, r: SpellRoll, o: RollOptions = {}): string {
   let dice = r.dice
   if (r.cantrip && o.level) dice = times(dice, cantripTier(o.level))
-  if (r.slot && o.slot && o.slot > spellLevel(e)) dice = plus(dice, r.slot, o.slot - spellLevel(e))
+  const lvl = spellLevel(e), above = o.slot && o.slot > lvl ? o.slot - lvl : 0
+  if (r.slot && above && !r.beams) dice = plus(dice, r.slot, above)
   // what features add to its damage (Agonizing Blast, Elemental Affinity), on top of the spellcasting modifier
   const add = (r.mod && o.mod != null ? o.mod : 0) + (o.add?.(r) ?? 0)
   const m = r.mod && o.mod == null ? ' + mod' : add ? ` ${signed(add, '−', ' ')}` : ''
   const what = r.kind === 'healing' ? ' healing' : r.kind === 'tempHp' ? ' temp HP' : r.type ? ` ${r.type.toLowerCase()}` : ' damage'
-  // a cantrip that makes more beams (Eldritch Blast): how many at the character's level, each with this roll
+  // made several times (Eldritch Blast, Magic Missile): how many at the character's level (a cantrip) or the slot level
   if (r.beams) {
-    if (!o.level) return `${dice}${m}${what} per ${r.beams}`
-    const n = cantripTier(o.level)
+    const n = beamCount(e, r, o)
+    if (n == null) return `${dice}${m}${what} per ${r.beams}`
     return n > 1 ? `${n} ${r.beams}s: ${dice}${m}${what} each` : `1 ${r.beams}: ${dice}${m}${what}`
   }
   return `${dice}${m}${what}`
+}
+/** How many times a roll is made: a cantrip's by character level (unknown without one), a leveled spell's at the slot
+ * level (its own when not cast higher). */
+export function beamCount(e: Entry, r: SpellRoll, o: RollOptions = {}): number | undefined {
+  const lvl = spellLevel(e)
+  if (!lvl) return o.level ? cantripTier(o.level) : undefined
+  const above = o.slot && o.slot > lvl ? o.slot - lvl : 0
+  return (r.count ?? 1) + (r.perSlot ?? 1) * above
 }
 /** A roll's numbers: the character's level (cantrips), the slot level, the spellcasting modifier, and what features
  * add to a roll (`add`). */
 export interface RollOptions { level?: number; slot?: number; mod?: number; add?: (r: SpellRoll) => number }
 /** How a roll grows, in words: "more dice at levels 5, 11 and 17", "+1d6 per slot level above 1st". */
 export function growthText(e: Entry, r: SpellRoll): string {
+  if (r.beams && spellLevel(e) > 0) { const k = r.perSlot ?? 1; return `+${k} ${r.beams}${k === 1 ? '' : 's'} per slot level above ${ORD[spellLevel(e)] ?? spellLevel(e)}` }
   if (r.beams) return `more ${r.beams}s at levels 5, 11 and 17`
   if (r.cantrip) return 'more dice at levels 5, 11 and 17'
   if (r.slot) return `+${r.slot} per slot level above ${ORD[spellLevel(e)] ?? spellLevel(e)}`

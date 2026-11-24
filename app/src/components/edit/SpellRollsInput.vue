@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // A spell's rolls on its Edit page, each a short sentence: what it rolls (damage of a type, healing or temporary hit
-// points), the dice and whether the spellcasting modifier is added; then how it grows — a cantrip's dice at character
-// levels 5, 11 and 17, or more dice per slot level above the spell's — and a note on when or to whom. Underneath, the
+// points), the dice and whether the spellcasting modifier is added; then how it grows — a cantrip's dice or beams at
+// character levels 5, 11 and 17, or more dice or more of them (darts, arrows) per slot level above the spell's — and a note on when or to whom. Underneath, the
 // roll as it reads in the Spellbook.
 import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
@@ -19,7 +19,9 @@ function put(i: number, p: Partial<SpellRoll>) {
   const l = list.value.map(x => ({ ...x }))
   const r: SpellRoll = { ...l[i], ...p }
   if (r.kind !== 'damage') delete r.type
-  for (const k of ['type', 'mod', 'cantrip', 'beams', 'slot', 'note'] as const) if (!r[k]) delete r[k]
+  for (const k of ['type', 'mod', 'cantrip', 'beams', 'count', 'perSlot', 'slot', 'note'] as const) if (!r[k]) delete r[k]
+  if (!r.beams) { delete r.count; delete r.perSlot }
+  if (r.perSlot === 1) delete r.perSlot
   l[i] = r
   model.value = l
 }
@@ -45,7 +47,7 @@ const preview = (r: SpellRoll) => [rollText(props.spell, r), growthText(props.sp
         <button type="button" class="link-btn roll-x" title="Remove this roll" @click="remove(i)">×</button>
       </div>
       <div class="roll-line small">
-        <template v-if="cantrip || r.cantrip || r.beams">
+        <template v-if="cantrip || r.cantrip || (r.beams && !lvl)">
           <!-- how a cantrip grows at character levels 5, 11 and 17: more dice (Fire Bolt), or more beams (Eldritch Blast) -->
           <Dropdown :value="r.beams ? 'beams' : r.cantrip ? 'dice' : ''" aria-label="How it grows" @change="val($event) === 'beams' ? put(i, { beams: r.beams || 'beam', cantrip: undefined }) : put(i, { cantrip: val($event) === 'dice' || undefined, beams: undefined })">
             <option value="dice">More dice at character levels 5, 11 and 17</option>
@@ -54,7 +56,19 @@ const preview = (r: SpellRoll) => [rollText(props.spell, r), growthText(props.sp
           </Dropdown>
           <label v-if="r.beams" title="What one is called: 2 at level 5, 3 at 11, 4 at 17">called <input class="effect-value" :value="r.beams" placeholder="beam" @change="put(i, { beams: val($event).trim() || 'beam' })" /></label>
         </template>
-        <label v-else>At higher levels: + <input class="effect-value roll-dice" :value="r.slot ?? ''" placeholder="1d6" @change="put(i, { slot: val($event).trim() || undefined })" /> per slot level above {{ ORD[lvl] || 'its level' }}</label>
+        <template v-else>
+          <!-- how a leveled spell grows per slot level above its own: more dice (Fireball), or more of them (Magic Missile) -->
+          <Dropdown :value="r.beams ? 'beams' : 'dice'" aria-label="How it grows" @change="val($event) === 'beams' ? put(i, { beams: r.beams || 'dart', count: r.count ?? 1, slot: undefined }) : put(i, { beams: undefined })">
+            <option value="dice">At higher levels: more dice</option>
+            <option value="beams">At higher levels: more of them</option>
+          </Dropdown>
+          <label v-if="!r.beams">+ <input class="effect-value roll-dice" :value="r.slot ?? ''" placeholder="1d6" @change="put(i, { slot: val($event).trim() || undefined })" /> per slot level above {{ ORD[lvl] || 'its level' }}</label>
+          <template v-else>
+            <label title="How many at the spell's own level"><input class="effect-value roll-count" type="number" min="1" :value="r.count ?? 1" @change="put(i, { count: Math.max(1, Number(val($event)) || 1) })" /></label>
+            <label title="What one is called: dart, ray, arrow">called <input class="effect-value" :value="r.beams" placeholder="dart" @change="put(i, { beams: val($event).trim() || 'dart' })" /></label>
+            <label>+ <input class="effect-value roll-count" type="number" min="1" :value="r.perSlot ?? 1" @change="put(i, { perSlot: Math.max(1, Number(val($event)) || 1) })" /> per slot level above {{ ORD[lvl] || 'its level' }}</label>
+          </template>
+        </template>
         <input class="effect-text" :value="r.note ?? ''" placeholder="note, e.g. half on a save" aria-label="Note" @change="put(i, { note: val($event).trim() || undefined })" />
       </div>
       <div class="muted small roll-preview">Reads: <b>{{ preview(r) }}</b></div>

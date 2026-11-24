@@ -158,9 +158,14 @@ export interface SpellRoll {
   type?: string
   mod?: boolean
   cantrip?: boolean
-  /** A cantrip that makes more of these at character levels 5, 11 and 17 instead of rolling more dice (Eldritch
-   * Blast: "beam"): what one is called. */
+  /** A roll made several times, each one "a beam" (Eldritch Blast), "a dart" (Magic Missile), "an arrow": what one is
+   * called. A cantrip makes more of them at character levels 5, 11 and 17; a leveled spell starts with `count` and
+   * gets `perSlot` more for each slot level above its own (instead of `slot` dice). */
   beams?: string
+  /** A leveled spell's number of `beams` at its own level (default 1). */
+  count?: number
+  /** More `beams` per slot level above the spell's (default 1). */
+  perSlot?: number
   slot?: string
   note?: string
 }

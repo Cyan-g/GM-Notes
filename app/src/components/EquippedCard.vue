@@ -162,11 +162,12 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
     <template v-if="slotsOn()">
       <div class="gear-board" :class="{ dragging: !!dragFits }">
         <div v-for="g in board" :key="g.id" class="gslot" :class="[`gslot-${g.id}`, { filled: !!g.x, lit: dragFits?.includes(g.id), dim: dragFits && !dragFits.includes(g.id), over: overSlot === g.id }]"
+             :draggable="!ro && !!g.x" @dragstart="g.x && startDrag($event, pc, g.x.i, 'equipped')" @dragend="endDrag(); overSlot = null"
              @dragover="onSlotOver($event, g.id)" @dragleave="overSlot = null" @drop="onSlotDrop($event, g.id)">
           <span class="gslot-name">{{ g.label }}</span>
           <span v-if="g.both" class="muted small">{{ g.x ? nameOf(g.x) : '' }}, both hands</span>
           <template v-else-if="g.x">
-            <span class="gslot-item" :draggable="!ro" @dragstart="startDrag($event, pc, g.x.i, 'equipped')" @dragend="endDrag(); overSlot = null">
+            <span class="gslot-item">
               <button class="link-btn cs-item" @click="shown = g.x.i">{{ nameOf(g.x) }}</button>
               <span v-if="untrained(g.x)" class="cs-untrained" :title="g.x.e!.fields.kind === 'Weapon' ? 'Not proficient: no proficiency bonus to hit' : 'Not proficient: disadvantage on STR and DEX rolls, no spellcasting'"><AppIcon ui="warning" /></span>
               <span v-if="unfit(g.x)" class="cs-untrained tip" :data-tip="unfit(g.x)"><AppIcon ui="warning" /></span>
@@ -209,8 +210,8 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
     <p v-if="told" class="warn-note small">{{ told }}</p>
     <h4>Attunement <span v-flash.neutral="attuned.length" class="muted small">{{ attuned.length }} / {{ ATTUNE_SLOTS }}</span></h4>
     <ol class="attune-slots">
-      <li v-for="(x, n) in slots" :key="n" :class="{ empty: !x, over: n >= ATTUNE_SLOTS }">
-        <button v-if="x" class="link-btn cs-item" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'attuned')" @dragend="endDrag" @click="shown = x.i">{{ nameOf(x) }}</button>
+      <li v-for="(x, n) in slots" :key="n" :class="{ empty: !x, over: n >= ATTUNE_SLOTS }" :draggable="!ro && !!x" @dragstart="x && startDrag($event, pc, x.i, 'attuned')" @dragend="endDrag">
+        <button v-if="x" class="link-btn cs-item" @click="shown = x.i">{{ nameOf(x) }}</button>
         <span v-else class="muted small">empty</span>
         <span v-if="x && unfit(x)" class="cs-untrained tip" :data-tip="unfit(x)"><AppIcon ui="warning" /></span>
         <!-- an attuned weapon or armor still has to be wielded or worn to attack or protect -->

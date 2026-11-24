@@ -2822,7 +2822,8 @@ select.dd option:is(:hover, :focus-visible)::before {
 .gslot { display: flex; flex-direction: column; gap: .15rem; min-height: 3.6rem; padding: .35rem .5rem; border: 1px dashed var(--line); border-radius: 8px; background: var(--panel-2); transition: opacity .15s, border-color .15s, background .15s; }
 .gslot.filled { border-style: solid; }
 .gslot-name { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
-.gslot-item { display: flex; align-items: baseline; gap: .3rem; cursor: grab; min-width: 0; }
+.gslot-item { display: flex; align-items: baseline; gap: .3rem; min-width: 0; }
+.gslot[draggable="true"], .attune-slots li[draggable="true"] { cursor: grab; }
 .gslot-item .cs-item { text-align: left; overflow-wrap: anywhere; }
 .gslot-foot { display: flex; align-items: center; gap: .4rem; margin-top: auto; }
 .gslot-foot .eq-off { font-size: 16px; line-height: 1; }

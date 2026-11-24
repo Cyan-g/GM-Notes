@@ -79,6 +79,9 @@ export interface ActiveTrait {
   via?: string
   /** A repeatable feat taken more than once: which time this is (2, 3…; the first has none). */
   inst?: number
+  /** A choice a picked option brings (Agonizing Blast's cantrip): the trait and option it belongs to. Lists show it
+   * with that option (subsOf), not as a feature of its own. */
+  parent?: { key: string; option: string }
 }
 /** Every trait of the character's species and background, in order (main race first, background last), with what's chosen and whether it counts yet. */
 export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): ActiveTrait[] {
@@ -103,7 +106,7 @@ export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): Active
     const sub = options.flatMap(o => (o.choices ?? []).filter(c => c.kind !== 'option').map((choice, n): ActiveTrait => {
       const k = `${key}.${o.id}.c${n}`
       return {
-        key: k, race, level, active: a.active, options: [], picks: st.picks?.[k] ?? [], ...(cast ? { cast } : {}), ...(via ? { via } : {}), ...(inst ? { inst } : {}),
+        key: k, race, level, active: a.active, options: [], picks: st.picks?.[k] ?? [], parent: { key, option: o.id }, ...(cast ? { cast } : {}), ...(via ? { via } : {}), ...(inst ? { inst } : {}),
         trait: { id: `${trait.id}.${o.id}.c${n}`, name: choice.label ? `${o.name}: ${choice.label}` : o.name, level: trait.level, choice, sub: true } as Trait,
       }
     }))
@@ -114,6 +117,14 @@ export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): Active
   const total = totalLevel(pc)
   return [...base, ...featsOf(pc, sheet, base).flatMap(f => build({ from: f.e, level: total, via: f.via, inst: f.inst })), ...itemsWithFeatures(sheet).flatMap(i => build({ from: i, level: total }))]
 }
+/** The choices that come with an option picked in a trait (Pact of the Tome's cantrips; Agonizing Blast's cantrip), from
+ * the list `speciesTraits` gave; all of a trait's picked options' when `option` is left out. */
+export const subsOf = (all: ActiveTrait[], a: ActiveTrait, option?: string) =>
+  all.filter(x => x.parent?.key === a.key && (option == null || x.parent.option === option))
+/** What a choice that comes with an option is called beside it: its label ("Cantrip"), else what it picks. */
+export const subLabel = (x: ActiveTrait) => x.trait.choice?.label || (x.trait.choice ? choiceWords(x.trait.choice, 1) : '')
+/** The picks of a choice by name (spells, options, skills…). */
+export const pickLabels = (x: ActiveTrait) => x.picks.map(id => get(id)?.name ?? choiceCandidates(x.trait.choice!).find(o => o.id === id)?.label ?? id)
 /** Where a feat comes from, in words: "your Origin feat", "your Versatile feat". */
 export const featVia = (a: ActiveTrait) => (a.via === 'origin' ? 'your Origin feat' : a.via && a.via !== 'sheet' ? `your ${a.via}` : 'the other one')
 /**

@@ -2892,3 +2892,7 @@ select.dd option:is(:hover, :focus-visible)::before {
 .item-needs-line { margin: .2rem 0; color: var(--muted); }
 table.grid td.col-kind, table.grid th.col-kind { white-space: nowrap; }
 .new-session { margin: 0 0 .4rem; }
+/* a choice a picked option brings (Agonizing Blast's cantrip), under its trait's picker */
+.sp-sub { margin: .4rem 0 0 .9rem; padding: .1rem 0 .1rem .7rem; border-left: 2px solid var(--line); }
+.sp-sub.sp-pending { border-left-color: var(--accent); }
+.sp-sub-head { margin-bottom: .15rem; }

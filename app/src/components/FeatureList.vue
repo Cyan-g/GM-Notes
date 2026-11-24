@@ -21,7 +21,7 @@ import { optionsIn } from '../model/lists'
 import { ui } from '../ui'
 import {
   backgroundOf, choiceCandidates, choiceOpen, featOfFeature, isOn, levelTag, picksLeft, sourceTag, toggleOn, isClassOrigin, scaleAt, shownInPlay,
-  speciesTraits, spendUse, usesLeft, usesMax, useReminder, isPool, type ActiveTrait,
+  speciesTraits, spendUse, subLabel, subsOf, pickLabels, usesLeft, usesMax, useReminder, isPool, type ActiveTrait,
 } from '../species'
 import { traitsOf } from '../model/traits'
 import EntryLink from './EntryLink.vue'
@@ -40,7 +40,8 @@ const replacedByPicks = (a: ActiveTrait) => !a.trait.uses && !a.trait.scale && a
 type Line = { kind: 'trait'; a: ActiveTrait } | { kind: 'option'; a: ActiveTrait; o: TraitOption } | { kind: 'feat'; a: ActiveTrait; id: string }
 /** Class features by level (then by class), then species traits, then the background's; each followed by its picks. */
 const lines = computed<Line[]>(() => {
-  const now = all.value.filter(a => a.active && (shownInPlay(a) || choiceOpen(a)))
+  // a choice a picked option brings (Agonizing Blast's cantrip) is said on that option's line, not as a line of its own
+  const now = all.value.filter(a => a.active && !a.parent && (shownInPlay(a) || choiceOpen(a)))
   const cls = now.filter(a => isClassOrigin(a.race)).sort((x, y) => (x.trait.level ?? 1) - (y.trait.level ?? 1))
   return [...cls, ...now.filter(a => a.race.type === 'race'), ...now.filter(a => a.race.type === 'background'), ...now.filter(a => a.race.type === 'feat'), ...now.filter(a => a.race.type === 'item')].flatMap(a => [
     ...(replacedByPicks(a) && !choiceOpen(a) ? [] : [{ kind: 'trait' as const, a }]),
@@ -90,6 +91,8 @@ const pickNames = (a: ActiveTrait) => (a.trait.choice && a.trait.choice.kind ===
 const masteries = (a: ActiveTrait) => (a.trait.choice?.kind === 'mastery'
   ? [...new Set(a.picks.map(id => MASTERY_OF[id]).filter(Boolean))].map(m => ({ name: m, rule: optionsIn(state.db?.meta, 'weaponMastery').find(o => o.id === m)?.note }))
   : [])
+/** What a picked option's own choices took, or still ask for: "Cantrip: Eldritch Blast", "Cantrip to pick". */
+const optionPicks = (a: ActiveTrait, o: TraitOption) => subsOf(all.value, a, o.id).map(x => ({ x, text: x.picks.length ? `${subLabel(x)}: ${pickLabels(x).join(', ')}` : '' }))
 const own = (f: Feature) => f.text?.trim()
 /** A text without the SRD's source line (it's for the entry's page, not the sheet). */
 const clean = (t: unknown) => String(t ?? '').replace(/\s*\*?Source: System Reference Document[^*]*\*?\s*$/i, '').trim()
@@ -134,7 +137,12 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
         <details class="sp-fold">
           <!-- a single pick reads as the feature with it ("Elemental Affinity (Fire)"); one of several by its own name -->
           <summary class="sp-head"><b>{{ (l.a.trait.choice?.count ?? 1) === 1 && !l.a.trait.choice?.steps?.length ? `${l.a.trait.name} (${l.o.name})` : l.o.name }}</b>
-            <span class="feat-tag" :class="'tag-' + l.a.race.type" :title="`Picked in ${l.a.trait.name}, from ${l.a.race.name}`">{{ (l.a.trait.choice?.count ?? 1) === 1 && !l.a.trait.choice?.steps?.length ? sourceTag(l.a) : l.a.trait.name }}</span></summary>
+            <span class="feat-tag" :class="'tag-' + l.a.race.type" :title="`Picked in ${l.a.trait.name}, from ${l.a.race.name}`">{{ (l.a.trait.choice?.count ?? 1) === 1 && !l.a.trait.choice?.steps?.length ? sourceTag(l.a) : l.a.trait.name }}</span>
+            <!-- what the option asks for in turn (Agonizing Blast's cantrip): picked, or a link to pick it -->
+            <template v-for="p in optionPicks(l.a, l.o)" :key="p.x.key">
+              <span v-if="p.text" class="muted small">{{ p.text }}</span>
+              <button v-else-if="!ro" type="button" class="link-btn sp-open small" title="Make the choice" @click.stop.prevent="choosing = true">{{ subLabel(p.x) }} to pick ✎</button>
+            </template></summary>
           <MarkdownView v-if="l.o.text" class="small sp-text" :source="l.o.text" />
           <TraitChips :t="l.o" :reached="l.a.level" />
         </details>

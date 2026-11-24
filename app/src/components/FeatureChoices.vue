@@ -14,7 +14,7 @@ import { totalLevel } from '../model/classes'
 import { state } from '../store'
 import { ui } from '../ui'
 import {
-  choiceOpen, grantOptions, skillSources, hasChoices, isClassOrigin, picksLeft, setCastAbility, setPicks, setSwap, sourceTag, speciesTraits, swappableSpells,
+  choiceOpen, grantOptions, skillSources, hasChoices, isClassOrigin, picksLeft, setCastAbility, setPicks, setSwap, sourceTag, speciesTraits, subLabel, subsOf, swappableSpells,
   traitGrants, GRANT_KINDS, type ActiveTrait,
 } from '../species'
 import { ABILITY_NAME } from '../model/dnd'
@@ -27,19 +27,26 @@ import { inputValue as val } from '../dom'
 const props = defineProps<{ pc: Entry; s: CharacterSheet; openOnly?: boolean }>()
 /** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
 const ro = useReadOnly()
+const traits = computed(() => speciesTraits(props.pc, props.s).filter(a => a.active))
+/** The choices a trait's picked options bring (Agonizing Blast's cantrip): made under that option, not on their own. */
+const subs = (a: ActiveTrait) => subsOf(traits.value, a)
+/** A trait's own picks and its options' still to make. */
+const openAll = (a: ActiveTrait) => choiceOpen(a) || subs(a).some(choiceOpen)
+const leftAll = (a: ActiveTrait) => picksLeft(a) + subs(a).reduce((n, x) => n + picksLeft(x), 0)
+const optionName = (a: ActiveTrait, x: ActiveTrait) => a.options.find(o => o.id === x.parent?.option)?.name ?? ''
 /** Class features by level, then the rest; the ones still waiting for a pick first. */
 const list = computed(() => {
-  const act = speciesTraits(props.pc, props.s).filter(a => a.active && hasChoices(a))
+  const act = traits.value.filter(a => !a.parent && hasChoices(a))
   const all = [...act.filter(a => isClassOrigin(a.race)).sort((x, y) => (x.trait.level ?? 1) - (y.trait.level ?? 1)), ...act.filter(a => !isClassOrigin(a.race))]
   // the open ones as they were when shown: one stays while its picks are made (it doesn't vanish mid-pick)
-  if (props.openOnly) return all.filter(a => choiceOpen(a) || shownOpen.has(a.key))
-  return [...all.filter(choiceOpen), ...all.filter(a => !choiceOpen(a))]
+  if (props.openOnly) return all.filter(a => openAll(a) || shownOpen.has(a.key))
+  return [...all.filter(openAll), ...all.filter(a => !openAll(a))]
 })
-const shownOpen = new Set<string>(props.openOnly ? speciesTraits(props.pc, props.s).filter(a => a.active && hasChoices(a) && choiceOpen(a)).map(a => a.key) : [])
+const shownOpen = new Set<string>(props.openOnly ? speciesTraits(props.pc, props.s).filter(a => a.active && !a.parent && hasChoices(a)).filter(a => choiceOpen(a) || subsOf(speciesTraits(props.pc, props.s), a).some(choiceOpen)).map(a => a.key) : [])
 /** The skill grid's numbers: the proficiency bonus, and where each skill comes from. */
 const prof = computed(() => profBonus(totalLevel(props.pc)))
 const sources = computed(() => skillSources(props.pc, props.s))
-const left = computed(() => list.value.reduce((n, a) => n + picksLeft(a), 0))
+const left = computed(() => list.value.reduce((n, a) => n + leftAll(a), 0))
 function swapOptions(g: TraitGrant & { was?: string }) {
   const opts = grantOptions(g.kind)
   return [g.was ?? g.id, g.id].filter((id, i, l) => l.indexOf(id) === i && !opts.some(o => o.id === id)).map(id => ({ id, label: id })).concat(opts)
@@ -76,9 +83,9 @@ onMounted(async () => {
     <details class="fc-fold" :open="left > 0 || openOnly">
     <summary v-if="!openOnly"><h4>Choices from classes, species, background and feats <span v-if="left" class="sp-open small">{{ left }} to pick</span><span v-else class="muted small">all {{ list.length }} made · open to change</span></h4></summary>
     <p v-else class="small muted">{{ left ? `${left} pick${left === 1 ? '' : 's'} to make.` : 'All made.' }}</p>
-    <div v-for="a in list" :key="a.key" class="sp-trait" :class="{ 'sp-pending': choiceOpen(a) }">
+    <div v-for="a in list" :key="a.key" class="sp-trait" :class="{ 'sp-pending': openAll(a) }">
       <div class="sp-head"><b>{{ a.trait.name }}</b> <span class="feat-tag" :class="'tag-' + a.race.type">{{ sourceTag(a) }}</span>
-        <span v-if="picksLeft(a)" class="sp-open small">{{ picksLeft(a) }} to pick</span></div>
+        <span v-if="leftAll(a)" class="sp-open small">{{ leftAll(a) }} to pick</span></div>
       <!-- given proficiencies: listed, with a fold to swap one -->
       <details v-if="traitGrants(a, s).length" class="sp-given small" :open="swapped(a)">
         <summary><span class="muted">Gives</span> {{ givenText(a) }} <span class="link-like">· swap…</span></summary>
@@ -109,6 +116,11 @@ onMounted(async () => {
         </label>
       </div>
       <TraitChoicePicker v-if="a.trait.choice" :a="a" :sheet="s" :prof="prof" :from="(x: string) => sources.get(x)" :have="haveNow(s)" :disabled="ro" @pick="p => pick(a, p)" />
+      <!-- what a picked option asks for in turn, under it: Agonizing Blast's cantrip, Pact of the Tome's cantrips -->
+      <div v-for="x in subs(a)" :key="x.key" class="sp-sub" :class="{ 'sp-pending': choiceOpen(x) }">
+        <div class="sp-sub-head small"><b>{{ optionName(a, x) }}</b> <span class="muted">· {{ subLabel(x) }}</span></div>
+        <TraitChoicePicker :a="x" :sheet="s" :prof="prof" :from="(n: string) => sources.get(n)" :have="haveNow(s)" :disabled="ro" @pick="p => pick(x, p)" />
+      </div>
     </div>
     </details>
   </section>

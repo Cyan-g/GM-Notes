@@ -137,6 +137,19 @@ function onSlotDrop(ev: DragEvent, slot: GearSlot) {
 const twoHandsOf = (x: { l: InventoryLine; e?: Entry }) => isTwoHanded(x.e?.fields) ? 'two-handed' : x.l.twoHands ? 'in two hands' : ''
 const canHoldTwo = (x: { i: number; e?: Entry }) => isVersatile(x.e?.fields) && !!sheetOf(props.pc) && canTwoHand(sheetOf(props.pc)!, x.i)
 const holdTwo = (x: { i: number; l: InventoryLine }) => { if (!ro.value) editSheet(props.pc, y => setTwoHands(y, x.i, !x.l.twoHands)) }
+/** Equipped, but it needs attunement it doesn't have: its magic doesn't work. Why, for its warning (empty: fine). */
+function notAttuned(x: { l: InventoryLine; e?: Entry }): string {
+  if (!x.e?.fields.attunement || x.l.attuned) return ''
+  const full = attuned.value.length >= ATTUNE_SLOTS.value
+  return `${nameOf(x)} needs attunement: until it's attuned, its magic doesn't work.${full ? ` All ${ATTUNE_SLOTS.value} attunement slots are taken.` : ro.value ? '' : ' Click to attune.'}`
+}
+/** Attune an equipped item from its warning, while a slot is free and its requirements are met. */
+function attuneNow(x: { i: number; l: InventoryLine; e?: Entry }) {
+  if (ro.value || attuned.value.length >= ATTUNE_SLOTS.value) return
+  const why = blockedFor(props.pc, x.l, 'attuned')
+  if (why) return refuse(why)
+  editSheet(props.pc, y => { rawSetInUse(y, x.i, 'attuned', true) })
+}
 /** A two-handed weapon held with a shield: one of them can't be used. */
 const handsFull = computed(() => {
   const twoHanded = wielded.value.find(x => (x.e!.fields.properties ?? []).some(p => /two-handed/i.test(p)))
@@ -175,6 +188,7 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
               <button class="link-btn cs-item" @click="shown = g.x.i">{{ nameOf(g.x) }}</button>
               <span v-if="untrained(g.x)" class="cs-untrained" :title="g.x.e!.fields.kind === 'Weapon' ? 'Not proficient: no proficiency bonus to hit' : 'Not proficient: disadvantage on STR and DEX rolls, no spellcasting'"><AppIcon ui="warning" /></span>
               <span v-if="unfit(g.x)" class="cs-untrained tip" :data-tip="unfit(g.x)"><AppIcon ui="warning" /></span>
+              <button v-if="notAttuned(g.x)" type="button" class="link-btn cs-untrained tip" :data-tip="notAttuned(g.x)" aria-label="Not attuned" @click="attuneNow(g.x)"><AppIcon ui="warning" /></button>
             </span>
             <span class="gslot-foot">
               <!-- a versatile weapon's grip: one hand or both (the off hand empties), the one held lit -->
@@ -196,6 +210,7 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
           <li v-for="x in [...otherGear, ...overflowed]" :key="x.i" :draggable="!ro" @dragstart="startDrag($event, pc, x.i, 'equipped')" @dragend="endDrag">
             <button class="link-btn cs-item" @click="shown = x.i">{{ nameOf(x) }}</button>
             <span v-if="unfit(x)" class="cs-untrained tip" :data-tip="unfit(x)"><AppIcon ui="warning" /></span>
+            <button v-if="notAttuned(x)" type="button" class="link-btn cs-untrained tip" :data-tip="notAttuned(x)" aria-label="Not attuned" @click="attuneNow(x)"><AppIcon ui="warning" /></button>
             <span class="role">{{ label(x) }}</span>
             <button v-if="!ro" class="link-btn eq-off" :title="`Take off ${x.e!.name} (it stays in the inventory)`" @click="off(x.i, 'equipped')">Unequip</button>
           </li>
@@ -207,6 +222,7 @@ const shownLine = computed<InventoryLine | undefined>(() => (shown.value != null
         <button class="link-btn cs-item" @click="shown = x.i">{{ nameOf(x) }}</button>
         <span v-if="untrained(x)" class="cs-untrained" :title="x.e!.fields.kind === 'Weapon' ? 'Not proficient: no proficiency bonus to hit' : 'Not proficient: disadvantage on STR and DEX rolls, no spellcasting'"><AppIcon ui="warning" /></span>
         <span v-if="unfit(x)" class="cs-untrained tip" :data-tip="unfit(x)"><AppIcon ui="warning" /></span>
+            <button v-if="notAttuned(x)" type="button" class="link-btn cs-untrained tip" :data-tip="notAttuned(x)" aria-label="Not attuned" @click="attuneNow(x)"><AppIcon ui="warning" /></button>
         <span class="role">{{ label(x) }}</span>
         <button v-if="!ro" class="link-btn eq-off" :title="`Take off ${x.e!.name} (it stays in the inventory)`" @click="off(x.i, 'equipped')">Unequip</button>
       </li>

@@ -32,7 +32,6 @@ import NpcAppearance from '../components/edit/NpcAppearance.vue'
 import DeityForm from '../components/edit/DeityForm.vue'
 import OrgForm from '../components/edit/OrgForm.vue'
 import SubPlaces from '../components/edit/SubPlaces.vue'
-import DmOnlyBadge from '../components/DmOnlyBadge.vue'
 
 const props = defineProps<{ id: string }>()
 const e = computed(() => get(props.id))
@@ -152,7 +151,7 @@ function remove() {
         <!-- whether players know of it: the DM's choice, for what can be shared (not a player's own world or a character) -->
         <label v-if="!playerMode && e.type !== 'pc'" class="toggle" :title="e.visibility === 'secret' ? 'Players don\'t know about this yet' : 'Players know this exists'">
           <input type="checkbox" :checked="e.visibility === 'known'" @change="toggleSecret" />
-          <span>Known to players</span><DmOnlyBadge v-if="e.visibility !== 'known'" />
+          <span>Known to players</span>
         </label>
         <label class="grow"><span>Also known as</span><ListInput :model-value="e.aliases" placeholder="Add alias…" @update:model-value="v => setList('aliases', v)" /></label>
       </div>

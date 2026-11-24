@@ -78,11 +78,16 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
 </script>
 
 <template>
-  <input v-if="def.kind === 'text'" :value="value ?? ''" @input="value = ($event.target as HTMLInputElement).value" />
+  <!-- the session's real-world date: typed, or today's with one click -->
+  <span v-if="def.kind === 'text' && def.key === 'playedOn'" class="played-on">
+    <input :value="value ?? ''" :placeholder="def.placeholder" @input="value = ($event.target as HTMLInputElement).value" />
+    <button type="button" class="link-btn small" title="Today's date" @click="value = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })">Today</button>
+  </span>
+  <input v-else-if="def.kind === 'text'" :value="value ?? ''" :placeholder="def.placeholder" @input="value = ($event.target as HTMLInputElement).value" />
   <LinkTextarea v-else-if="def.kind === 'longtext'" rows="3" :value="value ?? ''" @input="value = ($event.target as HTMLTextAreaElement).value" />
   <input v-else-if="def.kind === 'number'" type="number" :value="value ?? ''" @change="value = ($event.target as HTMLInputElement).value === '' ? undefined : Number(($event.target as HTMLInputElement).value)" />
   <input v-else-if="def.kind === 'weight'" type="number" step="0.1" min="0" :value="value ?? ''" placeholder="lb" @change="value = ($event.target as HTMLInputElement).value === '' ? undefined : Number(($event.target as HTMLInputElement).value)" />
-  <label v-else-if="def.kind === 'bool'" class="toggle"><input type="checkbox" :checked="!!value" @change="value = ($event.target as HTMLInputElement).checked || undefined" /><span>{{ value ? 'Yes' : 'No' }}</span></label>
+  <label v-else-if="def.kind === 'bool'" class="toggle"><input type="checkbox" :checked="!!value" :aria-label="def.label" @change="value = ($event.target as HTMLInputElement).checked || undefined" /></label>
   <Dropdown v-else-if="def.kind === 'select'" :value="value ?? ''" @change="value = ($event.target as HTMLSelectElement).value">
     <option value="">{{ fromParent ? `— (${fromParent})` : '—' }}</option>
     <option v-for="o in selectOptions" :key="o.id" :value="o.id">{{ o.label }}</option>

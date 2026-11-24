@@ -309,9 +309,11 @@ textarea { width: 100%; resize: vertical; }
 .list-input input { border: none; flex: 1; min-width: 6em; padding: .2em .3em; outline: none; background: transparent; }
 .list-input .chip { display: inline-flex; align-items: center; }
 
-.date-input { display: inline-flex; gap: .25rem; flex-wrap: wrap; }
-.date-input .day { width: 4.2em; }
-.date-input .year { width: 5.5em; }
+.date-input { display: inline-flex; gap: .25rem; flex-wrap: nowrap; align-items: center; }
+.date-input .day { width: 4.2em !important; }
+.date-input .year { width: 5.5em !important; }
+.played-on { display: flex; gap: .4rem; align-items: center; }
+.played-on input { flex: 1; min-width: 0; }
 .date-input select { width: auto !important; }
 
 .edit-table td { vertical-align: middle; }
@@ -1542,8 +1544,12 @@ h1 .icon svg.gi { color: var(--accent); }
 /* checklists: a box instead of the bullet; ticked items fade */
 .md li.task-item { list-style: none; position: relative; }
 .md li.task-item > input.task, .md li.task-item > p > input.task { position: absolute; left: -1.45em; top: .3em; margin: 0; width: 1em; height: 1em; padding: 0; accent-color: var(--accent); cursor: pointer; }
-.md li.task-item input.task:disabled { cursor: default; opacity: .8; }
+/* a read-only checklist (a session's page) keeps the boxes at full strength: ticked or not must read at a glance */
+.md li.task-item input.task:disabled { cursor: default; opacity: 1; }
+/* ticked: the text muted and struck through */
 .md li.task-item.done > p, .md li.task-item.done { color: var(--muted); }
+.md li.task-item.done > p, .md li.task-item.done:not(:has(> p)) { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted) 70%, transparent); }
+.md li.task-item.done ul, .md li.task-item.done ol { text-decoration: none; }
 .md li.task-item.done > :not(ul):not(ol) a { color: inherit; }
 .md li.task-item:not(.done) { color: var(--ink); }
 
@@ -2879,3 +2885,4 @@ select.dd option:is(:hover, :focus-visible)::before {
 .if-focus-add { margin: 0 .4rem .6rem 0; }
 .item-needs-line { margin: .2rem 0; color: var(--muted); }
 table.grid td.col-kind, table.grid th.col-kind { white-space: nowrap; }
+.new-session { margin: 0 0 .4rem; }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// A campaign's sessions on its page: the last ten, the earlier ones folded away, and a new one numbered after the last.
+// A campaign's sessions on its page, newest first: the last ten, the earlier ones folded away, and a new one numbered after the last.
 import { computed } from 'vue'
 import type { Entry } from '../model/types'
 import { formatDate, state } from '../store'
@@ -9,6 +9,7 @@ import EntryLink from './EntryLink.vue'
 
 const props = defineProps<{ campaign: Entry }>()
 const sessions = computed(() => sessionsOf(props.campaign.id))
+const newest = computed(() => [...sessions.value].reverse())
 /** What looks wrong in the log: two sessions with one number, a session dated before the one played before it. */
 const oddities = computed(() => {
   const out: string[] = [], seen = new Map<number, string>()
@@ -32,16 +33,17 @@ function newSession() {
 <template>
   <section>
     <h2>Sessions</h2>
+    <button class="new-session" @click="newSession">+ New session</button>
+    <!-- newest first, as on home -->
+    <ol v-if="sessions.length" class="plain">
+      <li v-for="s in newest.slice(0, 10)" :key="s.id"><EntryLink :id="s.id" /> <span class="muted">{{ formatDate(s.fields.date) }}</span></li>
+    </ol>
     <details v-if="sessions.length > 10" class="older-sessions">
       <summary>Show the {{ sessions.length - 10 }} earlier sessions</summary>
       <ol class="plain">
-        <li v-for="s in sessions.slice(0, -10)" :key="s.id"><EntryLink :id="s.id" /> <span class="muted">{{ formatDate(s.fields.date) }}</span></li>
+        <li v-for="s in newest.slice(10)" :key="s.id"><EntryLink :id="s.id" /> <span class="muted">{{ formatDate(s.fields.date) }}</span></li>
       </ol>
     </details>
-    <ol v-if="sessions.length" class="plain">
-      <li v-for="s in sessions.slice(-10)" :key="s.id"><EntryLink :id="s.id" /> <span class="muted">{{ formatDate(s.fields.date) }}</span></li>
-    </ol>
     <p v-if="oddities.length" class="small warn-text">In this log: {{ oddities.join('; ') }}.</p>
-    <button class="new-session" @click="newSession">+ New session</button>
   </section>
 </template>

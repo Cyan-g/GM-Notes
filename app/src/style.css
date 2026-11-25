@@ -2999,11 +2999,18 @@ label.check-chip b { font-weight: 600; }
   border-radius: 9px 13px 13px 9px; box-shadow: 0 20px 44px rgb(0 0 0 / .38), 0 2px 6px rgb(0 0 0 / .25), inset 0 0 0 1px rgb(0 0 0 / .35); }
 .book.single .binding { padding-bottom: var(--bind); }
 .binding > .spread { flex: 1; position: relative; z-index: 1; box-shadow: 0 1px 3px rgb(0 0 0 / .3); border-radius: 4px 7px 7px 4px; }
-/* the stacks: a block of thin sheets behind each half, showing below it and on its outer side */
+/* the stacks: a few whole sheets behind each half, each a little lower and further out than the one above it and a shade
+   darker, so their edges read as paper below the page and on its outer side; the spacing grows with the pages they
+   stand for. The box itself is plain paper (it shows for a moment while a page turns). */
 .stack { position: absolute; z-index: 0; top: var(--bind); bottom: calc(var(--bind) + var(--stack-max)); width: calc((100% - 2 * var(--bind)) / 2);
-  background: repeating-linear-gradient(to bottom, var(--page-edge) 0 1px, var(--page) 1px 2.6px); border-radius: 4px; }
-.stack.l { --t: calc(2px + var(--stack-l) * 11px); left: var(--bind); transform: translate(calc(var(--t) * -.55), var(--t)); border-radius: 6px 0 0 6px; }
-.stack.r { --t: calc(2px + var(--stack-r) * 11px); right: var(--bind); transform: translate(calc(var(--t) * .55), var(--t)); border-radius: 0 6px 6px 0; }
+  background: var(--page); --e1: color-mix(in srgb, var(--page) 93%, var(--ink)); --e2: color-mix(in srgb, var(--page) 88%, var(--ink));
+  --e3: color-mix(in srgb, var(--page) 83%, var(--ink)); --e4: color-mix(in srgb, var(--page) 78%, var(--ink)); --e5: color-mix(in srgb, var(--page) 72%, var(--ink)); }
+.stack.l { --g: calc((1px + var(--stack-l) * 11px) / 5); left: var(--bind); border-radius: 6px 0 0 6px;
+  box-shadow: calc(var(--g) * -.6) var(--g) 0 0 var(--e1), calc(var(--g) * -1.2) calc(var(--g) * 2) 0 0 var(--e2), calc(var(--g) * -1.8) calc(var(--g) * 3) 0 0 var(--e3),
+    calc(var(--g) * -2.4) calc(var(--g) * 4) 0 0 var(--e4), calc(var(--g) * -3) calc(var(--g) * 5) 0 0 var(--e5), calc(var(--g) * -3) calc(var(--g) * 5 + 2px) 6px rgb(0 0 0 / .3); }
+.stack.r { --g: calc((1px + var(--stack-r) * 11px) / 5); right: var(--bind); border-radius: 0 6px 6px 0;
+  box-shadow: calc(var(--g) * .6) var(--g) 0 0 var(--e1), calc(var(--g) * 1.2) calc(var(--g) * 2) 0 0 var(--e2), calc(var(--g) * 1.8) calc(var(--g) * 3) 0 0 var(--e3),
+    calc(var(--g) * 2.4) calc(var(--g) * 4) 0 0 var(--e4), calc(var(--g) * 3) calc(var(--g) * 5) 0 0 var(--e5), calc(var(--g) * 3) calc(var(--g) * 5 + 2px) 6px rgb(0 0 0 / .3); }
 /* the paper: the theme's, a little darker toward the outer edge and into the spine */
 .journal .jpage { background: var(--grain), var(--page); }
 .journal .jleft { background: var(--grain), linear-gradient(90deg, rgb(0 0 0 / .07), transparent 7%), var(--page); }
@@ -3025,8 +3032,6 @@ label.check-chip b { font-weight: 600; }
 /* Runecarved: the outer corners cut away, a carved double spine, the page number on a notched plaque */
 .fx[data-fx="runecarved"] .journal .jleft { clip-path: polygon(16px 0, 100% 0, 100% 100%, 16px 100%, 0 calc(100% - 16px), 0 16px); }
 .fx[data-fx="runecarved"] .journal .jright { clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%); }
-.fx[data-fx="runecarved"] .journal .stack.l { clip-path: polygon(16px 0, 100% 0, 100% 100%, 16px 100%, 0 calc(100% - 16px), 0 16px); }
-.fx[data-fx="runecarved"] .journal .stack.r { clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%); }
 .fx[data-fx="runecarved"] .journal .spread::after { width: 4px; left: calc(50% - 2px); background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 55%, transparent) 0 1px, transparent 1px 3px, color-mix(in srgb, var(--accent) 55%, transparent) 3px); }
 .fx[data-fx="runecarved"] .journal .jnum { padding: .05rem .8rem; color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent);
   clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); }

@@ -2,7 +2,7 @@
 // A character's Companions tab: creatures linked to them (a familiar, a steed, a summoned beast), each with its own
 // name and hit points, and its statblock from the creature entry. Only creatures the players may see can be picked;
 // the same creature can be linked more than once (two wolves).
-import Dropdown from './Dropdown.vue'
+import EntryPicker from './edit/EntryPicker.vue'
 import { useReadOnly } from '../composables/useReadOnly'
 import { computed, ref } from 'vue'
 import type { Companion, Entry } from '../model/types'
@@ -18,14 +18,11 @@ const ro = useReadOnly()
 const list = computed(() => sheetOrBlank(props.pc).companions ?? [])
 /** The creatures that can be linked: not DM-only, by name. */
 const creatures = computed(() => (byType.value.get('creature') ?? []).filter(c => c.visibility !== 'secret').sort((a, b) => a.name.localeCompare(b.name)))
-const filter = ref('')
-const shown = computed(() => { const f = filter.value.trim().toLowerCase(); return f ? creatures.value.filter(c => c.name.toLowerCase().includes(f)) : creatures.value })
 
 const edit = (fn: (l: Companion[]) => void) => editSheet(props.pc, s => { const l = s.companions ?? []; fn(l); if (l.length) s.companions = l; else delete s.companions })
 function add(id: string) {
   if (!id) return
   edit(l => l.push({ key: Math.random().toString(36).slice(2, 10), creature: id }))
-  filter.value = ''
 }
 const at = (l: Companion[], key: string) => l.find(c => c.key === key)
 const remove = (key: string) => edit(l => l.splice(l.findIndex(c => c.key === key), 1))
@@ -56,11 +53,8 @@ function apply(key: string, sign: number) { const n = Math.abs(Number(amount.val
       <h3>Link a creature</h3>
       <p class="muted small">A familiar, a steed, a summon: it gets its own name and hit points here. Only creatures the players may see are listed.</p>
       <div v-if="!ro" class="comp-add">
-        <input v-model="filter" type="search" placeholder="Filter creatures…" aria-label="Filter creatures" />
-        <Dropdown aria-label="Creature to link" @change="add(($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = ''">
-          <option value="">＋ Creature ({{ shown.length }})</option>
-          <option v-for="c in shown" :key="c.id" :value="c.id">{{ c.name }}<template v-if="statsOf(c)?.cr"> (CR {{ statsOf(c)!.cr }})</template></option>
-        </Dropdown>
+        <!-- the entry picker, as everywhere a creature is picked: typed to find, only those the players may see -->
+        <EntryPicker add :types="['creature']" :only="creatures.map(c => c.id)" :placeholder="`Link a creature (${creatures.length})…`" @pick="add" />
       </div>
       <p v-if="!creatures.length" class="muted small">No creatures the players may see yet.</p>
     </section>

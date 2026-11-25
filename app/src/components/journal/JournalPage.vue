@@ -2,7 +2,7 @@
 // One side of an open campaign journal (JournalBook): the cover and the campaign's overview, a session (its facts on
 // the left, its notes on the right), or the blank page after the last one. A page scrolls within its bounds. Its text is
 // written on the page itself: the pen opens the editor in place, the pen again (or Ctrl+S, Escape) closes it.
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, inject, onBeforeUnmount, ref, watch } from 'vue'
 import type { Entry } from '../../model/types'
 import { TYPES } from '../../model/schema'
 import { entries, formatDate, state } from '../../store'
@@ -15,16 +15,16 @@ import BodyEditor from '../edit/BodyEditor.vue'
 import FieldInput from '../edit/FieldInput.vue'
 import SessionSide from '../SessionSide.vue'
 import DataImage from '../DataImage.vue'
-import { writeOnOpen, writingOn } from '../../journal'
+import { bookShapeKey, writeOnOpen, writingOn } from '../../journal'
 import EntryLink from '../EntryLink.vue'
 import CampaignParty from '../CampaignParty.vue'
 import CampaignJoin from '../CampaignJoin.vue'
 
 export type Leaf = { kind: 'cover' } | { kind: 'session'; s: Entry } | { kind: 'next' }
 /** `side`: left or right of a spread, or both (one page at a time, a narrow window). `still`: a page turning over,
- * shown only (no editing). */
+ * shown only (inert; it looks just like the page, its buttons too, so nothing moves as it lands and the page takes over). */
 /** `num`: the left page's number (the right one's is the next). */
-const props = defineProps<{ campaign: Entry; leaf: Leaf; side: 'left' | 'right' | 'both'; num: number; still?: boolean; writeNow?: boolean; turnIn?: boolean }>()
+const props = defineProps<{ campaign: Entry; leaf: Leaf; side: 'left' | 'right' | 'both'; num: number; still?: boolean; writeNow?: boolean }>()
 
 const s = computed(() => (props.leaf.kind === 'session' ? props.leaf.s : undefined))
 const showLeft = computed(() => props.side !== 'right')
@@ -32,13 +32,16 @@ const showRight = computed(() => props.side !== 'left')
 /** Whose text this page holds: a session's notes, or (the cover's right page) the campaign's overview. */
 const textOf = computed(() => s.value ?? (props.leaf.kind === 'cover' ? props.campaign : undefined))
 /** Written here unless it's read-only: a read-only world, the DM's campaign in a player's world. */
-const canWrite = computed(() => !props.still && !state.readOnly && !!textOf.value && !isShared(textOf.value))
+const writable = computed(() => !state.readOnly && !!textOf.value && !isShared(textOf.value))
+const canWrite = computed(() => !props.still && writable.value)
 const canTick = computed(() => !state.readOnly && !!textOf.value && !isShared(textOf.value))
 
-// ---- the page's curve: its edges scoop up to a crest about 8% from the spine and fall deep into it (style.css, --dip 1.76%);
-// the Illuminated frame follows it ----
-const FRAME_LEFT = 'M0 1.76 L10 1.738 L20 1.671 L30 1.561 L40 1.406 L50 1.207 L60 0.963 L70 0.675 L76 0.482 L80 0.344 L84 0.204 L87 0.103 L90 0.022 L92 0 L94 0.035 L95 0.09 L96 0.183 L97 0.328 L98 0.547 L98.5 0.693 L99 0.867 L99.5 1.076 L100 1.325 L100 99.565 L99.5 99.316 L99 99.107 L98.5 98.933 L98 98.787 L97 98.568 L96 98.423 L95 98.33 L94 98.275 L92 98.24 L90 98.262 L87 98.343 L84 98.444 L80 98.584 L76 98.722 L70 98.915 L60 99.203 L50 99.447 L40 99.646 L30 99.801 L20 99.911 L10 99.978 L0 100 Z'
-const FRAME_RIGHT = 'M100 1.76 L90 1.738 L80 1.671 L70 1.561 L60 1.406 L50 1.207 L40 0.963 L30 0.675 L24 0.482 L20 0.344 L16 0.204 L13 0.103 L10 0.022 L8 0 L6 0.035 L5 0.09 L4 0.183 L3 0.328 L2 0.547 L1.5 0.693 L1 0.867 L0.5 1.076 L0 1.325 L0 99.565 L0.5 99.316 L1 99.107 L1.5 98.933 L2 98.787 L3 98.568 L4 98.423 L5 98.33 L6 98.275 L8 98.24 L10 98.262 L13 98.343 L16 98.444 L20 98.584 L24 98.722 L30 98.915 L40 99.203 L50 99.447 L60 99.646 L70 99.801 L80 99.911 L90 99.978 L100 100 Z'
+// ---- the gilded frame (Illuminated): along the page's outline, bent into the spine with it (bookShape.ts, from
+// JournalBook); before the book is measured, and in a narrow window, the plain curve below ----
+const FRAME_LEFT = 'M0 2 L10 1.974 L20 1.894 L30 1.774 L40 1.598 L50 1.372 L60 1.093 L70 0.768 L76 0.548 L80 0.392 L84 0.232 L87 0.116 L90 0.025 L92 0 L94 0.036 L96 0.185 L98 0.606 L100 1.506 L100 99.727 L98 99 L96 98.261 L94 98.034 L92 98 L90 98.023 L87 98.114 L84 98.227 L80 98.398 L76 98.545 L70 98.773 L60 99.091 L50 99.375 L40 99.602 L30 99.773 L20 99.898 L10 99.977 L0 100 Z'
+const FRAME_RIGHT = 'M100 2 L90 1.974 L80 1.894 L70 1.774 L60 1.598 L50 1.372 L40 1.093 L30 0.768 L24 0.548 L20 0.392 L16 0.232 L13 0.116 L10 0.025 L8 0 L6 0.036 L4 0.185 L2 0.606 L0 1.506 L0 99.727 L2 99 L4 98.261 L6 98.034 L8 98 L10 98.023 L13 98.114 L16 98.227 L20 98.398 L24 98.545 L30 98.773 L40 99.091 L50 99.375 L60 99.602 L70 99.773 L80 99.898 L90 99.977 L100 100 Z'
+const bookShape = inject(bookShapeKey, null)
+const shapeOf = (s: 'left' | 'right') => bookShape?.value?.[s === 'left' ? 'l' : 'r'] ?? null
 
 // ---- writing on the page ----
 // (shared, journal.ts: while the right page is written, the left one shows the preview)
@@ -93,9 +96,11 @@ const firstLast = computed(() => {
 
 <template>
   <!-- the left page -->
-  <section v-if="showLeft" class="jpage jleft" :class="[leaf.kind, { 'turn-in': turnIn }]">
+  <section v-if="showLeft" :inert="still" class="jpage jleft" :class="leaf.kind">
     <!-- the gilded frame along the page's curve (shown by the Illuminated style) -->
-    <svg v-for="f in ['outer', 'inner']" :key="f" class="jframe" :class="f" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path :d="FRAME_LEFT" /></svg>
+    <svg v-if="side !== 'both' && shapeOf('left')" class="jframe shaped" :viewBox="`0 0 ${shapeOf('left')!.w} ${shapeOf('left')!.h}`" preserveAspectRatio="none" aria-hidden="true">
+      <path class="outer" :d="shapeOf('left')!.frameOuter" /><path class="inner" :d="shapeOf('left')!.frameInner" /></svg>
+    <svg v-for="f in ['outer', 'inner']" v-else :key="f" class="jframe" :class="f" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path :d="FRAME_LEFT" /></svg>
     <div class="jbody">
     <!-- while the right page is written: how it reads, here -->
     <template v-if="previewing && textOf">
@@ -112,12 +117,12 @@ const firstLast = computed(() => {
         <p class="muted small">{{ count }} session{{ count === 1 ? '' : 's' }}<template v-if="firstLast"> · {{ firstLast }}</template></p>
       </div>
       <CampaignParty :campaign="campaign" />
-      <CampaignJoin v-if="!still" :campaign="campaign" />
+      <CampaignJoin :campaign="campaign" />
     </template>
     <template v-else-if="leaf.kind === 'session' && s">
       <header class="jpage-head">
         <span class="jpage-no">Session {{ s.fields.number ?? '' }}</span>
-        <button v-if="!still && !state.readOnly && !isShared(s)" type="button" class="link-btn small" :title="details ? 'Done' : 'Its date, who was there…'" @click="details = !details">{{ details ? 'Done' : '✎ Details' }}</button>
+        <button v-if="!state.readOnly && !isShared(s)" type="button" class="link-btn small" :title="details ? 'Done' : 'Its date, who was there…'" @click="details = !details">{{ details ? 'Done' : '✎ Details' }}</button>
       </header>
       <h2 v-if="heading && heading !== s.name" class="jpage-title">{{ heading }}</h2>
       <h2 v-else class="jpage-title">{{ s.name }}</h2>
@@ -134,7 +139,7 @@ const firstLast = computed(() => {
       <div class="jnext">
         <p class="jpage-no">Session {{ nextNo }}</p>
         <p class="muted">{{ notesOnly ? 'Your notes for the next session.' : 'The next session starts here.' }}</p>
-        <button v-if="!state.readOnly && !still" type="button" class="primary" @click="newPage">＋ {{ notesOnly ? 'My session notes' : `Session ${nextNo}` }}</button>
+        <button v-if="!state.readOnly" type="button" class="primary" @click="newPage">＋ {{ notesOnly ? 'My session notes' : `Session ${nextNo}` }}</button>
       </div>
     </template>
     </div>
@@ -142,19 +147,21 @@ const firstLast = computed(() => {
   </section>
 
   <!-- the right page -->
-  <section v-if="showRight" class="jpage jright" :class="[leaf.kind, { writing, 'turn-in': turnIn }]">
-    <svg v-for="f in ['outer', 'inner']" :key="f" class="jframe" :class="f" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path :d="FRAME_RIGHT" /></svg>
+  <section v-if="showRight" :inert="still" class="jpage jright" :class="[leaf.kind, { writing }]">
+    <svg v-if="side !== 'both' && shapeOf('right')" class="jframe shaped" :viewBox="`0 0 ${shapeOf('right')!.w} ${shapeOf('right')!.h}`" preserveAspectRatio="none" aria-hidden="true">
+      <path class="outer" :d="shapeOf('right')!.frameOuter" /><path class="inner" :d="shapeOf('right')!.frameInner" /></svg>
+    <svg v-for="f in ['outer', 'inner']" v-else :key="f" class="jframe" :class="f" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path :d="FRAME_RIGHT" /></svg>
     <div class="jbody">
     <template v-if="textOf">
-      <div v-if="canWrite" class="jpen">
+      <div v-if="writable" class="jpen">
         <button type="button" class="link-btn small" :title="writing ? 'Done writing (Ctrl+S)' : 'Write on this page'" @click="writing = !writing">{{ writing ? 'Done' : '✎ Write' }}</button>
       </div>
       <BodyEditor v-if="writing" :model-value="textOf.body" compact narrow @update:model-value="setText" />
       <template v-else>
         <!-- the whole outline, headings not filled in yet too: a journal page shows its template -->
         <MarkdownView v-if="textOf.body.trim()" :source="textOf.body" :tasks="canTick" all-headings @update:source="setText" />
-        <p v-else-if="canWrite || leaf.kind !== 'cover'" class="muted jempty">{{ leaf.kind === 'cover' ? 'The campaign in a few lines: where it starts, what it is about.' : 'Nothing written yet.' }}
-          <button v-if="canWrite" type="button" class="link-btn" @click="writing = true">✎ Write</button></p>
+        <p v-else-if="writable || leaf.kind !== 'cover'" class="muted jempty">{{ leaf.kind === 'cover' ? 'The campaign in a few lines: where it starts, what it is about.' : 'Nothing written yet.' }}
+          <button v-if="writable" type="button" class="link-btn" @click="writing = true">✎ Write</button></p>
       </template>
       <p v-if="leaf.kind === 'cover' && notesOnly" class="muted small">Your DM's campaign: the pages after this one are your own session notes.</p>
       <!-- page 2: the campaign's notes, under its overview -->

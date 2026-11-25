@@ -22,6 +22,6 @@ const title = computed(() => [
 
 <template>
   <button v-if="list.length" type="button" class="sync-chip" :class="{ live: on.length, err: !!devices.error }" :title="title" @click="ui.devices = true">
-    <AppIcon ui="link" /> {{ label }}
+    <AppIcon ui="link" /> <span class="sync-label">{{ label }}</span>
   </button>
 </template>

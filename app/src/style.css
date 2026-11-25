@@ -94,8 +94,9 @@ a.menu-title { display: inline-block; text-decoration: none; }
 .menu-title:hover, .menu-title.open { background: var(--panel); color: var(--ink); }
 .menu-title.current { color: var(--accent); }
 .menu-title.open { box-shadow: var(--shadow); }
-.bar-tools { margin-left: auto; display: flex; align-items: center; gap: .5rem; }
-.search-btn { display: flex; gap: 1.5rem; justify-content: space-between; align-items: center; color: var(--muted); min-width: 200px; }
+.bar-tools { margin-left: auto; display: flex; align-items: center; gap: .5rem; min-width: 0; }
+/* (narrower in a narrower window, so the bar fits before it wraps to two rows) */
+.search-btn { display: flex; gap: 1.5rem; justify-content: space-between; align-items: center; color: var(--muted); min-width: clamp(120px, 12vw, 200px); }
 kbd { font: 11px var(--sans); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; color: var(--muted); }
 .new-btn { padding: .45em .7em; }
 .save-status { font-size: 12px; color: var(--muted); white-space: nowrap; min-width: 4.5em; }
@@ -2527,7 +2528,9 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .dev-join label { display: flex; align-items: center; gap: .4rem; margin: .25rem 0; }
 .dev-found { display: flex; flex-direction: column; }
 .dev-code-input { font-family: ui-monospace, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; width: 10em; }
-.sync-chip { display: inline-flex; align-items: center; gap: .3rem; font-size: 12px; padding: .2em .65em; border-radius: 999px; color: var(--muted); white-space: nowrap; }
+.sync-chip { display: inline-flex; align-items: center; gap: .3rem; font-size: 12px; padding: .2em .65em; border-radius: 999px; color: var(--muted); white-space: nowrap; min-width: 0; max-width: 10rem; }
+/* a long device name is cut short (it's whole in the chip's tooltip) */
+.sync-label { overflow: hidden; text-overflow: ellipsis; }
 .sync-chip.live { color: var(--ink); border-color: color-mix(in srgb, #4caf50 55%, var(--line)); }
 .sync-chip.err { border-color: var(--accent); }
 .sync-notice { position: fixed; right: 16px; bottom: 16px; z-index: 45; width: min(380px, calc(100vw - 32px)); padding: .7rem .9rem; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; box-shadow: 0 12px 40px rgb(0 0 0 / .25); }
@@ -3022,7 +3025,7 @@ label.check-chip b { font-weight: 600; }
   --cover: var(--book-cover, color-mix(in srgb, var(--accent) 28%, #20140b));
   --spine: linear-gradient(90deg, transparent calc(50% - 10px), rgb(0 0 0 / .35) 50%, transparent calc(50% + 10px));
   --cover-shadow: 0 20px 44px rgb(0 0 0 / .38), 0 2px 6px rgb(0 0 0 / .25);
-  --bind: 7px; --stack-max: 13px; --stack-side: 8px;
+  --bind: 9px; --stack-max: 13px; --stack-side: 12px;
   /* a faint fibre grain, made in the browser */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .13 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
@@ -3044,13 +3047,13 @@ label.check-chip b { font-weight: 600; }
 .stack.l { --side: -1; left: calc(var(--bind) + var(--stack-side)); }
 .stack.r { --side: 1; right: calc(var(--bind) + var(--stack-side)); }
 .sheet { position: absolute; inset: 0; z-index: calc(10 - var(--d)); --sdip: calc(var(--dip, 0%) * var(--k));
-  /* the page edges: the theme's (--edge: gilt, stained; --edge-fx: a sheen or a speckle on it), else plain paper */
-  background: var(--edge-fx, linear-gradient(transparent, transparent)), color-mix(in srgb, var(--edge, var(--page)) calc(96% - var(--d) * 3%), #000);
+  /* the page edges: the theme's paper, a shade darker the deeper they lie */
+  background: color-mix(in srgb, var(--page) calc(96% - var(--d) * 3%), #000);
   transform: translate(calc(var(--ox) * var(--side)), var(--o)); }
-.stack.l .sheet { clip-path: polygon(0 calc(var(--dip) * 1), 10% calc(var(--dip) * 0.986), 20% calc(var(--dip) * 0.946), 30% calc(var(--dip) * 0.878), 40% calc(var(--dip) * 0.784), 50% calc(var(--dip) * 0.662), 60% calc(var(--dip) * 0.514), 70% calc(var(--dip) * 0.34), 76% calc(var(--dip) * 0.227), 80% calc(var(--dip) * 0.151), 84% calc(var(--dip) * 0.081), 87% calc(var(--dip) * 0.036), 90% calc(var(--dip) * 0.007), 92% 0, 94% calc(var(--dip) * 0.008), 96% calc(var(--dip) * 0.038), 97% calc(var(--dip) * 0.063), 98% calc(var(--dip) * 0.096), 99% calc(var(--dip) * 0.138), 100% calc(var(--dip) * 0.192),
-  100% calc(100% - var(--sdip) * 0.808), 99% calc(100% - var(--sdip) * 0.862), 98% calc(100% - var(--sdip) * 0.904), 97% calc(100% - var(--sdip) * 0.937), 96% calc(100% - var(--sdip) * 0.962), 94% calc(100% - var(--sdip) * 0.992), 92% calc(100% - var(--sdip) * 1), 90% calc(100% - var(--sdip) * 0.993), 87% calc(100% - var(--sdip) * 0.964), 84% calc(100% - var(--sdip) * 0.919), 80% calc(100% - var(--sdip) * 0.849), 76% calc(100% - var(--sdip) * 0.773), 70% calc(100% - var(--sdip) * 0.66), 60% calc(100% - var(--sdip) * 0.486), 50% calc(100% - var(--sdip) * 0.338), 40% calc(100% - var(--sdip) * 0.216), 30% calc(100% - var(--sdip) * 0.122), 20% calc(100% - var(--sdip) * 0.054), 10% calc(100% - var(--sdip) * 0.014), 0 100%); }
-.stack.r .sheet { clip-path: polygon(100% calc(var(--dip) * 1), 90% calc(var(--dip) * 0.986), 80% calc(var(--dip) * 0.946), 70% calc(var(--dip) * 0.878), 60% calc(var(--dip) * 0.784), 50% calc(var(--dip) * 0.662), 40% calc(var(--dip) * 0.514), 30% calc(var(--dip) * 0.34), 24% calc(var(--dip) * 0.227), 20% calc(var(--dip) * 0.151), 16% calc(var(--dip) * 0.081), 13% calc(var(--dip) * 0.036), 10% calc(var(--dip) * 0.007), 8% 0, 6% calc(var(--dip) * 0.008), 4% calc(var(--dip) * 0.038), 3% calc(var(--dip) * 0.063), 2% calc(var(--dip) * 0.096), 1% calc(var(--dip) * 0.138), 0 calc(var(--dip) * 0.192),
-  0 calc(100% - var(--sdip) * 0.808), 1% calc(100% - var(--sdip) * 0.862), 2% calc(100% - var(--sdip) * 0.904), 3% calc(100% - var(--sdip) * 0.937), 4% calc(100% - var(--sdip) * 0.962), 6% calc(100% - var(--sdip) * 0.992), 8% calc(100% - var(--sdip) * 1), 10% calc(100% - var(--sdip) * 0.993), 13% calc(100% - var(--sdip) * 0.964), 16% calc(100% - var(--sdip) * 0.919), 20% calc(100% - var(--sdip) * 0.849), 24% calc(100% - var(--sdip) * 0.773), 30% calc(100% - var(--sdip) * 0.66), 40% calc(100% - var(--sdip) * 0.486), 50% calc(100% - var(--sdip) * 0.338), 60% calc(100% - var(--sdip) * 0.216), 70% calc(100% - var(--sdip) * 0.122), 80% calc(100% - var(--sdip) * 0.054), 90% calc(100% - var(--sdip) * 0.014), 100% 100%); }
+.stack.l .sheet { clip-path: polygon(0 calc(var(--dip) + 6px), 1.8px calc(var(--dip) + 1.8px), 6px var(--dip), 10% calc(var(--dip) * 0.987), 20% calc(var(--dip) * 0.95), 30% calc(var(--dip) * 0.887), 40% calc(var(--dip) * 0.799), 50% calc(var(--dip) * 0.686), 60% calc(var(--dip) * 0.547), 70% calc(var(--dip) * 0.384), 76% calc(var(--dip) * 0.274), 80% calc(var(--dip) * 0.196), 84% calc(var(--dip) * 0.116), 87% calc(var(--dip) * 0.058), 90% calc(var(--dip) * 0.013), 92% 0, 94% calc(var(--dip) * 0.02), 95% calc(var(--dip) * 0.051), 96% calc(var(--dip) * 0.104), 97% calc(var(--dip) * 0.187), 98% calc(var(--dip) * 0.311), 98.5% calc(var(--dip) * 0.394), 99% calc(var(--dip) * 0.493), 99.5% calc(var(--dip) * 0.612), 100% calc(var(--dip) * 0.753),
+  100% calc(100% - var(--sdip) * 0.247), 99.5% calc(100% - var(--sdip) * 0.388), 99% calc(100% - var(--sdip) * 0.507), 98.5% calc(100% - var(--sdip) * 0.606), 98% calc(100% - var(--sdip) * 0.689), 97% calc(100% - var(--sdip) * 0.813), 96% calc(100% - var(--sdip) * 0.896), 95% calc(100% - var(--sdip) * 0.949), 94% calc(100% - var(--sdip) * 0.98), 92% calc(100% - var(--sdip) * 1), 90% calc(100% - var(--sdip) * 0.987), 87% calc(100% - var(--sdip) * 0.942), 84% calc(100% - var(--sdip) * 0.884), 80% calc(100% - var(--sdip) * 0.804), 76% calc(100% - var(--sdip) * 0.726), 70% calc(100% - var(--sdip) * 0.616), 60% calc(100% - var(--sdip) * 0.453), 50% calc(100% - var(--sdip) * 0.314), 40% calc(100% - var(--sdip) * 0.201), 30% calc(100% - var(--sdip) * 0.113), 20% calc(100% - var(--sdip) * 0.05), 10% calc(100% - var(--sdip) * 0.013), 6px 100%, 1.8px calc(100% - 1.8px), 0 calc(100% - 6px)); }
+.stack.r .sheet { clip-path: polygon(100% calc(var(--dip) + 6px), calc(100% - 1.8px) calc(var(--dip) + 1.8px), calc(100% - 6px) var(--dip), 90% calc(var(--dip) * 0.987), 80% calc(var(--dip) * 0.95), 70% calc(var(--dip) * 0.887), 60% calc(var(--dip) * 0.799), 50% calc(var(--dip) * 0.686), 40% calc(var(--dip) * 0.547), 30% calc(var(--dip) * 0.384), 24% calc(var(--dip) * 0.274), 20% calc(var(--dip) * 0.196), 16% calc(var(--dip) * 0.116), 13% calc(var(--dip) * 0.058), 10% calc(var(--dip) * 0.013), 8% 0, 6% calc(var(--dip) * 0.02), 5% calc(var(--dip) * 0.051), 4% calc(var(--dip) * 0.104), 3% calc(var(--dip) * 0.187), 2% calc(var(--dip) * 0.311), 1.5% calc(var(--dip) * 0.394), 1% calc(var(--dip) * 0.493), 0.5% calc(var(--dip) * 0.612), 0 calc(var(--dip) * 0.753),
+  0 calc(100% - var(--sdip) * 0.247), 0.5% calc(100% - var(--sdip) * 0.388), 1% calc(100% - var(--sdip) * 0.507), 1.5% calc(100% - var(--sdip) * 0.606), 2% calc(100% - var(--sdip) * 0.689), 3% calc(100% - var(--sdip) * 0.813), 4% calc(100% - var(--sdip) * 0.896), 5% calc(100% - var(--sdip) * 0.949), 6% calc(100% - var(--sdip) * 0.98), 8% calc(100% - var(--sdip) * 1), 10% calc(100% - var(--sdip) * 0.987), 13% calc(100% - var(--sdip) * 0.942), 16% calc(100% - var(--sdip) * 0.884), 20% calc(100% - var(--sdip) * 0.804), 24% calc(100% - var(--sdip) * 0.726), 30% calc(100% - var(--sdip) * 0.616), 40% calc(100% - var(--sdip) * 0.453), 50% calc(100% - var(--sdip) * 0.314), 60% calc(100% - var(--sdip) * 0.201), 70% calc(100% - var(--sdip) * 0.113), 80% calc(100% - var(--sdip) * 0.05), 90% calc(100% - var(--sdip) * 0.013), calc(100% - 6px) 100%, calc(100% - 1.8px) calc(100% - 1.8px), 100% calc(100% - 6px)); }
 /* the paper: the theme's, a little darker toward the outer edge and into the spine */
 .journal .jpage { background: var(--grain), var(--page); }
 /* a light curve: each page scoops up from its outer edge, rounds over a crest about 8% from the spine and falls into
@@ -3069,94 +3072,79 @@ label.check-chip b { font-weight: 600; }
    pen start below the outer top corner, where the edge dips lowest (a page is a size container, so the dip is known in
    pixels), and inside the frame's sides; the page number sits above the frame's bottom rules, clear of its corners */
 .journal .book:not(.single) .jpage { container-type: size; }
+/* a page's scrollbar: thin, in the paper's colours (not the system's) */
+.journal .jbody { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--page) 62%, var(--ink)) transparent; }
 .journal .book:not(.single) .jbody { --dip-px: calc(var(--dipn) * 1cqh); margin: calc(var(--dip-px) + 17px) 20px 0; padding: .3rem calc(2.1rem - 20px) 1rem; }
 .journal .book:not(.single) .jpen { margin-top: -.3rem; top: -.3rem; }
 .journal .book:not(.single) .jfoot { padding-bottom: 1.5rem; }
-.journal .book:not(.single) .jleft { border-radius: 0; clip-path: polygon(0 calc(var(--dip) * 1), 10% calc(var(--dip) * 0.986), 20% calc(var(--dip) * 0.946), 30% calc(var(--dip) * 0.878), 40% calc(var(--dip) * 0.784), 50% calc(var(--dip) * 0.662), 60% calc(var(--dip) * 0.514), 70% calc(var(--dip) * 0.34), 76% calc(var(--dip) * 0.227), 80% calc(var(--dip) * 0.151), 84% calc(var(--dip) * 0.081), 87% calc(var(--dip) * 0.036), 90% calc(var(--dip) * 0.007), 92% 0, 94% calc(var(--dip) * 0.008), 96% calc(var(--dip) * 0.038), 97% calc(var(--dip) * 0.063), 98% calc(var(--dip) * 0.096), 99% calc(var(--dip) * 0.138), 100% calc(var(--dip) * 0.192),
-  100% calc(100% - var(--dip) * 0.808), 99% calc(100% - var(--dip) * 0.862), 98% calc(100% - var(--dip) * 0.904), 97% calc(100% - var(--dip) * 0.937), 96% calc(100% - var(--dip) * 0.962), 94% calc(100% - var(--dip) * 0.992), 92% calc(100% - var(--dip) * 1), 90% calc(100% - var(--dip) * 0.993), 87% calc(100% - var(--dip) * 0.964), 84% calc(100% - var(--dip) * 0.919), 80% calc(100% - var(--dip) * 0.849), 76% calc(100% - var(--dip) * 0.773), 70% calc(100% - var(--dip) * 0.66), 60% calc(100% - var(--dip) * 0.486), 50% calc(100% - var(--dip) * 0.338), 40% calc(100% - var(--dip) * 0.216), 30% calc(100% - var(--dip) * 0.122), 20% calc(100% - var(--dip) * 0.054), 10% calc(100% - var(--dip) * 0.014), 0 100%); }
-.journal .book:not(.single) .jright { border-radius: 0; clip-path: polygon(100% calc(var(--dip) * 1), 90% calc(var(--dip) * 0.986), 80% calc(var(--dip) * 0.946), 70% calc(var(--dip) * 0.878), 60% calc(var(--dip) * 0.784), 50% calc(var(--dip) * 0.662), 40% calc(var(--dip) * 0.514), 30% calc(var(--dip) * 0.34), 24% calc(var(--dip) * 0.227), 20% calc(var(--dip) * 0.151), 16% calc(var(--dip) * 0.081), 13% calc(var(--dip) * 0.036), 10% calc(var(--dip) * 0.007), 8% 0, 6% calc(var(--dip) * 0.008), 4% calc(var(--dip) * 0.038), 3% calc(var(--dip) * 0.063), 2% calc(var(--dip) * 0.096), 1% calc(var(--dip) * 0.138), 0 calc(var(--dip) * 0.192),
-  0 calc(100% - var(--dip) * 0.808), 1% calc(100% - var(--dip) * 0.862), 2% calc(100% - var(--dip) * 0.904), 3% calc(100% - var(--dip) * 0.937), 4% calc(100% - var(--dip) * 0.962), 6% calc(100% - var(--dip) * 0.992), 8% calc(100% - var(--dip) * 1), 10% calc(100% - var(--dip) * 0.993), 13% calc(100% - var(--dip) * 0.964), 16% calc(100% - var(--dip) * 0.919), 20% calc(100% - var(--dip) * 0.849), 24% calc(100% - var(--dip) * 0.773), 30% calc(100% - var(--dip) * 0.66), 40% calc(100% - var(--dip) * 0.486), 50% calc(100% - var(--dip) * 0.338), 60% calc(100% - var(--dip) * 0.216), 70% calc(100% - var(--dip) * 0.122), 80% calc(100% - var(--dip) * 0.054), 90% calc(100% - var(--dip) * 0.014), 100% 100%); }
+.journal .book:not(.single) .jleft { border-radius: 0; clip-path: polygon(0 calc(var(--dip) + 6px), 1.8px calc(var(--dip) + 1.8px), 6px var(--dip), 10% calc(var(--dip) * 0.987), 20% calc(var(--dip) * 0.95), 30% calc(var(--dip) * 0.887), 40% calc(var(--dip) * 0.799), 50% calc(var(--dip) * 0.686), 60% calc(var(--dip) * 0.547), 70% calc(var(--dip) * 0.384), 76% calc(var(--dip) * 0.274), 80% calc(var(--dip) * 0.196), 84% calc(var(--dip) * 0.116), 87% calc(var(--dip) * 0.058), 90% calc(var(--dip) * 0.013), 92% 0, 94% calc(var(--dip) * 0.02), 95% calc(var(--dip) * 0.051), 96% calc(var(--dip) * 0.104), 97% calc(var(--dip) * 0.187), 98% calc(var(--dip) * 0.311), 98.5% calc(var(--dip) * 0.394), 99% calc(var(--dip) * 0.493), 99.5% calc(var(--dip) * 0.612), 100% calc(var(--dip) * 0.753),
+  100% calc(100% - var(--dip) * 0.247), 99.5% calc(100% - var(--dip) * 0.388), 99% calc(100% - var(--dip) * 0.507), 98.5% calc(100% - var(--dip) * 0.606), 98% calc(100% - var(--dip) * 0.689), 97% calc(100% - var(--dip) * 0.813), 96% calc(100% - var(--dip) * 0.896), 95% calc(100% - var(--dip) * 0.949), 94% calc(100% - var(--dip) * 0.98), 92% calc(100% - var(--dip) * 1), 90% calc(100% - var(--dip) * 0.987), 87% calc(100% - var(--dip) * 0.942), 84% calc(100% - var(--dip) * 0.884), 80% calc(100% - var(--dip) * 0.804), 76% calc(100% - var(--dip) * 0.726), 70% calc(100% - var(--dip) * 0.616), 60% calc(100% - var(--dip) * 0.453), 50% calc(100% - var(--dip) * 0.314), 40% calc(100% - var(--dip) * 0.201), 30% calc(100% - var(--dip) * 0.113), 20% calc(100% - var(--dip) * 0.05), 10% calc(100% - var(--dip) * 0.013), 6px 100%, 1.8px calc(100% - 1.8px), 0 calc(100% - 6px)); }
+.journal .book:not(.single) .jright { border-radius: 0; clip-path: polygon(100% calc(var(--dip) + 6px), calc(100% - 1.8px) calc(var(--dip) + 1.8px), calc(100% - 6px) var(--dip), 90% calc(var(--dip) * 0.987), 80% calc(var(--dip) * 0.95), 70% calc(var(--dip) * 0.887), 60% calc(var(--dip) * 0.799), 50% calc(var(--dip) * 0.686), 40% calc(var(--dip) * 0.547), 30% calc(var(--dip) * 0.384), 24% calc(var(--dip) * 0.274), 20% calc(var(--dip) * 0.196), 16% calc(var(--dip) * 0.116), 13% calc(var(--dip) * 0.058), 10% calc(var(--dip) * 0.013), 8% 0, 6% calc(var(--dip) * 0.02), 5% calc(var(--dip) * 0.051), 4% calc(var(--dip) * 0.104), 3% calc(var(--dip) * 0.187), 2% calc(var(--dip) * 0.311), 1.5% calc(var(--dip) * 0.394), 1% calc(var(--dip) * 0.493), 0.5% calc(var(--dip) * 0.612), 0 calc(var(--dip) * 0.753),
+  0 calc(100% - var(--dip) * 0.247), 0.5% calc(100% - var(--dip) * 0.388), 1% calc(100% - var(--dip) * 0.507), 1.5% calc(100% - var(--dip) * 0.606), 2% calc(100% - var(--dip) * 0.689), 3% calc(100% - var(--dip) * 0.813), 4% calc(100% - var(--dip) * 0.896), 5% calc(100% - var(--dip) * 0.949), 6% calc(100% - var(--dip) * 0.98), 8% calc(100% - var(--dip) * 1), 10% calc(100% - var(--dip) * 0.987), 13% calc(100% - var(--dip) * 0.942), 16% calc(100% - var(--dip) * 0.884), 20% calc(100% - var(--dip) * 0.804), 24% calc(100% - var(--dip) * 0.726), 30% calc(100% - var(--dip) * 0.616), 40% calc(100% - var(--dip) * 0.453), 50% calc(100% - var(--dip) * 0.314), 60% calc(100% - var(--dip) * 0.201), 70% calc(100% - var(--dip) * 0.113), 80% calc(100% - var(--dip) * 0.05), 90% calc(100% - var(--dip) * 0.013), calc(100% - 6px) 100%, calc(100% - 1.8px) calc(100% - 1.8px), 100% calc(100% - 6px)); }
 .journal .book:not(.single) .stack { top: 0; }
 /* the cover board doesn't show above the open pages (they stand up off it, seen from a little above): its top is level
    with the pages' lowest top corner, the outer one, and nothing of it shows in the dip of their curve */
 .journal .book:not(.single) .binding { padding-top: 0; background: none; box-shadow: none; }
 .journal .book:not(.single) .binding::before { content: ''; position: absolute; z-index: 0; top: var(--dip); left: 0; right: 0; bottom: 0; pointer-events: none;
-  background: var(--spine), var(--cover);
-  border-radius: 9px 13px 13px 9px; box-shadow: var(--cover-shadow), inset 0 0 0 1px rgb(0 0 0 / .35); }
+  border-radius: 9px 13px 13px 9px; }
 
-/* ---------- each theme's book: its cover (only its rim shows around the open pages: corners, rules, studs and the
-   material) and its page edges (the stacks' sheets). In CSS only; the cover's colour is the theme's Book cover. ---------- */
+/* ---------- the book, dressed by the theme and the decorative style: the theme gives the materials (the cover's colour,
+   its Book cover, and texture; the paper, its Journal paper, which the page edges below are too), the style the ornament
+   on them (Plain none). Only the cover's rim shows around the open pages. In CSS only. ---------- */
 .book {
-  /* corner pieces in a metal (--trim) */
+  --cover-tex: var(--grain);
+  --cover-sheen: radial-gradient(ellipse at 30% 0, rgb(255 255 255 / .07), transparent 65%);
+  /* cloth: a fine weave */
+  --weave: repeating-linear-gradient(45deg, rgb(255 255 255 / .05) 0 1px, transparent 1px 3px), repeating-linear-gradient(-45deg, rgb(0 0 0 / .1) 0 1px, transparent 1px 3px);
+  /* corner pieces in the style's metal (--trim) */
   --corners: linear-gradient(135deg, var(--trim) 0 11px, transparent 11.5px) left top / 24px 24px no-repeat,
     linear-gradient(225deg, var(--trim) 0 11px, transparent 11.5px) right top / 24px 24px no-repeat,
     linear-gradient(45deg, var(--trim) 0 11px, transparent 11.5px) left bottom / 24px 24px no-repeat,
     linear-gradient(315deg, var(--trim) 0 11px, transparent 11.5px) right bottom / 24px 24px no-repeat;
-  /* a metal's sheen across the page edges */
-  --gilt: linear-gradient(90deg, rgb(255 255 255 / 0), rgb(255 255 255 / .32) 28%, rgb(255 255 255 / 0) 52%, rgb(255 255 255 / .2) 78%, rgb(255 255 255 / 0));
-  /* a fine sprinkle of colour on the edges */
-  --sprinkle: radial-gradient(circle at 30% 40%, rgb(0 0 0 / .38) .6px, transparent 1.1px) 0 0 / 5px 4px,
-    radial-gradient(circle at 70% 70%, rgb(0 0 0 / .3) .5px, transparent 1px) 0 0 / 7px 6px;
-  /* cloth: a fine weave */
-  --weave: repeating-linear-gradient(45deg, rgb(255 255 255 / .05) 0 1px, transparent 1px 3px), repeating-linear-gradient(-45deg, rgb(0 0 0 / .1) 0 1px, transparent 1px 3px);
 }
-/* Parchment: brown calf with a blind-tooled border; aged, deckled edges */
-:root[data-preset="parchment"] .journal .book { --edge: color-mix(in srgb, var(--page) 82%, #8a6a3a); }
-:root[data-preset="parchment"] .journal .book:not(.single) .binding::before {
-  background: var(--spine), radial-gradient(ellipse at 30% 30%, rgb(255 255 255 / .08), transparent 60%), var(--grain), var(--cover);
-  box-shadow: var(--cover-shadow), inset 0 0 0 4px var(--cover), inset 0 0 0 5px rgb(0 0 0 / .35), inset 0 0 0 6px rgb(255 255 255 / .08), inset 0 0 0 1px rgb(0 0 0 / .35); }
-/* Candlelight: oxblood leather with brass corners and studs; red-sprinkled edges */
-:root[data-preset="candlelight"] .journal .book { --trim: #b8893a; --edge: color-mix(in srgb, var(--page) 45%, #8e2a1e); --edge-fx: var(--sprinkle); }
-:root[data-preset="candlelight"] .journal .book:not(.single) .binding::before {
-  background: var(--spine), radial-gradient(circle at 7px 7px, #e2bf74 1.6px, transparent 2.2px) left top / 24px 24px no-repeat,
-    radial-gradient(circle at calc(100% - 7px) calc(100% - 7px), #e2bf74 1.6px, transparent 2.2px) right bottom / 24px 24px no-repeat,
-    radial-gradient(circle at 7px calc(100% - 7px), #e2bf74 1.6px, transparent 2.2px) left bottom / 24px 24px no-repeat,
-    radial-gradient(circle at calc(100% - 7px) 7px, #e2bf74 1.6px, transparent 2.2px) right top / 24px 24px no-repeat,
-    var(--corners), radial-gradient(ellipse at 50% 0, rgb(255 255 255 / .07), transparent 70%), var(--grain), var(--cover); }
-/* Dungeon: dark planked board, iron bands and rivets; grey, deckled edges */
-:root[data-preset="dungeon"] .journal .book { --edge: color-mix(in srgb, var(--page) 70%, #6b6f76); }
-:root[data-preset="dungeon"] .journal .book:not(.single) .binding::before {
-  background: var(--spine),
-    radial-gradient(circle, #8b9099 1.7px, #3d4046 2.2px, transparent 2.6px) 9% calc(100% - 5px) / 12px 12px no-repeat,
-    radial-gradient(circle, #8b9099 1.7px, #3d4046 2.2px, transparent 2.6px) 91% calc(100% - 5px) / 12px 12px no-repeat,
-    radial-gradient(circle, #8b9099 1.7px, #3d4046 2.2px, transparent 2.6px) 3px 3px / 12px 12px no-repeat,
-    radial-gradient(circle, #8b9099 1.7px, #3d4046 2.2px, transparent 2.6px) calc(100% - 3px) 3px / 12px 12px no-repeat,
-    linear-gradient(90deg, transparent calc(9% - 7px), #4a4d53 calc(9% - 7px) calc(9% + 7px), transparent calc(9% + 7px) calc(91% - 7px), #4a4d53 calc(91% - 7px) calc(91% + 7px), transparent calc(91% + 7px)),
-    repeating-linear-gradient(90deg, rgb(0 0 0 / .22) 0 1px, transparent 1px 38px), var(--grain), var(--cover); }
-/* Elven Grove: moss-green cloth with a double gold rule; gilt edges */
-:root[data-preset="grove"] .journal .book { --edge: #c9a24a; --edge-fx: var(--gilt); }
-:root[data-preset="grove"] .journal .book:not(.single) .binding::before {
-  background: var(--spine), var(--weave), var(--cover);
-  box-shadow: var(--cover-shadow), inset 0 0 0 4px var(--cover), inset 0 0 0 5px #c9a54a, inset 0 0 0 7px var(--cover), inset 0 0 0 8px rgb(201 165 74 / .55), inset 0 0 0 1px rgb(0 0 0 / .35); }
-/* Arcane Tome: violet velvet flecked with silver stars; silvered edges */
-:root[data-preset="arcane"] .journal .book { --edge: #b9bccb; --edge-fx: var(--gilt); }
-:root[data-preset="arcane"] .journal .book:not(.single) .binding::before {
-  background: var(--spine), radial-gradient(circle, rgb(235 235 255 / .85) .7px, transparent 1.2px) 0 0 / 37px 41px,
-    radial-gradient(circle, rgb(235 235 255 / .55) .5px, transparent 1px) 13px 19px / 53px 47px,
-    radial-gradient(circle, rgb(205 195 255 / .45) 1px, transparent 1.7px) 29px 7px / 71px 67px,
-    radial-gradient(ellipse at 50% 120%, rgb(255 255 255 / .12), transparent 60%), var(--cover);
-  box-shadow: var(--cover-shadow), inset 0 0 18px rgb(0 0 0 / .45), inset 0 0 0 1px rgb(0 0 0 / .35); }
-/* Infernal: black hide with ember-red stitching; scorched edges */
-:root[data-preset="infernal"] .journal .book { --edge: color-mix(in srgb, var(--page) 55%, #3a1610); --edge-fx: var(--sprinkle); }
-:root[data-preset="infernal"] .journal .book:not(.single) .binding::before {
-  background: var(--spine), radial-gradient(ellipse at 20% 30%, rgb(110 24 12 / .28), transparent 40%), radial-gradient(ellipse at 78% 72%, rgb(110 24 12 / .22), transparent 45%), var(--grain), var(--cover);
-  outline: 1.5px dashed color-mix(in srgb, #e5482e 80%, transparent); outline-offset: -5px;
-  box-shadow: var(--cover-shadow), inset 0 0 12px rgb(229 72 46 / .2), inset 0 0 0 1px rgb(0 0 0 / .5); }
-/* Frostmaw: blue-grey leather, silver frost corners and rule; silvered edges */
-:root[data-preset="frost"] .journal .book { --trim: #d5dde6; --edge: #b4c2d1; --edge-fx: var(--gilt); }
-:root[data-preset="frost"] .journal .book:not(.single) .binding::before {
-  background: var(--spine), var(--corners), radial-gradient(ellipse at 0 0, rgb(255 255 255 / .22), transparent 30%), radial-gradient(ellipse at 100% 100%, rgb(255 255 255 / .18), transparent 30%), var(--grain), var(--cover);
-  box-shadow: var(--cover-shadow), inset 0 0 0 4px transparent, inset 0 0 0 5px rgb(230 240 250 / .4), inset 0 0 0 1px rgb(0 0 0 / .35); }
-/* Feywild: rose cloth strewn with petals; rose-gold edges */
-:root[data-preset="feywild"] .journal .book { --edge: #d39a8a; --edge-fx: var(--gilt); }
-:root[data-preset="feywild"] .journal .book:not(.single) .binding::before {
-  background: var(--spine), radial-gradient(3px 5px at 50% 30%, rgb(255 225 238 / .38) 96%, transparent) 0 0 / 22px 22px,
-    radial-gradient(5px 3px at 30% 50%, rgb(255 225 238 / .3) 96%, transparent) 11px 11px / 22px 22px, var(--weave), var(--cover); }
-/* deckled edges (Parchment, Dungeon): the sheets' bottom edges a little ragged, each sheet its own */
-:root:is([data-preset="parchment"], [data-preset="dungeon"]) .journal .stack .sheet {
-  --dk: calc(2.4px + var(--d) * .35px);
-  -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 2px) no-repeat, radial-gradient(circle, #000 1px, transparent 1.5px) bottom / var(--dk) 3px repeat-x;
-  mask: linear-gradient(#000 0 0) top / 100% calc(100% - 2px) no-repeat, radial-gradient(circle, #000 1px, transparent 1.5px) bottom / var(--dk) 3px repeat-x; }
+/* the materials, per theme */
+:root[data-preset="parchment"] .journal .book { --cover-sheen: radial-gradient(ellipse at 30% 30%, rgb(255 255 255 / .09), transparent 60%); }
+:root[data-preset="candlelight"] .journal .book { --cover-sheen: radial-gradient(ellipse at 50% 0, rgb(255 205 150 / .08), transparent 70%); }
+:root[data-preset="dungeon"] .journal .book { --cover-tex: repeating-linear-gradient(90deg, rgb(0 0 0 / .22) 0 1px, transparent 1px 38px), var(--grain); }
+:root[data-preset="grove"] .journal .book { --cover-tex: var(--weave); }
+:root[data-preset="arcane"] .journal .book { --cover-tex: radial-gradient(ellipse at 50% 120%, rgb(255 255 255 / .12), transparent 60%); --cover-depth: inset 0 0 18px rgb(0 0 0 / .45); }
+:root[data-preset="infernal"] .journal .book { --cover-tex: radial-gradient(ellipse at 20% 30%, rgb(110 24 12 / .28), transparent 40%), radial-gradient(ellipse at 78% 72%, rgb(110 24 12 / .22), transparent 45%), var(--grain); }
+:root[data-preset="frost"] .journal .book { --cover-sheen: radial-gradient(ellipse at 0 0, rgb(255 255 255 / .2), transparent 30%), radial-gradient(ellipse at 100% 100%, rgb(255 255 255 / .16), transparent 30%); }
+:root[data-preset="feywild"] .journal .book { --cover-tex: var(--weave); --cover-sheen: radial-gradient(ellipse at 40% 0, rgb(255 225 238 / .1), transparent 65%); }
+/* the board: its material, the style's ornament on top, a light rim and a dark edge (its thickness) */
+.journal .book:not(.single) .binding::before {
+  background: var(--spine), var(--cover-orn, linear-gradient(transparent, transparent)), var(--cover-sheen), var(--cover-tex), var(--cover);
+  box-shadow: var(--cover-shadow), var(--cover-depth, 0 0 transparent), inset 0 -3px 0 color-mix(in srgb, var(--cover) 72%, #000), inset 0 0 0 1px rgb(255 255 255 / .1), inset 0 0 0 2px rgb(0 0 0 / .3); }
+/* the ornament, per style: Illuminated gilt corners and a gold rule; Runecarved iron corners with rivets and a cut line;
+   Wax & Ribbon stitching (its ribbon is below) */
+.fx[data-fx="illuminated"] .journal .book { --trim: var(--gild, #c9a24a); --cover-orn: var(--corners); }
+.fx[data-fx="illuminated"] .journal .book:not(.single) .binding::before { outline: 1px solid color-mix(in srgb, var(--gild, #c9a24a) 75%, transparent); outline-offset: -6px; }
+.fx[data-fx="runecarved"] .journal .book { --trim: color-mix(in srgb, var(--cover) 30%, #6d7179);
+  --cover-orn: radial-gradient(circle at 6px 6px, #b9bdc4 1.4px, #4a4d53 2px, transparent 2.4px) left top / 24px 24px no-repeat,
+    radial-gradient(circle at calc(100% - 6px) 6px, #b9bdc4 1.4px, #4a4d53 2px, transparent 2.4px) right top / 24px 24px no-repeat,
+    radial-gradient(circle at 6px calc(100% - 6px), #b9bdc4 1.4px, #4a4d53 2px, transparent 2.4px) left bottom / 24px 24px no-repeat,
+    radial-gradient(circle at calc(100% - 6px) calc(100% - 6px), #b9bdc4 1.4px, #4a4d53 2px, transparent 2.4px) right bottom / 24px 24px no-repeat,
+    var(--corners); }
+.fx[data-fx="runecarved"] .journal .book:not(.single) .binding::before { outline: 1px solid rgb(0 0 0 / .4); outline-offset: -7px; }
+.fx[data-fx="wax"] .journal .book:not(.single) .binding::before { outline: 1.5px dashed color-mix(in srgb, var(--accent) 60%, var(--page)); outline-offset: -6px; }
+/* the spine's foot, seen from the front: the page edges bend down into the spine around a half circle (--arch) that
+   shows the cover through it; the headband sits where the place in the book has the pages meet (--spine-f: at its left
+   edge on the first page, its right on the last); below, in the cover's rim, the spine's back bends out past the
+   board's edge between two creases */
+.book { --arch: 14px; }
+.spine-gap { position: absolute; z-index: 1; left: calc(50% - var(--arch)); width: calc(2 * var(--arch)); height: var(--arch); bottom: var(--bind);
+  border-radius: var(--arch) var(--arch) 0 0; pointer-events: none;
+  /* the cover seen through it, shadowed under the pages' edges */
+  background: var(--cover-tex), color-mix(in srgb, var(--cover) 82%, #000);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / .45); }
+.spine-back { position: absolute; z-index: 0; left: calc(50% - var(--arch) - 14px); width: calc(2 * var(--arch) + 28px); bottom: -5px; height: calc(var(--bind) + 5px); pointer-events: none;
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  /* a half cylinder lying along the spine: the cover's own material, a crease line where it leaves the board on either side */
+  background: var(--cover-tex), var(--cover);
+  box-shadow: inset 1.5px 0 rgb(0 0 0 / .5), inset -1.5px 0 rgb(0 0 0 / .5), 0 2px 3px rgb(0 0 0 / .25); }
+.headband { position: absolute; z-index: 1; left: calc(50% - 9px + (var(--spine-f, .5) * 2 - 1) * (var(--arch) - 3px)); width: 18px; height: 5px; bottom: calc(var(--bind) - 3px); border-radius: 3px 3px 1px 1px; pointer-events: none;
+  background: repeating-linear-gradient(90deg, var(--accent) 0 2px, color-mix(in srgb, var(--accent) 45%, var(--page)) 2px 4px);
+  box-shadow: 0 1px 2px rgb(0 0 0 / .4); }
 /* the gilded frame drawn along the curve (Illuminated; JournalPage's svg) */
 .jframe { display: none; position: absolute; z-index: 2; pointer-events: none; fill: none; overflow: visible; }
 .jframe path { vector-effect: non-scaling-stroke; stroke-width: 1px; }
@@ -3167,20 +3155,20 @@ label.check-chip b { font-weight: 600; }
 .fx[data-fx="illuminated"] .journal .book:not(.single) .jpage { outline: none; }
 /* its corner scrolls where the curved corners are */
 .fx[data-fx="illuminated"] .journal .book:not(.single) .jleft::after {
-  -webkit-mask: url(./styles/ornaments/corner-tl.svg) left 0 top var(--dip) / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top calc(var(--dip) * 0.192) / 14px no-repeat,
-    url(./styles/ornaments/corner-bl.svg) left 0 bottom 0 / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom calc(var(--dip) * 0.808) / 14px no-repeat;
-  mask: url(./styles/ornaments/corner-tl.svg) left 0 top var(--dip) / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top calc(var(--dip) * 0.192) / 14px no-repeat,
-    url(./styles/ornaments/corner-bl.svg) left 0 bottom 0 / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom calc(var(--dip) * 0.808) / 14px no-repeat; }
+  -webkit-mask: url(./styles/ornaments/corner-tl.svg) left 0 top var(--dip) / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top calc(var(--dip) * 0.753) / 14px no-repeat,
+    url(./styles/ornaments/corner-bl.svg) left 0 bottom 0 / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom calc(var(--dip) * 0.247) / 14px no-repeat;
+  mask: url(./styles/ornaments/corner-tl.svg) left 0 top var(--dip) / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top calc(var(--dip) * 0.753) / 14px no-repeat,
+    url(./styles/ornaments/corner-bl.svg) left 0 bottom 0 / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom calc(var(--dip) * 0.247) / 14px no-repeat; }
 .fx[data-fx="illuminated"] .journal .book:not(.single) .jright::after {
-  -webkit-mask: url(./styles/ornaments/corner-tl.svg) left 0 top calc(var(--dip) * 0.192) / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top var(--dip) / 14px no-repeat,
-    url(./styles/ornaments/corner-bl.svg) left 0 bottom calc(var(--dip) * 0.808) / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom 0 / 14px no-repeat;
-  mask: url(./styles/ornaments/corner-tl.svg) left 0 top calc(var(--dip) * 0.192) / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top var(--dip) / 14px no-repeat,
-    url(./styles/ornaments/corner-bl.svg) left 0 bottom calc(var(--dip) * 0.808) / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom 0 / 14px no-repeat; }
+  -webkit-mask: url(./styles/ornaments/corner-tl.svg) left 0 top calc(var(--dip) * 0.753) / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top var(--dip) / 14px no-repeat,
+    url(./styles/ornaments/corner-bl.svg) left 0 bottom calc(var(--dip) * 0.247) / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom 0 / 14px no-repeat;
+  mask: url(./styles/ornaments/corner-tl.svg) left 0 top calc(var(--dip) * 0.753) / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top var(--dip) / 14px no-repeat,
+    url(./styles/ornaments/corner-bl.svg) left 0 bottom calc(var(--dip) * 0.247) / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom 0 / 14px no-repeat; }
 /* Runecarved: its cut corners on the curve */
-.fx[data-fx="runecarved"] .journal .book:not(.single) .jleft { clip-path: polygon(16px calc(var(--dip) * 1), 10% calc(var(--dip) * 0.986), 20% calc(var(--dip) * 0.946), 30% calc(var(--dip) * 0.878), 40% calc(var(--dip) * 0.784), 50% calc(var(--dip) * 0.662), 60% calc(var(--dip) * 0.514), 70% calc(var(--dip) * 0.34), 76% calc(var(--dip) * 0.227), 80% calc(var(--dip) * 0.151), 84% calc(var(--dip) * 0.081), 87% calc(var(--dip) * 0.036), 90% calc(var(--dip) * 0.007), 92% 0, 94% calc(var(--dip) * 0.008), 96% calc(var(--dip) * 0.038), 97% calc(var(--dip) * 0.063), 98% calc(var(--dip) * 0.096), 99% calc(var(--dip) * 0.138), 100% calc(var(--dip) * 0.192),
-  100% calc(100% - var(--dip) * 0.808), 99% calc(100% - var(--dip) * 0.862), 98% calc(100% - var(--dip) * 0.904), 97% calc(100% - var(--dip) * 0.937), 96% calc(100% - var(--dip) * 0.962), 94% calc(100% - var(--dip) * 0.992), 92% calc(100% - var(--dip) * 1), 90% calc(100% - var(--dip) * 0.993), 87% calc(100% - var(--dip) * 0.964), 84% calc(100% - var(--dip) * 0.919), 80% calc(100% - var(--dip) * 0.849), 76% calc(100% - var(--dip) * 0.773), 70% calc(100% - var(--dip) * 0.66), 60% calc(100% - var(--dip) * 0.486), 50% calc(100% - var(--dip) * 0.338), 40% calc(100% - var(--dip) * 0.216), 30% calc(100% - var(--dip) * 0.122), 20% calc(100% - var(--dip) * 0.054), 10% calc(100% - var(--dip) * 0.014), 16px 100%, 0 calc(100% - 16px), 0 calc(16px + var(--dip))); }
-.fx[data-fx="runecarved"] .journal .book:not(.single) .jright { clip-path: polygon(calc(100% - 16px) var(--dip), 90% calc(var(--dip) * 0.986), 80% calc(var(--dip) * 0.946), 70% calc(var(--dip) * 0.878), 60% calc(var(--dip) * 0.784), 50% calc(var(--dip) * 0.662), 40% calc(var(--dip) * 0.514), 30% calc(var(--dip) * 0.34), 24% calc(var(--dip) * 0.227), 20% calc(var(--dip) * 0.151), 16% calc(var(--dip) * 0.081), 13% calc(var(--dip) * 0.036), 10% calc(var(--dip) * 0.007), 8% 0, 6% calc(var(--dip) * 0.008), 4% calc(var(--dip) * 0.038), 3% calc(var(--dip) * 0.063), 2% calc(var(--dip) * 0.096), 1% calc(var(--dip) * 0.138), 0 calc(var(--dip) * 0.192),
-  0 calc(100% - var(--dip) * 0.808), 1% calc(100% - var(--dip) * 0.862), 2% calc(100% - var(--dip) * 0.904), 3% calc(100% - var(--dip) * 0.937), 4% calc(100% - var(--dip) * 0.962), 6% calc(100% - var(--dip) * 0.992), 8% calc(100% - var(--dip) * 1), 10% calc(100% - var(--dip) * 0.993), 13% calc(100% - var(--dip) * 0.964), 16% calc(100% - var(--dip) * 0.919), 20% calc(100% - var(--dip) * 0.849), 24% calc(100% - var(--dip) * 0.773), 30% calc(100% - var(--dip) * 0.66), 40% calc(100% - var(--dip) * 0.486), 50% calc(100% - var(--dip) * 0.338), 60% calc(100% - var(--dip) * 0.216), 70% calc(100% - var(--dip) * 0.122), 80% calc(100% - var(--dip) * 0.054), 90% calc(100% - var(--dip) * 0.014), calc(100% - 16px) 100%, 100% calc(100% - 16px), 100% calc(16px + var(--dip))); }
+.fx[data-fx="runecarved"] .journal .book:not(.single) .jleft { clip-path: polygon(16px calc(var(--dip) * 1), 10% calc(var(--dip) * 0.987), 20% calc(var(--dip) * 0.95), 30% calc(var(--dip) * 0.887), 40% calc(var(--dip) * 0.799), 50% calc(var(--dip) * 0.686), 60% calc(var(--dip) * 0.547), 70% calc(var(--dip) * 0.384), 76% calc(var(--dip) * 0.274), 80% calc(var(--dip) * 0.196), 84% calc(var(--dip) * 0.116), 87% calc(var(--dip) * 0.058), 90% calc(var(--dip) * 0.013), 92% 0, 94% calc(var(--dip) * 0.02), 95% calc(var(--dip) * 0.051), 96% calc(var(--dip) * 0.104), 97% calc(var(--dip) * 0.187), 98% calc(var(--dip) * 0.311), 98.5% calc(var(--dip) * 0.394), 99% calc(var(--dip) * 0.493), 99.5% calc(var(--dip) * 0.612), 100% calc(var(--dip) * 0.753),
+  100% calc(100% - var(--dip) * 0.247), 99.5% calc(100% - var(--dip) * 0.388), 99% calc(100% - var(--dip) * 0.507), 98.5% calc(100% - var(--dip) * 0.606), 98% calc(100% - var(--dip) * 0.689), 97% calc(100% - var(--dip) * 0.813), 96% calc(100% - var(--dip) * 0.896), 95% calc(100% - var(--dip) * 0.949), 94% calc(100% - var(--dip) * 0.98), 92% calc(100% - var(--dip) * 1), 90% calc(100% - var(--dip) * 0.987), 87% calc(100% - var(--dip) * 0.942), 84% calc(100% - var(--dip) * 0.884), 80% calc(100% - var(--dip) * 0.804), 76% calc(100% - var(--dip) * 0.726), 70% calc(100% - var(--dip) * 0.616), 60% calc(100% - var(--dip) * 0.453), 50% calc(100% - var(--dip) * 0.314), 40% calc(100% - var(--dip) * 0.201), 30% calc(100% - var(--dip) * 0.113), 20% calc(100% - var(--dip) * 0.05), 10% calc(100% - var(--dip) * 0.013), 16px 100%, 0 calc(100% - 16px), 0 calc(16px + var(--dip))); }
+.fx[data-fx="runecarved"] .journal .book:not(.single) .jright { clip-path: polygon(calc(100% - 16px) var(--dip), 90% calc(var(--dip) * 0.987), 80% calc(var(--dip) * 0.95), 70% calc(var(--dip) * 0.887), 60% calc(var(--dip) * 0.799), 50% calc(var(--dip) * 0.686), 40% calc(var(--dip) * 0.547), 30% calc(var(--dip) * 0.384), 24% calc(var(--dip) * 0.274), 20% calc(var(--dip) * 0.196), 16% calc(var(--dip) * 0.116), 13% calc(var(--dip) * 0.058), 10% calc(var(--dip) * 0.013), 8% 0, 6% calc(var(--dip) * 0.02), 5% calc(var(--dip) * 0.051), 4% calc(var(--dip) * 0.104), 3% calc(var(--dip) * 0.187), 2% calc(var(--dip) * 0.311), 1.5% calc(var(--dip) * 0.394), 1% calc(var(--dip) * 0.493), 0.5% calc(var(--dip) * 0.612), 0 calc(var(--dip) * 0.753),
+  0 calc(100% - var(--dip) * 0.247), 0.5% calc(100% - var(--dip) * 0.388), 1% calc(100% - var(--dip) * 0.507), 1.5% calc(100% - var(--dip) * 0.606), 2% calc(100% - var(--dip) * 0.689), 3% calc(100% - var(--dip) * 0.813), 4% calc(100% - var(--dip) * 0.896), 5% calc(100% - var(--dip) * 0.949), 6% calc(100% - var(--dip) * 0.98), 8% calc(100% - var(--dip) * 1), 10% calc(100% - var(--dip) * 0.987), 13% calc(100% - var(--dip) * 0.942), 16% calc(100% - var(--dip) * 0.884), 20% calc(100% - var(--dip) * 0.804), 24% calc(100% - var(--dip) * 0.726), 30% calc(100% - var(--dip) * 0.616), 40% calc(100% - var(--dip) * 0.453), 50% calc(100% - var(--dip) * 0.314), 60% calc(100% - var(--dip) * 0.201), 70% calc(100% - var(--dip) * 0.113), 80% calc(100% - var(--dip) * 0.05), 90% calc(100% - var(--dip) * 0.013), calc(100% - 16px) 100%, 100% calc(100% - 16px), 100% calc(16px + var(--dip))); }
 /* the journal's controls on the right of its header */
 .journal-head > .spacer { flex: 1; }
 .book.single .spread { background: var(--grain), var(--page); }

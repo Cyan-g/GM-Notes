@@ -9,6 +9,7 @@
 // A character's classes and subclasses count the same way too: their Features, each from a level in that class, with
 // uses that can grow by level (Rage), scaling values (Sneak Attack), and picks (Fighting Style, Expertise, Metamagic).
 import type { AbilityBonus, CharacterSheet, Entry, GearEffect, Id, SpeciesState, Speeds, Trait, TraitChoice, TraitGrant, TraitOption, TraitSpell } from './model/types'
+import { computed } from 'vue'
 import { classesOf, totalLevel, withoutClass } from './model/classes'
 import { classEntry, classLabel } from './classRules'
 import { byType, entries, get, listOptions, state } from './store'
@@ -622,6 +623,17 @@ export function choiceOffer(c: TraitChoice, have: HaveNow | undefined, picked: s
   if (c.kind === 'feat') return all.filter(o => { const need = get(o.id)?.fields.requirements?.classes ?? []; return keep(o) || !need.length || need.some(x => have.classes.includes(x.toLowerCase())) })
   return all
 }
+/** Every feature name in the world (classes, subclasses, species, backgrounds, feats, and their options: Fighting Style,
+ * Pact of the Blade), for a "has this feature" prerequisite; as list options, the name as its id. */
+export const featureNames = (): { id: string; label: string }[] => allFeatureNames.value
+const allFeatureNames = computed(() => {
+  const names = new Set<string>()
+  for (const e of entries.value) {
+    if (!['class', 'subclass', 'race', 'background', 'feat'].includes(e.type)) continue
+    for (const t of traitsOf(e)) { if (t.name?.trim()) names.add(t.name.trim()); for (const o of t.choice?.options ?? []) if (o.name?.trim()) names.add(o.name.trim()) }
+  }
+  return [...names].sort((a, b) => a.localeCompare(b)).map(n => ({ id: n, label: n }))
+})
 /** The world's spells a spell choice can take: of its level, on one of its classes' lists (any, if none), rituals if asked. */
 export function spellsMatching(f: TraitChoice['spell']): Entry[] {
   const classes = f?.classes ?? []

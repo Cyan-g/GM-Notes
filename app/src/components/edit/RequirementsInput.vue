@@ -6,6 +6,7 @@ import { computed } from 'vue'
 import type { Requirements } from '../../model/types'
 import { ABILITIES, SKILLS } from '../../model/dnd'
 import { listOptions } from '../../store'
+import { featureNames } from '../../species'
 import ProfChips from '../ProfChips.vue'
 import EntryPicker from './EntryPicker.vue'
 import EntryLink from '../EntryLink.vue'
@@ -43,7 +44,7 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
     </div>
     <div v-if="features" class="req-row">
       <span class="req-label">Has feature</span>
-      <ProfChips :values="r.features ?? []" :suggest="[]" :create="(x: string) => x" placeholder="e.g. Fighting Style…" @change="v => put({ features: v })" />
+      <ProfChips :values="r.features ?? []" :suggest="featureNames()" :create="(x: string) => x" placeholder="e.g. Fighting Style…" @change="v => put({ features: v })" />
     </div>
     <div class="req-row">
       <span class="req-label">Class</span>

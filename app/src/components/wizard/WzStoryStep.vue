@@ -5,8 +5,6 @@ import { computed } from 'vue'
 import { byType, get, playerMode } from '../../store'
 import { defaultCampaigns, wizard } from '../../wizard'
 import Dropdown from '../Dropdown.vue'
-import SuggestInput from '../SuggestInput.vue'
-import { AGES, usedValues } from '../../npc'
 import { useDraft } from '../../composables/useDraft'
 import { inputValue as val } from '../../dom'
 
@@ -14,8 +12,6 @@ const { d } = useDraft()
 // the campaigns it joins: the running one unless picked otherwise
 const chosen = computed(() => d.value.campaigns ?? defaultCampaigns())
 const campaigns = computed(() => (byType.value.get('campaign') ?? []).filter(c => !chosen.value.includes(c.id)).sort((a, b) => a.name.localeCompare(b.name)))
-/** What a look can be: what characters and NPCs already have (ages also the usual words), as on the Edit page. */
-const looksFor = (k: string) => (k === 'age' ? [...new Set([...AGES, ...usedValues('age')])] : usedValues(k))
 const addCampaign = (id: string) => { if (id) wizard.d.campaigns = [...chosen.value, id] }
 const dropCampaign = (id: string) => { wizard.d.campaigns = chosen.value.filter(x => x !== id) }
 </script>
@@ -24,7 +20,7 @@ const dropCampaign = (id: string) => { wizard.d.campaigns = chosen.value.filter(
   <!-- who: the name big, with player and campaign beside it; then looks and story side by side -->
   <div class="wz-who">
     <label class="wz-name"><span>Name</span><input :class="{ 'wz-todo': !d.name.trim() }" :value="d.name" placeholder="The character's name" @input="wizard.d.name = val($event)" /></label>
-    <label v-if="!playerMode" class="wz-player"><span>Player</span><SuggestInput :value="d.player" :options="usedValues('player', ['pc'])" @input="wizard.d.player = val($event)" /></label>
+    <label v-if="!playerMode" class="wz-player"><span>Player</span><input :value="d.player" @input="wizard.d.player = val($event)" /></label>
     <div class="wz-campaigns"><span>Campaign</span>
       <span class="wz-campaign-list">
         <span v-for="id in chosen" :key="id" class="chip">{{ get(id)?.name ?? id }} <button type="button" class="link-btn" title="Not in this campaign" @click="dropCampaign(id)">×</button></span>
@@ -40,7 +36,7 @@ const dropCampaign = (id: string) => { wizard.d.campaigns = chosen.value.filter(
     <section class="card wz-looks">
       <h3>Looks</h3>
       <div class="wz-looks-grid">
-        <label v-for="(v, k) in d.looks" :key="k" :class="{ wide: k === 'clothing' }"><span>{{ k.charAt(0).toUpperCase() + k.slice(1) }}</span><SuggestInput :value="v" :options="looksFor(String(k))" @input="wizard.d.looks = { ...d.looks, [k]: val($event) }" /></label>
+        <label v-for="(v, k) in d.looks" :key="k" :class="{ wide: k === 'clothing' }"><span>{{ k.charAt(0).toUpperCase() + k.slice(1) }}</span><input :value="v" @input="wizard.d.looks = { ...d.looks, [k]: val($event) }" /></label>
       </div>
     </section>
     <section class="card wz-story">

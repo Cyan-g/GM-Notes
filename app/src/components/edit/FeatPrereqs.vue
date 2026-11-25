@@ -8,6 +8,7 @@ import type { Entry, Requirements } from '../../model/types'
 import { TYPES } from '../../model/schema'
 import { ABILITIES, SKILLS } from '../../model/dnd'
 import { listOptions } from '../../store'
+import { featureNames } from '../../species'
 import { changed } from '../../edit'
 import { describeRequirements } from '../../requirements'
 import FieldInput from './FieldInput.vue'
@@ -122,7 +123,7 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
               </div>
             </template>
             <span v-else-if="c.id === 'spellcaster'" class="small">The character can cast spells (a Spellcasting or Pact Magic feature).</span>
-            <ProfChips v-else-if="c.id === 'features'" :values="req.features ?? []" :suggest="[]" :create="(x: string) => x" placeholder="e.g. Fighting Style…" @change="v => putReq({ features: v })" />
+            <ProfChips v-else-if="c.id === 'features'" :values="req.features ?? []" :suggest="featureNames()" :create="(x: string) => x" placeholder="e.g. Fighting Style…" @change="v => putReq({ features: v })" />
             <ProfChips v-else-if="c.id === 'classes'" :values="req.classes ?? []" :toggles="listOptions('class')" @change="v => putReq({ classes: v })" />
             <template v-else-if="c.id === 'races'">
               <span v-for="id in req.races ?? []" :key="id" class="chip"><EntryLink :id="id" /><button type="button" class="link-btn" title="Remove" @click="putReq({ races: (req.races ?? []).filter(x => x !== id) })">×</button></span>

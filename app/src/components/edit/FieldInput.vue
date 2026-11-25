@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import LinkTextarea from './LinkTextarea.vue'
-import SuggestInput from '../SuggestInput.vue'
-import { usedValues } from '../../npc'
+import { campaignColor } from '../../sessions'
 import Dropdown from '../Dropdown.vue'
 import TraitsInput from './TraitsInput.vue'
 import ClassBasicsInput from './ClassBasicsInput.vue'
@@ -28,7 +27,6 @@ import ListInput from './ListInput.vue'
 import MoneyInput from './MoneyInput.vue'
 import RecipeInput from './RecipeInput.vue'
 import StockInput from './StockInput.vue'
-import StatblockInput from './StatblockInput.vue'
 import EncounterInput from './EncounterInput.vue'
 import RanksInput from './RanksInput.vue'
 import EffectsInput from './EffectsInput.vue'
@@ -85,7 +83,12 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
     <input :value="value ?? ''" :placeholder="def.placeholder" @input="value = ($event.target as HTMLInputElement).value" />
     <button type="button" class="link-btn small" title="Today's date" @click="value = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })">Today</button>
   </span>
-  <SuggestInput v-else-if="def.kind === 'text' && def.suggest" :value="value ?? ''" :options="usedValues(def.key, [entry.type])" :placeholder="def.placeholder" @input="value = ($event.target as HTMLInputElement).value" />
+  <!-- a campaign's colour on the calendar: picked; empty, it's one of the palette's -->
+  <span v-else-if="def.kind === 'text' && def.key === 'color' && entry.type === 'campaign'" class="color-field">
+    <input type="color" :value="/^#[0-9a-f]{6}$/i.test(String(value ?? '')) ? value : (campaignColor(entry.id) ?? '#888888')" aria-label="Colour on the calendar" @input="value = ($event.target as HTMLInputElement).value" />
+    <button v-if="value" type="button" class="link-btn small" title="Use the palette's colour again" @click="value = undefined">auto</button>
+    <span v-else class="muted small">the palette's</span>
+  </span>
   <input v-else-if="def.kind === 'text'" :value="value ?? ''" :placeholder="def.placeholder" @input="value = ($event.target as HTMLInputElement).value" />
   <LinkTextarea v-else-if="def.kind === 'longtext'" rows="3" :value="value ?? ''" @input="value = ($event.target as HTMLTextAreaElement).value" />
   <input v-else-if="def.kind === 'number'" type="number" :value="value ?? ''" @change="value = ($event.target as HTMLInputElement).value === '' ? undefined : Number(($event.target as HTMLInputElement).value)" />
@@ -119,7 +122,6 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
   <RecipeInput v-else-if="def.kind === 'recipe'" v-model="value" :item-value="entry.fields.value" />
   <StockInput v-else-if="def.kind === 'stock'" v-model="value" :markup="(entry.fields.markup) ?? 1" />
   <EncounterInput v-else-if="def.kind === 'combatants'" v-model="value" />
-  <StatblockInput v-else-if="def.kind === 'statblock'" v-model="value" />
   <ImageInput v-else-if="def.kind === 'image'" :model-value="value" :hint="`${entry.name} ${def.label.toLowerCase()}`" @update:model-value="v => (value = v)" />
   <input v-else :value="value ?? ''" @input="value = ($event.target as HTMLInputElement).value" />
 </template>

@@ -19,6 +19,8 @@ const put = (p: Partial<TraitChoice>) => {
   model.value = c
 }
 type SpellFilter = NonNullable<TraitChoice['spell']>
+/** The world's feat kinds (Origin Feat, Fighting Style…), for a feat choice. */
+const featKinds = computed(() => listOptions('feat.category'))
 const spell = computed<SpellFilter>(() => model.value.spell ?? { how: 'atWill' })
 const putSpell = (p: Partial<SpellFilter>) => {
   const f: SpellFilter = { ...spell.value, ...p }
@@ -49,7 +51,12 @@ const LEVELS = ['Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9']
     <StepsInput numeric label="How many" :model-value="model.steps" @update:model-value="v => put({ steps: v as [number, number][] | undefined })" />
   </details>
   <label v-if="model.kind === 'skill'" class="small" title="A picked skill the character is already proficient in becomes Expertise (Keen Mind, Observant)"><input type="checkbox" :checked="!!model.orExpertise" @change="put({ orExpertise: ($event.target as HTMLInputElement).checked || undefined })" /> or Expertise if proficient</label>
-  <label v-if="model.kind === 'feat'" class="small">kind <input class="steps-label" :value="model.category ?? ''" placeholder="e.g. Fighting Style" @change="put({ category: val($event).trim() || undefined })" /></label>
+  <!-- which feats it offers: one kind of the world's feat kinds (the Lists page), or any -->
+  <label v-if="model.kind === 'feat'" class="small">kind <Dropdown compact :value="model.category ?? ''" aria-label="Which kind of feat" @change="put({ category: val($event) || undefined })">
+    <option value="">any feat</option>
+    <option v-for="o in featKinds" :key="o.id" :value="o.id">{{ o.label }}</option>
+    <option v-if="model.category && !featKinds.some(o => o.id === model.category)" :value="model.category">{{ model.category }}</option>
+  </Dropdown></label>
   <template v-if="model.kind === 'spell'">
     <Dropdown :value="spell.level ?? ''" aria-label="Spell level" @change="putSpell({ level: val($event) || undefined })">
       <option value="">any level</option>

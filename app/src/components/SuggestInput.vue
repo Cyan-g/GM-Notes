@@ -42,7 +42,8 @@ function position() {
 }
 function show() {
   if (open.value) return
-  typed.value = input.value?.value ?? ''
+  // opened on a box that already holds a value: the whole list, filtered only once something is typed
+  typed.value = ''
   open.value = true
   sel.value = -1
   position()

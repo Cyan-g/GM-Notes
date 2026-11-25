@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // A deity's facts: rank, epithet, alignment, the cleric domains it offers and its portfolio always; where it
 // dwells, who worships it, its symbol, holy days and the subclasses it's a patron of once added.
+import SuggestInput from '../SuggestInput.vue'
 import { computed } from 'vue'
 import type { Entry } from '../../model/types'
 import { TYPES, byKey } from '../../model/schema'
@@ -38,8 +39,7 @@ const holidayOptions = computed(() => holidays().map(h => ({ id: h.name, label: 
       <label class="sf-field npc-occ"><span class="sf-label">Epithet</span>
         <input :value="f.epithet ?? ''" placeholder="e.g. the golden lady" @change="set('epithet', val($event).trim())" /></label>
       <label class="sf-field"><span class="sf-label">Alignment</span>
-        <input :value="f.alignment ?? ''" list="deity-alignments" placeholder="e.g. neutral good" @change="set('alignment', val($event).trim())" />
-        <datalist id="deity-alignments"><option v-for="a in ALIGNMENTS" :key="a" :value="a" /></datalist></label>
+        <SuggestInput :value="f.alignment ?? ''" :options="ALIGNMENTS" placeholder="e.g. neutral good" @change="set('alignment', val($event).trim())" /></label>
     </div>
     <PartRow label="Domains" label-title="The cleric domains it offers" fixed><FieldInput :def="def('domains')" :entry="entry" /></PartRow>
     <PartRow label="Portfolio" label-title="What it holds sway over" fixed>

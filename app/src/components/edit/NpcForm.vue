@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // An NPC's who-they-are line (occupation, attitude to the party, status) and how to play them. The roleplay parts
 // show once added: an NPC with only a name isn't a page of empty boxes.
+import SuggestInput from '../SuggestInput.vue'
 import LinkTextarea from './LinkTextarea.vue'
 import { computed } from 'vue'
 import type { Entry } from '../../model/types'
@@ -44,15 +45,13 @@ const { shown, addable, open, close } = useParts(PARTS, k => !isEmpty(f.value[k]
   <section class="card npc-form">
     <div class="npc-who">
       <label class="sf-field npc-occ"><span class="sf-label">Occupation</span>
-        <input :value="f.occupation ?? ''" list="npc-occupations" placeholder="e.g. blacksmith, queen, smuggler" @change="set('occupation', val($event).trim())" />
-        <datalist id="npc-occupations"><option v-for="o in occupations" :key="o" :value="o" /></datalist>
+        <SuggestInput :value="f.occupation ?? ''" :options="occupations" placeholder="e.g. blacksmith, queen, smuggler" @change="set('occupation', val($event).trim())" />
       </label>
       <div class="sf-field"><span class="sf-label" title="How they stand with the party">Attitude</span>
         <AttitudePicker type="npc" :model-value="f.attitude" @update:model-value="v => set('attitude', v)" />
       </div>
       <label class="sf-field npc-status"><span class="sf-label">Status</span>
-        <input :value="f.status ?? ''" list="npc-statuses" placeholder="Alive" title="Pick one or type your own" @change="set('status', val($event).trim())" />
-        <datalist id="npc-statuses"><option v-for="s in statuses" :key="s" :value="s" /></datalist>
+        <SuggestInput :value="f.status ?? ''" :options="statuses" placeholder="Alive" title="Pick one or type your own" @change="set('status', val($event).trim())" />
       </label>
       <label v-if="!living" class="sf-field"><span class="sf-label">Since</span>
         <DateInput :model-value="f.statusSince" @update:model-value="v => set('statusSince', v)" />

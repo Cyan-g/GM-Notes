@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Edit every relation of one entry. A change shows up on the other entry's page too.
+import SuggestInput from '../SuggestInput.vue'
 import Dropdown from '../Dropdown.vue'
 import { computed, ref } from 'vue'
 import type { Entry, EntryType, Relation, RelationKind } from '../../model/types'
@@ -102,8 +103,7 @@ function add(other: string) {
         <div v-for="r in g.list" :key="r.id" class="rel-row" :class="{ open: open.has(r.id) }">
           <div class="rel-line">
             <EntryPicker class="rel-who" :model-value="otherOf(r)" :exclude="[entry.id]" @update:model-value="v => setOther(r, v)" />
-            <input class="rel-role" :value="r.role ?? ''" :list="`roles-${r.id}`" :placeholder="rankTitles(r).length ? 'rank' : 'role'" title="Role (optional)" @change="setField(r, 'role', ($event.target as HTMLInputElement).value.trim())" />
-            <datalist :id="`roles-${r.id}`"><option v-for="t in rolesFor(r)" :key="t" :value="t" /></datalist>
+            <SuggestInput class="rel-role" :value="r.role ?? ''" :options="rolesFor(r)" :placeholder="rankTitles(r).length ? 'rank' : 'role'" title="Role (optional)" @change="setField(r, 'role', ($event.target as HTMLInputElement).value.trim())" />
             <button type="button" class="rel-more" :class="{ dated: !!dates(r) }" :title="open.has(r.id) ? 'Hide details' : RELATION_KINDS[r.kind].dated ? 'Kind, and since when' : 'Kind'" @click="toggle(r.id)">{{ dates(r) || (RELATION_KINDS[r.kind].dated ? 'when?' : '⋯') }}</button>
             <button type="button" class="x" title="Remove this relation" @click="removeRelation(r.id)">×</button>
           </div>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // A creature's statblock as a form: buttons and boxes instead of statblock text. The free-text parts of the
 // stored statblock ("30 ft., fly 30 ft. (hover)", "perception +5") are read into fields and written back the same way.
+import SuggestInput from '../SuggestInput.vue'
 import LinkTextarea from './LinkTextarea.vue'
 import Dropdown from '../Dropdown.vue'
 import { computed, onMounted, ref } from 'vue'
@@ -269,8 +270,7 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
       </template>
       <template v-if="source === 'srd'">
         <div class="cf-row">
-          <input class="cf-srd-input" :value="sb.srd ?? ''" list="cf-srd-names" :placeholder="`Search the SRD's ${srdMonsterNames.length || 330} monsters…`" @change="set('srd', val($event).trim() || undefined)" />
-          <datalist id="cf-srd-names"><option v-for="n in srdMonsterNames" :key="n" :value="n" /></datalist>
+          <SuggestInput class="cf-srd-input" :value="sb.srd ?? ''" :options="srdMonsterNames" :placeholder="`Search the SRD's ${srdMonsterNames.length || 330} monsters…`" @change="set('srd', val($event).trim() || undefined)" />
           <button v-if="srdBase" type="button" class="chip-btn" title="Write its stats into the form (with what's set here on top), to change them; the creature then has its own stats" @click="copySrd">Copy its stats in</button>
         </div>
         <p v-if="srdBase" class="muted small">{{ srdBase.name }}<template v-if="srdBase.name.toLowerCase() !== (sb.srd ?? '').toLowerCase()"> (for “{{ sb.srd }}”)</template>: {{ srdBase.statblock.size }} {{ srdBase.statblock.creatureType }}, CR {{ srdBase.statblock.cr }}. Its stats show on the right, greyed in the form; anything you fill in replaces them.</p>
@@ -296,8 +296,7 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
           <input :value="typeParts.tags" placeholder="e.g. shapechanger" @change="setType(typeValue, val($event))" />
         </label>
         <label class="sf-field"><span class="sf-label">Alignment</span>
-          <input :value="sb.alignment ?? ''" list="cf-align" :placeholder="ph.alignment ?? 'e.g. neutral evil'" @change="set('alignment', val($event).trim() || undefined)" />
-          <datalist id="cf-align"><option v-for="a in ALIGNMENTS" :key="a" :value="a" /></datalist>
+          <SuggestInput :value="sb.alignment ?? ''" :options="ALIGNMENTS" :placeholder="ph.alignment ?? 'e.g. neutral evil'" @change="set('alignment', val($event).trim() || undefined)" />
         </label>
         <label class="sf-field"><span class="sf-label">Challenge</span>
           <span class="cf-row">
@@ -455,12 +454,11 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
         </template>
       </div>
       <div v-for="(l, i) in sc?.lists ?? []" :key="i" class="cf-row cf-splist">
-        <input class="effect-value cf-sclabel" :value="l.label" list="cf-sclabels" @change="setList(i, { label: val($event).trim() || 'At Will' })" />
+        <SuggestInput class="effect-value cf-sclabel" :value="l.label" :options="SC_LABELS" @change="setList(i, { label: val($event).trim() || 'At Will' })" />
         <span v-for="id in l.spells" :key="id" class="chip"><EntryLink :id="id" /><button type="button" class="link-btn" title="Remove" @click="setList(i, { spells: l.spells.filter(x => x !== id) })">×</button></span>
         <EntryPicker add :types="['spell']" :exclude="l.spells" placeholder="+ spell…" @pick="id => setList(i, { spells: [...l.spells, id] })" />
         <button type="button" class="link-btn" title="Remove this list" @click="removeList(i)">×</button>
       </div>
-      <datalist id="cf-sclabels"><option v-for="x in SC_LABELS" :key="x" :value="x" /></datalist>
       <button v-if="sc" type="button" class="chip-btn" @click="addList">＋ List</button>
     </section>
 

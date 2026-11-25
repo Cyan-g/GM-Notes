@@ -2,6 +2,7 @@
 // One row of proficiencies on the character sheet. Values are ids (list options or Tool items): the fixed
 // choices show as toggles (Light, Medium…), the rest as chips that can be removed, plus a box to add one of the
 // suggestions. With `create`, a name that isn't one yet is added to its list first.
+import SuggestInput from './SuggestInput.vue'
 import { computed, ref } from 'vue'
 import type { ListOption } from '../model/lists'
 
@@ -21,7 +22,6 @@ const props = defineProps<{
   given?: { id: string; from: string }[]
 }>()
 const emit = defineEmits<{ change: [values: string[]] }>()
-const listId = `prof-${Math.random().toString(36).slice(2, 8)}`
 const typed = ref('')
 const all = computed(() => [...(props.toggles ?? []), ...(props.suggest ?? [])])
 /** An option's label; an id the lists don't have reads as words ("bagpipes" → "Bagpipes", "herbalism-kit" → "Herbalism kit"). */
@@ -64,8 +64,7 @@ function add() {
       <span v-for="v in givenExtras" :key="'g-' + v" class="chip prof-chip given" :title="`From ${givenBy(v)}`">{{ labelOf(v) }}</span>
       <span v-for="v in extras" :key="v" class="chip prof-chip">{{ labelOf(v) }}<button v-if="!disabled" type="button" class="link-btn" :title="`Remove ${labelOf(v)}`" @click="remove(v)">×</button></span>
       <template v-if="!disabled && (create || offered.length)">
-        <input v-model="typed" class="prof-add" :list="listId" :placeholder="placeholder ?? 'Add…'" @keydown.enter.prevent="add" @change="add" />
-        <datalist :id="listId"><option v-for="o in offered" :key="o.id" :value="o.label" /></datalist>
+        <SuggestInput v-model="typed" class="prof-add" :options="offered.map(o => o.label)" :placeholder="placeholder ?? 'Add…'" @keydown.enter.prevent="add" @change="add" />
       </template>
       <span v-if="disabled && !values.length && !givenExtras.length" class="muted small">none</span>
     </div>

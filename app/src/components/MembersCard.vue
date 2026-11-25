@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Members of an organization as of a chosen year: who was in, who had left, who came later.
+import SuggestInput from './SuggestInput.vue'
 import { computed, ref } from 'vue'
 import type { Entry, Relation } from '../model/types'
 import { db, formatDate, get, playerMode, relationsWith, state } from '../store'
@@ -48,8 +49,7 @@ const range = (r: Relation) => (r.from || r.to) ? `${r.from ? formatDate(r.from)
     <div v-if="canEdit" class="members-add">
       <EntryPicker add :types="['npc', 'pc', 'creature', 'deity', 'organization']" :exclude="[org.id, ...members.map(r => r.a)]" placeholder="＋ member…" @pick="addMember" />
       <span class="muted small">as</span>
-      <input v-model="newRank" class="short" :list="`ranks-${org.id}`" :placeholder="ranksOf(org).length ? 'rank' : 'role'" title="Their rank or role (optional)" />
-      <datalist :id="`ranks-${org.id}`"><option v-for="k in ranksOf(org)" :key="k.title" :value="k.title" /></datalist>
+      <SuggestInput v-model="newRank" class="short" :options="ranksOf(org).map(k => k.title)" :placeholder="ranksOf(org).length ? 'rank' : 'role'" title="Their rank or role (optional)" />
     </div>
     <details v-if="split.before.length">
       <summary class="muted small">Earlier members ({{ split.before.length }})</summary>

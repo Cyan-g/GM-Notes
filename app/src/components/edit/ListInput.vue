@@ -1,11 +1,11 @@
 <script setup lang="ts">
 // A list of short texts as removable chips. Enter or comma adds one.
+import SuggestInput from '../SuggestInput.vue'
 import { ref } from 'vue'
 
 const props = defineProps<{ modelValue?: string[]; options?: readonly string[]; placeholder?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [string[]] }>()
 const q = ref('')
-const id = `dl-${Math.random().toString(36).slice(2)}`
 
 function add() {
   const v = q.value.trim().replace(/,$/, '')
@@ -29,7 +29,6 @@ function key(ev: KeyboardEvent) {
 <template>
   <div class="list-input">
     <span v-for="(v, i) in modelValue ?? []" :key="v + i" class="chip">{{ v }}<button type="button" class="x" @click="remove(i)">×</button></span>
-    <input v-model="q" :list="options ? id : undefined" :placeholder="placeholder || 'Add…'" @keydown="key" @blur="add" />
-    <datalist v-if="options" :id="id"><option v-for="o in options.filter(o => !(modelValue ?? []).includes(o))" :key="o" :value="o" /></datalist>
+    <SuggestInput v-model="q" :options="(options ?? []).filter(o => !(modelValue ?? []).includes(o))" :placeholder="placeholder || 'Add…'" @keydown="key" @blur="add" />
   </div>
 </template>

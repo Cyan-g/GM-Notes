@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // An NPC's looks: race, gender and age always; hair, eyes, skin and clothing once added. What the world already
 // says (black hair, golden eyes) is offered while typing. An age can be a word or worked out from a birth date.
+import SuggestInput from '../SuggestInput.vue'
 import { computed, ref } from 'vue'
 import type { Entry } from '../../model/types'
 import { TYPES } from '../../model/schema'
@@ -35,13 +36,11 @@ const age = computed(() => ageOf(props.entry))
     <div><FieldInput id="f-race" :def="raceDef" :entry="entry" /></div>
 
     <label for="f-gender">Gender</label>
-    <div><input id="f-gender" :value="f.gender ?? ''" list="npc-dl-gender" @change="set('gender', val($event).trim())" />
-      <datalist id="npc-dl-gender"><option v-for="v in suggestions('gender')" :key="v" :value="v" /></datalist></div>
+    <div><SuggestInput id="f-gender" :value="f.gender ?? ''" :options="suggestions('gender')" @change="set('gender', val($event).trim())" /></div>
 
     <label for="f-age">Age</label>
     <div>
-      <input v-if="!f.born" id="f-age" :value="f.age ?? ''" list="npc-dl-age" placeholder="a word or a number" @change="set('age', val($event).trim())" />
-      <datalist id="npc-dl-age"><option v-for="v in [...new Set([...AGES, ...suggestions('age')])]" :key="v" :value="v" /></datalist>
+      <SuggestInput v-if="!f.born" id="f-age" :value="f.age ?? ''" :options="[...new Set([...AGES, ...suggestions('age')])]" placeholder="a word or a number" @change="set('age', val($event).trim())" />
       <div v-if="showBorn" class="npc-born">
         <span class="muted small">born</span>
         <DateInput :model-value="f.born" @update:model-value="v => { set('born', v); if (!v) bornOpen = false }" />
@@ -51,8 +50,7 @@ const age = computed(() => ageOf(props.entry))
     </div>
 
     <PartRow v-for="k in shownLooks" :key="k" :label="label(k)" :label-for="`f-${k}`" @remove="close(k)">
-      <input :id="`f-${k}`" :value="f[k] ?? ''" :list="`npc-dl-${k}`" @change="set(k, val($event).trim())" />
-      <datalist :id="`npc-dl-${k}`"><option v-for="v in suggestions(k)" :key="v" :value="v" /></datalist>
+      <SuggestInput :id="`f-${k}`" :value="f[k] ?? ''" :options="suggestions(k)" @change="set(k, val($event).trim())" />
     </PartRow>
     <AddPartsBar class="full npc-add" :parts="addable" :label="label" @add="open" />
   </div>

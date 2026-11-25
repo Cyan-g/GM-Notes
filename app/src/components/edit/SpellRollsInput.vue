@@ -6,7 +6,8 @@
 import Dropdown from '../Dropdown.vue'
 import { computed } from 'vue'
 import type { Entry, SpellRoll } from '../../model/types'
-import { DAMAGE } from '../../model/schema'
+import { TYPES } from '../../model/schema'
+import { fieldOptions } from '../../store'
 import { growthText, rollText } from '../../spells'
 import { ORD } from '../../model/dnd'
 import { inputValue as val } from '../../dom'
@@ -14,6 +15,8 @@ import { inputValue as val } from '../../dom'
 const model = defineModel<SpellRoll[] | undefined>()
 const props = defineProps<{ cantrip?: boolean; /** The spell (for its level, in the growth and preview). */ spell: Entry }>()
 const list = computed(() => model.value ?? [])
+/** The world's damage types (the Lists page), as on items and effects. */
+const damageTypes = computed(() => fieldOptions(TYPES.item.fields.find(x => x.key === 'damageType')))
 const lvl = computed(() => Number(props.spell.fields.level) || 0)
 function put(i: number, p: Partial<SpellRoll>) {
   const l = list.value.map(x => ({ ...x }))
@@ -41,7 +44,7 @@ const preview = (r: SpellRoll) => [rollText(props.spell, r), growthText(props.sp
         <input class="effect-value roll-dice" :value="r.dice" placeholder="2d10" aria-label="Dice" @change="put(i, { dice: val($event).trim() || '1d6' })" />
         <Dropdown v-if="r.kind === 'damage'" :value="r.type ?? ''" aria-label="Damage type" @change="put(i, { type: val($event) || undefined })">
           <option value="">any type</option>
-          <option v-for="t in DAMAGE" :key="t" :value="t">{{ t }}</option>
+          <option v-for="t in damageTypes" :key="t.id" :value="t.id">{{ t.label }}</option>
         </Dropdown>
         <label class="small effect-check" title="Plus the caster's spellcasting ability modifier"><input type="checkbox" :checked="!!r.mod" @change="put(i, { mod: ($event.target as HTMLInputElement).checked })" /> + spellcasting modifier</label>
         <button type="button" class="link-btn roll-x" title="Remove this roll" @click="remove(i)">×</button>

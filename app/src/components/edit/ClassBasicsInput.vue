@@ -8,8 +8,7 @@ import { computed } from 'vue'
 import type { ClassBasics } from '../../model/types'
 import { builtInBasics } from '../../classRules'
 import { DICE } from '../../model/classes'
-import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from '../../model/schema'
-import { entries, get } from '../../store'
+import { entries, get, listOptions } from '../../store'
 import { itemNamed } from '../../lookup'
 import { isToolKind } from '../../species'
 import ProfChips from '../ProfChips.vue'
@@ -38,11 +37,12 @@ const CASTERS: { id: NonNullable<ClassBasics['caster']>; label: string }[] = [
   { id: 'none', label: 'No spellcasting' }, { id: 'full', label: 'Full caster (Wizard, Cleric…)' }, { id: 'half', label: 'Half caster (Paladin, Ranger)' },
   { id: 'third', label: 'Third caster (Eldritch Knight)' }, { id: 'pact', label: 'Pact Magic (Warlock)' }, { id: 'artificer', label: 'Artificer (half, rounded up)' },
 ]
-const ARMOR = ['Light', 'Medium', 'Heavy', 'Shield']
-const WEAPONS = ['Simple', 'Martial']
-const WEAPON_TOGGLES = WEAPONS.map(x => ({ id: x, label: `${x} weapons` }))
+// the world's armor types, weapon categories and weapons (the Lists page)
+const ARMOR = computed(() => listOptions('item.armorType').map(o => o.id))
+const WEAPONS = computed(() => listOptions('item.weaponCategory').map(o => o.id))
+const WEAPON_TOGGLES = computed(() => listOptions('item.weaponCategory').map(o => ({ id: o.id, label: `${o.label} weapons` })))
 /** Single weapons a class can be proficient with (a Rogue's Rapier), besides Simple and Martial ones. */
-const WEAPON_NAMES = [...SIMPLE_WEAPONS, ...MARTIAL_WEAPONS].sort().map(x => ({ id: x, label: x }))
+const WEAPON_NAMES = computed(() => [...listOptions('item.baseWeapon')].sort((a, b) => a.label.localeCompare(b.label)))
 const LEVELS = Array.from({ length: 20 }, (_, i) => i + 1)
 const casts = computed(() => (cur.value.caster ?? 'none') !== 'none')
 /** One number per level for a by-level table (cantrips, prepared spells). */

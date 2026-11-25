@@ -6,7 +6,7 @@ import LinkTextarea from './LinkTextarea.vue'
 import Dropdown from '../Dropdown.vue'
 import { computed, onMounted, ref } from 'vue'
 import { loadSrdMonsters, srdMonster, srdMonsterNames, withSrd } from '../../srd'
-import { fieldOptions, get, optionLabel } from '../../store'
+import { fieldOptions, get, listOptions, optionLabel } from '../../store'
 import type { Abilities, Entry, Feature, Statblock } from '../../model/types'
 import { TYPES } from '../../model/schema'
 import { changed, isEmpty } from '../../edit'
@@ -33,7 +33,8 @@ function set<K extends keyof Statblock>(key: K, v: Statblock[K] | undefined) {
 const num = (raw: string) => (raw.trim() === '' ? undefined : Number(raw))
 
 // ---- identity: size, type (+ tags in brackets), alignment ----
-const SIZES = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']
+/** The world's sizes (the Lists page); a statblock keeps the word. */
+const SIZES = computed(() => listOptions('size').map(o => o.label))
 const sizeIs = (s: string) => (sb.value.size ?? '').toLowerCase() === s.toLowerCase()
 const TYPE_OPTIONS = computed(() => fieldOptions(TYPES.creature.fields.find(f => f.key === 'creatureType')))
 const typeParts = computed(() => {
@@ -159,8 +160,9 @@ function setRest(which: 'speed' | 'senses', v?: string) {
 }
 
 // ---- damage and conditions ----
-const DAMAGE = ['Acid', 'Bludgeoning', 'Cold', 'Fire', 'Force', 'Lightning', 'Necrotic', 'Piercing', 'Poison', 'Psychic', 'Radiant', 'Slashing', 'Thunder']
-const LANGS = ['Common', 'Dwarvish', 'Elvish', 'Giant', 'Gnomish', 'Goblin', 'Halfling', 'Orc', 'Abyssal', 'Celestial', 'Draconic', 'Deep Speech', 'Infernal', 'Primordial', 'Sylvan', 'Undercommon', 'telepathy 60 ft.', "understands Common but can't speak"]
+/** The world's damage types and languages (the Lists page), as words; languages with the statblock's usual extras. */
+const DAMAGE = computed(() => fieldOptions(TYPES.item.fields.find(x => x.key === 'damageType')).map(o => o.label))
+const LANGS = computed(() => [...listOptions('language').map(o => o.label), 'telepathy 60 ft.', "understands Common but can't speak"])
 const NONMAGICAL = 'bludgeoning, piercing, and slashing from nonmagical attacks'
 
 // ---- features: traits, actions, … one tab each ----

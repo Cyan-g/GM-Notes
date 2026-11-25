@@ -72,7 +72,7 @@ const toggleIn = (key: 'ownSaves' | 'ownArmor' | 'ownWeapons', v: string) => {
     <div class="wz-row"><span>Armor</span>
       <span class="seg"><button v-for="o in armorTypes" :key="o.id" type="button" :class="{ on: d.ownArmor.includes(o.id) }" @click="toggleIn('ownArmor', o.id)">{{ o.label }}</button></span></div>
     <div class="wz-row"><span>Weapons</span>
-      <span class="seg"><button v-for="w in ['Simple', 'Martial']" :key="w" type="button" :class="{ on: d.ownWeapons.includes(w) }" @click="toggleIn('ownWeapons', w)">{{ w }}</button></span></div>
+      <span class="seg"><button v-for="w in listOptions('item.weaponCategory')" :key="w.id" type="button" :class="{ on: d.ownWeapons.includes(w.id) }" @click="toggleIn('ownWeapons', w.id)">{{ w.label }}</button></span></div>
     <div class="wz-row"><label>Skills to pick <input type="number" min="0" max="8" class="wz-small" :value="d.ownSkillCount" @change="wizard.d.ownSkillCount = num($event)" /></label></div>
   </template>
   <p v-if="granted.length" class="small"><b>From the species and background:</b>{{ ' ' }}<template v-for="(g, i) in granted" :key="i"><template v-if="i">, </template>{{ grantOptions(g.kind).find(o => o.id === g.id)?.label ?? g.id }} <span class="muted">({{ g.from }})</span></template></p>

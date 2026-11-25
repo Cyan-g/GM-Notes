@@ -8,7 +8,7 @@ import { computed, ref } from 'vue'
 import type { Entry, Regain } from '../../model/types'
 import { TYPES, MASTERY_OF, byKey, type FieldDef } from '../../model/schema'
 import { changed, setField, toggleField } from '../../edit'
-import { formatMoney } from '../../store'
+import { formatMoney, listOptions } from '../../store'
 import { parseRegain, worksWhileOf } from '../../items'
 import { mainCoin, rule } from '../../rules'
 import { itemNamed } from '../../lookup'
@@ -127,7 +127,8 @@ function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete
         <label class="sheet-field"><span>Rarity</span>
           <Dropdown :value="String(f.rarity ?? '')" @change="setRarity(val($event))">
             <option value="">—</option>
-            <option v-for="r in ['Common', 'Uncommon', 'Rare', 'Very rare', 'Legendary', 'Artifact']" :key="r" :value="r">{{ r }}</option>
+            <!-- the world's rarities (the Lists page) -->
+            <option v-for="r in listOptions('item.rarity')" :key="r.id" :value="r.id">{{ r.label }}</option>
           </Dropdown>
           <small v-if="usualPrice" class="muted">usual price {{ formatMoney(usualPrice) }}{{ consumable ? ' (consumable: half)' : '' }}</small>
           <small v-else-if="f.rarity === 'Artifact'" class="muted">priceless</small></label>

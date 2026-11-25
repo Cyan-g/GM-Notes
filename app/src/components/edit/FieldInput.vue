@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import LinkTextarea from './LinkTextarea.vue'
+import SuggestInput from '../SuggestInput.vue'
+import { usedValues } from '../../npc'
 import Dropdown from '../Dropdown.vue'
 import TraitsInput from './TraitsInput.vue'
 import ClassBasicsInput from './ClassBasicsInput.vue'
@@ -83,6 +85,7 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
     <input :value="value ?? ''" :placeholder="def.placeholder" @input="value = ($event.target as HTMLInputElement).value" />
     <button type="button" class="link-btn small" title="Today's date" @click="value = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })">Today</button>
   </span>
+  <SuggestInput v-else-if="def.kind === 'text' && def.suggest" :value="value ?? ''" :options="usedValues(def.key, [entry.type])" :placeholder="def.placeholder" @input="value = ($event.target as HTMLInputElement).value" />
   <input v-else-if="def.kind === 'text'" :value="value ?? ''" :placeholder="def.placeholder" @input="value = ($event.target as HTMLInputElement).value" />
   <LinkTextarea v-else-if="def.kind === 'longtext'" rows="3" :value="value ?? ''" @input="value = ($event.target as HTMLTextAreaElement).value" />
   <input v-else-if="def.kind === 'number'" type="number" :value="value ?? ''" @change="value = ($event.target as HTMLInputElement).value === '' ? undefined : Number(($event.target as HTMLInputElement).value)" />

@@ -17,6 +17,8 @@ export interface FieldDef {
   kind: FieldKind
   /** A text field's hint while it's empty. */
   placeholder?: string
+  /** A text field that suggests the values already used for it by entries of its type (a PC's Player). */
+  suggest?: boolean
   /** A choice field's starting options (see lists.ts: the world's lists are managed on the Lists page). */
   options?: readonly string[]
   /** The list it picks from, when several fields share one; otherwise "<type>.<key>". */
@@ -108,7 +110,7 @@ export const SCHEMA = [
   },
   {
     type: 'pc', label: 'Player character', plural: 'Player characters', icon: '🛡️', fields: [
-      { key: 'player', label: 'Player', kind: 'text' },
+      { key: 'player', label: 'Player', kind: 'text', suggest: true },
       // Classes and their levels are set on the sheet (Edit page); the level is the sum, or this one without a class.
       { key: 'classLevels', label: 'Classes', kind: 'classes' },
       { key: 'level', label: 'Level', kind: 'number' },

@@ -32,7 +32,8 @@ const SCHOOLS = computed(() => opts('school'))
 const KINDS = computed(() => opts('spellType'))
 const ABILITIES = computed(() => opts('savingThrow'))
 const CLASSES = computed(() => opts('classes'))
-const CONDITION_OPTS = TYPES.spell.fields.find(x => x.key === 'conditions')?.options ?? []
+/** The world's conditions a spell can cause (the Lists page). */
+const CONDITION_OPTS = computed(() => opts('conditions').map(o => o.id))
 /** The usual wordings, one click away. */
 const QUICK = {
   castingTime: ['Action', 'Bonus Action', 'Reaction', '1 minute', '10 minutes', '1 hour', '8 hours'],
@@ -73,7 +74,7 @@ function setArea(p: Partial<SpellArea> | null) {
 const num = (ev: Event) => Number((ev.target as HTMLInputElement).value) || undefined
 
 // ---- conditions: the ones it causes, more from the menu ----
-const missing = computed(() => CONDITION_OPTS.filter(c => !(f.value.conditions ?? []).includes(c)))
+const missing = computed(() => CONDITION_OPTS.value.filter(c => !(f.value.conditions ?? []).includes(c)))
 function addCondition(ev: Event) { const s = ev.target as HTMLSelectElement; if (s.value) toggleIn('conditions', s.value); s.value = '' }
 </script>
 

@@ -3015,7 +3015,8 @@ label.check-chip b { font-weight: 600; }
    pages read so far (left) and still to come (right) are stacked under the spread, as thick as they are many
    (--stack-l, --stack-r: 0 to 1, JournalBook). Each decorative style adds its touch below. */
 .book {
-  --page: color-mix(in srgb, var(--panel) 88%, var(--accent));
+  /* the theme's journal paper (theme.ts); a page shown before the theme is applied: the cards' colour toward the accent */
+  --page: var(--paper, color-mix(in srgb, var(--panel) 88%, var(--accent)));
   --page-edge: color-mix(in srgb, var(--page) 72%, #000);
   --cover: color-mix(in srgb, var(--accent) 28%, #20140b);
   --bind: 7px; --stack-max: 13px; --stack-side: 8px;
@@ -3027,19 +3028,21 @@ label.check-chip b { font-weight: 600; }
   border-radius: 9px 13px 13px 9px; box-shadow: 0 20px 44px rgb(0 0 0 / .38), 0 2px 6px rgb(0 0 0 / .25), inset 0 0 0 1px rgb(0 0 0 / .35); }
 .book.single .binding { padding: var(--bind); }
 .binding > .spread { flex: 1; position: relative; z-index: 1; box-shadow: 0 1px 3px rgb(0 0 0 / .3); border-radius: 4px 7px 7px 4px; }
-/* the stacks: a few whole sheets behind each half, each a little lower and further out than the one above it and a shade
-   darker, so their edges read as paper below the page and on its outer side; the spacing grows with the pages they
-   stand for. The box itself is paper a shade darker than the open page, so that page's curved bottom edge shows. */
+/* the stacks: a few whole sheets behind each half (JournalBook), each a little lower and further out than the one above
+   it and a shade darker (toward black, never toward the ink: on a dark theme that would make them lighter than the open
+   page), so their edges read as paper below the page and on its outer side; the spacing grows with the pages they stand
+   for. Each sheet curves like the open page, the less the deeper it lies (--k, JournalBook's sheetCurve). */
 .stack { position: absolute; z-index: 0; top: var(--bind); bottom: calc(var(--bind) + var(--stack-max)); width: calc((100% - 2 * var(--bind) - 2 * var(--stack-side)) / 2);
-  /* (darker toward black, never toward the ink: on a dark theme that would make them lighter than the open page) */
-  background: color-mix(in srgb, var(--page) 88%, #000); --e1: color-mix(in srgb, var(--page) 91%, #000); --e2: color-mix(in srgb, var(--page) 86%, #000);
-  --e3: color-mix(in srgb, var(--page) 81%, #000); --e4: color-mix(in srgb, var(--page) 76%, #000); --e5: color-mix(in srgb, var(--page) 70%, #000); }
-.stack.l { --g: calc((1px + var(--stack-l) * 11px) / 5); left: calc(var(--bind) + var(--stack-side)); border-radius: 6px 0 0 6px;
-  box-shadow: calc(var(--g) * -.6) var(--g) 0 0 var(--e1), calc(var(--g) * -1.2) calc(var(--g) * 2) 0 0 var(--e2), calc(var(--g) * -1.8) calc(var(--g) * 3) 0 0 var(--e3),
-    calc(var(--g) * -2.4) calc(var(--g) * 4) 0 0 var(--e4), calc(var(--g) * -3) calc(var(--g) * 5) 0 0 var(--e5), calc(var(--g) * -3) calc(var(--g) * 5 + 2px) 6px rgb(0 0 0 / .3); }
-.stack.r { --g: calc((1px + var(--stack-r) * 11px) / 5); right: calc(var(--bind) + var(--stack-side)); border-radius: 0 6px 6px 0;
-  box-shadow: calc(var(--g) * .6) var(--g) 0 0 var(--e1), calc(var(--g) * 1.2) calc(var(--g) * 2) 0 0 var(--e2), calc(var(--g) * 1.8) calc(var(--g) * 3) 0 0 var(--e3),
-    calc(var(--g) * 2.4) calc(var(--g) * 4) 0 0 var(--e4), calc(var(--g) * 3) calc(var(--g) * 5) 0 0 var(--e5), calc(var(--g) * 3) calc(var(--g) * 5 + 2px) 6px rgb(0 0 0 / .3); }
+  filter: drop-shadow(0 3px 5px rgb(0 0 0 / .3)); }
+.stack.l { --g: calc((1px + var(--stack-l) * 11px) / 5); --side: -.6; left: calc(var(--bind) + var(--stack-side)); }
+.stack.r { --g: calc((1px + var(--stack-r) * 11px) / 5); --side: .6; right: calc(var(--bind) + var(--stack-side)); }
+.sheet { position: absolute; inset: 0; z-index: calc(10 - var(--d)); --sdip: calc(var(--dip, 0%) * var(--k));
+  background: color-mix(in srgb, var(--page) calc(90% - var(--d) * 4%), #000);
+  transform: translate(calc(var(--g) * var(--d) * var(--side)), calc(var(--g) * var(--d))); }
+.stack.l .sheet { clip-path: polygon(0 calc(var(--sdip) * 1), 10% calc(var(--sdip) * 0.986), 20% calc(var(--sdip) * 0.946), 30% calc(var(--sdip) * 0.878), 40% calc(var(--sdip) * 0.784), 50% calc(var(--sdip) * 0.662), 60% calc(var(--sdip) * 0.514), 70% calc(var(--sdip) * 0.34), 76% calc(var(--sdip) * 0.227), 80% calc(var(--sdip) * 0.151), 84% calc(var(--sdip) * 0.081), 87% calc(var(--sdip) * 0.036), 90% calc(var(--sdip) * 0.007), 92% 0, 94% calc(var(--sdip) * 0.008), 96% calc(var(--sdip) * 0.038), 97% calc(var(--sdip) * 0.063), 98% calc(var(--sdip) * 0.096), 99% calc(var(--sdip) * 0.138), 100% calc(var(--sdip) * 0.192),
+  100% calc(100% - var(--sdip) * 0.808), 99% calc(100% - var(--sdip) * 0.862), 98% calc(100% - var(--sdip) * 0.904), 97% calc(100% - var(--sdip) * 0.937), 96% calc(100% - var(--sdip) * 0.962), 94% calc(100% - var(--sdip) * 0.992), 92% calc(100% - var(--sdip) * 1), 90% calc(100% - var(--sdip) * 0.993), 87% calc(100% - var(--sdip) * 0.964), 84% calc(100% - var(--sdip) * 0.919), 80% calc(100% - var(--sdip) * 0.849), 76% calc(100% - var(--sdip) * 0.773), 70% calc(100% - var(--sdip) * 0.66), 60% calc(100% - var(--sdip) * 0.486), 50% calc(100% - var(--sdip) * 0.338), 40% calc(100% - var(--sdip) * 0.216), 30% calc(100% - var(--sdip) * 0.122), 20% calc(100% - var(--sdip) * 0.054), 10% calc(100% - var(--sdip) * 0.014), 0 100%); }
+.stack.r .sheet { clip-path: polygon(100% calc(var(--sdip) * 1), 90% calc(var(--sdip) * 0.986), 80% calc(var(--sdip) * 0.946), 70% calc(var(--sdip) * 0.878), 60% calc(var(--sdip) * 0.784), 50% calc(var(--sdip) * 0.662), 40% calc(var(--sdip) * 0.514), 30% calc(var(--sdip) * 0.34), 24% calc(var(--sdip) * 0.227), 20% calc(var(--sdip) * 0.151), 16% calc(var(--sdip) * 0.081), 13% calc(var(--sdip) * 0.036), 10% calc(var(--sdip) * 0.007), 8% 0, 6% calc(var(--sdip) * 0.008), 4% calc(var(--sdip) * 0.038), 3% calc(var(--sdip) * 0.063), 2% calc(var(--sdip) * 0.096), 1% calc(var(--sdip) * 0.138), 0 calc(var(--sdip) * 0.192),
+  0 calc(100% - var(--sdip) * 0.808), 1% calc(100% - var(--sdip) * 0.862), 2% calc(100% - var(--sdip) * 0.904), 3% calc(100% - var(--sdip) * 0.937), 4% calc(100% - var(--sdip) * 0.962), 6% calc(100% - var(--sdip) * 0.992), 8% calc(100% - var(--sdip) * 1), 10% calc(100% - var(--sdip) * 0.993), 13% calc(100% - var(--sdip) * 0.964), 16% calc(100% - var(--sdip) * 0.919), 20% calc(100% - var(--sdip) * 0.849), 24% calc(100% - var(--sdip) * 0.773), 30% calc(100% - var(--sdip) * 0.66), 40% calc(100% - var(--sdip) * 0.486), 50% calc(100% - var(--sdip) * 0.338), 60% calc(100% - var(--sdip) * 0.216), 70% calc(100% - var(--sdip) * 0.122), 80% calc(100% - var(--sdip) * 0.054), 90% calc(100% - var(--sdip) * 0.014), 100% 100%); }
 /* the paper: the theme's, a little darker toward the outer edge and into the spine */
 .journal .jpage { background: var(--grain), var(--page); }
 /* a light curve: each page scoops up from its outer edge, rounds over a crest about 8% from the spine and falls into

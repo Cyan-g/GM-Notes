@@ -17,6 +17,10 @@ import LeafStrip from './LeafStrip.vue'
 
 /** How many strips a turning page bends in. */
 const STRIPS = 8
+/** How strongly a sheet in the stacks curves (like the open page: 1), `depth` sheets below it: weaker the deeper it lies. */
+const sheetCurve = (depth: number) => 0.85 * 0.72 ** depth
+/** The stacks' sheets, from the one right under the page down: their curves. */
+const SHEETS = Array.from({ length: 6 }, (_, d) => sheetCurve(d).toFixed(3))
 
 /** `at`: the session the book is opened at (else the page last open in this campaign, else its latest session). */
 const props = defineProps<{ campaign: Entry; at?: Id }>()
@@ -113,8 +117,8 @@ function remembered() { return lastOpenByCampaign }
       <!-- the binding: the cover board behind, and the pages already read (left) and still to come (right) stacked
            under the open spread, as thick as they are many -->
       <div class="binding" :style="{ '--stack-l': stackL, '--stack-r': stackR }">
-      <div v-if="!narrow" class="stack l" aria-hidden="true" />
-      <div v-if="!narrow" class="stack r" aria-hidden="true" />
+      <div v-if="!narrow" class="stack l" aria-hidden="true"><i v-for="(k, d) in SHEETS" :key="d" class="sheet" :style="{ '--d': d, '--k': k }" /></div>
+      <div v-if="!narrow" class="stack r" aria-hidden="true"><i v-for="(k, d) in SHEETS" :key="d" class="sheet" :style="{ '--d': d, '--k': k }" /></div>
       <div class="spread">
         <template v-if="narrow">
           <JournalPage :campaign="campaign" :leaf="leaf" side="both" :num="page * 2 + 1" :write-now="leaf.kind === 'session' && leaf.s.id === writeNow" />

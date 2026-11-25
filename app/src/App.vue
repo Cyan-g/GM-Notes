@@ -61,7 +61,7 @@ const typing = (t: EventTarget | null) => t instanceof HTMLElement && (t.isConte
 function onKey(ev: KeyboardEvent) {
   const mod = ev.ctrlKey || ev.metaKey
   if (mod && ev.key.toLowerCase() === 'k') { ev.preventDefault(); ui.switcher = !ui.switcher }
-  else if (mod && ev.key.toLowerCase() === 's') { ev.preventDefault(); save() }
+  else if (mod && ev.key.toLowerCase() === 's') { ev.preventDefault(); void saveAndClose() }
   // back and forward as in a browser, but not while typing (Alt+arrows move by word there)
   else if (ev.altKey && !mod && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') && !typing(ev.target)) {
     ev.preventDefault()
@@ -72,6 +72,16 @@ function onKey(ev: KeyboardEvent) {
     else if (ev.key === 'f' && !route.current.edit) { ev.preventDefault(); toggleFavourite(route.current.id) }
     else if (ev.key === 'Escape' && route.current.edit) go(hrefEntry(route.current.id))
   }
+}
+/** Ctrl+S: save; in an edit mode (an entry's, the calendar's) also leave it, as Done does. The field being typed in is
+ * committed first (most fields take their value when they lose focus). */
+async function saveAndClose() {
+  const r = route.current
+  const editing = (r.name === 'entry' && r.edit) || (r.name === 'calendar' && r.edit)
+  if (editing && document.activeElement instanceof HTMLElement) document.activeElement.blur()
+  await save()
+  if (r.name === 'entry' && r.edit) go(hrefEntry(r.id))
+  else if (r.name === 'calendar' && r.edit) go('#/calendar')
 }
 // Warn before closing the tab while a save is still pending.
 const reload = () => location.reload()

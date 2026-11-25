@@ -81,7 +81,7 @@ const missing = computed(() => CONDITION_OPTS.value.filter(c => !(f.value.condit
 /** A condition typed or picked in the box: added when it's one of the list's (any case), and the box empties. */
 function addCondition(ev: Event) {
   const el = ev.target as HTMLInputElement, c = missing.value.find(x => x.toLowerCase() === el.value.trim().toLowerCase())
-  if (c) { toggleIn('conditions', c); el.value = '' }
+  if (c) { toggleIn('conditions', c); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })) }
 }
 </script>
 

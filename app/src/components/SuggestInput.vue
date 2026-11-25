@@ -7,12 +7,18 @@
 // Every other attribute and listener (class, placeholder, @change, @keydown.enter, v-model) goes to the <input>
 // itself, and a pick sets its value and sends `input` and `change` as typing would, so a field that used a datalist
 // works unchanged. `options`: words, or { value, label } when what's written differs from what's shown.
-import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, useAttrs, watch } from 'vue'
 
 defineOptions({ inheritAttrs: false })
 const props = defineProps<{ options: (string | { value: string; label?: string })[]; /** With v-model. */ modelValue?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 const input = ref<HTMLInputElement>()
+// What's in the box: its own copy, so a redraw (the list filtering as you type) never puts the field's saved value back
+// over what's being typed (Vue writes an input's value on every redraw). It follows the field when that changes.
+const attrs = useAttrs()
+const outside = computed(() => String((props.modelValue !== undefined ? props.modelValue : attrs.value) ?? ''))
+const current = ref(outside.value)
+watch(outside, v => { current.value = v })
 const open = ref(false)
 const typed = ref('')
 const sel = ref(-1)
@@ -58,6 +64,7 @@ function hide() {
 onBeforeUnmount(hide)
 function onInput() {
   typed.value = input.value?.value ?? ''
+  current.value = typed.value
   emit('update:modelValue', typed.value)
   sel.value = -1
   if (!open.value) show()
@@ -67,6 +74,7 @@ function pick(value: string) {
   const el = input.value
   if (!el) return
   el.value = value
+  current.value = value
   el.dispatchEvent(new Event('input', { bubbles: true }))
   el.dispatchEvent(new Event('change', { bubbles: true }))
   typed.value = value
@@ -97,7 +105,7 @@ function onKey(e: KeyboardEvent) {
 
 <template>
   <span class="suggest" @keydown.capture="onKey">
-    <input ref="input" v-bind="$attrs" :value="modelValue !== undefined ? modelValue : $attrs.value" autocomplete="off" @focus="show" @click="show" @input="onInput" @blur="hide" />
+    <input ref="input" v-bind="$attrs" :value="current" autocomplete="off" @focus="show" @click="show" @input="onInput" @blur="hide" />
     <Teleport to="body">
       <ul v-if="showList" class="picker-list floating suggest-list" :style="place" role="listbox">
         <!-- mousedown: picked before the box loses focus (which closes the list) -->

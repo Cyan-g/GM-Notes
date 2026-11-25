@@ -90,7 +90,7 @@ const skillSuggest = (s: string) => modOf(SKILLS[s]) + prof.value
 /** A skill typed or picked in the box: added when it's one of the skills (any case), and the box empties. */
 function addSkill(ev: Event) {
   const el = ev.target as HTMLInputElement, name = Object.keys(SKILLS).find(k => k.toLowerCase() === el.value.trim().toLowerCase())
-  if (name && !skillOn(name)) { toggleSkill(name); el.value = '' }
+  if (name && !skillOn(name)) { toggleSkill(name); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })) }
 }
 function toggleSkill(s: string) {
   set('skills', writeBonuses(skillOn(s) ? skills.value.filter(b => b.name.toLowerCase() !== s.toLowerCase()) : [...skills.value, { name: s, n: skillSuggest(s) }]))

@@ -94,8 +94,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', onResize))
 /** Where the book is open, in words: "Session 12 of 63", "Cover", "Next page". */
 const where = computed(() => (leaf.value.kind === 'cover' ? 'The party' : leaf.value.kind === 'next' ? 'The next session'
   : `Session ${leaf.value.s.fields.number ?? page.value} of ${sessions.value.length}`))
-/** Where the spine's foot has the pages meet: 0 at the first page (all of them on the right), 1 at the last. */
-const spineAt = computed(() => (leaves.value.length > 1 ? page.value / (leaves.value.length - 1) : 0.5).toFixed(3))
 /** The sheets under each side: the pages before the open one, and after it. */
 const sheetsL = computed(() => sheetsFor(page.value))
 const sheetsR = computed(() => sheetsFor(Math.max(0, leaves.value.length - 1 - page.value)))
@@ -133,9 +131,9 @@ function remembered() { return lastOpenByCampaign }
       <button type="button" class="book-edge prev" title="The page before (←)" aria-label="The page before" :disabled="page <= 0" @click="turnTo(page - 1)">‹</button>
       <!-- the binding: the cover board behind, and the pages already read (left) and still to come (right) stacked
            under the open spread, as thick as they are many -->
-      <div class="binding" :style="{ '--spine-f': spineAt }">
-      <!-- the spine's foot: its back bending out below the board, the arch where the stacks meet, the headband -->
-      <i v-if="!narrow" class="spine-back" aria-hidden="true" /><i v-if="!narrow" class="spine-gap" aria-hidden="true" /><i v-if="!narrow" class="headband" aria-hidden="true" />
+      <div class="binding">
+      <!-- the spine's foot: its back bending out below the board, the arch where the stacks meet -->
+      <i v-if="!narrow" class="spine-back" aria-hidden="true" /><i v-if="!narrow" class="spine-gap" aria-hidden="true" />
       <div v-if="!narrow" class="stack l" aria-hidden="true"><i v-for="(x, d) in sheetsL" :key="d" class="sheet" :style="{ '--d': d, '--k': x.k, '--o': x.off, '--ox': x.out }" /></div>
       <div v-if="!narrow" class="stack r" aria-hidden="true"><i v-for="(x, d) in sheetsR" :key="d" class="sheet" :style="{ '--d': d, '--k': x.k, '--o': x.off, '--ox': x.out }" /></div>
       <div class="spread">

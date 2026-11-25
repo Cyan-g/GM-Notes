@@ -2943,6 +2943,8 @@ label.check-chip b { font-weight: 600; }
 /* the spine between the pages */
 .spread::after { content: ''; position: absolute; top: 0; bottom: 0; left: calc(50% - 1px); width: 2px; background: color-mix(in srgb, var(--ink) 18%, transparent); pointer-events: none; z-index: 2; }
 .book.single .spread::after { display: none; }
+/* (it starts and ends where the pages' edges do at the spine, where they dip: 0.753 and 0.247 of --dip, as in their clip-paths) */
+.journal .book:not(.single) .spread::after { top: calc(var(--dip) * 0.753); bottom: calc(var(--dip) * 0.247); }
 /* a page: its text scrolls within it, the page number stays at its foot */
 .jpage { position: relative; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--page); color: var(--ink); }
 .jbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1.6rem 2.1rem 1rem; }
@@ -3084,7 +3086,7 @@ label.check-chip b { font-weight: 600; }
 .journal .book:not(.single) .stack { top: 0; }
 /* the cover board doesn't show above the open pages (they stand up off it, seen from a little above): its top is level
    with the pages' lowest top corner, the outer one, and nothing of it shows in the dip of their curve */
-.journal .book:not(.single) .binding { padding-top: 0; background: none; box-shadow: none; }
+.journal .book:not(.single) .binding { padding-top: 0; background: none; box-shadow: none; isolation: isolate; }
 .journal .book:not(.single) .binding::before { content: ''; position: absolute; z-index: 0; top: var(--dip); left: 0; right: 0; bottom: 0; pointer-events: none;
   border-radius: 9px 13px 13px 9px; }
 
@@ -3128,23 +3130,17 @@ label.check-chip b { font-weight: 600; }
 .fx[data-fx="runecarved"] .journal .book:not(.single) .binding::before { outline: 1px solid rgb(0 0 0 / .4); outline-offset: -7px; }
 .fx[data-fx="wax"] .journal .book:not(.single) .binding::before { outline: 1.5px dashed color-mix(in srgb, var(--accent) 60%, var(--page)); outline-offset: -6px; }
 /* the spine's foot, seen from the front: the page edges bend down into the spine around a half circle (--arch) that
-   shows the cover through it; the headband sits where the place in the book has the pages meet (--spine-f: at its left
-   edge on the first page, its right on the last); below, in the cover's rim, the spine's back bends out past the
-   board's edge between two creases */
+   shows the cover through it; below, the spine's back bends out past the board's edge */
 .book { --arch: 14px; }
 .spine-gap { position: absolute; z-index: 1; left: calc(50% - var(--arch)); width: calc(2 * var(--arch)); height: var(--arch); bottom: var(--bind);
   border-radius: var(--arch) var(--arch) 0 0; pointer-events: none;
-  /* the cover seen through it, shadowed under the pages' edges */
-  background: var(--cover-tex), color-mix(in srgb, var(--cover) 82%, #000);
-  box-shadow: inset 0 2px 4px rgb(0 0 0 / .45); }
-.spine-back { position: absolute; z-index: 0; left: calc(50% - var(--arch) - 14px); width: calc(2 * var(--arch) + 28px); bottom: -5px; height: calc(var(--bind) + 5px); pointer-events: none;
+  /* the cover seen through it, as it is */
+  background: var(--spine), var(--cover-tex), var(--cover); }
+.spine-back { position: absolute; z-index: -1; left: calc(50% - var(--arch) - 14px); width: calc(2 * var(--arch) + 28px); bottom: -5px; height: calc(var(--bind) + 5px); pointer-events: none;
   border-radius: 0 0 50% 50% / 0 0 100% 100%;
-  /* a half cylinder lying along the spine: the cover's own material, a crease line where it leaves the board on either side */
-  background: var(--cover-tex), var(--cover);
-  box-shadow: inset 1.5px 0 rgb(0 0 0 / .5), inset -1.5px 0 rgb(0 0 0 / .5), 0 2px 3px rgb(0 0 0 / .25); }
-.headband { position: absolute; z-index: 1; left: calc(50% - 9px + (var(--spine-f, .5) * 2 - 1) * (var(--arch) - 3px)); width: 18px; height: 5px; bottom: calc(var(--bind) - 3px); border-radius: 3px 3px 1px 1px; pointer-events: none;
-  background: repeating-linear-gradient(90deg, var(--accent) 0 2px, color-mix(in srgb, var(--accent) 45%, var(--page)) 2px 4px);
-  box-shadow: 0 1px 2px rgb(0 0 0 / .4); }
+  /* a half cylinder lying along the spine, in the cover's own material and with the board's dark edge */
+  background: var(--spine), var(--cover-tex), var(--cover);
+  box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--cover) 72%, #000), 0 2px 3px rgb(0 0 0 / .25); }
 /* the gilded frame drawn along the curve (Illuminated; JournalPage's svg) */
 .jframe { display: none; position: absolute; z-index: 2; pointer-events: none; fill: none; overflow: visible; }
 .jframe path { vector-effect: non-scaling-stroke; stroke-width: 1px; }

@@ -2923,3 +2923,51 @@ label.check-chip b { font-weight: 600; }
 .add-feat-modal .lu-foot { display: flex; gap: .5rem; }
 .sp-again { display: inline-flex; gap: .4rem; align-items: center; margin-left: .4rem; }
 .old-fight { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: .6rem .8rem; margin-bottom: .6rem; border-color: var(--accent); }
+
+/* ---------- the campaign journal (components/journal): a book opened on a spread ---------- */
+.journal-entry { max-width: none; }
+.journal-head { display: flex; align-items: flex-end; gap: .8rem; margin-bottom: .7rem; }
+.journal-title { margin: 0; }
+.journal-nav { display: flex; gap: .3rem; }
+.journal-where { white-space: nowrap; }
+.book { --page: color-mix(in srgb, var(--panel) 86%, #c8a46e); position: relative; display: grid; grid-template-columns: 2.4rem minmax(0, 1fr) 2.4rem; align-items: stretch;
+  height: calc(100vh - var(--bar-h, 52px) - 10rem); min-height: 30rem; }
+.book-edge { border: none; background: transparent; box-shadow: none; padding: 0; font-size: 2.2rem; line-height: 1; color: var(--muted); }
+.book-edge:hover:not(:disabled) { color: var(--accent); }
+.book-edge:disabled { opacity: .2; cursor: default; }
+.spread { position: relative; display: grid; grid-template-columns: 1fr 1fr; min-height: 0; perspective: 4200px;
+  border-radius: 8px 12px 12px 8px; box-shadow: 0 18px 44px rgb(0 0 0 / .34), 0 2px 6px rgb(0 0 0 / .2); }
+/* the spine between the pages */
+.spread::after { content: ''; position: absolute; top: 0; bottom: 0; left: calc(50% - 1px); width: 2px; background: color-mix(in srgb, var(--ink) 18%, transparent); pointer-events: none; z-index: 2; }
+.book.single .spread::after { display: none; }
+.jpage { position: relative; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1.6rem 2.1rem 2rem; background: var(--page); color: var(--ink); }
+.jleft { border-radius: 10px 0 0 10px; box-shadow: inset -22px 0 26px -22px rgb(0 0 0 / .5); }
+.jright { border-radius: 0 10px 10px 0; box-shadow: inset 22px 0 26px -22px rgb(0 0 0 / .5); }
+/* one page at a time: the page scrolls as a whole, its facts above its notes */
+.book.single .spread { display: block; overflow-y: auto; border-radius: 10px; background: var(--page); }
+.book.single .jpage { overflow: visible; border-radius: 0; box-shadow: none; }
+.jpage-head { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.jpage-no { font-variant: small-caps; letter-spacing: .06em; color: var(--accent); font-weight: 600; margin: 0; }
+.jpage-title { margin: .2rem 0 .8rem; font-size: 1.6rem; }
+.jpen { position: sticky; top: -1.6rem; z-index: 1; display: flex; justify-content: flex-end; margin: -.6rem 0 .2rem; }
+.jempty { margin-top: 2rem; }
+.jdetails { margin-top: .4rem; }
+/* the session's facts on its left page: sections of the page, not cards on it */
+.journal .jpage .card { background: transparent !important; border: none !important; outline: none !important; box-shadow: none !important; padding: .2rem 0; margin: 0 0 .8rem; }
+.journal .jpage .card::before, .journal .jpage .card::after { display: none !important; }
+.jcover { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: .6rem; }
+.jcover-kicker { font-variant: small-caps; letter-spacing: .12em; color: var(--muted); margin: 0; }
+.jcover-title { font-size: 2.4rem; margin: 0; }
+.jcover-img { max-width: 70%; max-height: 45%; object-fit: contain; border-radius: 8px; }
+.jnext { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem; text-align: center; }
+/* a page turning over: the open page swings around the spine; the one it uncovers fades in behind it */
+.leaf { position: absolute; top: 0; bottom: 0; width: 50%; z-index: 3; pointer-events: none; transform-style: preserve-3d; }
+.leaf.fwd { left: 50%; transform-origin: left center; animation: leaf-fwd .6s ease-in-out forwards; }
+.leaf.back { left: 0; transform-origin: right center; animation: leaf-back .6s ease-in-out forwards; }
+.leaf > .jpage { height: 100%; backface-visibility: hidden; overflow: hidden; }
+@keyframes leaf-fwd { from { transform: rotateY(0); } to { transform: rotateY(-180deg); } }
+@keyframes leaf-back { from { transform: rotateY(0); } to { transform: rotateY(180deg); } }
+.jpage.turn-in { animation: page-in .6s ease forwards; }
+@keyframes page-in { 0%, 45% { opacity: 0; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .leaf { display: none; } .jpage.turn-in { animation: none; } }
+.journal-strip { margin-top: 1.4rem; display: grid; gap: 1.2rem; }

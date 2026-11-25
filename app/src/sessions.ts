@@ -65,12 +65,13 @@ export function nextSessionFields(campaign: Id): Record<string, unknown> {
  * above (`extra` on top, a date picked in the calendar), the last session's headings and open checklist items as its
  * text, then open in edit mode.
  */
-export function createSession(campaign: Id, extra: Record<string, unknown> = {}): Entry {
+/** `open`: where it opens: its Edit page (default), or its page (in the campaign's journal, to write in). */
+export function createSession(campaign: Id, extra: Record<string, unknown> = {}, open: 'edit' | 'page' = 'edit'): Entry {
   const fields = { ...nextSessionFields(campaign), ...extra }
   const e = createEntry('session', `Session ${fields.number}`, fields)
   const before = sessionsOf(campaign).filter(s => s.id !== e.id && sessionNo(s) < Number(fields.number)).at(-1)
   if (before?.body.trim()) e.body = carryOver(before.body)
-  go(hrefEntry(e.id, true))
+  go(hrefEntry(e.id, open === 'edit'))
   return e
 }
 export const nextSessionNo = (campaign: Id) => Math.max(0, ...sessionsOf(campaign).map(sessionNo).filter(Number.isFinite)) + 1

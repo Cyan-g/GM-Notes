@@ -36,6 +36,7 @@ import StatblockView from '../components/Statblock.vue'
 import MembersCard from '../components/MembersCard.vue'
 import SessionSide from '../components/SessionSide.vue'
 import CampaignSessions from '../components/CampaignSessions.vue'
+import JournalBook from '../components/journal/JournalBook.vue'
 import CampaignParty from '../components/CampaignParty.vue'
 import RaceMembers from '../components/RaceMembers.vue'
 import RelationCards from '../components/RelationCards.vue'
@@ -202,8 +203,16 @@ function leaveCampaign(pc: Entry) {
   if (rest.length) pc.fields.campaigns = rest; else delete pc.fields.campaigns
   changed(pc)
 }
+/** A campaign opens as its journal (JournalBook), and so does a session of one, at its page. */
+const journalOf = computed(() => {
+  const x = e.value
+  if (!x || hiddenFromPlayers(x)) return undefined
+  if (x.type === 'campaign') return x
+  const c = x.type === 'session' ? get(x.fields.campaign) : undefined
+  return c?.type === 'campaign' ? c : undefined
+})
 // its notes (the characters are in the party at the top)
-const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.value.filter(n => n.type === 'note' && n.fields.campaign === e.value!.id) : [])
+const campaignNotes = computed(() => journalOf.value ? entries.value.filter(n => n.type === 'note' && n.fields.campaign === journalOf.value!.id) : [])
 </script>
 
 <template>
@@ -211,6 +220,28 @@ const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.valu
     <h1>Not known to players</h1>
     <p>Player mode shows what the players know, and this {{ def?.label.toLowerCase() ?? 'entry' }} isn't marked Known to players{{ e.type === 'encounter' ? ' (encounters are the DM\'s)' : '' }}.</p>
   </div>
+  <!-- a campaign, and its sessions: the journal, with the party and the campaign's notes under it -->
+  <article v-else-if="e && journalOf" class="entry journal-entry">
+    <JournalBook :campaign="journalOf" :at="e.type === 'session' ? e.id : undefined" />
+    <div class="journal-strip">
+      <CampaignParty :campaign="journalOf" />
+      <section v-if="e.type === 'campaign' && shared" class="campaign-join">
+          <h2>Your characters</h2>
+          <p class="small muted">Characters in this campaign go to your DM while you're connected to their live session: they see them, read-only, and get your changes a few seconds after you make them.
+            <template v-if="characterSend.error"><br /><span class="warn-text">Not sent: {{ characterSend.error }}</span></template></p>
+          <ul v-if="myInCampaign.length" class="plain">
+            <li v-for="pc in myInCampaign" :key="pc.id"><EntryLink :id="pc.id" icon /> <button type="button" class="link-btn small" title="Your DM keeps the last version, marked as no longer shared" @click="leaveCampaign(pc)">Take out</button></li>
+          </ul>
+          <!-- every own character not in it yet (one the DM took out comes back the same way) -->
+          <button v-for="pc in notInCampaign" :key="pc.id" type="button" class="chip-btn join-btn" @click="joinCampaign(pc)">＋ Put {{ pc.name }} in this campaign</button>
+          <p v-if="!myInCampaign.length && !notInCampaign.length" class="small muted">Make a character first (Character menu), then put it in here.</p>
+        </section>
+      <section v-if="campaignNotes.length">
+        <h2>Notes</h2>
+        <ul class="plain"><li v-for="n in campaignNotes" :key="n.id"><EntryLink :id="n.id" icon /></li></ul>
+      </section>
+    </div>
+  </article>
   <article v-else-if="e && def" class="entry">
     <nav class="crumbs">
       <template v-if="itemHome"><span class="crumb-root muted">{{ itemHome.menu }}</span><span class="sep">›</span><a :href="itemHome.href"><TypeIcon :type="e.type" /> {{ itemHome.view }}</a></template>
@@ -281,17 +312,6 @@ const campaignNotes = computed(() => e.value?.type === 'campaign' ? entries.valu
           <div class="feat-list"><FeatCard v-for="f in grantedFeats" :key="f.id" :e="f" title /></div>
         </section>
 
-        <section v-if="e.type === 'campaign' && shared" class="campaign-join">
-          <h2>Your characters</h2>
-          <p class="small muted">Characters in this campaign go to your DM while you're connected to their live session: they see them, read-only, and get your changes a few seconds after you make them.
-            <template v-if="characterSend.error"><br /><span class="warn-text">Not sent: {{ characterSend.error }}</span></template></p>
-          <ul v-if="myInCampaign.length" class="plain">
-            <li v-for="pc in myInCampaign" :key="pc.id"><EntryLink :id="pc.id" icon /> <button type="button" class="link-btn small" title="Your DM keeps the last version, marked as no longer shared" @click="leaveCampaign(pc)">Take out</button></li>
-          </ul>
-          <!-- every own character not in it yet (one the DM took out comes back the same way) -->
-          <button v-for="pc in notInCampaign" :key="pc.id" type="button" class="chip-btn join-btn" @click="joinCampaign(pc)">＋ Put {{ pc.name }} in this campaign</button>
-          <p v-if="!myInCampaign.length && !notInCampaign.length" class="small muted">Make a character first (Character menu), then put it in here.</p>
-        </section>
         <CampaignSessions v-if="e.type === 'campaign'" :campaign="e" />
         <section v-if="campaignNotes.length">
           <h2>Notes</h2>

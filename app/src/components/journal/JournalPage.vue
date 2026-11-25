@@ -5,7 +5,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { Entry } from '../../model/types'
 import { TYPES } from '../../model/schema'
-import { formatDate, state } from '../../store'
+import { entries, formatDate, state } from '../../store'
 import { changed } from '../../edit'
 import { isShared } from '../../sync'
 import { createSession, nextSessionNo, sessionsOf } from '../../sessions'
@@ -15,12 +15,16 @@ import BodyEditor from '../edit/BodyEditor.vue'
 import FieldInput from '../edit/FieldInput.vue'
 import SessionSide from '../SessionSide.vue'
 import DataImage from '../DataImage.vue'
-import { writeOnOpen } from '../../journal'
+import { writeOnOpen, writingOn } from '../../journal'
+import EntryLink from '../EntryLink.vue'
+import CampaignParty from '../CampaignParty.vue'
+import CampaignJoin from '../CampaignJoin.vue'
 
 export type Leaf = { kind: 'cover' } | { kind: 'session'; s: Entry } | { kind: 'next' }
 /** `side`: left or right of a spread, or both (one page at a time, a narrow window). `still`: a page turning over,
  * shown only (no editing). */
-const props = defineProps<{ campaign: Entry; leaf: Leaf; side: 'left' | 'right' | 'both'; still?: boolean; writeNow?: boolean; turnIn?: boolean }>()
+/** `num`: the left page's number (the right one's is the next). */
+const props = defineProps<{ campaign: Entry; leaf: Leaf; side: 'left' | 'right' | 'both'; num: number; still?: boolean; writeNow?: boolean; turnIn?: boolean }>()
 
 const s = computed(() => (props.leaf.kind === 'session' ? props.leaf.s : undefined))
 const showLeft = computed(() => props.side !== 'right')
@@ -32,8 +36,17 @@ const canWrite = computed(() => !props.still && !state.readOnly && !!textOf.valu
 const canTick = computed(() => !state.readOnly && !!textOf.value && !isShared(textOf.value))
 
 // ---- writing on the page ----
-const writing = ref(false)
-watch(() => [props.leaf, props.writeNow] as const, () => { writing.value = !!props.writeNow && canWrite.value }, { immediate: true })
+// (shared, journal.ts: while the right page is written, the left one shows the preview)
+const writing = computed({
+  get: () => !props.still && !!textOf.value && writingOn.value === textOf.value.id,
+  set: v => { writingOn.value = v && textOf.value ? textOf.value.id : null },
+})
+// a page opened anew isn't being written, unless it was just made here; only the page that holds the text decides
+// (by which page it is: the leaf object is made anew whenever the sessions change, as with every keystroke written)
+const leafKey = computed(() => (props.leaf.kind === 'session' ? props.leaf.s.id : props.leaf.kind))
+watch(() => [leafKey.value, props.writeNow] as const, () => { if (props.side !== 'left' && !props.still) writing.value = !!props.writeNow && canWrite.value }, { immediate: true })
+/** The left page, while its right one is written: the text as it reads. */
+const previewing = computed(() => props.side === 'left' && writing.value)
 function setText(v: string) { const e = textOf.value; if (!e) return; e.body = v; changed(e) }
 const onKey = (ev: KeyboardEvent) => {
   if (!writing.value && !details.value) return
@@ -65,6 +78,8 @@ const notesOnly = computed(() => isShared(props.campaign))
 const nextNo = computed(() => nextSessionNo(props.campaign.id))
 function newPage() { const e = createSession(props.campaign.id, {}, 'page'); writeOnOpen.value = e.id }
 const count = computed(() => sessionsOf(props.campaign.id).length)
+/** The campaign's notes, listed on page 2. */
+const notes = computed(() => entries.value.filter(n => n.type === 'note' && n.fields.campaign === props.campaign.id).sort((a, b) => a.name.localeCompare(b.name)))
 const firstLast = computed(() => {
   const l = sessionsOf(props.campaign.id).map(x => x.fields.date).filter(Boolean)
   return l.length ? [formatDate(l[0]), formatDate(l.at(-1))].filter((x, i, a) => x && a.indexOf(x) === i).join(' – ') : ''
@@ -74,13 +89,23 @@ const firstLast = computed(() => {
 <template>
   <!-- the left page -->
   <section v-if="showLeft" class="jpage jleft" :class="[leaf.kind, { 'turn-in': turnIn }]">
-    <template v-if="leaf.kind === 'cover'">
+    <div class="jbody">
+    <!-- while the right page is written: how it reads, here -->
+    <template v-if="previewing && textOf">
+      <p class="jpage-no">Preview</p>
+      <MarkdownView v-if="textOf.body.trim()" :source="textOf.body" all-headings />
+      <p v-else class="muted">Nothing written yet.</p>
+    </template>
+    <template v-else-if="leaf.kind === 'cover'">
+      <!-- page 1: the campaign and its party -->
       <div class="jcover">
         <p class="jcover-kicker">Campaign journal</p>
         <h2 class="jcover-title">{{ campaign.name }}</h2>
         <DataImage v-if="campaign.image" :path="campaign.image" :alt="campaign.name" class="jcover-img" />
         <p class="muted small">{{ count }} session{{ count === 1 ? '' : 's' }}<template v-if="firstLast"> · {{ firstLast }}</template></p>
       </div>
+      <CampaignParty :campaign="campaign" />
+      <CampaignJoin v-if="!still" :campaign="campaign" />
     </template>
     <template v-else-if="leaf.kind === 'session' && s">
       <header class="jpage-head">
@@ -105,10 +130,13 @@ const firstLast = computed(() => {
         <button v-if="!state.readOnly && !still" type="button" class="primary" @click="newPage">＋ {{ notesOnly ? 'My session notes' : `Session ${nextNo}` }}</button>
       </div>
     </template>
+    </div>
+    <footer class="jfoot">{{ side === 'both' ? `${num}–${num + 1}` : num }}</footer>
   </section>
 
   <!-- the right page -->
   <section v-if="showRight" class="jpage jright" :class="[leaf.kind, { writing, 'turn-in': turnIn }]">
+    <div class="jbody">
     <template v-if="textOf">
       <div v-if="canWrite" class="jpen">
         <button type="button" class="link-btn small" :title="writing ? 'Done writing (Ctrl+S)' : 'Write on this page'" @click="writing = !writing">{{ writing ? 'Done' : '✎ Write' }}</button>
@@ -121,6 +149,13 @@ const firstLast = computed(() => {
           <button v-if="canWrite" type="button" class="link-btn" @click="writing = true">✎ Write</button></p>
       </template>
       <p v-if="leaf.kind === 'cover' && notesOnly" class="muted small">Your DM's campaign: the pages after this one are your own session notes.</p>
+      <!-- page 2: the campaign's notes, under its overview -->
+      <section v-if="leaf.kind === 'cover' && notes.length" class="jnotes">
+        <h3>Notes</h3>
+        <ul class="plain"><li v-for="n in notes" :key="n.id"><EntryLink :id="n.id" icon /></li></ul>
+      </section>
     </template>
+    </div>
+    <footer v-if="side !== 'both'" class="jfoot">{{ num + 1 }}</footer>
   </section>
 </template>

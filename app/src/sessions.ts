@@ -19,14 +19,17 @@ export const bySessionNo = (a: Entry, b: Entry) =>
 /** A campaign's sessions in play order. */
 export const sessionsOf = (campaign: Id) => (byType.value.get('session') ?? []).filter(s => s.fields.campaign === campaign).sort(bySessionNo)
 /** The number a campaign's next session gets. */
-/** The campaign being played: the one made current, else the one with the most sessions (as Home has always shown). */
+/** The campaign being played: the one made current, else the one with the most sessions (as Home has always shown),
+ * else (a player's world, where the DM's campaign has no sessions) the current character's, or the only one. */
 export const currentCampaign = computed<Entry | undefined>(() => {
   const set = get(state.db?.meta.currentCampaign)
   if (set?.type === 'campaign') return set
   const all = byType.value.get('campaign') ?? []
   const count = (id: Id) => sessionsOf(id).length
   const top = [...all].sort((a, b) => count(b.id) - count(a.id))[0]
-  return top && count(top.id) ? top : undefined
+  if (top && count(top.id)) return top
+  const mine = ((get(state.db?.meta.currentCharacter)?.fields.campaigns as Id[] | undefined) ?? []).map(id => get(id)).find(c => c?.type === 'campaign')
+  return mine ?? (all.length === 1 ? all[0] : undefined)
 })
 /** Make a campaign the current one (or none). */
 export function setCurrentCampaign(id: Id | undefined) {

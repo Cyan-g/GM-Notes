@@ -13,3 +13,7 @@ export function startTurn(campaign: Id, from: number, dir: 'fwd' | 'back') {
   turning.value = { campaign, from, dir }
   timer = window.setTimeout(() => { turning.value = null }, 600)
 }
+
+/** The entry being written on a journal's right page (a session's notes, the campaign's overview): its left page shows
+ * the preview meanwhile. */
+export const writingOn = ref<Id | null>(null)

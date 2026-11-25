@@ -2940,12 +2940,18 @@ label.check-chip b { font-weight: 600; }
 /* the spine between the pages */
 .spread::after { content: ''; position: absolute; top: 0; bottom: 0; left: calc(50% - 1px); width: 2px; background: color-mix(in srgb, var(--ink) 18%, transparent); pointer-events: none; z-index: 2; }
 .book.single .spread::after { display: none; }
-.jpage { position: relative; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1.6rem 2.1rem 2rem; background: var(--page); color: var(--ink); }
+/* a page: its text scrolls within it, the page number stays at its foot */
+.jpage { position: relative; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--page); color: var(--ink); }
+.jbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1.6rem 2.1rem 1rem; }
+.jfoot { flex: none; text-align: center; padding: .3rem 0 .7rem; font-size: 13px; color: var(--muted); font-variant-numeric: oldstyle-nums; letter-spacing: .05em; }
+.jleft .jfoot { text-align: left; padding-left: 2.1rem; }
+.jright .jfoot { text-align: right; padding-right: 2.1rem; }
 .jleft { border-radius: 10px 0 0 10px; box-shadow: inset -22px 0 26px -22px rgb(0 0 0 / .5); }
 .jright { border-radius: 0 10px 10px 0; box-shadow: inset 22px 0 26px -22px rgb(0 0 0 / .5); }
 /* one page at a time: the page scrolls as a whole, its facts above its notes */
 .book.single .spread { display: block; overflow-y: auto; border-radius: 10px; background: var(--page); }
-.book.single .jpage { overflow: visible; border-radius: 0; box-shadow: none; }
+.book.single .jpage, .book.single .jbody { overflow: visible; border-radius: 0; box-shadow: none; }
+.book.single .jfoot { text-align: center; padding: .3rem 0 .7rem; }
 .jpage-head { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
 .jpage-no { font-variant: small-caps; letter-spacing: .06em; color: var(--accent); font-weight: 600; margin: 0; }
 .jpage-title { margin: .2rem 0 .8rem; font-size: 1.6rem; }
@@ -2955,7 +2961,7 @@ label.check-chip b { font-weight: 600; }
 /* the session's facts on its left page: sections of the page, not cards on it */
 .journal .jpage .card { background: transparent !important; border: none !important; outline: none !important; box-shadow: none !important; padding: .2rem 0; margin: 0 0 .8rem; }
 .journal .jpage .card::before, .journal .jpage .card::after { display: none !important; }
-.jcover { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: .6rem; }
+.jcover { padding: 1rem 0 1.4rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: .6rem; }
 .jcover-kicker { font-variant: small-caps; letter-spacing: .12em; color: var(--muted); margin: 0; }
 .jcover-title { font-size: 2.4rem; margin: 0; }
 .jcover-img { max-width: 70%; max-height: 45%; object-fit: contain; border-radius: 8px; }
@@ -2970,4 +2976,8 @@ label.check-chip b { font-weight: 600; }
 .jpage.turn-in { animation: page-in .6s ease forwards; }
 @keyframes page-in { 0%, 45% { opacity: 0; } 100% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .leaf { display: none; } .jpage.turn-in { animation: none; } }
-.journal-strip { margin-top: 1.4rem; display: grid; gap: 1.2rem; }
+/* the journal fills the window: the book's pages scroll, the window doesn't */
+.journal { height: calc(100vh - var(--bar-h, 52px) - 5.6rem); display: flex; flex-direction: column; }
+.journal .book { flex: 1; height: auto; min-height: 22rem; }
+.journal-current.on { color: var(--accent); }
+.jnotes { margin-top: 1.4rem; }

@@ -78,6 +78,8 @@ function sessionNodes(): MenuNode[] {
 export const MENUS: TopMenu[] = [
   {
     title: 'Campaign',
+    // the title opens the current campaign's journal (the campaigns' list while there's none)
+    get home() { const c = currentCampaign.value; return c ? hrefEntry(c.id) : hrefList('campaign') },
     player: true,
     owns: r => r.name === 'tracker' || ['campaign', 'session', 'encounter', 'pc'].includes(typeOf(r) ?? ''),
     // The latest session of the campaign being played and a new one, then the tables. Players keep only their

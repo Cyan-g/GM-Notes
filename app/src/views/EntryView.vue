@@ -223,24 +223,6 @@ const campaignNotes = computed(() => journalOf.value ? entries.value.filter(n =>
   <!-- a campaign, and its sessions: the journal, with the party and the campaign's notes under it -->
   <article v-else-if="e && journalOf" class="entry journal-entry">
     <JournalBook :campaign="journalOf" :at="e.type === 'session' ? e.id : undefined" />
-    <div class="journal-strip">
-      <CampaignParty :campaign="journalOf" />
-      <section v-if="e.type === 'campaign' && shared" class="campaign-join">
-          <h2>Your characters</h2>
-          <p class="small muted">Characters in this campaign go to your DM while you're connected to their live session: they see them, read-only, and get your changes a few seconds after you make them.
-            <template v-if="characterSend.error"><br /><span class="warn-text">Not sent: {{ characterSend.error }}</span></template></p>
-          <ul v-if="myInCampaign.length" class="plain">
-            <li v-for="pc in myInCampaign" :key="pc.id"><EntryLink :id="pc.id" icon /> <button type="button" class="link-btn small" title="Your DM keeps the last version, marked as no longer shared" @click="leaveCampaign(pc)">Take out</button></li>
-          </ul>
-          <!-- every own character not in it yet (one the DM took out comes back the same way) -->
-          <button v-for="pc in notInCampaign" :key="pc.id" type="button" class="chip-btn join-btn" @click="joinCampaign(pc)">＋ Put {{ pc.name }} in this campaign</button>
-          <p v-if="!myInCampaign.length && !notInCampaign.length" class="small muted">Make a character first (Character menu), then put it in here.</p>
-        </section>
-      <section v-if="campaignNotes.length">
-        <h2>Notes</h2>
-        <ul class="plain"><li v-for="n in campaignNotes" :key="n.id"><EntryLink :id="n.id" icon /></li></ul>
-      </section>
-    </div>
   </article>
   <article v-else-if="e && def" class="entry">
     <nav class="crumbs">

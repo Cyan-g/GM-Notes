@@ -6,7 +6,8 @@
 // at a time.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { Entry, Id } from '../../model/types'
-import { sessionsOf } from '../../sessions'
+import { sessionsOf, setCurrentCampaign } from '../../sessions'
+import AppIcon from '../AppIcon.vue'
 import { hrefEntry, hrefList, replaceTo } from '../../router'
 import { state } from '../../store'
 import { isShared } from '../../sync'
@@ -68,9 +69,10 @@ onMounted(() => window.addEventListener('resize', onResize))
 onBeforeUnmount(() => window.removeEventListener('resize', onResize))
 
 /** Where the book is open, in words: "Session 12 of 63", "Cover", "Next page". */
-const where = computed(() => (leaf.value.kind === 'cover' ? 'Cover' : leaf.value.kind === 'next' ? 'After the last session'
-  : `Session ${leaf.value.s.fields.number ?? page.value} · page ${page.value} of ${sessions.value.length}`))
+const where = computed(() => (leaf.value.kind === 'cover' ? 'The party' : leaf.value.kind === 'next' ? 'The next session'
+  : `Session ${leaf.value.s.fields.number ?? page.value} of ${sessions.value.length}`))
 const editable = computed(() => !state.readOnly && !isShared(props.campaign))
+const isCurrent = computed(() => state.db?.meta.currentCampaign === props.campaign.id)
 </script>
 
 <script lang="ts">
@@ -86,10 +88,15 @@ function remembered() { return lastOpenByCampaign }
         <h1 class="journal-title">{{ campaign.name }}</h1>
       </div>
       <span class="spacer" />
+      <!-- the campaign the app's Campaign menu opens (and home shows): marked here -->
+      <button type="button" class="chip-btn journal-current" :class="{ on: isCurrent }" :title="isCurrent ? 'The Campaign menu opens this journal' : 'Open this journal from the Campaign menu'" @click="setCurrentCampaign(isCurrent ? undefined : campaign.id)">
+        <AppIcon ui="star" :class="{ off: !isCurrent }" /> {{ isCurrent ? 'Current campaign' : 'Make current' }}</button>
       <span class="muted small journal-where">{{ where }}</span>
       <div class="journal-nav">
+        <button type="button" title="Page 1: the campaign and its party (Home)" :disabled="page <= 0" @click="turnTo(0)">Party</button>
         <button type="button" title="The page before (←)" :disabled="page <= 0" @click="turnTo(page - 1)">◀</button>
         <button type="button" title="The page after (→)" :disabled="page >= leaves.length - 1" @click="turnTo(page + 1)">▶</button>
+        <button type="button" title="The last page: the next session's (End)" :disabled="page >= leaves.length - 1" @click="turnTo(leaves.length - 1)">Last</button>
       </div>
       <a v-if="editable" class="button" :href="hrefEntry(campaign.id, true)" title="The campaign's own details: party, status, colour">✎ Campaign</a>
     </header>
@@ -98,14 +105,14 @@ function remembered() { return lastOpenByCampaign }
       <button type="button" class="book-edge prev" title="The page before (←)" aria-label="The page before" :disabled="page <= 0" @click="turnTo(page - 1)">‹</button>
       <div class="spread">
         <template v-if="narrow">
-          <JournalPage :campaign="campaign" :leaf="leaf" side="both" :write-now="leaf.kind === 'session' && leaf.s.id === writeNow" />
+          <JournalPage :campaign="campaign" :leaf="leaf" side="both" :num="page * 2 + 1" :write-now="leaf.kind === 'session' && leaf.s.id === writeNow" />
         </template>
         <template v-else>
-          <JournalPage :campaign="campaign" :leaf="leaf" side="left" :turn-in="turning?.dir === 'fwd'" />
-          <JournalPage :campaign="campaign" :leaf="leaf" side="right" :turn-in="turning?.dir === 'back'" :write-now="leaf.kind === 'session' && leaf.s.id === writeNow" />
+          <JournalPage :campaign="campaign" :leaf="leaf" side="left" :num="page * 2 + 1" :turn-in="turning?.dir === 'fwd'" />
+          <JournalPage :campaign="campaign" :leaf="leaf" side="right" :num="page * 2 + 1" :turn-in="turning?.dir === 'back'" :write-now="leaf.kind === 'session' && leaf.s.id === writeNow" />
           <!-- the page turning over: the one that was open, swinging around the spine -->
           <div v-if="turning && leaves[turning.from]" class="leaf" :class="turning.dir">
-            <JournalPage :campaign="campaign" :leaf="leaves[turning.from]" :side="turning.dir === 'fwd' ? 'right' : 'left'" still />
+            <JournalPage :campaign="campaign" :leaf="leaves[turning.from]" :side="turning.dir === 'fwd' ? 'right' : 'left'" :num="turning.from * 2 + 1" still />
           </div>
         </template>
       </div>

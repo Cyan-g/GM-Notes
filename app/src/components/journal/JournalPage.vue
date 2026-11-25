@@ -35,9 +35,10 @@ const textOf = computed(() => s.value ?? (props.leaf.kind === 'cover' ? props.ca
 const canWrite = computed(() => !props.still && !state.readOnly && !!textOf.value && !isShared(textOf.value))
 const canTick = computed(() => !state.readOnly && !!textOf.value && !isShared(textOf.value))
 
-// ---- the page's curve: its edges rise toward the spine (style.css, --dip 1.6%); the Illuminated frame follows it ----
-const FRAME_LEFT = 'M0 1.6 C45 1.5 80 0.85 100 0 L100 98.9 C80 99.35 45 99.95 0 100 Z'
-const FRAME_RIGHT = 'M100 1.6 C55 1.5 20 0.85 0 0 L0 98.9 C20 99.35 55 99.95 100 100 Z'
+// ---- the page's curve: its edges rise to a crest a quarter from the spine, level again at it (style.css, --dip 1.6%);
+// the Illuminated frame follows it ----
+const FRAME_LEFT = 'M0 1.6 L5 1.583 L10 1.531 L15 1.447 L20 1.335 L25 1.2 L30 1.047 L35 0.884 L40 0.716 L45 0.553 L50 0.4 L55 0.265 L60 0.153 L65 0.069 L70 0.017 L75 0 L80 0.07 L85 0.254 L90 0.482 L95 0.666 L100 0.736 L100 99.395 L95 99.346 L90 99.217 L85 99.058 L80 98.929 L75 98.88 L70 98.892 L65 98.928 L60 98.987 L55 99.065 L50 99.16 L45 99.267 L40 99.381 L35 99.499 L30 99.613 L25 99.72 L20 99.815 L15 99.893 L10 99.952 L5 99.988 L0 100 Z'
+const FRAME_RIGHT = 'M100 1.6 L95 1.583 L90 1.531 L85 1.447 L80 1.335 L75 1.2 L70 1.047 L65 0.884 L60 0.716 L55 0.553 L50 0.4 L45 0.265 L40 0.153 L35 0.069 L30 0.017 L25 0 L20 0.07 L15 0.254 L10 0.482 L5 0.666 L0 0.736 L0 99.395 L5 99.346 L10 99.217 L15 99.058 L20 98.929 L25 98.88 L30 98.892 L35 98.928 L40 98.987 L45 99.065 L50 99.16 L55 99.267 L60 99.381 L65 99.499 L70 99.613 L75 99.72 L80 99.815 L85 99.893 L90 99.952 L95 99.988 L100 100 Z'
 
 // ---- writing on the page ----
 // (shared, journal.ts: while the right page is written, the left one shows the preview)

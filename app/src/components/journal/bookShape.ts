@@ -3,11 +3,10 @@
 // into the spine reaches, and the outlines of the sheets stacked under each page. One set of numbers, so the edge, the
 // frame, the shading and the stack bend together.
 //
-// A page curves gently from its outer edge to a crest near the spine, then bends down into the spine across a strip
-// by it; the more paper lies under that side, the wider that strip and the steeper the bend, and the deeper into the
-// spine its frame and margin go. The spine itself sits lower toward the seam's ends (`dSpine`), each page as low as
-// the paper under it allows (`d`, style.css translates the page and its stack by it). The sheets under a page follow
-// its curve and bend, a little flatter the deeper they lie.
+// A page curves gently from its outer edge to a crest near the spine, then down into the spine, where it's bound into
+// the seam's oval (where the spine is across it), leaving it at right angles; it's as high everywhere across its width.
+// Each page sits as low as the paper under it allows (`d`, style.css translates the page and its stack by it). The
+// sheets under a page follow its curve, a little flatter the deeper they lie, each bound at its own point on the oval.
 
 /** The stacks' full depth below the spread (style.css --stack-max), px. */
 export const STACK = 13
@@ -16,8 +15,8 @@ export const STACK = 13
 export const PAD = 12
 /** How far a page's edges dip from their crest to its outer corners, as a share of its height (style.css --dip). */
 const DIP = 0.02
-/** The seam's half width (style.css --seam-a), px. */
-const SEAM_HALF = 26
+/** The seam's half width (style.css --seam-a), px: the spine travels it from end to end. */
+export const SEAM_HALF = 26
 
 // the curve from the outer edge (t 0) to the spine (t 1): its crest about 8% from the spine (as the CSS outlines)
 const T0 = 0.92, Q = 33
@@ -32,9 +31,6 @@ export interface ShapeInput {
   h: number
   /** How far the spine sits right of the cover's middle, px (style.css --spine-shift: the spread slides by it). */
   shift: number
-  /** The seam's height where the spine is, 0 (its ends) to 1 (its middle); how much lower the spine sits there, px. */
-  sq: number
-  dSpine: number
   /** How much lower each page sits than one on a full stack, px; how bent into the spine, 0 to 1 (more paper: more). */
   dL: number
   dR: number
@@ -59,12 +55,11 @@ export interface PageShape {
   /** The gilded frame's two lines, in the page box's px. */
   frameOuter: string
   frameInner: string
-  /** The frame's corner scrolls on the spine side (style.css): how far in from the page's spine edge, and how far
-   * from the top and from the bottom of the corner box. */
-  cornerIn: number
+  /** The frame's corner scrolls on the spine side (style.css): how far from the top and from the bottom of the corner
+   * box. */
   cornerTop: number
   cornerBottom: number
-  /** The shadow into the spine: how far it reaches, how dark it is. */
+  /** The shadow into the spine: how far it reaches (to the page's crest), how dark it is. */
   gutter: number
   gutterAlpha: number
   /** Where the page's top edge meets the spine, in the spread's px (style.css: the spine line starts there). */
@@ -92,8 +87,10 @@ function smoothed(line: number[][], keep = 36, sigma = 24.2): number[][] {
       along.push(along[along.length - 1] + len / n)
     }
   }
+  // (for the path every 4th point is enough, the ends kept: only those are worked out)
   const out: number[][] = []
   for (let k = 0; k < even.length; k++) {
+    if (k % 4 !== 0 && k !== even.length - 1) continue
     const sg = Math.min(sigma, Math.max(0, ((along[k] - keep) * 0.4) / 1.1))
     if (sg < 0.5 || k === even.length - 1) { out.push(even[k]); continue }
     const reach = Math.ceil((3 * sg) / step)
@@ -104,20 +101,20 @@ function smoothed(line: number[][], keep = 36, sigma = 24.2): number[][] {
     }
     out.push([sx / sw, sy / sw])
   }
-  // fewer points for the path: every 4th, the ends kept
-  return out.filter((_, k) => k % 4 === 0 || k === out.length - 1)
+  return out
 }
 /** A polyline's height at `px` (its points as [px, y], in either order along px); level beyond its ends. */
 function heightAt(line: number[][], px: number): number {
-  const pts = line[0][0] <= line[line.length - 1][0] ? line : [...line].reverse()
-  if (px <= pts[0][0]) return pts[0][1]
-  for (let k = 1; k < pts.length; k++) {
-    if (px <= pts[k][0]) {
-      const [x0, y0] = pts[k - 1], [x1, y1] = pts[k]
+  const last = line.length - 1, up = line[0][0] <= line[last][0]
+  const at = (k: number) => line[up ? k : last - k]
+  if (px <= at(0)[0]) return at(0)[1]
+  for (let k = 1; k <= last; k++) {
+    if (px <= at(k)[0]) {
+      const [x0, y0] = at(k - 1), [x1, y1] = at(k)
       return x1 === x0 ? y1 : y0 + ((y1 - y0) * (px - x0)) / (x1 - x0)
     }
   }
-  return pts[pts.length - 1][1]
+  return at(last)[1]
 }
 
 /** What a page's shape is worked out from, for one side. */
@@ -155,106 +152,7 @@ function sideOf(side: 'l' | 'r', i: ShapeInput) {
     if (npx > 0) { npx = 0; ny = -1 }
     return { px, y, npx, ny }
   }
-  // the strip that bends into the spine (wider with more paper under the page), and the angles its edges meet the
-  // spine at (steeper with more paper)
-  const bend = Math.min(pw * 0.35, 46 + 104 * b)
-  return {
-    pw, hb, b, d, bend, t0: 1 - bend / pw, dip: DIP * hb, amp, spreadX, ovalTop, bindAt, bindAtX,
-    tanTop: Math.tan(((6 + 22 * b) * Math.PI) / 180),
-    tanBottom: Math.tan(((10 + 38 * b) * Math.PI) / 180),
-    // where the spine's top and bottom are, in the page's box (the page itself sits `d` lower)
-    spineTop: 0.753 * DIP * i.h + i.dSpine - d,
-    spineBottom: hb - STACK * i.sq - d,
-  }
-}
-
-/**
- * An outline from a page's curve and bend: along the top from the outer edge, the bend down into the spine, the spine,
- * the bend back out along the bottom, to the outer edge. `x`: where a point `px` from the page's outer edge lies in the
- * box drawn in; `top`, `bottom`: the edges' heights at t (0 outer, 1 spine) before the bend; `spineTop`, `spineBottom`:
- * where they meet the spine; `sx`: how far from the outer edge the spine side is; `from`: where along the top it
- * starts (px from the outer edge); `corner`: the outer corners' rounding, 'cut' for chamfers, 0 for square.
- */
-function trace(o: {
-  pw: number; bend: number; t0: number; tanTop: number; tanBottom: number
-  x: (px: number) => number; top: (t: number) => number; bottom: (t: number) => number
-  spineTop: number; spineBottom: number; sx: number; from: number; corner: number | 'cut'
-  /** The lowest the bottom edge may go at a point `px` from the outer edge (the seam's oval: paper wraps around it). */
-  floor?: (px: number) => number
-  /** The bottom edge keeps its own curve to the spine instead of bending (the page and the sheets under it, wrapping
-   * only around the seam's oval); the top edge too (the frame: where the page bends away, the page's outline hides it). */
-  plainBottom?: boolean
-  plainTop?: boolean
-  /** Where the bottom edge is bound into the spine (px from the outer edge, y in the box drawn in) and the direction it
-   * leaves it in (at right angles to the seam's oval): from there it eases into its own curve. */
-  bind?: { px: number; y: number; npx: number; ny: number }
-}): string {
-  const { pw, bend, t0 } = o
-  const pt = (px: number, y: number) => `${n(o.x(px))} ${n(y)}`
-  const slope = (f: (t: number) => number, t: number) => (f(t + 0.001) - f(t - 0.001)) / (0.002 * pw)
-  const x0 = t0 * pw
-  const ts: number[] = []
-  for (let t = o.from / pw; t < t0; t += 0.04) ts.push(t)
-  ts.push(t0)
-  // the bend: a long, soft handle out of the curve, so it eases away from it; into the spine a handle at the angle the
-  // edge meets it, never rising more than the edge actually drops there (else the curve would swing up into a hump)
-  const out = bend * 0.55
-  const mTop = slope(o.top, t0), mBot = slope(o.bottom, t0)
-  const reach = Math.min(bend * 0.45, o.sx - x0)
-  const intoTop = Math.min(reach, (0.8 * Math.max(0.5, o.spineTop - o.top(t0))) / o.tanTop)
-  const intoBottom = Math.min(reach, (0.8 * Math.max(0.5, o.spineBottom - o.bottom(t0))) / o.tanBottom)
-  const parts: string[] = []
-  const r = o.corner === 'cut' ? 16 : o.corner
-  const t = (px: number) => px / pw
-  if (r) {
-    parts.push(`M ${pt(o.from, o.top(t(o.from)) + r)}`)
-    parts.push(o.corner === 'cut' ? `L ${pt(o.from + r, o.top(t(o.from + r)))}` : `Q ${pt(o.from, o.top(t(o.from)))} ${pt(o.from + r, o.top(t(o.from + r)))}`)
-  } else parts.push(`M ${pt(o.from, o.top(t(o.from)))}`)
-  for (const u of ts.slice(1)) parts.push(`L ${pt(u * pw, o.top(u))}`)
-  if (o.plainTop) {
-    for (let k = 1; k <= 12; k++) { const bx = x0 + (k / 12) * (o.sx - x0); parts.push(`L ${pt(bx, o.top(bx / pw))}`) }
-  } else parts.push(`C ${pt(x0 + out, o.top(t0) + mTop * out)} ${pt(o.sx - intoTop, o.spineTop - o.tanTop * intoTop)} ${pt(o.sx, o.spineTop)}`)
-  parts.push(`L ${pt(o.sx, o.spineBottom)}`)
-  // (the bend back out along the bottom, as points, each kept above the seam's oval: the paper wraps around it)
-  const b0 = [o.sx, o.spineBottom], b1 = [o.sx - intoBottom, o.spineBottom - o.tanBottom * intoBottom]
-  const b2 = [x0 + out, o.bottom(t0) + mBot * out], b3 = [x0, o.bottom(t0)]
-  const keep = (bx: number, by: number) => (o.floor ? Math.min(by, o.floor(bx)) : by)
-  if (o.bind) {
-    // from the spine to where it's bound, out of the oval at right angles, easing into its own curve 90px from the spine
-    // (the same for every page, so they stay in order, none crossing the one beneath), then along it to the outer edge
-    const bd = o.bind
-    parts.push(`L ${pt(bd.px, bd.y)}`)
-    const jx = Math.max(o.from + 8, Math.min(bd.px - 20, o.sx - 90)), jy = o.bottom(jx / pw)
-    const mj = (o.bottom((jx + 1) / pw) - o.bottom((jx - 1) / pw)) / 2
-    const dist = Math.hypot(bd.px - jx, bd.y - jy)
-    const tl = Math.hypot(1, mj)
-    const c0 = [bd.px, bd.y], c1 = [bd.px + bd.npx * dist * 0.3, bd.y + bd.ny * dist * 0.3]
-    const c2 = [jx + (dist * 0.55) / tl, jy + (mj * dist * 0.55) / tl], c3 = [jx, jy]
-    for (let k = 1; k <= 16; k++) {
-      const u = k / 16, v = 1 - u
-      const bx = v * v * v * c0[0] + 3 * v * v * u * c1[0] + 3 * v * u * u * c2[0] + u * u * u * c3[0]
-      const by = v * v * v * c0[1] + 3 * v * v * u * c1[1] + 3 * v * u * u * c2[1] + u * u * u * c3[1]
-      parts.push(`L ${pt(bx, keep(bx, by))}`)
-    }
-    for (let bx = jx - pw * 0.03; bx > o.from; bx -= pw * 0.03) parts.push(`L ${pt(bx, o.bottom(bx / pw))}`)
-  } else if (o.plainBottom) {
-    for (let k = 1; k <= 24; k++) {
-      const bx = o.sx - (k / 24) * (o.sx - x0), by = o.bottom(bx / pw)
-      parts.push(`L ${pt(bx, keep(bx, by))}`)
-    }
-  } else for (let k = 1; k <= 24; k++) {
-    const u = k / 24, v = 1 - u
-    const bx = v * v * v * b0[0] + 3 * v * v * u * b1[0] + 3 * v * u * u * b2[0] + u * u * u * b3[0]
-    const by = v * v * v * b0[1] + 3 * v * v * u * b1[1] + 3 * v * u * u * b2[1] + u * u * u * b3[1]
-    parts.push(`L ${pt(bx, o.floor ? Math.min(by, o.floor(bx)) : by)}`)
-  }
-  if (!o.bind) for (const u of ts.slice(0, -1).reverse()) parts.push(`L ${pt(u * pw, o.bottom(u))}`)
-  if (r) {
-    parts.push(`L ${pt(o.from + r, o.bottom(t(o.from + r)))}`)
-    parts.push(o.corner === 'cut' ? `L ${pt(o.from, o.bottom(t(o.from)) - r)}` : `Q ${pt(o.from, o.bottom(t(o.from)))} ${pt(o.from, o.bottom(t(o.from)) - r)}`)
-  } else parts.push(`L ${pt(o.from, o.bottom(t(o.from)))}`)
-  parts.push('Z')
-  return parts.join(' ')
+  return { pw, hb, b, d, dip: DIP * hb, amp, spreadX, ovalTop, bindAt, bindAtX }
 }
 
 /**
@@ -321,8 +219,15 @@ function bound(o: {
   return { d: parts.join(' '), top: spineToOuter, bottom: pts.map(q => [...q]) }
 }
 
-/** The open page's outline on one side, and its top edge (px from the outer edge, y in its box). */
+/** The open page's outline on one side, and its top and bottom edges (px from the outer edge, y in its box): worked
+ * out once for each shape input (the page's frame and every sheet under it read it). */
+const outlines = new WeakMap<ShapeInput, { l?: ReturnType<typeof bound>; r?: ReturnType<typeof bound> }>()
 function pageOutline(side: 'l' | 'r', i: ShapeInput) {
+  let byInput = outlines.get(i)
+  if (!byInput) outlines.set(i, (byInput = {}))
+  return (byInput[side] ??= outlineOf(side, i))
+}
+function outlineOf(side: 'l' | 'r', i: ShapeInput) {
   const s = sideOf(side, i)
   const x = (px: number) => (side === 'l' ? px : s.pw - px)
   // (in the page box's px, which start PAD above the spread)
@@ -337,14 +242,18 @@ function pageOutline(side: 'l' | 'r', i: ShapeInput) {
   })
 }
 
+/** How far from the spine a page's crest is (the highest point of its top edge, px from the outer edge in `top`),
+ * within reason (a page lying flat has none to speak of). */
+function crestGap(top: number[][], pw: number): number {
+  let best = top[0]
+  for (const q of top) if (q[1] < best[1] - 0.01) best = q
+  return Math.max(16, Math.min(pw * 0.25, pw - best[0]))
+}
+
 /** One page's shape. Its spine edge is at its right (left page) or left (right page). */
 function page(side: 'l' | 'r', i: ShapeInput): PageShape {
   const s = sideOf(side, i)
   const x = (px: number) => (side === 'l' ? px : s.pw - px)
-  // (the outer corners where a curved page's are; a page with less paper under it rises less from them, a page on the
-  // cover not at all: it lies flat, the cover showing above it)
-  const top = (t: number) => PAD + s.dip * (1 - s.amp * lift(t))
-  const bottom = (t: number) => PAD + s.hb - STACK - s.dip * s.amp * lift(t)
   const bp = s.bindAt(0)
   const height = s.hb - STACK - s.dip
   const outline = pageOutline(side, i)
@@ -367,12 +276,12 @@ function page(side: 'l' | 'r', i: ShapeInput): PageShape {
     clip,
     frameOuter: frame(11),
     frameInner: frame(15),
-    cornerIn: 0,
     spineTop: bp.y - height,
     // (where the frame turns at the spine side, from the corner scrolls' box, which starts PAD lower: style.css)
     cornerTop: topAt(s.pw - 11) - PAD,
     cornerBottom: s.hb + PAD - STACK - bottomAt(s.pw - 11),
-    gutter: 16 + 0.5 * s.bend,
+    // (across to the page's crest, where its curve turns down into the spine: it fades out there)
+    gutter: crestGap(outline.top, s.pw),
     gutterAlpha: 0.1 + 0.2 * s.b,
   }
 }

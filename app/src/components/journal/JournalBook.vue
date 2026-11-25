@@ -14,7 +14,7 @@ import { isShared } from '../../sync'
 import JournalPage, { type Leaf } from './JournalPage.vue'
 import { endTurn, startTurn, turning as turnState, writeOnOpen } from '../../journal'
 import LeafStrip from './LeafStrip.vue'
-import { STACK, bookShape, sheetClip, type ShapeInput } from './bookShape'
+import { SEAM_HALF, STACK, bookShape, sheetClip, type ShapeInput } from './bookShape'
 import { bookShapeKey } from '../../journal'
 import { settings } from '../../theme'
 
@@ -23,10 +23,10 @@ const STRIPS = 8
 // ---- the stacks under the open spread: the pages read so far (left) and still to come (right) ----
 /** How many bands the book's pages are bound in across the seam: a sheet for each band's binding point. */
 const BINDS = 24
-/** Where those points lie across the seam's oval (px from its middle; half width 26, as high as the stacks): evenly
+/** Where those points lie across the seam's oval (px from its middle; SEAM_HALF to either side, as high as the stacks): evenly
  * spaced along its curved edge, from its left end (0) to its right (BINDS), so the gaps along the edge are all alike. */
 const BIND_X = (() => {
-  const a = 26, b = STACK, steps = 2000
+  const a = SEAM_HALF, b = STACK, steps = 2000
   // the half oval's edge from its left end over the top to its right, and how far along it each step is
   const xs: number[] = [], along: number[] = [0]
   for (let k = 0; k <= steps; k++) xs.push(-a * Math.cos((Math.PI * k) / steps))
@@ -146,7 +146,7 @@ const spineSlot = computed(() => {
   return 1.4 + ((p - 1) * (BINDS - 2.8)) / Math.max(1, n - 2)
 })
 /** The same as a share of the seam's width: 0 its left end, 1 its right. */
-const spineAt = computed(() => ((bindX(spineSlot.value) / 26 + 1) / 2).toFixed(4))
+const spineAt = computed(() => ((bindX(spineSlot.value) / SEAM_HALF + 1) / 2).toFixed(4))
 
 // ---- the book's shape (bookShape.ts): each page's outline, its frame, its corner scrolls and its shadow into the
 // spine, worked out in px from the spread's size, the spine's place and the paper under each side ----
@@ -167,14 +167,10 @@ const pagesL = computed(() => page.value)
 const pagesR = computed(() => Math.max(0, leaves.value.length - 1 - page.value))
 const dropL = computed(() => `${dropFor(pagesL.value).toFixed(2)}px`)
 const dropR = computed(() => `${dropFor(pagesR.value).toFixed(2)}px`)
-/** The seam's half width (style.css --seam-a): the spine travels it from end to end. */
-const SEAM = 26
 const shapeIn = computed<ShapeInput>(() => {
   const { w, h } = spreadSize.value
-  const sn = (Number(spineAt.value) * 2 - 1) * SEAM
-  const sq = Math.sqrt(Math.max(0, 1 - (sn * sn) / (SEAM * SEAM)))
   return {
-    w, h, shift: sn, sq, dSpine: STACK * (1 - sq),
+    w, h, shift: (Number(spineAt.value) * 2 - 1) * SEAM_HALF,
     dL: dropFor(pagesL.value), dR: dropFor(pagesR.value),
     bL: stackThickness(Math.max(1, pagesL.value)) / STACK, bR: stackThickness(Math.max(1, pagesR.value)) / STACK,
     // how strongly each page curves: as much as the paper under it lets it, flat on the cover with none
@@ -188,7 +184,7 @@ const shape = computed(() => bookShape(shapeIn.value))
 function sheetsOf(side: 'l' | 'r', pages: number) {
   const measured = !!shape.value
   // the block's share of the seam: from the spine's place to the seam's end on its side
-  const reach = SEAM + (side === 'l' ? 1 : -1) * shapeIn.value.shift
+  const reach = SEAM_HALF + (side === 'l' ? 1 : -1) * shapeIn.value.shift
   return sheetsFor(side, pages, reach, spineSlot.value).map(x => ({
     melt: x.melt,
     style: { '--o': `${x.off.toFixed(2)}px`, '--ox': `${x.out.toFixed(2)}px`, '--k': x.k.toFixed(3), opacity: x.alpha.toFixed(2), ...(measured ? { clipPath: `path('${sheetClip(side, shapeIn.value, x)}')` } : {}) },
@@ -205,7 +201,6 @@ const bindingVars = computed(() => {
   if (sh) {
     for (const [k, p] of [['l', sh.l], ['r', sh.r]] as const) {
       v[`--clip-${k}`] = `path('${p.clip}')`
-      v[`--cn-in-${k}`] = `${p.cornerIn.toFixed(1)}px`
       v[`--cn-top-${k}`] = `${p.cornerTop.toFixed(1)}px`
       v[`--cn-bottom-${k}`] = `${p.cornerBottom.toFixed(1)}px`
       v[`--gut-${k}`] = `${p.gutter.toFixed(1)}px`

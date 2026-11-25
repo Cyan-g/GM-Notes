@@ -118,7 +118,7 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
   <FeatBonusInput v-else-if="def.kind === 'abilityBonus' && entry.type === 'feat'" v-model="value" />
   <AbilityBonusInput v-else-if="def.kind === 'abilityBonus'" v-model="value" />
   <SpeedsInput v-else-if="def.kind === 'speeds'" v-model="value" :inherited="entry.type === 'race' ? (get(entry.fields.parent)?.fields.speeds as Speeds | undefined) : undefined" />
-  <ProfChips v-else-if="def.kind === 'skills'" :values="value ?? []" :toggles="SKILL_OPTIONS" @change="value = $event.length ? $event : undefined" />
+  <ProfChips v-else-if="def.kind === 'skills'" :values="value ?? []" :suggest="SKILL_OPTIONS" placeholder="Add a skill…" @change="value = $event.length ? $event : undefined" />
   <EquipmentInput v-else-if="def.kind === 'equipment'" v-model="value" />
   <RequirementsInput v-else-if="def.kind === 'requires'" v-model="value" :features="entry.type === 'feat'" />
   <RecipeInput v-else-if="def.kind === 'recipe'" v-model="value" :item-value="entry.fields.value" />

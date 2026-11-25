@@ -84,6 +84,9 @@ function onKey(e: KeyboardEvent) {
     void nextTick(() => document.querySelector('.suggest-list li.sel')?.scrollIntoView({ block: 'nearest' }))
   } else if (e.key === 'Enter' && showList.value && sel.value >= 0) {
     pick(shown.value[sel.value].value)
+  } else if (e.key === 'Enter' && showList.value && typed.value.trim() && shown.value.length === 1) {
+    // typed down to one suggestion ("steal" → Stealth): Enter takes it
+    pick(shown.value[0].value)
   } else if (e.key === 'Escape' && open.value) {
     e.preventDefault()
     e.stopPropagation()

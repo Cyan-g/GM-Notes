@@ -107,8 +107,8 @@ function dropLists() { listsOpen.value = false; patch({ spellLists: undefined })
           <Dropdown :value="castMode" aria-label="Its spells are cast with" title="The ability its spells (and its picked option's) are cast with, where a spell doesn't name one" @change="setCastMode(val($event))">
             <option value="pick">the player's pick</option><option value="same">the same as another {{ word }}</option>
           </Dropdown>
-          <div v-if="castMode === 'pick'" class="seg wrap">
-            <button v-for="ab in ABILITY_KEYS" :key="ab" type="button" :class="{ on: t.castWith?.among?.includes(ab) }" @click="toggleCast(ab)">{{ ABILITY_UPPER[ab] }}</button>
+          <div v-if="castMode === 'pick'" class="chip-toggles">
+            <button class="chip-toggle" v-for="ab in ABILITY_KEYS" :key="ab" type="button" :class="{ on: t.castWith?.among?.includes(ab) }" @click="toggleCast(ab)">{{ ABILITY_UPPER[ab] }}</button>
           </div>
           <Dropdown v-else-if="castMode === 'same'" :value="t.castWith?.sameAs" aria-label="As which" @change="patch({ castWith: { sameAs: val($event) } })">
             <option v-for="o in others" :key="o.id" :value="o.id">{{ o.name }}</option>

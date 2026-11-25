@@ -87,6 +87,11 @@ const writeBonuses = (list: Bonus[]) => list.filter(b => b.name.trim()).map(b =>
 const skills = computed(() => parseBonuses(sb.value.skills))
 const skillOn = (s: string) => skills.value.find(b => b.name.toLowerCase() === s.toLowerCase())
 const skillSuggest = (s: string) => modOf(SKILLS[s]) + prof.value
+/** A skill typed or picked in the box: added when it's one of the skills (any case), and the box empties. */
+function addSkill(ev: Event) {
+  const el = ev.target as HTMLInputElement, name = Object.keys(SKILLS).find(k => k.toLowerCase() === el.value.trim().toLowerCase())
+  if (name && !skillOn(name)) { toggleSkill(name); el.value = '' }
+}
 function toggleSkill(s: string) {
   set('skills', writeBonuses(skillOn(s) ? skills.value.filter(b => b.name.toLowerCase() !== s.toLowerCase()) : [...skills.value, { name: s, n: skillSuggest(s) }]))
 }
@@ -360,11 +365,15 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
     <!-- skills, senses, languages -->
     <section class="card cf-card">
       <div class="sf-field"><span class="sf-label">Skills <span class="muted">(bonus filled in from the ability and proficiency)</span></span>
+        <!-- the picked skills, each with its bonus, and a box to add one (several picks from a long list) -->
         <div class="cf-skills">
-          <span v-for="(ab, s) in SKILLS" :key="s" class="cf-skill" :class="{ on: !!skillOn(s) }">
-            <button type="button" class="token-opt" :class="{ on: !!skillOn(s) }" :title="`${s} (${ab.toUpperCase()})`" @click="toggleSkill(s)">{{ s }}</button>
-            <input v-if="skillOn(s)" type="number" :value="skillOn(s)!.n ?? ''" :placeholder="signedText(skillSuggest(s))" @change="setSkillBonus(s, val($event))" />
-          </span>
+          <template v-for="(ab, s) in SKILLS" :key="s">
+            <span v-if="skillOn(s)" class="cf-skill on chip" :title="`${s} (${ab.toUpperCase()})`">{{ s }}
+              <input type="number" :value="skillOn(s)!.n ?? ''" :placeholder="signedText(skillSuggest(s))" :aria-label="`${s} bonus`" @change="setSkillBonus(s, val($event))" />
+              <button type="button" class="link-btn" :title="`Remove ${s}`" @click="toggleSkill(s)">×</button>
+            </span>
+          </template>
+          <SuggestInput class="cf-skill-add" :options="Object.keys(SKILLS).filter(s => !skillOn(s))" placeholder="Add a skill…" @change="addSkill" />
         </div>
       </div>
 

@@ -100,8 +100,8 @@ const remove = (i: number) => { const l = [...list.value]; l.splice(i, 1); model
         <option value="force">becomes</option>
       </Dropdown>
       <input v-if="!kindOf(f)?.noValue" type="number" class="effect-value" :value="f.value ?? ''" aria-label="Value" @change="put(i, { value: Number(val($event)) || 0 })" />
-      <span v-if="needs(f, 'abilities')" class="seg" role="group" aria-label="Plus these modifiers">
-        <button v-for="a in ABILITIES" :key="a.key" type="button" :class="{ on: f.abilities?.includes(a.key as Ab) }" @click="toggleAbility(i, a.key as Ab)">{{ a.short }}</button>
+      <span v-if="needs(f, 'abilities')" class="chip-toggles" role="group" aria-label="Plus these modifiers">
+        <button class="chip-toggle" v-for="a in ABILITIES" :key="a.key" type="button" :class="{ on: f.abilities?.includes(a.key as Ab) }" @click="toggleAbility(i, a.key as Ab)">{{ a.short }}</button>
       </span>
       <label v-if="needs(f, 'noShield')" class="small effect-check" title="Only without a shield (a monk's Unarmored Defense)"><input type="checkbox" :checked="!!f.noShield" @change="put(i, { noShield: ($event.target as HTMLInputElement).checked || undefined })" /> no shield</label>
       <Dropdown compact v-if="needs(f, 'when')" :value="f.when ?? ''" aria-label="Only for" @change="put(i, { when: (val($event) || undefined) as GearEffect['when'] })">

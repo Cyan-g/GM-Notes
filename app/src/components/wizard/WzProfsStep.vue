@@ -68,11 +68,11 @@ const toggleIn = (key: 'ownSaves' | 'ownArmor' | 'ownWeapons', v: string) => {
   </template>
   <template v-else-if="d.cls">
     <div class="wz-row"><span>Saving throws</span>
-      <span class="seg"><button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: d.ownSaves.includes(a) }" @click="toggleIn('ownSaves', a)">{{ ABILITY_UPPER[a] }}</button></span></div>
+      <span class="chip-toggles"><button class="chip-toggle" v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: d.ownSaves.includes(a) }" @click="toggleIn('ownSaves', a)">{{ ABILITY_UPPER[a] }}</button></span></div>
     <div class="wz-row"><span>Armor</span>
-      <span class="seg"><button v-for="o in armorTypes" :key="o.id" type="button" :class="{ on: d.ownArmor.includes(o.id) }" @click="toggleIn('ownArmor', o.id)">{{ o.label }}</button></span></div>
+      <span class="chip-toggles"><button class="chip-toggle" v-for="o in armorTypes" :key="o.id" type="button" :class="{ on: d.ownArmor.includes(o.id) }" @click="toggleIn('ownArmor', o.id)">{{ o.label }}</button></span></div>
     <div class="wz-row"><span>Weapons</span>
-      <span class="seg"><button v-for="w in listOptions('item.weaponCategory')" :key="w.id" type="button" :class="{ on: d.ownWeapons.includes(w.id) }" @click="toggleIn('ownWeapons', w.id)">{{ w.label }}</button></span></div>
+      <span class="chip-toggles"><button class="chip-toggle" v-for="w in listOptions('item.weaponCategory')" :key="w.id" type="button" :class="{ on: d.ownWeapons.includes(w.id) }" @click="toggleIn('ownWeapons', w.id)">{{ w.label }}</button></span></div>
     <div class="wz-row"><label>Skills to pick <input type="number" min="0" max="8" class="wz-small" :value="d.ownSkillCount" @change="wizard.d.ownSkillCount = num($event)" /></label></div>
   </template>
   <p v-if="granted.length" class="small"><b>From the species and background:</b>{{ ' ' }}<template v-for="(g, i) in granted" :key="i"><template v-if="i">, </template>{{ grantOptions(g.kind).find(o => o.id === g.id)?.label ?? g.id }} <span class="muted">({{ g.from }})</span></template></p>

@@ -63,7 +63,7 @@ function setAll(all: boolean) { if (all) props.e.fields.toolsAll = true; else de
       </div>
       <template v-if="mode === 'three'">
         <p class="muted small">Tick three abilities: the player puts +2 on one and +1 on another, or +1 on all three.</p>
-        <div class="seg cb-toggles"><button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: picked.includes(a) }" :disabled="!picked.includes(a) && picked.length >= 3" @click="toggle(a)">{{ ABILITY_UPPER[a] }}</button></div>
+        <div class="chip-toggles"><button class="chip-toggle" v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: picked.includes(a) }" :disabled="!picked.includes(a) && picked.length >= 3" @click="toggle(a)">{{ ABILITY_UPPER[a] }}</button></div>
         <p v-if="picked.length < 3" class="small warn-text">{{ 3 - picked.length }} more to tick.</p>
         <p v-else-if="bonus && !three" class="small muted">Ticking three replaces the custom increase it has.</p>
       </template>

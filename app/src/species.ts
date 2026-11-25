@@ -100,7 +100,10 @@ export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): Active
         ? trait.choice.options?.find(o => o.name.toLowerCase() === String(bg.fields.originFeatNote).trim().toLowerCase()) : undefined
     const picks = st.picks?.[key]?.length ? st.picks[key] : auto ? [auto.id] : []
     const options = trait.choice?.kind === 'option'
-      ? picks.map(id => trait.choice!.options?.find(o => o.id === id)).filter((o): o is TraitOption => !!o) : []
+      // a repeatable option picked again is stored as "id#2": a copy of the option carrying that id, so its own choices
+      // (Agonizing Blast's second cantrip) and its line are its own
+      ? picks.map(id => { const base = id.split('#')[0], o = trait.choice!.options?.find(x => x.id === base); return o && id !== base ? { ...o, id } : o })
+        .filter((o): o is TraitOption => !!o) : []
     const cw = trait.castWith, cast = cw ? st.abilities?.[cw.sameAs ? `${inst ? `${race.id}#${inst}` : race.id}.${cw.sameAs}` : key] : undefined
     const a: ActiveTrait = { key, trait, race, level, active: (trait.level ?? 1) <= level, option: options[0], options, picks, ...(cast ? { cast } : {}), ...(via ? { via } : {}), ...(inst ? { inst } : {}) }
     // the choices a picked option brings, each as a trait of its own (picked and listed like any other)

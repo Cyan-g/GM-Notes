@@ -382,6 +382,8 @@ export interface TraitOption {
   /** What it takes to pick this option: a level (of the class it comes from, or the character's) and another option of
    * the same choice picked first (Thirsting Blade: Pact of the Blade). */
   needs?: { level?: number; option?: string }
+  /** It can be picked more than once (Agonizing Blast: a different cantrip each time); a copy is stored as "id#2". */
+  repeatable?: boolean
 }
 /**
  * A choice the player makes on the sheet: `count` skills, languages or tools (only from `among`, if given), or one

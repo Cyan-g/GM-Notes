@@ -387,7 +387,7 @@ export function steps(d: Draft): Step[] {
     pickedLanguages(d).length < languageRule(d).picks ? `${languageRule(d).picks - pickedLanguages(d).length} language${languageRule(d).picks - pickedLanguages(d).length === 1 ? '' : 's'}` : '',
   ].filter(Boolean) as string[], chosen: d.skills.join(', ') })
   const classFeatures = speciesTraits(pc).filter(a => isClassOrigin(a.race) && a.active)
-  const featurePicks = classFeatures.filter(a => a.trait.choice).flatMap(a => a.picks.map(id => get(id)?.name ?? a.trait.choice?.options?.find(o => o.id === id)?.name ?? id))
+  const featurePicks = classFeatures.filter(a => a.trait.choice).flatMap(a => a.picks.map(id => get(id)?.name ?? a.trait.choice?.options?.find(o => o.id === id.split('#')[0])?.name ?? id))
   if (classFeatures.length) s.push({ id: 'features', label: 'Class features', open: classFeatures.filter(choiceOpen).map(a => a.trait.name), chosen: featurePicks.join(', ') })
   // the Feats step: the Origin feat, the feats a trait gives (Versatile), and a feat at each level that gives one
   const featTraits = speciesTraits(pc).filter(a => !isClassOrigin(a.race) && a.active && inFeats(a))

@@ -2920,3 +2920,6 @@ label.check-chip:has(> input:checked) { background: var(--accent); border-color:
 label.check-chip:has(> input:focus-visible) { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 1px; }
 label.check-chip:has(> input:disabled) { opacity: .6; cursor: default; }
 label.check-chip b { font-weight: 600; }
+.add-feat-modal { display: grid; gap: .6rem; }
+.add-feat-modal .lu-foot { display: flex; gap: .5rem; }
+.sp-again { display: inline-flex; gap: .4rem; align-items: center; margin-left: .4rem; }

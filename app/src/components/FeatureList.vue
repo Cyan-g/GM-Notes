@@ -145,7 +145,7 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
       <div v-else-if="l.kind === 'option'" class="sp-trait" :class="{ 'sp-pending': optionOpen(l.a, l.o) }">
         <details class="sp-fold">
           <!-- a single pick reads as the feature with it ("Elemental Affinity (Fire)"); one of several by its own name -->
-          <summary class="sp-head"><b>{{ (l.a.trait.choice?.count ?? 1) === 1 && !l.a.trait.choice?.steps?.length ? `${l.a.trait.name} (${l.o.name})` : l.o.name }}</b>
+          <summary class="sp-head"><b>{{ (l.a.trait.choice?.count ?? 1) === 1 && !l.a.trait.choice?.steps?.length ? `${l.a.trait.name} (${l.o.name})` : l.o.name }}<template v-if="l.o.id.includes('#')"> ({{ l.o.id.split('#')[1] }})</template></b>
             <span class="feat-tag" :class="'tag-' + l.a.race.type" :title="`Picked in ${l.a.trait.name}, from ${l.a.race.name}`">{{ (l.a.trait.choice?.count ?? 1) === 1 && !l.a.trait.choice?.steps?.length ? sourceTag(l.a) : l.a.trait.name }}</span>
             <!-- what the option asks for in turn (Agonizing Blast's cantrip): picked, or a link to pick it -->
             <template v-for="p in optionPicks(l.a, l.o)" :key="p.x.key">

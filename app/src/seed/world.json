@@ -3568,7 +3568,8 @@
             "damaging": true
            }
           }
-         ]
+         ],
+         "repeatable": true
         },
         {
          "id": "armor-of-shadows",
@@ -3647,7 +3648,8 @@
             "damaging": true
            }
           }
-         ]
+         ],
+         "repeatable": true
         },
         {
          "id": "fiendish-vigor",
@@ -3831,7 +3833,8 @@
             "damaging": true
            }
           }
-         ]
+         ],
+         "repeatable": true
         },
         {
          "id": "thirsting-blade",

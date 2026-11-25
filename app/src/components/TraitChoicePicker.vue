@@ -114,7 +114,25 @@ const lacking = (r: Row) => [props.taken?.has(r.id) && `taken by ${props.taken.g
 /** The first sentence, shown on the row; the rest folds away. */
 const lead = (t: string) => t.match(/^[^.!?]*[.!?]/)?.[0] ?? t
 /** The picks made, by name, for the line under the trait. */
-const pickedRows = computed(() => props.a.picks.filter(Boolean).map(id => rows.value.find(r => r.id === id) ?? { id, label: get(id)?.name ?? id, text: '' }))
+const pickedRows = computed(() => props.a.picks.filter(Boolean).map(id => {
+  const r = rows.value.find(x => x.id === baseOf(id))
+  return r ? (id === r.id ? r : { ...r, id, label: `${r.label} (${id.split('#')[1]})` }) : { id, label: get(id)?.name ?? id, text: '' }
+}))
+// ---- a repeatable option taken again ("agonizing-blast#2"), each copy with its own choices ----
+const baseOf = (id: string) => id.split('#')[0]
+/** How many more times a row is taken (its copies). */
+const copiesOf = (r: Row) => props.a.picks.filter(p => p !== r.id && baseOf(p) === r.id).length
+function takeAgain(r: Row) {
+  if (props.disabled || full.value) return
+  const now = props.a.picks.filter(Boolean)
+  let k = 2
+  while (now.includes(`${r.id}#${k}`)) k++
+  emit('pick', [...now, `${r.id}#${k}`])
+}
+function dropCopy(r: Row) {
+  const now = props.a.picks.filter(Boolean), last = [...now].reverse().find(p => p !== r.id && baseOf(p) === r.id)
+  if (last) emit('pick', now.filter(p => p !== last))
+}
 
 // ---- the dialog with the list ----
 const open = ref(false)
@@ -128,7 +146,8 @@ function toggle(id: string) {
   const r = rows.value.find(x => x.id === id)
   if (r && lacking(r) && !props.a.picks.includes(id)) return
   const now = props.a.picks.filter(Boolean)
-  if (now.includes(id)) return emit('pick', now.filter(x => x !== id))
+  // given up: with its copies, if it was taken more than once
+  if (now.includes(id)) return emit('pick', now.filter(x => baseOf(x) !== id))
   if (n.value === 1) return emit('pick', [id])
   if (!full.value) emit('pick', [...now, id])
 }
@@ -171,7 +190,13 @@ function toggle(id: string) {
         <span class="sp-opt-body">
           <span class="sp-opt-head"><b>{{ r.label }}</b>
             <span v-if="r.prereq || r.needs || r.needOption" class="sp-prereq" :class="{ lacking: !!lacking(r) }" :title="lacking(r) || 'Prerequisite'">{{ r.prereq ?? [r.needs && `Level ${r.needs}+`, r.needOption && rows.find(x => x.id === r.needOption)?.label].filter(Boolean).join(', ') }}</span>
-            <TraitChips v-if="r.option" :t="r.option" no-grants /></span>
+            <TraitChips v-if="r.option" :t="r.option" no-grants />
+            <!-- taken more than once (a repeatable option): how often, and once more or once less -->
+            <span v-if="r.option?.repeatable && a.picks.includes(r.id)" class="sp-again small" @click.stop.prevent>
+              <b v-if="copiesOf(r)">× {{ copiesOf(r) + 1 }}</b>
+              <button v-if="!disabled" type="button" class="link-btn" :disabled="full" :title="full ? 'No picks left' : 'Take it once more (each time with its own choices)'" @click="takeAgain(r)">＋ again</button>
+              <button v-if="copiesOf(r) && !disabled" type="button" class="link-btn" title="Take it once less" @click="dropCopy(r)">− one</button>
+            </span></span>
           <span v-if="lacking(r) && !a.picks.includes(r.id)" class="small sp-opt-lacks">Not yet: {{ lacking(r) }}</span>
           <span v-if="r.text" class="muted small sp-opt-lead" v-html="renderInline(lead(r.text))" />
           <details v-if="r.text.length > lead(r.text).length + 2" class="sp-opt-more" @click.stop><summary class="small">more</summary><MarkdownView class="small" :source="r.text" /></details>

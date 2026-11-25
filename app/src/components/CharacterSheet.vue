@@ -41,6 +41,7 @@ import ConditionsBar from './ConditionsBar.vue'
 import DeathSaves from './DeathSaves.vue'
 import LevelUpModal from './LevelUpModal.vue'
 import ChoicesModal from './ChoicesModal.vue'
+import AddFeatDialog from './AddFeatDialog.vue'
 import ShortRestModal from './ShortRestModal.vue'
 import SkillGrid from './SkillGrid.vue'
 import { freeFrame } from '../skillFrames'
@@ -294,6 +295,8 @@ const sizes = computed(() => speciesSizes(props.pc))
 const leveling = ref(false)
 /** The "to pick" window: the choices still to make, on the sheet. */
 const choosing = ref(false)
+/** The "＋ Feat" window (Edit page). */
+const addingFeat = ref(false)
 /** Level up from the Level tile: a character of one's own, below 20, not while editing; with XP, "ready" shows. */
 const canLevelUp = computed(() => !ro.value && !build.value && !isShared(props.pc) && classes.value.length > 0 && level.value < levelCap())
 const levelReady = computed(() => canLevelUp.value && rule('experience') === 'xp' && (s.value.xp ?? 0) >= (XP_AT[level.value] ?? Infinity))
@@ -353,6 +356,7 @@ onBeforeUnmount(() => {
     <div class="cs-top-right">
     <LevelUpModal v-if="leveling" :pc="pc" :s="s" @close="leveling = false" />
     <ChoicesModal v-if="choosing" :pc="pc" :s="s" @close="choosing = false" />
+    <AddFeatDialog v-if="addingFeat" :pc="pc" :s="s" @close="addingFeat = false" />
     <ShortRestModal v-if="resting" :pc="pc" :s="s" :summary="resting" :kind="restKind" @close="resting = ''" />
     <!-- the strip at the top: the numbers looked at most -->
     <!-- building: what the sheet works out, in one line; below it, what's set by hand -->
@@ -501,7 +505,7 @@ onBeforeUnmount(() => {
 
     <!-- features and traits: in play right below the abilities, the uses on them clicked often -->
     <section ref="featuresRef" class="cs-features">
-      <h4>Features &amp; traits <button v-if="build" class="link-btn" @click="addFeature">＋ Add</button>
+      <h4>Features &amp; traits <button v-if="build" class="link-btn" title="A feat of the world, with its ability increases" @click="addingFeat = true">＋ Feat</button> <button v-if="build" class="link-btn" title="Anything else, typed: a boon, a homebrew feature" @click="addFeature">＋ Other</button>
         <!-- building: the picks still to make are in their features' lines below; this jumps to the first -->
         <button v-if="build && openChoices && !ro" type="button" class="link-btn sp-open small" :title="`${openChoices} pick${openChoices === 1 ? '' : 's'} still to make`" @click="toFirstPick">{{ openChoices }} to pick ↓</button>
         <button v-if="!build && openChoices && !ro" type="button" class="link-btn sp-open small" :title="`${openChoices} pick${openChoices === 1 ? '' : 's'} still to make`" @click="choosing = true">{{ openChoices }} to pick ✎</button></h4>
@@ -529,7 +533,7 @@ onBeforeUnmount(() => {
       </template>
       <!-- everything from the classes, species, background, the sheet and the gear, each with its source (species.ts) -->
       <FeatureList v-else :pc="pc" :s="s" :gear="fromGear" />
-      <p v-if="build && !s.features.length" class="muted small">＋ Add is for anything else: a boon, a homebrew feature, a feat by its name.</p>
+      <p v-if="build && !s.features.length" class="muted small">＋ Feat adds one of the world's feats; ＋ Other anything else, typed: a boon, a homebrew feature.</p>
       <!-- building: the features that come by themselves (classes, species, background, feats), each with its choices -->
       <h5 v-if="build" class="cs-auto-head muted small">From the classes, species, background and feats</h5>
       <FeatureList v-if="build" edit :pc="pc" :s="s" :gear="fromGear" />

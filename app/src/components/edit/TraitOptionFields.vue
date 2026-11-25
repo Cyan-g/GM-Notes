@@ -40,7 +40,7 @@ function setNeeds(p: Partial<NonNullable<TraitOption['needs']>>) {
 }
 const put = (patch: Partial<TraitOption>) => {
   const next: TraitOption = { ...model.value, ...patch }
-  for (const k of ['text', 'effects', 'grants', 'spells', 'needs'] as const) {
+  for (const k of ['text', 'effects', 'grants', 'spells', 'needs', 'repeatable'] as const) {
     const v = next[k]
     if (v == null || v === '' || (Array.isArray(v) && !v.length)) delete next[k]
   }
@@ -87,6 +87,7 @@ function drop(part: 'effects' | 'grants' | 'spells', label: string) {
   <div class="trait-fields">
     <label v-if="!noName" class="trait-name"><span>Name</span><input :value="model.name" placeholder="e.g. Dwarven Resilience" @input="put({ name: val($event) })" /></label>
     <div v-if="siblings" class="trait-needs small">
+      <label class="check-chip" title="It can be picked more than once (Agonizing Blast: a different cantrip each time)"><input type="checkbox" :checked="!!model.repeatable" @change="put({ repeatable: ($event.target as HTMLInputElement).checked || undefined })" /> can be taken again</label>
       <span class="trait-label">Needs</span>
       <label>{{ levelWord ?? 'level' }} <input type="number" min="1" max="20" class="effect-value" :value="model.needs?.level ?? ''" placeholder="—" @change="setNeeds({ level: Number(val($event)) || undefined })" /></label>
       <label>and <Dropdown :value="model.needs?.option ?? ''" @change="setNeeds({ option: val($event) || undefined })">

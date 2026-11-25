@@ -135,7 +135,7 @@ const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 's
     <h4>Multiclassing <span class="cb-tag" :class="tag('multiclass')">{{ tag('multiclass') }}</span><button v-if="isOwn('multiclass')" type="button" class="link-btn small" @click="reset('multiclass')">Reset</button></h4>
     <div class="cb-line"><span class="muted small">Needs 13 in</span>
       <div class="chip-toggles"><button class="chip-toggle" v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: mc.primary.includes(a) }" @click="setMc({ primary: toggle(mc.primary, a) })">{{ ABILITY_UPPER[a] }}</button></div>
-      <label v-if="mc.primary.length > 1" class="small"><input type="checkbox" :checked="!!mc.any" @change="setMc({ any: ($event.target as HTMLInputElement).checked || undefined })" /> one of them is enough</label></div>
+      <label v-if="mc.primary.length > 1" class="check-chip small"><input type="checkbox" :checked="!!mc.any" @change="setMc({ any: ($event.target as HTMLInputElement).checked || undefined })" /> one of them is enough</label></div>
     <div class="cb-line"><span class="muted small">Gives</span>
       <div class="chip-toggles"><button class="chip-toggle" v-for="x in [...ARMOR, ...WEAPONS]" :key="x" type="button" :class="{ on: [...mc.armor, ...mc.weapons].includes(x) }" @click="ARMOR.includes(x) ? setMc({ armor: toggle(mc.armor, x) }) : setMc({ weapons: toggle(mc.weapons, x) })">{{ x }}</button></div></div>
     <div class="cb-line"><span class="muted small">Tools</span><ProfChips :values="toolIds(mc.tools)" :suggest="toolItems" :create="(x: string) => x" placeholder="Add a tool…" @change="v => setMc({ tools: v })" /></div>

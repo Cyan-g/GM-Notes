@@ -93,7 +93,7 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
   <LinkTextarea v-else-if="def.kind === 'longtext'" rows="3" :value="value ?? ''" @input="value = ($event.target as HTMLTextAreaElement).value" />
   <input v-else-if="def.kind === 'number'" type="number" :value="value ?? ''" @change="value = ($event.target as HTMLInputElement).value === '' ? undefined : Number(($event.target as HTMLInputElement).value)" />
   <input v-else-if="def.kind === 'weight'" type="number" step="0.1" min="0" :value="value ?? ''" placeholder="lb" @change="value = ($event.target as HTMLInputElement).value === '' ? undefined : Number(($event.target as HTMLInputElement).value)" />
-  <label v-else-if="def.kind === 'bool'" class="toggle"><input type="checkbox" :checked="!!value" :aria-label="def.label" @change="value = ($event.target as HTMLInputElement).checked || undefined" /></label>
+  <label v-else-if="def.kind === 'bool'" class="check-chip"><input type="checkbox" :checked="!!value" @change="value = ($event.target as HTMLInputElement).checked || undefined" /> {{ def.label }}</label>
   <Dropdown v-else-if="def.kind === 'select'" :value="value ?? ''" @change="value = ($event.target as HTMLSelectElement).value">
     <option value="">{{ fromParent ? `— (${fromParent})` : '—' }}</option>
     <option v-for="o in selectOptions" :key="o.id" :value="o.id">{{ o.label }}</option>

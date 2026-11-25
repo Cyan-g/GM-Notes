@@ -107,10 +107,10 @@ function addCondition(ev: Event) {
         <div class="sf-cell">
           <span class="sf-label">Components</span>
           <div class="sf-inline">
-            <div class="seg" role="group" aria-label="Components">
-              <button type="button" :class="{ on: f.verbal }" title="Verbal" @click="toggle('verbal')">V</button>
-              <button type="button" :class="{ on: f.somatic }" title="Somatic" @click="toggle('somatic')">S</button>
-              <button type="button" :class="{ on: hasM }" title="Material" @click="toggleM">M</button>
+            <div class="chip-toggles" role="group" aria-label="Components">
+              <button class="chip-toggle" type="button" :class="{ on: f.verbal }" title="Verbal" @click="toggle('verbal')">V</button>
+              <button class="chip-toggle" type="button" :class="{ on: f.somatic }" title="Somatic" @click="toggle('somatic')">S</button>
+              <button class="chip-toggle" type="button" :class="{ on: hasM }" title="Material" @click="toggleM">M</button>
             </div>
             <input v-if="hasM" class="sf-material" :value="materialText" placeholder="Which materials (optional)" @change="setMaterial(($event.target as HTMLInputElement).value)" />
           </div>
@@ -142,9 +142,9 @@ function addCondition(ev: Event) {
         </div>
         <div class="sf-cell">
           <span class="sf-label">Casting</span>
-          <div class="seg">
-            <button type="button" :class="{ on: f.concentration }" @click="toggle('concentration')">Concentration</button>
-            <button type="button" :class="{ on: f.ritual }" @click="toggle('ritual')">Ritual</button>
+          <div class="chip-toggles">
+            <button class="chip-toggle" type="button" :class="{ on: f.concentration }" @click="toggle('concentration')">Concentration</button>
+            <button class="chip-toggle" type="button" :class="{ on: f.ritual }" @click="toggle('ritual')">Ritual</button>
           </div>
         </div>
       </div>

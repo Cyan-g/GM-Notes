@@ -7,6 +7,12 @@ export type { Ability }
 
 // ---- abilities and skills ----
 export const ABILITY_KEYS: Ability[] = ['str', 'dex', 'con', 'int', 'wis', 'cha']
+/** The kinds of speed, walking first, in the order a statblock writes them; and the senses with a range. One list for
+ * the creature form, race speeds and effects. */
+export const SPEED_TYPES = ['walk', 'fly', 'swim', 'climb', 'burrow'] as const
+export const SENSE_TYPES = ['darkvision', 'blindsight', 'tremorsense', 'truesight'] as const
+/** Every alignment, as written in a statblock or a deity's entry ("any alignment": creatures only). */
+export const ALIGNMENTS = ['lawful good', 'neutral good', 'chaotic good', 'lawful neutral', 'neutral', 'chaotic neutral', 'lawful evil', 'neutral evil', 'chaotic evil', 'unaligned']
 /** Each ability's full name ("Strength"). */
 export const ABILITY_NAME: Record<Ability, string> = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' }
 /** Each ability's short name, as written in running text ("Str"). */

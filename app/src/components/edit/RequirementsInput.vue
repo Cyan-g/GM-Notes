@@ -40,7 +40,7 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
         <button type="button" class="link-btn" title="Remove" @click="put({ scores: scores.filter((_, k) => k !== i) })">×</button>
       </span>
       <button type="button" class="chip-btn" @click="put({ scores: [...scores, { ability: 'str', min: 13 }] })">＋ Score</button>
-      <label v-if="scores.length > 1" class="small effect-check"><input type="checkbox" :checked="!!r.anyScore" @change="put({ anyScore: ($event.target as HTMLInputElement).checked })" /> one of them is enough</label>
+      <label v-if="scores.length > 1" class="check-chip small effect-check"><input type="checkbox" :checked="!!r.anyScore" @change="put({ anyScore: ($event.target as HTMLInputElement).checked })" /> one of them is enough</label>
     </div>
     <div v-if="features" class="req-row">
       <span class="req-label">Has feature</span>
@@ -49,7 +49,7 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
     <div class="req-row">
       <span class="req-label">Class</span>
       <ProfChips :values="r.classes ?? []" :suggest="classOptions" placeholder="Add a class…" @change="v => put({ classes: v })" />
-      <label class="small effect-check"><input type="checkbox" :checked="!!r.spellcaster" @change="put({ spellcaster: ($event.target as HTMLInputElement).checked })" /> or any spellcaster</label>
+      <label class="check-chip small effect-check"><input type="checkbox" :checked="!!r.spellcaster" @change="put({ spellcaster: ($event.target as HTMLInputElement).checked })" /> or any spellcaster</label>
     </div>
     <div class="req-row">
       <span class="req-label">Race</span>

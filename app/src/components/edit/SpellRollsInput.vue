@@ -46,7 +46,7 @@ const preview = (r: SpellRoll) => [rollText(props.spell, r), growthText(props.sp
           <option value="">any type</option>
           <option v-for="t in damageTypes" :key="t.id" :value="t.id">{{ t.label }}</option>
         </Dropdown>
-        <label class="small effect-check" title="Plus the caster's spellcasting ability modifier"><input type="checkbox" :checked="!!r.mod" @change="put(i, { mod: ($event.target as HTMLInputElement).checked })" /> + spellcasting modifier</label>
+        <label class="check-chip small effect-check" title="Plus the caster's spellcasting ability modifier"><input type="checkbox" :checked="!!r.mod" @change="put(i, { mod: ($event.target as HTMLInputElement).checked })" /> + spellcasting modifier</label>
         <button type="button" class="link-btn roll-x" title="Remove this roll" @click="remove(i)">×</button>
       </div>
       <div class="roll-line small">

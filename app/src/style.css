@@ -2910,3 +2910,13 @@ table.grid td.col-kind, table.grid th.col-kind { white-space: nowrap; }
 /* several picks from a short list (6 or fewer): toggle chips, as on the sheet (the forms rule) */
 .chip-toggles { display: inline-flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
 .cf-skill-add { width: 11rem; }
+/* yes/no in edit forms: a chip with its name, lit when on, as the toggle chips (the forms rule); the tickbox is inside,
+   hidden, so the keyboard and screen readers work as with a tickbox */
+label.check-chip { display: inline-flex; align-items: center; gap: .3em; position: relative; font-size: 12px; padding: .15rem .55rem; border: 1px solid var(--line);
+  background: var(--panel); color: var(--ink); border-radius: 999px; white-space: nowrap; cursor: pointer; user-select: none; width: auto; }
+label.check-chip:hover { border-color: var(--accent-2); }
+label.check-chip > input[type=checkbox] { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; padding: 0; pointer-events: none; }
+label.check-chip:has(> input:checked) { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+label.check-chip:has(> input:focus-visible) { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 1px; }
+label.check-chip:has(> input:disabled) { opacity: .6; cursor: default; }
+label.check-chip b { font-weight: 600; }

@@ -31,11 +31,8 @@ const putSpell = (p: Partial<SpellFilter>) => {
   if (!f.ability) delete f.ability
   put({ spell: f })
 }
-function toggleAmong(id: string) {
-  const among = new Set(model.value.among ?? [])
-  if (among.has(id)) among.delete(id); else among.add(id)
-  put({ among: [...among] })
-}
+/** What the choice could take, for narrowing it to some of them. */
+const candidates = computed(() => choiceCandidates({ ...model.value, among: undefined }))
 const LEVELS = ['Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 </script>
 
@@ -46,7 +43,7 @@ const LEVELS = ['Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9']
     <summary class="small">{{ model.steps?.length ? 'changes by level' : 'same at every level (change by level…)' }}</summary>
     <StepsInput numeric label="How many" :model-value="model.steps" @update:model-value="v => put({ steps: v as [number, number][] | undefined })" />
   </details>
-  <label v-if="model.kind === 'skill'" class="small" title="A picked skill the character is already proficient in becomes Expertise (Keen Mind, Observant)"><input type="checkbox" :checked="!!model.orExpertise" @change="put({ orExpertise: ($event.target as HTMLInputElement).checked || undefined })" /> or Expertise if proficient</label>
+  <label v-if="model.kind === 'skill'" class="check-chip small" title="A picked skill the character is already proficient in becomes Expertise (Keen Mind, Observant)"><input type="checkbox" :checked="!!model.orExpertise" @change="put({ orExpertise: ($event.target as HTMLInputElement).checked || undefined })" /> or Expertise if proficient</label>
   <!-- which feats it offers: one kind of the world's feat kinds (the Lists page), or any -->
   <label v-if="model.kind === 'feat'" class="small">kind <Dropdown compact :value="model.category ?? ''" aria-label="Which kind of feat" @change="put({ category: val($event) || undefined })">
     <option value="">any feat</option>
@@ -58,12 +55,12 @@ const LEVELS = ['Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9']
       <option value="">any level</option>
       <option v-for="l in LEVELS" :key="l" :value="l">{{ l === 'Cantrip' ? 'cantrips' : `level ${l}` }}</option>
     </Dropdown>
-    <label class="small"><input type="checkbox" :checked="!!spell.ritual" @change="putSpell({ ritual: ($event.target as HTMLInputElement).checked })" /> rituals only</label>
-    <label class="small" title="Only spells with a damage roll (a Warlock cantrip that deals damage)"><input type="checkbox" :checked="!!spell.damaging" @change="putSpell({ damaging: ($event.target as HTMLInputElement).checked || undefined })" /> that deal damage</label>
+    <label class="check-chip small"><input type="checkbox" :checked="!!spell.ritual" @change="putSpell({ ritual: ($event.target as HTMLInputElement).checked })" /> rituals only</label>
+    <label class="check-chip small" title="Only spells with a damage roll (a Warlock cantrip that deals damage)"><input type="checkbox" :checked="!!spell.damaging" @change="putSpell({ damaging: ($event.target as HTMLInputElement).checked || undefined })" /> that deal damage</label>
     <Dropdown :value="spell.how" aria-label="How the picked spells are cast" @change="putSpell({ how: val($event) as TraitSpell['how'] })">
       <option v-for="(label, id) in HOW_SPECIES" :key="id" :value="id">{{ label }}</option>
     </Dropdown>
-    <label v-if="spell.how === 'long' || spell.how === 'short'" class="small" title="Also always prepared, and cast with spell slots too (Magic Initiate's level 1 spell)"><input type="checkbox" :checked="!!spell.prepared" @change="putSpell({ prepared: ($event.target as HTMLInputElement).checked || undefined })" /> also always prepared</label>
+    <label v-if="spell.how === 'long' || spell.how === 'short'" class="check-chip small" title="Also always prepared, and cast with spell slots too (Magic Initiate's level 1 spell)"><input type="checkbox" :checked="!!spell.prepared" @change="putSpell({ prepared: ($event.target as HTMLInputElement).checked || undefined })" /> also always prepared</label>
     <label v-if="spell.how !== 'known'" class="small ab-with" title="The ability they're cast with (their attack and save DC are shown with them)">cast with <Dropdown :value="spell.ability ?? ''" aria-label="Cast with" @change="putSpell({ ability: (val($event) || undefined) as SpellFilter['ability'] })">
       <option value="">—</option>
       <option v-for="(label, id) in ABILITY_NAME" :key="id" :value="id">{{ label }}</option>
@@ -75,8 +72,8 @@ const LEVELS = ['Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9']
   </template>
   <details v-else-if="model.kind !== 'option'" class="trait-among">
     <summary class="small">{{ model.among?.length ? `only from ${model.among.length}` : 'from any' }}</summary>
-    <div class="seg wrap">
-      <button v-for="o in choiceCandidates({ ...model, among: undefined })" :key="o.id" type="button" :class="{ on: model.among?.includes(o.id) }" @click="toggleAmong(o.id)">{{ o.label }}</button>
-    </div>
+    <!-- several picks: up to 6 candidates as toggle chips, more as chips plus a box -->
+    <ProfChips v-if="candidates.length <= 6" :values="model.among ?? []" :toggles="candidates" @change="v => put({ among: v })" />
+    <ProfChips v-else :values="model.among ?? []" :suggest="candidates" placeholder="Add one…" @change="v => put({ among: v })" />
   </details>
 </template>

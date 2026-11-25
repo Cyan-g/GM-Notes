@@ -71,7 +71,7 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
 <template>
   <p v-if="!editing" class="small item-needs-line">Anyone can use it, no attunement · <button type="button" class="link-btn" @click="editing = true">change</button></p>
   <div v-else class="feat-prereqs item-needs">
-    <label class="fp-switch"><input type="checkbox" :checked="!!f.attunement" @change="toggleAttune" /> <b>Requires attunement</b></label>
+    <label class="check-chip fp-switch"><input type="checkbox" :checked="!!f.attunement" @change="toggleAttune" /> <b>Requires attunement</b></label>
     <span class="muted small">Who can use it{{ f.attunement ? ' (attune to it)' : ' (equip it)' }}:</span>
     <div class="seg fp-mode">
       <button type="button" :class="{ on: !restricted }" @click="setRestricted(false)">Anyone</button>

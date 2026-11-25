@@ -9,7 +9,7 @@ import { ownerOf } from './sheetData'
 import { get } from './store'
 import { rule } from './rules'
 import { applyConditions } from './conditions'
-import { ABILITY_UPPER, SKILLS, mod, profBonus, signed, type Ability } from './model/dnd'
+import { ABILITY_UPPER, SENSE_TYPES, SKILLS, mod, profBonus, signed, type Ability } from './model/dnd'
 import { activeEffectsOf, activeSpells } from './spells'
 import { totalLevel } from './model/classes'
 import { activeGear, itemsInUse, slotsUsed, weightOf } from './items'
@@ -60,7 +60,7 @@ export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: Effect
   { on: 'sense', label: 'Sense (ft)', needs: ['sense'] },
   { on: 'feature', label: 'Feature', needs: ['text'], noValue: true },
 ]
-export const SENSES = ['Darkvision', 'Blindsight', 'Tremorsense', 'Truesight']
+export const SENSES = SENSE_TYPES.map(s => s[0].toUpperCase() + s.slice(1))
 const MODE: Record<string, string> = { adv: 'Advantage', dis: 'Disadvantage' }
 const ABILITY_SHORT: Record<string, string> = ABILITY_UPPER
 /** An effect's limit, in words. */

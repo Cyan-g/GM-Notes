@@ -15,7 +15,7 @@ import TokenField from './TokenField.vue'
 import EntryPicker from './EntryPicker.vue'
 import EntryLink from '../EntryLink.vue'
 import { attackText, statProblems } from '../../creatures'
-import { ABILITY_KEYS, ABILITY_NAME, CONDITIONS, SKILLS as SKILL_LIST, crProf, mod, signed, type Ability } from '../../model/dnd'
+import { ABILITY_KEYS, ABILITY_NAME, ALIGNMENTS, SENSE_TYPES, SPEED_TYPES, CONDITIONS, SKILLS as SKILL_LIST, crProf, mod, signed, type Ability } from '../../model/dnd'
 import type { StatAttack } from '../../model/types'
 import { inputValue as val } from '../../dom'
 
@@ -54,7 +54,7 @@ function setType(base: string, tags: string) {
   const line = [optionLabel('creature.creatureType', base).toLowerCase(), tags.trim() ? `(${tags.trim()})` : ''].filter(Boolean).join(' ')
   set('creatureType', line || undefined)
 }
-const ALIGNMENTS = ['lawful good', 'neutral good', 'chaotic good', 'lawful neutral', 'neutral', 'chaotic neutral', 'lawful evil', 'neutral evil', 'chaotic evil', 'unaligned', 'any alignment']
+const CREATURE_ALIGNMENTS = [...ALIGNMENTS, 'any alignment']
 
 // ---- challenge ----
 const CRS = ['0', '1/8', '1/4', '1/2', ...Array.from({ length: 30 }, (_, i) => String(i + 1))]
@@ -132,7 +132,7 @@ function writeDistances(out: Record<string, Dist>, modes: string[], plain: strin
   if (passive != null) parts.push(`passive Perception ${passive}`)
   return [...parts, ...rest].join(', ') || undefined
 }
-const SPEEDS = ['walk', 'fly', 'swim', 'climb', 'burrow']
+const SPEEDS = [...SPEED_TYPES]
 const speed = computed(() => parseDistances(sb.value.speed, SPEEDS, 'walk'))
 function setSpeed(mode: string, patch: Dist) {
   const p = speed.value
@@ -147,7 +147,7 @@ function toggleHover() {
   setSpeed('fly', { note: hover.value ? note.replace(/\(?hover\)?/i, '').trim() || undefined : [note, '(hover)'].filter(Boolean).join(' ') })
 }
 
-const SENSES = ['darkvision', 'blindsight', 'tremorsense', 'truesight']
+const SENSES = [...SENSE_TYPES]
 const senses = computed(() => parseDistances(sb.value.senses, SENSES))
 function setSense(mode: string, raw: string) {
   const p = senses.value
@@ -305,7 +305,7 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
           <input :value="typeParts.tags" placeholder="e.g. shapechanger" @change="setType(typeValue, val($event))" />
         </label>
         <label class="sf-field"><span class="sf-label">Alignment</span>
-          <SuggestInput :value="sb.alignment ?? ''" :options="ALIGNMENTS" :placeholder="ph.alignment ?? 'e.g. neutral evil'" @change="set('alignment', val($event).trim() || undefined)" />
+          <SuggestInput :value="sb.alignment ?? ''" :options="CREATURE_ALIGNMENTS" :placeholder="ph.alignment ?? 'e.g. neutral evil'" @change="set('alignment', val($event).trim() || undefined)" />
         </label>
         <label class="sf-field"><span class="sf-label">Challenge</span>
           <span class="cf-row">
@@ -342,7 +342,7 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
               <span>{{ m }}</span>
               <input type="number" step="5" min="0" :value="speed.out[m]?.n ?? ''" @change="setSpeed(m, { n: num(val($event)) })" />
             </label>
-            <button v-if="speed.out.fly" type="button" class="token-opt" :class="{ on: hover }" @click="toggleHover">hover</button>
+            <button v-if="speed.out.fly" type="button" class="chip-toggle" :class="{ on: hover }" @click="toggleHover">hover</button>
           </div>
           <TokenField v-if="speed.rest.length" :model-value="speed.rest.join(', ')" placeholder="Other…" @update:model-value="v => setRest('speed', v)" />
         </div>
@@ -462,7 +462,7 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
         <template v-else>
           <label class="small">with <Dropdown :value="sc.ability" @change="setSc({ ability: val($event) as any })"><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ ABILITY_NAME[a] }}</option></Dropdown></label>
           <span class="muted small">save DC {{ 8 + prof + modOf(sc.ability) }}, {{ signedText(prof + modOf(sc.ability)) }} to hit</span>
-          <label class="small"><input type="checkbox" :checked="!!sc.noMaterial" @change="setSc({ noMaterial: ($event.target as HTMLInputElement).checked || undefined })" /> no Material components</label>
+          <label class="check-chip small"><input type="checkbox" :checked="!!sc.noMaterial" @change="setSc({ noMaterial: ($event.target as HTMLInputElement).checked || undefined })" /> no Material components</label>
           <button type="button" class="link-btn small" title="Remove its spellcasting" @click="setSc(null)">remove</button>
         </template>
       </div>

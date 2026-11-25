@@ -24,7 +24,7 @@ const fieldOf = (k: string) => TYPES.feat.fields.find(f => f.key === k)
     <div class="ff-col ff-needs">
       <h4>What it needs</h4>
       <FeatPrereqs :e="entry" />
-      <label class="fp-switch ff-repeat" title="It can be taken more than once (another version each time, where its text says so)"><input type="checkbox" :checked="!!entry.fields.repeatable" @change="toggleField(entry, 'repeatable')" /> Can be taken more than once (repeatable)</label>
+      <label class="check-chip fp-switch ff-repeat" title="It can be taken more than once (another version each time, where its text says so)"><input type="checkbox" :checked="!!entry.fields.repeatable" @change="toggleField(entry, 'repeatable')" /> Can be taken more than once (repeatable)</label>
     </div>
   </div>
 </template>

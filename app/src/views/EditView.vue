@@ -237,7 +237,8 @@ function remove() {
             <template v-for="f in fs" :key="f.key">
               <template v-if="f.kind === 'statblock'"><div class="full"><FieldInput :def="f" :entry="e" /></div></template>
               <template v-else>
-                <label :for="`f-${f.key}`">{{ f.label }}</label>
+                <!-- a yes/no field is a chip that carries its own name -->
+                <label v-if="f.kind !== 'bool'" :for="`f-${f.key}`">{{ f.label }}</label><span v-else />
                 <div><FieldInput :id="`f-${f.key}`" :def="f" :entry="e" />
                   <small v-if="inheritedList(f)" class="muted inherit-hint">{{ inheritedList(f) }}</small></div>
               </template>

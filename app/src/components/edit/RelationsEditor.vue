@@ -85,15 +85,13 @@ function add(other: string) {
 
 <template>
   <div class="rel-edit">
-    <!-- adding first: what it is (the usual ones as buttons), then whom -->
+    <!-- adding first: what it is (one Dropdown, the usual kinds first), then whom -->
     <div class="rel-add">
-      <div class="seg wrap rel-quick">
-        <button v-for="o in quick" :key="o.value" type="button" :class="{ on: newKind === o.value }" @click="newKind = o.value">{{ o.label }}</button>
-        <Dropdown compact :value="quick.some(o => o.value === newKind) ? '' : newKind" title="Other kinds of relation" @change="newKind = ($event.target as HTMLSelectElement).value || newKind">
-          <option value="">more…</option>
-          <option v-for="o in OPTIONS.filter(o => !quick.includes(o))" :key="o.value" :value="o.value">{{ o.label }}</option>
-        </Dropdown>
-      </div>
+      <Dropdown compact class="rel-kind" :value="newKind" aria-label="Kind of relation" @change="newKind = ($event.target as HTMLSelectElement).value || newKind">
+        <option v-for="o in quick" :key="o.value" :value="o.value">{{ o.label }}</option>
+        <hr />
+        <option v-for="o in OPTIONS.filter(o => !quick.includes(o))" :key="o.value" :value="o.value">{{ o.label }}</option>
+      </Dropdown>
       <EntryPicker add :exclude="[entry.id]" :types="newOther" :placeholder="`${OPTIONS.find(o => o.value === newKind)?.label ?? 'Add'}: type a name…`" @pick="add" />
     </div>
     <!-- Grouped like the page reads; each row is the other entry, its role and dates. ⋯ opens the kind and dates. -->

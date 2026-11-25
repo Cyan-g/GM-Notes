@@ -139,8 +139,8 @@ function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete
         <button v-if="d.key === 'focus' && !focusShown" type="button" class="chip-btn if-focus-add" title="Make it an arcane focus, a druidic focus or a holy symbol" @click="focusOpen = true">＋ Spellcasting focus</button>
         <label v-else class="sheet-field if-wide" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>
       </template>
-      <div v-if="bools(basics).length" class="seg wrap if-bools">
-        <button v-for="d in bools(basics)" :key="d.key" type="button" :class="{ on: !!f[d.key] }" @click="toggleBool(d.key)">{{ d.label }}</button>
+      <div v-if="bools(basics).length" class="chip-toggles if-bools">
+        <button class="chip-toggle" v-for="d in bools(basics)" :key="d.key" type="button" :class="{ on: !!f[d.key] }" @click="toggleBool(d.key)">{{ d.label }}</button>
       </div>
     </section>
 
@@ -164,8 +164,8 @@ function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete
           <label v-if="f.armorType === 'Heavy'" class="sheet-field"><span>Strength needed</span><input type="number" min="0" max="30" :value="strNeeded ?? ''" placeholder="e.g. 15" @change="setStr(val($event))" /><small class="muted">worn without it: −10 ft speed</small></label>
         </template>
       </div>
-      <div v-if="g === 'Armor' && (realArmor || f.stealthDis)" class="seg wrap if-bools">
-        <button type="button" :class="{ on: !!f.stealthDis }" title="Disadvantage on Stealth checks while worn" @click="toggleBool('stealthDis')">Stealth disadvantage</button>
+      <div v-if="g === 'Armor' && (realArmor || f.stealthDis)" class="chip-toggles if-bools">
+        <button class="chip-toggle" type="button" :class="{ on: !!f.stealthDis }" title="Disadvantage on Stealth checks while worn" @click="toggleBool('stealthDis')">Stealth disadvantage</button>
       </div>
       <label v-for="d in wide(ds)" :key="d.key" class="sheet-field if-wide" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>
     </section>

@@ -93,7 +93,7 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
 
 <template>
   <div class="feat-prereqs">
-    <label class="fp-switch"><input type="checkbox" :checked="has" @change="setOn(($event.target as HTMLInputElement).checked)" /> <b>This feat has prerequisites</b></label>
+    <label class="check-chip fp-switch"><input type="checkbox" :checked="has" @change="setOn(($event.target as HTMLInputElement).checked)" /> <b>This feat has prerequisites</b></label>
 
     <template v-if="has">
       <div class="seg fp-mode">

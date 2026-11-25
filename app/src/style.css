@@ -3016,7 +3016,7 @@ label.check-chip b { font-weight: 600; }
    (--stack-l, --stack-r: 0 to 1, JournalBook). Each decorative style adds its touch below. */
 .book {
   --page: color-mix(in srgb, var(--panel) 88%, var(--accent));
-  --page-edge: color-mix(in srgb, var(--page) 72%, var(--ink));
+  --page-edge: color-mix(in srgb, var(--page) 72%, #000);
   --cover: color-mix(in srgb, var(--accent) 28%, #20140b);
   --bind: 7px; --stack-max: 13px; --stack-side: 8px;
   /* a faint fibre grain, made in the browser */
@@ -3031,8 +3031,9 @@ label.check-chip b { font-weight: 600; }
    darker, so their edges read as paper below the page and on its outer side; the spacing grows with the pages they
    stand for. The box itself is paper a shade darker than the open page, so that page's curved bottom edge shows. */
 .stack { position: absolute; z-index: 0; top: var(--bind); bottom: calc(var(--bind) + var(--stack-max)); width: calc((100% - 2 * var(--bind) - 2 * var(--stack-side)) / 2);
-  background: color-mix(in srgb, var(--page) 90%, var(--ink)); --e1: color-mix(in srgb, var(--page) 93%, var(--ink)); --e2: color-mix(in srgb, var(--page) 88%, var(--ink));
-  --e3: color-mix(in srgb, var(--page) 83%, var(--ink)); --e4: color-mix(in srgb, var(--page) 78%, var(--ink)); --e5: color-mix(in srgb, var(--page) 72%, var(--ink)); }
+  /* (darker toward black, never toward the ink: on a dark theme that would make them lighter than the open page) */
+  background: color-mix(in srgb, var(--page) 88%, #000); --e1: color-mix(in srgb, var(--page) 91%, #000); --e2: color-mix(in srgb, var(--page) 86%, #000);
+  --e3: color-mix(in srgb, var(--page) 81%, #000); --e4: color-mix(in srgb, var(--page) 76%, #000); --e5: color-mix(in srgb, var(--page) 70%, #000); }
 .stack.l { --g: calc((1px + var(--stack-l) * 11px) / 5); left: calc(var(--bind) + var(--stack-side)); border-radius: 6px 0 0 6px;
   box-shadow: calc(var(--g) * -.6) var(--g) 0 0 var(--e1), calc(var(--g) * -1.2) calc(var(--g) * 2) 0 0 var(--e2), calc(var(--g) * -1.8) calc(var(--g) * 3) 0 0 var(--e3),
     calc(var(--g) * -2.4) calc(var(--g) * 4) 0 0 var(--e4), calc(var(--g) * -3) calc(var(--g) * 5) 0 0 var(--e5), calc(var(--g) * -3) calc(var(--g) * 5 + 2px) 6px rgb(0 0 0 / .3); }

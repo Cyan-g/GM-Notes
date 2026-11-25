@@ -2979,7 +2979,8 @@ label.check-chip b { font-weight: 600; }
 /* the journal fills the window: the book's pages scroll, the window doesn't */
 .journal { height: calc(100vh - var(--bar-h, 52px) - 5.6rem); display: flex; flex-direction: column; }
 .journal .book { flex: 1; height: auto; min-height: 22rem; }
-.journal-current.on { color: var(--accent); }
+/* the current campaign's mark: lit like any active chip; its star in the chip's own text colour */
+.journal-current.on .app-icon, .journal-current.on svg { color: inherit; }
 .jnotes { margin-top: 1.4rem; }
 
 /* ---------- the journal, dressed by the theme ----------
@@ -3013,8 +3014,19 @@ label.check-chip b { font-weight: 600; }
     calc(var(--g) * 2.4) calc(var(--g) * 4) 0 0 var(--e4), calc(var(--g) * 3) calc(var(--g) * 5) 0 0 var(--e5), calc(var(--g) * 3) calc(var(--g) * 5 + 2px) 6px rgb(0 0 0 / .3); }
 /* the paper: the theme's, a little darker toward the outer edge and into the spine */
 .journal .jpage { background: var(--grain), var(--page); }
-.journal .jleft { background: var(--grain), linear-gradient(90deg, rgb(0 0 0 / .07), transparent 7%), var(--page); }
-.journal .jright { background: var(--grain), linear-gradient(270deg, rgb(0 0 0 / .07), transparent 7%), var(--page); }
+/* a light curve: each page rises from the spine, catches the light a little past its middle and falls away to its outer
+   edge (shade there and in the gutter, a soft highlight between); its top and bottom edges dip toward the outer corners.
+   The text stays flat. */
+.journal .jleft { background: var(--grain),
+  linear-gradient(90deg, rgb(0 0 0 / .13), rgb(0 0 0 / .04) 9%, transparent 22%, rgb(255 255 255 / .045) 52%, rgb(255 255 255 / .06) 68%, transparent 84%, rgb(0 0 0 / .06) 95%, rgb(0 0 0 / .14)),
+  var(--page); }
+.journal .jright { background: var(--grain),
+  linear-gradient(270deg, rgb(0 0 0 / .13), rgb(0 0 0 / .04) 9%, transparent 22%, rgb(255 255 255 / .045) 52%, rgb(255 255 255 / .06) 68%, transparent 84%, rgb(0 0 0 / .06) 95%, rgb(0 0 0 / .14)),
+  var(--page); }
+.journal .book:not(.single) .jleft { border-radius: 55% 2px 2px 55% / 9px 2px 2px 9px; }
+.journal .book:not(.single) .jright { border-radius: 2px 55% 55% 2px / 2px 9px 9px 2px; }
+.journal .book:not(.single) .stack.l { border-radius: 55% 2px 2px 55% / 9px 2px 2px 9px; }
+.journal .book:not(.single) .stack.r { border-radius: 2px 55% 55% 2px / 2px 9px 9px 2px; }
 .book.single .spread { background: var(--grain), var(--page); }
 .jnum { display: inline-block; }
 /* the stacks reach a little past the book's sides: clipped there, never a sideways scrollbar */

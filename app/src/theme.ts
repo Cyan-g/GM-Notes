@@ -1,10 +1,10 @@
-// Colour themes. A theme is six base colours (the sixth, paper, is the campaign journal's pages); every other colour token is derived from them,
+// Colour themes. A theme is seven base colours (the last two, paper and cover, are the campaign journal's); every other colour token is derived from them,
 // so changing one colour (say the accent) keeps the whole page consistent.
 // The chosen theme is stored in the database (meta.theme) and applied as CSS variables on <html>.
 import { ref, watchEffect } from 'vue'
 import { state, touch } from './store'
 
-export interface ThemeColors { bg: string; panel: string; ink: string; accent: string; link: string; paper: string }
+export interface ThemeColors { bg: string; panel: string; ink: string; accent: string; link: string; paper: string; cover: string }
 export interface ThemeSettings {
   /** A preset id, or 'system' (Parchment by day, Candlelight by night, following the OS). */
   preset: string
@@ -23,21 +23,21 @@ export interface Preset { id: string; name: string; note: string; dark: boolean;
 
 export const PRESETS: Preset[] = [
   { id: 'parchment', name: 'Parchment', note: 'Ink on old paper', dark: false,
-    colors: { bg: '#f4ecdc', panel: '#fffaf0', ink: '#2a2420', accent: '#8c2f1f', link: '#7a2a1b', paper: '#f3e6c8' } },
+    colors: { bg: '#f4ecdc', panel: '#fffaf0', ink: '#2a2420', accent: '#8c2f1f', link: '#7a2a1b', paper: '#f3e6c8', cover: '#6b4426' } },
   { id: 'candlelight', name: 'Candlelight', note: 'A tavern after dark', dark: true,
-    colors: { bg: '#171412', panel: '#211c18', ink: '#ece4d8', accent: '#e0835f', link: '#f0a27f', paper: '#2c241d' } },
+    colors: { bg: '#171412', panel: '#211c18', ink: '#ece4d8', accent: '#e0835f', link: '#f0a27f', paper: '#2c241d', cover: '#5a1a16' } },
   { id: 'dungeon', name: 'Dungeon', note: 'Cold stone and torchlight', dark: true,
-    colors: { bg: '#141619', panel: '#1d2025', ink: '#dfe2e6', accent: '#e8a33d', link: '#f2c26b', paper: '#262a30' } },
+    colors: { bg: '#141619', panel: '#1d2025', ink: '#dfe2e6', accent: '#e8a33d', link: '#f2c26b', paper: '#262a30', cover: '#2f3134' } },
   { id: 'grove', name: 'Elven Grove', note: 'Moss, birch and gold leaf', dark: false,
-    colors: { bg: '#eef0e2', panel: '#fbfcf4', ink: '#1f2a1e', accent: '#2f6b3a', link: '#36703f', paper: '#f2f0d9' } },
+    colors: { bg: '#eef0e2', panel: '#fbfcf4', ink: '#1f2a1e', accent: '#2f6b3a', link: '#36703f', paper: '#f2f0d9', cover: '#3f5a2e' } },
   { id: 'arcane', name: 'Arcane Tome', note: 'Starlight on violet vellum', dark: true,
-    colors: { bg: '#15121e', panel: '#1e1a2b', ink: '#e6e0f2', accent: '#a78bfa', link: '#c4b5fd', paper: '#28223a' } },
+    colors: { bg: '#15121e', panel: '#1e1a2b', ink: '#e6e0f2', accent: '#a78bfa', link: '#c4b5fd', paper: '#28223a', cover: '#3a2160' } },
   { id: 'infernal', name: 'Infernal', note: 'Brimstone and blood', dark: true,
-    colors: { bg: '#120c0c', panel: '#1d1312', ink: '#f0dfd6', accent: '#e5482e', link: '#ff8a6b', paper: '#2a1b18' } },
+    colors: { bg: '#120c0c', panel: '#1d1312', ink: '#f0dfd6', accent: '#e5482e', link: '#ff8a6b', paper: '#2a1b18', cover: '#1c1110' } },
   { id: 'frost', name: 'Frostmaw', note: 'Glacier light and steel', dark: false,
-    colors: { bg: '#e8eef3', panel: '#f8fbfd', ink: '#1b2733', accent: '#2a6496', link: '#245b8a', paper: '#eef3f6' } },
+    colors: { bg: '#e8eef3', panel: '#f8fbfd', ink: '#1b2733', accent: '#2a6496', link: '#245b8a', paper: '#eef3f6', cover: '#5a6e80' } },
   { id: 'feywild', name: 'Feywild', note: 'Dusk, petals and mischief', dark: false,
-    colors: { bg: '#f5ecf2', panel: '#fffafd', ink: '#2b1f2b', accent: '#a23b7a', link: '#8e2f6a', paper: '#f8ecf2' } },
+    colors: { bg: '#f5ecf2', panel: '#fffafd', ink: '#2b1f2b', accent: '#a23b7a', link: '#8e2f6a', paper: '#f8ecf2', cover: '#9e5274' } },
 ]
 
 const SERIF = '"Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif'
@@ -74,7 +74,7 @@ export const FLOURISHES = [
 ]
 
 export const COLOR_LABELS: Record<keyof ThemeColors, string> = {
-  bg: 'Background', panel: 'Cards and menus', ink: 'Text', accent: 'Accent', link: 'Links', paper: 'Journal paper',
+  bg: 'Background', panel: 'Cards and menus', ink: 'Text', accent: 'Accent', link: 'Links', paper: 'Journal paper', cover: 'Book cover',
 }
 
 const darkQuery = window.matchMedia('(prefers-color-scheme: dark)')
@@ -124,6 +124,7 @@ export function tokens(c: ThemeColors): Record<string, string> {
     '--link': c.link,
     // the campaign journal's pages (style.css .book)
     '--paper': c.paper,
+    '--book-cover': c.cover,
     '--chip': mix(mix(c.panel, c.ink, dark ? 0.08 : 0.05), c.accent, 0.06),
     '--secret-bg': mix(c.panel, c.accent, dark ? 0.12 : 0.07),
     '--secret-line': mix(c.panel, c.accent, 0.45),
@@ -149,6 +150,8 @@ export function applyTheme() {
   const fx = !gallery && FLOURISHES.some(f => f.id === s.flourish && f.id !== 'plain') ? s.flourish! : ''
   root.classList.toggle('fx', !!fx)
   if (fx) root.dataset.fx = fx; else delete root.dataset.fx
+  // the theme in effect, by name: the campaign journal's cover and page edges are dressed per theme (style.css)
+  root.dataset.preset = activePreset(s).id
   // The browser's own UI (address bar on phones) follows the background.
   let meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null
   if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.append(meta) }
@@ -163,14 +166,14 @@ export function startTheme() {
 
 // ---------- themes the user saved: their own colours, kept on this computer for every world ----------
 
-/** A theme made from changed colours: its name, the theme it was made from, and all six colours (one saved before the
- * journal paper has five: it takes the paper of the theme it was made from). */
+/** A theme made from changed colours: its name, the theme it was made from, and all seven colours (one saved before the
+ * journal's paper and cover colours has fewer: it takes those of the theme it was made from). */
 export interface SavedTheme { id: string; name: string; base: string; colors: ThemeColors }
 const SAVED_KEY = 'gm-notes:saved-themes'
 function readSaved(): SavedTheme[] {
   try {
     const v = JSON.parse(localStorage.getItem(SAVED_KEY) ?? '[]')
-    // a theme saved before a colour existed (the journal paper) takes that colour from the theme it was made from
+    // a theme saved before a colour existed (the journal's paper and cover) takes that colour from the theme it was made from
     return Array.isArray(v) ? v.filter(t => t?.id && t.name && t.colors?.bg)
       .map(t => ({ ...t, colors: { ...(PRESETS.find(p => p.id === t.base) ?? PRESETS[0]).colors, ...t.colors } })) : []
   } catch { return [] }

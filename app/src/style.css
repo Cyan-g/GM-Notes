@@ -3023,10 +3023,40 @@ label.check-chip b { font-weight: 600; }
 .journal .jright { background: var(--grain),
   linear-gradient(270deg, rgb(0 0 0 / .13), rgb(0 0 0 / .04) 9%, transparent 22%, rgb(255 255 255 / .045) 52%, rgb(255 255 255 / .06) 68%, transparent 84%, rgb(0 0 0 / .06) 95%, rgb(0 0 0 / .14)),
   var(--page); }
-.journal .book:not(.single) .jleft { border-radius: 55% 2px 2px 55% / 9px 2px 2px 9px; }
-.journal .book:not(.single) .jright { border-radius: 2px 55% 55% 2px / 2px 9px 9px 2px; }
-.journal .book:not(.single) .stack.l { border-radius: 55% 2px 2px 55% / 9px 2px 2px 9px; }
-.journal .book:not(.single) .stack.r { border-radius: 2px 55% 55% 2px / 2px 9px 9px 2px; }
+/* the page's edges rise toward the spine: the outer top corner sits lowest, the inner side lifts (--dip: how much, a
+   share of the page's height); the stacks start below the lowered outer corner */
+.book:not(.single) { --dip: 1.6%; }
+.journal .book:not(.single) .jleft { border-radius: 0; clip-path: polygon(0 var(--dip), 20% calc(var(--dip) * .95), 40% calc(var(--dip) * .85), 60% calc(var(--dip) * .68), 75% calc(var(--dip) * .5), 88% calc(var(--dip) * .28), 100% 0,
+  100% calc(100% - var(--dip) * .7), 88% calc(100% - var(--dip) * .52), 75% calc(100% - var(--dip) * .36), 60% calc(100% - var(--dip) * .22), 40% calc(100% - var(--dip) * .1), 20% calc(100% - var(--dip) * .03), 0 100%); }
+.journal .book:not(.single) .jright { border-radius: 0; clip-path: polygon(100% var(--dip), 80% calc(var(--dip) * .95), 60% calc(var(--dip) * .85), 40% calc(var(--dip) * .68), 25% calc(var(--dip) * .5), 12% calc(var(--dip) * .28), 0 0,
+  0 calc(100% - var(--dip) * .7), 12% calc(100% - var(--dip) * .52), 25% calc(100% - var(--dip) * .36), 40% calc(100% - var(--dip) * .22), 60% calc(100% - var(--dip) * .1), 80% calc(100% - var(--dip) * .03), 100% 100%); }
+.journal .book:not(.single) .stack { top: calc(var(--bind) + 1.7%); }
+/* the gilded frame drawn along the curve (Illuminated; JournalPage's svg) */
+.jframe { display: none; position: absolute; z-index: 2; pointer-events: none; fill: none; overflow: visible; }
+.jframe path { vector-effect: non-scaling-stroke; stroke-width: 1px; }
+.fx[data-fx="illuminated"] .journal .book:not(.single) .jframe { display: block; stroke: var(--gild); }
+/* (an svg doesn't stretch between insets: its size is given) */
+.fx[data-fx="illuminated"] .journal .book:not(.single) .jframe.outer { top: 11px; left: 11px; width: calc(100% - 22px); height: calc(100% - 22px); opacity: .85; }
+.fx[data-fx="illuminated"] .journal .book:not(.single) .jframe.inner { top: 15px; left: 15px; width: calc(100% - 30px); height: calc(100% - 30px); opacity: .4; }
+.fx[data-fx="illuminated"] .journal .book:not(.single) .jpage { outline: none; }
+/* its corner scrolls where the curved corners are */
+.fx[data-fx="illuminated"] .journal .book:not(.single) .jleft::after {
+  -webkit-mask: url(./styles/ornaments/corner-tl.svg) left 0 top var(--dip) / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top 0 / 14px no-repeat,
+    url(./styles/ornaments/corner-bl.svg) left 0 bottom 0 / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom calc(var(--dip) * .7) / 14px no-repeat;
+  mask: url(./styles/ornaments/corner-tl.svg) left 0 top var(--dip) / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top 0 / 14px no-repeat,
+    url(./styles/ornaments/corner-bl.svg) left 0 bottom 0 / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom calc(var(--dip) * .7) / 14px no-repeat; }
+.fx[data-fx="illuminated"] .journal .book:not(.single) .jright::after {
+  -webkit-mask: url(./styles/ornaments/corner-tl.svg) left 0 top 0 / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top var(--dip) / 14px no-repeat,
+    url(./styles/ornaments/corner-bl.svg) left 0 bottom calc(var(--dip) * .7) / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom 0 / 14px no-repeat;
+  mask: url(./styles/ornaments/corner-tl.svg) left 0 top 0 / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top var(--dip) / 14px no-repeat,
+    url(./styles/ornaments/corner-bl.svg) left 0 bottom calc(var(--dip) * .7) / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom 0 / 14px no-repeat; }
+/* Runecarved: its cut corners on the curve */
+.fx[data-fx="runecarved"] .journal .book:not(.single) .jleft { clip-path: polygon(16px var(--dip), 40% calc(var(--dip) * .85), 75% calc(var(--dip) * .5), 100% 0, 100% calc(100% - var(--dip) * .7),
+  75% calc(100% - var(--dip) * .36), 40% calc(100% - var(--dip) * .1), 16px 100%, 0 calc(100% - 16px), 0 calc(16px + var(--dip))); }
+.fx[data-fx="runecarved"] .journal .book:not(.single) .jright { clip-path: polygon(0 0, 25% calc(var(--dip) * .5), 60% calc(var(--dip) * .85), calc(100% - 16px) var(--dip), 100% calc(16px + var(--dip)),
+  100% calc(100% - 16px), calc(100% - 16px) 100%, 60% calc(100% - var(--dip) * .1), 25% calc(100% - var(--dip) * .36), 0 calc(100% - var(--dip) * .7)); }
+/* the journal's controls on the right of its header */
+.journal-head > .spacer { flex: 1; }
 .book.single .spread { background: var(--grain), var(--page); }
 .jnum { display: inline-block; }
 /* the stacks reach a little past the book's sides: clipped there, never a sideways scrollbar */

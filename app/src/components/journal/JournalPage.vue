@@ -35,6 +35,10 @@ const textOf = computed(() => s.value ?? (props.leaf.kind === 'cover' ? props.ca
 const canWrite = computed(() => !props.still && !state.readOnly && !!textOf.value && !isShared(textOf.value))
 const canTick = computed(() => !state.readOnly && !!textOf.value && !isShared(textOf.value))
 
+// ---- the page's curve: its edges rise toward the spine (style.css, --dip 1.6%); the Illuminated frame follows it ----
+const FRAME_LEFT = 'M0 1.6 C45 1.5 80 0.85 100 0 L100 98.9 C80 99.35 45 99.95 0 100 Z'
+const FRAME_RIGHT = 'M100 1.6 C55 1.5 20 0.85 0 0 L0 98.9 C20 99.35 55 99.95 100 100 Z'
+
 // ---- writing on the page ----
 // (shared, journal.ts: while the right page is written, the left one shows the preview)
 const writing = computed({
@@ -89,6 +93,8 @@ const firstLast = computed(() => {
 <template>
   <!-- the left page -->
   <section v-if="showLeft" class="jpage jleft" :class="[leaf.kind, { 'turn-in': turnIn }]">
+    <!-- the gilded frame along the page's curve (shown by the Illuminated style) -->
+    <svg v-for="f in ['outer', 'inner']" :key="f" class="jframe" :class="f" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path :d="FRAME_LEFT" /></svg>
     <div class="jbody">
     <!-- while the right page is written: how it reads, here -->
     <template v-if="previewing && textOf">
@@ -136,6 +142,7 @@ const firstLast = computed(() => {
 
   <!-- the right page -->
   <section v-if="showRight" class="jpage jright" :class="[leaf.kind, { writing, 'turn-in': turnIn }]">
+    <svg v-for="f in ['outer', 'inner']" :key="f" class="jframe" :class="f" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path :d="FRAME_RIGHT" /></svg>
     <div class="jbody">
     <template v-if="textOf">
       <div v-if="canWrite" class="jpen">

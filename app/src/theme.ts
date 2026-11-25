@@ -168,7 +168,12 @@ export function startTheme() {
 export interface SavedTheme { id: string; name: string; base: string; colors: ThemeColors }
 const SAVED_KEY = 'gm-notes:saved-themes'
 function readSaved(): SavedTheme[] {
-  try { const v = JSON.parse(localStorage.getItem(SAVED_KEY) ?? '[]'); return Array.isArray(v) ? v.filter(t => t?.id && t.name && t.colors?.bg) : [] } catch { return [] }
+  try {
+    const v = JSON.parse(localStorage.getItem(SAVED_KEY) ?? '[]')
+    // a theme saved before a colour existed (the journal paper) takes that colour from the theme it was made from
+    return Array.isArray(v) ? v.filter(t => t?.id && t.name && t.colors?.bg)
+      .map(t => ({ ...t, colors: { ...(PRESETS.find(p => p.id === t.base) ?? PRESETS[0]).colors, ...t.colors } })) : []
+  } catch { return [] }
 }
 /** The saved themes (GM Notes' own storage on this computer: every world here has them, players and other devices don't). */
 export const savedThemes = ref<SavedTheme[]>(readSaved())
@@ -177,7 +182,7 @@ const baseColors = (id: string) => (PRESETS.find(p => p.id === id) ?? PRESETS[0]
 /** The colours that differ from a theme's own (what's kept in the world as its changes). */
 function changesFrom(base: string, c: ThemeColors): Partial<ThemeColors> | undefined {
   const b = baseColors(base), out: Partial<ThemeColors> = {}
-  for (const k of Object.keys(c) as (keyof ThemeColors)[]) if (c[k].toLowerCase() !== b[k].toLowerCase()) out[k] = c[k]
+  for (const k of Object.keys(c) as (keyof ThemeColors)[]) if (c[k] && c[k].toLowerCase() !== b[k]?.toLowerCase()) out[k] = c[k]
   return Object.keys(out).length ? out : undefined
 }
 /** Save the colours as they are now as a theme called `name`, and use it. */
@@ -211,7 +216,7 @@ export function savedState(s = settings()): { theme?: SavedTheme; changed: boole
   const theme = s.saved ? savedThemes.value.find(t => t.id === s.saved) : undefined
   if (!theme) return { changed: false }
   const now = effectiveColors(s)
-  return { theme, changed: (Object.keys(now) as (keyof ThemeColors)[]).some(k => now[k].toLowerCase() !== theme.colors[k].toLowerCase()) }
+  return { theme, changed: (Object.keys(now) as (keyof ThemeColors)[]).some(k => now[k].toLowerCase() !== theme.colors[k]?.toLowerCase()) }
 }
 
 export function setTheme(patch: Partial<ThemeSettings>) {

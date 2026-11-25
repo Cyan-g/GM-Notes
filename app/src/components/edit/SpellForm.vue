@@ -118,10 +118,8 @@ function addCondition(ev: Event) {
         <!-- free text, with the usual wordings as one-click picks -->
         <div v-for="key in (Object.keys(QUICK) as Quick[])" :key="key" class="sf-cell">
           <span class="sf-label">{{ LABELS[key] }}</span>
-          <input :value="f[key] ?? ''" :placeholder="PLACEHOLDER[key]" @change="set(key, ($event.target as HTMLInputElement).value.trim())" />
-          <div class="sf-quick">
-            <button v-for="q in QUICK[key]" :key="q" type="button" class="chip-btn" :class="{ on: String(f[key] ?? '').toLowerCase() === q.toLowerCase() }" @click="set(key, q === 'Reaction' ? 'Reaction, which you take when ' : q)">{{ q }}</button>
-          </div>
+          <!-- typed, or one of the usual wordings from the box's list (a reaction starts its "which you take when …") -->
+          <SuggestInput :value="f[key] ?? ''" :options="QUICK[key].map(q => ({ value: q === 'Reaction' ? 'Reaction, which you take when ' : q, label: q }))" :placeholder="PLACEHOLDER[key]" @change="set(key, ($event.target as HTMLInputElement).value.trim())" />
           <small v-if="key === 'castingTime' && isReaction" class="muted">A reaction says when it's taken: "Reaction, which you take when …".</small>
           <small v-if="key === 'duration' && f.concentration && f.duration" class="muted">Reads: {{ durationText }}</small>
         </div>

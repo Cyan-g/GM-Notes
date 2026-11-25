@@ -72,6 +72,8 @@ const only = computed(() => {
   return (props.def.to ?? []).flatMap(t => byType.value.get(t) ?? []).filter(e => p.is.includes(String(byKey(e.fields)[p.field] ?? ''))).map(e => e.id)
 })
 const refs = computed(() => (value.value as string[] | undefined) ?? [])
+/** The world's campaigns, for a character's Campaigns. */
+const campaignOptions = computed(() => (byType.value.get('campaign') ?? []).map(c => ({ id: c.id, label: c.name })).sort((a, b) => a.label.localeCompare(b.label)))
 function addRef(id: string) { if (!refs.value.includes(id)) value.value = [...refs.value, id] }
 /** Lists picked from with a dropdown (long lists with descriptions) instead of toggle buttons. */
 const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
@@ -106,6 +108,9 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
   <MoneyInput v-else-if="def.kind === 'money'" v-model="value" />
   <DateInput v-else-if="def.kind === 'date'" v-model="value" />
   <EntryPicker v-else-if="def.kind === 'ref'" v-model="value" :types="def.to" :exclude="[entry.id]" :only="only" />
+  <!-- a character's campaigns: few to pick from, so as the forms' several-picks rule (as in the character wizard) -->
+  <ProfChips v-else-if="def.kind === 'refs' && entry.type === 'pc' && def.key === 'campaigns' && campaignOptions.length <= 6" :values="refs" :toggles="campaignOptions" @change="value = $event.length ? $event : undefined" />
+  <ProfChips v-else-if="def.kind === 'refs' && entry.type === 'pc' && def.key === 'campaigns'" :values="refs" :suggest="campaignOptions" placeholder="Add a campaign…" @change="value = $event.length ? $event : undefined" />
   <div v-else-if="def.kind === 'refs'" class="refs-input">
     <span v-for="(id, i) in refs" :key="id" class="chip"><EntryPicker :model-value="id" :types="def.to" :only="only" @update:model-value="v => { const l = [...refs]; if (v) l[i] = v; else l.splice(i, 1); value = l }" /></span>
     <EntryPicker add :types="def.to" :exclude="[entry.id, ...refs]" :only="only" placeholder="Add…" @pick="addRef" />

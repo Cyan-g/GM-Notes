@@ -165,7 +165,9 @@ npm run seed       # rebuild the starting world from ../data (or a folder given 
 - **FAT32 / exFAT drives:** git may need `git config --global --add safe.directory <folder>`, and `npm run dist`
   builds on the local disk because the packager needs finer file times.
 
-**Releasing:** raise `version` in `app/package.json`, commit, tag (`v1.2.3`) and push both.
+**Releasing:** first review the code that goes out: everything since the last version's tag
+(`git diff v1.2.2..beta`, or a `/code-review` of the branch), and fix what it finds. Then raise `version` in
+`app/package.json`, commit, tag (`v1.2.3`) and push both.
 `.github/workflows/release.yml` builds the Windows installer and the universal Mac `.dmg`/`.zip`, uploads them
 into a draft release and publishes it once all of them are there (a missing one fails the run and leaves the draft),
 which is where the apps look for updates. A tag uses the workflow as it was in that commit.

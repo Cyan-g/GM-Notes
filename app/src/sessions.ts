@@ -19,14 +19,17 @@ export const bySessionNo = (a: Entry, b: Entry) =>
 /** A campaign's sessions in play order. */
 export const sessionsOf = (campaign: Id) => (byType.value.get('session') ?? []).filter(s => s.fields.campaign === campaign).sort(bySessionNo)
 /** The number a campaign's next session gets. */
-/** The campaign being played: the one made current, else the one with the most sessions (as Home has always shown). */
+/** The campaign being played: the one made current, else the one with the most sessions (as Home has always shown),
+ * else (a player's world, where the DM's campaign has no sessions) the current character's, or the only one. */
 export const currentCampaign = computed<Entry | undefined>(() => {
   const set = get(state.db?.meta.currentCampaign)
   if (set?.type === 'campaign') return set
   const all = byType.value.get('campaign') ?? []
   const count = (id: Id) => sessionsOf(id).length
   const top = [...all].sort((a, b) => count(b.id) - count(a.id))[0]
-  return top && count(top.id) ? top : undefined
+  if (top && count(top.id)) return top
+  const mine = ((get(state.db?.meta.currentCharacter)?.fields.campaigns as Id[] | undefined) ?? []).map(id => get(id)).find(c => c?.type === 'campaign')
+  return mine ?? (all.length === 1 ? all[0] : undefined)
 })
 /** Make a campaign the current one (or none). */
 export function setCurrentCampaign(id: Id | undefined) {
@@ -65,12 +68,13 @@ export function nextSessionFields(campaign: Id): Record<string, unknown> {
  * above (`extra` on top, a date picked in the calendar), the last session's headings and open checklist items as its
  * text, then open in edit mode.
  */
-export function createSession(campaign: Id, extra: Record<string, unknown> = {}): Entry {
+/** `open`: where it opens: its Edit page (default), or its page (in the campaign's journal, to write in). */
+export function createSession(campaign: Id, extra: Record<string, unknown> = {}, open: 'edit' | 'page' = 'edit'): Entry {
   const fields = { ...nextSessionFields(campaign), ...extra }
   const e = createEntry('session', `Session ${fields.number}`, fields)
   const before = sessionsOf(campaign).filter(s => s.id !== e.id && sessionNo(s) < Number(fields.number)).at(-1)
   if (before?.body.trim()) e.body = carryOver(before.body)
-  go(hrefEntry(e.id, true))
+  go(hrefEntry(e.id, open === 'edit'))
   return e
 }
 export const nextSessionNo = (campaign: Id) => Math.max(0, ...sessionsOf(campaign).map(sessionNo).filter(Number.isFinite)) + 1

@@ -13,7 +13,8 @@ import TableGrid from './TableGrid.vue'
 import { NEW_TABLE, editParts, joinTables, tableText, type Part, type Table } from '../../textTables'
 
 /** `compact`: start a few lines tall and grow with the text (short descriptions), instead of a tall page. */
-const props = defineProps<{ modelValue: string; hint?: string; compact?: boolean }>()
+/** `narrow`: it sits in a narrow column (a journal's page): it starts in Write only, not beside its preview. */
+const props = defineProps<{ modelValue: string; hint?: string; compact?: boolean; narrow?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [string] }>()
 
 const lt = ref<InstanceType<typeof LinkTextarea>>()
@@ -49,7 +50,7 @@ function insertTable() {
   const post = !after ? '' : after.startsWith('\n\n') ? '' : after.startsWith('\n') ? '\n' : '\n\n'
   replaceRange(s, el.selectionEnd, pre + NEW_TABLE + post)
 }
-const mode = ref<'write' | 'split' | 'preview'>(window.innerWidth > 1300 ? 'split' : 'write')
+const mode = ref<'write' | 'split' | 'preview'>(window.innerWidth > 1300 && !props.narrow ? 'split' : 'write')
 const busy = ref('')
 
 function fit() {

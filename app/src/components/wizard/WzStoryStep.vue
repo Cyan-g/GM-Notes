@@ -4,16 +4,16 @@ import LinkTextarea from '../edit/LinkTextarea.vue'
 import { computed } from 'vue'
 import { byType, get, playerMode } from '../../store'
 import { defaultCampaigns, wizard } from '../../wizard'
-import Dropdown from '../Dropdown.vue'
+import ProfChips from '../ProfChips.vue'
 import { useDraft } from '../../composables/useDraft'
 import { inputValue as val } from '../../dom'
 
 const { d } = useDraft()
 // the campaigns it joins: the running one unless picked otherwise
 const chosen = computed(() => d.value.campaigns ?? defaultCampaigns())
-const campaigns = computed(() => (byType.value.get('campaign') ?? []).filter(c => !chosen.value.includes(c.id)).sort((a, b) => a.name.localeCompare(b.name)))
-const addCampaign = (id: string) => { if (id) wizard.d.campaigns = [...chosen.value, id] }
-const dropCampaign = (id: string) => { wizard.d.campaigns = chosen.value.filter(x => x !== id) }
+/** Every campaign, as on the character's Details card: toggle chips up to 6, else chips plus a box. */
+const campaignOptions = computed(() => (byType.value.get('campaign') ?? []).map(c => ({ id: c.id, label: c.name })).sort((a, b) => a.label.localeCompare(b.label)))
+const setCampaigns = (ids: string[]) => { wizard.d.campaigns = ids }
 </script>
 
 <template>
@@ -22,14 +22,9 @@ const dropCampaign = (id: string) => { wizard.d.campaigns = chosen.value.filter(
     <label class="wz-name"><span>Name</span><input :class="{ 'wz-todo': !d.name.trim() }" :value="d.name" placeholder="The character's name" @input="wizard.d.name = val($event)" /></label>
     <label v-if="!playerMode" class="wz-player"><span>Player</span><input :value="d.player" @input="wizard.d.player = val($event)" /></label>
     <div class="wz-campaigns"><span>Campaign</span>
-      <span class="wz-campaign-list">
-        <span v-for="id in chosen" :key="id" class="chip">{{ get(id)?.name ?? id }} <button type="button" class="link-btn" title="Not in this campaign" @click="dropCampaign(id)">×</button></span>
-        <Dropdown v-if="campaigns.length" compact value="" aria-label="Add a campaign" @change="addCampaign(($event.target as HTMLSelectElement).value)">
-          <option value="">{{ chosen.length ? '＋ another…' : 'Choose…' }}</option>
-          <option v-for="c in campaigns" :key="c.id" :value="c.id">{{ c.name }}</option>
-        </Dropdown>
-        <span v-if="!chosen.length && !campaigns.length" class="muted small">none in this world</span>
-      </span>
+      <ProfChips v-if="campaignOptions.length <= 6" :values="chosen" :toggles="campaignOptions" @change="setCampaigns" />
+      <ProfChips v-else-if="campaignOptions.length" :values="chosen" :suggest="campaignOptions" placeholder="Add a campaign…" @change="setCampaigns" />
+      <span v-else class="muted small">none in this world</span>
     </div>
   </div>
   <div class="wz-about">

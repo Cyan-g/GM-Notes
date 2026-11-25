@@ -38,12 +38,10 @@ function load(id: string | null) {
 }
 function addParty() { addPlayers(partyOf(partyCampaign.value || undefined)) }
 const addEntry = (id: Id) => addEntryToTracker(id)
-const freeName = ref('')
-function addFree() {
-  const n = freeName.value.trim()
-  if (!n) return
-  addCombatant({ id: newCombatantId(), name: n, isPlayer: false, init: null, initMod: 0, conditions: [] })
-  freeName.value = ''
+/** An enemy by name only (no entry): typed in the enemy picker. */
+function addFree(name: string) {
+  const n = name.trim()
+  if (n) addCombatant({ id: newCombatantId(), name: n, isPlayer: false, init: null, initMod: 0, conditions: [] })
 }
 function addAlly(id: Id) {
   addEntry(id)
@@ -236,10 +234,8 @@ function clearAll() { if (confirm('Clear the tracker? The monsters go; player ch
         <CombatantCard v-for="c in enemies" :key="c.id" :c="c" :hint="c.id === firstBare" :current="current(c)" :selected="selected === c.id" :compact="compact" @select="selected = c.id; if (statsOf(get(c.entry))) pinned = c.id" @stats="showStats(c)" />
         <div class="card side-add" :class="{ slim: enemies.length }">
           <label><span>Encounter</span><EntryPicker :model-value="t.encounter ?? null" :types="['encounter']" placeholder="Load an encounter…" @update:model-value="load" /></label>
-          <label><span>Enemy</span><EntryPicker add :types="['creature', 'npc']" placeholder="Add a creature by name…" @pick="addEntry" /></label>
-          <label><span>…or anything</span>
-            <span class="row"><input v-model="freeName" placeholder="e.g. Goblin" @keydown.enter="addFree" /><button :disabled="!freeName.trim()" @click="addFree">Add</button></span>
-          </label>
+          <!-- a creature or NPC of the world, or any name typed (as in an encounter) -->
+          <label><span>Enemy</span><EntryPicker add :types="['creature', 'npc']" placeholder="Add a creature, or type any name…" free-text="by name only" @pick="addEntry" @text="addFree" /></label>
         </div>
       </section>
       <!-- the statblock of whoever's acting (or was looked at last), beside the cards -->

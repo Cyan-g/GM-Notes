@@ -78,5 +78,11 @@ export const hrefList = (type: EntryType) => `#/t/${type}`
 /** The character creation wizard. */
 export const hrefWizard = '#/new-character'
 export const go = (href: string) => { location.hash = href.replace(/^#/, '') }
+/** Show another address without a new step in the history (turning a journal's pages: Back leaves the book, it doesn't
+ * flip back through every page) and without scrolling to the top. */
+export function replaceTo(href: string) {
+  history.replaceState({ ...(history.state ?? {}) }, '', href.startsWith('#') ? href : '#' + href)
+  route.current = parse()
+}
 export const hrefDashboard = (id: string, view?: string) => `#/d/${id}${view ? '/' + encodeURIComponent(view) : ''}`
 export const hrefMap = (id: Id, pin?: string) => `#/map/${encodeURIComponent(id)}${pin ? '/' + pin : ''}`

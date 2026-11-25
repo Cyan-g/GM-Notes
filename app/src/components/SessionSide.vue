@@ -11,7 +11,8 @@ import EntryLink from './EntryLink.vue'
 import { sessionsOf } from '../sessions'
 import { stripSecrets } from '../model/text'
 
-const props = defineProps<{ e: Entry }>()
+/** `inBook`: on a journal's page (the book turns the pages: no links to the sessions before and after). */
+const props = defineProps<{ e: Entry; inBook?: boolean }>()
 
 // ---- facts ----
 const date = computed(() => {
@@ -77,7 +78,7 @@ const newEncounter = () => newEntry('encounter', { session: props.e.id, ...(prop
       <template v-if="players.length"><dt>Present</dt><dd><span class="chips"><EntryLink v-for="id in players" :key="id" :id="id" class="chip" /></span></dd></template>
     </dl>
     <p v-if="!date && !e.fields.playedOn && !players.length" class="muted small">No in-world date yet: ✎ Edit to set one.</p>
-    <div v-if="pager && (pager.prev || pager.next)" class="pager session-pager">
+    <div v-if="!inBook && pager && (pager.prev || pager.next)" class="pager session-pager">
       <EntryLink v-if="pager.prev" :id="pager.prev.id" :label="'← ' + pager.prev.name" />
       <span v-else />
       <EntryLink v-if="pager.next" :id="pager.next.id" :label="pager.next.name + ' →'" />

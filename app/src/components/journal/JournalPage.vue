@@ -1,0 +1,176 @@
+<script setup lang="ts">
+// One side of an open campaign journal (JournalBook): the cover and the campaign's overview, a session (its facts on
+// the left, its notes on the right), or the blank page after the last one. A page scrolls within its bounds. Its text is
+// written on the page itself: the pen opens the editor in place, the pen again (or Ctrl+S, Escape) closes it.
+import { computed, inject, onBeforeUnmount, ref, watch } from 'vue'
+import type { Entry } from '../../model/types'
+import { TYPES } from '../../model/schema'
+import { entries, formatDate, state } from '../../store'
+import { changed } from '../../edit'
+import { isShared } from '../../sync'
+import { createSession, nextSessionNo, sessionsOf } from '../../sessions'
+import { hrefEntry } from '../../router'
+import MarkdownView from '../MarkdownView.vue'
+import BodyEditor from '../edit/BodyEditor.vue'
+import FieldInput from '../edit/FieldInput.vue'
+import SessionSide from '../SessionSide.vue'
+import DataImage from '../DataImage.vue'
+import { bookShapeKey, writeOnOpen, writingOn } from '../../journal'
+import EntryLink from '../EntryLink.vue'
+import CampaignParty from '../CampaignParty.vue'
+import CampaignJoin from '../CampaignJoin.vue'
+
+export type Leaf = { kind: 'cover' } | { kind: 'session'; s: Entry } | { kind: 'next' }
+/** `side`: left or right of a spread, or both (one page at a time, a narrow window). `still`: a page turning over,
+ * shown only (inert; it looks just like the page, its buttons too, so nothing moves as it lands and the page takes over). */
+/** `num`: the left page's number (the right one's is the next). */
+const props = defineProps<{ campaign: Entry; leaf: Leaf; side: 'left' | 'right' | 'both'; num: number; still?: boolean; writeNow?: boolean }>()
+
+const s = computed(() => (props.leaf.kind === 'session' ? props.leaf.s : undefined))
+const showLeft = computed(() => props.side !== 'right')
+const showRight = computed(() => props.side !== 'left')
+/** Whose text this page holds: a session's notes, or (the cover's right page) the campaign's overview. */
+const textOf = computed(() => s.value ?? (props.leaf.kind === 'cover' ? props.campaign : undefined))
+/** Written here unless it's read-only: a read-only world, the DM's campaign in a player's world. */
+const writable = computed(() => !state.readOnly && !!textOf.value && !isShared(textOf.value))
+const canWrite = computed(() => !props.still && writable.value)
+const canTick = computed(() => !state.readOnly && !!textOf.value && !isShared(textOf.value))
+
+// ---- the gilded frame (Illuminated): along the page's outline, bent into the spine with it (bookShape.ts, from
+// JournalBook); before the book is measured, and in a narrow window, the plain curve below ----
+const FRAME_LEFT = 'M0 2 L10 1.974 L20 1.894 L30 1.774 L40 1.598 L50 1.372 L60 1.093 L70 0.768 L76 0.548 L80 0.392 L84 0.232 L87 0.116 L90 0.025 L92 0 L94 0.036 L96 0.185 L98 0.606 L100 1.506 L100 99.727 L98 99 L96 98.261 L94 98.034 L92 98 L90 98.023 L87 98.114 L84 98.227 L80 98.398 L76 98.545 L70 98.773 L60 99.091 L50 99.375 L40 99.602 L30 99.773 L20 99.898 L10 99.977 L0 100 Z'
+const FRAME_RIGHT = 'M100 2 L90 1.974 L80 1.894 L70 1.774 L60 1.598 L50 1.372 L40 1.093 L30 0.768 L24 0.548 L20 0.392 L16 0.232 L13 0.116 L10 0.025 L8 0 L6 0.036 L4 0.185 L2 0.606 L0 1.506 L0 99.727 L2 99 L4 98.261 L6 98.034 L8 98 L10 98.023 L13 98.114 L16 98.227 L20 98.398 L24 98.545 L30 98.773 L40 99.091 L50 99.375 L60 99.602 L70 99.773 L80 99.898 L90 99.977 L100 100 Z'
+const bookShape = inject(bookShapeKey, null)
+const shapeOf = (s: 'left' | 'right') => bookShape?.value?.[s === 'left' ? 'l' : 'r'] ?? null
+
+// ---- writing on the page ----
+// (shared, journal.ts: while the right page is written, the left one shows the preview)
+const writing = computed({
+  get: () => !props.still && !!textOf.value && writingOn.value === textOf.value.id,
+  set: v => { writingOn.value = v && textOf.value ? textOf.value.id : null },
+})
+// a page opened anew isn't being written, unless it was just made here; only the page that holds the text decides
+// (by which page it is: the leaf object is made anew whenever the sessions change, as with every keystroke written)
+const leafKey = computed(() => (props.leaf.kind === 'session' ? props.leaf.s.id : props.leaf.kind))
+watch(() => [leafKey.value, props.writeNow] as const, () => { if (props.side !== 'left' && !props.still) writing.value = !!props.writeNow && canWrite.value }, { immediate: true })
+/** The left page, while its right one is written: the text as it reads. */
+const previewing = computed(() => props.side === 'left' && writing.value)
+function setText(v: string) { const e = textOf.value; if (!e) return; e.body = v; changed(e) }
+const onKey = (ev: KeyboardEvent) => {
+  if (!writing.value && !details.value) return
+  if (ev.key === 'Escape' || ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 's')) {
+    // Ctrl+S also saves (the app's own handler); here it closes the writing too
+    if (ev.key === 'Escape') ev.stopPropagation()
+    ;(document.activeElement as HTMLElement | null)?.blur?.()
+    writing.value = false; details.value = false
+  }
+}
+window.addEventListener('keydown', onKey, true)
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
+
+// ---- a session's details, edited on its left page ----
+const details = ref(false)
+const DETAIL_KEYS = ['number', 'playedOn', 'date', 'players']
+const detailDefs = computed(() => TYPES.session.fields.filter(f => DETAIL_KEYS.includes(f.key)))
+function rename(v: string) { const e = s.value; if (e && v.trim()) { e.name = v.trim(); changed(e) } }
+/** "Session 12": the number on the page's top; a title of its own besides ("Session 12 - The Well") is its heading. */
+const heading = computed(() => {
+  const e = s.value
+  if (!e) return ''
+  const n = e.fields.number
+  return n != null ? e.name.replace(new RegExp(`^Session\\s*${n}\\s*[-–—:]?\\s*`, 'i'), '') : e.name
+})
+
+// ---- the page after the last one ----
+const notesOnly = computed(() => isShared(props.campaign))
+const nextNo = computed(() => nextSessionNo(props.campaign.id))
+function newPage() { const e = createSession(props.campaign.id, {}, 'page'); writeOnOpen.value = e.id }
+const count = computed(() => sessionsOf(props.campaign.id).length)
+/** The campaign's notes, listed on page 2. */
+const notes = computed(() => entries.value.filter(n => n.type === 'note' && n.fields.campaign === props.campaign.id).sort((a, b) => a.name.localeCompare(b.name)))
+const firstLast = computed(() => {
+  const l = sessionsOf(props.campaign.id).map(x => x.fields.date).filter(Boolean)
+  return l.length ? [formatDate(l[0]), formatDate(l.at(-1))].filter((x, i, a) => x && a.indexOf(x) === i).join(' – ') : ''
+})
+</script>
+
+<template>
+  <!-- the left page -->
+  <section v-if="showLeft" :inert="still" class="jpage jleft" :class="leaf.kind">
+    <!-- the gilded frame along the page's curve (shown by the Illuminated style) -->
+    <svg v-if="side !== 'both' && shapeOf('left')" class="jframe shaped" :viewBox="`0 0 ${shapeOf('left')!.w} ${shapeOf('left')!.h}`" preserveAspectRatio="none" aria-hidden="true">
+      <path class="outer" :d="shapeOf('left')!.frameOuter" /><path class="inner" :d="shapeOf('left')!.frameInner" /></svg>
+    <svg v-for="f in ['outer', 'inner']" v-else :key="f" class="jframe" :class="f" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path :d="FRAME_LEFT" /></svg>
+    <div class="jbody">
+    <!-- while the right page is written: how it reads, here -->
+    <template v-if="previewing && textOf">
+      <p class="jpage-no">Preview</p>
+      <MarkdownView v-if="textOf.body.trim()" :source="textOf.body" all-headings />
+      <p v-else class="muted">Nothing written yet.</p>
+    </template>
+    <template v-else-if="leaf.kind === 'cover'">
+      <!-- page 1: the campaign and its party -->
+      <div class="jcover">
+        <p class="jcover-kicker">Campaign journal</p>
+        <h2 class="jcover-title">{{ campaign.name }}</h2>
+        <DataImage v-if="campaign.image" :path="campaign.image" :alt="campaign.name" class="jcover-img" />
+        <p class="muted small">{{ count }} session{{ count === 1 ? '' : 's' }}<template v-if="firstLast"> · {{ firstLast }}</template></p>
+      </div>
+      <CampaignParty :campaign="campaign" />
+      <CampaignJoin :campaign="campaign" />
+    </template>
+    <template v-else-if="leaf.kind === 'session' && s">
+      <header class="jpage-head">
+        <span class="jpage-no">Session {{ s.fields.number ?? '' }}</span>
+        <button v-if="!state.readOnly && !isShared(s)" type="button" class="link-btn small" :title="details ? 'Done' : 'Its date, who was there…'" @click="details = !details">{{ details ? 'Done' : '✎ Details' }}</button>
+      </header>
+      <h2 v-if="heading && heading !== s.name" class="jpage-title">{{ heading }}</h2>
+      <h2 v-else class="jpage-title">{{ s.name }}</h2>
+      <div v-if="details" class="jdetails form-grid">
+        <label>Name</label><div><input :value="s.name" @change="rename(($event.target as HTMLInputElement).value)" /></div>
+        <template v-for="f in detailDefs" :key="f.key">
+          <label>{{ f.label }}</label><div><FieldInput :def="f" :entry="s" /></div>
+        </template>
+        <p class="full muted small">More (featured, loot, the timeline) on its <a :href="hrefEntry(s.id, true)">Edit page</a>.</p>
+      </div>
+      <SessionSide v-else :e="s" in-book />
+    </template>
+    <template v-else>
+      <div class="jnext">
+        <p class="jpage-no">Session {{ nextNo }}</p>
+        <p class="muted">{{ notesOnly ? 'Your notes for the next session.' : 'The next session starts here.' }}</p>
+        <button v-if="!state.readOnly" type="button" class="primary" @click="newPage">＋ {{ notesOnly ? 'My session notes' : `Session ${nextNo}` }}</button>
+      </div>
+    </template>
+    </div>
+    <footer class="jfoot"><span class="jnum">{{ side === 'both' ? `${num}–${num + 1}` : num }}</span></footer>
+  </section>
+
+  <!-- the right page -->
+  <section v-if="showRight" :inert="still" class="jpage jright" :class="[leaf.kind, { writing }]">
+    <svg v-if="side !== 'both' && shapeOf('right')" class="jframe shaped" :viewBox="`0 0 ${shapeOf('right')!.w} ${shapeOf('right')!.h}`" preserveAspectRatio="none" aria-hidden="true">
+      <path class="outer" :d="shapeOf('right')!.frameOuter" /><path class="inner" :d="shapeOf('right')!.frameInner" /></svg>
+    <svg v-for="f in ['outer', 'inner']" v-else :key="f" class="jframe" :class="f" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path :d="FRAME_RIGHT" /></svg>
+    <div class="jbody">
+    <template v-if="textOf">
+      <div v-if="writable" class="jpen">
+        <button type="button" class="link-btn small" :title="writing ? 'Done writing (Ctrl+S)' : 'Write on this page'" @click="writing = !writing">{{ writing ? 'Done' : '✎ Write' }}</button>
+      </div>
+      <BodyEditor v-if="writing" :model-value="textOf.body" compact narrow @update:model-value="setText" />
+      <template v-else>
+        <!-- the whole outline, headings not filled in yet too: a journal page shows its template -->
+        <MarkdownView v-if="textOf.body.trim()" :source="textOf.body" :tasks="canTick" all-headings @update:source="setText" />
+        <p v-else-if="writable || leaf.kind !== 'cover'" class="muted jempty">{{ leaf.kind === 'cover' ? 'The campaign in a few lines: where it starts, what it is about.' : 'Nothing written yet.' }}
+          <button v-if="writable" type="button" class="link-btn" @click="writing = true">✎ Write</button></p>
+      </template>
+      <p v-if="leaf.kind === 'cover' && notesOnly" class="muted small">Your DM's campaign: the pages after this one are your own session notes.</p>
+      <!-- page 2: the campaign's notes, under its overview -->
+      <section v-if="leaf.kind === 'cover' && notes.length" class="jnotes">
+        <h3>Notes</h3>
+        <ul class="plain"><li v-for="n in notes" :key="n.id"><EntryLink :id="n.id" icon /></li></ul>
+      </section>
+    </template>
+    </div>
+    <footer v-if="side !== 'both'" class="jfoot"><span class="jnum">{{ num + 1 }}</span></footer>
+  </section>
+</template>

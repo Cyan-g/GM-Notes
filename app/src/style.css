@@ -94,8 +94,9 @@ a.menu-title { display: inline-block; text-decoration: none; }
 .menu-title:hover, .menu-title.open { background: var(--panel); color: var(--ink); }
 .menu-title.current { color: var(--accent); }
 .menu-title.open { box-shadow: var(--shadow); }
-.bar-tools { margin-left: auto; display: flex; align-items: center; gap: .5rem; }
-.search-btn { display: flex; gap: 1.5rem; justify-content: space-between; align-items: center; color: var(--muted); min-width: 200px; }
+.bar-tools { margin-left: auto; display: flex; align-items: center; gap: .5rem; min-width: 0; }
+/* (narrower in a narrower window, so the bar fits before it wraps to two rows) */
+.search-btn { display: flex; gap: 1.5rem; justify-content: space-between; align-items: center; color: var(--muted); min-width: clamp(120px, 12vw, 200px); }
 kbd { font: 11px var(--sans); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; color: var(--muted); }
 .new-btn { padding: .45em .7em; }
 .save-status { font-size: 12px; color: var(--muted); white-space: nowrap; min-width: 4.5em; }
@@ -2527,7 +2528,9 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 .dev-join label { display: flex; align-items: center; gap: .4rem; margin: .25rem 0; }
 .dev-found { display: flex; flex-direction: column; }
 .dev-code-input { font-family: ui-monospace, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; width: 10em; }
-.sync-chip { display: inline-flex; align-items: center; gap: .3rem; font-size: 12px; padding: .2em .65em; border-radius: 999px; color: var(--muted); white-space: nowrap; }
+.sync-chip { display: inline-flex; align-items: center; gap: .3rem; font-size: 12px; padding: .2em .65em; border-radius: 999px; color: var(--muted); white-space: nowrap; min-width: 0; max-width: 10rem; }
+/* a long device name is cut short (it's whole in the chip's tooltip) */
+.sync-label { overflow: hidden; text-overflow: ellipsis; }
 .sync-chip.live { color: var(--ink); border-color: color-mix(in srgb, #4caf50 55%, var(--line)); }
 .sync-chip.err { border-color: var(--accent); }
 .sync-notice { position: fixed; right: 16px; bottom: 16px; z-index: 45; width: min(380px, calc(100vw - 32px)); padding: .7rem .9rem; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; box-shadow: 0 12px 40px rgb(0 0 0 / .25); }
@@ -2923,3 +2926,339 @@ label.check-chip b { font-weight: 600; }
 .add-feat-modal .lu-foot { display: flex; gap: .5rem; }
 .sp-again { display: inline-flex; gap: .4rem; align-items: center; margin-left: .4rem; }
 .old-fight { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: .6rem .8rem; margin-bottom: .6rem; border-color: var(--accent); }
+
+/* ---------- the campaign journal (components/journal): a book opened on a spread ---------- */
+.journal-entry { max-width: none; }
+.journal-head { display: flex; align-items: flex-end; gap: .8rem; margin-bottom: .7rem; }
+.journal-title { margin: 0; }
+.journal-nav { display: flex; gap: .3rem; }
+.journal-where { white-space: nowrap; }
+.book { --page: color-mix(in srgb, var(--panel) 86%, #c8a46e); position: relative; display: grid; grid-template-columns: 2.4rem minmax(0, 1fr) 2.4rem; align-items: stretch;
+  height: calc(100vh - var(--bar-h, 52px) - 10rem); min-height: 30rem; }
+.book-edge { border: none; background: transparent; box-shadow: none; padding: 0; font-size: 2.2rem; line-height: 1; color: var(--muted); }
+.book-edge:hover:not(:disabled) { color: var(--accent); }
+.book-edge:disabled { opacity: .2; cursor: default; }
+/* (the viewpoint well below the book's foot: a page turning over comes up toward the viewer and lifts off the book
+   as a whole, its head arching higher than its foot, while it stays bound at the spine; it comes down onto the page
+   it lands on from above, its foot onto that page's bottom edge, and settles flat) */
+.spread { position: relative; display: grid; grid-template-columns: 1fr 1fr; min-height: 0; perspective: 4000px; perspective-origin: 50% calc(100% + 280px);
+  border-radius: 8px 12px 12px 8px; box-shadow: 0 18px 44px rgb(0 0 0 / .34), 0 2px 6px rgb(0 0 0 / .2); }
+/* the spine between the pages */
+.spread::after { content: ''; position: absolute; top: 0; bottom: 0; left: calc(50% - 1px); width: 2px; background: color-mix(in srgb, var(--ink) 18%, transparent); pointer-events: none; z-index: 2; }
+.book.single .spread::after { display: none; }
+/* (it starts where the pages' top edges are at the spine, where they dip: 0.753 of --dip, as in their clip-paths, and
+   ends at the seam's edge where the spine is, which the pages' bottom edges dip down to; toward the seam's ends it is
+   lower, as long as ever: --d-spine) */
+.journal .book:not(.single) .spread::after { top: var(--spine-top, calc(var(--dip) * 0.753 + var(--d-spine)));
+  bottom: calc(-1 * var(--stack-max) * (1 - var(--sq))); }
+/* a page: its text scrolls within it, the page number stays at its foot */
+.jpage { position: relative; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--page); color: var(--ink); }
+.jbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1.6rem 2.1rem 1rem; }
+.jfoot { flex: none; text-align: center; padding: .3rem 0 .7rem; font-size: 13px; color: var(--muted); font-variant-numeric: oldstyle-nums; letter-spacing: .05em; }
+.jleft .jfoot { text-align: left; padding-left: 2.1rem; }
+.jright .jfoot { text-align: right; padding-right: 2.1rem; }
+.jleft { border-radius: 10px 0 0 10px; box-shadow: inset -22px 0 26px -22px rgb(0 0 0 / .3); }
+.jright { border-radius: 0 10px 10px 0; box-shadow: inset 22px 0 26px -22px rgb(0 0 0 / .3); }
+/* one page at a time: the page scrolls as a whole, its facts above its notes */
+.book.single .spread { display: block; overflow-y: auto; border-radius: 10px; background: var(--page); }
+.book.single .jpage, .book.single .jbody { overflow: visible; border-radius: 0; box-shadow: none; }
+.book.single .jfoot { text-align: center; padding: .3rem 0 .7rem; }
+.jpage-head { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.jpage-no { font-variant: small-caps; letter-spacing: .06em; color: var(--accent); font-weight: 600; margin: 0; }
+.jpage-title { margin: .2rem 0 .8rem; font-size: 1.6rem; }
+.jpen { position: sticky; top: -1.6rem; z-index: 1; display: flex; justify-content: flex-end; margin: -.6rem 0 .2rem; }
+.jempty { margin-top: 2rem; }
+.jdetails { margin-top: .4rem; }
+/* the session's facts on its left page: sections of the page, not cards on it */
+.journal .jpage .card { background: transparent !important; border: none !important; outline: none !important; box-shadow: none !important; padding: .2rem 0; margin: 0 0 .8rem; }
+.journal .jpage .card::before, .journal .jpage .card::after { display: none !important; }
+.jcover { padding: 1rem 0 1.4rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: .6rem; }
+.jcover-kicker { font-variant: small-caps; letter-spacing: .12em; color: var(--muted); margin: 0; }
+.jcover-title { font-size: 2.4rem; margin: 0; }
+.jcover-img { max-width: 70%; max-height: 45%; object-fit: contain; border-radius: 8px; }
+.jnext { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem; text-align: center; }
+/* a page turning over: the open page swings around the spine; the one it uncovers fades in behind it */
+.leaf { position: absolute; top: 0; bottom: 0; width: 50%; z-index: 3; pointer-events: none; transform-style: preserve-3d; }
+.leaf.fwd { left: 50%; }
+.leaf.back { left: 0; }
+/* it bends: hinged strips (LeafStrip), the first swinging the whole sheet over, each further one bending a little more
+   against the one before, its free edge leading as it lifts and trailing a touch as it falls, flat again on landing */
+.lstrip { position: absolute; top: 0; bottom: 0; transform-style: preserve-3d; }
+.leaf.fwd > .lstrip { left: 0; width: calc(100% / var(--n)); transform-origin: left center; animation: leaf-fwd 1.2s ease-in-out forwards; }
+.leaf.back > .lstrip { right: 0; width: calc(100% / var(--n)); transform-origin: right center; animation: leaf-back 1.2s ease-in-out forwards; }
+.leaf.fwd .lstrip .lstrip { left: 100%; width: 100%; transform-origin: left center; animation: curl-fwd 1.2s ease-in-out forwards; }
+.leaf.back .lstrip .lstrip { left: -100%; width: 100%; transform-origin: right center; animation: curl-back 1.2s ease-in-out forwards; }
+/* each strip shows its slice of the page, 1px wider so no seam shows between them (the slice is placed by the strip's
+   own width: 100% - 1px) */
+.lclip { position: absolute; top: 0; bottom: 0; left: 0; right: -1px; overflow: hidden; backface-visibility: hidden; }
+.lpage { position: absolute; top: 0; bottom: 0; }
+.lpage > .jpage { height: 100%; overflow: hidden; }
+@keyframes leaf-fwd { from { transform: rotateY(0); } to { transform: rotateY(-180deg); } }
+@keyframes leaf-back { from { transform: rotateY(0); } to { transform: rotateY(180deg); } }
+@keyframes curl-fwd { 0% { transform: rotateY(0); } 40% { transform: rotateY(-6deg); } 80% { transform: rotateY(2deg); } 100% { transform: rotateY(0); } }
+@keyframes curl-back { 0% { transform: rotateY(0); } 40% { transform: rotateY(6deg); } 80% { transform: rotateY(-2deg); } 100% { transform: rotateY(0); } }
+/* shading: the sheet darkens as it stands up and lightens as it lands (on the page itself, so nothing shows past its
+   edge; evenly, so its strips don't show) */
+.lpage { animation: leaf-shade 1.2s ease-in-out forwards; }
+@keyframes leaf-shade { 0% { filter: brightness(1); } 50% { filter: brightness(.86); } 100% { filter: brightness(1); } }
+/* its back: plain paper in the shape of the page it lands as (LeafStrip places that page's slice) */
+.lback { position: absolute; top: 0; bottom: 0; left: 0; right: -1px; overflow: hidden; backface-visibility: hidden; transform: rotateY(180deg); pointer-events: none; }
+/* (in shade as it comes over the spine, in full light as it lands) */
+.lback-page { position: absolute; top: 0; bottom: 0; animation: leaf-back-shade 1.2s ease-in-out forwards; }
+.lback-page > .jpage { height: 100%; overflow: hidden; }
+@keyframes leaf-back-shade { 0%, 45% { filter: brightness(.72); } 100% { filter: brightness(1); } }
+/* the shadow it casts: on the page it uncovers while it lifts, then on the page it lands on, from the spine out */
+.leaf-cast { position: absolute; top: 0; bottom: 0; width: 50%; z-index: 2; pointer-events: none; opacity: 0; }
+/* (cut to the page it falls on; it widens and narrows from the spine) */
+.leaf-cast.under.fwd, .leaf-cast.land.back { left: 50%; clip-path: var(--clip-r); background: linear-gradient(90deg, rgb(0 0 0 / .32), rgb(0 0 0 / .1) 35%, transparent 75%) left / 100% 100% no-repeat; }
+.leaf-cast.under.back, .leaf-cast.land.fwd { left: 0; clip-path: var(--clip-l); background: linear-gradient(270deg, rgb(0 0 0 / .32), rgb(0 0 0 / .1) 35%, transparent 75%) right / 100% 100% no-repeat; }
+.leaf-cast.under { animation: cast-under 1.2s ease-in-out forwards; }
+.leaf-cast.land { animation: cast-land 1.2s ease-in-out forwards; }
+@keyframes cast-under { 0% { opacity: 0; background-size: 100% 100%; } 22% { opacity: 1; background-size: 75% 100%; } 50% { opacity: 0; background-size: 15% 100%; } 100% { opacity: 0; } }
+@keyframes cast-land { 0%, 50% { opacity: 0; background-size: 15% 100%; } 78% { opacity: 1; background-size: 75% 100%; } 100% { opacity: 0; background-size: 100% 100%; } }
+@media (prefers-reduced-motion: reduce) { .leaf, .leaf-cast { display: none; } }
+/* the journal fills the window: the book's pages scroll, the window doesn't */
+.journal { height: calc(100vh - var(--bar-h, 52px) - 5.6rem); display: flex; flex-direction: column; }
+.journal .book { flex: 1; height: auto; min-height: 22rem; }
+/* the current campaign's mark: lit like any active chip; its star in the chip's own text colour */
+.journal-current.on .app-icon, .journal-current.on svg { color: inherit; }
+.jnotes { margin-top: 1.4rem; }
+
+/* ---------- the journal, dressed by the theme ----------
+   Paper, ink and spine come from the theme's colours; the cover board is a dark leather mixed with the accent; the
+   pages read so far (left) and still to come (right) are stacked under the spread, as thick as they are many
+   (JournalBook's sheetsFor). Each decorative style adds its touch below. */
+.book {
+  /* the theme's journal paper (theme.ts); a page shown before the theme is applied: the cards' colour toward the accent */
+  --page: var(--paper, color-mix(in srgb, var(--panel) 88%, var(--accent)));
+  --page-edge: color-mix(in srgb, var(--page) 72%, #000);
+  /* the theme's book cover (theme.ts); dressed per theme below */
+  --cover: var(--book-cover, color-mix(in srgb, var(--accent) 28%, #20140b));
+  --spine: linear-gradient(90deg, transparent calc(50% - 10px), rgb(0 0 0 / .35) 50%, transparent calc(50% + 10px));
+  --cover-shadow: 0 20px 44px rgb(0 0 0 / .38), 0 2px 6px rgb(0 0 0 / .25);
+  --bind: 9px; --stack-max: 13px; --stack-side: 30px; --page-pad: 12px;
+  /* a faint fibre grain, made in the browser */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .13 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.binding { position: relative; min-height: 0; display: flex; padding: var(--bind) calc(var(--bind) + var(--stack-side)) calc(var(--bind) + var(--stack-max));
+  background: linear-gradient(90deg, transparent calc(50% - 10px), rgb(0 0 0 / .35) 50%, transparent calc(50% + 10px)), var(--cover);
+  border-radius: 9px 13px 13px 9px; box-shadow: 0 20px 44px rgb(0 0 0 / .38), 0 2px 6px rgb(0 0 0 / .25), inset 0 0 0 1px rgb(0 0 0 / .35); }
+.book.single .binding { padding: var(--bind); }
+.binding > .spread { flex: 1; position: relative; z-index: 1; box-shadow: 0 1px 3px rgb(0 0 0 / .3); border-radius: 4px 7px 7px 4px; }
+/* the open pages' shadow on the sheets below follows their curved edges (a box's shadow would rule a straight line) */
+.journal .book:not(.single) .binding > .spread { box-shadow: none; filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / .16)); }
+/* the stacks: a few whole sheets behind each half (JournalBook), each a little lower and further out than the one above
+   it and a shade darker (toward black, never toward the ink: on a dark theme that would make them lighter than the open
+   page), so their edges read as paper below the page and on its outer side. One sheet per page left on that side, up to
+   8; how far down (--o) and out (--ox) each lies and how much it curves like the open page (--k, fading to flat at the cover) are
+   JournalBook's sheetsFor; its top edge follows the open page's curve, so none shows above it. A side with no pages shows
+   the open page's own paper edge only. */
+.stack { position: absolute; z-index: 0; top: var(--bind); bottom: calc(var(--bind) + var(--stack-max)); width: calc((100% - 2 * var(--bind) - 2 * var(--stack-side)) / 2);
+  filter: drop-shadow(0 3px 5px rgb(0 0 0 / .3)); }
+.stack.l { left: calc(var(--bind) + var(--stack-side)); }
+
+.stack.r { right: calc(var(--bind) + var(--stack-side)); }
+
+.sheet { position: absolute; inset: 0; z-index: calc(10 - var(--d)); --sdip: calc(var(--dip, 0%) * var(--k));
+  /* the page edges: the theme's paper, a shade darker the deeper they lie, each with a clear edge line along its bottom
+     (the sheet itself, showing below its face, ::after) */
+  background: color-mix(in srgb, var(--page) calc(64% - var(--dn, 0) * 12%), #000);
+  transform: translateY(var(--o)); }
+/* (out past the page on its outer side only: at the spine a sheet stays where the page is) */
+.sheet::after { content: ''; position: absolute; inset: 0; clip-path: inherit; translate: 0 -1.8px; background: color-mix(in srgb, var(--page) calc(96% - var(--dn, 0) * 22%), #000); }
+/* (the lowest sheet melting into the cover: its face and edge toward the cover's colour) */
+.sheet.melt { background: color-mix(in srgb, color-mix(in srgb, var(--page) calc(64% - var(--dn, 0) * 12%), #000) 70%, var(--cover)); }
+.sheet.melt::after { background: color-mix(in srgb, color-mix(in srgb, var(--page) calc(96% - var(--dn, 0) * 22%), #000) 82%, var(--cover)); }
+.stack.l .sheet { left: calc(-1 * var(--ox)); }
+.stack.r .sheet { right: calc(-1 * var(--ox)); }
+.stack.l .sheet { clip-path: polygon(0 calc(var(--dip) + 6px), 1.8px calc(var(--dip) + 1.8px), 6px var(--dip), 10% calc(var(--dip) * 0.987), 20% calc(var(--dip) * 0.95), 30% calc(var(--dip) * 0.887), 40% calc(var(--dip) * 0.799), 50% calc(var(--dip) * 0.686), 60% calc(var(--dip) * 0.547), 70% calc(var(--dip) * 0.384), 76% calc(var(--dip) * 0.274), 80% calc(var(--dip) * 0.196), 84% calc(var(--dip) * 0.116), 87% calc(var(--dip) * 0.058), 90% calc(var(--dip) * 0.013), 92% 0, 94% calc(var(--dip) * 0.02), 95% calc(var(--dip) * 0.051), 96% calc(var(--dip) * 0.104), 97% calc(var(--dip) * 0.187), 98% calc(var(--dip) * 0.311), 98.5% calc(var(--dip) * 0.394), 99% calc(var(--dip) * 0.493), 99.5% calc(var(--dip) * 0.612), 100% calc(var(--dip) * 0.753),
+  100% 100%, calc(100% - 2.5%) calc(100% - var(--sdip) * 0.951 * (1 - pow(0.8, 3))), calc(100% - 5%) calc(100% - var(--sdip) * 0.951 * (1 - pow(0.6, 3))), calc(100% - 7.5%) calc(100% - var(--sdip) * 0.951 * (1 - pow(0.4, 3))), calc(100% - 10%) calc(100% - var(--sdip) * 0.951 * (1 - pow(0.2, 3))), calc(100% - 12.5%) calc(100% - var(--sdip) * 0.951 * (1 - pow(0, 3))), 87% calc(100% - var(--sdip) * 0.942), 84% calc(100% - var(--sdip) * 0.884), 80% calc(100% - var(--sdip) * 0.804), 76% calc(100% - var(--sdip) * 0.726), 70% calc(100% - var(--sdip) * 0.616), 60% calc(100% - var(--sdip) * 0.453), 50% calc(100% - var(--sdip) * 0.314), 40% calc(100% - var(--sdip) * 0.201), 30% calc(100% - var(--sdip) * 0.113), 20% calc(100% - var(--sdip) * 0.05), 10% calc(100% - var(--sdip) * 0.013), 6px 100%, 1.8px calc(100% - 1.8px), 0 calc(100% - 6px)); }
+.stack.r .sheet { clip-path: polygon(100% calc(var(--dip) + 6px), calc(100% - 1.8px) calc(var(--dip) + 1.8px), calc(100% - 6px) var(--dip), 90% calc(var(--dip) * 0.987), 80% calc(var(--dip) * 0.95), 70% calc(var(--dip) * 0.887), 60% calc(var(--dip) * 0.799), 50% calc(var(--dip) * 0.686), 40% calc(var(--dip) * 0.547), 30% calc(var(--dip) * 0.384), 24% calc(var(--dip) * 0.274), 20% calc(var(--dip) * 0.196), 16% calc(var(--dip) * 0.116), 13% calc(var(--dip) * 0.058), 10% calc(var(--dip) * 0.013), 8% 0, 6% calc(var(--dip) * 0.02), 5% calc(var(--dip) * 0.051), 4% calc(var(--dip) * 0.104), 3% calc(var(--dip) * 0.187), 2% calc(var(--dip) * 0.311), 1.5% calc(var(--dip) * 0.394), 1% calc(var(--dip) * 0.493), 0.5% calc(var(--dip) * 0.612), 0 calc(var(--dip) * 0.753),
+  0 100%, 2.5% calc(100% - var(--sdip) * 0.951 * (1 - pow(0.8, 3))), 5% calc(100% - var(--sdip) * 0.951 * (1 - pow(0.6, 3))), 7.5% calc(100% - var(--sdip) * 0.951 * (1 - pow(0.4, 3))), 10% calc(100% - var(--sdip) * 0.951 * (1 - pow(0.2, 3))), 12.5% calc(100% - var(--sdip) * 0.951 * (1 - pow(0, 3))), 13% calc(100% - var(--sdip) * 0.942), 16% calc(100% - var(--sdip) * 0.884), 20% calc(100% - var(--sdip) * 0.804), 24% calc(100% - var(--sdip) * 0.726), 30% calc(100% - var(--sdip) * 0.616), 40% calc(100% - var(--sdip) * 0.453), 50% calc(100% - var(--sdip) * 0.314), 60% calc(100% - var(--sdip) * 0.201), 70% calc(100% - var(--sdip) * 0.113), 80% calc(100% - var(--sdip) * 0.05), 90% calc(100% - var(--sdip) * 0.013), calc(100% - 6px) 100%, calc(100% - 1.8px) calc(100% - 1.8px), 100% calc(100% - 6px)); }
+/* the paper: the theme's, a little darker toward the outer edge and into the spine */
+.journal .jpage { background: var(--grain), var(--page); }
+/* a light curve: each page scoops up from its outer edge, rounds over a crest about 8% from the spine and falls into
+   it; a faint highlight on the crest, a little shade at the edges (light enough to keep the grain). The text stays flat. */
+.journal .jleft { background: var(--grain),
+  linear-gradient(90deg, rgb(0 0 0 / .06), transparent 16%, rgb(255 255 255 / .02) 72%, rgb(255 255 255 / .03) 90%, transparent 98%, rgb(0 0 0 / .05) 100%),
+  var(--page); }
+.journal .jright { background: var(--grain),
+  linear-gradient(270deg, rgb(0 0 0 / .06), transparent 16%, rgb(255 255 255 / .02) 72%, rgb(255 255 255 / .03) 90%, transparent 98%, rgb(0 0 0 / .05) 100%),
+  var(--page); }
+/* in the open book the shadow into the spine is each page's own: as wide and as dark as that page bends into it, the
+   one on more paper bending deeper (bookShape.ts, --gut-*); the light on the curve as above */
+.journal .book:not(.single) .spread > .jleft, .journal .book:not(.single) :is(.lpage, .lback-page) > .jleft { box-shadow: none; background: var(--grain),
+  linear-gradient(270deg, rgb(0 0 0 / var(--gut-a-l, .12)), transparent var(--gut-l, 30px)),
+  linear-gradient(90deg, rgb(0 0 0 / .06), transparent 16%, rgb(255 255 255 / .02) 72%, rgb(255 255 255 / .03) 90%, transparent 98%),
+  var(--page); }
+.journal .book:not(.single) .spread > .jright, .journal .book:not(.single) :is(.lpage, .lback-page) > .jright { box-shadow: none; background: var(--grain),
+  linear-gradient(90deg, rgb(0 0 0 / var(--gut-a-r, .12)), transparent var(--gut-r, 30px)),
+  linear-gradient(270deg, rgb(0 0 0 / .06), transparent 16%, rgb(255 255 255 / .02) 72%, rgb(255 255 255 / .03) 90%, transparent 98%),
+  var(--page); }
+/* the page's edges follow that curve: lowest at the outer corner, highest at the crest, a little lower again at the spine
+   (--dip: how much, a share of the page's height; JournalPage's frame paths draw the same curve); the stacks start
+   below the lowered outer corner */
+.book:not(.single) { --dip: 2%; --dipn: 2; }
+/* what sits at a page's edges keeps clear of its curve and its frame: the page's scrolling text, its scrollbar and the
+   pen start below the outer top corner, where the edge dips lowest (a page is a size container, so the dip is known in
+   pixels), and inside the frame's sides; the page number sits above the frame's bottom rules, clear of its corners */
+.journal .book:not(.single) .jpage { container-type: size; }
+.journal .book:not(.single) .spread > .jpage { margin-bottom: calc(-1 * var(--stack-max)); padding-bottom: var(--stack-max);
+  /* (and above it, room for its curve near the spine, which rises above the spread: bookShape.ts PAD) */
+  margin-top: calc(-1 * var(--page-pad)); padding-top: var(--page-pad); }
+.journal .book:not(.single) :is(.lpage, .lback-page) > .jpage { padding-bottom: var(--stack-max); padding-top: var(--page-pad); }
+.journal .book:not(.single) :is(.lclip, .lback, .leaf-cast) { bottom: calc(-1 * var(--stack-max)); top: calc(-1 * var(--page-pad)); }
+/* a page's scrollbar: thin, in the paper's colours (not the system's) */
+.journal .jbody { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--page) 62%, var(--ink)) transparent; }
+.journal .book:not(.single) .jbody { --dip-px: calc(var(--dipn) * 1cqh); margin: calc(var(--dip-px) + 17px) 20px 0; padding: .3rem calc(2.1rem - 20px) 1rem; }
+.journal .book:not(.single) .jpen { margin-top: -.3rem; top: -.3rem; }
+.journal .book:not(.single) .jfoot { padding-bottom: 1.5rem; }
+/* the pages' outlines (also the turning page's back and the shadows it casts take them): on the binding, where what
+   they're drawn from is set (the spine's place and drop, each page's drop and dip: JournalBook), since a variable is
+   worked out where it's declared */
+.journal .book:not(.single) .binding { --clip-l: polygon(0 calc(var(--dip) + 6px), 1.8px calc(var(--dip) + 1.8px), 6px var(--dip), 10% calc(var(--dip) * 0.987), 20% calc(var(--dip) * 0.95), 30% calc(var(--dip) * 0.887), 40% calc(var(--dip) * 0.799), 50% calc(var(--dip) * 0.686), 60% calc(var(--dip) * 0.547), 70% calc(var(--dip) * 0.384), 76% calc(var(--dip) * 0.274), 80% calc(var(--dip) * 0.196), 84% calc(var(--dip) * 0.116), 87% calc(var(--dip) * 0.058), calc(100% - 12.5%) calc(var(--dip) * 0.049), calc(100% - 10%) calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px))) * (1 - pow(0.2, 2))), calc(100% - 7.5%) calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px))) * (1 - pow(0.4, 2))), calc(100% - 5%) calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px))) * (1 - pow(0.6, 2))), calc(100% - 2.5%) calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px))) * (1 - pow(0.8, 2))), 100% calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px)),
+  100% calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-l, 0px))), calc(100% - 2.5%) calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-l, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-l, 0px) + var(--dip) * 0.951) * (1 - pow(0.8, var(--k-l, 3)))), calc(100% - 5%) calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-l, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-l, 0px) + var(--dip) * 0.951) * (1 - pow(0.6, var(--k-l, 3)))), calc(100% - 7.5%) calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-l, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-l, 0px) + var(--dip) * 0.951) * (1 - pow(0.4, var(--k-l, 3)))), calc(100% - 10%) calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-l, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-l, 0px) + var(--dip) * 0.951) * (1 - pow(0.2, var(--k-l, 3)))), calc(100% - 12.5%) calc(100% - var(--stack-max) - var(--dip) * 0.951), 87% calc(100% - var(--stack-max) - var(--dip) * 0.942), 84% calc(100% - var(--stack-max) - var(--dip) * 0.884), 80% calc(100% - var(--stack-max) - var(--dip) * 0.804), 76% calc(100% - var(--stack-max) - var(--dip) * 0.726), 70% calc(100% - var(--stack-max) - var(--dip) * 0.616), 60% calc(100% - var(--stack-max) - var(--dip) * 0.453), 50% calc(100% - var(--stack-max) - var(--dip) * 0.314), 40% calc(100% - var(--stack-max) - var(--dip) * 0.201), 30% calc(100% - var(--stack-max) - var(--dip) * 0.113), 20% calc(100% - var(--stack-max) - var(--dip) * 0.05), 10% calc(100% - var(--stack-max) - var(--dip) * 0.013), 6px calc(100% - var(--stack-max)), 1.8px calc(100% - var(--stack-max) - 1.8px), 0 calc(100% - var(--stack-max) - 6px)); }
+.journal .book:not(.single) .jleft { border-radius: 0; clip-path: var(--clip-l); }
+.journal .book:not(.single) .binding { --clip-r: polygon(100% calc(var(--dip) + 6px), calc(100% - 1.8px) calc(var(--dip) + 1.8px), calc(100% - 6px) var(--dip), 90% calc(var(--dip) * 0.987), 80% calc(var(--dip) * 0.95), 70% calc(var(--dip) * 0.887), 60% calc(var(--dip) * 0.799), 50% calc(var(--dip) * 0.686), 40% calc(var(--dip) * 0.547), 30% calc(var(--dip) * 0.384), 24% calc(var(--dip) * 0.274), 20% calc(var(--dip) * 0.196), 16% calc(var(--dip) * 0.116), 13% calc(var(--dip) * 0.058), 12.5% calc(var(--dip) * 0.049), 10% calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px))) * (1 - pow(0.2, 2))), 7.5% calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px))) * (1 - pow(0.4, 2))), 5% calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px))) * (1 - pow(0.6, 2))), 2.5% calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px))) * (1 - pow(0.8, 2))), 0 calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px)),
+  0 calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-r, 0px))), 2.5% calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-r, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-r, 0px) + var(--dip) * 0.951) * (1 - pow(0.8, var(--k-r, 3)))), 5% calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-r, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-r, 0px) + var(--dip) * 0.951) * (1 - pow(0.6, var(--k-r, 3)))), 7.5% calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-r, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-r, 0px) + var(--dip) * 0.951) * (1 - pow(0.4, var(--k-r, 3)))), 10% calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-r, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-r, 0px) + var(--dip) * 0.951) * (1 - pow(0.2, var(--k-r, 3)))), 12.5% calc(100% - var(--stack-max) - var(--dip) * 0.951), 13% calc(100% - var(--stack-max) - var(--dip) * 0.942), 16% calc(100% - var(--stack-max) - var(--dip) * 0.884), 20% calc(100% - var(--stack-max) - var(--dip) * 0.804), 24% calc(100% - var(--stack-max) - var(--dip) * 0.726), 30% calc(100% - var(--stack-max) - var(--dip) * 0.616), 40% calc(100% - var(--stack-max) - var(--dip) * 0.453), 50% calc(100% - var(--stack-max) - var(--dip) * 0.314), 60% calc(100% - var(--stack-max) - var(--dip) * 0.201), 70% calc(100% - var(--stack-max) - var(--dip) * 0.113), 80% calc(100% - var(--stack-max) - var(--dip) * 0.05), 90% calc(100% - var(--stack-max) - var(--dip) * 0.013), calc(100% - 6px) calc(100% - var(--stack-max)), calc(100% - 1.8px) calc(100% - var(--stack-max) - 1.8px), 100% calc(100% - var(--stack-max) - 6px)); }
+.journal .book:not(.single) .jright { border-radius: 0; clip-path: var(--clip-r); }
+.journal .book:not(.single) .stack { top: 0; }
+/* the cover board doesn't show above the open pages (they stand up off it, seen from a little above): its top is level
+   with the pages' lowest top corner, the outer one, and nothing of it shows in the dip of their curve */
+.journal .book:not(.single) .binding { padding-top: 0; background: none; box-shadow: none; isolation: isolate; }
+.journal .book:not(.single) .binding::before { content: ''; position: absolute; z-index: 0; top: var(--dip); left: 0; right: 0; bottom: 0; pointer-events: none;
+  border-radius: 9px 13px 13px 9px; }
+
+/* ---------- the book, dressed by the theme and the decorative style: the theme gives the materials (the cover's colour,
+   its Book cover, and texture; the paper, its Journal paper, which the page edges below are too), the style the ornament
+   on them (Plain none). Only the cover's rim shows around the open pages. In CSS only. ---------- */
+.book {
+  --cover-tex: var(--grain);
+  --cover-sheen: radial-gradient(ellipse at 30% 0, rgb(255 255 255 / .07), transparent 65%);
+  /* cloth: a fine weave */
+  --weave: repeating-linear-gradient(45deg, rgb(255 255 255 / .05) 0 1px, transparent 1px 3px), repeating-linear-gradient(-45deg, rgb(0 0 0 / .1) 0 1px, transparent 1px 3px);
+  /* corner pieces in the style's metal (--trim) */
+  --corners: linear-gradient(135deg, var(--trim) 0 11px, transparent 11.5px) left top / 24px 24px no-repeat,
+    linear-gradient(225deg, var(--trim) 0 11px, transparent 11.5px) right top / 24px 24px no-repeat,
+    linear-gradient(45deg, var(--trim) 0 11px, transparent 11.5px) left bottom / 24px 24px no-repeat,
+    linear-gradient(315deg, var(--trim) 0 11px, transparent 11.5px) right bottom / 24px 24px no-repeat;
+}
+/* the materials, per theme */
+:root[data-preset="parchment"] .journal .book { --cover-sheen: radial-gradient(ellipse at 30% 30%, rgb(255 255 255 / .09), transparent 60%); }
+:root[data-preset="candlelight"] .journal .book { --cover-sheen: radial-gradient(ellipse at 50% 0, rgb(255 205 150 / .08), transparent 70%); }
+:root[data-preset="dungeon"] .journal .book { --cover-tex: repeating-linear-gradient(90deg, rgb(0 0 0 / .22) 0 1px, transparent 1px 38px), var(--grain); }
+:root[data-preset="grove"] .journal .book { --cover-tex: var(--weave); }
+:root[data-preset="arcane"] .journal .book { --cover-tex: radial-gradient(ellipse at 50% 120%, rgb(255 255 255 / .12), transparent 60%); --cover-depth: inset 0 0 18px rgb(0 0 0 / .45); }
+:root[data-preset="infernal"] .journal .book { --cover-tex: radial-gradient(ellipse at 20% 30%, rgb(110 24 12 / .28), transparent 40%), radial-gradient(ellipse at 78% 72%, rgb(110 24 12 / .22), transparent 45%), var(--grain); }
+:root[data-preset="frost"] .journal .book { --cover-sheen: radial-gradient(ellipse at 0 0, rgb(255 255 255 / .2), transparent 30%), radial-gradient(ellipse at 100% 100%, rgb(255 255 255 / .16), transparent 30%); }
+:root[data-preset="feywild"] .journal .book { --cover-tex: var(--weave); --cover-sheen: radial-gradient(ellipse at 40% 0, rgb(255 225 238 / .1), transparent 65%); }
+/* the board: its material, the style's ornament on top, a light rim and a dark edge (its thickness) */
+.journal .book:not(.single) .binding::before {
+  background: var(--spine), var(--cover-orn, linear-gradient(transparent, transparent)), var(--cover-sheen), var(--cover-tex), var(--cover);
+  box-shadow: var(--cover-shadow), var(--cover-depth, 0 0 transparent), inset 0 -3px 0 color-mix(in srgb, var(--cover) 72%, #000), inset 0 0 0 1px rgb(255 255 255 / .1), inset 0 0 0 2px rgb(0 0 0 / .3); }
+/* the ornament, per style: Illuminated gilt corners and a gold rule; Runecarved iron corners with rivets and a cut line;
+   Wax & Ribbon stitching (its ribbon is below) */
+.fx[data-fx="illuminated"] .journal .book { --trim: var(--gild, #c9a24a); --cover-orn: var(--corners); }
+.fx[data-fx="illuminated"] .journal .book:not(.single) .binding::before { outline: 1px solid color-mix(in srgb, var(--gild, #c9a24a) 75%, transparent); outline-offset: -6px; }
+.fx[data-fx="runecarved"] .journal .book { --trim: color-mix(in srgb, var(--cover) 30%, #6d7179);
+  --cover-orn: radial-gradient(circle at 6px 6px, #b9bdc4 1.4px, #4a4d53 2px, transparent 2.4px) left top / 24px 24px no-repeat,
+    radial-gradient(circle at calc(100% - 6px) 6px, #b9bdc4 1.4px, #4a4d53 2px, transparent 2.4px) right top / 24px 24px no-repeat,
+    radial-gradient(circle at 6px calc(100% - 6px), #b9bdc4 1.4px, #4a4d53 2px, transparent 2.4px) left bottom / 24px 24px no-repeat,
+    radial-gradient(circle at calc(100% - 6px) calc(100% - 6px), #b9bdc4 1.4px, #4a4d53 2px, transparent 2.4px) right bottom / 24px 24px no-repeat,
+    var(--corners); }
+.fx[data-fx="runecarved"] .journal .book:not(.single) .binding::before { outline: 1px solid rgb(0 0 0 / .4); outline-offset: -7px; }
+.fx[data-fx="wax"] .journal .book:not(.single) .binding::before { outline: 1.5px dashed color-mix(in srgb, var(--accent) 60%, var(--page)); outline-offset: -6px; }
+/* the spine's foot, seen from the front: the pages dip into the spine (their outlines) and meet a flat half oval seam
+   there that shows the cover through it (--seam-a: half its width); below, the spine's back bends out past the board's
+   edge, over it, so the board's rim and the style's line stop at the seam. The spine travels the seam's whole width with
+   the place in the book */
+.book { --seam-a: 26px; --seam-a-n: 26; }
+/* the spine travels across the seam at its foot with the place in the book (--spine-f, JournalBook: 0 on the first page, 1 on
+   the last), and the spread splits there: the left page a little wider early in the book, the right one later on */
+.journal .book:not(.single) .binding { --sn: calc((var(--spine-f, .5) * 2 - 1) * var(--seam-a-n)); --spine-shift: calc(var(--sn) * 1px);
+  --sq: sqrt(max(0, 1 - var(--sn) * var(--sn) / (var(--seam-a-n) * var(--seam-a-n))));
+  /* the spine sits lower toward the seam's ends (by as much as the seam is lower there), its length kept */
+  --d-spine: calc(var(--stack-max) * (1 - var(--sq))); }
+/* each page, and the stack under it, sits as high as the paper under it: lower by --d-l, --d-r (JournalBook) with less
+   of it, so the cover shows above a page lying low; near the spine its edges ease to where the spine is */
+.journal .book:not(.single) :is(.spread, .lpage, .lback-page) > .jleft { translate: 0 var(--d-l, 0px); }
+.journal .book:not(.single) :is(.spread, .lpage, .lback-page) > .jright { translate: 0 var(--d-r, 0px); }
+/* every page is as wide as every other: the open spread slides with the spine instead (its two blocks meet there), and
+   the stacks with it; each block's lower pages reach out past its top page by its share of the seam (JournalBook) */
+.journal .book:not(.single) .spread { translate: var(--spine-shift) 0; }
+.journal .book:not(.single) .stack.l { translate: var(--spine-shift) var(--d-l, 0px); }
+.journal .book:not(.single) .stack.r { translate: var(--spine-shift) var(--d-r, 0px); }
+.spine-gap { position: absolute; z-index: 1; left: calc(50% - var(--seam-a)); width: calc(2 * var(--seam-a)); bottom: var(--bind); pointer-events: none;
+  /* (a flat half oval down to the cover, its top level with the pages' bottom edges; they dip to its edge at the spine) */
+  height: var(--stack-max); border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  /* the cover seen through it, as it is, and a seam along its edge */
+  background: var(--spine), var(--cover-tex), var(--cover);
+  border: 2px solid color-mix(in srgb, var(--cover) 35%, #000); border-bottom: none; box-shadow: inset 0 1px 0 rgb(255 255 255 / .14); }
+/* (above the stacks too, so the shadow they cast doesn't run across it) */
+.spine-back { position: absolute; z-index: 1; left: calc(50% - var(--seam-a)); width: calc(2 * var(--seam-a)); bottom: -5px; height: calc(var(--bind) + 5px); pointer-events: none;
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  /* a half cylinder lying along the spine, in the cover's own material and with the board's dark edge */
+  background: var(--spine), var(--cover-tex), var(--cover);
+  box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--cover) 72%, #000), 0 2px 3px rgb(0 0 0 / .25); }
+/* the gilded frame drawn along the curve (Illuminated; JournalPage's svg) */
+.jframe { display: none; position: absolute; z-index: 2; pointer-events: none; fill: none; overflow: visible; }
+.jframe path { vector-effect: non-scaling-stroke; stroke-width: 1px; }
+.fx[data-fx="illuminated"] .journal .book:not(.single) .jframe { display: block; stroke: var(--gild); }
+/* (an svg doesn't stretch between insets: its size is given) */
+.fx[data-fx="illuminated"] .journal .book:not(.single) .jframe.outer { top: 11px; left: 11px; width: calc(100% - 22px); height: calc(100% - 22px - var(--stack-max)); opacity: .85; }
+.fx[data-fx="illuminated"] .journal .book:not(.single) .jframe.inner { top: 15px; left: 15px; width: calc(100% - 30px); height: calc(100% - 30px - var(--stack-max)); opacity: .4; }
+.fx[data-fx="illuminated"] .journal .book:not(.single) .jpage::after { bottom: calc(7px + var(--stack-max)); top: calc(7px + var(--page-pad)); }
+/* (drawn from the book's shape, bookShape.ts: over the whole page, both lines along its outline, bent into the spine) */
+.fx[data-fx="illuminated"] .journal .book:not(.single) .jframe.shaped { top: 0; left: 0; width: 100%; height: 100%; }
+.jframe.shaped .outer { opacity: .85; }
+.jframe.shaped .inner { opacity: .4; }
+.fx[data-fx="illuminated"] .journal .book:not(.single) .jpage { outline: none; }
+/* its corner scrolls where the curved corners are */
+.fx[data-fx="illuminated"] .journal .book:not(.single) .jleft::after {
+  -webkit-mask: url(./styles/ornaments/corner-tl.svg) left 0 top var(--dip) / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top var(--cn-top-l, calc(var(--dip) * 0.753)) / 14px no-repeat,
+    url(./styles/ornaments/corner-bl.svg) left 0 bottom 0 / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom var(--cn-bottom-l, calc(var(--dip) * 0.247)) / 14px no-repeat;
+  mask: url(./styles/ornaments/corner-tl.svg) left 0 top var(--dip) / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top var(--cn-top-l, calc(var(--dip) * 0.753)) / 14px no-repeat,
+    url(./styles/ornaments/corner-bl.svg) left 0 bottom 0 / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom var(--cn-bottom-l, calc(var(--dip) * 0.247)) / 14px no-repeat; }
+.fx[data-fx="illuminated"] .journal .book:not(.single) .jright::after {
+  -webkit-mask: url(./styles/ornaments/corner-tl.svg) left 0 top var(--cn-top-r, calc(var(--dip) * 0.753)) / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top var(--dip) / 14px no-repeat,
+    url(./styles/ornaments/corner-bl.svg) left 0 bottom var(--cn-bottom-r, calc(var(--dip) * 0.247)) / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom 0 / 14px no-repeat;
+  mask: url(./styles/ornaments/corner-tl.svg) left 0 top var(--cn-top-r, calc(var(--dip) * 0.753)) / 14px no-repeat, url(./styles/ornaments/corner-tr.svg) right 0 top var(--dip) / 14px no-repeat,
+    url(./styles/ornaments/corner-bl.svg) left 0 bottom var(--cn-bottom-r, calc(var(--dip) * 0.247)) / 14px no-repeat, url(./styles/ornaments/corner-br.svg) right 0 bottom 0 / 14px no-repeat; }
+/* Runecarved: its cut corners on the curve */
+.fx[data-fx="runecarved"] .journal .book:not(.single) .binding { --clip-l: polygon(16px calc(var(--dip) * 1), 10% calc(var(--dip) * 0.987), 20% calc(var(--dip) * 0.95), 30% calc(var(--dip) * 0.887), 40% calc(var(--dip) * 0.799), 50% calc(var(--dip) * 0.686), 60% calc(var(--dip) * 0.547), 70% calc(var(--dip) * 0.384), 76% calc(var(--dip) * 0.274), 80% calc(var(--dip) * 0.196), 84% calc(var(--dip) * 0.116), 87% calc(var(--dip) * 0.058), calc(100% - 12.5%) calc(var(--dip) * 0.049), calc(100% - 10%) calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px))) * (1 - pow(0.2, 2))), calc(100% - 7.5%) calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px))) * (1 - pow(0.4, 2))), calc(100% - 5%) calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px))) * (1 - pow(0.6, 2))), calc(100% - 2.5%) calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px))) * (1 - pow(0.8, 2))), 100% calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-l, 0px)),
+  100% calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-l, 0px))), calc(100% - 2.5%) calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-l, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-l, 0px) + var(--dip) * 0.951) * (1 - pow(0.8, var(--k-l, 3)))), calc(100% - 5%) calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-l, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-l, 0px) + var(--dip) * 0.951) * (1 - pow(0.6, var(--k-l, 3)))), calc(100% - 7.5%) calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-l, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-l, 0px) + var(--dip) * 0.951) * (1 - pow(0.4, var(--k-l, 3)))), calc(100% - 10%) calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-l, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-l, 0px) + var(--dip) * 0.951) * (1 - pow(0.2, var(--k-l, 3)))), calc(100% - 12.5%) calc(100% - var(--stack-max) - var(--dip) * 0.951), 87% calc(100% - var(--stack-max) - var(--dip) * 0.942), 84% calc(100% - var(--stack-max) - var(--dip) * 0.884), 80% calc(100% - var(--stack-max) - var(--dip) * 0.804), 76% calc(100% - var(--stack-max) - var(--dip) * 0.726), 70% calc(100% - var(--stack-max) - var(--dip) * 0.616), 60% calc(100% - var(--stack-max) - var(--dip) * 0.453), 50% calc(100% - var(--stack-max) - var(--dip) * 0.314), 40% calc(100% - var(--stack-max) - var(--dip) * 0.201), 30% calc(100% - var(--stack-max) - var(--dip) * 0.113), 20% calc(100% - var(--stack-max) - var(--dip) * 0.05), 10% calc(100% - var(--stack-max) - var(--dip) * 0.013), 16px calc(100% - var(--stack-max)), 0 calc(100% - var(--stack-max) - 16px), 0 calc(16px + var(--dip))); }
+.fx[data-fx="runecarved"] .journal .book:not(.single) .jleft { clip-path: var(--clip-l); }
+.fx[data-fx="runecarved"] .journal .book:not(.single) .binding { --clip-r: polygon(calc(100% - 16px) var(--dip), 90% calc(var(--dip) * 0.987), 80% calc(var(--dip) * 0.95), 70% calc(var(--dip) * 0.887), 60% calc(var(--dip) * 0.799), 50% calc(var(--dip) * 0.686), 40% calc(var(--dip) * 0.547), 30% calc(var(--dip) * 0.384), 24% calc(var(--dip) * 0.274), 20% calc(var(--dip) * 0.196), 16% calc(var(--dip) * 0.116), 13% calc(var(--dip) * 0.058), 12.5% calc(var(--dip) * 0.049), 10% calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px))) * (1 - pow(0.2, 2))), 7.5% calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px))) * (1 - pow(0.4, 2))), 5% calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px))) * (1 - pow(0.6, 2))), 2.5% calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px) + (var(--dip) * 0.049 - (var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px))) * (1 - pow(0.8, 2))), 0 calc(var(--dip) * 0.753 + var(--d-spine, 0px) - var(--d-r, 0px)),
+  0 calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-r, 0px))), 2.5% calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-r, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-r, 0px) + var(--dip) * 0.951) * (1 - pow(0.8, var(--k-r, 3)))), 5% calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-r, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-r, 0px) + var(--dip) * 0.951) * (1 - pow(0.6, var(--k-r, 3)))), 7.5% calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-r, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-r, 0px) + var(--dip) * 0.951) * (1 - pow(0.4, var(--k-r, 3)))), 10% calc(100% - (var(--stack-max) * var(--sq, 1) + var(--d-r, 0px)) - (var(--stack-max) * (1 - var(--sq, 1)) - var(--d-r, 0px) + var(--dip) * 0.951) * (1 - pow(0.2, var(--k-r, 3)))), 12.5% calc(100% - var(--stack-max) - var(--dip) * 0.951), 13% calc(100% - var(--stack-max) - var(--dip) * 0.942), 16% calc(100% - var(--stack-max) - var(--dip) * 0.884), 20% calc(100% - var(--stack-max) - var(--dip) * 0.804), 24% calc(100% - var(--stack-max) - var(--dip) * 0.726), 30% calc(100% - var(--stack-max) - var(--dip) * 0.616), 40% calc(100% - var(--stack-max) - var(--dip) * 0.453), 50% calc(100% - var(--stack-max) - var(--dip) * 0.314), 60% calc(100% - var(--stack-max) - var(--dip) * 0.201), 70% calc(100% - var(--stack-max) - var(--dip) * 0.113), 80% calc(100% - var(--stack-max) - var(--dip) * 0.05), 90% calc(100% - var(--stack-max) - var(--dip) * 0.013), calc(100% - 16px) calc(100% - var(--stack-max)), 100% calc(100% - var(--stack-max) - 16px), 100% calc(16px + var(--dip))); }
+.fx[data-fx="runecarved"] .journal .book:not(.single) .jright { clip-path: var(--clip-r); }
+/* the journal's controls on the right of its header */
+.journal-head > .spacer { flex: 1; }
+.book.single .spread { background: var(--grain), var(--page); }
+.jnum { display: inline-block; }
+/* the stacks reach a little past the book's sides: clipped there, never a sideways scrollbar */
+.journal { overflow-x: clip; }
+
+/* Illuminated: a gilded rule inside each page, scrolled corners, the page number between two fleurons */
+.fx[data-fx="illuminated"] .journal .jpage { outline: var(--gild-rule); outline-offset: -11px; }
+.fx[data-fx="illuminated"] .journal .jpage::after { content: ''; position: absolute; inset: 7px; z-index: 2; pointer-events: none;
+  background: var(--gild); -webkit-mask: var(--fx-frame-ornament-mask); mask: var(--fx-frame-ornament-mask); }
+.fx[data-fx="illuminated"] .journal .jnum { color: var(--gild); }
+.fx[data-fx="illuminated"] .journal .jnum::before { content: '❦ '; opacity: .7; }
+.fx[data-fx="illuminated"] .journal .jnum::after { content: ' ❦'; opacity: .7; display: inline-block; transform: scaleX(-1); }
+.fx[data-fx="illuminated"] .journal .jbody { padding-top: 1.9rem; }
+
+/* Runecarved: the outer corners cut away, a carved double spine, the page number on a notched plaque */
+.fx[data-fx="runecarved"] .journal .jleft { clip-path: polygon(16px 0, 100% 0, 100% 100%, 16px 100%, 0 calc(100% - 16px), 0 16px); }
+.fx[data-fx="runecarved"] .journal .jright { clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%); }
+.fx[data-fx="runecarved"] .journal .spread::after { width: 4px; left: calc(50% - 2px); background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 55%, transparent) 0 1px, transparent 1px 3px, color-mix(in srgb, var(--accent) 55%, transparent) 3px); }
+.fx[data-fx="runecarved"] .journal .jnum { padding: .05rem .8rem; color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent);
+  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); }
+
+/* Wax & Ribbon: a ribbon bookmark's tail hanging out below the book, the page number pressed in a wax seal */
+.fx[data-fx="wax"] .journal .binding::after { content: ''; position: absolute; z-index: 0; top: calc(100% - 30px); right: 24%; width: 15px; height: 58px; pointer-events: none;
+  background: linear-gradient(90deg, rgb(0 0 0 / .18), transparent 30%, transparent 70%, rgb(0 0 0 / .18)), color-mix(in srgb, var(--accent) 80%, #5a0e0e);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 8px), 0 100%); box-shadow: 0 2px 4px rgb(0 0 0 / .3); }
+.fx[data-fx="wax"] .journal .book.single .binding::after { display: none; }
+.fx[data-fx="wax"] .journal .jnum { display: inline-grid; place-items: center; min-width: 2.1em; height: 2.1em; padding: 0 .3em; border-radius: 50%; font-size: 11px; font-weight: 600;
+  color: color-mix(in srgb, var(--page) 90%, #fff); background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--accent) 70%, #fff) 0 18%, color-mix(in srgb, var(--accent) 85%, #4a0c0c) 60%);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 60%, #2a0606), 0 1px 2px rgb(0 0 0 / .35); }

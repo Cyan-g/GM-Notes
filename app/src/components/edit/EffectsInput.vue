@@ -68,10 +68,10 @@ const remove = (i: number) => { const l = [...list.value]; l.splice(i, 1); model
       <Dropdown compact v-if="needs(f, 'ability')" :value="f.ability" aria-label="Ability" @change="put(i, { ability: val($event) as GearEffect['ability'] })">
         <option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.label }}</option>
       </Dropdown>
-      <Dropdown compact v-if="needs(f, 'plusAbility')" :value="f.ability ?? ''" aria-label="Plus an ability's modifier" @change="put(i, { ability: (val($event) || undefined) as GearEffect['ability'] })">
-        <option value="">no ability</option>
-        <option v-for="a in ABILITIES" :key="a.key" :value="a.key">+ {{ a.label }} modifier</option>
-      </Dropdown>
+      <label v-if="needs(f, 'plusAbility')" class="small ab-with">+ modifier of <Dropdown compact :value="f.ability ?? ''" aria-label="Plus an ability's modifier" @change="put(i, { ability: (val($event) || undefined) as GearEffect['ability'] })">
+        <option value="">—</option>
+        <option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.label }}</option>
+      </Dropdown></label>
       <Dropdown compact v-if="needs(f, 'skill')" :value="f.skill" aria-label="Skill" @change="put(i, { skill: val($event) })">
         <option v-for="s in SKILLS" :key="s.name" :value="s.name">{{ s.name }}</option>
       </Dropdown>

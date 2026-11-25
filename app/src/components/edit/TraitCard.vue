@@ -15,7 +15,7 @@ import TraitUsesSection from './TraitUsesSection.vue'
 import type { Trait } from '../../model/types'
 import { cleanTrait, hasSpells, newChoice, scaleSummary } from '../../traitEditing'
 import { listOptions } from '../../store'
-import { ABILITY_KEYS, ABILITY_NAME } from '../../model/dnd'
+import { ABILITY_KEYS, ABILITY_NAME, ABILITY_UPPER } from '../../model/dnd'
 import { inputValue as val } from '../../dom'
 
 const props = defineProps<{
@@ -108,7 +108,7 @@ function dropLists() { listsOpen.value = false; patch({ spellLists: undefined })
             <option value="pick">the player's pick</option><option value="same">the same as another {{ word }}</option>
           </Dropdown>
           <div v-if="castMode === 'pick'" class="seg wrap">
-            <button v-for="ab in ABILITY_KEYS" :key="ab" type="button" :class="{ on: t.castWith?.among?.includes(ab) }" @click="toggleCast(ab)">{{ ABILITY_NAME[ab] }}</button>
+            <button v-for="ab in ABILITY_KEYS" :key="ab" type="button" :class="{ on: t.castWith?.among?.includes(ab) }" @click="toggleCast(ab)">{{ ABILITY_UPPER[ab] }}</button>
           </div>
           <Dropdown v-else-if="castMode === 'same'" :value="t.castWith?.sameAs" aria-label="As which" @change="patch({ castWith: { sameAs: val($event) } })">
             <option v-for="o in others" :key="o.id" :value="o.id">{{ o.name }}</option>

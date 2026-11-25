@@ -429,7 +429,7 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
             <div class="seg">
               <button v-for="k in (['melee', 'ranged', 'both'] as const)" :key="k" type="button" :class="{ on: f.attack.kind === k }" @click="setAttack(i, { kind: k })">{{ k === 'both' ? 'Melee or ranged' : k[0].toUpperCase() + k.slice(1) }}</button>
             </div>
-            <label>with <Dropdown :value="f.attack.ability" @change="setAttack(i, { ability: val($event) as StatAttack['ability'] })"><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ a.toUpperCase() }} ({{ signedText(modOf(a)) }})</option></Dropdown></label>
+            <label>with <Dropdown :value="f.attack.ability" @change="setAttack(i, { ability: val($event) as StatAttack['ability'] })"><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ ABILITY_NAME[a] }}</option></Dropdown> <span class="muted">({{ signedText(modOf(f.attack.ability)) }})</span></label>
             <label v-if="f.attack.kind !== 'ranged'">reach <input type="number" min="5" step="5" class="effect-value" :value="f.attack.reach ?? 5" @change="setAttack(i, { reach: num(val($event)) ?? 5 })" /> ft</label>
             <label v-if="f.attack.kind !== 'melee'">range <input class="effect-value cf-range" :value="f.attack.range ?? ''" placeholder="30/120" @change="setAttack(i, { range: val($event).trim() })" /> ft</label>
             <label>damage <input class="effect-value cf-range" :value="f.attack.dice" placeholder="1d6" @change="setAttack(i, { dice: val($event).trim() || '1d6' })" /></label>

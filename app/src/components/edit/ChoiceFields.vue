@@ -64,10 +64,10 @@ const LEVELS = ['Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9']
       <option v-for="(label, id) in HOW_SPECIES" :key="id" :value="id">{{ label }}</option>
     </Dropdown>
     <label v-if="spell.how === 'long' || spell.how === 'short'" class="small" title="Also always prepared, and cast with spell slots too (Magic Initiate's level 1 spell)"><input type="checkbox" :checked="!!spell.prepared" @change="putSpell({ prepared: ($event.target as HTMLInputElement).checked || undefined })" /> also always prepared</label>
-    <Dropdown v-if="spell.how !== 'known'" :value="spell.ability ?? ''" aria-label="Cast with" title="The ability they're cast with (their attack and save DC are shown with them)" @change="putSpell({ ability: (val($event) || undefined) as SpellFilter['ability'] })">
-      <option value="">no ability</option>
-      <option v-for="(label, id) in ABILITY_NAME" :key="id" :value="id">with {{ label }}</option>
-    </Dropdown>
+    <label v-if="spell.how !== 'known'" class="small ab-with" title="The ability they're cast with (their attack and save DC are shown with them)">cast with <Dropdown :value="spell.ability ?? ''" aria-label="Cast with" @change="putSpell({ ability: (val($event) || undefined) as SpellFilter['ability'] })">
+      <option value="">—</option>
+      <option v-for="(label, id) in ABILITY_NAME" :key="id" :value="id">{{ label }}</option>
+    </Dropdown></label>
     <details class="trait-among">
       <summary class="small">{{ spell.classes?.length ? `${spell.classes.join(', ')} list${spell.classes.length > 1 ? 's' : ''}` : "any class's list" }}</summary>
       <ProfChips :values="spell.classes ?? []" :suggest="listOptions('class')" placeholder="Add a class's list…" @change="v => putSpell({ classes: v })" />

@@ -162,8 +162,9 @@ function addCondition(ev: Event) {
             </Dropdown>
             <Dropdown v-if="f.spellType === 'Saving throw' || f.savingThrow" :value="f.savingThrow ?? ''" aria-label="Saving throw" @change="set('savingThrow', ($event.target as HTMLSelectElement).value || undefined)">
               <option value="">which save?</option>
-              <option v-for="o in ABILITIES" :key="o.id" :value="o.id">{{ o.label }} save</option>
+              <option v-for="o in ABILITIES" :key="o.id" :value="o.id">{{ o.label }}</option>
             </Dropdown>
+            <span v-if="f.savingThrow" class="muted small">save</span>
           </div>
         </div>
         <div class="sf-cell full">

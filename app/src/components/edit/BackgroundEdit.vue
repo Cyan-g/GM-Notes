@@ -8,7 +8,7 @@ import { computed, ref } from 'vue'
 import type { AbilityBonus, Entry } from '../../model/types'
 import { TYPES } from '../../model/schema'
 import type { BonusChoice } from '../../abilityBonus'
-import { ABILITY_KEYS, ABILITY_SHORT, type Ability } from '../../model/dnd'
+import { ABILITY_KEYS, ABILITY_SHORT, type Ability, ABILITY_UPPER } from '../../model/dnd'
 import { get } from '../../store'
 import { changed } from '../../edit'
 import { traitsOf } from '../../model/traits'
@@ -63,7 +63,7 @@ function setAll(all: boolean) { if (all) props.e.fields.toolsAll = true; else de
       </div>
       <template v-if="mode === 'three'">
         <p class="muted small">Tick three abilities: the player puts +2 on one and +1 on another, or +1 on all three.</p>
-        <div class="seg cb-toggles"><button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: picked.includes(a) }" :disabled="!picked.includes(a) && picked.length >= 3" @click="toggle(a)">{{ ABILITY_SHORT[a] }}</button></div>
+        <div class="seg cb-toggles"><button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: picked.includes(a) }" :disabled="!picked.includes(a) && picked.length >= 3" @click="toggle(a)">{{ ABILITY_UPPER[a] }}</button></div>
         <p v-if="picked.length < 3" class="small warn-text">{{ 3 - picked.length }} more to tick.</p>
         <p v-else-if="bonus && !three" class="small muted">Ticking three replaces the custom increase it has.</p>
       </template>

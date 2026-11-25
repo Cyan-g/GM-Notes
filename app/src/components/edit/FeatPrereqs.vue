@@ -112,7 +112,7 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
             <FieldInput v-else-if="c.id === 'feats'" :def="requiresDef" :entry="e" />
             <template v-else-if="c.id === 'scores'">
               <span v-for="(x, i) in scores" :key="i" class="req-score">
-                <Dropdown :value="x.ability" aria-label="Ability" @change="setScore(i, { ability: ($event.target as HTMLSelectElement).value as any })"><option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.short }}</option></Dropdown>
+                <Dropdown :value="x.ability" aria-label="Ability" @change="setScore(i, { ability: ($event.target as HTMLSelectElement).value as any })"><option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.label }}</option></Dropdown>
                 <input type="number" min="1" max="30" class="effect-value" :value="x.min" aria-label="Minimum" @change="setScore(i, { min: Number(($event.target as HTMLInputElement).value) || 13 })" />+
                 <button type="button" class="link-btn" title="Remove" @click="putReq({ scores: scores.filter((_, k) => k !== i) })">×</button>
               </span>

@@ -13,7 +13,7 @@ import { itemNamed } from '../../lookup'
 import { isToolKind } from '../../species'
 import ProfChips from '../ProfChips.vue'
 import ClassKitsInput from './ClassKitsInput.vue'
-import { SKILLS, ABILITY_KEYS, ABILITY_SHORT } from '../../model/dnd'
+import { SKILLS, ABILITY_KEYS, ABILITY_NAME, ABILITY_UPPER } from '../../model/dnd'
 
 type Key = keyof ClassBasics
 const props = defineProps<{ cls: string }>()
@@ -76,7 +76,7 @@ const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 's
     </div>
 
     <h4>Saving throws <span class="cb-tag" :class="tag('saves')">{{ tag('saves') }}</span><button v-if="isOwn('saves')" type="button" class="link-btn small" @click="reset('saves')">Reset</button></h4>
-    <div class="seg cb-toggles"><button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: cur.saves?.includes(a) }" @click="set('saves', toggle(cur.saves, a))">{{ ABILITY_SHORT[a] }}</button></div>
+    <div class="seg cb-toggles"><button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: cur.saves?.includes(a) }" @click="set('saves', toggle(cur.saves, a))">{{ ABILITY_UPPER[a] }}</button></div>
 
     <h4>Proficiencies <span class="cb-tag" :class="isOwn('armor') || isOwn('weapons') || isOwn('tools') ? 'changed' : tag('armor')">{{ isOwn('armor') || isOwn('weapons') || isOwn('tools') ? 'changed' : tag('armor') }}</span>
       <button v-if="isOwn('armor') || isOwn('weapons') || isOwn('tools')" type="button" class="link-btn small" @click="reset('armor'); reset('weapons'); reset('tools')">Reset</button></h4>
@@ -93,7 +93,7 @@ const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 's
       <button v-if="isOwn('caster') || isOwn('casting')" type="button" class="link-btn small" @click="reset('caster'); reset('casting')">Reset</button></h4>
     <div class="cb-line">
       <Dropdown :value="cur.caster ?? 'none'" aria-label="Spell slots" @change="set('caster', ($event.target as HTMLSelectElement).value as ClassBasics['caster'])"><option v-for="c in CASTERS" :key="c.id" :value="c.id">{{ c.label }}</option></Dropdown>
-      <Dropdown v-if="casts" :value="cur.casting ?? ''" aria-label="Casting ability" @change="set('casting', (($event.target as HTMLSelectElement).value || undefined) as ClassBasics['casting'])"><option value="">Casting ability…</option><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ ABILITY_SHORT[a] }}</option></Dropdown>
+      <Dropdown v-if="casts" :value="cur.casting ?? ''" aria-label="Casting ability" @change="set('casting', (($event.target as HTMLSelectElement).value || undefined) as ClassBasics['casting'])"><option value="">Casting ability…</option><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ ABILITY_NAME[a] }}</option></Dropdown>
     </div>
     <template v-if="casts">
       <div class="cb-levels">
@@ -133,7 +133,7 @@ const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 's
 
     <h4>Multiclassing <span class="cb-tag" :class="tag('multiclass')">{{ tag('multiclass') }}</span><button v-if="isOwn('multiclass')" type="button" class="link-btn small" @click="reset('multiclass')">Reset</button></h4>
     <div class="cb-line"><span class="muted small">Needs 13 in</span>
-      <div class="seg cb-toggles"><button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: mc.primary.includes(a) }" @click="setMc({ primary: toggle(mc.primary, a) })">{{ ABILITY_SHORT[a] }}</button></div>
+      <div class="seg cb-toggles"><button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: mc.primary.includes(a) }" @click="setMc({ primary: toggle(mc.primary, a) })">{{ ABILITY_UPPER[a] }}</button></div>
       <label v-if="mc.primary.length > 1" class="small"><input type="checkbox" :checked="!!mc.any" @change="setMc({ any: ($event.target as HTMLInputElement).checked || undefined })" /> one of them is enough</label></div>
     <div class="cb-line"><span class="muted small">Gives</span>
       <div class="seg cb-toggles"><button v-for="x in [...ARMOR, ...WEAPONS]" :key="x" type="button" :class="{ on: [...mc.armor, ...mc.weapons].includes(x) }" @click="ARMOR.includes(x) ? setMc({ armor: toggle(mc.armor, x) }) : setMc({ weapons: toggle(mc.weapons, x) })">{{ x }}</button></div></div>

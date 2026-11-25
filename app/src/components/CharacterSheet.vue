@@ -471,8 +471,8 @@ onBeforeUnmount(() => {
         <h4>Spellcasting</h4>
         <div class="cs-cast">
           <Dropdown v-if="build" :value="s.spellAbility ?? ''" @change="edit(x => x.spellAbility = (($event.target as HTMLSelectElement).value || undefined) as Ability | undefined)">
-            <option value="">{{ cast && !s.spellAbility ? `${cast.toUpperCase()} (class)` : 'None' }}</option>
-            <option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.short }}</option>
+            <option value="">{{ cast && !s.spellAbility ? `${ABILITIES.find(a => a.key === cast)?.label ?? cast} (the class's)` : 'None' }}</option>
+            <option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.label }}</option>
           </Dropdown>
           <span v-else>{{ castLabel }}</span>
           <template v-if="cast"><span>Save DC <b v-flash="spellDC" :class="{ 'gear-mod tip': gt.spellDC.length }" :data-tip="tipOf(spellDC, gt.spellDC, String)">{{ spellDC }}</b></span><span>Attack <b v-flash="spellAtk" :class="{ 'gear-mod tip': gt.spellAttack.length }" :data-tip="tipOf(spellAtk, gt.spellAttack)">{{ signed(spellAtk) }}</b></span></template>

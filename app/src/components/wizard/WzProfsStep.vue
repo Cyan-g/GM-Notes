@@ -6,7 +6,7 @@
 import { computed } from 'vue'
 import type { Entry } from '../../model/types'
 import { languageRule, pickedLanguages, wizard } from '../../wizard'
-import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, SKILLS } from '../../model/dnd'
+import { ABILITY_KEYS, ABILITY_NAME, ABILITY_SHORT, SKILLS, ABILITY_UPPER } from '../../model/dnd'
 import { grantOptions, isToolKind } from '../../species'
 import { entries, listOptions } from '../../store'
 import { useDraft } from '../../composables/useDraft'
@@ -68,7 +68,7 @@ const toggleIn = (key: 'ownSaves' | 'ownArmor' | 'ownWeapons', v: string) => {
   </template>
   <template v-else-if="d.cls">
     <div class="wz-row"><span>Saving throws</span>
-      <span class="seg"><button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: d.ownSaves.includes(a) }" @click="toggleIn('ownSaves', a)">{{ ABILITY_SHORT[a] }}</button></span></div>
+      <span class="seg"><button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: d.ownSaves.includes(a) }" @click="toggleIn('ownSaves', a)">{{ ABILITY_UPPER[a] }}</button></span></div>
     <div class="wz-row"><span>Armor</span>
       <span class="seg"><button v-for="o in armorTypes" :key="o.id" type="button" :class="{ on: d.ownArmor.includes(o.id) }" @click="toggleIn('ownArmor', o.id)">{{ o.label }}</button></span></div>
     <div class="wz-row"><span>Weapons</span>

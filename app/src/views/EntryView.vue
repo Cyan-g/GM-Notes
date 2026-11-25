@@ -4,9 +4,9 @@ import TypeIcon from '../components/TypeIcon.vue'
 import { NOTE_TYPES, fromPlayer, isShared } from '../sync'
 import PlayerNotes from '../components/PlayerNotes.vue'
 import { computed } from 'vue'
-import type { Entry, Id } from '../model/types'
+import type { Entry } from '../model/types'
 import { TYPES, byKey, type FieldDef } from '../model/schema'
-import { childrenOf, get, hiddenFromPlayers, placePath, playerMode, entries, state } from '../store'
+import { childrenOf, get, hiddenFromPlayers, placePath, playerMode, state } from '../store'
 import { go, hrefDashboard, hrefEntry, hrefFamily, hrefList, hrefTab, type EntryTab } from '../router'
 import type { UiIcon } from '../icons/ui'
 import SpellbookView from './SpellbookView.vue'
@@ -26,7 +26,7 @@ import MapView from '../components/MapView.vue'
 import SubTree from '../components/SubTree.vue'
 import Sunburst from '../components/Sunburst.vue'
 import { ui } from '../ui'
-import { changed, createEntry, isEmpty } from '../edit'
+import { createEntry, isEmpty } from '../edit'
 import EntryLink from '../components/EntryLink.vue'
 import EntryHeader from '../components/EntryHeader.vue'
 import MarkdownView from '../components/MarkdownView.vue'
@@ -35,9 +35,7 @@ import FieldGroupCard from '../components/FieldGroupCard.vue'
 import StatblockView from '../components/Statblock.vue'
 import MembersCard from '../components/MembersCard.vue'
 import SessionSide from '../components/SessionSide.vue'
-import CampaignSessions from '../components/CampaignSessions.vue'
 import JournalBook from '../components/journal/JournalBook.vue'
-import CampaignParty from '../components/CampaignParty.vue'
 import RaceMembers from '../components/RaceMembers.vue'
 import RelationCards from '../components/RelationCards.vue'
 import AddToTracker from '../components/AddToTracker.vue'
@@ -66,8 +64,6 @@ import OutlineCard from '../components/OutlineCard.vue'
 import { featsGrantedBy } from '../lookup'
 import { bodyParts as cutBody, setBodyPart, type BodyPart } from '../bodyParts'
 import { provideLocked, provideSharedEditable } from '../composables/useReadOnly'
-import { currentPc } from '../sheet'
-import { characterSend } from '../playerCharacters'
 
 const props = defineProps<{ id: string; tab?: EntryTab }>()
 const e = computed(() => get(props.id))
@@ -187,32 +183,15 @@ const shared = computed(() => isShared(e.value))
 provideLocked(shared)
 // a player's character at the DM's: its HP, conditions and inventory are the DM's to change too
 provideSharedEditable(computed(() => e.value?.type === 'pc' && !!fromPlayer(e.value)))
-/** A campaign the DM shares: the player's characters in it, putting the current one in, and taking one out. */
-const campaignsOf = (pc: Entry) => (pc.fields.campaigns as Id[] | undefined) ?? []
-const myInCampaign = computed(() => (e.value?.type === 'campaign' && shared.value ? entries.value.filter(x => x.type === 'pc' && !isShared(x) && campaignsOf(x).includes(e.value!.id)) : []))
-/** One's own characters not in this (DM's) campaign: the current one first. */
-const notInCampaign = computed(() => (e.value?.type === 'campaign' && shared.value
-  ? entries.value.filter(x => x.type === 'pc' && !isShared(x) && !campaignsOf(x).includes(e.value!.id)).sort((a, b) => Number(b.id === currentPc.value?.id) - Number(a.id === currentPc.value?.id) || a.name.localeCompare(b.name))
-  : []))
-function joinCampaign(pc: Entry) {
-  pc.fields.campaigns = [...campaignsOf(pc), e.value!.id]
-  changed(pc)
-}
-function leaveCampaign(pc: Entry) {
-  const rest = campaignsOf(pc).filter(id => id !== e.value!.id)
-  if (rest.length) pc.fields.campaigns = rest; else delete pc.fields.campaigns
-  changed(pc)
-}
-/** A campaign opens as its journal (JournalBook), and so does a session of one, at its page. */
+/** A campaign opens as its journal (JournalBook), and so does a session of one, at its page (not one of a campaign
+ * the players don't know of, in player mode: that session shows as a page of its own). */
 const journalOf = computed(() => {
   const x = e.value
   if (!x || hiddenFromPlayers(x)) return undefined
   if (x.type === 'campaign') return x
   const c = x.type === 'session' ? get(x.fields.campaign) : undefined
-  return c?.type === 'campaign' ? c : undefined
+  return c?.type === 'campaign' && !hiddenFromPlayers(c) ? c : undefined
 })
-// its notes (the characters are in the party at the top)
-const campaignNotes = computed(() => journalOf.value ? entries.value.filter(n => n.type === 'note' && n.fields.campaign === journalOf.value!.id) : [])
 </script>
 
 <template>
@@ -244,8 +223,6 @@ const campaignNotes = computed(() => journalOf.value ? entries.value.filter(n =>
     <CompanionsTab v-else-if="onPals" :pc="e" />
     <div v-else class="entry-grid">
       <div class="entry-main">
-        <CampaignParty v-if="e.type === 'campaign'" :campaign="e" />
-
         <!-- An item's card takes the main two thirds; its recipe is the first card on the right (as when editing). -->
         <div v-if="e.type === 'item'" class="item-top">
           <ItemCard :e="e" in-page />
@@ -292,12 +269,6 @@ const campaignNotes = computed(() => journalOf.value ? entries.value.filter(n =>
         <section v-if="grantedFeats.length && !bodyParts.placed.has('feats')">
           <h2>Feats</h2>
           <div class="feat-list"><FeatCard v-for="f in grantedFeats" :key="f.id" :e="f" title /></div>
-        </section>
-
-        <CampaignSessions v-if="e.type === 'campaign'" :campaign="e" />
-        <section v-if="campaignNotes.length">
-          <h2>Notes</h2>
-          <ul class="plain"><li v-for="n in campaignNotes" :key="n.id"><EntryLink :id="n.id" icon /></li></ul>
         </section>
 
         <section v-if="history.length" class="history">

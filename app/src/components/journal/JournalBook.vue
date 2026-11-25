@@ -8,8 +8,8 @@ import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import type { Entry, Id } from '../../model/types'
 import { sessionsOf, setCurrentCampaign } from '../../sessions'
 import AppIcon from '../AppIcon.vue'
-import { hrefEntry, hrefList, replaceTo } from '../../router'
-import { state } from '../../store'
+import { hrefEntry, hrefList, replaceTo, route } from '../../router'
+import { get, state } from '../../store'
 import { isShared } from '../../sync'
 import JournalPage, { type Leaf } from './JournalPage.vue'
 import { endTurn, startTurn, turnSettling, turnStarted, turning as turnState, writeOnOpen } from '../../journal'
@@ -108,6 +108,13 @@ const turning = computed(() => (turnState.value?.campaign === props.campaign.id 
  * so it comes down onto the new shape. */
 const shapedAt = computed(() => (turning.value && !turnSettling.value ? turning.value.from : page.value))
 const isTurn = (e: AnimationEvent) => e.animationName === 'leaf-fwd' || e.animationName === 'leaf-back'
+// a turn cut short by leaving the book (another entry, its Edit page) ends there; turning to another page of the same
+// book makes the book anew too, and the turn goes on in it
+onBeforeUnmount(() => {
+  const r = route.current, x = r.name === 'entry' && !r.edit ? get(r.id) : undefined
+  const sameBook = !!x && (x.id === props.campaign.id || (x.type === 'session' && x.fields.campaign === props.campaign.id))
+  if (turning.value && !sameBook) endTurn()
+})
 const onTurnStart = (e: AnimationEvent) => { if (isTurn(e)) turnStarted(parseFloat(getComputedStyle(e.target as Element).animationDuration) * 1000) }
 const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 function turnTo(i: number) {

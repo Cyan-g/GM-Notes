@@ -12,7 +12,7 @@ import { hrefEntry, hrefList, replaceTo } from '../../router'
 import { state } from '../../store'
 import { isShared } from '../../sync'
 import JournalPage, { type Leaf } from './JournalPage.vue'
-import { endTurn, startTurn, turning as turnState, writeOnOpen } from '../../journal'
+import { endTurn, startTurn, turnSettling, turnStarted, turning as turnState, writeOnOpen } from '../../journal'
 import LeafStrip from './LeafStrip.vue'
 import { SEAM_HALF, STACK, bookShape, sheetClip, type ShapeInput } from './bookShape'
 import { bookShapeKey } from '../../journal'
@@ -103,6 +103,12 @@ const writeNow = writeOnOpen
 // ---- turning the pages ----
 /** The page turning over now, in this campaign's book (journal.ts). */
 const turning = computed(() => (turnState.value?.campaign === props.campaign.id ? turnState.value : null))
+/** The spread the book's shape is for: while a page turns, still the one it turns from (where the spine sits, the paper
+ * under each side, how the pages are bound into the spine), until it's halfway over (journal.ts turnSettling),
+ * so it comes down onto the new shape. */
+const shapedAt = computed(() => (turning.value && !turnSettling.value ? turning.value.from : page.value))
+const isTurn = (e: AnimationEvent) => e.animationName === 'leaf-fwd' || e.animationName === 'leaf-back'
+const onTurnStart = (e: AnimationEvent) => { if (isTurn(e)) turnStarted(parseFloat(getComputedStyle(e.target as Element).animationDuration) * 1000) }
 const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 function turnTo(i: number) {
   const l = leaves.value
@@ -139,7 +145,7 @@ const where = computed(() => (leaf.value.kind === 'cover' ? 'The party' : leaf.v
  * page and the last; between, from just past the first point to just short of the last, so the first page turned
  * either way already shows a sheet of its own. */
 const spineSlot = computed(() => {
-  const n = leaves.value.length - 1, p = page.value
+  const n = leaves.value.length - 1, p = shapedAt.value
   if (n < 1) return BINDS / 2
   if (p <= 0) return 0
   if (p >= n) return BINDS
@@ -163,8 +169,8 @@ onMounted(() => {
 onBeforeUnmount(() => sizeWatch?.disconnect())
 /** How much lower a page sits than one on a full stack (px): as much as its stack is thinner (style.css --d-l, --d-r). */
 const dropFor = (pages: number) => STACK - stackThickness(Math.max(1, pages))
-const pagesL = computed(() => page.value)
-const pagesR = computed(() => Math.max(0, leaves.value.length - 1 - page.value))
+const pagesL = computed(() => shapedAt.value)
+const pagesR = computed(() => Math.max(0, leaves.value.length - 1 - shapedAt.value))
 const dropL = computed(() => `${dropFor(pagesL.value).toFixed(2)}px`)
 const dropR = computed(() => `${dropFor(pagesR.value).toFixed(2)}px`)
 const shapeIn = computed<ShapeInput>(() => {
@@ -266,7 +272,7 @@ function remembered() { return lastOpenByCampaign }
             <div class="leaf-cast under" :class="turning.dir" aria-hidden="true" />
             <div class="leaf-cast land" :class="turning.dir" aria-hidden="true" />
             <div class="leaf" :class="turning.dir" :style="{ '--n': STRIPS }"
-                 @animationend="e => (e.animationName === 'leaf-fwd' || e.animationName === 'leaf-back') && endTurn()">
+                 @animationstart="onTurnStart" @animationend="e => isTurn(e) && endTurn()">
               <LeafStrip :campaign="campaign" :leaf="leaves[turning.from]" :num="turning.from * 2 + 1" :back-leaf="leaf" :back-num="page * 2 + 1"
                          :dir="turning.dir" :i="0" :n="STRIPS" />
             </div>

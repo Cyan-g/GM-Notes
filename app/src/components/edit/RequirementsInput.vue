@@ -48,7 +48,7 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
     </div>
     <div class="req-row">
       <span class="req-label">Class</span>
-      <ProfChips :values="r.classes ?? []" :toggles="classOptions" @change="v => put({ classes: v })" />
+      <ProfChips :values="r.classes ?? []" :suggest="classOptions" placeholder="Add a class…" @change="v => put({ classes: v })" />
       <label class="small effect-check"><input type="checkbox" :checked="!!r.spellcaster" @change="put({ spellcaster: ($event.target as HTMLInputElement).checked })" /> or any spellcaster</label>
     </div>
     <div class="req-row">

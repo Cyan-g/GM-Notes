@@ -7,6 +7,7 @@
 import { computed, ref } from 'vue'
 import Dropdown from '../Dropdown.vue'
 import StepsInput from './StepsInput.vue'
+import ProfChips from '../ProfChips.vue'
 import TraitChoiceSection from './TraitChoiceSection.vue'
 import TraitOptionFields from './TraitOptionFields.vue'
 import TraitSection from './TraitSection.vue'
@@ -53,11 +54,6 @@ const castSummary = computed(() => (t.value.castWith?.sameAs != null ? `as ${pro
 // ---- more spell lists for its class (Magical Secrets) ----
 const listsOpen = ref(false)
 const showLists = computed(() => !!t.value.spellLists?.length || listsOpen.value)
-function toggleList(id: string) {
-  const l = new Set(t.value.spellLists ?? [])
-  if (l.has(id)) l.delete(id); else l.add(id)
-  patch({ spellLists: l.size ? [...l] : undefined })
-}
 function dropLists() { listsOpen.value = false; patch({ spellLists: undefined }) }
 </script>
 
@@ -123,9 +119,7 @@ function dropLists() { listsOpen.value = false; patch({ spellLists: undefined })
       <!-- more spell lists for its class (Magical Secrets) -->
       <TraitSection v-if="showLists" title="Extra spell lists" :summary="(t.spellLists ?? []).join(', ') || 'none picked yet'" @remove="dropLists">
         <p class="small muted">Its class can also take spells from these lists (Magical Secrets).</p>
-        <div class="seg wrap">
-          <button v-for="o in listOptions('class')" :key="o.id" type="button" :class="{ on: t.spellLists?.includes(o.id) }" @click="toggleList(o.id)">{{ o.label }}</button>
-        </div>
+        <ProfChips :values="t.spellLists ?? []" :suggest="listOptions('class')" placeholder="Add a class's list…" @change="v => patch({ spellLists: v.length ? v : undefined })" />
       </TraitSection>
     </template>
 

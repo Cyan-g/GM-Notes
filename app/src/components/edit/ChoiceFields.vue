@@ -9,6 +9,7 @@ import { choiceCandidates, HOW_SPECIES } from '../../species'
 import { listOptions } from '../../store'
 import { ABILITY_NAME } from '../../model/dnd'
 import StepsInput from './StepsInput.vue'
+import ProfChips from '../ProfChips.vue'
 import { inputValue as val } from '../../dom'
 
 const model = defineModel<TraitChoice>({ required: true })
@@ -29,11 +30,6 @@ const putSpell = (p: Partial<SpellFilter>) => {
   if (!f.ritual) delete f.ritual
   if (!f.ability) delete f.ability
   put({ spell: f })
-}
-function toggleClass(id: string) {
-  const s = new Set(spell.value.classes ?? [])
-  if (s.has(id)) s.delete(id); else s.add(id)
-  putSpell({ classes: [...s] })
 }
 function toggleAmong(id: string) {
   const among = new Set(model.value.among ?? [])
@@ -74,9 +70,7 @@ const LEVELS = ['Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9']
     </Dropdown>
     <details class="trait-among">
       <summary class="small">{{ spell.classes?.length ? `${spell.classes.join(', ')} list${spell.classes.length > 1 ? 's' : ''}` : "any class's list" }}</summary>
-      <div class="seg wrap">
-        <button v-for="o in listOptions('class')" :key="o.id" type="button" :class="{ on: spell.classes?.includes(o.id) }" @click="toggleClass(o.id)">{{ o.label }}</button>
-      </div>
+      <ProfChips :values="spell.classes ?? []" :suggest="listOptions('class')" placeholder="Add a class's list…" @change="v => putSpell({ classes: v })" />
     </details>
   </template>
   <details v-else-if="model.kind !== 'option'" class="trait-among">

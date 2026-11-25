@@ -282,11 +282,13 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
     <!-- who it is -->
     <section class="card cf-card">
       <div class="cf-grid">
-        <div class="sf-field cf-wide"><span class="sf-label">Size</span>
-          <div class="seg">
-            <button v-for="s in SIZES" :key="s" type="button" :class="{ on: sizeIs(s) }" @click="set('size', sizeIs(s) ? undefined : s)">{{ s }}</button>
-          </div>
-        </div>
+        <label class="sf-field"><span class="sf-label">Size</span>
+          <Dropdown :value="SIZES.find(sizeIs) ?? sb.size ?? ''" aria-label="Size" @change="set('size', val($event) || undefined)">
+            <option value="">—</option>
+            <option v-for="s in SIZES" :key="s" :value="s">{{ s }}</option>
+            <option v-if="sb.size && !SIZES.some(sizeIs)" :value="sb.size">{{ sb.size }}</option>
+          </Dropdown>
+        </label>
         <label class="sf-field"><span class="sf-label">Type</span>
           <Dropdown :value="typeValue" @change="setType(val($event), typeParts.tags)">
             <option value="">—</option>
@@ -389,16 +391,16 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
     <!-- damage and conditions -->
     <section class="card cf-card">
       <div class="sf-field"><span class="sf-label">Damage vulnerabilities</span>
-        <TokenField :model-value="sb.vulnerabilities" :options="DAMAGE" @update:model-value="v => set('vulnerabilities', v)" />
+        <TokenField :model-value="sb.vulnerabilities" :suggestions="DAMAGE" placeholder="Add a damage type…" @update:model-value="v => set('vulnerabilities', v)" />
       </div>
       <div class="sf-field"><span class="sf-label">Damage resistances</span>
-        <TokenField :model-value="sb.resistances" :options="DAMAGE" :suggestions="[NONMAGICAL]" @update:model-value="v => set('resistances', v)" />
+        <TokenField :model-value="sb.resistances" :suggestions="[...DAMAGE, NONMAGICAL]" placeholder="Add a damage type…" @update:model-value="v => set('resistances', v)" />
       </div>
       <div class="sf-field"><span class="sf-label">Damage immunities</span>
-        <TokenField :model-value="sb.immunities" :options="DAMAGE" :suggestions="[NONMAGICAL]" @update:model-value="v => set('immunities', v)" />
+        <TokenField :model-value="sb.immunities" :suggestions="[...DAMAGE, NONMAGICAL]" placeholder="Add a damage type…" @update:model-value="v => set('immunities', v)" />
       </div>
       <div class="sf-field"><span class="sf-label">Condition immunities</span>
-        <TokenField :model-value="sb.conditionImmunities" :options="CONDITIONS" @update:model-value="v => set('conditionImmunities', v)" />
+        <TokenField :model-value="sb.conditionImmunities" :suggestions="CONDITIONS" placeholder="Add a condition…" @update:model-value="v => set('conditionImmunities', v)" />
       </div>
     </section>
 

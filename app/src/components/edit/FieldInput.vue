@@ -99,7 +99,9 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
     <option v-for="o in selectOptions" :key="o.id" :value="o.id">{{ o.label }}</option>
   </Dropdown>
   <ChoiceListInput v-else-if="def.kind === 'list' && hasList && DROPDOWN_LISTS.includes(listKeyOf(def) ?? '')" :values="value ?? []" :options="options" :placeholder="`Add a ${def.label.toLowerCase().replace(/ies$/, 'y').replace(/s$/, '')}…`" @change="value = $event" />
-  <ProfChips v-else-if="def.kind === 'list' && hasList" :values="value ?? []" :toggles="options" @change="value = $event" />
+  <!-- several picks: up to 6 options as toggle chips, more as the picked ones plus a box to add (the forms' rule) -->
+  <ProfChips v-else-if="def.kind === 'list' && hasList && options.length <= 6" :values="value ?? []" :toggles="options" @change="value = $event" />
+  <ProfChips v-else-if="def.kind === 'list' && hasList" :values="value ?? []" :suggest="options" :placeholder="`Add ${def.label.toLowerCase()}…`" @change="value = $event" />
   <ListInput v-else-if="def.kind === 'list'" v-model="value" />
   <MoneyInput v-else-if="def.kind === 'money'" v-model="value" />
   <DateInput v-else-if="def.kind === 'date'" v-model="value" />

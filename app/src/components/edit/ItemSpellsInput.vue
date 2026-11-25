@@ -6,6 +6,7 @@ import { computed } from 'vue'
 import type { ItemSpell } from '../../model/types'
 import { howCast } from '../../items'
 import EntryPicker from './EntryPicker.vue'
+import { ORD } from '../../model/dnd'
 
 const model = defineModel<ItemSpell[] | undefined>()
 const list = computed(() => model.value ?? [])
@@ -37,7 +38,10 @@ const num = (ev: Event) => Number((ev.target as HTMLInputElement).value) || unde
             <option v-for="h in HOW" :key="h.id" :value="h.id">{{ h.label }}</option>
           </Dropdown></td>
           <td class="num"><input v-if="x.how === 'charges'" type="number" min="1" class="effect-value" :value="x.cost ?? 1" aria-label="Charges it costs" @change="put(i, { cost: num($event) ?? 1 })" /><span v-else class="muted">—</span></td>
-          <td class="num"><input type="number" min="1" max="9" class="effect-value" :value="x.level ?? ''" placeholder="—" aria-label="Level it's cast at" @change="put(i, { level: num($event) })" /></td>
+          <td><Dropdown compact :value="x.level ?? ''" aria-label="Level it's cast at" @change="put(i, { level: Number(($event.target as HTMLSelectElement).value) || undefined })">
+            <option value="">its own</option>
+            <option v-for="l in 9" :key="l" :value="l">{{ ORD[l] }}</option>
+          </Dropdown></td>
           <td><button type="button" class="x" title="Remove this spell" @click="remove(i)">×</button></td>
         </tr>
       </tbody>

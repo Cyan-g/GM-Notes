@@ -124,7 +124,7 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
             </template>
             <span v-else-if="c.id === 'spellcaster'" class="small">The character can cast spells (a Spellcasting or Pact Magic feature).</span>
             <ProfChips v-else-if="c.id === 'features'" :values="req.features ?? []" :suggest="featureNames()" :create="(x: string) => x" placeholder="e.g. Fighting Style…" @change="v => putReq({ features: v })" />
-            <ProfChips v-else-if="c.id === 'classes'" :values="req.classes ?? []" :toggles="listOptions('class')" @change="v => putReq({ classes: v })" />
+            <ProfChips v-else-if="c.id === 'classes'" :values="req.classes ?? []" :suggest="listOptions('class')" placeholder="Add a class…" @change="v => putReq({ classes: v })" />
             <template v-else-if="c.id === 'races'">
               <span v-for="id in req.races ?? []" :key="id" class="chip"><EntryLink :id="id" /><button type="button" class="link-btn" title="Remove" @click="putReq({ races: (req.races ?? []).filter(x => x !== id) })">×</button></span>
               <EntryPicker add :types="['race']" :exclude="req.races ?? []" placeholder="Add a race (subraces count)…" @pick="id => putReq({ races: [...(req.races ?? []), id] })" />

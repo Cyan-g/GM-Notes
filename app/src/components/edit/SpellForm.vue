@@ -14,6 +14,9 @@ import { areaText } from '../../spells'
 import SpellRollsInput from './SpellRollsInput.vue'
 import EffectsInput from './EffectsInput.vue'
 import ConditionIcon from '../ConditionIcon.vue'
+import SuggestInput from '../SuggestInput.vue'
+import ProfChips from '../ProfChips.vue'
+import { inputValue as val } from '../../dom'
 
 const props = defineProps<{ entry: Entry }>()
 const f = computed(() => props.entry.fields)
@@ -75,7 +78,11 @@ const num = (ev: Event) => Number((ev.target as HTMLInputElement).value) || unde
 
 // ---- conditions: the ones it causes, more from the menu ----
 const missing = computed(() => CONDITION_OPTS.value.filter(c => !(f.value.conditions ?? []).includes(c)))
-function addCondition(ev: Event) { const s = ev.target as HTMLSelectElement; if (s.value) toggleIn('conditions', s.value); s.value = '' }
+/** A condition typed or picked in the box: added when it's one of the list's (any case), and the box empties. */
+function addCondition(ev: Event) {
+  const el = ev.target as HTMLInputElement, c = missing.value.find(x => x.toLowerCase() === el.value.trim().toLowerCase())
+  if (c) { toggleIn('conditions', c); el.value = '' }
+}
 </script>
 
 <template>
@@ -85,9 +92,10 @@ function addCondition(ev: Event) { const s = ev.target as HTMLSelectElement; if 
       <div class="spell-form">
         <div class="sf-cell full">
           <span class="sf-label">Level</span>
-          <div class="seg">
-            <button v-for="l in LEVELS" :key="l.id" type="button" :class="{ on: f.level === l.id }" @click="set('level', f.level === l.id ? undefined : l.id)">{{ l.label }}</button>
-          </div>
+          <Dropdown :value="f.level ?? ''" aria-label="Spell level" @change="set('level', val($event) || undefined)">
+            <option value="">—</option>
+            <option v-for="l in LEVELS" :key="l.id" :value="l.id">{{ l.label }}</option>
+          </Dropdown>
         </div>
         <label class="sf-cell">
           <span class="sf-label">School</span>
@@ -166,10 +174,7 @@ function addCondition(ev: Event) { const s = ev.target as HTMLSelectElement; if 
           <span class="sf-label">Conditions it can cause</span>
           <div class="conds">
             <span v-for="c in f.conditions ?? []" :key="c" class="cond-chip" :title="CONDITION_RULES[c]?.text"><ConditionIcon :name="c" />{{ c }}<button type="button" class="cond-x" :title="`Remove ${c}`" @click="toggleIn('conditions', c)">×</button></span>
-            <Dropdown class="cond-add" aria-label="Add a condition" @change="addCondition">
-              <option value="">＋ Condition</option>
-              <option v-for="c in missing" :key="c" :value="c">{{ c }}</option>
-            </Dropdown>
+            <SuggestInput class="cond-add-box" :options="missing" placeholder="Add a condition…" aria-label="Add a condition" @change="addCondition" />
           </div>
         </div>
         <div class="sf-cell full">
@@ -181,9 +186,7 @@ function addCondition(ev: Event) { const s = ev.target as HTMLSelectElement; if 
 
     <section class="sf-part">
       <h4>Who learns it</h4>
-      <div class="seg wrap">
-        <button v-for="c in CLASSES" :key="c.id" type="button" :class="{ on: (f.classes ?? []).includes(c.id) }" @click="toggleIn('classes', c.id)">{{ c.label }}</button>
-      </div>
+      <ProfChips :values="f.classes ?? []" :suggest="CLASSES" placeholder="Add a class…" @change="v => set('classes', v.length ? v : undefined)" />
     </section>
   </div>
 </template>

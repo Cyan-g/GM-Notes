@@ -81,7 +81,7 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
       <div v-for="c in shown" :key="c.id" class="fp-row">
         <span class="fp-label">{{ c.label }}</span>
         <div class="fp-value">
-          <ProfChips v-if="c.id === 'classes'" :values="req.classes ?? []" :toggles="listOptions('class')" @change="v => putReq({ classes: v })" />
+          <ProfChips v-if="c.id === 'classes'" :values="req.classes ?? []" :suggest="listOptions('class')" placeholder="Add a class…" @change="v => putReq({ classes: v })" />
           <span v-else-if="c.id === 'spellcaster'" class="small">Anyone who can cast spells{{ req.classes?.length ? ', or one of the classes' : '' }}.</span>
           <template v-else-if="c.id === 'races'">
             <span v-for="id in req.races ?? []" :key="id" class="chip"><EntryLink :id="id" /><button type="button" class="link-btn" title="Remove" @click="putReq({ races: (req.races ?? []).filter(x => x !== id) })">×</button></span>

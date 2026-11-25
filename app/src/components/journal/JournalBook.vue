@@ -135,8 +135,8 @@ function remembered() { return lastOpenByCampaign }
       <!-- the binding: the cover board behind, and the pages already read (left) and still to come (right) stacked
            under the open spread, as thick as they are many -->
       <div class="binding" :style="{ '--spine-f': spineAt }">
-      <!-- the spine's foot: its back bending out below the board, the arch where the stacks meet -->
-      <i v-if="!narrow" class="spine-back" aria-hidden="true" /><i v-if="!narrow" class="spine-gap" aria-hidden="true" />
+      <!-- the spine's foot: its back bending out below the board, the arch where the stacks meet, the pages tucked into it -->
+      <i v-if="!narrow" class="spine-back" aria-hidden="true" /><i v-if="!narrow" class="spine-gap" aria-hidden="true" /><i v-if="!narrow" class="spine-tuck" aria-hidden="true" />
       <div v-if="!narrow" class="stack l" aria-hidden="true"><i v-for="(x, d) in sheetsL" :key="d" class="sheet" :style="{ '--d': d, '--k': x.k, '--o': x.off, '--ox': x.out }" /></div>
       <div v-if="!narrow" class="stack r" aria-hidden="true"><i v-for="(x, d) in sheetsR" :key="d" class="sheet" :style="{ '--d': d, '--k': x.k, '--o': x.off, '--ox': x.out }" /></div>
       <div class="spread">

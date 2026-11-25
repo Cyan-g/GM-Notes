@@ -3158,6 +3158,13 @@ label.check-chip b { font-weight: 600; }
   border-radius: var(--arch) var(--arch) 0 0; pointer-events: none;
   /* the cover seen through it, as it is */
   background: var(--spine), var(--cover-tex), var(--cover); }
+/* the pages tucked into the spine: they run on down from their bottom edges to the half circle's edge where the spine
+   is, narrowing to it (a few px deep in the middle, up to the stacks' depth at either end) */
+.spine-tuck { position: absolute; z-index: 1; pointer-events: none; left: calc(50% + var(--spine-shift) - 28px); width: 56px;
+  bottom: calc(var(--bind) + sqrt(var(--arch-n) * var(--arch-n) - var(--sn) * var(--sn)) * 1px);
+  height: calc(var(--stack-max) - sqrt(var(--arch-n) * var(--arch-n) - var(--sn) * var(--sn)) * 1px + 8px);
+  background: linear-gradient(rgb(0 0 0 / .04), rgb(0 0 0 / .14)), var(--grain), var(--page);
+  clip-path: polygon(0 0, 100% 0, 80% 22%, 64% 52%, 54% 82%, 50% 100%, 46% 82%, 36% 52%, 20% 22%); }
 .spine-back { position: absolute; z-index: -1; left: calc(50% - var(--arch) - 14px); width: calc(2 * var(--arch) + 28px); bottom: -5px; height: calc(var(--bind) + 5px); pointer-events: none;
   border-radius: 0 0 50% 50% / 0 0 100% 100%;
   /* a half cylinder lying along the spine, in the cover's own material and with the board's dark edge */

@@ -25,11 +25,16 @@ const stackThickness = (pages: number) => Math.min(13, 2.2 * Math.sqrt(pages))
 /** How strongly sheet `depth` (0: right under the open page) of `sheets` curves, the open page's curve being 1: the
  * curve fades toward the cover, the less the deeper it lies. */
 const sheetCurve = (depth: number, sheets: number) => 0.9 * (1 - depth / sheets)
-/** A stack's sheets for `pages` pages: how far each lies below the open page (px) and how much it curves. None when the
- * side has no pages. */
-function sheetsFor(pages: number): { off: string; k: string }[] {
+/** How far out sheet `depth` of `sheets` reaches past the open page, as a share of the most (the bottom sheet's): each
+ * deeper sheet steps out less than the one above it. */
+const sheetOut = (depth: number, sheets: number) => 1 - (1 - (depth + 1) / sheets) ** 2
+/** A stack's sheets for `pages` pages: how far each lies below the open page and out past it (px), and how much it
+ * curves. None when the side has no pages. */
+function sheetsFor(pages: number): { off: string; out: string; k: string }[] {
   const n = Math.min(pages, MAX_SHEETS), t = stackThickness(pages)
-  return Array.from({ length: n }, (_, d) => ({ off: `${(((d + 1) * t) / n).toFixed(2)}px`, k: sheetCurve(d, n).toFixed(3) }))
+  return Array.from({ length: n }, (_, d) => ({
+    off: `${(((d + 1) * t) / n).toFixed(2)}px`, out: `${(0.6 * t * sheetOut(d, n)).toFixed(2)}px`, k: sheetCurve(d, n).toFixed(3),
+  }))
 }
 
 /** `at`: the session the book is opened at (else the page last open in this campaign, else its latest session). */
@@ -127,8 +132,8 @@ function remembered() { return lastOpenByCampaign }
       <!-- the binding: the cover board behind, and the pages already read (left) and still to come (right) stacked
            under the open spread, as thick as they are many -->
       <div class="binding">
-      <div v-if="!narrow" class="stack l" aria-hidden="true"><i v-for="(x, d) in sheetsL" :key="d" class="sheet" :style="{ '--d': d, '--k': x.k, '--o': x.off }" /></div>
-      <div v-if="!narrow" class="stack r" aria-hidden="true"><i v-for="(x, d) in sheetsR" :key="d" class="sheet" :style="{ '--d': d, '--k': x.k, '--o': x.off }" /></div>
+      <div v-if="!narrow" class="stack l" aria-hidden="true"><i v-for="(x, d) in sheetsL" :key="d" class="sheet" :style="{ '--d': d, '--k': x.k, '--o': x.off, '--ox': x.out }" /></div>
+      <div v-if="!narrow" class="stack r" aria-hidden="true"><i v-for="(x, d) in sheetsR" :key="d" class="sheet" :style="{ '--d': d, '--k': x.k, '--o': x.off, '--ox': x.out }" /></div>
       <div class="spread">
         <template v-if="narrow">
           <JournalPage :campaign="campaign" :leaf="leaf" side="both" :num="page * 2 + 1" :write-now="leaf.kind === 'session' && leaf.s.id === writeNow" />

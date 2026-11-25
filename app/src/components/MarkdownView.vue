@@ -6,10 +6,11 @@ import { state } from '../store'
 
 /** `tasks`: checklist boxes can be ticked; each tick sends the changed text as `update:source`. */
 /** `keepEnd`: the text goes on below (a card inserted after it), so a heading at its end isn't empty. */
-const props = defineProps<{ source: string; tasks?: boolean; keepEnd?: boolean }>()
+/** `allHeadings`: empty headings shown too (the editor's preview). */
+const props = defineProps<{ source: string; tasks?: boolean; keepEnd?: boolean; allHeadings?: boolean }>()
 const emit = defineEmits<{ 'update:source': [string] }>()
 const root = ref<HTMLElement>()
-const html = computed(() => renderMarkdown(props.source, { tasks: props.tasks, keepEnd: props.keepEnd }))
+const html = computed(() => renderMarkdown(props.source, { tasks: props.tasks, keepEnd: props.keepEnd, allHeadings: props.allHeadings }))
 
 function click(ev: MouseEvent) {
   const box = ev.target as HTMLInputElement

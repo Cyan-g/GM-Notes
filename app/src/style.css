@@ -1396,7 +1396,6 @@ h1 .icon svg.gi { color: var(--accent); }
 .choice-list .chip .link-btn { margin-left: .25rem; }
 .choice-add { width: auto; min-width: 11rem; }
 /* a long "Mentioned in" list scrolls inside its card */
-.mentions-list { max-height: 18rem; overflow-y: auto; }
 
 /* An item's effects (effects.ts): editor rows, and the sheet's gear marks. */
 .effects-input { display: flex; flex-direction: column; gap: .35rem; align-items: flex-start; }
@@ -2923,3 +2922,4 @@ label.check-chip b { font-weight: 600; }
 .add-feat-modal { display: grid; gap: .6rem; }
 .add-feat-modal .lu-foot { display: flex; gap: .5rem; }
 .sp-again { display: inline-flex; gap: .4rem; align-items: center; margin-left: .4rem; }
+.old-fight { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: .6rem .8rem; margin-bottom: .6rem; border-color: var(--accent); }

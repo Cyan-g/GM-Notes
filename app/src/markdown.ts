@@ -110,13 +110,13 @@ function dropEmptyHeadings(lines: string[], keepEnd = false): string[] {
 }
 
 /** Turn callout boxes ("> [!tip] Title", foldable with + or -) and :::secret blocks into HTML before parsing. */
-function preprocess(src: string, keepEnd = false): string {
+function preprocess(src: string, keepEnd = false, allHeadings = false): string {
   // Player mode never shows DM-only text.
   src = src.replace(SECRET_BLOCK, (_, inner) => playerMode.value ? '' : `<div class="secret"><span class="secret-tag">DM only</span>\n\n${inner}\n\n</div>\n`)
   // "- 24. August 892" is a date, not a list numbered from 24
   const months = state.db?.meta.calendar?.months.map(m => m.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) ?? []
   if (months.length) src = src.replace(new RegExp(`^(\\s*(?:[-*+]\\s+)?)(\\d+)\\.(?=[ \\t]+(?:${months.join('|')})\\b)`, 'gm'), '$1$2\\.')
-  const lines = dropEmptyHeadings(src.split('\n'), keepEnd)
+  const lines = allHeadings ? src.split('\n') : dropEmptyHeadings(src.split('\n'), keepEnd)
   const out: string[] = []
   for (let i = 0; i < lines.length; i++) {
     const m = lines[i].match(/^>\s*\[!([\w-]+)\]([+-]?)\s*(.*)$/)
@@ -135,6 +135,7 @@ function preprocess(src: string, keepEnd = false): string {
 
 /** Rendered HTML without anything that runs code; links may still open in a new window (target), pictures load lazily. */
 const clean = (html: string) => DOMPurify.sanitize(html, { ADD_ATTR: ['target', 'loading'], FORBID_TAGS: ['style', 'form', 'button', 'textarea', 'select'] })
-export const renderMarkdown = (src: string, opts: { tasks?: boolean; keepEnd?: boolean } = {}) => clean(md.render(preprocess(src || '', !!opts.keepEnd), { tasks: !!opts.tasks }))
+/** `allHeadings`: headings with nothing under them are shown too (the editor's preview: a template's outline). */
+export const renderMarkdown = (src: string, opts: { tasks?: boolean; keepEnd?: boolean; allHeadings?: boolean } = {}) => clean(md.render(preprocess(src || '', !!opts.keepEnd, !!opts.allHeadings), { tasks: !!opts.tasks }))
 /** One line of text: a DM-only block in it (a field's :::secret) is left out, it shows only as a block on the page. */
 export const renderInline = (src: string) => clean(md.renderInline(stripSecrets(src || '').trim()))

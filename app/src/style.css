@@ -2944,9 +2944,10 @@ label.check-chip b { font-weight: 600; }
 .spread::after { content: ''; position: absolute; top: 0; bottom: 0; left: calc(50% - 1px); width: 2px; background: color-mix(in srgb, var(--ink) 18%, transparent); pointer-events: none; z-index: 2; }
 .book.single .spread::after { display: none; }
 /* (it starts and ends where the pages' edges do at the spine, where they dip: 0.753 and 0.247 of --dip, as in their clip-paths) */
-.journal .book:not(.single) .spread::after { top: calc(var(--dip) * 0.753); bottom: calc(var(--dip) * 0.247);
-  /* travelling with the place in the book (--spine-f, JournalBook): at the half circle's left edge on the first page, its right on the last */
-  translate: calc((var(--spine-f, .5) * 2 - 1) * (var(--arch) - 1px)) 0; }
+.journal .book:not(.single) .spread::after { top: calc(var(--dip) * 0.753);
+  /* (down past the pages to the half circle's edge, which is lower the further the spine is from its middle) */
+  bottom: calc(sqrt(var(--arch-n) * var(--arch-n) - var(--sn) * var(--sn)) * 1px - var(--stack-max));
+  translate: var(--spine-shift) 0; }
 /* a page: its text scrolls within it, the page number stays at its foot */
 .jpage { position: relative; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--page); color: var(--ink); }
 .jbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1.6rem 2.1rem 1rem; }
@@ -2977,6 +2978,8 @@ label.check-chip b { font-weight: 600; }
 .leaf { position: absolute; top: 0; bottom: 0; width: 50%; z-index: 3; pointer-events: none; transform-style: preserve-3d; }
 .leaf.fwd { left: 50%; }
 .leaf.back { left: 0; }
+.journal .book:not(.single) .leaf.fwd { left: calc(50% + var(--spine-shift)); width: calc(50% - var(--spine-shift)); }
+.journal .book:not(.single) .leaf.back { width: calc(50% + var(--spine-shift)); }
 /* it bends: hinged strips (LeafStrip), the first swinging the whole sheet over, each further one bending a little more
    against the one before, its free edge leading as it lifts and trailing a touch as it falls, flat again on landing */
 .lstrip { position: absolute; top: 0; bottom: 0; transform-style: preserve-3d; }
@@ -3010,6 +3013,8 @@ label.check-chip b { font-weight: 600; }
 /* (cut to the page it falls on; it widens and narrows from the spine) */
 .leaf-cast.under.fwd, .leaf-cast.land.back { left: 50%; clip-path: var(--clip-r); background: linear-gradient(90deg, rgb(0 0 0 / .32), rgb(0 0 0 / .1) 35%, transparent 75%) left / 100% 100% no-repeat; }
 .leaf-cast.under.back, .leaf-cast.land.fwd { left: 0; clip-path: var(--clip-l); background: linear-gradient(270deg, rgb(0 0 0 / .32), rgb(0 0 0 / .1) 35%, transparent 75%) right / 100% 100% no-repeat; }
+.journal .book:not(.single) :is(.leaf-cast.under.fwd, .leaf-cast.land.back) { left: calc(50% + var(--spine-shift)); width: calc(50% - var(--spine-shift)); }
+.journal .book:not(.single) :is(.leaf-cast.under.back, .leaf-cast.land.fwd) { width: calc(50% + var(--spine-shift)); }
 .leaf-cast.under { animation: cast-under .6s ease-in-out forwards; }
 .leaf-cast.land { animation: cast-land .6s ease-in-out forwards; }
 @keyframes cast-under { 0% { opacity: 0; background-size: 100% 100%; } 22% { opacity: 1; background-size: 75% 100%; } 50% { opacity: 0; background-size: 15% 100%; } 100% { opacity: 0; } }
@@ -3056,7 +3061,9 @@ label.check-chip b { font-weight: 600; }
 .stack { position: absolute; z-index: 0; top: var(--bind); bottom: calc(var(--bind) + var(--stack-max)); width: calc((100% - 2 * var(--bind) - 2 * var(--stack-side)) / 2);
   filter: drop-shadow(0 3px 5px rgb(0 0 0 / .3)); }
 .stack.l { --side: -1; left: calc(var(--bind) + var(--stack-side)); }
+.journal .book:not(.single) .stack.l { width: calc((100% - 2 * var(--bind) - 2 * var(--stack-side)) / 2 + var(--spine-shift)); }
 .stack.r { --side: 1; right: calc(var(--bind) + var(--stack-side)); }
+.journal .book:not(.single) .stack.r { width: calc((100% - 2 * var(--bind) - 2 * var(--stack-side)) / 2 - var(--spine-shift)); }
 .sheet { position: absolute; inset: 0; z-index: calc(10 - var(--d)); --sdip: calc(var(--dip, 0%) * var(--k));
   /* the page edges: the theme's paper, a shade darker the deeper they lie */
   background: color-mix(in srgb, var(--page) calc(96% - var(--d) * 3%), #000);
@@ -3142,7 +3149,11 @@ label.check-chip b { font-weight: 600; }
 .fx[data-fx="wax"] .journal .book:not(.single) .binding::before { outline: 1.5px dashed color-mix(in srgb, var(--accent) 60%, var(--page)); outline-offset: -6px; }
 /* the spine's foot, seen from the front: the page edges bend down into the spine around a half circle (--arch) that
    shows the cover through it; below, the spine's back bends out past the board's edge */
-.book { --arch: 14px; }
+.book { --arch: 14px; --arch-n: 14; }
+/* the spine travels across the half circle with the place in the book (--spine-f, JournalBook: 0 on the first page, 1 on
+   the last), and the spread splits there: the left page a little wider early in the book, the right one later on */
+.journal .book:not(.single) .binding { --sn: calc((var(--spine-f, .5) * 2 - 1) * (var(--arch-n) - 1)); --spine-shift: calc(var(--sn) * 1px); }
+.journal .book:not(.single) .spread { grid-template-columns: calc(50% + var(--spine-shift)) minmax(0, 1fr); }
 .spine-gap { position: absolute; z-index: 1; left: calc(50% - var(--arch)); width: calc(2 * var(--arch)); height: var(--arch); bottom: var(--bind);
   border-radius: var(--arch) var(--arch) 0 0; pointer-events: none;
   /* the cover seen through it, as it is */

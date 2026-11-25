@@ -13,6 +13,10 @@ import { state } from '../../store'
 import { isShared } from '../../sync'
 import JournalPage, { type Leaf } from './JournalPage.vue'
 import { startTurn, turning as turnState, writeOnOpen } from '../../journal'
+import LeafStrip from './LeafStrip.vue'
+
+/** How many strips a turning page bends in. */
+const STRIPS = 8
 
 /** `at`: the session the book is opened at (else the page last open in this campaign, else its latest session). */
 const props = defineProps<{ campaign: Entry; at?: Id }>()
@@ -118,10 +122,15 @@ function remembered() { return lastOpenByCampaign }
         <template v-else>
           <JournalPage :campaign="campaign" :leaf="leaf" side="left" :num="page * 2 + 1" :turn-in="turning?.dir === 'fwd'" />
           <JournalPage :campaign="campaign" :leaf="leaf" side="right" :num="page * 2 + 1" :turn-in="turning?.dir === 'back'" :write-now="leaf.kind === 'session' && leaf.s.id === writeNow" />
-          <!-- the page turning over: the one that was open, swinging around the spine -->
-          <div v-if="turning && leaves[turning.from]" class="leaf" :class="turning.dir">
-            <JournalPage :campaign="campaign" :leaf="leaves[turning.from]" :side="turning.dir === 'fwd' ? 'right' : 'left'" :num="turning.from * 2 + 1" still />
-          </div>
+          <!-- the page turning over: the one that was open, curling around the spine (in hinged strips), and the
+               shadow it casts on the page it uncovers, then on the one it lands on -->
+          <template v-if="turning && leaves[turning.from]">
+            <div class="leaf-cast under" :class="turning.dir" aria-hidden="true" />
+            <div class="leaf-cast land" :class="turning.dir" aria-hidden="true" />
+            <div class="leaf" :class="turning.dir" :style="{ '--n': STRIPS }">
+              <LeafStrip :campaign="campaign" :leaf="leaves[turning.from]" :num="turning.from * 2 + 1" :dir="turning.dir" :i="0" :n="STRIPS" />
+            </div>
+          </template>
         </template>
       </div>
       </div>

@@ -2981,3 +2981,61 @@ label.check-chip b { font-weight: 600; }
 .journal .book { flex: 1; height: auto; min-height: 22rem; }
 .journal-current.on { color: var(--accent); }
 .jnotes { margin-top: 1.4rem; }
+
+/* ---------- the journal, dressed by the theme ----------
+   Paper, ink and spine come from the theme's colours; the cover board is a dark leather mixed with the accent; the
+   pages read so far (left) and still to come (right) are stacked under the spread, as thick as they are many
+   (--stack-l, --stack-r: 0 to 1, JournalBook). Each decorative style adds its touch below. */
+.book {
+  --page: color-mix(in srgb, var(--panel) 88%, var(--accent));
+  --page-edge: color-mix(in srgb, var(--page) 72%, var(--ink));
+  --cover: color-mix(in srgb, var(--accent) 28%, #20140b);
+  --bind: 7px; --stack-max: 13px;
+  /* a faint fibre grain, made in the browser */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .13 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.binding { position: relative; min-height: 0; display: flex; padding: var(--bind) var(--bind) calc(var(--bind) + var(--stack-max));
+  background: linear-gradient(90deg, transparent calc(50% - 10px), rgb(0 0 0 / .35) 50%, transparent calc(50% + 10px)), var(--cover);
+  border-radius: 9px 13px 13px 9px; box-shadow: 0 20px 44px rgb(0 0 0 / .38), 0 2px 6px rgb(0 0 0 / .25), inset 0 0 0 1px rgb(0 0 0 / .35); }
+.book.single .binding { padding-bottom: var(--bind); }
+.binding > .spread { flex: 1; position: relative; z-index: 1; box-shadow: 0 1px 3px rgb(0 0 0 / .3); border-radius: 4px 7px 7px 4px; }
+/* the stacks: a block of thin sheets behind each half, showing below it and on its outer side */
+.stack { position: absolute; z-index: 0; top: var(--bind); bottom: calc(var(--bind) + var(--stack-max)); width: calc((100% - 2 * var(--bind)) / 2);
+  background: repeating-linear-gradient(to bottom, var(--page-edge) 0 1px, var(--page) 1px 2.6px); border-radius: 4px; }
+.stack.l { --t: calc(2px + var(--stack-l) * 11px); left: var(--bind); transform: translate(calc(var(--t) * -.55), var(--t)); border-radius: 6px 0 0 6px; }
+.stack.r { --t: calc(2px + var(--stack-r) * 11px); right: var(--bind); transform: translate(calc(var(--t) * .55), var(--t)); border-radius: 0 6px 6px 0; }
+/* the paper: the theme's, a little darker toward the outer edge and into the spine */
+.journal .jpage { background: var(--grain), var(--page); }
+.journal .jleft { background: var(--grain), linear-gradient(90deg, rgb(0 0 0 / .07), transparent 7%), var(--page); }
+.journal .jright { background: var(--grain), linear-gradient(270deg, rgb(0 0 0 / .07), transparent 7%), var(--page); }
+.book.single .spread { background: var(--grain), var(--page); }
+.jnum { display: inline-block; }
+/* the stacks reach a little past the book's sides: clipped there, never a sideways scrollbar */
+.journal { overflow-x: clip; }
+
+/* Illuminated: a gilded rule inside each page, scrolled corners, the page number between two fleurons */
+.fx[data-fx="illuminated"] .journal .jpage { outline: var(--gild-rule); outline-offset: -11px; }
+.fx[data-fx="illuminated"] .journal .jpage::after { content: ''; position: absolute; inset: 7px; z-index: 2; pointer-events: none;
+  background: var(--gild); -webkit-mask: var(--fx-frame-ornament-mask); mask: var(--fx-frame-ornament-mask); }
+.fx[data-fx="illuminated"] .journal .jnum { color: var(--gild); }
+.fx[data-fx="illuminated"] .journal .jnum::before { content: '❦ '; opacity: .7; }
+.fx[data-fx="illuminated"] .journal .jnum::after { content: ' ❦'; opacity: .7; display: inline-block; transform: scaleX(-1); }
+.fx[data-fx="illuminated"] .journal .jbody { padding-top: 1.9rem; }
+
+/* Runecarved: the outer corners cut away, a carved double spine, the page number on a notched plaque */
+.fx[data-fx="runecarved"] .journal .jleft { clip-path: polygon(16px 0, 100% 0, 100% 100%, 16px 100%, 0 calc(100% - 16px), 0 16px); }
+.fx[data-fx="runecarved"] .journal .jright { clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%); }
+.fx[data-fx="runecarved"] .journal .stack.l { clip-path: polygon(16px 0, 100% 0, 100% 100%, 16px 100%, 0 calc(100% - 16px), 0 16px); }
+.fx[data-fx="runecarved"] .journal .stack.r { clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%); }
+.fx[data-fx="runecarved"] .journal .spread::after { width: 4px; left: calc(50% - 2px); background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 55%, transparent) 0 1px, transparent 1px 3px, color-mix(in srgb, var(--accent) 55%, transparent) 3px); }
+.fx[data-fx="runecarved"] .journal .jnum { padding: .05rem .8rem; color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent);
+  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); }
+
+/* Wax & Ribbon: a ribbon bookmark's tail hanging out below the book, the page number pressed in a wax seal */
+.fx[data-fx="wax"] .journal .binding::after { content: ''; position: absolute; z-index: 0; top: calc(100% - 30px); right: 24%; width: 15px; height: 58px; pointer-events: none;
+  background: linear-gradient(90deg, rgb(0 0 0 / .18), transparent 30%, transparent 70%, rgb(0 0 0 / .18)), color-mix(in srgb, var(--accent) 80%, #5a0e0e);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 8px), 0 100%); box-shadow: 0 2px 4px rgb(0 0 0 / .3); }
+.fx[data-fx="wax"] .journal .book.single .binding::after { display: none; }
+.fx[data-fx="wax"] .journal .jnum { display: inline-grid; place-items: center; min-width: 2.1em; height: 2.1em; padding: 0 .3em; border-radius: 50%; font-size: 11px; font-weight: 600;
+  color: color-mix(in srgb, var(--page) 90%, #fff); background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--accent) 70%, #fff) 0 18%, color-mix(in srgb, var(--accent) 85%, #4a0c0c) 60%);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 60%, #2a0606), 0 1px 2px rgb(0 0 0 / .35); }

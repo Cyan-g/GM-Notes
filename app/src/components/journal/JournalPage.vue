@@ -131,7 +131,7 @@ const firstLast = computed(() => {
       </div>
     </template>
     </div>
-    <footer class="jfoot">{{ side === 'both' ? `${num}–${num + 1}` : num }}</footer>
+    <footer class="jfoot"><span class="jnum">{{ side === 'both' ? `${num}–${num + 1}` : num }}</span></footer>
   </section>
 
   <!-- the right page -->
@@ -156,6 +156,6 @@ const firstLast = computed(() => {
       </section>
     </template>
     </div>
-    <footer v-if="side !== 'both'" class="jfoot">{{ num + 1 }}</footer>
+    <footer v-if="side !== 'both'" class="jfoot"><span class="jnum">{{ num + 1 }}</span></footer>
   </section>
 </template>

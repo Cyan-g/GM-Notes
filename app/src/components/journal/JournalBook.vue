@@ -71,6 +71,9 @@ onBeforeUnmount(() => window.removeEventListener('resize', onResize))
 /** Where the book is open, in words: "Session 12 of 63", "Cover", "Next page". */
 const where = computed(() => (leaf.value.kind === 'cover' ? 'The party' : leaf.value.kind === 'next' ? 'The next session'
   : `Session ${leaf.value.s.fields.number ?? page.value} of ${sessions.value.length}`))
+/** How thick the stacks under the spread are: the pages read so far (left) and still to come (right), 0 to 1. */
+const stackL = computed(() => (leaves.value.length > 1 ? page.value / (leaves.value.length - 1) : 0).toFixed(3))
+const stackR = computed(() => (1 - Number(stackL.value)).toFixed(3))
 const editable = computed(() => !state.readOnly && !isShared(props.campaign))
 const isCurrent = computed(() => state.db?.meta.currentCampaign === props.campaign.id)
 </script>
@@ -103,6 +106,11 @@ function remembered() { return lastOpenByCampaign }
 
     <div class="book" :class="{ single: narrow }">
       <button type="button" class="book-edge prev" title="The page before (←)" aria-label="The page before" :disabled="page <= 0" @click="turnTo(page - 1)">‹</button>
+      <!-- the binding: the cover board behind, and the pages already read (left) and still to come (right) stacked
+           under the open spread, as thick as they are many -->
+      <div class="binding" :style="{ '--stack-l': stackL, '--stack-r': stackR }">
+      <div v-if="!narrow" class="stack l" aria-hidden="true" />
+      <div v-if="!narrow" class="stack r" aria-hidden="true" />
       <div class="spread">
         <template v-if="narrow">
           <JournalPage :campaign="campaign" :leaf="leaf" side="both" :num="page * 2 + 1" :write-now="leaf.kind === 'session' && leaf.s.id === writeNow" />
@@ -115,6 +123,7 @@ function remembered() { return lastOpenByCampaign }
             <JournalPage :campaign="campaign" :leaf="leaves[turning.from]" :side="turning.dir === 'fwd' ? 'right' : 'left'" :num="turning.from * 2 + 1" still />
           </div>
         </template>
+      </div>
       </div>
       <button type="button" class="book-edge next" title="The page after (→)" aria-label="The page after" :disabled="page >= leaves.length - 1" @click="turnTo(page + 1)">›</button>
     </div>

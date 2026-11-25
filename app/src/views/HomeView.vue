@@ -1,13 +1,13 @@
 <script setup lang="ts">
 // The DM desk: the campaign at hand, the tools, favourites, the regions of the world
-// with their factions, the gods, peoples and subclasses, and a few links. Everything comes from the entries.
+// with their factions, the gods, peoples (and a link to the subclasses), and a few links. Everything comes from the entries.
 import TypeIcon from '../components/TypeIcon.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { classText, classesOf, totalLevel } from '../model/classes'
 import { computed, ref } from 'vue'
 import { optionLabel } from '../store'
 import type { Entry, Id, WorldDate } from '../model/types'
-import { byType, childrenOf, db, entries, formatDate, get, placePath, playerMode, touch } from '../store'
+import { byType, childrenOf, db, dmIds, entries, formatDate, get, placePath, playerMode, touch } from '../store'
 import { hrefDashboard, hrefList } from '../router'
 import { DASHBOARDS } from '../dashboards'
 import { newEntry } from '../ui'
@@ -16,7 +16,7 @@ import { describe } from '../describe'
 import { armorClass, maxHpOf } from '../sheet'
 import { sheetOf } from '../sheetData'
 import EntryLink from '../components/EntryLink.vue'
-import { currentCampaign, nextSessionFields, nextSessionNo, sessionsOf } from '../sessions'
+import { createSession, currentCampaign, nextSessionNo, sessionsOf } from '../sessions'
 import PartyAt from '../components/PartyAt.vue'
 
 const byName = (a: Entry, b: Entry) => a.name.localeCompare(b.name)
@@ -27,11 +27,19 @@ const campaigns = computed(() => list('campaign').map(c => {
   const s = sessionsOf(c.id).reverse()
   return { c, sessions: s }
 }).sort((a, b) => b.sessions.length - a.sessions.length || byName(a.c, b.c)))
-// the campaign being played: the current one (else the most played) first
-const current = computed(() => campaigns.value.find(x => x.c.id === currentCampaign.value?.id && x.sessions.length) ?? (campaigns.value[0]?.sessions.length ? campaigns.value[0] : undefined))
+// the campaign being played: the current one, else the most played, else (a player's world, where the DM's campaign
+// has no sessions) the one the current character plays in, or the only one
+const current = computed(() => {
+  const l = campaigns.value
+  const pc = get(db().meta.currentCharacter)
+  const inIt = (x: (typeof l)[number]) => ((pc?.fields.campaigns as Id[] | undefined) ?? []).includes(x.c.id)
+  return l.find(x => x.c.id === currentCampaign.value?.id) ?? (l[0]?.sessions.length ? l[0] : undefined) ?? l.find(inIt) ?? (l.length === 1 ? l[0] : undefined)
+})
+/** The DM's campaign in a player's world: sessions made in it are the player's own notes. */
+const notesOnly = computed(() => !!current.value && dmIds.value.has(current.value.c.id))
 const others = computed(() => campaigns.value.filter(x => x !== current.value))
 const nextNumber = computed(() => (current.value ? nextSessionNo(current.value.c.id) : 1))
-const newSession = () => current.value && newEntry('session', nextSessionFields(current.value.c.id))
+const newSession = () => current.value && createSession(current.value.c.id)
 const notes = computed(() => list('note').sort(byName))
 
 // ---- the desk: dashboards and tools ----
@@ -63,8 +71,12 @@ const characters = computed(() => list('pc').sort(byName).map(p => {
 
 // ---- favourites ----
 const favourites = computed(() => (db().meta.favourites ?? []).map(id => get(id)).filter((e): e is Entry => !!e))
-// ---- recently edited (sessions and notes included, so the last thing worked on is one click away) ----
-const recent = computed(() => [...entries.value].sort((a, b) => (b.updated ?? '').localeCompare(a.updated ?? '')).slice(0, 8))
+// ---- recently edited (sessions and notes included, so the last thing worked on is one click away); in a player's
+// world only their own, and what last came from the DM apart ----
+const newest = (l: Entry[], n: number) => [...l].sort((a, b) => (b.updated ?? '').localeCompare(a.updated ?? '')).slice(0, n)
+const recent = computed(() => newest(entries.value.filter(e => !dmIds.value.has(e.id)), 8))
+const fromDm = computed(() => (dmIds.value.size ? newest(entries.value.filter(e => dmIds.value.has(e.id)), 5) : []))
+const dmTitle = computed(() => db().follow?.title ?? 'your DM')
 const ago = (iso: string) => {
   const m = Math.round((Date.now() - Date.parse(iso)) / 60000)
   return !iso || isNaN(m) ? '' : m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`
@@ -131,12 +143,12 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
       <section class="card home-campaign">
         <h3><TypeIcon type="campaign" /> Campaign</h3>
         <template v-if="current">
-          <p class="home-current"><EntryLink :id="current.c.id" /> <span class="muted small">{{ current.sessions.length }} sessions</span></p>
+          <p class="home-current"><EntryLink :id="current.c.id" /> <span v-if="current.sessions.length" class="muted small">{{ current.sessions.length }} sessions</span></p>
           <PartyAt :campaign="current.c" />
           <ul class="rel">
             <li v-for="s in current.sessions.slice(0, 3)" :key="s.id"><EntryLink :id="s.id" /><span class="when">{{ sessionDate(s) }}</span></li>
           </ul>
-          <button class="chip-btn" @click="newSession">＋ Session {{ nextNumber }}</button>
+          <button class="chip-btn" :title="notesOnly ? 'Your own notes for a session: they stay in your world' : undefined" @click="newSession">＋ {{ notesOnly ? 'My session notes' : `Session ${nextNumber}` }}</button>
         </template>
         <h4 v-if="others.length">Others</h4>
         <ul class="rel compact">
@@ -177,6 +189,13 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
         <ul class="rel compact">
           <li v-for="e in recent" :key="e.id"><EntryLink :id="e.id" icon /><span class="when">{{ ago(e.updated) }}</span></li>
         </ul>
+        <p v-if="!recent.length" class="muted small">Nothing of yours yet.</p>
+        <template v-if="fromDm.length">
+          <h4><AppIcon ui="history" /> New from {{ dmTitle }}</h4>
+          <ul class="rel compact">
+            <li v-for="e in fromDm" :key="e.id"><EntryLink :id="e.id" icon /><span class="when">{{ ago(e.updated) }}</span></li>
+          </ul>
+        </template>
       </section>
     </div>
 
@@ -215,10 +234,8 @@ const sessionDate = (s: Entry) => { const d = s.fields.date; return d?.year ? fo
       <section v-if="!playerMode" class="card">
         <h3><TypeIcon type="race" /> Races <a class="muted small" :href="hrefList('race')">all →</a></h3>
         <p class="home-inline"><span v-for="r in races" :key="r.id" class="home-tag"><EntryLink :id="r.id" /></span></p>
-        <template v-if="subclasses.length">
-          <h4>Subclasses</h4>
-          <ul class="rel compact"><li v-for="s in subclasses" :key="s.id"><EntryLink :id="s.id" /></li></ul>
-        </template>
+        <!-- the subclasses are a list of their own (dozens of them): one link, not a column down the page -->
+        <p v-if="subclasses.length" class="small"><a :href="hrefList('subclass')">{{ subclasses.length }} subclasses →</a></p>
       </section>
 
       <section class="card home-links">

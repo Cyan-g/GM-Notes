@@ -8,7 +8,7 @@ import { computed } from 'vue'
 import { draftHave, ownedSpells, wizard } from '../../wizard'
 import { ABILITY_NAME } from '../../model/dnd'
 import { get } from '../../store'
-import { choiceOpen, isClassOrigin, setCastAbility, sourceTag, speciesTraits, takenByOthers, type ActiveTrait } from '../../species'
+import { choiceOpen, isClassOrigin, setCastAbility, sourceTag, speciesTraits, subLabel, subsOf, takenByOthers, type ActiveTrait } from '../../species'
 import { renderInline } from '../../markdown'
 import { useDraft } from '../../composables/useDraft'
 import { useDraftSheet } from '../../composables/useDraftSheet'
@@ -25,7 +25,10 @@ const sources = computed(() => skillSources(draftNow.pc.value, draftNow.sheet.va
 const all = computed(() => speciesTraits(pc.value))
 const kindOf = (a: ActiveTrait) => (a.race.type !== 'race' ? 'background' : a.race.fields.parent ? 'subrace' : 'species')
 const inFeats = (a: ActiveTrait) => a.race.type === 'feat' || a.trait.choice?.kind === 'feat'
-const choices = computed(() => all.value.filter(a => !isClassOrigin(a.race) && a.active && (a.trait.choice || a.trait.castWith?.among?.length)
+/** The choices a trait's picked options bring, made under that option. */
+const subs = (a: ActiveTrait) => subsOf(all.value, a)
+const optionName = (a: ActiveTrait, x: ActiveTrait) => a.options.find(o => o.id === x.parent?.option)?.name ?? ''
+const choices = computed(() => all.value.filter(a => !isClassOrigin(a.race) && a.active && !a.parent && (a.trait.choice || a.trait.castWith?.among?.length)
   && (props.which === 'feat' ? a.race.type === 'feat' && a.race.id === props.feat && (a.via ?? 'origin') === (props.via ?? 'origin') : !inFeats(a) && kindOf(a) === props.which)))
 /** This step's traits that give a feat (Versatile): chosen in the Feats step. */
 const featGivers = computed(() => props.which === 'feat' ? [] : all.value.filter(a => !isClassOrigin(a.race) && a.active && a.trait.choice?.kind === 'feat' && kindOf(a) === props.which))
@@ -40,11 +43,15 @@ const setCast = (a: ActiveTrait, ab: string) => { const holder = { species: { ..
 </script>
 
 <template>
-  <div v-for="a in choices" :key="a.key" class="wz-choice" :class="{ open: choiceOpen(a), 'wz-todo': choiceOpen(a) }" :data-left="choiceOpen(a) ? 'to pick' : undefined">
+  <div v-for="a in choices" :key="a.key" class="wz-choice" :class="{ open: choiceOpen(a) || subs(a).some(choiceOpen), 'wz-todo': choiceOpen(a) || subs(a).some(choiceOpen) }" :data-left="choiceOpen(a) || subs(a).some(choiceOpen) ? 'to pick' : undefined">
     <b>{{ a.trait.name }}</b> <span class="feat-tag" :class="'tag-' + a.race.type">{{ sourceTag(a) }}</span>
     <details v-if="(a.trait.text ?? '').length > 220" class="small wz-rules"><summary>Rules</summary><MarkdownView :source="a.trait.text!" /></details>
     <p v-else-if="a.trait.text" class="small md" v-html="renderInline(a.trait.text)" />
     <TraitChoicePicker v-if="a.trait.choice" :a="a" :sheet="draftNow.sheet.value" :prof="draftNow.prof.value" :from="(x: string) => sources.get(x)" :taken="takenByOthers(all, a)" :have="draftHave(d)" :owned="a.trait.choice.kind === 'spell' ? ownedSpells(d, { skip: a.key, withClass: true }) : undefined" @pick="p => setPicks(a, p)" />
+    <div v-for="x in subs(a)" :key="x.key" class="sp-sub" :class="{ 'sp-pending': choiceOpen(x) }">
+      <div class="sp-sub-head small"><b>{{ optionName(a, x) }}</b> <span class="muted">· {{ subLabel(x) }}</span></div>
+      <TraitChoicePicker :a="x" :sheet="draftNow.sheet.value" :prof="draftNow.prof.value" :from="(n: string) => sources.get(n)" :have="draftHave(d)" :owned="x.trait.choice?.kind === 'spell' ? ownedSpells(d, { skip: x.key, withClass: true }) : undefined" @pick="p => setPicks(x, p)" />
+    </div>
     <label v-if="a.trait.castWith?.among?.length" class="small wz-cast">Casts its spells with
       <Dropdown :value="a.cast ?? ''" @change="setCast(a, val($event))">
         <option value="">Choose…</option>

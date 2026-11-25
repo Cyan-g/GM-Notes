@@ -8,6 +8,7 @@ import type { Entry, Requirements } from '../../model/types'
 import { TYPES } from '../../model/schema'
 import { ABILITIES, SKILLS } from '../../model/dnd'
 import { listOptions } from '../../store'
+import { featureNames } from '../../species'
 import { changed } from '../../edit'
 import { describeRequirements } from '../../requirements'
 import FieldInput from './FieldInput.vue'
@@ -92,7 +93,7 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
 
 <template>
   <div class="feat-prereqs">
-    <label class="fp-switch"><input type="checkbox" :checked="has" @change="setOn(($event.target as HTMLInputElement).checked)" /> <b>This feat has prerequisites</b></label>
+    <label class="check-chip fp-switch"><input type="checkbox" :checked="has" @change="setOn(($event.target as HTMLInputElement).checked)" /> <b>This feat has prerequisites</b></label>
 
     <template v-if="has">
       <div class="seg fp-mode">
@@ -111,7 +112,7 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
             <FieldInput v-else-if="c.id === 'feats'" :def="requiresDef" :entry="e" />
             <template v-else-if="c.id === 'scores'">
               <span v-for="(x, i) in scores" :key="i" class="req-score">
-                <Dropdown :value="x.ability" aria-label="Ability" @change="setScore(i, { ability: ($event.target as HTMLSelectElement).value as any })"><option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.short }}</option></Dropdown>
+                <Dropdown :value="x.ability" aria-label="Ability" @change="setScore(i, { ability: ($event.target as HTMLSelectElement).value as any })"><option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.label }}</option></Dropdown>
                 <input type="number" min="1" max="30" class="effect-value" :value="x.min" aria-label="Minimum" @change="setScore(i, { min: Number(($event.target as HTMLInputElement).value) || 13 })" />+
                 <button type="button" class="link-btn" title="Remove" @click="putReq({ scores: scores.filter((_, k) => k !== i) })">×</button>
               </span>
@@ -122,8 +123,8 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
               </div>
             </template>
             <span v-else-if="c.id === 'spellcaster'" class="small">The character can cast spells (a Spellcasting or Pact Magic feature).</span>
-            <ProfChips v-else-if="c.id === 'features'" :values="req.features ?? []" :suggest="[]" :create="(x: string) => x" placeholder="e.g. Fighting Style…" @change="v => putReq({ features: v })" />
-            <ProfChips v-else-if="c.id === 'classes'" :values="req.classes ?? []" :toggles="listOptions('class')" @change="v => putReq({ classes: v })" />
+            <ProfChips v-else-if="c.id === 'features'" :values="req.features ?? []" :suggest="featureNames()" :create="(x: string) => x" placeholder="e.g. Fighting Style…" @change="v => putReq({ features: v })" />
+            <ProfChips v-else-if="c.id === 'classes'" :values="req.classes ?? []" :suggest="listOptions('class')" placeholder="Add a class…" @change="v => putReq({ classes: v })" />
             <template v-else-if="c.id === 'races'">
               <span v-for="id in req.races ?? []" :key="id" class="chip"><EntryLink :id="id" /><button type="button" class="link-btn" title="Remove" @click="putReq({ races: (req.races ?? []).filter(x => x !== id) })">×</button></span>
               <EntryPicker add :types="['race']" :exclude="req.races ?? []" placeholder="Add a race (subraces count)…" @pick="id => putReq({ races: [...(req.races ?? []), id] })" />

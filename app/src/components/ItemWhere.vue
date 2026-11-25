@@ -1,10 +1,17 @@
+<script lang="ts">
+/** Who loot was last given to, for the next item this session (handing out a pile goes to one character). */
+let lastGiven = ''
+</script>
+
 <script setup lang="ts">
 // Where an item is: the characters carrying it (how many, worn or attuned) and the shops selling it (at what price,
-// how many left). "Give to …" hands one to a character (the current one first) for free: loot handed out at the table.
+// how many left). "Give to …" hands one to a character for free (loot handed out at the table): the one last given to,
+// else the current one, then the current campaign's party, then the rest.
 import { computed, ref } from 'vue'
 import type { Entry } from '../model/types'
 import { byType, formatMoney, get, playerMode, state } from '../store'
 import { currentPc } from '../sheet'
+import { currentCampaign, membersOf } from '../sessions'
 import Dropdown from './Dropdown.vue'
 import { addToInventory } from '../sheetData'
 import { carriersOf, shopsSelling } from '../items'
@@ -13,14 +20,20 @@ import EntryLink from './EntryLink.vue'
 const props = defineProps<{ item: Entry }>()
 const carriers = computed(() => carriersOf(props.item))
 const shops = computed(() => shopsSelling(props.item))
-/** The characters it can be given to: the current one first, then the others by name. */
-const pcs = computed(() => (state.readOnly || playerMode.value ? [] : (byType.value.get('pc') ?? []).slice().sort((a, b) => Number(b.id === currentPc.value?.id) - Number(a.id === currentPc.value?.id) || a.name.localeCompare(b.name))))
-const to = ref('')
+/** The characters it can be given to: the current one, the current campaign's party, then the others; each by name. */
+const pcs = computed(() => {
+  if (state.readOnly || playerMode.value) return []
+  const party = new Set(currentCampaign.value ? membersOf(currentCampaign.value.id).map(p => p.id) : [])
+  const rank = (p: Entry) => (p.id === currentPc.value?.id ? 0 : party.has(p.id) ? 1 : 2)
+  return (byType.value.get('pc') ?? []).slice().sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))
+})
+const to = ref(lastGiven)
 const giver = computed(() => get(to.value) ?? pcs.value[0])
 const given = ref('')
 function give() {
   if (!giver.value) return
   addToInventory(giver.value, props.item.id)
+  lastGiven = giver.value.id
   given.value = `One ${props.item.name} put in ${giver.value.name}'s inventory.`
 }
 </script>

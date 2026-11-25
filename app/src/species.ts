@@ -9,6 +9,7 @@
 // A character's classes and subclasses count the same way too: their Features, each from a level in that class, with
 // uses that can grow by level (Rage), scaling values (Sneak Attack), and picks (Fighting Style, Expertise, Metamagic).
 import type { AbilityBonus, CharacterSheet, Entry, GearEffect, Id, SpeciesState, Speeds, Trait, TraitChoice, TraitGrant, TraitOption, TraitSpell } from './model/types'
+import { computed } from 'vue'
 import { classesOf, totalLevel, withoutClass } from './model/classes'
 import { classEntry, classLabel } from './classRules'
 import { byType, entries, get, listOptions, state } from './store'
@@ -79,6 +80,9 @@ export interface ActiveTrait {
   via?: string
   /** A repeatable feat taken more than once: which time this is (2, 3…; the first has none). */
   inst?: number
+  /** A choice a picked option brings (Agonizing Blast's cantrip): the trait and option it belongs to. Lists show it
+   * with that option (subsOf), not as a feature of its own. */
+  parent?: { key: string; option: string }
 }
 /** Every trait of the character's species and background, in order (main race first, background last), with what's chosen and whether it counts yet. */
 export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): ActiveTrait[] {
@@ -96,14 +100,17 @@ export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): Active
         ? trait.choice.options?.find(o => o.name.toLowerCase() === String(bg.fields.originFeatNote).trim().toLowerCase()) : undefined
     const picks = st.picks?.[key]?.length ? st.picks[key] : auto ? [auto.id] : []
     const options = trait.choice?.kind === 'option'
-      ? picks.map(id => trait.choice!.options?.find(o => o.id === id)).filter((o): o is TraitOption => !!o) : []
+      // a repeatable option picked again is stored as "id#2": a copy of the option carrying that id, so its own choices
+      // (Agonizing Blast's second cantrip) and its line are its own
+      ? picks.map(id => { const base = id.split('#')[0], o = trait.choice!.options?.find(x => x.id === base); return o && id !== base ? { ...o, id } : o })
+        .filter((o): o is TraitOption => !!o) : []
     const cw = trait.castWith, cast = cw ? st.abilities?.[cw.sameAs ? `${inst ? `${race.id}#${inst}` : race.id}.${cw.sameAs}` : key] : undefined
     const a: ActiveTrait = { key, trait, race, level, active: (trait.level ?? 1) <= level, option: options[0], options, picks, ...(cast ? { cast } : {}), ...(via ? { via } : {}), ...(inst ? { inst } : {}) }
     // the choices a picked option brings, each as a trait of its own (picked and listed like any other)
     const sub = options.flatMap(o => (o.choices ?? []).filter(c => c.kind !== 'option').map((choice, n): ActiveTrait => {
       const k = `${key}.${o.id}.c${n}`
       return {
-        key: k, race, level, active: a.active, options: [], picks: st.picks?.[k] ?? [], ...(cast ? { cast } : {}), ...(via ? { via } : {}), ...(inst ? { inst } : {}),
+        key: k, race, level, active: a.active, options: [], picks: st.picks?.[k] ?? [], parent: { key, option: o.id }, ...(cast ? { cast } : {}), ...(via ? { via } : {}), ...(inst ? { inst } : {}),
         trait: { id: `${trait.id}.${o.id}.c${n}`, name: choice.label ? `${o.name}: ${choice.label}` : o.name, level: trait.level, choice, sub: true } as Trait,
       }
     }))
@@ -114,6 +121,14 @@ export function speciesTraits(pc: Entry | undefined, s?: CharacterSheet): Active
   const total = totalLevel(pc)
   return [...base, ...featsOf(pc, sheet, base).flatMap(f => build({ from: f.e, level: total, via: f.via, inst: f.inst })), ...itemsWithFeatures(sheet).flatMap(i => build({ from: i, level: total }))]
 }
+/** The choices that come with an option picked in a trait (Pact of the Tome's cantrips; Agonizing Blast's cantrip), from
+ * the list `speciesTraits` gave; all of a trait's picked options' when `option` is left out. */
+export const subsOf = (all: ActiveTrait[], a: ActiveTrait, option?: string) =>
+  all.filter(x => x.parent?.key === a.key && (option == null || x.parent.option === option))
+/** What a choice that comes with an option is called beside it: its label ("Cantrip"), else what it picks. */
+export const subLabel = (x: ActiveTrait) => x.trait.choice?.label || (x.trait.choice ? choiceWords(x.trait.choice, 1) : '')
+/** The picks of a choice by name (spells, options, skills…). */
+export const pickLabels = (x: ActiveTrait) => x.picks.map(id => get(id)?.name ?? choiceCandidates(x.trait.choice!).find(o => o.id === id)?.label ?? id)
 /** Where a feat comes from, in words: "your Origin feat", "your Versatile feat". */
 export const featVia = (a: ActiveTrait) => (a.via === 'origin' ? 'your Origin feat' : a.via && a.via !== 'sheet' ? `your ${a.via}` : 'the other one')
 /**
@@ -244,9 +259,14 @@ const active = (pc: Entry | undefined, s?: CharacterSheet) => speciesTraits(pc, 
 /** The effects that count, each with what it comes from (the trait, or the chosen option). */
 export function speciesEffects(pc: Entry | undefined, s?: CharacterSheet): { name: string; effects: GearEffect[] }[] {
   const on = new Set(stateOf(s ?? (pc?.fields.sheet as CharacterSheet | undefined)).on ?? [])
-  return active(pc, s).filter(a => !a.trait.toggle || on.has(a.key)).flatMap(a => [
+  const all = active(pc, s)
+  // an option's `picked` effects go on the spells picked in its "one they have" spell choice (Agonizing Blast's cantrip)
+  const pickedFor = (a: ActiveTrait, o: TraitOption) => (o.choices ?? []).flatMap((c, n) => (c.kind === 'spell' && c.spell?.how === 'known'
+    ? all.find(x => x.key === `${a.key}.${o.id}.c${n}`)?.picks ?? [] : []))
+  const optionEffects = (a: ActiveTrait, o: TraitOption) => (o.effects ?? []).flatMap(f => (f.picked ? pickedFor(a, o).map(spell => ({ ...f, spell, picked: undefined })) : [f]))
+  return all.filter(a => !a.trait.toggle || on.has(a.key)).flatMap(a => [
     { name: a.trait.name, effects: (a.trait.effects ?? []).map(f => withScale(f, a)) },
-    ...a.options.map(o => ({ name: o.name, effects: o.effects ?? [] })),
+    ...a.options.map(o => ({ name: o.name, effects: optionEffects(a, o) })),
   ]).filter(x => x.effects.length)
 }
 
@@ -411,7 +431,7 @@ export function setCastAbility(s: CharacterSheet, key: string, ability: Ability 
 }
 
 // ---- spells ----
-export const HOW_SPECIES: Record<TraitSpell['how'], string> = { atWill: 'at will', short: '1/short rest', long: '1/long rest', prepared: 'always prepared', list: 'on the spell list', book: 'in the spellbook' }
+export const HOW_SPECIES: Record<TraitSpell['how'], string> = { atWill: 'at will', short: '1/short rest', long: '1/long rest', prepared: 'always prepared', list: 'on the spell list', book: 'in the spellbook', known: "one they have (the option's effects go on it)" }
 /** `source`: what gives the trait (a species, background or feat by name; a class feature by the feature's name). */
 export interface SpeciesSpell { key: string; spell: TraitSpell; from: string; source: string; ready: boolean; status: string; level: number }
 /** The spells the species gives at the character's level, with whether a once-per-rest one can be cast now. */
@@ -423,7 +443,8 @@ export function speciesSpells(pc: Entry | undefined, s?: CharacterSheet): Specie
     const lists: [string, TraitSpell[] | undefined, string][] = [[a.key, a.trait.spells, a.trait.name]]
     for (const o of a.options) lists.push([`${a.key}.${o.id}`, o.spells, o.name])
     const c = a.trait.choice, swaps = stateOf(s ?? (pc.fields.sheet as CharacterSheet | undefined)).swaps ?? {}
-    if (c?.kind === 'spell' && c.spell) lists.push([`${a.key}.p`, a.picks.map(spell => ({ spell, how: c.spell!.how, ability: c.spell!.ability, ...(c.spell!.prepared ? { prepared: true } : {}) })), a.trait.name])
+    // a "one they have" pick gives nothing: it only says which spell the option's effects go on
+    if (c?.kind === 'spell' && c.spell && c.spell.how !== 'known') lists.push([`${a.key}.p`, a.picks.map(spell => ({ spell, how: c.spell!.how, ability: c.spell!.ability, ...(c.spell!.prepared ? { prepared: true } : {}) })), a.trait.name])
     for (const [base, list, from] of lists) {
       (list ?? []).forEach((x, k) => {
         const key = `${base}.s${k}`
@@ -582,7 +603,9 @@ export function choiceCandidates(c: TraitChoice): { id: string; label: string }[
 }
 /** What a character has, for filtering and marking a choice's options: skills they're proficient in, weapon
  * proficiencies (categories or base weapons), languages. */
-export interface HaveNow { skills: string[]; weapons: string[]; languages: string[]; /** Their classes (lower case): a feat for one class only (Blessed Warrior) is offered to it alone. */ classes: string[] }
+export interface HaveNow { skills: string[]; weapons: string[]; languages: string[]; /** Their classes (lower case): a feat for one class only (Blessed Warrior) is offered to it alone. */ classes: string[]
+  /** The spells they have (spellbook and features), for a "one they have" spell choice; unknown: any matching spell. */
+  spells?: string[] }
 /** Languages only a class teaches (Thieves' Cant, Druidic): never offered by a free language pick. */
 export const SECRET_LANGUAGES = ["Thieves' Cant", 'Druidic']
 const RANGED_WEAPON = /bow|crossbow|sling|blowgun|dart|musket|pistol|net/i
@@ -599,16 +622,29 @@ export function choiceOffer(c: TraitChoice, have: HaveNow | undefined, picked: s
   if (c.kind === 'mastery') return all.filter(o => keep(o) || (!!masteryOf(o.id) && (!c.meleeOnly || !RANGED_WEAPON.test(o.id))
     && (have.weapons.includes(o.id) || have.weapons.includes(catOf(o.id) ?? '-'))))
   if (c.kind === 'language') return all.filter(o => keep(o) || (!have.languages.includes(o.id) && !SECRET_LANGUAGES.includes(o.id)))
+  if (c.kind === 'spell' && c.spell?.how === 'known' && have.spells) return all.filter(o => keep(o) || have.spells!.includes(o.id))
   if (c.kind === 'feat') return all.filter(o => { const need = get(o.id)?.fields.requirements?.classes ?? []; return keep(o) || !need.length || need.some(x => have.classes.includes(x.toLowerCase())) })
   return all
 }
+/** Every feature name in the world (classes, subclasses, species, backgrounds, feats, and their options: Fighting Style,
+ * Pact of the Blade), for a "has this feature" prerequisite; as list options, the name as its id. */
+export const featureNames = (): { id: string; label: string }[] => allFeatureNames.value
+const allFeatureNames = computed(() => {
+  const names = new Set<string>()
+  for (const e of entries.value) {
+    if (!['class', 'subclass', 'race', 'background', 'feat'].includes(e.type)) continue
+    for (const t of traitsOf(e)) { if (t.name?.trim()) names.add(t.name.trim()); for (const o of t.choice?.options ?? []) if (o.name?.trim()) names.add(o.name.trim()) }
+  }
+  return [...names].sort((a, b) => a.localeCompare(b)).map(n => ({ id: n, label: n }))
+})
 /** The world's spells a spell choice can take: of its level, on one of its classes' lists (any, if none), rituals if asked. */
 export function spellsMatching(f: TraitChoice['spell']): Entry[] {
   const classes = f?.classes ?? []
   const schools = f?.schools ?? []
   return entries.value.filter(e => e.type === 'spell' && (!f?.level || e.fields.level === f.level)
     && (!classes.length || (e.fields.classes ?? []).some(x => classes.includes(x))) && (!f?.ritual || !!e.fields.ritual)
-    && (!schools.length || schools.includes(String(e.fields.school ?? ''))))
+    && (!schools.length || schools.includes(String(e.fields.school ?? '')))
+    && (!f?.damaging || (e.fields.rolls ?? []).some(r => r.kind === 'damage')))
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 /** A spell choice's spells in words: "Wizard cantrip", "level 1 ritual spell", "level 1 Divination or Enchantment spell". */
@@ -616,7 +652,8 @@ export function spellChoiceWords(c: TraitChoice, plural: boolean): string {
   const f = c.spell, s = plural ? 's' : ''
   const schools = f?.schools?.length ? `${f.schools.join(' or ')} ` : ''
   const kind = f?.level === 'Cantrip' ? `${schools}cantrip${s}` : `${f?.level ? `level ${f.level} ` : ''}${f?.ritual ? 'ritual ' : ''}${schools}spell${s}`
-  return `${f?.classes?.length ? f.classes.join(' or ') + ' ' : ''}${kind}${f?.classes?.length || schools ? '' : ' from any class'}`
+  const dmg = f?.damaging ? ` that deal${plural ? '' : 's'} damage` : ''
+  return `${f?.classes?.length ? f.classes.join(' or ') + ' ' : ''}${kind}${f?.classes?.length || schools ? '' : ' from any class'}${dmg}`
 }
 /** What a choice picks, in words: "skill" / "skills", "Wizard cantrip". */
 export const choiceWords = (c: TraitChoice, n: number) => (c.kind === 'spell' ? spellChoiceWords(c, n !== 1) : CHOICE_WORDS[c.kind][n === 1 ? 0 : 1])

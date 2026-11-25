@@ -1,11 +1,12 @@
 <script setup lang="ts">
 // A creature's statblock as a form: buttons and boxes instead of statblock text. The free-text parts of the
 // stored statblock ("30 ft., fly 30 ft. (hover)", "perception +5") are read into fields and written back the same way.
+import SuggestInput from '../SuggestInput.vue'
 import LinkTextarea from './LinkTextarea.vue'
 import Dropdown from '../Dropdown.vue'
 import { computed, onMounted, ref } from 'vue'
 import { loadSrdMonsters, srdMonster, srdMonsterNames, withSrd } from '../../srd'
-import { fieldOptions, get, optionLabel } from '../../store'
+import { fieldOptions, get, listOptions, optionLabel } from '../../store'
 import type { Abilities, Entry, Feature, Statblock } from '../../model/types'
 import { TYPES } from '../../model/schema'
 import { changed, isEmpty } from '../../edit'
@@ -14,7 +15,7 @@ import TokenField from './TokenField.vue'
 import EntryPicker from './EntryPicker.vue'
 import EntryLink from '../EntryLink.vue'
 import { attackText, statProblems } from '../../creatures'
-import { ABILITY_KEYS, ABILITY_NAME, CONDITIONS, SKILLS as SKILL_LIST, crProf, mod, signed, type Ability } from '../../model/dnd'
+import { ABILITY_KEYS, ABILITY_NAME, ALIGNMENTS, SENSE_TYPES, SPEED_TYPES, CONDITIONS, SKILLS as SKILL_LIST, crProf, mod, signed, type Ability } from '../../model/dnd'
 import type { StatAttack } from '../../model/types'
 import { inputValue as val } from '../../dom'
 
@@ -32,7 +33,8 @@ function set<K extends keyof Statblock>(key: K, v: Statblock[K] | undefined) {
 const num = (raw: string) => (raw.trim() === '' ? undefined : Number(raw))
 
 // ---- identity: size, type (+ tags in brackets), alignment ----
-const SIZES = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']
+/** The world's sizes (the Lists page); a statblock keeps the word. */
+const SIZES = computed(() => listOptions('size').map(o => o.label))
 const sizeIs = (s: string) => (sb.value.size ?? '').toLowerCase() === s.toLowerCase()
 const TYPE_OPTIONS = computed(() => fieldOptions(TYPES.creature.fields.find(f => f.key === 'creatureType')))
 const typeParts = computed(() => {
@@ -52,7 +54,7 @@ function setType(base: string, tags: string) {
   const line = [optionLabel('creature.creatureType', base).toLowerCase(), tags.trim() ? `(${tags.trim()})` : ''].filter(Boolean).join(' ')
   set('creatureType', line || undefined)
 }
-const ALIGNMENTS = ['lawful good', 'neutral good', 'chaotic good', 'lawful neutral', 'neutral', 'chaotic neutral', 'lawful evil', 'neutral evil', 'chaotic evil', 'unaligned', 'any alignment']
+const CREATURE_ALIGNMENTS = [...ALIGNMENTS, 'any alignment']
 
 // ---- challenge ----
 const CRS = ['0', '1/8', '1/4', '1/2', ...Array.from({ length: 30 }, (_, i) => String(i + 1))]
@@ -85,6 +87,11 @@ const writeBonuses = (list: Bonus[]) => list.filter(b => b.name.trim()).map(b =>
 const skills = computed(() => parseBonuses(sb.value.skills))
 const skillOn = (s: string) => skills.value.find(b => b.name.toLowerCase() === s.toLowerCase())
 const skillSuggest = (s: string) => modOf(SKILLS[s]) + prof.value
+/** A skill typed or picked in the box: added when it's one of the skills (any case), and the box empties. */
+function addSkill(ev: Event) {
+  const el = ev.target as HTMLInputElement, name = Object.keys(SKILLS).find(k => k.toLowerCase() === el.value.trim().toLowerCase())
+  if (name && !skillOn(name)) { toggleSkill(name); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })) }
+}
 function toggleSkill(s: string) {
   set('skills', writeBonuses(skillOn(s) ? skills.value.filter(b => b.name.toLowerCase() !== s.toLowerCase()) : [...skills.value, { name: s, n: skillSuggest(s) }]))
 }
@@ -125,7 +132,7 @@ function writeDistances(out: Record<string, Dist>, modes: string[], plain: strin
   if (passive != null) parts.push(`passive Perception ${passive}`)
   return [...parts, ...rest].join(', ') || undefined
 }
-const SPEEDS = ['walk', 'fly', 'swim', 'climb', 'burrow']
+const SPEEDS = [...SPEED_TYPES]
 const speed = computed(() => parseDistances(sb.value.speed, SPEEDS, 'walk'))
 function setSpeed(mode: string, patch: Dist) {
   const p = speed.value
@@ -140,7 +147,7 @@ function toggleHover() {
   setSpeed('fly', { note: hover.value ? note.replace(/\(?hover\)?/i, '').trim() || undefined : [note, '(hover)'].filter(Boolean).join(' ') })
 }
 
-const SENSES = ['darkvision', 'blindsight', 'tremorsense', 'truesight']
+const SENSES = [...SENSE_TYPES]
 const senses = computed(() => parseDistances(sb.value.senses, SENSES))
 function setSense(mode: string, raw: string) {
   const p = senses.value
@@ -158,8 +165,9 @@ function setRest(which: 'speed' | 'senses', v?: string) {
 }
 
 // ---- damage and conditions ----
-const DAMAGE = ['Acid', 'Bludgeoning', 'Cold', 'Fire', 'Force', 'Lightning', 'Necrotic', 'Piercing', 'Poison', 'Psychic', 'Radiant', 'Slashing', 'Thunder']
-const LANGS = ['Common', 'Dwarvish', 'Elvish', 'Giant', 'Gnomish', 'Goblin', 'Halfling', 'Orc', 'Abyssal', 'Celestial', 'Draconic', 'Deep Speech', 'Infernal', 'Primordial', 'Sylvan', 'Undercommon', 'telepathy 60 ft.', "understands Common but can't speak"]
+/** The world's damage types and languages (the Lists page), as words; languages with the statblock's usual extras. */
+const DAMAGE = computed(() => fieldOptions(TYPES.item.fields.find(x => x.key === 'damageType')).map(o => o.label))
+const LANGS = computed(() => [...listOptions('language').map(o => o.label), 'telepathy 60 ft.', "understands Common but can't speak"])
 const NONMAGICAL = 'bludgeoning, piercing, and slashing from nonmagical attacks'
 
 // ---- features: traits, actions, … one tab each ----
@@ -269,8 +277,7 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
       </template>
       <template v-if="source === 'srd'">
         <div class="cf-row">
-          <input class="cf-srd-input" :value="sb.srd ?? ''" list="cf-srd-names" :placeholder="`Search the SRD's ${srdMonsterNames.length || 330} monsters…`" @change="set('srd', val($event).trim() || undefined)" />
-          <datalist id="cf-srd-names"><option v-for="n in srdMonsterNames" :key="n" :value="n" /></datalist>
+          <SuggestInput class="cf-srd-input" :value="sb.srd ?? ''" :options="srdMonsterNames" :placeholder="`Search the SRD's ${srdMonsterNames.length || 330} monsters…`" @change="set('srd', val($event).trim() || undefined)" />
           <button v-if="srdBase" type="button" class="chip-btn" title="Write its stats into the form (with what's set here on top), to change them; the creature then has its own stats" @click="copySrd">Copy its stats in</button>
         </div>
         <p v-if="srdBase" class="muted small">{{ srdBase.name }}<template v-if="srdBase.name.toLowerCase() !== (sb.srd ?? '').toLowerCase()"> (for “{{ sb.srd }}”)</template>: {{ srdBase.statblock.size }} {{ srdBase.statblock.creatureType }}, CR {{ srdBase.statblock.cr }}. Its stats show on the right, greyed in the form; anything you fill in replaces them.</p>
@@ -280,11 +287,13 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
     <!-- who it is -->
     <section class="card cf-card">
       <div class="cf-grid">
-        <div class="sf-field cf-wide"><span class="sf-label">Size</span>
-          <div class="seg">
-            <button v-for="s in SIZES" :key="s" type="button" :class="{ on: sizeIs(s) }" @click="set('size', sizeIs(s) ? undefined : s)">{{ s }}</button>
-          </div>
-        </div>
+        <label class="sf-field"><span class="sf-label">Size</span>
+          <Dropdown :value="SIZES.find(sizeIs) ?? sb.size ?? ''" aria-label="Size" @change="set('size', val($event) || undefined)">
+            <option value="">—</option>
+            <option v-for="s in SIZES" :key="s" :value="s">{{ s }}</option>
+            <option v-if="sb.size && !SIZES.some(sizeIs)" :value="sb.size">{{ sb.size }}</option>
+          </Dropdown>
+        </label>
         <label class="sf-field"><span class="sf-label">Type</span>
           <Dropdown :value="typeValue" @change="setType(val($event), typeParts.tags)">
             <option value="">—</option>
@@ -296,8 +305,7 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
           <input :value="typeParts.tags" placeholder="e.g. shapechanger" @change="setType(typeValue, val($event))" />
         </label>
         <label class="sf-field"><span class="sf-label">Alignment</span>
-          <input :value="sb.alignment ?? ''" list="cf-align" :placeholder="ph.alignment ?? 'e.g. neutral evil'" @change="set('alignment', val($event).trim() || undefined)" />
-          <datalist id="cf-align"><option v-for="a in ALIGNMENTS" :key="a" :value="a" /></datalist>
+          <SuggestInput :value="sb.alignment ?? ''" :options="CREATURE_ALIGNMENTS" :placeholder="ph.alignment ?? 'e.g. neutral evil'" @change="set('alignment', val($event).trim() || undefined)" />
         </label>
         <label class="sf-field"><span class="sf-label">Challenge</span>
           <span class="cf-row">
@@ -334,7 +342,7 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
               <span>{{ m }}</span>
               <input type="number" step="5" min="0" :value="speed.out[m]?.n ?? ''" @change="setSpeed(m, { n: num(val($event)) })" />
             </label>
-            <button v-if="speed.out.fly" type="button" class="token-opt" :class="{ on: hover }" @click="toggleHover">hover</button>
+            <button v-if="speed.out.fly" type="button" class="chip-toggle" :class="{ on: hover }" @click="toggleHover">hover</button>
           </div>
           <TokenField v-if="speed.rest.length" :model-value="speed.rest.join(', ')" placeholder="Other…" @update:model-value="v => setRest('speed', v)" />
         </div>
@@ -357,11 +365,15 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
     <!-- skills, senses, languages -->
     <section class="card cf-card">
       <div class="sf-field"><span class="sf-label">Skills <span class="muted">(bonus filled in from the ability and proficiency)</span></span>
+        <!-- the picked skills, each with its bonus, and a box to add one (several picks from a long list) -->
         <div class="cf-skills">
-          <span v-for="(ab, s) in SKILLS" :key="s" class="cf-skill" :class="{ on: !!skillOn(s) }">
-            <button type="button" class="token-opt" :class="{ on: !!skillOn(s) }" :title="`${s} (${ab.toUpperCase()})`" @click="toggleSkill(s)">{{ s }}</button>
-            <input v-if="skillOn(s)" type="number" :value="skillOn(s)!.n ?? ''" :placeholder="signedText(skillSuggest(s))" @change="setSkillBonus(s, val($event))" />
-          </span>
+          <template v-for="(ab, s) in SKILLS" :key="s">
+            <span v-if="skillOn(s)" class="cf-skill on chip" :title="`${s} (${ab.toUpperCase()})`">{{ s }}
+              <input type="number" :value="skillOn(s)!.n ?? ''" :placeholder="signedText(skillSuggest(s))" :aria-label="`${s} bonus`" @change="setSkillBonus(s, val($event))" />
+              <button type="button" class="link-btn" :title="`Remove ${s}`" @click="toggleSkill(s)">×</button>
+            </span>
+          </template>
+          <SuggestInput class="cf-skill-add" :options="Object.keys(SKILLS).filter(s => !skillOn(s))" placeholder="Add a skill…" @change="addSkill" />
         </div>
       </div>
 
@@ -388,16 +400,16 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
     <!-- damage and conditions -->
     <section class="card cf-card">
       <div class="sf-field"><span class="sf-label">Damage vulnerabilities</span>
-        <TokenField :model-value="sb.vulnerabilities" :options="DAMAGE" @update:model-value="v => set('vulnerabilities', v)" />
+        <TokenField :model-value="sb.vulnerabilities" :suggestions="DAMAGE" placeholder="Add a damage type…" @update:model-value="v => set('vulnerabilities', v)" />
       </div>
       <div class="sf-field"><span class="sf-label">Damage resistances</span>
-        <TokenField :model-value="sb.resistances" :options="DAMAGE" :suggestions="[NONMAGICAL]" @update:model-value="v => set('resistances', v)" />
+        <TokenField :model-value="sb.resistances" :suggestions="[...DAMAGE, NONMAGICAL]" placeholder="Add a damage type…" @update:model-value="v => set('resistances', v)" />
       </div>
       <div class="sf-field"><span class="sf-label">Damage immunities</span>
-        <TokenField :model-value="sb.immunities" :options="DAMAGE" :suggestions="[NONMAGICAL]" @update:model-value="v => set('immunities', v)" />
+        <TokenField :model-value="sb.immunities" :suggestions="[...DAMAGE, NONMAGICAL]" placeholder="Add a damage type…" @update:model-value="v => set('immunities', v)" />
       </div>
       <div class="sf-field"><span class="sf-label">Condition immunities</span>
-        <TokenField :model-value="sb.conditionImmunities" :options="CONDITIONS" @update:model-value="v => set('conditionImmunities', v)" />
+        <TokenField :model-value="sb.conditionImmunities" :suggestions="CONDITIONS" placeholder="Add a condition…" @update:model-value="v => set('conditionImmunities', v)" />
       </div>
     </section>
 
@@ -426,7 +438,7 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
             <div class="seg">
               <button v-for="k in (['melee', 'ranged', 'both'] as const)" :key="k" type="button" :class="{ on: f.attack.kind === k }" @click="setAttack(i, { kind: k })">{{ k === 'both' ? 'Melee or ranged' : k[0].toUpperCase() + k.slice(1) }}</button>
             </div>
-            <label>with <Dropdown :value="f.attack.ability" @change="setAttack(i, { ability: val($event) as StatAttack['ability'] })"><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ a.toUpperCase() }} ({{ signedText(modOf(a)) }})</option></Dropdown></label>
+            <label>with <Dropdown :value="f.attack.ability" @change="setAttack(i, { ability: val($event) as StatAttack['ability'] })"><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ ABILITY_NAME[a] }}</option></Dropdown> <span class="muted">({{ signedText(modOf(f.attack.ability)) }})</span></label>
             <label v-if="f.attack.kind !== 'ranged'">reach <input type="number" min="5" step="5" class="effect-value" :value="f.attack.reach ?? 5" @change="setAttack(i, { reach: num(val($event)) ?? 5 })" /> ft</label>
             <label v-if="f.attack.kind !== 'melee'">range <input class="effect-value cf-range" :value="f.attack.range ?? ''" placeholder="30/120" @change="setAttack(i, { range: val($event).trim() })" /> ft</label>
             <label>damage <input class="effect-value cf-range" :value="f.attack.dice" placeholder="1d6" @change="setAttack(i, { dice: val($event).trim() || '1d6' })" /></label>
@@ -450,17 +462,16 @@ const removeList = (i: number) => setSc({ lists: sc.value!.lists.filter((_, k) =
         <template v-else>
           <label class="small">with <Dropdown :value="sc.ability" @change="setSc({ ability: val($event) as any })"><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ ABILITY_NAME[a] }}</option></Dropdown></label>
           <span class="muted small">save DC {{ 8 + prof + modOf(sc.ability) }}, {{ signedText(prof + modOf(sc.ability)) }} to hit</span>
-          <label class="small"><input type="checkbox" :checked="!!sc.noMaterial" @change="setSc({ noMaterial: ($event.target as HTMLInputElement).checked || undefined })" /> no Material components</label>
+          <label class="check-chip small"><input type="checkbox" :checked="!!sc.noMaterial" @change="setSc({ noMaterial: ($event.target as HTMLInputElement).checked || undefined })" /> no Material components</label>
           <button type="button" class="link-btn small" title="Remove its spellcasting" @click="setSc(null)">remove</button>
         </template>
       </div>
       <div v-for="(l, i) in sc?.lists ?? []" :key="i" class="cf-row cf-splist">
-        <input class="effect-value cf-sclabel" :value="l.label" list="cf-sclabels" @change="setList(i, { label: val($event).trim() || 'At Will' })" />
+        <SuggestInput class="effect-value cf-sclabel" :value="l.label" :options="SC_LABELS" @change="setList(i, { label: val($event).trim() || 'At Will' })" />
         <span v-for="id in l.spells" :key="id" class="chip"><EntryLink :id="id" /><button type="button" class="link-btn" title="Remove" @click="setList(i, { spells: l.spells.filter(x => x !== id) })">×</button></span>
         <EntryPicker add :types="['spell']" :exclude="l.spells" placeholder="+ spell…" @pick="id => setList(i, { spells: [...l.spells, id] })" />
         <button type="button" class="link-btn" title="Remove this list" @click="removeList(i)">×</button>
       </div>
-      <datalist id="cf-sclabels"><option v-for="x in SC_LABELS" :key="x" :value="x" /></datalist>
       <button v-if="sc" type="button" class="chip-btn" @click="addList">＋ List</button>
     </section>
 

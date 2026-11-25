@@ -15,6 +15,8 @@ export interface FieldDef {
   key: string
   label: string
   kind: FieldKind
+  /** A text field's hint while it's empty. */
+  placeholder?: string
   /** A choice field's starting options (see lists.ts: the world's lists are managed on the Lists page). */
   options?: readonly string[]
   /** The list it picks from, when several fields share one; otherwise "<type>.<key>". */
@@ -366,7 +368,7 @@ export const SCHEMA = [
     type: 'session', label: 'Session', plural: 'Sessions', icon: '📅', fields: [
       { key: 'campaign', label: 'Campaign', kind: 'ref', to: ['campaign'] },
       { key: 'number', label: 'Number', kind: 'number' },
-      { key: 'playedOn', label: 'Played on', kind: 'text' },
+      { key: 'playedOn', label: 'Played on', kind: 'text', placeholder: 'the real-world date' },
       { key: 'date', label: 'In-world date', kind: 'date' },
       { key: 'players', label: 'Characters present', kind: 'refs', to: ['pc'] },
       { key: 'featured', label: 'Featured', kind: 'refs' },
@@ -390,7 +392,8 @@ export const SCHEMA = [
       { key: 'category', label: 'Category', kind: 'text' },
       { key: 'author', label: 'Author', kind: 'ref', to: ['npc', 'pc', 'organization', 'deity'] },
       { key: 'date', label: 'Written', kind: 'date' },
-      { key: 'language', label: 'Language', kind: 'text' },
+      // the world's languages (the Lists page); one written before that keeps its word
+      { key: 'language', label: 'Language', kind: 'select', options: [], list: 'language' },
     ],
   },
   {

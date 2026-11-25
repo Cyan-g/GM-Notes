@@ -6,7 +6,8 @@ import { describe } from '../describe'
 import { TYPES, byKey } from '../model/schema'
 import { fieldLabel, formatMoney, get, state } from '../store'
 import { optionsIn } from '../model/lists'
-import { renderInline } from '../markdown'
+import { renderInline, renderMarkdown } from '../markdown'
+import { hasSecrets } from '../model/text'
 import { describeEffect } from '../effects'
 import { armorClassText, effectsOf, howCast, regainText, spellsOf, worksWhileOf } from '../items'
 import EntryLink from './EntryLink.vue'
@@ -17,7 +18,7 @@ import { describeRequirements } from '../requirements'
 import { MASTERY_OF } from '../model/schema'
 import { itemNamed } from '../lookup'
 
-const props = defineProps<{ e: Entry }>()
+const props = defineProps<{ e: Entry; /** On its own page, under the kind badge. */ inPage?: boolean }>()
 const f = computed(() => props.e.fields)
 /** A choice field's value as its option's label. */
 /** Its damage, or its base weapon's (a +1 Longsword written without its own dice). */
@@ -60,11 +61,14 @@ const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magic
 
 <template>
   <div class="item-card" :class="'r-' + rarity">
-    <div class="ic-line">{{ kindLine }}</div>
+    <!-- on its page the kind is beside the title already: the line only when it says more ("Ammunition", "Melee (Rapier)") -->
+    <div v-if="!(inPage && kindLine.toLowerCase() === L('kind').toLowerCase())" class="ic-line">{{ kindLine }}</div>
     <DataImage v-if="e.image" :path="e.image" :alt="e.name" class="ic-pic" />
     <div class="ic-body">
       <div class="ic-text">
-        <p v-if="f.summary" class="ic-summary" v-html="renderInline(f.summary)" />
+        <!-- a DM-only part of the description shows as its own block (players' copies never have it) -->
+        <div v-if="f.summary && hasSecrets(String(f.summary))" class="ic-summary field-md" v-html="renderMarkdown(String(f.summary))" />
+        <p v-else-if="f.summary" class="ic-summary" v-html="renderInline(f.summary)" />
         <p v-if="f.effect" class="ic-effect"><b>Effect.</b> <span v-html="renderInline(f.effect)" /></p>
         <div v-if="propList.length" class="chips"><span v-for="p in propList" :key="p.id" class="chip" :class="{ tip: 'note' in p && p.note }" :data-tip="'note' in p ? p.note : undefined">{{ p.label }}</span></div>
         <!-- What it does while in use: its effects, then the spells it casts, one per line. -->
@@ -79,7 +83,8 @@ const rarity = computed(() => String(f.value.rarity ?? (f.value.magical ? 'magic
         </div>
         <!-- its rules as features (with uses, choices and spells), when it has them -->
         <div v-if="features.length" class="ic-gear ic-features">
-          <div class="ic-gear-head">{{ effects.length || spells.length ? 'Features' : effectsWhen }}</div>
+          <!-- features say themselves when they work (eaten, forged): "While carried" only when it was picked -->
+          <div class="ic-gear-head">{{ effects.length || spells.length || (!f.worksWhile && worksWhileOf(e) === 'carried') ? 'Features' : effectsWhen }}</div>
           <TraitList :traits="features" :known="String(e.body ?? '')" />
         </div>
       </div>

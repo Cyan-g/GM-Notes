@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import LinkTextarea from './LinkTextarea.vue'
+import { campaignColor } from '../../sessions'
 import Dropdown from '../Dropdown.vue'
 import TraitsInput from './TraitsInput.vue'
 import ClassBasicsInput from './ClassBasicsInput.vue'
@@ -26,7 +27,6 @@ import ListInput from './ListInput.vue'
 import MoneyInput from './MoneyInput.vue'
 import RecipeInput from './RecipeInput.vue'
 import StockInput from './StockInput.vue'
-import StatblockInput from './StatblockInput.vue'
 import EncounterInput from './EncounterInput.vue'
 import RanksInput from './RanksInput.vue'
 import EffectsInput from './EffectsInput.vue'
@@ -78,17 +78,30 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
 </script>
 
 <template>
-  <input v-if="def.kind === 'text'" :value="value ?? ''" @input="value = ($event.target as HTMLInputElement).value" />
+  <!-- the session's real-world date: typed, or today's with one click -->
+  <span v-if="def.kind === 'text' && def.key === 'playedOn'" class="played-on">
+    <input :value="value ?? ''" :placeholder="def.placeholder" @input="value = ($event.target as HTMLInputElement).value" />
+    <button type="button" class="link-btn small" title="Today's date" @click="value = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })">Today</button>
+  </span>
+  <!-- a campaign's colour on the calendar: picked; empty, it's one of the palette's -->
+  <span v-else-if="def.kind === 'text' && def.key === 'color' && entry.type === 'campaign'" class="color-field">
+    <input type="color" :value="/^#[0-9a-f]{6}$/i.test(String(value ?? '')) ? value : (campaignColor(entry.id) ?? '#888888')" aria-label="Colour on the calendar" @input="value = ($event.target as HTMLInputElement).value" />
+    <button v-if="value" type="button" class="link-btn small" title="Use the palette's colour again" @click="value = undefined">auto</button>
+    <span v-else class="muted small">the palette's</span>
+  </span>
+  <input v-else-if="def.kind === 'text'" :value="value ?? ''" :placeholder="def.placeholder" @input="value = ($event.target as HTMLInputElement).value" />
   <LinkTextarea v-else-if="def.kind === 'longtext'" rows="3" :value="value ?? ''" @input="value = ($event.target as HTMLTextAreaElement).value" />
   <input v-else-if="def.kind === 'number'" type="number" :value="value ?? ''" @change="value = ($event.target as HTMLInputElement).value === '' ? undefined : Number(($event.target as HTMLInputElement).value)" />
   <input v-else-if="def.kind === 'weight'" type="number" step="0.1" min="0" :value="value ?? ''" placeholder="lb" @change="value = ($event.target as HTMLInputElement).value === '' ? undefined : Number(($event.target as HTMLInputElement).value)" />
-  <label v-else-if="def.kind === 'bool'" class="toggle"><input type="checkbox" :checked="!!value" @change="value = ($event.target as HTMLInputElement).checked || undefined" /><span>{{ value ? 'Yes' : 'No' }}</span></label>
+  <label v-else-if="def.kind === 'bool'" class="check-chip"><input type="checkbox" :checked="!!value" @change="value = ($event.target as HTMLInputElement).checked || undefined" /> {{ def.label }}</label>
   <Dropdown v-else-if="def.kind === 'select'" :value="value ?? ''" @change="value = ($event.target as HTMLSelectElement).value">
     <option value="">{{ fromParent ? `— (${fromParent})` : '—' }}</option>
     <option v-for="o in selectOptions" :key="o.id" :value="o.id">{{ o.label }}</option>
   </Dropdown>
   <ChoiceListInput v-else-if="def.kind === 'list' && hasList && DROPDOWN_LISTS.includes(listKeyOf(def) ?? '')" :values="value ?? []" :options="options" :placeholder="`Add a ${def.label.toLowerCase().replace(/ies$/, 'y').replace(/s$/, '')}…`" @change="value = $event" />
-  <ProfChips v-else-if="def.kind === 'list' && hasList" :values="value ?? []" :toggles="options" @change="value = $event" />
+  <!-- several picks: up to 6 options as toggle chips, more as the picked ones plus a box to add (the forms' rule) -->
+  <ProfChips v-else-if="def.kind === 'list' && hasList && options.length <= 6" :values="value ?? []" :toggles="options" @change="value = $event" />
+  <ProfChips v-else-if="def.kind === 'list' && hasList" :values="value ?? []" :suggest="options" :placeholder="`Add ${def.label.toLowerCase()}…`" @change="value = $event" />
   <ListInput v-else-if="def.kind === 'list'" v-model="value" />
   <MoneyInput v-else-if="def.kind === 'money'" v-model="value" />
   <DateInput v-else-if="def.kind === 'date'" v-model="value" />
@@ -105,13 +118,12 @@ const DROPDOWN_LISTS = ['weaponProperty', 'ingredientProperty']
   <FeatBonusInput v-else-if="def.kind === 'abilityBonus' && entry.type === 'feat'" v-model="value" />
   <AbilityBonusInput v-else-if="def.kind === 'abilityBonus'" v-model="value" />
   <SpeedsInput v-else-if="def.kind === 'speeds'" v-model="value" :inherited="entry.type === 'race' ? (get(entry.fields.parent)?.fields.speeds as Speeds | undefined) : undefined" />
-  <ProfChips v-else-if="def.kind === 'skills'" :values="value ?? []" :toggles="SKILL_OPTIONS" @change="value = $event.length ? $event : undefined" />
+  <ProfChips v-else-if="def.kind === 'skills'" :values="value ?? []" :suggest="SKILL_OPTIONS" placeholder="Add a skill…" @change="value = $event.length ? $event : undefined" />
   <EquipmentInput v-else-if="def.kind === 'equipment'" v-model="value" />
   <RequirementsInput v-else-if="def.kind === 'requires'" v-model="value" :features="entry.type === 'feat'" />
   <RecipeInput v-else-if="def.kind === 'recipe'" v-model="value" :item-value="entry.fields.value" />
   <StockInput v-else-if="def.kind === 'stock'" v-model="value" :markup="(entry.fields.markup) ?? 1" />
   <EncounterInput v-else-if="def.kind === 'combatants'" v-model="value" />
-  <StatblockInput v-else-if="def.kind === 'statblock'" v-model="value" />
   <ImageInput v-else-if="def.kind === 'image'" :model-value="value" :hint="`${entry.name} ${def.label.toLowerCase()}`" @update:model-value="v => (value = v)" />
   <input v-else :value="value ?? ''" @input="value = ($event.target as HTMLInputElement).value" />
 </template>

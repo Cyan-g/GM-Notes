@@ -146,6 +146,14 @@ export function planExport(start: Id | null, opts: ExportOptions): ExportPlan | 
 
 const toDataUrl = (b: Blob) => new Promise<string>((ok, fail) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => fail(r.error); r.readAsDataURL(b) })
 
+/** A field value with the DM-only blocks taken out of every text in it. */
+function noSecrets(v: unknown): unknown {
+  if (typeof v === 'string') return hasSecrets(v) ? stripSecrets(v).replace(/\n{3,}/g, '\n\n').trim() : v
+  if (Array.isArray(v)) return v.map(noSecrets)
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, noSecrets(x)]))
+  return v
+}
+
 /**
  * The plan's entries as they leave this world: DM-only text out unless asked, references to what doesn't go along
  * as plain words (or, for entries that stay home but aren't hidden, kept with their name in `names`).
@@ -161,6 +169,8 @@ export function outgoingEntries(plan: ExportPlan): { entries: Entry[]; names: Re
     if (!plan.opts.dmText && hasSecrets(c.body)) c.body = stripSecrets(c.body).replace(/\n{3,}/g, '\n\n').trim()
     // so are the DM-only fields (an NPC's or organization's secret, and how it stands with the party)
     if (!plan.opts.dmText) for (const k of dmOnlyKeys(c.type)) delete (c.fields as Record<string, unknown>)[k]
+    // and the DM-only blocks written into a field's text (an item's description, a feature's text)
+    if (!plan.opts.dmText) c.fields = noSecrets(c.fields) as Entry['fields']
     // stats based on a creature that doesn't go along: its stats written out, so the copy is complete
     const sb = c.fields.statblock as Statblock | undefined
     if (sb?.base && !ids.has(sb.base)) { const full = { ...(statsOf(e) ?? sb) }; delete full.base; c.fields.statblock = full }

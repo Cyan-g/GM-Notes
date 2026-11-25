@@ -7,6 +7,7 @@
 import { computed, ref } from 'vue'
 import Dropdown from '../Dropdown.vue'
 import StepsInput from './StepsInput.vue'
+import ProfChips from '../ProfChips.vue'
 import TraitChoiceSection from './TraitChoiceSection.vue'
 import TraitOptionFields from './TraitOptionFields.vue'
 import TraitSection from './TraitSection.vue'
@@ -14,7 +15,7 @@ import TraitUsesSection from './TraitUsesSection.vue'
 import type { Trait } from '../../model/types'
 import { cleanTrait, hasSpells, newChoice, scaleSummary } from '../../traitEditing'
 import { listOptions } from '../../store'
-import { ABILITY_KEYS, ABILITY_NAME } from '../../model/dnd'
+import { ABILITY_KEYS, ABILITY_NAME, ABILITY_UPPER } from '../../model/dnd'
 import { inputValue as val } from '../../dom'
 
 const props = defineProps<{
@@ -53,11 +54,6 @@ const castSummary = computed(() => (t.value.castWith?.sameAs != null ? `as ${pro
 // ---- more spell lists for its class (Magical Secrets) ----
 const listsOpen = ref(false)
 const showLists = computed(() => !!t.value.spellLists?.length || listsOpen.value)
-function toggleList(id: string) {
-  const l = new Set(t.value.spellLists ?? [])
-  if (l.has(id)) l.delete(id); else l.add(id)
-  patch({ spellLists: l.size ? [...l] : undefined })
-}
 function dropLists() { listsOpen.value = false; patch({ spellLists: undefined }) }
 </script>
 
@@ -111,8 +107,8 @@ function dropLists() { listsOpen.value = false; patch({ spellLists: undefined })
           <Dropdown :value="castMode" aria-label="Its spells are cast with" title="The ability its spells (and its picked option's) are cast with, where a spell doesn't name one" @change="setCastMode(val($event))">
             <option value="pick">the player's pick</option><option value="same">the same as another {{ word }}</option>
           </Dropdown>
-          <div v-if="castMode === 'pick'" class="seg wrap">
-            <button v-for="ab in ABILITY_KEYS" :key="ab" type="button" :class="{ on: t.castWith?.among?.includes(ab) }" @click="toggleCast(ab)">{{ ABILITY_NAME[ab] }}</button>
+          <div v-if="castMode === 'pick'" class="chip-toggles">
+            <button class="chip-toggle" v-for="ab in ABILITY_KEYS" :key="ab" type="button" :class="{ on: t.castWith?.among?.includes(ab) }" @click="toggleCast(ab)">{{ ABILITY_UPPER[ab] }}</button>
           </div>
           <Dropdown v-else-if="castMode === 'same'" :value="t.castWith?.sameAs" aria-label="As which" @change="patch({ castWith: { sameAs: val($event) } })">
             <option v-for="o in others" :key="o.id" :value="o.id">{{ o.name }}</option>
@@ -123,9 +119,7 @@ function dropLists() { listsOpen.value = false; patch({ spellLists: undefined })
       <!-- more spell lists for its class (Magical Secrets) -->
       <TraitSection v-if="showLists" title="Extra spell lists" :summary="(t.spellLists ?? []).join(', ') || 'none picked yet'" @remove="dropLists">
         <p class="small muted">Its class can also take spells from these lists (Magical Secrets).</p>
-        <div class="seg wrap">
-          <button v-for="o in listOptions('class')" :key="o.id" type="button" :class="{ on: t.spellLists?.includes(o.id) }" @click="toggleList(o.id)">{{ o.label }}</button>
-        </div>
+        <ProfChips :values="t.spellLists ?? []" :suggest="listOptions('class')" placeholder="Add a class's list…" @change="v => patch({ spellLists: v.length ? v : undefined })" />
       </TraitSection>
     </template>
 

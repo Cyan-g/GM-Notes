@@ -4,11 +4,11 @@
 // Below, side by side: what it gives (when it works, then its effects, spells & charges and features, each with
 // what it's for; empty ones fold into + buttons) and what it needs (attunement, and who can use it, step by step).
 import Dropdown from '../Dropdown.vue'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { Entry, Regain } from '../../model/types'
 import { TYPES, MASTERY_OF, byKey, type FieldDef } from '../../model/schema'
 import { changed, setField, toggleField } from '../../edit'
-import { formatMoney } from '../../store'
+import { formatMoney, listOptions } from '../../store'
 import { parseRegain, worksWhileOf } from '../../items'
 import { mainCoin, rule } from '../../rules'
 import { itemNamed } from '../../lookup'
@@ -17,6 +17,7 @@ import FieldInput from './FieldInput.vue'
 import ItemNeeds from './ItemNeeds.vue'
 import AddPartsBar from './AddPartsBar.vue'
 import { inputValue as val } from '../../dom'
+import { openRecipe, recipeShown } from '../../composables/recipeOpen'
 
 const props = defineProps<{ entry: Entry }>()
 const f = computed(() => byKey(props.entry.fields))
@@ -56,6 +57,8 @@ const groups = computed(() => {
   for (const d of fields.value) if (d.group && !SPECIAL.includes(d.key)) out.set(d.group, [...(out.get(d.group) ?? []), d])
   return [...out]
 })
+const focusOpen = ref(false)
+const focusShown = computed(() => focusOpen.value || !!(f.value.focus as unknown[] | undefined)?.length)
 const WIDE = ['list', 'longtext', 'effects', 'itemSpells', 'requires', 'speciesTraits']
 const short = (l: FieldDef[]) => l.filter(d => !WIDE.includes(d.kind) && d.kind !== 'bool')
 const wide = (l: FieldDef[]) => l.filter(d => WIDE.includes(d.kind))
@@ -124,19 +127,28 @@ function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete
         <label class="sheet-field"><span>Rarity</span>
           <Dropdown :value="String(f.rarity ?? '')" @change="setRarity(val($event))">
             <option value="">—</option>
-            <option v-for="r in ['Common', 'Uncommon', 'Rare', 'Very rare', 'Legendary', 'Artifact']" :key="r" :value="r">{{ r }}</option>
+            <!-- the world's rarities (the Lists page) -->
+            <option v-for="r in listOptions('item.rarity')" :key="r.id" :value="r.id">{{ r.label }}</option>
           </Dropdown>
           <small v-if="usualPrice" class="muted">usual price {{ formatMoney(usualPrice) }}{{ consumable ? ' (consumable: half)' : '' }}</small>
           <small v-else-if="f.rarity === 'Artifact'" class="muted">priceless</small></label>
       </div>
       <!-- a basic that's a list of options: the spellcasting focus types it is -->
-      <label v-for="d in wide(basics)" :key="d.key" class="sheet-field if-wide" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>
-      <div v-if="bools(basics).length" class="seg wrap if-bools">
-        <button v-for="d in bools(basics)" :key="d.key" type="button" :class="{ on: !!f[d.key] }" @click="toggleBool(d.key)">{{ d.label }}</button>
+      <template v-for="d in wide(basics)" :key="d.key">
+        <!-- a spellcasting focus is rare: a button until it's one (or the button's pressed) -->
+        <button v-if="d.key === 'focus' && !focusShown" type="button" class="chip-btn if-focus-add" title="Make it an arcane focus, a druidic focus or a holy symbol" @click="focusOpen = true">＋ Spellcasting focus</button>
+        <label v-else class="sheet-field if-wide" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>
+      </template>
+      <div v-if="bools(basics).length" class="chip-toggles if-bools">
+        <button class="chip-toggle" v-for="d in bools(basics)" :key="d.key" type="button" :class="{ on: !!f[d.key] }" @click="toggleBool(d.key)">{{ d.label }}</button>
       </div>
     </section>
 
-    <section v-for="[g, ds] in groups" :key="g" class="if-section">
+    <!-- an item that can be made but has no recipe yet: one button instead of an empty Crafting part and Recipe card -->
+    <div v-if="groups.some(([g]) => g === 'Crafting') && !recipeShown(entry)" class="if-add">
+      <button type="button" class="chip-btn" title="What it's made of, the tool it's made with, the crafting time and its effect" @click="openRecipe(entry)">＋ Recipe</button>
+    </div>
+    <section v-for="[g, ds] in groups.filter(([g]) => g !== 'Crafting' || recipeShown(entry))" :key="g" class="if-section">
       <h4>{{ g }}</h4>
       <div class="if-grid">
         <label v-for="d in short(ds)" :key="d.key" class="sheet-field" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>
@@ -152,8 +164,8 @@ function useParsed() { if (parsed.value) { f.value.regain = parsed.value; delete
           <label v-if="f.armorType === 'Heavy'" class="sheet-field"><span>Strength needed</span><input type="number" min="0" max="30" :value="strNeeded ?? ''" placeholder="e.g. 15" @change="setStr(val($event))" /><small class="muted">worn without it: −10 ft speed</small></label>
         </template>
       </div>
-      <div v-if="g === 'Armor' && (realArmor || f.stealthDis)" class="seg wrap if-bools">
-        <button type="button" :class="{ on: !!f.stealthDis }" title="Disadvantage on Stealth checks while worn" @click="toggleBool('stealthDis')">Stealth disadvantage</button>
+      <div v-if="g === 'Armor' && (realArmor || f.stealthDis)" class="chip-toggles if-bools">
+        <button class="chip-toggle" type="button" :class="{ on: !!f.stealthDis }" title="Disadvantage on Stealth checks while worn" @click="toggleBool('stealthDis')">Stealth disadvantage</button>
       </div>
       <label v-for="d in wide(ds)" :key="d.key" class="sheet-field if-wide" :class="'k-' + d.kind"><span>{{ d.label }}</span><FieldInput :def="d" :entry="entry" /></label>
     </section>

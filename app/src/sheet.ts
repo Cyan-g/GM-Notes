@@ -15,7 +15,7 @@ import { unmet } from './requirements'
 import { setConditions } from './conditions'
 import { longRestHeals, rule } from './rules'
 import { castingOf, hitDicePools } from './classRules'
-import { restSpecies, speciesExpertise, speciesGrants, speciesSize, speciesSkills, speciesSpeed, speciesSpeeds, speciesTraits, toolKindOf, type HaveNow } from './species'
+import { restSpecies, speciesExpertise, speciesGrants, speciesSize, speciesSkills, speciesSpeed, speciesSpeeds, speciesSpells, speciesTraits, toolKindOf, type HaveNow } from './species'
 import { blankProfs, emptyBook, onSheetEdit, ownerOf, profsToEdit, sheetOf, sheetOrBlank, sheetToEdit, stackItem } from './sheetData'
 import { SKILLS, mod, profBonus, signed, type Ability } from './model/dnd'
 import { changed } from './edit'
@@ -235,7 +235,9 @@ export function speedOf(s: CharacterSheet): string | undefined {
 export function haveNow(s: CharacterSheet): HaveNow {
   const p = profsOf(s)
   const pc = ownerOf(s)
-  return { skills: SKILLS.filter(x => skillLevel(s, x.name) > 0).map(x => x.name), weapons: p.weapons, languages: p.languages, classes: pc ? classesOf(pc).map(l => l.class.toLowerCase()) : [] }
+  // the spells they have, for a "one they have" spell choice: the spellbook's and what features give
+  const spells = [...(s.spellbook?.known ?? []), ...(pc ? speciesSpells(pc, s).map(x => x.spell.spell) : [])]
+  return { skills: SKILLS.filter(x => skillLevel(s, x.name) > 0).map(x => x.name), weapons: p.weapons, languages: p.languages, classes: pc ? classesOf(pc).map(l => l.class.toLowerCase()) : [], spells }
 }
 /**
  * What features add to a spell's damage rolls (Agonizing Blast to Eldritch Blast, Elemental Affinity to fire spells):

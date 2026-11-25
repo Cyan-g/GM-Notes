@@ -34,8 +34,14 @@ const props = withDefaults(defineProps<{
   groups?: string[]
 }>(), { facets: () => [], sort: () => ({ key: 'name', dir: 1 as const }) })
 
-/** The columns, leaving out any with nothing in any row (a Player nobody filled in). */
-const columns = computed(() => props.cols.map(k => column(k, props.type)).filter(c => !props.rows.length || props.rows.some(e => !isEmpty(c.value(e)))))
+/**
+ * The columns, leaving out any with nothing in the rows shown (a Player nobody filled in; Magical while the filters
+ * show only mundane things). With no rows shown they all stay, so the headers don't jump around an empty table.
+ */
+const columns = computed(() => {
+  const rows = shown.value.length ? shown.value : props.rows
+  return props.cols.map(k => column(k, props.type)).filter(c => !rows.length || rows.some(e => !isEmpty(c.value(e))))
+})
 // ---- known to players or DM only: entries that can be shared (not characters, sessions, encounters, nor what came
 // from elsewhere and is read-only here) ----
 const shareable = (e: Entry) => e.type !== 'pc' && canExport(e) && !isShared(e)
@@ -54,7 +60,7 @@ watch(() => props.facets.join(), () => { chosen.value = {} })
 watch(facetDefs, fs => { for (const x of fs) chosen.value[x.f.key] ??= '' }, { immediate: true })
 
 const sorted = (list: Entry[], key: string, dir: number) => {
-  const col = key === 'name' ? column('name') : columns.value.find(c => c.key === key) ?? column(key)
+  const col = key === 'name' ? column('name') : column(key, props.type)
   return [...list].sort((a, b) => {
     const x = col.sort(a), y = col.sort(b)
     return (x < y ? -1 : x > y ? 1 : a.name.localeCompare(b.name, undefined, { numeric: true })) * dir
@@ -119,7 +125,7 @@ function sortBy(k: string) {
   if (sortKey.value === k) sortDir.value *= -1
   else { sortKey.value = k; sortDir.value = 1 }
 }
-const arrow = (k: string) => (sortKey.value === k ? (sortDir.value > 0 ? ' ▲' : ' ▼') : '')
+const arrow = (k: string) => (sortKey.value === k ? (sortDir.value > 0 ? '▲' : '▼') : '')
 
 // ---- every shown spell or item as a printed card, in the order shown (the filters pick) ----
 const cardRows = computed(() => shown.value.filter(printable))
@@ -189,8 +195,8 @@ defineExpose({ count: computed(() => shown.value.length) })
       <table class="grid">
         <thead>
           <tr>
-            <th class="sortable" title="Sort by name" @click="sortBy('name')">Name{{ arrow('name') }}</th>
-            <th v-for="c in columns" :key="c.key" class="sortable" :class="['col-' + c.key.replace('@', ''), { num: c.kind === 'money' || c.field?.kind === 'money' }]" :title="c.key === '@concRitual' ? 'Concentration · Ritual' : `Sort by ${c.label.toLowerCase()}`" @click="sortBy(c.key)">{{ c.label }}{{ arrow(c.key) }}</th>
+            <th class="sortable" title="Sort by name" @click="sortBy('name')">Name<span class="sort-arrow">{{ arrow('name') }}</span></th>
+            <th v-for="c in columns" :key="c.key" class="sortable" :class="['col-' + c.key.replace('@', ''), { num: c.kind === 'money' || c.field?.kind === 'money' }]" :title="c.key === '@concRitual' ? 'Concentration · Ritual' : `Sort by ${c.label.toLowerCase()}`" @click="sortBy(c.key)">{{ c.label }}<span class="sort-arrow">{{ arrow(c.key) }}</span></th>
             <th v-if="spells" class="book-col" />
             <th v-if="knownCol" class="known-col" :title="allKnown ? 'All shown are known to players; untick to make them DM only' : 'Tick to make every row shown known to players'">
               <label><input type="checkbox" :checked="allKnown" :indeterminate="someKnown && !allKnown" :aria-label="'Known to players: every row shown'" @change="setAllKnown(($event.target as HTMLInputElement).checked, $event)" /> Players see</label>

@@ -4,7 +4,7 @@
 import { computed } from 'vue'
 import type { AbilityBonus, AbilityPick } from '../../model/types'
 import { abilityBonusText, cleanBonus } from '../../abilityBonus'
-import { ABILITY_KEYS, ABILITY_SHORT } from '../../model/dnd'
+import { ABILITY_KEYS, ABILITY_SHORT, ABILITY_UPPER } from '../../model/dnd'
 
 const model = defineModel<AbilityBonus | undefined>()
 const b = computed<AbilityBonus>(() => model.value ?? {})
@@ -34,7 +34,7 @@ const text = computed(() => abilityBonusText(model.value))
   <div class="ability-bonus-input">
     <div class="ab-fixed">
       <label v-for="a in ABILITY_KEYS" :key="a" class="ab-score">
-        <span>{{ ABILITY_SHORT[a].toUpperCase() }}</span>
+        <span>{{ ABILITY_UPPER[a] }}</span>
         <input type="number" min="-5" max="5" :value="b.fixed?.[a] || ''" placeholder="0" @change="setFixed(a, num($event))" />
       </label>
     </div>
@@ -44,8 +44,8 @@ const text = computed(() => abilityBonusText(model.value))
         <div v-for="(p, i) in list(side)" :key="i" class="effect-row ab-pick">
           <label class="small">+<input type="number" min="1" max="5" class="effect-value" :value="p.amount" aria-label="Bonus" @change="setPick(side, i, { amount: num($event) || 1 })" /></label>
           <label class="small">to <input type="number" min="1" max="6" class="effect-value" :value="p.count ?? 1" aria-label="How many scores" @change="setPick(side, i, { count: num($event) || 1 })" /> {{ (p.count ?? 1) === 1 ? 'score' : 'scores' }}</label>
-          <span class="seg" :title="p.among?.length ? 'Only from these' : 'From any score (pick some to narrow it)'">
-            <button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: p.among?.includes(a) }" @click="toggleAmong(side, i, a)">{{ ABILITY_SHORT[a] }}</button>
+          <span class="chip-toggles" :title="p.among?.length ? 'Only from these' : 'From any score (pick some to narrow it)'">
+            <button class="chip-toggle" v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: p.among?.includes(a) }" @click="toggleAmong(side, i, a)">{{ ABILITY_UPPER[a] }}</button>
           </span>
           <button type="button" class="link-btn" title="Remove" @click="removePick(side, i)">×</button>
         </div>

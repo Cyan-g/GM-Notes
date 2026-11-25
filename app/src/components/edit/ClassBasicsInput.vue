@@ -8,13 +8,12 @@ import { computed } from 'vue'
 import type { ClassBasics } from '../../model/types'
 import { builtInBasics } from '../../classRules'
 import { DICE } from '../../model/classes'
-import { MARTIAL_WEAPONS, SIMPLE_WEAPONS } from '../../model/schema'
-import { entries, get } from '../../store'
+import { entries, get, listOptions } from '../../store'
 import { itemNamed } from '../../lookup'
 import { isToolKind } from '../../species'
 import ProfChips from '../ProfChips.vue'
 import ClassKitsInput from './ClassKitsInput.vue'
-import { SKILLS, ABILITY_KEYS, ABILITY_SHORT } from '../../model/dnd'
+import { SKILLS, ABILITY_KEYS, ABILITY_NAME, ABILITY_UPPER } from '../../model/dnd'
 
 type Key = keyof ClassBasics
 const props = defineProps<{ cls: string }>()
@@ -38,11 +37,13 @@ const CASTERS: { id: NonNullable<ClassBasics['caster']>; label: string }[] = [
   { id: 'none', label: 'No spellcasting' }, { id: 'full', label: 'Full caster (Wizard, Cleric…)' }, { id: 'half', label: 'Half caster (Paladin, Ranger)' },
   { id: 'third', label: 'Third caster (Eldritch Knight)' }, { id: 'pact', label: 'Pact Magic (Warlock)' }, { id: 'artificer', label: 'Artificer (half, rounded up)' },
 ]
-const ARMOR = ['Light', 'Medium', 'Heavy', 'Shield']
-const WEAPONS = ['Simple', 'Martial']
-const WEAPON_TOGGLES = WEAPONS.map(x => ({ id: x, label: `${x} weapons` }))
+// the world's armor types, weapon categories and weapons (the Lists page)
+const ARMOR = computed(() => listOptions('item.armorType').map(o => o.id))
+const WEAPONS = computed(() => listOptions('item.weaponCategory').map(o => o.id))
+const WEAPON_TOGGLES = computed(() => listOptions('item.weaponCategory').map(o => ({ id: o.id, label: `${o.label} weapons` })))
 /** Single weapons a class can be proficient with (a Rogue's Rapier), besides Simple and Martial ones. */
-const WEAPON_NAMES = [...SIMPLE_WEAPONS, ...MARTIAL_WEAPONS].sort().map(x => ({ id: x, label: x }))
+const SKILL_OPTIONS = SKILLS.map(s => ({ id: s.name, label: s.name }))
+const WEAPON_NAMES = computed(() => [...listOptions('item.baseWeapon')].sort((a, b) => a.label.localeCompare(b.label)))
 const LEVELS = Array.from({ length: 20 }, (_, i) => i + 1)
 const casts = computed(() => (cur.value.caster ?? 'none') !== 'none')
 /** One number per level for a by-level table (cantrips, prepared spells). */
@@ -76,24 +77,24 @@ const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 's
     </div>
 
     <h4>Saving throws <span class="cb-tag" :class="tag('saves')">{{ tag('saves') }}</span><button v-if="isOwn('saves')" type="button" class="link-btn small" @click="reset('saves')">Reset</button></h4>
-    <div class="seg cb-toggles"><button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: cur.saves?.includes(a) }" @click="set('saves', toggle(cur.saves, a))">{{ ABILITY_SHORT[a] }}</button></div>
+    <div class="chip-toggles"><button class="chip-toggle" v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: cur.saves?.includes(a) }" @click="set('saves', toggle(cur.saves, a))">{{ ABILITY_UPPER[a] }}</button></div>
 
     <h4>Proficiencies <span class="cb-tag" :class="isOwn('armor') || isOwn('weapons') || isOwn('tools') ? 'changed' : tag('armor')">{{ isOwn('armor') || isOwn('weapons') || isOwn('tools') ? 'changed' : tag('armor') }}</span>
       <button v-if="isOwn('armor') || isOwn('weapons') || isOwn('tools')" type="button" class="link-btn small" @click="reset('armor'); reset('weapons'); reset('tools')">Reset</button></h4>
-    <div class="cb-line"><span class="muted small">Armor</span><div class="seg cb-toggles"><button v-for="x in ARMOR" :key="x" type="button" :class="{ on: cur.armor?.includes(x) }" @click="set('armor', toggle(cur.armor, x))">{{ x }}</button></div></div>
+    <div class="cb-line"><span class="muted small">Armor</span><div class="chip-toggles"><button class="chip-toggle" v-for="x in ARMOR" :key="x" type="button" :class="{ on: cur.armor?.includes(x) }" @click="set('armor', toggle(cur.armor, x))">{{ x }}</button></div></div>
     <div class="cb-line"><span class="muted small">Weapons</span><ProfChips :values="cur.weapons ?? []" :toggles="WEAPON_TOGGLES" :suggest="WEAPON_NAMES" :create="(x: string) => x" placeholder="Add a weapon…" @change="v => set('weapons', v)" /></div>
     <div class="cb-line"><span class="muted small">Tools</span><ProfChips :values="toolIds(cur.tools)" :suggest="toolItems" :create="(x: string) => x" placeholder="Add a tool…" @change="v => set('tools', v)" /></div>
 
     <h4>Skills <span class="cb-tag" :class="tag('skills')">{{ tag('skills') }}</span><button v-if="isOwn('skills')" type="button" class="link-btn small" @click="reset('skills')">Reset</button></h4>
     <div class="cb-line"><span class="muted small">Pick</span><input class="cb-num" type="number" min="0" max="18" :value="cur.skills?.count ?? 2" @change="set('skills', { count: num($event) ?? 0, from: cur.skills?.from ?? [] })" />
       <span class="muted small">from {{ cur.skills?.from?.length ? '' : 'any skill (none ticked)' }}</span></div>
-    <div class="cb-skills"><button v-for="sk in SKILLS" :key="sk.name" type="button" class="chip-btn" :class="{ on: cur.skills?.from?.includes(sk.name) }" @click="set('skills', { count: cur.skills?.count ?? 2, from: toggle(cur.skills?.from, sk.name) })">{{ sk.name }}</button></div>
+    <ProfChips :values="cur.skills?.from ?? []" :suggest="SKILL_OPTIONS" placeholder="Add a skill…" @change="v => set('skills', { count: cur.skills?.count ?? 2, from: v })" />
 
     <h4>Spellcasting <span class="cb-tag" :class="isOwn('caster') || isOwn('casting') ? 'changed' : tag('caster')">{{ isOwn('caster') || isOwn('casting') ? 'changed' : tag('caster') }}</span>
       <button v-if="isOwn('caster') || isOwn('casting')" type="button" class="link-btn small" @click="reset('caster'); reset('casting')">Reset</button></h4>
     <div class="cb-line">
       <Dropdown :value="cur.caster ?? 'none'" aria-label="Spell slots" @change="set('caster', ($event.target as HTMLSelectElement).value as ClassBasics['caster'])"><option v-for="c in CASTERS" :key="c.id" :value="c.id">{{ c.label }}</option></Dropdown>
-      <Dropdown v-if="casts" :value="cur.casting ?? ''" aria-label="Casting ability" @change="set('casting', (($event.target as HTMLSelectElement).value || undefined) as ClassBasics['casting'])"><option value="">Casting ability…</option><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ ABILITY_SHORT[a] }}</option></Dropdown>
+      <Dropdown v-if="casts" :value="cur.casting ?? ''" aria-label="Casting ability" @change="set('casting', (($event.target as HTMLSelectElement).value || undefined) as ClassBasics['casting'])"><option value="">Casting ability…</option><option v-for="a in ABILITY_KEYS" :key="a" :value="a">{{ ABILITY_NAME[a] }}</option></Dropdown>
     </div>
     <template v-if="casts">
       <div class="cb-levels">
@@ -133,10 +134,10 @@ const tag = (k: Key) => (isOwn(k) ? 'changed' : base.value[k] !== undefined ? 's
 
     <h4>Multiclassing <span class="cb-tag" :class="tag('multiclass')">{{ tag('multiclass') }}</span><button v-if="isOwn('multiclass')" type="button" class="link-btn small" @click="reset('multiclass')">Reset</button></h4>
     <div class="cb-line"><span class="muted small">Needs 13 in</span>
-      <div class="seg cb-toggles"><button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: mc.primary.includes(a) }" @click="setMc({ primary: toggle(mc.primary, a) })">{{ ABILITY_SHORT[a] }}</button></div>
-      <label v-if="mc.primary.length > 1" class="small"><input type="checkbox" :checked="!!mc.any" @change="setMc({ any: ($event.target as HTMLInputElement).checked || undefined })" /> one of them is enough</label></div>
+      <div class="chip-toggles"><button class="chip-toggle" v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: mc.primary.includes(a) }" @click="setMc({ primary: toggle(mc.primary, a) })">{{ ABILITY_UPPER[a] }}</button></div>
+      <label v-if="mc.primary.length > 1" class="check-chip small"><input type="checkbox" :checked="!!mc.any" @change="setMc({ any: ($event.target as HTMLInputElement).checked || undefined })" /> one of them is enough</label></div>
     <div class="cb-line"><span class="muted small">Gives</span>
-      <div class="seg cb-toggles"><button v-for="x in [...ARMOR, ...WEAPONS]" :key="x" type="button" :class="{ on: [...mc.armor, ...mc.weapons].includes(x) }" @click="ARMOR.includes(x) ? setMc({ armor: toggle(mc.armor, x) }) : setMc({ weapons: toggle(mc.weapons, x) })">{{ x }}</button></div></div>
+      <div class="chip-toggles"><button class="chip-toggle" v-for="x in [...ARMOR, ...WEAPONS]" :key="x" type="button" :class="{ on: [...mc.armor, ...mc.weapons].includes(x) }" @click="ARMOR.includes(x) ? setMc({ armor: toggle(mc.armor, x) }) : setMc({ weapons: toggle(mc.weapons, x) })">{{ x }}</button></div></div>
     <div class="cb-line"><span class="muted small">Tools</span><ProfChips :values="toolIds(mc.tools)" :suggest="toolItems" :create="(x: string) => x" placeholder="Add a tool…" @change="v => setMc({ tools: v })" /></div>
     <div class="cb-line">
       <label class="small">Skills <input class="cb-num" type="number" min="0" :value="mc.skills ?? 0" @change="setMc({ skills: num($event) || undefined })" /></label>

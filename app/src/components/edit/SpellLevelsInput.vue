@@ -43,11 +43,11 @@ const nextLevel = computed(() => newLevel.value ?? Math.min(20, (rows.value.at(-
         <option v-if="shared('how') === 'mixed'" value="mixed">mixed (set per spell)</option>
         <option v-for="(label, id) in HOW_SPECIES" :key="id" :value="id">{{ label }}</option>
       </Dropdown>
-      <Dropdown :value="shared('ability')" aria-label="Cast with" @change="val($event) !== 'mixed' && setAll({ ability: (val($event) || undefined) as TraitSpell['ability'] })">
-        <option v-if="shared('ability') === 'mixed'" value="mixed">mixed abilities</option>
-        <option value="">with the class's ability</option>
-        <option v-for="(label, id) in ABILITY_NAME" :key="id" :value="id">with {{ label }}</option>
-      </Dropdown>
+      <label class="small ab-with">cast with <Dropdown :value="shared('ability')" aria-label="Cast with" @change="val($event) !== 'mixed' && setAll({ ability: (val($event) || undefined) as TraitSpell['ability'] })">
+        <option v-if="shared('ability') === 'mixed'" value="mixed">mixed</option>
+        <option value="">the class's ability</option>
+        <option v-for="(label, id) in ABILITY_NAME" :key="id" :value="id">{{ label }}</option>
+      </Dropdown></label>
     </div>
     <table class="spell-levels-table">
       <thead><tr><th>{{ levelWord }}</th><th>Spells</th></tr></thead>

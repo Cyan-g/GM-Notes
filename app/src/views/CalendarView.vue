@@ -5,7 +5,7 @@ import AppIcon from '../components/AppIcon.vue'
 import { computed, ref, watch } from 'vue'
 import type { Entry, WorldDate } from '../model/types'
 import { db, entries, formatDate, get, touch } from '../store'
-import { campaignColor, currentCampaign, nextSessionFields } from '../sessions'
+import { campaignColor, createSession, currentCampaign } from '../sessions'
 import { addDays, eraOf, eraShort, monthDays, moonMark, weekday } from '../calendar'
 import { go } from '../router'
 import { newEntry } from '../ui'
@@ -139,7 +139,7 @@ const yearInput = (v: string) => { const y = Number(v); if (v.trim() && !Number.
         <p v-if="!(items.byDay.get(selected!)?.length) && !holidays.some(h => h.day === selected)" class="muted small">Nothing on this day.</p>
         <div class="day-actions">
           <button @click="newEntry('event', { date: selDate, category: 'Historical Events' })">＋ Event</button>
-          <button @click="newEntry('session', { ...(currentCampaign ? nextSessionFields(currentCampaign.id) : {}), date: selDate })">＋ Session</button>
+          <button @click="currentCampaign ? createSession(currentCampaign.id, { date: selDate }) : newEntry('session', { date: selDate })">＋ Session</button>
           <button v-if="!same(today, selDate.year, selDate.month!, selDate.day)" @click="setToday(selDate)">Make this today</button>
         </div>
       </aside>

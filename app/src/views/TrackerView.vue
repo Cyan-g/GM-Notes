@@ -54,6 +54,8 @@ function addAlly(id: Id) {
 // ---- the two sides and the order of play ----
 const party = computed(() => t.value.combatants.filter(isParty))
 const enemies = computed(() => t.value.combatants.filter(c => !isParty(c)))
+/** The first creature without stats (allies, then enemies): only its card says how to give them. */
+const firstBare = computed(() => [...party.value, ...enemies.value].find(c => !c.isPlayer && !statsOf(get(c.entry)) && c.maxHp == null && c.ac == null)?.id)
 /**
  * The initiative order around whoever is acting: they stand in the middle, those who went before them to the
  * left (oldest at the far left), those still to come to the right. "↻" marks where a new round begins.
@@ -132,6 +134,22 @@ function onKey(ev: KeyboardEvent) {
 }
 onMounted(() => window.addEventListener('keydown', onKey))
 onUnmounted(() => window.removeEventListener('keydown', onKey))
+// ---- a fight left from before: its player characters aren't the current campaign's party ----
+/** The fight's player characters that aren't in the current campaign (all of them, for a fight from another campaign). */
+const strangers = computed(() => {
+  const cur = currentCampaign.value
+  if (!cur || !t.value.combatants.length) return []
+  const members = new Set(partyOf(cur.id).map(p => p.id))
+  return t.value.combatants.filter(c => c.isPlayer && c.entry && !members.has(c.entry))
+})
+/** Shown until "Keep it" for this visit, when most of the fight's characters aren't in the current party. */
+const keptOld = ref(false)
+const oldFight = computed(() => !keptOld.value && strangers.value.length * 2 > t.value.combatants.filter(c => c.isPlayer && c.entry).length)
+/** Start over: the old fight goes entirely, and the current campaign's party is put in. */
+function startFresh() {
+  clearTracker(false)
+  if (currentCampaign.value) { addPlayers(partyOf(currentCampaign.value.id)); partyCampaign.value = currentCampaign.value.id }
+}
 function clearAll() { if (confirm('Clear the tracker? The monsters go; player characters stay, keeping the HP on their sheets.')) clearTracker() }
 </script>
 
@@ -153,6 +171,15 @@ function clearAll() { if (confirm('Clear the tracker? The monsters go; player ch
         <button class="primary" title="Next turn (N or Space)" :disabled="!t.combatants.length" @click="nextTurn()"><template v-if="t.turn < 0"><AppIcon ui="combat" /> Start combat</template><template v-else>Next ▶</template></button>
       </div>
     </header>
+
+    <!-- a fight left from before, with characters from outside the current campaign: said, with a way to start over -->
+    <div v-if="oldFight" class="card old-fight small">
+      <span>This fight is left from earlier<template v-if="encounter"> ({{ encounter.name }})</template><template v-if="t.round">, round {{ t.round }}</template>,
+        with {{ strangers.map(c => c.name).join(', ') }}, who {{ strangers.length === 1 ? "isn't" : "aren't" }} in the party of {{ currentCampaign?.name }}.</span>
+      <span class="spacer" />
+      <button class="primary" @click="startFresh">Start fresh with {{ currentCampaign?.name }}</button>
+      <button @click="keptOld = true">Keep it</button>
+    </div>
 
     <!-- The order of play: whoever is acting in the middle, earlier turns to the left, upcoming to the right. -->
     <div class="init-strip card" :class="{ empty: !t.combatants.length }" :style="t.combatants.length ? { gridTemplateColumns: stripCols } : undefined">
@@ -192,7 +219,7 @@ function clearAll() { if (confirm('Clear the tracker? The monsters go; player ch
     <div class="sides" :class="{ compact, 'with-panel': !!panelStats }">
       <section class="side-col">
         <h2 class="side-title"><AppIcon ui="shield" /> Party &amp; allies <span class="muted small">{{ party.length }}</span></h2>
-        <CombatantCard v-for="c in party" :key="c.id" :c="c" :current="current(c)" :selected="selected === c.id" :compact="compact" @select="selected = c.id" @stats="showStats(c)" />
+        <CombatantCard v-for="c in party" :key="c.id" :c="c" :hint="c.id === firstBare" :current="current(c)" :selected="selected === c.id" :compact="compact" @select="selected = c.id" @stats="showStats(c)" />
         <!-- Adding: a big card while the side is empty, a slim one under the fighters after. -->
         <div class="card side-add" :class="{ slim: party.length }">
           <label><span>Party</span>
@@ -206,7 +233,7 @@ function clearAll() { if (confirm('Clear the tracker? The monsters go; player ch
       </section>
       <section class="side-col enemies">
         <h2 class="side-title"><AppIcon ui="skull" /> Enemies <span v-if="enemies.length" class="muted small">{{ enemies.filter(c => stripState(c) !== 'down').length }} / {{ enemies.length }} standing</span></h2>
-        <CombatantCard v-for="c in enemies" :key="c.id" :c="c" :current="current(c)" :selected="selected === c.id" :compact="compact" @select="selected = c.id; if (statsOf(get(c.entry))) pinned = c.id" @stats="showStats(c)" />
+        <CombatantCard v-for="c in enemies" :key="c.id" :c="c" :hint="c.id === firstBare" :current="current(c)" :selected="selected === c.id" :compact="compact" @select="selected = c.id; if (statsOf(get(c.entry))) pinned = c.id" @stats="showStats(c)" />
         <div class="card side-add" :class="{ slim: enemies.length }">
           <label><span>Encounter</span><EntryPicker :model-value="t.encounter ?? null" :types="['encounter']" placeholder="Load an encounter…" @update:model-value="load" /></label>
           <label><span>Enemy</span><EntryPicker add :types="['creature', 'npc']" placeholder="Add a creature by name…" @pick="addEntry" /></label>

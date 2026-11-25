@@ -2,9 +2,9 @@
 // The side cards of an entry's page about what it's connected to: its relations grouped by how they read from its
 // side, what an item is used in and where it is, the maps with a pin for it, the characters who know a spell, and
 // the entries that mention it (leaving out what another card already lists).
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { Entry, Relation } from '../model/types'
-import { RELATION_KINDS } from '../model/schema'
+import { RELATION_KINDS, byKey } from '../model/schema'
 import { backlinks, byType, childrenOf, entries, get, hiddenFromPlayers, relationsOf } from '../store'
 import { hrefMap } from '../router'
 import { carriersOf, shopsSelling } from '../items'
@@ -13,7 +13,7 @@ import { dateRange, factRelations, relationEnded as ended } from '../entryFacts'
 import AppIcon from './AppIcon.vue'
 import EntryLink from './EntryLink.vue'
 import ItemWhere from './ItemWhere.vue'
-import { membersOf } from '../sessions'
+import { membersOf, sessionsOf } from '../sessions'
 
 const props = defineProps<{ e: Entry }>()
 
@@ -43,6 +43,10 @@ const usedIn = computed(() => props.e.type === 'item'
   ? entries.value.filter(n => ((n.fields.recipe as { item: string }[]) ?? []).some(l => l.item === props.e.id)) : [])
 /** The characters with this spell in their spellbook. */
 const knownBy = computed(() => (props.e.type === 'spell' ? (byType.value.get('pc') ?? []).filter(p => p.fields.sheet?.spellbook?.known?.includes(props.e.id)) : []))
+/** "Mentioned in": the first ten, the rest on "Show all" (folded again on another entry). */
+const MENTIONS_SHOWN = 10
+const allMentions = ref(false)
+watch(() => props.e.id, () => { allMentions.value = false })
 const mentions = computed(() => {
   const x = props.e
   const related = new Set((relationsOf.value.get(x.id) ?? []).flatMap(r => [r.a, r.b]))
@@ -52,7 +56,9 @@ const mentions = computed(() => {
   const soldAt = x.type === 'item' ? shopsSelling(x).map(s => s.s) : []
   const carriedBy = x.type === 'item' ? carriersOf(x).map(c => c.p) : []
   const members = x.type === 'race' ? raceMembers(x) : []
-  const party = x.type === 'campaign' ? membersOf(x.id) : []
+  // a campaign's party and its sessions are on its page already (on a player's copy, the party's NPC copies too)
+  const party = x.type === 'campaign' ? [...membersOf(x.id), ...sessionsOf(x.id),
+    ...(byType.value.get('npc') ?? []).filter(n => ((byKey(n.fields).partyOf as string[] | undefined) ?? []).includes(x.id))] : []
   const kids = new Set([...children, ...usedIn.value, ...soldAt, ...members, ...knownBy.value, ...carriedBy, ...party].map(c => c.id))
   return [...(backlinks.value.get(x.id) ?? [])].map(get).filter((m): m is Entry => !!m && !related.has(m.id) && !kids.has(m.id) && !hiddenFromPlayers(m))
     .sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name, undefined, { numeric: true }))
@@ -89,6 +95,8 @@ const mentions = computed(() => {
   <!-- an item's carriers and shops are in ItemWhere; a player character's notes take the place of this card -->
   <div v-if="e.type !== 'pc' && mentions.length" class="card">
     <h3>Mentioned in <span class="muted small">{{ mentions.length }}</span></h3>
-    <ul class="rel mentions-list"><li v-for="m in mentions" :key="m.id"><EntryLink :id="m.id" icon /></li></ul>
+    <!-- the first ten, the rest behind "show all" (no scroll box inside the page's scroll) -->
+    <ul class="rel mentions-list"><li v-for="m in (allMentions ? mentions : mentions.slice(0, MENTIONS_SHOWN))" :key="m.id"><EntryLink :id="m.id" icon /></li></ul>
+    <button v-if="mentions.length > MENTIONS_SHOWN" type="button" class="link-btn small" @click="allMentions = !allMentions">{{ allMentions ? 'Show fewer' : `Show all ${mentions.length}` }}</button>
   </div>
 </template>

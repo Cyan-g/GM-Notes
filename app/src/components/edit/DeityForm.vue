@@ -1,9 +1,11 @@
 <script setup lang="ts">
 // A deity's facts: rank, epithet, alignment, the cleric domains it offers and its portfolio always; where it
 // dwells, who worships it, its symbol, holy days and the subclasses it's a patron of once added.
+import SuggestInput from '../SuggestInput.vue'
 import { computed } from 'vue'
 import type { Entry } from '../../model/types'
 import { TYPES, byKey } from '../../model/schema'
+import { byType } from '../../store'
 import { isEmpty, setField } from '../../edit'
 import { ALIGNMENTS, holidays } from '../../deity'
 import { useParts } from '../../composables/useParts'
@@ -28,6 +30,9 @@ const { shown, addable, open, close } = useParts(MORE, k => !isEmpty(byKey(f.val
     if (k === 'symbol') set('symbolImage', undefined)
   },
 })
+/** Places to name as its realm (any), and as its home plane (places of the Plane kind first, then the rest). */
+const placeNames = computed(() => (byType.value.get('place') ?? []).map(e => e.name).sort((a, b) => a.localeCompare(b)))
+const planeNames = computed(() => { const all = byType.value.get('place') ?? [], planes = all.filter(e => /plane/i.test(String(e.fields.placeType ?? ''))).map(e => e.name).sort((a, b) => a.localeCompare(b)); return [...new Set([...planes, ...placeNames.value])] })
 const holidayOptions = computed(() => holidays().map(h => ({ id: h.name, label: h.name })))
 </script>
 
@@ -38,16 +43,15 @@ const holidayOptions = computed(() => holidays().map(h => ({ id: h.name, label: 
       <label class="sf-field npc-occ"><span class="sf-label">Epithet</span>
         <input :value="f.epithet ?? ''" placeholder="e.g. the golden lady" @change="set('epithet', val($event).trim())" /></label>
       <label class="sf-field"><span class="sf-label">Alignment</span>
-        <input :value="f.alignment ?? ''" list="deity-alignments" placeholder="e.g. neutral good" @change="set('alignment', val($event).trim())" />
-        <datalist id="deity-alignments"><option v-for="a in ALIGNMENTS" :key="a" :value="a" /></datalist></label>
+        <SuggestInput :value="f.alignment ?? ''" :options="ALIGNMENTS" placeholder="e.g. neutral good" @change="set('alignment', val($event).trim())" /></label>
     </div>
     <PartRow label="Domains" label-title="The cleric domains it offers" fixed><FieldInput :def="def('domains')" :entry="entry" /></PartRow>
     <PartRow label="Portfolio" label-title="What it holds sway over" fixed>
       <ListInput :model-value="f.portfolio ?? []" placeholder="Add, e.g. Wealth, Commerce…" @update:model-value="v => set('portfolio', v)" /></PartRow>
 
     <PartRow v-for="k in shown" :key="k" :label="def(k).label" @remove="close(k)">
-      <input v-if="k === 'realm'" :value="f.realm ?? ''" placeholder="its home, e.g. Brightwater" @change="set('realm', val($event).trim())" />
-      <input v-else-if="k === 'plane'" :value="f.plane ?? ''" placeholder="e.g. the Outlands" @change="set('plane', val($event).trim())" />
+      <SuggestInput v-if="k === 'realm'" :value="f.realm ?? ''" :options="placeNames" placeholder="its home, e.g. Brightwater" @change="set('realm', val($event).trim())" />
+      <SuggestInput v-else-if="k === 'plane'" :value="f.plane ?? ''" :options="planeNames" placeholder="e.g. the Outlands" @change="set('plane', val($event).trim())" />
       <input v-else-if="k === 'worshippers'" :value="f.worshippers ?? ''" placeholder="e.g. merchants, smugglers, gamblers" @change="set('worshippers', val($event).trim())" />
       <div v-else-if="k === 'symbol'" class="deity-symbol">
         <input :value="f.symbol ?? ''" placeholder="e.g. a golden coin bearing her profile" @change="set('symbol', val($event).trim())" />

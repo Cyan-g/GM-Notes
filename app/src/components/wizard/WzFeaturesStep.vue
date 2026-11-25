@@ -3,7 +3,7 @@
 // with the choices they ask for. Levelling bookkeeping (the Spellcasting rules) is one line at the end.
 import { computed } from 'vue'
 import { draftHave, ownedSpells, wizard } from '../../wizard'
-import { choiceOpen, isClassOrigin, scaleAt, setPicks as setTraitPicks, speciesTraits, type ActiveTrait } from '../../species'
+import { choiceOpen, isClassOrigin, scaleAt, setPicks as setTraitPicks, speciesTraits, subLabel, subsOf, type ActiveTrait } from '../../species'
 import { useDraft } from '../../composables/useDraft'
 import { useDraftSheet } from '../../composables/useDraftSheet'
 import { skillSources } from '../../species'
@@ -17,7 +17,11 @@ const { d, pc } = useDraft()
 const draftNow = useDraftSheet()
 const sources = computed(() => skillSources(draftNow.pc.value, draftNow.sheet.value, get(draftNow.d.value.cls)?.name ?? 'the class'))
 /** The class's and subclass's features at the chosen level, by where they come from. */
-const classFeatures = computed(() => speciesTraits(pc.value).filter(a => isClassOrigin(a.race) && a.active))
+const traits = computed(() => speciesTraits(pc.value))
+const classFeatures = computed(() => traits.value.filter(a => isClassOrigin(a.race) && a.active && !a.parent))
+/** The choices a feature's picked options bring (Agonizing Blast's cantrip), made under that option. */
+const subs = (a: ActiveTrait) => subsOf(traits.value, a)
+const optionName = (a: ActiveTrait, x: ActiveTrait) => a.options.find(o => o.id === x.parent?.option)?.name ?? ''
 const featureGroups = computed(() => [...new Map(classFeatures.value.map(a => [a.race.id, a.race])).values()].map(r => ({ r, list: classFeatures.value.filter(a => a.race.id === r.id) })))
 /** A feature that's only levelling bookkeeping (the Spellcasting rules, "Warlock Subclass"): folded into one line. */
 const bookkeeping = (a: ActiveTrait) => a.trait.onSheet === 'hide' && !a.trait.choice
@@ -28,13 +32,17 @@ const pickFeature = (a: ActiveTrait, picks: string[]) => { const holder = { spec
   <p class="muted small">What the class{{ d.subclass ? ' and subclass give' : ' gives' }} at level {{ d.level }}; the sheet keeps them up to date as the character levels up. Make the choices here or later on the sheet.</p>
   <template v-for="g in featureGroups" :key="g.r.id">
     <h3><EntryLink :id="g.r.id" /></h3>
-    <div v-for="a in g.list.filter(x => !bookkeeping(x))" :key="a.key" class="wz-feature" :class="{ open: choiceOpen(a) }">
+    <div v-for="a in g.list.filter(x => !bookkeeping(x))" :key="a.key" class="wz-feature" :class="{ open: choiceOpen(a) || subs(a).some(choiceOpen) }">
       <details>
         <summary><b>{{ a.trait.name }}</b> <span class="muted small">level {{ a.trait.level ?? 1 }}</span>
           <span v-if="scaleAt(a)" class="chip">{{ a.trait.scale!.label }} {{ scaleAt(a) }}</span></summary>
         <MarkdownView v-if="a.trait.text" class="small" :source="a.trait.text" />
       </details>
       <TraitChoicePicker v-if="a.trait.choice" :a="a" :sheet="draftNow.sheet.value" :prof="draftNow.prof.value" :from="(x: string) => sources.get(x)" :have="draftHave(d)" :owned="a.trait.choice.kind === 'spell' ? ownedSpells(d, { skip: a.key, withClass: true }) : undefined" @pick="p => pickFeature(a, p)" />
+      <div v-for="x in subs(a)" :key="x.key" class="sp-sub" :class="{ 'sp-pending': choiceOpen(x) }">
+        <div class="sp-sub-head small"><b>{{ optionName(a, x) }}</b> <span class="muted">· {{ subLabel(x) }}</span></div>
+        <TraitChoicePicker :a="x" :sheet="draftNow.sheet.value" :prof="draftNow.prof.value" :from="(n: string) => sources.get(n)" :have="draftHave(d)" :owned="x.trait.choice?.kind === 'spell' ? ownedSpells(d, { skip: x.key, withClass: true }) : undefined" @pick="p => pickFeature(x, p)" />
+      </div>
     </div>
     <p v-if="g.list.some(bookkeeping)" class="muted small">Also at this level (worked out by the sheet and the Spellbook): {{ g.list.filter(bookkeeping).map(a => a.trait.name).join(', ') }}.</p>
   </template>

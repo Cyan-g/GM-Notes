@@ -1,5 +1,6 @@
 // Dashboards: named tables over entries, each with a few views. Add or change views here.
 import type { Entry, EntryType } from './model/types'
+import { dmIds } from './store'
 
 /** The Spells table's tab for each spell level (1st…9th). */
 export const SPELL_LEVEL_TABS = ['1st level', '2nd level', '3rd level', '4th level', '5th level', '6th level', '7th level', '8th level', '9th level']
@@ -60,7 +61,7 @@ export const DASHBOARDS: Dashboard[] = [
   },
   {
     id: 'recent', title: 'Recently edited', icon: '🕘', uiIcon: 'history', views: [
-      { name: 'Last 50 changes', filter: () => true, cols: ['@type', '@updated'], facets: ['@type'], sort: { key: '@updated', dir: 1 }, limit: 50 },
+      { name: 'Last 50 changes', filter: e => !dmIds.value.has(e.id), cols: ['@type', '@updated'], facets: ['@type'], sort: { key: '@updated', dir: 1 }, limit: 50 },
     ],
   },
 ]

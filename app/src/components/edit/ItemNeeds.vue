@@ -20,6 +20,8 @@ const req = computed<Requirements>(() => f.value.requirements ?? {})
 /** Checks other than heavy armor's Strength (set with the armor). */
 const someone = computed(() => !!(req.value.classes?.length || req.value.spellcaster || req.value.races?.length || req.value.skills?.length || req.value.note || (req.value.scores ?? []).some(x => !(f.value.armorType === 'Heavy' && x.ability === 'str'))))
 const restricted = ref(someone.value)
+/** At its defaults (anyone, no attunement) it's one line until "change" opens the controls. */
+const editing = ref(!!f.value.attunement || someone.value)
 
 function putReq(p: Partial<Requirements>) {
   const n: Requirements = { ...req.value, ...p }
@@ -67,8 +69,9 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
 </script>
 
 <template>
-  <div class="feat-prereqs item-needs">
-    <label class="fp-switch"><input type="checkbox" :checked="!!f.attunement" @change="toggleAttune" /> <b>Requires attunement</b></label>
+  <p v-if="!editing" class="small item-needs-line">Anyone can use it, no attunement · <button type="button" class="link-btn" @click="editing = true">change</button></p>
+  <div v-else class="feat-prereqs item-needs">
+    <label class="check-chip fp-switch"><input type="checkbox" :checked="!!f.attunement" @change="toggleAttune" /> <b>Requires attunement</b></label>
     <span class="muted small">Who can use it{{ f.attunement ? ' (attune to it)' : ' (equip it)' }}:</span>
     <div class="seg fp-mode">
       <button type="button" :class="{ on: !restricted }" @click="setRestricted(false)">Anyone</button>
@@ -78,7 +81,7 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
       <div v-for="c in shown" :key="c.id" class="fp-row">
         <span class="fp-label">{{ c.label }}</span>
         <div class="fp-value">
-          <ProfChips v-if="c.id === 'classes'" :values="req.classes ?? []" :toggles="listOptions('class')" @change="v => putReq({ classes: v })" />
+          <ProfChips v-if="c.id === 'classes'" :values="req.classes ?? []" :suggest="listOptions('class')" placeholder="Add a class…" @change="v => putReq({ classes: v })" />
           <span v-else-if="c.id === 'spellcaster'" class="small">Anyone who can cast spells{{ req.classes?.length ? ', or one of the classes' : '' }}.</span>
           <template v-else-if="c.id === 'races'">
             <span v-for="id in req.races ?? []" :key="id" class="chip"><EntryLink :id="id" /><button type="button" class="link-btn" title="Remove" @click="putReq({ races: (req.races ?? []).filter(x => x !== id) })">×</button></span>
@@ -86,7 +89,7 @@ const skillOptions = SKILLS.map(s => ({ id: s.name, label: s.name }))
           </template>
           <template v-else-if="c.id === 'scores'">
             <span v-for="{ x, i } in scores" :key="i" class="req-score">
-              <Dropdown :value="x.ability" aria-label="Ability" @change="setScore(i, { ability: ($event.target as HTMLSelectElement).value as any })"><option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.short }}</option></Dropdown>
+              <Dropdown :value="x.ability" aria-label="Ability" @change="setScore(i, { ability: ($event.target as HTMLSelectElement).value as any })"><option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.label }}</option></Dropdown>
               <input type="number" min="1" max="30" class="effect-value" :value="x.min" aria-label="Minimum" @change="setScore(i, { min: Number(($event.target as HTMLInputElement).value) || 13 })" />+
               <button type="button" class="link-btn" title="Remove" @click="putReq({ scores: (req.scores ?? []).filter((_, k) => k !== i) })">×</button>
             </span>

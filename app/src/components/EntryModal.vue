@@ -2,6 +2,7 @@
 // Any entry in a pop-up, so the page behind it stays where it is (the character creator: a link opens this, never the
 // entry's page). A spell, item or feat as its card; a class, species, background and the rest as the creator shows
 // them (WizardPage). Esc or a click outside closes it.
+import { stripSecrets } from '../model/text'
 import TypeIcon from './TypeIcon.vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Id } from '../model/types'
@@ -45,7 +46,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true))
         <FeatCard v-else-if="e.type === 'feat'" :e="e" />
         <WizardPage v-else-if="PAGE.includes(e.type)" :e="e" bare />
         <template v-else>
-          <p v-if="e.fields.summary" class="small">{{ e.fields.summary }}</p>
+          <p v-if="e.fields.summary" class="small">{{ stripSecrets(String(e.fields.summary)).trim() }}</p>
           <MarkdownView :source="e.body" />
         </template>
       </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Edit every relation of one entry. A change shows up on the other entry's page too.
+import SuggestInput from '../SuggestInput.vue'
 import Dropdown from '../Dropdown.vue'
 import { computed, ref } from 'vue'
 import type { Entry, EntryType, Relation, RelationKind } from '../../model/types'
@@ -84,15 +85,13 @@ function add(other: string) {
 
 <template>
   <div class="rel-edit">
-    <!-- adding first: what it is (the usual ones as buttons), then whom -->
+    <!-- adding first: what it is (one Dropdown, the usual kinds first), then whom -->
     <div class="rel-add">
-      <div class="seg wrap rel-quick">
-        <button v-for="o in quick" :key="o.value" type="button" :class="{ on: newKind === o.value }" @click="newKind = o.value">{{ o.label }}</button>
-        <Dropdown compact :value="quick.some(o => o.value === newKind) ? '' : newKind" title="Other kinds of relation" @change="newKind = ($event.target as HTMLSelectElement).value || newKind">
-          <option value="">more…</option>
-          <option v-for="o in OPTIONS.filter(o => !quick.includes(o))" :key="o.value" :value="o.value">{{ o.label }}</option>
-        </Dropdown>
-      </div>
+      <Dropdown compact class="rel-kind" :value="newKind" aria-label="Kind of relation" @change="newKind = ($event.target as HTMLSelectElement).value || newKind">
+        <option v-for="o in quick" :key="o.value" :value="o.value">{{ o.label }}</option>
+        <hr />
+        <option v-for="o in OPTIONS.filter(o => !quick.includes(o))" :key="o.value" :value="o.value">{{ o.label }}</option>
+      </Dropdown>
       <EntryPicker add :exclude="[entry.id]" :types="newOther" :placeholder="`${OPTIONS.find(o => o.value === newKind)?.label ?? 'Add'}: type a name…`" @pick="add" />
     </div>
     <!-- Grouped like the page reads; each row is the other entry, its role and dates. ⋯ opens the kind and dates. -->
@@ -102,8 +101,7 @@ function add(other: string) {
         <div v-for="r in g.list" :key="r.id" class="rel-row" :class="{ open: open.has(r.id) }">
           <div class="rel-line">
             <EntryPicker class="rel-who" :model-value="otherOf(r)" :exclude="[entry.id]" @update:model-value="v => setOther(r, v)" />
-            <input class="rel-role" :value="r.role ?? ''" :list="`roles-${r.id}`" :placeholder="rankTitles(r).length ? 'rank' : 'role'" title="Role (optional)" @change="setField(r, 'role', ($event.target as HTMLInputElement).value.trim())" />
-            <datalist :id="`roles-${r.id}`"><option v-for="t in rolesFor(r)" :key="t" :value="t" /></datalist>
+            <SuggestInput class="rel-role" :value="r.role ?? ''" :options="rolesFor(r)" :placeholder="rankTitles(r).length ? 'rank' : 'role'" title="Role (optional)" @change="setField(r, 'role', ($event.target as HTMLInputElement).value.trim())" />
             <button type="button" class="rel-more" :class="{ dated: !!dates(r) }" :title="open.has(r.id) ? 'Hide details' : RELATION_KINDS[r.kind].dated ? 'Kind, and since when' : 'Kind'" @click="toggle(r.id)">{{ dates(r) || (RELATION_KINDS[r.kind].dated ? 'when?' : '⋯') }}</button>
             <button type="button" class="x" title="Remove this relation" @click="removeRelation(r.id)">×</button>
           </div>

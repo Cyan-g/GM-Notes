@@ -12,7 +12,7 @@ import { useReadOnly, useReadOnlyShared } from '../composables/useReadOnly'
 import AppIcon from './AppIcon.vue'
 import ConditionIcon from './ConditionIcon.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import type { CharacterSheet, ClassLine, DeathSaveState, Entry, Id, Proficiencies } from '../model/types'
+import type { CharacterSheet, ClassLine, DeathSaveState, Entry, Feature, Id, Proficiencies } from '../model/types'
 import { byType, get, listOptions, setList, state } from '../store'
 import { CLASS_DIE, DICE, classText, classesOf } from '../model/classes'
 import { dieOf } from '../classRules'
@@ -32,7 +32,8 @@ import ItemModal from './ItemModal.vue'
 import GearToggles from './GearToggles.vue'
 import PcPortrait from './PcPortrait.vue'
 import FeatureList from './FeatureList.vue'
-import FeatureChoices from './FeatureChoices.vue'
+import MarkdownView from './MarkdownView.vue'
+import EntryLink from './EntryLink.vue'
 import UsesCard from './UsesCard.vue'
 import { levelCap, longRestHeals, restLengths, rule } from '../rules'
 import ActiveSpellsCard from './ActiveSpellsCard.vue'
@@ -40,6 +41,7 @@ import ConditionsBar from './ConditionsBar.vue'
 import DeathSaves from './DeathSaves.vue'
 import LevelUpModal from './LevelUpModal.vue'
 import ChoicesModal from './ChoicesModal.vue'
+import AddFeatDialog from './AddFeatDialog.vue'
 import ShortRestModal from './ShortRestModal.vue'
 import SkillGrid from './SkillGrid.vue'
 import { freeFrame } from '../skillFrames'
@@ -75,6 +77,9 @@ const fromGear = computed(() => {
 /** Choices the character's classes, species and background still wait for. */
 /** Picks still to make on the Edit page (invocations left, a lineage, a casting ability…). */
 const openChoices = computed(() => speciesTraits(props.pc, s.value).filter(a => a.active).reduce((n, a) => n + picksLeft(a), 0))
+/** Building: scroll to the first feature line still waiting for a pick. */
+const featuresRef = ref<HTMLElement>()
+const toFirstPick = () => featuresRef.value?.querySelector('.sp-pending')?.scrollIntoView({ block: 'center', behavior: 'smooth' })
 const scoreOf = (a: Ability) => scoreWith(s.value, a, gt.value)
 const scoreTip = (a: Ability) => scoreBreakdown(s.value, a, gt.value)
 /** A total's tooltip: what it is without gear, then each item's part. */
@@ -281,6 +286,8 @@ const setProfs = (k: Exclude<keyof Proficiencies, 'other'>, v: string[]) => edit
 
 // ---- features ----
 const addFeature = () => edit(x => { x.features.push({ name: '', text: '' }) })
+/** A feat line's text to read: the one written on the sheet, else the feat's own; without the SRD's source line. */
+const featText = (f: Feature) => String(f.text?.trim() || featOfFeature(f)?.fields.summary || '').replace(/\s*\*?Source: [^*]*\*?\s*$/i, '').trim()
 const castLabel = computed(() => (s.value.spellAbility ? s.value.spellAbility.toUpperCase() : cast.value ? `${cast.value.toUpperCase()} (class)` : 'None'))
 /** Experience needed for each level (1…20), the same in 2014 and 2024. */
 const xpNext = computed(() => XP_AT[level.value])
@@ -288,6 +295,8 @@ const sizes = computed(() => speciesSizes(props.pc))
 const leveling = ref(false)
 /** The "to pick" window: the choices still to make, on the sheet. */
 const choosing = ref(false)
+/** The "＋ Feat" window (Edit page). */
+const addingFeat = ref(false)
 /** Level up from the Level tile: a character of one's own, below 20, not while editing; with XP, "ready" shows. */
 const canLevelUp = computed(() => !ro.value && !build.value && !isShared(props.pc) && classes.value.length > 0 && level.value < levelCap())
 const levelReady = computed(() => canLevelUp.value && rule('experience') === 'xp' && (s.value.xp ?? 0) >= (XP_AT[level.value] ?? Infinity))
@@ -342,13 +351,12 @@ onBeforeUnmount(() => {
       </div>
       <p v-if="levelOver" class="error small">The class levels add up to more than 20; the sheet counts 20.</p>
     </section>
-    <!-- building: the choices the classes, species, background and feats ask for, right below the classes -->
-    <FeatureChoices v-if="build" :pc="pc" :s="s" />
     <div class="cs-top" :class="{ 'with-portrait': !build, 'no-portrait': !build && !pc.image }">
     <PcPortrait v-if="!build" :pc="pc" />
     <div class="cs-top-right">
     <LevelUpModal v-if="leveling" :pc="pc" :s="s" @close="leveling = false" />
     <ChoicesModal v-if="choosing" :pc="pc" :s="s" @close="choosing = false" />
+    <AddFeatDialog v-if="addingFeat" :pc="pc" :s="s" @close="addingFeat = false" />
     <ShortRestModal v-if="resting" :pc="pc" :s="s" :summary="resting" :kind="restKind" @close="resting = ''" />
     <!-- the strip at the top: the numbers looked at most -->
     <!-- building: what the sheet works out, in one line; below it, what's set by hand -->
@@ -390,10 +398,12 @@ onBeforeUnmount(() => {
             <input v-flash="s.hp ?? maxHp" class="cs-hp-now" type="number" :value="s.hp ?? maxHp ?? ''" placeholder="now" :disabled="roShared" title="Current HP" @change="setHpNow" />
             <span class="muted">/</span>
           </template>
-          <span :class="{ tip: hpParts.length && !build, 'gear-mod': gt.maxHp.length && !build }" :data-tip="build ? undefined : breakdown(`${s.maxHp ?? 0} set`, hpParts)"><input v-flash="build ? baseMaxHp(s) : maxHp" type="number" :value="(build ? baseMaxHp(s) : maxHp) ?? ''" :placeholder="'max'" :disabled="locked" title="Maximum HP" @change="edit(x => setMaxHp(x, num($event)))" /></span>
+          <span :class="{ tip: hpParts.length && !build, 'gear-mod': gt.maxHp.length && !build }" :data-tip="build ? undefined : breakdown(`${s.maxHp ?? 0} set`, hpParts)"><input v-flash="build ? baseMaxHp(s) : maxHp" type="number" :value="(build ? baseMaxHp(s) : maxHp) ?? ''" :placeholder="'max'" :disabled="ro || (locked && classes.length > 0)" title="Maximum HP" @change="edit(x => setMaxHp(x, num($event)))" /></span>
           <label v-if="!build" class="cs-hp-temp"><span class="muted small">temp</span>
             <input v-flash="s.tempHp ?? 0" type="number" :value="s.tempHp ?? ''" placeholder="0" :disabled="roShared" title="Temporary HP" @change="editShared(x => x.tempHp = num($event) || undefined)" /></label>
         </div>
+        <!-- no class yet: nothing to work max HP out from, so it's typed here (homebrew, other rulesets) until one is picked -->
+        <p v-if="!classes.length && !build && !ro" class="muted small cs-noclass">No class yet: pick one on the <a :href="hrefEntry(pc.id, true)">✎ Edit page</a>, or type a max HP here.</p>
         <div v-if="maxHp && !build" class="cs-hp-bar"><i :style="{ width: Math.min(100, Math.round(100 * (s.hp ?? maxHp) / maxHp)) + '%' }" /></div>
       </div>
       <label v-if="!build" class="cs-hp-change"><span class="cs-label">Damage / heal</span><input placeholder="−7 or +5" :disabled="roShared" @keydown.enter="hit" @change="hit" />
@@ -465,8 +475,8 @@ onBeforeUnmount(() => {
         <h4>Spellcasting</h4>
         <div class="cs-cast">
           <Dropdown v-if="build" :value="s.spellAbility ?? ''" @change="edit(x => x.spellAbility = (($event.target as HTMLSelectElement).value || undefined) as Ability | undefined)">
-            <option value="">{{ cast && !s.spellAbility ? `${cast.toUpperCase()} (class)` : 'None' }}</option>
-            <option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.short }}</option>
+            <option value="">{{ cast && !s.spellAbility ? `${ABILITIES.find(a => a.key === cast)?.label ?? cast} (the class's)` : 'None' }}</option>
+            <option v-for="a in ABILITIES" :key="a.key" :value="a.key">{{ a.label }}</option>
           </Dropdown>
           <span v-else>{{ castLabel }}</span>
           <template v-if="cast"><span>Save DC <b v-flash="spellDC" :class="{ 'gear-mod tip': gt.spellDC.length }" :data-tip="tipOf(spellDC, gt.spellDC, String)">{{ spellDC }}</b></span><span>Attack <b v-flash="spellAtk" :class="{ 'gear-mod tip': gt.spellAttack.length }" :data-tip="tipOf(spellAtk, gt.spellAttack)">{{ signed(spellAtk) }}</b></span></template>
@@ -494,8 +504,10 @@ onBeforeUnmount(() => {
 
 
     <!-- features and traits: in play right below the abilities, the uses on them clicked often -->
-    <section class="cs-features">
-      <h4>Features &amp; traits <button v-if="build" class="link-btn" @click="addFeature">＋ Add</button>
+    <section ref="featuresRef" class="cs-features">
+      <h4>Features &amp; traits <button v-if="build" class="link-btn" title="A feat of the world, with its ability increases" @click="addingFeat = true">＋ Feat</button> <button v-if="build" class="link-btn" title="Anything else, typed: a boon, a homebrew feature" @click="addFeature">＋ Other</button>
+        <!-- building: the picks still to make are in their features' lines below; this jumps to the first -->
+        <button v-if="build && openChoices && !ro" type="button" class="link-btn sp-open small" :title="`${openChoices} pick${openChoices === 1 ? '' : 's'} still to make`" @click="toFirstPick">{{ openChoices }} to pick ↓</button>
         <button v-if="!build && openChoices && !ro" type="button" class="link-btn sp-open small" :title="`${openChoices} pick${openChoices === 1 ? '' : 's'} still to make`" @click="choosing = true">{{ openChoices }} to pick ✎</button></h4>
       <template v-if="build">
         <label v-if="background || s.originFeat !== undefined" class="cs-origin"><span>Origin feat</span>
@@ -506,19 +518,25 @@ onBeforeUnmount(() => {
           </Dropdown>
           <small class="muted">{{ originValue === '' ? 'The background\'s; pick another if the DM allows it' : originValue === 'none' ? 'No Origin feat' : 'Instead of the background\'s' }}</small>
         </label>
-        <div v-for="(f, i) in s.features" :key="i" class="cs-feature">
-          <input :value="f.name" placeholder="Name, e.g. Bardic Inspiration (d6)" @change="edit(x => x.features[i].name = ($event.target as HTMLInputElement).value)" />
-          <LinkTextarea rows="2" :value="f.text" placeholder="What it does" @change="edit(x => x.features[i].text = ($event.target as HTMLTextAreaElement).value)" />
-          <button class="link-btn" title="Remove" @click="edit(x => x.features.splice(i, 1))">✕</button>
+        <div v-for="(f, i) in s.features" :key="i" class="cs-feature" :class="{ 'cs-feature-feat': !!featOfFeature(f) }">
+          <!-- a feat of the world (Poisoner): its rules are the feat's, to read here, not to edit; only taken off -->
+          <details v-if="featOfFeature(f)" class="sp-fold">
+            <summary class="sp-head"><b><EntryLink :id="featOfFeature(f)!.id" :label="f.name" /></b> <span class="feat-tag tag-feat">feat</span></summary>
+            <MarkdownView v-if="featText(f)" class="small sp-text" :source="featText(f)" />
+          </details>
+          <template v-else>
+            <input :value="f.name" placeholder="Name, e.g. Bardic Inspiration (d6)" @change="edit(x => x.features[i].name = ($event.target as HTMLInputElement).value)" />
+            <LinkTextarea rows="2" :value="f.text" placeholder="What it does" @change="edit(x => x.features[i].text = ($event.target as HTMLTextAreaElement).value)" />
+          </template>
+          <button class="link-btn" :title="featOfFeature(f) ? 'Take this feat off the character' : 'Remove'" @click="edit(x => x.features.splice(i, 1))">✕</button>
         </div>
       </template>
       <!-- everything from the classes, species, background, the sheet and the gear, each with its source (species.ts) -->
       <FeatureList v-else :pc="pc" :s="s" :gear="fromGear" />
-      <details v-if="build" class="cs-auto-feats">
-        <summary class="small">Features that come by themselves <span class="muted">(classes, species, background, feats): no need to add them</span></summary>
-        <FeatureList :pc="pc" :s="s" :gear="fromGear" />
-      </details>
-      <p v-if="build && !s.features.length" class="muted small">＋ Add is for anything else: a boon, a homebrew feature, a feat by its name.</p>
+      <p v-if="build && !s.features.length" class="muted small">＋ Feat adds one of the world's feats; ＋ Other anything else, typed: a boon, a homebrew feature.</p>
+      <!-- building: the features that come by themselves (classes, species, background, feats), each with its choices -->
+      <h5 v-if="build" class="cs-auto-head muted small">From the classes, species, background and feats</h5>
+      <FeatureList v-if="build" edit :pc="pc" :s="s" :gear="fromGear" />
     </section>
 
     <!-- the gear is on the Inventory tab; here its effects count in the numbers, and its charges are in the Uses card -->

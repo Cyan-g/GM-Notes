@@ -19,6 +19,7 @@ import BodyEditor from '../components/edit/BodyEditor.vue'
 import CharacterSheet from '../components/CharacterSheet.vue'
 import SpellForm from '../components/edit/SpellForm.vue'
 import ItemForm from '../components/edit/ItemForm.vue'
+import { recipeShown } from '../composables/recipeOpen'
 import FeatForm from '../components/edit/FeatForm.vue'
 import CreatureForm from '../components/edit/CreatureForm.vue'
 import StatblockView from '../components/Statblock.vue'
@@ -31,7 +32,6 @@ import NpcAppearance from '../components/edit/NpcAppearance.vue'
 import DeityForm from '../components/edit/DeityForm.vue'
 import OrgForm from '../components/edit/OrgForm.vue'
 import SubPlaces from '../components/edit/SubPlaces.vue'
-import DmOnlyBadge from '../components/DmOnlyBadge.vue'
 
 const props = defineProps<{ id: string }>()
 const e = computed(() => get(props.id))
@@ -151,7 +151,7 @@ function remove() {
         <!-- whether players know of it: the DM's choice, for what can be shared (not a player's own world or a character) -->
         <label v-if="!playerMode && e.type !== 'pc'" class="toggle" :title="e.visibility === 'secret' ? 'Players don\'t know about this yet' : 'Players know this exists'">
           <input type="checkbox" :checked="e.visibility === 'known'" @change="toggleSecret" />
-          <span>Known to players</span><DmOnlyBadge v-if="e.visibility !== 'known'" />
+          <span>Known to players</span>
         </label>
         <label class="grow"><span>Also known as</span><ListInput :model-value="e.aliases" placeholder="Add alias…" @update:model-value="v => setList('aliases', v)" /></label>
       </div>
@@ -219,7 +219,7 @@ function remove() {
       </aside>
       <aside v-else-if="!noSide" class="entry-side">
         <!-- A craftable item's recipe sits first on the right, beside its stats. -->
-        <div v-for="f in e.type === 'item' ? bigFields.filter(x => x.kind !== 'speciesTraits') : []" :key="f.key" class="card side-big">
+        <div v-for="f in e.type === 'item' ? bigFields.filter(x => x.kind !== 'speciesTraits' && (x.kind !== 'recipe' || recipeShown(e!))) : []" :key="f.key" class="card side-big">
           <h3>{{ f.label }}</h3>
           <FieldInput :def="f" :entry="e" />
         </div>
@@ -237,7 +237,8 @@ function remove() {
             <template v-for="f in fs" :key="f.key">
               <template v-if="f.kind === 'statblock'"><div class="full"><FieldInput :def="f" :entry="e" /></div></template>
               <template v-else>
-                <label :for="`f-${f.key}`">{{ f.label }}</label>
+                <!-- a yes/no field is a chip that carries its own name -->
+                <label v-if="f.kind !== 'bool'" :for="`f-${f.key}`">{{ f.label }}</label><span v-else />
                 <div><FieldInput :id="`f-${f.key}`" :def="f" :entry="e" />
                   <small v-if="inheritedList(f)" class="muted inherit-hint">{{ inheritedList(f) }}</small></div>
               </template>

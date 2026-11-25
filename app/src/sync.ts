@@ -103,7 +103,7 @@ export async function planPublish(since: PublishTarget = 'publish'): Promise<Pub
   const plan = planExport(null, { dmText: false, hidden: false, textLinks: false, skip: ['pc'], exclude: e => playerIndex.value.has(e.id) })!
   // the party, as NPCs for the other players
   const party = partyMembers()
-  plan.entries.push(...party.map(p => partyNpc(p, classText(p, db().meta, id => db().entries[id]?.name) || `Level ${totalLevel(p)}`)))
+  plan.entries.push(...party.map(p => partyNpc(p, classText(p, db().meta, id => db().entries[id]?.name) || `Level ${totalLevel(p)}`, partyCampaigns(p))))
   const { entries, names } = outgoingEntries(plan)
   const ids = new Set(entries.map(e => e.id))
   const files: Record<string, string> = {}
@@ -176,6 +176,11 @@ export function partyMembers(): Entry[] {
   const known = new Set(camps.map(c => c.id)), extra = new Set(camps.flatMap(c => (c.fields.members as Id[] | undefined) ?? []))
   return Object.values(d.entries).filter(e => e.type === 'pc' && !hidden.has(e.id) && !playerIndex.value.get(e.id)?.gone
     && (extra.has(e.id) || ((e.fields.campaigns as Id[] | undefined) ?? []).some(c => known.has(c))))
+}
+/** The campaigns players know of that a party member plays in (its own list, or the campaign's members). */
+export function partyCampaigns(p: Entry): Id[] {
+  return Object.values(db().entries).filter(c => c.type === 'campaign' && c.visibility === 'known'
+    && (((p.fields.campaigns as Id[] | undefined) ?? []).includes(c.id) || ((c.fields.members as Id[] | undefined) ?? []).includes(p.id))).map(c => c.id)
 }
 /** A player's characters the DM took out of campaigns: their id → campaign → when (none when there are none). */
 export function removalsOf(p: PlayerShare): Record<Id, Removals> | undefined {

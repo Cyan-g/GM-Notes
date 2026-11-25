@@ -4,7 +4,9 @@
 // on the sheet, and what their gear adds. Only what's used or read here is listed (shownInPlay): a trait that only gives
 // proficiencies, spells or numbers the sheet already shows is left out. Picked options (invocations, Metamagic) and
 // feats (a Fighting Style) are lines of their own. Each line names its source as a tag and folds its text away; use
-// pips (or − / ＋ for a pool), scaling values stay on the line. Choices are made on the Edit page, not here.
+// pips (or − / ＋ for a pool), scaling values stay on the line. Choices are made on the Edit page (`edit`): there every
+// feature with something to pick or swap is listed, its picker in its line (TraitChoiceBlock), and an option's own
+// choice (Agonizing Blast's cantrip) in that option's line.
 import { useReadOnly } from '../composables/useReadOnly'
 import { computed, ref } from 'vue'
 import ChoicesModal from './ChoicesModal.vue'
@@ -20,27 +22,30 @@ import { MASTERY_OF } from '../model/schema'
 import { optionsIn } from '../model/lists'
 import { ui } from '../ui'
 import {
-  backgroundOf, choiceCandidates, choiceOpen, featOfFeature, isOn, levelTag, picksLeft, sourceTag, toggleOn, isClassOrigin, scaleAt, shownInPlay,
-  speciesTraits, spendUse, usesLeft, usesMax, useReminder, isPool, type ActiveTrait,
+  backgroundOf, choiceCandidates, choiceOpen, featOfFeature, hasChoices, isOn, levelTag, picksLeft, sourceTag, toggleOn, isClassOrigin, scaleAt, shownInPlay,
+  speciesTraits, spendUse, subLabel, subsOf, pickLabels, usesLeft, usesMax, useReminder, isPool, type ActiveTrait,
 } from '../species'
 import { traitsOf } from '../model/traits'
 import EntryLink from './EntryLink.vue'
 import ConditionIcon from './ConditionIcon.vue'
 import MarkdownView from './MarkdownView.vue'
 import TraitChips from './TraitChips.vue'
+import TraitChoiceBlock from './TraitChoiceBlock.vue'
 
 interface GearLine { text: string; from: string }
-const props = defineProps<{ pc: Entry; s: CharacterSheet; gear: { senses: { sense: string; range: number; from: string }[]; resistances: { type: string; from: string }[]; immunities: { condition: string; from: string }[]; damageImmunities: { type: string; from: string }[]; features: GearLine[] } }>()
+/** `edit`: on the Edit page, with each feature's choices made in its line, and without the sheet's own feature lines (edited above it there). */
+const props = defineProps<{ pc: Entry; s: CharacterSheet; edit?: boolean; gear: { senses: { sense: string; range: number; from: string }[]; resistances: { type: string; from: string }[]; immunities: { condition: string; from: string }[]; damageImmunities: { type: string; from: string }[]; features: GearLine[] } }>()
 /** Nothing changes in a read-only world, nor on a character that's read-only here (a player's, at the DM's). */
 const ro = useReadOnly()
 const all = computed(() => speciesTraits(props.pc, props.s))
 /** A trait whose picks are what's used (invocations, a Fighting Style feat): once picked, its picks are listed instead. */
-const replacedByPicks = (a: ActiveTrait) => !a.trait.uses && !a.trait.scale && a.trait.onSheet !== 'show'
+const replacedByPicks = (a: ActiveTrait) => !props.edit && !a.trait.uses && !a.trait.scale && a.trait.onSheet !== 'show'
   && (a.trait.choice?.kind === 'option' || a.trait.choice?.kind === 'feat') && a.picks.length > 0
 type Line = { kind: 'trait'; a: ActiveTrait } | { kind: 'option'; a: ActiveTrait; o: TraitOption } | { kind: 'feat'; a: ActiveTrait; id: string }
 /** Class features by level (then by class), then species traits, then the background's; each followed by its picks. */
 const lines = computed<Line[]>(() => {
-  const now = all.value.filter(a => a.active && (shownInPlay(a) || choiceOpen(a)))
+  // a choice a picked option brings (Agonizing Blast's cantrip) is said on that option's line, not as a line of its own
+  const now = all.value.filter(a => a.active && !a.parent && (shownInPlay(a) || choiceOpen(a) || (props.edit && hasChoices(a))))
   const cls = now.filter(a => isClassOrigin(a.race)).sort((x, y) => (x.trait.level ?? 1) - (y.trait.level ?? 1))
   return [...cls, ...now.filter(a => a.race.type === 'race'), ...now.filter(a => a.race.type === 'background'), ...now.filter(a => a.race.type === 'feat'), ...now.filter(a => a.race.type === 'item')].flatMap(a => [
     ...(replacedByPicks(a) && !choiceOpen(a) ? [] : [{ kind: 'trait' as const, a }]),
@@ -58,8 +63,10 @@ const originFeat = computed(() => {
   const f = get(bg.value?.fields.originFeat)
   return f && !live(f) && !props.s.features.some(x => x.name.toLowerCase().startsWith(f.name.toLowerCase())) ? f : undefined
 })
-/** The sheet's feature lines, but for feats whose features are listed. */
-const ownFeatures = computed(() => props.s.features.filter(f => f.name.trim() && !live(featOfFeature(f))))
+/** The sheet's feature lines, but for feats whose features are listed (on the Edit page they're the inputs above). */
+const ownFeatures = computed(() => (props.edit ? [] : props.s.features.filter(f => f.name.trim() && !live(featOfFeature(f)))))
+/** A picked option's own choices still to make (Agonizing Blast's cantrip). */
+const optionOpen = (a: ActiveTrait, o: TraitOption) => subsOf(all.value, a, o.id).some(choiceOpen)
 /** The "to pick" window. */
 const choosing = ref(false)
 // switching a feature with uses on spends one (entering a Rage), and the note says how many are left, with Undo
@@ -90,6 +97,8 @@ const pickNames = (a: ActiveTrait) => (a.trait.choice && a.trait.choice.kind ===
 const masteries = (a: ActiveTrait) => (a.trait.choice?.kind === 'mastery'
   ? [...new Set(a.picks.map(id => MASTERY_OF[id]).filter(Boolean))].map(m => ({ name: m, rule: optionsIn(state.db?.meta, 'weaponMastery').find(o => o.id === m)?.note }))
   : [])
+/** What a picked option's own choices took, or still ask for: "Cantrip: Eldritch Blast", "Cantrip to pick". */
+const optionPicks = (a: ActiveTrait, o: TraitOption) => subsOf(all.value, a, o.id).map(x => ({ x, text: x.picks.length ? `${subLabel(x)}: ${pickLabels(x).join(', ')}` : '' }))
 const own = (f: Feature) => f.text?.trim()
 /** A text without the SRD's source line (it's for the entry's page, not the sheet). */
 const clean = (t: unknown) => String(t ?? '').replace(/\s*\*?Source: System Reference Document[^*]*\*?\s*$/i, '').trim()
@@ -111,7 +120,8 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
             <span v-if="l.a.trait.dc" class="chip sp-scale" :title="`8 + proficiency bonus + ${l.a.trait.dc.toUpperCase()} modifier`">DC {{ dcOf(l.a) }}</span>
             <button v-if="l.a.trait.toggle" class="chip-btn sbk-on" :class="{ on: isOn(l.a, s) }" :aria-pressed="isOn(l.a, s)" :disabled="ro" :title="isOn(l.a, s) ? 'On: its effects count on the sheet. Click to end it' : 'Switch it on: its effects count on the sheet until you end it or take a long rest'" @click.stop.prevent="flip(l.a)">{{ isOn(l.a, s) ? 'On' : 'Off' }}</button>
             <span v-if="pickNames(l.a).length" class="muted small">{{ pickNames(l.a).join(', ') }}</span>
-            <button v-if="choiceOpen(l.a) && !ro" type="button" class="link-btn sp-open small" title="Make the choice" @click.stop.prevent="choosing = true">{{ picksLeft(l.a) }} to pick ✎</button>
+            <button v-if="choiceOpen(l.a) && !ro && !edit" type="button" class="link-btn sp-open small" title="Make the choice" @click.stop.prevent="choosing = true">{{ picksLeft(l.a) }} to pick ✎</button>
+            <span v-else-if="choiceOpen(l.a) && edit" class="sp-open small">{{ picksLeft(l.a) }} to pick</span>
             <span v-if="max(l.a)" class="sp-uses" :title="`Uses; back on a ${l.a.trait.uses!.recharge} rest${l.a.trait.uses!.shortBack ? `, ${l.a.trait.uses!.shortBack} on a short rest` : ''}`" @click.stop.prevent>
               <template v-if="max(l.a) <= 10 && !isPool(l.a)">
                 <button v-for="p in max(l.a)" :key="p" class="pip" :class="{ on: p <= left(l.a) }" :disabled="ro"
@@ -128,16 +138,30 @@ const empty = computed(() => !lines.value.length && !originFeat.value && !ownFea
           <TraitChips :t="l.a.trait" no-uses :reached="l.a.level" />
           <ul v-if="masteries(l.a).length" class="small sp-masteries"><li v-for="m in masteries(l.a)" :key="m.name"><b>{{ m.name }}.</b> {{ m.rule }}</li></ul>
         </details>
+        <!-- on the Edit page: what it asks for, made right here -->
+        <TraitChoiceBlock v-if="edit && hasChoices(l.a)" :pc="pc" :s="s" :a="l.a" />
       </div>
       <!-- a picked option (an invocation, a Metamagic option, a lineage…) -->
-      <div v-else-if="l.kind === 'option'" class="sp-trait">
+      <div v-else-if="l.kind === 'option'" class="sp-trait" :class="{ 'sp-pending': optionOpen(l.a, l.o) }">
         <details class="sp-fold">
           <!-- a single pick reads as the feature with it ("Elemental Affinity (Fire)"); one of several by its own name -->
-          <summary class="sp-head"><b>{{ (l.a.trait.choice?.count ?? 1) === 1 && !l.a.trait.choice?.steps?.length ? `${l.a.trait.name} (${l.o.name})` : l.o.name }}</b>
-            <span class="feat-tag" :class="'tag-' + l.a.race.type" :title="`Picked in ${l.a.trait.name}, from ${l.a.race.name}`">{{ (l.a.trait.choice?.count ?? 1) === 1 && !l.a.trait.choice?.steps?.length ? sourceTag(l.a) : l.a.trait.name }}</span></summary>
+          <summary class="sp-head"><b>{{ (l.a.trait.choice?.count ?? 1) === 1 && !l.a.trait.choice?.steps?.length ? `${l.a.trait.name} (${l.o.name})` : l.o.name }}<template v-if="l.o.id.includes('#')"> ({{ l.o.id.split('#')[1] }})</template></b>
+            <span class="feat-tag" :class="'tag-' + l.a.race.type" :title="`Picked in ${l.a.trait.name}, from ${l.a.race.name}`">{{ (l.a.trait.choice?.count ?? 1) === 1 && !l.a.trait.choice?.steps?.length ? sourceTag(l.a) : l.a.trait.name }}</span>
+            <!-- what the option asks for in turn (Agonizing Blast's cantrip): picked, or a link to pick it -->
+            <template v-for="p in optionPicks(l.a, l.o)" :key="p.x.key">
+              <span v-if="p.text" class="muted small">{{ p.text }}</span>
+              <button v-else-if="!ro && !edit" type="button" class="link-btn sp-open small" title="Make the choice" @click.stop.prevent="choosing = true">{{ subLabel(p.x) }} to pick ✎</button>
+              <span v-else-if="edit" class="sp-open small">{{ subLabel(p.x) }} to pick</span>
+            </template></summary>
           <MarkdownView v-if="l.o.text" class="small sp-text" :source="l.o.text" />
           <TraitChips :t="l.o" :reached="l.a.level" />
         </details>
+        <!-- on the Edit page: the option's own choice (Agonizing Blast's cantrip), made in its line -->
+        <template v-if="edit">
+          <div v-for="x in subsOf(all, l.a, l.o.id)" :key="x.key" class="sp-sub" :class="{ 'sp-pending': choiceOpen(x) }">
+            <TraitChoiceBlock :pc="pc" :s="s" :a="x" />
+          </div>
+        </template>
       </div>
       <!-- a picked feat (a Fighting Style) -->
       <div v-else class="sp-trait">

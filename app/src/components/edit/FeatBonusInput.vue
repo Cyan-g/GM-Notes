@@ -5,7 +5,7 @@ import Dropdown from '../Dropdown.vue'
 import { computed, ref } from 'vue'
 import type { AbilityBonus } from '../../model/types'
 import type { BonusChoice } from '../../abilityBonus'
-import { ABILITY_KEYS, ABILITY_SHORT, type Ability } from '../../model/dnd'
+import { ABILITY_KEYS, ABILITY_SHORT, type Ability, ABILITY_UPPER } from '../../model/dnd'
 import AbilityBonusInput from './AbilityBonusInput.vue'
 import SpreadPicker from '../SpreadPicker.vue'
 
@@ -42,7 +42,7 @@ const preview = ref<BonusChoice>({ picks: [] })
       <button type="button" :class="{ on: mode === 'custom' }" @click="setMode('custom')">Custom</button>
     </div>
     <div v-if="mode === 'one'" class="cb-line">
-      <div class="seg cb-toggles"><button v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: among.includes(a) }" @click="toggle(a)">{{ ABILITY_SHORT[a] }}</button></div>
+      <div class="chip-toggles"><button class="chip-toggle" v-for="a in ABILITY_KEYS" :key="a" type="button" :class="{ on: among.includes(a) }" @click="toggle(a)">{{ ABILITY_UPPER[a] }}</button></div>
       <span class="muted small">{{ among.length ? '' : 'none ticked: any ability' }}</span>
       <label class="small">max <Dropdown :value="max" @change="max = Number(($event.target as HTMLSelectElement).value); save()"><option :value="20">20</option><option :value="30">30 (Epic Boon)</option></Dropdown></label>
     </div>

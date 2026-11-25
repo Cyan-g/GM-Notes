@@ -14,7 +14,8 @@ import DataImage from './DataImage.vue'
 import StockTable from './StockTable.vue'
 import EncounterTable from './EncounterTable.vue'
 import RanksTable from './RanksTable.vue'
-import { renderInline } from '../markdown'
+import { renderInline, renderMarkdown } from '../markdown'
+import { hasSecrets } from '../model/text'
 import { craftingRule, craftingTime } from '../crafting'
 import { describeEffect } from '../effects'
 import { howCast } from '../items'
@@ -59,6 +60,8 @@ const stock = computed(() => {
   <template v-else-if="def.kind === 'list'">
     <span class="chips"><span v-for="(v, i) in (value as string[])" :key="i" class="chip" v-html="renderInline(String(v))" /></span>
   </template>
+  <!-- a DM-only part (:::secret) is a block of its own, as in the entry's text (and left out for players) -->
+  <div v-else-if="def.kind === 'longtext' && hasSecrets(String(value))" class="field-md" v-html="renderMarkdown(String(value))" />
   <template v-else-if="def.kind === 'longtext'"><span v-html="renderInline(String(value))" /></template>
   <template v-else-if="def.kind === 'effects'">
     <span class="chips"><span v-for="(x, i) in (value as GearEffect[])" :key="i" class="chip">{{ describeEffect(x) }}</span></span>

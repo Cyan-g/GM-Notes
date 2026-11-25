@@ -104,6 +104,9 @@ export interface GearEffect {
   emptyDice?: string
   /** `spellDamage`: only this spell's damage (else every spell's of `type`, or every spell's). */
   spell?: Id
+  /** `spellDamage` in a choice's option: the spell the player picked with that option (its "one they have" spell
+   * choice: Agonizing Blast's cantrip) instead of a set one. */
+  picked?: boolean
   /** `unarmed`: Monk weapons (Simple melee, Martial melee with Light) get it too, the die and STR or DEX, while no
    * armor or shield is worn and only such weapons are held (Martial Arts). */
   monkWeapons?: boolean
@@ -158,9 +161,14 @@ export interface SpellRoll {
   type?: string
   mod?: boolean
   cantrip?: boolean
-  /** A cantrip that makes more of these at character levels 5, 11 and 17 instead of rolling more dice (Eldritch
-   * Blast: "beam"): what one is called. */
+  /** A roll made several times, each one "a beam" (Eldritch Blast), "a dart" (Magic Missile), "an arrow": what one is
+   * called. A cantrip makes more of them at character levels 5, 11 and 17; a leveled spell starts with `count` and
+   * gets `perSlot` more for each slot level above its own (instead of `slot` dice). */
   beams?: string
+  /** A leveled spell's number of `beams` at its own level (default 1). */
+  count?: number
+  /** More `beams` per slot level above the spell's (default 1). */
+  perSlot?: number
   slot?: string
   note?: string
 }
@@ -349,8 +357,10 @@ export interface TraitGrant { kind: 'skill' | 'armor' | 'weapon' | 'tool' | 'lan
 /** A spell a trait gives: from character level `from` (default 1), at will, once per short or long rest, or always prepared. */
 export interface TraitSpell {
   spell: Id
-  /** `list`: on the spell list of the class it comes from (learnable, Dusk Prince); `book`: in the spellbook for free, prepared as usual (Hemomancer). */
-  how: 'atWill' | 'short' | 'long' | 'prepared' | 'list' | 'book'
+  /** `list`: on the spell list of the class it comes from (learnable, Dusk Prince); `book`: in the spellbook for free,
+   * prepared as usual (Hemomancer); `known`: only in a spell choice, one the character already has, given nothing (the
+   * cantrip Agonizing Blast goes on; the option's `picked` effects apply to it). */
+  how: 'atWill' | 'short' | 'long' | 'prepared' | 'list' | 'book' | 'known'
   from?: number
   /** The ability it's cast with, if the trait says (attack and DC are shown with it); else the trait's `castWith`. */
   ability?: Ability
@@ -372,6 +382,8 @@ export interface TraitOption {
   /** What it takes to pick this option: a level (of the class it comes from, or the character's) and another option of
    * the same choice picked first (Thirsting Blade: Pact of the Blade). */
   needs?: { level?: number; option?: string }
+  /** It can be picked more than once (Agonizing Blast: a different cantrip each time); a copy is stored as "id#2". */
+  repeatable?: boolean
 }
 /**
  * A choice the player makes on the sheet: `count` skills, languages or tools (only from `among`, if given), or one
@@ -383,7 +395,8 @@ export interface TraitChoice {
   /** What it's called when it comes with an option ("Cantrips"); the option's name goes before it. */
   label?: string
   /** For a spell choice: which spells (any class's list, if `classes` is empty), and how the picked ones are cast. */
-  spell?: { classes?: string[]; level?: string; ritual?: boolean; /** Only spells of these schools (Fey Touched: Divination or Enchantment). */ schools?: string[]; how: TraitSpell['how']; ability?: TraitSpell['ability']; prepared?: boolean }
+  spell?: { classes?: string[]; level?: string; ritual?: boolean; /** Only spells of these schools (Fey Touched: Divination or Enchantment). */ schools?: string[]; how: TraitSpell['how']; ability?: TraitSpell['ability']; prepared?: boolean
+    /** Only spells that deal damage (have a damage roll): "a Warlock cantrip that deals damage". */ damaging?: boolean }
   count?: number
   /** A skill choice: a picked skill the character is already proficient in becomes Expertise (Keen Mind, Observant). */
   orExpertise?: boolean

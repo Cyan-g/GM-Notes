@@ -5,7 +5,7 @@ import type { Entry } from './model/types'
 import { byType, db } from './store'
 import { entryNamed } from './lookup'
 
-export const ALIGNMENTS = ['lawful good', 'neutral good', 'chaotic good', 'lawful neutral', 'neutral', 'chaotic neutral', 'lawful evil', 'neutral evil', 'chaotic evil', 'unaligned']
+export { ALIGNMENTS } from './model/dnd'
 
 /** The world's subclass for a cleric domain ("Life" → Life Domain), if there is one. */
 export function domainSubclass(domain: string): Entry | undefined {

@@ -24,11 +24,18 @@ export const toCarryOut = (removals: Removals | undefined, done: Removals | unde
 /** What players see of a party member's character: their name, picture, species, class and level, looks and text. */
 const LOOKS = ['race', 'gender', 'age', 'born', 'hair', 'eyes', 'skin', 'clothing'] as const
 
-/** A character as an NPC for the other players (`occupation`: "Wizard 5"; the DM-only text goes when it's published). */
-export function partyNpc(pc: Entry, occupation: string): Entry {
+/**
+ * A character as an NPC for the other players (`occupation`: "Wizard 5"; the DM-only text goes when it's published).
+ * `partyOf`: the campaigns it plays in, so a player's campaign page shows it in its party; `playedBy`: the character's
+ * Player field (who plays it).
+ */
+export function partyNpc(pc: Entry, occupation: string, partyOf: Id[] = []): Entry {
   const fields: Record<string, unknown> = {}
   for (const k of LOOKS) { const v = (pc.fields as Record<string, unknown>)[k]; if (v != null && v !== '') fields[k] = v }
   if (occupation) fields.occupation = occupation
+  if (partyOf.length) fields.partyOf = [...partyOf]
+  const player = (pc.fields as Record<string, unknown>).player
+  if (typeof player === 'string' && player.trim()) fields.playedBy = player.trim()
   return {
     id: pc.id, type: 'npc', name: pc.name, aliases: [...(pc.aliases ?? [])], tags: [], fields: fields as Entry['fields'],
     body: pc.body ?? '', visibility: 'known', ...(pc.image ? { image: pc.image } : {}), created: pc.created, updated: pc.updated,

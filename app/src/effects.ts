@@ -9,7 +9,7 @@ import { ownerOf } from './sheetData'
 import { get } from './store'
 import { rule } from './rules'
 import { applyConditions } from './conditions'
-import { ABILITY_UPPER, SKILLS, mod, profBonus, signed, type Ability } from './model/dnd'
+import { ABILITY_UPPER, SENSE_TYPES, SKILLS, mod, profBonus, signed, type Ability } from './model/dnd'
 import { activeEffectsOf, activeSpells } from './spells'
 import { totalLevel } from './model/classes'
 import { activeGear, itemsInUse, slotsUsed, weightOf } from './items'
@@ -60,7 +60,7 @@ export const EFFECT_KINDS: { on: GearEffect['on']; label: string; needs?: Effect
   { on: 'sense', label: 'Sense (ft)', needs: ['sense'] },
   { on: 'feature', label: 'Feature', needs: ['text'], noValue: true },
 ]
-export const SENSES = ['Darkvision', 'Blindsight', 'Tremorsense', 'Truesight']
+export const SENSES = SENSE_TYPES.map(s => s[0].toUpperCase() + s.slice(1))
 const MODE: Record<string, string> = { adv: 'Advantage', dis: 'Disadvantage' }
 const ABILITY_SHORT: Record<string, string> = ABILITY_UPPER
 /** An effect's limit, in words. */
@@ -116,7 +116,7 @@ export function describeEffect(f: GearEffect): string {
     case 'acMin': return `AC at least ${v}`
     case 'unarmed': return `Unarmed strike${f.monkWeapons ? ' and Monk weapons' : ''}: ${f.dice || (f.fromScale ? 'the scaling die' : '1')}${f.emptyDice ? ` (${f.emptyDice} with no weapon or shield)` : ''}${f.proficient ? ', with STR or DEX' : ''}${f.monkWeapons ? ' (no armor or shield)' : ''}`
     case 'halfProf': return 'Half the proficiency bonus on skill checks without proficiency'
-    case 'spellDamage': return `${v ? signed(v) : ''}${f.ability ? `${v ? ' ' : ''}+ ${ABILITY_SHORT[f.ability] ?? f.ability} modifier` : ''} to the damage of ${f.spell ? (get(f.spell)?.name ?? f.spell) : f.type ? `${f.type.toLowerCase()} spells` : 'spells'}`.trim()
+    case 'spellDamage': return `${v ? signed(v) : ''}${f.ability ? `${v ? ' ' : ''}+ ${ABILITY_SHORT[f.ability] ?? f.ability} modifier` : ''} to the damage of ${f.picked ? 'the spell picked with it' : f.spell ? (get(f.spell)?.name ?? f.spell) : f.type ? `${f.type.toLowerCase()} spells` : 'spells'}`.trim()
     case 'initiativeAdv': return `${MODE[f.mode ?? 'adv']} on Initiative`
     case 'cantrips': return `${signed(v)} cantrip${Math.abs(v) === 1 ? '' : 's'} known`
     case 'restInspiration': return 'Heroic Inspiration after each long rest'

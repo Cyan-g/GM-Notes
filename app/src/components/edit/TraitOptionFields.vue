@@ -40,7 +40,7 @@ function setNeeds(p: Partial<NonNullable<TraitOption['needs']>>) {
 }
 const put = (patch: Partial<TraitOption>) => {
   const next: TraitOption = { ...model.value, ...patch }
-  for (const k of ['text', 'effects', 'grants', 'spells', 'needs'] as const) {
+  for (const k of ['text', 'effects', 'grants', 'spells', 'needs', 'repeatable'] as const) {
     const v = next[k]
     if (v == null || v === '' || (Array.isArray(v) && !v.length)) delete next[k]
   }
@@ -87,6 +87,7 @@ function drop(part: 'effects' | 'grants' | 'spells', label: string) {
   <div class="trait-fields">
     <label v-if="!noName" class="trait-name"><span>Name</span><input :value="model.name" placeholder="e.g. Dwarven Resilience" @input="put({ name: val($event) })" /></label>
     <div v-if="siblings" class="trait-needs small">
+      <label class="check-chip" title="It can be picked more than once (Agonizing Blast: a different cantrip each time)"><input type="checkbox" :checked="!!model.repeatable" @change="put({ repeatable: ($event.target as HTMLInputElement).checked || undefined })" /> can be taken again</label>
       <span class="trait-label">Needs</span>
       <label>{{ levelWord ?? 'level' }} <input type="number" min="1" max="20" class="effect-value" :value="model.needs?.level ?? ''" placeholder="—" @change="setNeeds({ level: Number(val($event)) || undefined })" /></label>
       <label>and <Dropdown :value="model.needs?.option ?? ''" @change="setNeeds({ option: val($event) || undefined })">
@@ -125,12 +126,12 @@ function drop(part: 'effects' | 'grants' | 'spells', label: string) {
           <Dropdown :value="x.how" aria-label="How it's cast" @change="setSpell(i, { how: val($event) as TraitSpell['how'] })">
             <option v-for="(label, id) in HOW_SPECIES" :key="id" :value="id">{{ label }}</option>
           </Dropdown>
-          <Dropdown :value="x.ability ?? ''" aria-label="Cast with" title="The ability it's cast with (its attack and save DC are shown with it)" @change="setSpell(i, { ability: (val($event) || undefined) as TraitSpell['ability'] })">
-            <option value="">no ability</option>
-            <option v-for="(label, id) in ABILITY_NAME" :key="id" :value="id">with {{ label }}</option>
-          </Dropdown>
+          <label class="small ab-with" title="The ability it's cast with (its attack and save DC are shown with it)">cast with <Dropdown :value="x.ability ?? ''" aria-label="Cast with" @change="setSpell(i, { ability: (val($event) || undefined) as TraitSpell['ability'] })">
+            <option value="">—</option>
+            <option v-for="(label, id) in ABILITY_NAME" :key="id" :value="id">{{ label }}</option>
+          </Dropdown></label>
           <label class="small" title="Only from a later level than the feature's own; empty: with the feature">from level <input type="number" min="1" max="20" class="effect-value" :value="x.from ?? ''" :placeholder="`${traitLevel ?? 1}`" @change="setSpell(i, { from: Number(val($event)) || undefined })" /></label>
-          <label class="small" title="The player may swap it for another spell of its level from a class's list (High Elf: a Wizard cantrip)"><input type="checkbox" :checked="!!x.swap" @change="setSpell(i, { swap: ($event.target as HTMLInputElement).checked ? {} : undefined })" /> swappable</label>
+          <label class="check-chip small" title="The player may swap it for another spell of its level from a class's list (High Elf: a Wizard cantrip)"><input type="checkbox" :checked="!!x.swap" @change="setSpell(i, { swap: ($event.target as HTMLInputElement).checked ? {} : undefined })" /> swappable</label>
           <Dropdown v-if="x.swap" :value="x.swap.classes?.[0] ?? ''" aria-label="For a spell of which list" @change="setSpell(i, { swap: val($event) ? { classes: [val($event)] } : {} })">
             <option value="">any list</option>
             <option v-for="o in listOptions('class')" :key="o.id" :value="o.id">{{ o.label }} list</option>

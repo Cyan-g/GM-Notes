@@ -55,6 +55,8 @@ const similar = computed(() => {
     .filter(x => x.exact || norm(x.e.name).startsWith(norm(n)) || norm(n).startsWith(norm(x.e.name)))
     .sort((a, b) => Number(b.exact) - Number(a.exact)).slice(0, 3)
 })
+// going to another page closes it (it would sit over the new page)
+watch(() => route.current, () => { open.value = false })
 function openExisting(e: Entry) { open.value = false; go(hrefEntry(e.id)) }
 
 /** Arrow keys move through the type grid (left/right, and up/down by its row length); Enter creates. */

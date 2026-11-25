@@ -219,7 +219,8 @@ async function onPick(ev: Event) {
           </li>
         </ul>
       </div>
-      <div v-show="mode !== 'write'" class="be-preview"><MarkdownView :source="modelValue" /></div>
+      <!-- the preview shows the outline too (headings not filled in yet), so a template reads as one -->
+      <div v-show="mode !== 'write'" class="be-preview"><MarkdownView :source="modelValue" all-headings /></div>
     </div>
   </div>
 </template>

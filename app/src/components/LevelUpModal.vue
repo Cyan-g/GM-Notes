@@ -25,7 +25,7 @@ import { featsAllowed, isAsiFeat, levelCap, rule } from '../rules'
 import { gearTotals, scoreWith } from '../effects'
 import { backgroundOf, choiceOpen, featBonusFor, featGivesSave, featOfFeature, speciesTraits, isToolKind } from '../species'
 import { traitsOf } from '../model/traits'
-import { unmet } from '../requirements'
+import { applyFeat, featGroups as featGroups_, featLacks } from '../feats'
 import { changed } from '../edit'
 import { renderInline } from '../markdown'
 import FeatScoreTable from './FeatScoreTable.vue'
@@ -65,34 +65,10 @@ const features = computed(() => [classEntry(cls.value), get(subId.value || undef
 const featLevels = computed(() => rulesOf(cls.value)?.featLevels ?? [4, 8, 12, 16, 19])
 const featDue = computed(() => featLevels.value.includes(newLevel.value))
 const boon = computed(() => newLevel.value === EPIC_BOON_LEVEL)
-/** Feats the character already has (only the Ability Score Improvement can be taken again). */
-const taken = computed(() => new Set([get(backgroundOf(props.pc)?.fields.originFeat)?.id, ...(props.s.features ?? []).map(f => featOfFeature(f)?.id)].filter(Boolean) as string[]))
-/** A feat that can be taken again: marked Repeatable (the Ability Score Improvement always is). */
-const isAsi = (f: Entry) => !!f.fields.repeatable || /^ability score improvement$/i.test(f.name.trim())
-/** The character's features and feats by name, for a feat's "has feature" prerequisite. */
-const featureNames = computed(() => new Set([...speciesTraits(props.pc, props.s).map(a => a.trait.name), ...(props.s.features ?? []).map(x => x.name)].map(n => n.toLowerCase())))
-const hasFeature = (name: string) => [...featureNames.value].some(n => n === name.toLowerCase() || n.startsWith(name.toLowerCase()))
-/** Why a feat can't be taken now: the level it needs, the feats it needs, already taken. */
-function lacks(f: Entry): string {
-  const need = Number(f.fields.level) || 0
-  if (need > total.value + 1) return `level ${need}+`
-  const missing = ((f.fields.requires as string[] | undefined) ?? []).filter(id => !taken.value.has(id)).map(id => get(id)?.name ?? id)
-  if (missing.length) return `needs ${missing.join(', ')}`
-  if (taken.value.has(f.id) && !isAsi(f)) return 'taken'
-  const why = unmet(props.pc, props.s, f, a => scoreNow(a), !!castingAbility(props.pc, props.s), hasFeature)
-  if (why.length) return why.join(', ')
-  return ''
-}
-/** The feats on offer, by kind: Epic Boons at 19, General, Origin and Fighting Style feats, and any other. */
-const KINDS = ['Epic Boon', 'General Feat', 'Origin Feat', 'Fighting Style', 'Other']
-const KIND_LABEL: Record<string, string> = { 'Epic Boon': 'Epic Boons', 'General Feat': 'General feats', 'Origin Feat': 'Origin feats', 'Fighting Style': 'Fighting styles', Other: 'Other' }
-const featGroups = computed(() => {
-  // the Ruleset's "Ability Score Improvement only": that feat alone
-  const all = entries.value.filter(e => e.type === 'feat' && (featsAllowed() || isAsiFeat(e.name))).sort((a, b) => a.name.localeCompare(b.name))
-  const kinds = boon.value ? KINDS : KINDS.filter(k => k !== 'Epic Boon')
-  const kindOf = (f: Entry) => (KINDS.includes(String(f.fields.category)) ? String(f.fields.category) : 'Other')
-  return kinds.map(k => ({ kind: k, label: KIND_LABEL[k], list: all.filter(f => kindOf(f) === k) })).filter(g => g.list.length)
-})
+/** Why a feat can't be taken now (feats.ts): the level it needs, the feats it needs, already taken, the scores. */
+const lacks = (f: Entry) => featLacks(props.pc, props.s, f, total.value + 1, a => scoreNow(a))
+/** The feats on offer, by kind (Epic Boons at 19). */
+const featGroups = computed(() => featGroups_(boon.value))
 const featNote = (f: Entry) => (lacks(f) ? ` (${lacks(f)})` : f.fields.prerequisite ? ` (${f.fields.prerequisite})` : '')
 const feat = ref('')
 const choice = ref<BonusChoice>({ picks: [] })
@@ -211,11 +187,7 @@ function apply() {
     if (s.maxHp != null) s.maxHp += hp
     // the feat: its ability increases go into the scores (at most 20); a named feat is listed with the features
     if (takeFeat) {
-      const f = takeFeat
-      for (const a of ABILITY_KEYS) if (add[a]) s.abilities[a] = Math.min(epic ? 30 : 20, (s.abilities[a] ?? 10) + add[a]!)
-      // Resilient: proficiency in the raised ability's saves
-      if (featGivesSave(f)) for (const a of ABILITY_KEYS) if (add[a] && !s.saves.includes(a)) s.saves.push(a)
-      if (!/^ability score improvement$/i.test(f.name.trim())) s.features = [...(s.features ?? []), { name: f.name, text: String(f.fields.summary ?? '').trim() }]
+      applyFeat(s, takeFeat, add, epic)
     }
     // a new class's proficiencies (multiclassing)
     if (brings) {
@@ -260,7 +232,7 @@ function apply() {
       </header>
 
       <template v-if="phase === 'choices'">
-        <FeatureChoices :pc="pc" :s="s" open-only />
+        <FeatureChoices :pc="pc" :s="s" />
         <footer class="lu-foot"><span class="muted small">These can also be made later, from "to pick" on the sheet.</span><span class="spacer" /><button class="primary" @click="emit('close')">Done</button></footer>
       </template>
       <template v-else>

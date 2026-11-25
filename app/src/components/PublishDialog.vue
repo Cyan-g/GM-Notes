@@ -3,7 +3,8 @@
 // after showing what would change. "Send now" writes to both and tells the players connected live. The DM can also
 // host whenever the world opens and have changes sent to the session as they're made (sync.ts).
 import TypeIcon from './TypeIcon.vue'
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { route } from '../router'
 import { SCHEMA } from '../model/schema'
 import { desktop } from '../storage/desktop'
 import { db } from '../store'
@@ -27,6 +28,11 @@ async function prepare() {
   try { plan.value = await planPublish(folder.value ? 'publish' : 'live') } catch (e) { error.value = (e as Error).message } finally { busy.value = ''; finish() }
 }
 watch(open, v => { if (v) { done.value = ''; prepare() } }, { immediate: true })
+// it closes when the page changes, and on Escape wherever the focus is
+watch(() => route.current, () => { open.value = false })
+const onKey = (ev: KeyboardEvent) => { if (open.value && ev.key === 'Escape') open.value = false }
+window.addEventListener('keydown', onKey)
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 async function choose() { if (await desktop!.publish.pick()) await prepare() }
 
 async function startHosting() {

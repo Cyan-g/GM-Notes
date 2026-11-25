@@ -29,8 +29,10 @@ const sheetCurve = (depth: number, sheets: number) => 0.9 * (1 - depth / sheets)
  * deeper sheet steps out less than the one above it. */
 const sheetOut = (depth: number, sheets: number) => 1 - (1 - (depth + 1) / sheets) ** 2
 /** A stack's sheets for `pages` pages: how far each lies below the open page and out past it (px), and how much it
- * curves. None when the side has no pages. */
+ * curves. A side with no pages: the open page's own edge only. */
 function sheetsFor(pages: number): { off: string; out: string; k: string }[] {
+  // a side with no pages under it still shows paper down to the cover under the open page's raised edge: one flat sheet
+  if (pages <= 0) return [{ off: '1.5px', out: '0.6px', k: '0.000' }]
   const n = Math.min(pages, MAX_SHEETS), t = stackThickness(pages)
   return Array.from({ length: n }, (_, d) => ({
     off: `${(((d + 1) * t) / n).toFixed(2)}px`, out: `${(0.6 * t * sheetOut(d, n)).toFixed(2)}px`, k: sheetCurve(d, n).toFixed(3),

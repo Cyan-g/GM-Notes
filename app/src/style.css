@@ -3056,18 +3056,21 @@ label.check-chip b { font-weight: 600; }
    it and a shade darker (toward black, never toward the ink: on a dark theme that would make them lighter than the open
    page), so their edges read as paper below the page and on its outer side. One sheet per page left on that side, up to
    8; how far down (--o) and out (--ox) each lies and how much it curves like the open page (--k, fading to flat at the cover) are
-   JournalBook's sheetsFor; its top edge follows the open page's curve, so none shows above it. A side with no pages has
-   none. */
+   JournalBook's sheetsFor; its top edge follows the open page's curve, so none shows above it. A side with no pages shows
+   the open page's own paper edge only. */
 .stack { position: absolute; z-index: 0; top: var(--bind); bottom: calc(var(--bind) + var(--stack-max)); width: calc((100% - 2 * var(--bind) - 2 * var(--stack-side)) / 2);
   filter: drop-shadow(0 3px 5px rgb(0 0 0 / .3)); }
-.stack.l { --side: -1; left: calc(var(--bind) + var(--stack-side)); }
+.stack.l { left: calc(var(--bind) + var(--stack-side)); }
 .journal .book:not(.single) .stack.l { width: calc((100% - 2 * var(--bind) - 2 * var(--stack-side)) / 2 + var(--spine-shift)); }
-.stack.r { --side: 1; right: calc(var(--bind) + var(--stack-side)); }
+.stack.r { right: calc(var(--bind) + var(--stack-side)); }
 .journal .book:not(.single) .stack.r { width: calc((100% - 2 * var(--bind) - 2 * var(--stack-side)) / 2 - var(--spine-shift)); }
 .sheet { position: absolute; inset: 0; z-index: calc(10 - var(--d)); --sdip: calc(var(--dip, 0%) * var(--k));
   /* the page edges: the theme's paper, a shade darker the deeper they lie */
   background: color-mix(in srgb, var(--page) calc(96% - var(--d) * 3%), #000);
-  transform: translate(calc(var(--ox) * var(--side)), var(--o)); }
+  transform: translateY(var(--o)); }
+/* (out past the page on its outer side only: at the spine a sheet stays where the page is) */
+.stack.l .sheet { left: calc(-1 * var(--ox)); }
+.stack.r .sheet { right: calc(-1 * var(--ox)); }
 .stack.l .sheet { clip-path: polygon(0 calc(var(--dip) + 6px), 1.8px calc(var(--dip) + 1.8px), 6px var(--dip), 10% calc(var(--dip) * 0.987), 20% calc(var(--dip) * 0.95), 30% calc(var(--dip) * 0.887), 40% calc(var(--dip) * 0.799), 50% calc(var(--dip) * 0.686), 60% calc(var(--dip) * 0.547), 70% calc(var(--dip) * 0.384), 76% calc(var(--dip) * 0.274), 80% calc(var(--dip) * 0.196), 84% calc(var(--dip) * 0.116), 87% calc(var(--dip) * 0.058), 90% calc(var(--dip) * 0.013), 92% 0, 94% calc(var(--dip) * 0.02), 95% calc(var(--dip) * 0.051), 96% calc(var(--dip) * 0.104), 97% calc(var(--dip) * 0.187), 98% calc(var(--dip) * 0.311), 98.5% calc(var(--dip) * 0.394), 99% calc(var(--dip) * 0.493), 99.5% calc(var(--dip) * 0.612), 100% calc(var(--dip) * 0.753),
   100% calc(100% - var(--sdip) * 0.247), 99.5% calc(100% - var(--sdip) * 0.388), 99% calc(100% - var(--sdip) * 0.507), 98.5% calc(100% - var(--sdip) * 0.606), 98% calc(100% - var(--sdip) * 0.689), 97% calc(100% - var(--sdip) * 0.813), 96% calc(100% - var(--sdip) * 0.896), 95% calc(100% - var(--sdip) * 0.949), 94% calc(100% - var(--sdip) * 0.98), 92% calc(100% - var(--sdip) * 1), 90% calc(100% - var(--sdip) * 0.987), 87% calc(100% - var(--sdip) * 0.942), 84% calc(100% - var(--sdip) * 0.884), 80% calc(100% - var(--sdip) * 0.804), 76% calc(100% - var(--sdip) * 0.726), 70% calc(100% - var(--sdip) * 0.616), 60% calc(100% - var(--sdip) * 0.453), 50% calc(100% - var(--sdip) * 0.314), 40% calc(100% - var(--sdip) * 0.201), 30% calc(100% - var(--sdip) * 0.113), 20% calc(100% - var(--sdip) * 0.05), 10% calc(100% - var(--sdip) * 0.013), 6px 100%, 1.8px calc(100% - 1.8px), 0 calc(100% - 6px)); }
 .stack.r .sheet { clip-path: polygon(100% calc(var(--dip) + 6px), calc(100% - 1.8px) calc(var(--dip) + 1.8px), calc(100% - 6px) var(--dip), 90% calc(var(--dip) * 0.987), 80% calc(var(--dip) * 0.95), 70% calc(var(--dip) * 0.887), 60% calc(var(--dip) * 0.799), 50% calc(var(--dip) * 0.686), 40% calc(var(--dip) * 0.547), 30% calc(var(--dip) * 0.384), 24% calc(var(--dip) * 0.274), 20% calc(var(--dip) * 0.196), 16% calc(var(--dip) * 0.116), 13% calc(var(--dip) * 0.058), 10% calc(var(--dip) * 0.013), 8% 0, 6% calc(var(--dip) * 0.02), 5% calc(var(--dip) * 0.051), 4% calc(var(--dip) * 0.104), 3% calc(var(--dip) * 0.187), 2% calc(var(--dip) * 0.311), 1.5% calc(var(--dip) * 0.394), 1% calc(var(--dip) * 0.493), 0.5% calc(var(--dip) * 0.612), 0 calc(var(--dip) * 0.753),

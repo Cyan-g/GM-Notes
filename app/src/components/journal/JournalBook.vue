@@ -17,10 +17,20 @@ import LeafStrip from './LeafStrip.vue'
 
 /** How many strips a turning page bends in. */
 const STRIPS = 8
-/** How strongly a sheet in the stacks curves (like the open page: 1), `depth` sheets below it: weaker the deeper it lies. */
-const sheetCurve = (depth: number) => 0.85 * 0.72 ** depth
-/** The stacks' sheets, from the one right under the page down: their curves. */
-const SHEETS = Array.from({ length: 6 }, (_, d) => sheetCurve(d).toFixed(3))
+// ---- the stacks under the open spread: the pages read so far (left) and still to come (right) ----
+/** At most this many sheets a side: one per page while there are no more pages than that, else that many. */
+const MAX_SHEETS = 8
+/** How thick a stack of `pages` is, in px: quick at first, slower later (1 page 2.2px, 8 pages 6.2px, 35 and more 13px). */
+const stackThickness = (pages: number) => Math.min(13, 2.2 * Math.sqrt(pages))
+/** How strongly sheet `depth` (0: right under the open page) of `sheets` curves, the open page's curve being 1: the
+ * curve fades toward the cover, the less the deeper it lies. */
+const sheetCurve = (depth: number, sheets: number) => 0.9 * (1 - depth / sheets)
+/** A stack's sheets for `pages` pages: how far each lies below the open page (px) and how much it curves. None when the
+ * side has no pages. */
+function sheetsFor(pages: number): { off: string; k: string }[] {
+  const n = Math.min(pages, MAX_SHEETS), t = stackThickness(pages)
+  return Array.from({ length: n }, (_, d) => ({ off: `${(((d + 1) * t) / n).toFixed(2)}px`, k: sheetCurve(d, n).toFixed(3) }))
+}
 
 /** `at`: the session the book is opened at (else the page last open in this campaign, else its latest session). */
 const props = defineProps<{ campaign: Entry; at?: Id }>()
@@ -79,9 +89,9 @@ onBeforeUnmount(() => window.removeEventListener('resize', onResize))
 /** Where the book is open, in words: "Session 12 of 63", "Cover", "Next page". */
 const where = computed(() => (leaf.value.kind === 'cover' ? 'The party' : leaf.value.kind === 'next' ? 'The next session'
   : `Session ${leaf.value.s.fields.number ?? page.value} of ${sessions.value.length}`))
-/** How thick the stacks under the spread are: the pages read so far (left) and still to come (right), 0 to 1. */
-const stackL = computed(() => (leaves.value.length > 1 ? page.value / (leaves.value.length - 1) : 0).toFixed(3))
-const stackR = computed(() => (1 - Number(stackL.value)).toFixed(3))
+/** The sheets under each side: the pages before the open one, and after it. */
+const sheetsL = computed(() => sheetsFor(page.value))
+const sheetsR = computed(() => sheetsFor(Math.max(0, leaves.value.length - 1 - page.value)))
 const editable = computed(() => !state.readOnly && !isShared(props.campaign))
 const isCurrent = computed(() => state.db?.meta.currentCampaign === props.campaign.id)
 </script>
@@ -116,9 +126,9 @@ function remembered() { return lastOpenByCampaign }
       <button type="button" class="book-edge prev" title="The page before (←)" aria-label="The page before" :disabled="page <= 0" @click="turnTo(page - 1)">‹</button>
       <!-- the binding: the cover board behind, and the pages already read (left) and still to come (right) stacked
            under the open spread, as thick as they are many -->
-      <div class="binding" :style="{ '--stack-l': stackL, '--stack-r': stackR }">
-      <div v-if="!narrow" class="stack l" aria-hidden="true"><i v-for="(k, d) in SHEETS" :key="d" class="sheet" :style="{ '--d': d, '--k': k }" /></div>
-      <div v-if="!narrow" class="stack r" aria-hidden="true"><i v-for="(k, d) in SHEETS" :key="d" class="sheet" :style="{ '--d': d, '--k': k }" /></div>
+      <div class="binding">
+      <div v-if="!narrow" class="stack l" aria-hidden="true"><i v-for="(x, d) in sheetsL" :key="d" class="sheet" :style="{ '--d': d, '--k': x.k, '--o': x.off }" /></div>
+      <div v-if="!narrow" class="stack r" aria-hidden="true"><i v-for="(x, d) in sheetsR" :key="d" class="sheet" :style="{ '--d': d, '--k': x.k, '--o': x.off }" /></div>
       <div class="spread">
         <template v-if="narrow">
           <JournalPage :campaign="campaign" :leaf="leaf" side="both" :num="page * 2 + 1" :write-now="leaf.kind === 'session' && leaf.s.id === writeNow" />

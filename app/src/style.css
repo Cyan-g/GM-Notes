@@ -3182,7 +3182,9 @@ label.check-chip b { font-weight: 600; }
 .book { --seam-a: 26px; --seam-a-n: 26; }
 /* the spine travels across the seam at its foot with the place in the book (--spine-f, JournalBook: 0 on the first page, 1 on
    the last), and the spread splits there: the left page a little wider early in the book, the right one later on */
-.journal .book:not(.single) .binding { --sn: calc((var(--spine-f, .5) * 2 - 1) * var(--seam-a-n)); --spine-shift: calc(var(--sn) * 1px);
+.journal .book:not(.single) .binding { --sn: calc((var(--spine-f, .5) * 2 - 1) * var(--seam-a-n)); --spine-shift: round(calc(var(--sn) * 1px), 1px);
+  /* (whole pixels, as each page's drop: the spread is drawn as one picture for its shadow, and moved by a part of a
+     pixel its text would blur) */
   --sq: sqrt(max(0, 1 - var(--sn) * var(--sn) / (var(--seam-a-n) * var(--seam-a-n))));
   /* the spine sits lower toward the seam's ends (by as much as the seam is lower there), its length kept */
   --d-spine: calc(var(--stack-max) * (1 - var(--sq))); }

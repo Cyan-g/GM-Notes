@@ -105,8 +105,9 @@ const writeNow = writeOnOpen
 
 // ---- turning the pages ----
 /** The pages turning over now, oldest first (the book stays as it is across its pages, App.vue, so they go on as the
- * address changes): from which page to which, which way, in how many strips, and whether it's halfway over yet. */
-interface Turn { id: number; from: number; to: number; dir: 'fwd' | 'back'; strips: number; settled: boolean }
+ * address changes): from which page to which, which way, in how many strips, and when its animation started and how
+ * long it lasts (once its pages are drawn). */
+interface Turn { id: number; from: number; to: number; dir: 'fwd' | 'back'; strips: number; start: number | null; dur: number }
 const turns = ref<Turn[]>([])
 let turnIds = 0, lastTurn = 0
 const timers = new Map<number, number[]>()
@@ -118,19 +119,40 @@ function endTurn(id: number) {
   turns.value = turns.value.filter(t => t.id !== id)
   if (!turns.value.length && queued !== null) { const q = queued; queued = null; turnTo(q) }
 }
-onBeforeUnmount(() => { for (const ts of timers.values()) ts.forEach(clearTimeout) })
+onBeforeUnmount(() => { for (const ts of timers.values()) ts.forEach(clearTimeout); cancelAnimationFrame(raf) })
 /** The oldest page still in the air: the side it lands on still shows the page there until it's covered. */
 const oldest = computed(() => turns.value[0] ?? null)
-/** The spread the book's shape is for: while pages turn, still the one the oldest page not yet halfway over turns from
- * (where the spine sits, the paper under each side, how the pages are bound into the spine), so each comes down onto
- * the new shape. */
-const shapedAt = computed(() => turns.value.find(t => !t.settled)?.from ?? page.value)
+// While pages turn, the side they uncover has its new shape from the start (it lies there, under them); the side they
+// land on, and the spine, move into theirs as each comes down, from halfway over to landed, smoothly (a clock ticks
+// every frame meanwhile).
+const clock = ref(0)
+let raf = 0
+function tick() { clock.value = performance.now(); raf = turns.value.length ? requestAnimationFrame(tick) : 0 }
+/** How far a turning page has come down: 0 until it's halfway over, 1 once it has landed (eased). */
+function landed(t: Turn, now: number) {
+  if (t.start === null) return 0
+  const x = Math.min(1, Math.max(0, ((now - t.start) / t.dur - 0.5) * 2))
+  return x * x * (3 - 2 * x)
+}
+/** Where the book's shape is, in pages (between two while a page comes down): each side's, and the spine's. */
+const shapedAt = computed(() => {
+  const ts = turns.value, now = clock.value
+  if (!ts.length) return { l: page.value, r: page.value, spine: page.value }
+  const at = ts[0].from + ts.reduce((sum, t) => sum + (t.to - t.from) * landed(t, now), 0)
+  return ts[0].dir === 'fwd' ? { l: at, r: page.value, spine: at } : { l: page.value, r: at, spine: at }
+})
+/** `f` at a place between two pages: between its values at the pages either side. */
+function between(p: number, f: (page: number) => number) {
+  const a = Math.floor(p), b = Math.ceil(p)
+  return a === b ? f(a) : f(a) + (f(b) - f(a)) * (p - a)
+}
 const isTurn = (e: AnimationEvent) => e.animationName === 'leaf-fwd' || e.animationName === 'leaf-back'
 /** A turn's animation has started (once its pages are drawn): it's halfway over half its time later. */
 function onTurnStart(t: Turn, e: AnimationEvent) {
   if (!isTurn(e) || e.target !== (e.currentTarget as Element).firstElementChild) return
-  const ms = parseFloat(getComputedStyle(e.target as Element).animationDuration) * 1000
-  timers.get(t.id)?.push(window.setTimeout(() => { const x = turns.value.find(y => y.id === t.id); if (x) x.settled = true }, ms * 0.5))
+  t.dur = parseFloat(getComputedStyle(e.target as Element).animationDuration) * 1000
+  t.start = performance.now() - e.elapsedTime * 1000
+  if (!raf) raf = requestAnimationFrame(tick)
 }
 function onTurnEnd(t: Turn, e: AnimationEvent) { if (isTurn(e) && e.target === (e.currentTarget as Element).firstElementChild) endTurn(t.id) }
 const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -144,7 +166,7 @@ function turnTo(i: number) {
     if (turns.value.length && turns.value[0].dir !== dir) { queued = i; return }
     if (turns.value.length >= MAX_TURNS || now - lastTurn < TURN_GAP) return
     lastTurn = now
-    const t: Turn = { id: ++turnIds, from: page.value, to: i, dir, strips: turns.value.length ? STRIPS_QUICK : STRIPS, settled: false }
+    const t: Turn = { id: ++turnIds, from: page.value, to: i, dir, strips: turns.value.length ? STRIPS_QUICK : STRIPS, start: null, dur: 1200 }
     turns.value.push(t)
     // (it ends when it has landed; this only in case its animation never ends)
     timers.set(t.id, [window.setTimeout(() => endTurn(t.id), 4000)])
@@ -179,13 +201,16 @@ const where = computed(() => (leaf.value.kind === 'cover' ? 'The party' : leaf.v
 /** Where the spine sits across the seam's binding points (BINDS of them, 0 at its left end): at its ends on the first
  * page and the last; between, from just past the first point to just short of the last, so the first page turned
  * either way already shows a sheet of its own. */
-const spineSlot = computed(() => {
-  const n = leaves.value.length - 1, p = shapedAt.value
+function slotAt(p: number) {
+  const n = leaves.value.length - 1
   if (n < 1) return BINDS / 2
   if (p <= 0) return 0
   if (p >= n) return BINDS
   return 1.4 + ((p - 1) * (BINDS - 2.8)) / Math.max(1, n - 2)
-})
+}
+const spineSlot = computed(() => between(shapedAt.value.spine, slotAt))
+/** How far the spine sits from the seam's middle, px: whole pixels at every page (style.css --spine-shift). */
+const spineShift = computed(() => between(shapedAt.value.spine, p => Math.round(bindX(slotAt(p)))))
 /** The same as a share of the seam's width: 0 its left end, 1 its right. */
 const spineAt = computed(() => ((bindX(spineSlot.value) / SEAM_HALF + 1) / 2).toFixed(4))
 
@@ -203,16 +228,21 @@ onMounted(() => {
 })
 onBeforeUnmount(() => sizeWatch?.disconnect())
 /** How much lower a page sits than one on a full stack (px): as much as its stack is thinner (style.css --d-l, --d-r). */
-const dropFor = (pages: number) => STACK - stackThickness(Math.max(1, pages))
-const pagesL = computed(() => shapedAt.value)
-const pagesR = computed(() => Math.max(0, leaves.value.length - 1 - shapedAt.value))
-const dropL = computed(() => `${dropFor(pagesL.value).toFixed(2)}px`)
-const dropR = computed(() => `${dropFor(pagesR.value).toFixed(2)}px`)
+// (whole pixels: a page moved by a part of a pixel blurs its text, style.css --spine-shift)
+const dropFor = (pages: number) => Math.round(STACK - stackThickness(Math.max(1, pages)))
+/** The pages under each side (between two while a page comes down on it). */
+const pagesL = computed(() => shapedAt.value.l)
+const pagesR = computed(() => Math.max(0, leaves.value.length - 1 - shapedAt.value.r))
+const n1 = () => leaves.value.length - 1
+const dL = computed(() => between(shapedAt.value.l, dropFor))
+const dR = computed(() => between(shapedAt.value.r, p => dropFor(Math.max(0, n1() - p))))
+const dropL = computed(() => `${dL.value.toFixed(2)}px`)
+const dropR = computed(() => `${dR.value.toFixed(2)}px`)
 const shapeIn = computed<ShapeInput>(() => {
   const { w, h } = spreadSize.value
   return {
-    w, h, shift: (Number(spineAt.value) * 2 - 1) * SEAM_HALF,
-    dL: dropFor(pagesL.value), dR: dropFor(pagesR.value),
+    w, h, shift: spineShift.value,
+    dL: dL.value, dR: dR.value,
     bL: stackThickness(Math.max(1, pagesL.value)) / STACK, bR: stackThickness(Math.max(1, pagesR.value)) / STACK,
     // how strongly each page curves: as much as the paper under it lets it, flat on the cover with none
     aL: stackThickness(pagesL.value) / STACK, aR: stackThickness(pagesR.value) / STACK,
@@ -237,7 +267,7 @@ const sheetsR = computed(() => sheetsOf('r', pagesR.value))
 provide(bookShapeKey, shape)
 /** The binding's variables: where the spine is, each page's drop, and the shape's outlines, corners and shadows. */
 const bindingVars = computed(() => {
-  const v: Record<string, string> = { '--spine-f': spineAt.value, '--d-l': dropL.value, '--d-r': dropR.value }
+  const v: Record<string, string> = { '--spine-f': spineAt.value, '--spine-shift': `${spineShift.value.toFixed(2)}px`, '--d-l': dropL.value, '--d-r': dropR.value }
   const sh = shape.value
   if (sh) {
     for (const [k, p] of [['l', sh.l], ['r', sh.r]] as const) {

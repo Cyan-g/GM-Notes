@@ -2462,7 +2462,8 @@ table.grid tr.group-row td { background: var(--panel-2); font-family: var(--seri
 /* the entry picker's list floats over the page (EntryPicker): fixed at its input, above dialogs too */
 .picker-caret { position: absolute; right: .6rem; top: 50%; translate: 0 -50%; color: var(--muted); font-size: .8em; pointer-events: none; }
 .picker-dd { padding-right: 1.8rem; cursor: pointer; }
-.picker-list.floating { position: fixed; right: auto; z-index: 2000; margin: 0; min-width: 0; }
+/* (top or bottom comes from the script: upward lists set only bottom, so the list's own top: 100% mustn't stay) */
+.picker-list.floating { position: fixed; top: auto; right: auto; z-index: 2000; margin: 0; min-width: 0; }
 /* ---- the wizard: the picked class's or species' page under the choices; the subrace as its own choice ---- */
 .wz-page { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 .wz-page-head { display: flex; align-items: baseline; gap: .8rem; margin: 0 0 .6rem; }

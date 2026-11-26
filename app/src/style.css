@@ -2984,6 +2984,8 @@ label.check-chip b { font-weight: 600; }
 .jnext { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem; text-align: center; }
 /* a page turning over: the open page swings around the spine; the one it uncovers fades in behind it */
 .leaf { position: absolute; top: 0; bottom: 0; width: 50%; z-index: 3; pointer-events: none; transform-style: preserve-3d; }
+/* (the pages turning over, several when flipping through, in one 3D space: the one further over lies above the next) */
+.leaves { position: absolute; inset: 0; z-index: 3; pointer-events: none; transform-style: preserve-3d; }
 .leaf.fwd { left: 50%; }
 .leaf.back { left: 0; }
 /* it bends: hinged strips (LeafStrip), the first swinging the whole sheet over, each further one bending a little more

@@ -2,7 +2,7 @@
 import PrintCards from './components/PrintCards.vue'
 import AppIcon from './components/AppIcon.vue'
 import ProgressBar from './components/ProgressBar.vue'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { get, overwrite, save, state } from './store'
 import { ui } from './ui'
 import { desktop, type UpdateInfo } from './storage/desktop'
@@ -52,6 +52,15 @@ startFlash()
 
 /** A world is open (StartScreen opens it). */
 const ready = ref(false)
+/** What the entry page is made anew for: each entry, except a campaign's journal, kept across its pages (the campaign
+ * and its sessions), so turning them redraws only the pages, and a page still turning goes on. */
+const entryKey = computed(() => {
+  const r = route.current
+  if (r.name !== 'entry') return ''
+  const x = get(r.id)
+  const c = x?.type === 'campaign' ? x : x?.type === 'session' ? get(x.fields.campaign as string | undefined) : undefined
+  return c?.type === 'campaign' ? `journal-${c.id}` : r.id
+})
 /** A new version of the desktop app: downloaded and ready to install (Windows), or out to download (Mac). */
 const update = ref<UpdateInfo | null>(null)
 desktop?.onUpdate(info => { update.value = info })
@@ -149,7 +158,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKey); window.removeE
       <DashboardView v-else-if="route.current.name === 'dashboard'" :id="route.current.id" :view="route.current.view" />
       <EncounterView v-else-if="route.current.name === 'entry' && get(route.current.id)?.type === 'encounter'" :id="route.current.id" :key="'enc-' + route.current.id" />
       <EditView v-else-if="route.current.name === 'entry' && route.current.edit" :id="route.current.id" :key="'edit-' + route.current.id" />
-      <EntryView v-else-if="route.current.name === 'entry'" :id="route.current.id" :tab="route.current.tab" :key="route.current.id" />
+      <EntryView v-else-if="route.current.name === 'entry'" :id="route.current.id" :tab="route.current.tab" :key="entryKey" />
     </main>
     <QuickSwitcher v-model="ui.switcher" />
     <PrintCards v-if="ui.printCards" />

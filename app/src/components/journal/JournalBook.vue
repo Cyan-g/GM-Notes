@@ -8,18 +8,21 @@ import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import type { Entry, Id } from '../../model/types'
 import { sessionsOf, setCurrentCampaign } from '../../sessions'
 import AppIcon from '../AppIcon.vue'
-import { hrefEntry, hrefList, replaceTo, route } from '../../router'
-import { get, state } from '../../store'
+import { hrefEntry, hrefList, replaceTo } from '../../router'
+import { state } from '../../store'
 import { isShared } from '../../sync'
 import JournalPage, { type Leaf } from './JournalPage.vue'
-import { endTurn, startTurn, turnSettling, turnStarted, turning as turnState, writeOnOpen } from '../../journal'
+import { writeOnOpen } from '../../journal'
 import LeafStrip from './LeafStrip.vue'
 import { SEAM_HALF, STACK, bookShape, sheetClip, type ShapeInput } from './bookShape'
 import { bookShapeKey } from '../../journal'
 import { settings } from '../../theme'
 
-/** How many strips a turning page bends in. */
-const STRIPS = 8
+/** How many strips a turning page bends in: fewer for one turned while others are still in the air (flipping through,
+ * where the finer bend can't be seen and every strip is two more pages to draw). */
+const STRIPS = 8, STRIPS_QUICK = 4
+/** Flipping through: at most this many pages in the air at once, a new one at most every this many ms. */
+const MAX_TURNS = 4, TURN_GAP = 120
 // ---- the stacks under the open spread: the pages read so far (left) and still to come (right) ----
 /** How many bands the book's pages are bound in across the seam: a sheet for each band's binding point. */
 const BINDS = 24
@@ -101,26 +104,51 @@ const leaf = computed(() => leaves.value[Math.min(page.value, leaves.value.lengt
 const writeNow = writeOnOpen
 
 // ---- turning the pages ----
-/** The page turning over now, in this campaign's book (journal.ts). */
-const turning = computed(() => (turnState.value?.campaign === props.campaign.id ? turnState.value : null))
-/** The spread the book's shape is for: while a page turns, still the one it turns from (where the spine sits, the paper
- * under each side, how the pages are bound into the spine), until it's halfway over (journal.ts turnSettling),
- * so it comes down onto the new shape. */
-const shapedAt = computed(() => (turning.value && !turnSettling.value ? turning.value.from : page.value))
+/** The pages turning over now, oldest first (the book stays as it is across its pages, App.vue, so they go on as the
+ * address changes): from which page to which, which way, in how many strips, and whether it's halfway over yet. */
+interface Turn { id: number; from: number; to: number; dir: 'fwd' | 'back'; strips: number; settled: boolean }
+const turns = ref<Turn[]>([])
+let turnIds = 0, lastTurn = 0
+const timers = new Map<number, number[]>()
+/** A turn back while pages are still going forward (or the other way round) waits until they've landed. */
+let queued: number | null = null
+function endTurn(id: number) {
+  for (const t of timers.get(id) ?? []) clearTimeout(t)
+  timers.delete(id)
+  turns.value = turns.value.filter(t => t.id !== id)
+  if (!turns.value.length && queued !== null) { const q = queued; queued = null; turnTo(q) }
+}
+onBeforeUnmount(() => { for (const ts of timers.values()) ts.forEach(clearTimeout) })
+/** The oldest page still in the air: the side it lands on still shows the page there until it's covered. */
+const oldest = computed(() => turns.value[0] ?? null)
+/** The spread the book's shape is for: while pages turn, still the one the oldest page not yet halfway over turns from
+ * (where the spine sits, the paper under each side, how the pages are bound into the spine), so each comes down onto
+ * the new shape. */
+const shapedAt = computed(() => turns.value.find(t => !t.settled)?.from ?? page.value)
 const isTurn = (e: AnimationEvent) => e.animationName === 'leaf-fwd' || e.animationName === 'leaf-back'
-// a turn cut short by leaving the book (another entry, its Edit page) ends there; turning to another page of the same
-// book makes the book anew too, and the turn goes on in it
-onBeforeUnmount(() => {
-  const r = route.current, x = r.name === 'entry' && !r.edit ? get(r.id) : undefined
-  const sameBook = !!x && (x.id === props.campaign.id || (x.type === 'session' && x.fields.campaign === props.campaign.id))
-  if (turning.value && !sameBook) endTurn()
-})
-const onTurnStart = (e: AnimationEvent) => { if (isTurn(e)) turnStarted(parseFloat(getComputedStyle(e.target as Element).animationDuration) * 1000) }
+/** A turn's animation has started (once its pages are drawn): it's halfway over half its time later. */
+function onTurnStart(t: Turn, e: AnimationEvent) {
+  if (!isTurn(e) || e.target !== (e.currentTarget as Element).firstElementChild) return
+  const ms = parseFloat(getComputedStyle(e.target as Element).animationDuration) * 1000
+  timers.get(t.id)?.push(window.setTimeout(() => { const x = turns.value.find(y => y.id === t.id); if (x) x.settled = true }, ms * 0.5))
+}
+function onTurnEnd(t: Turn, e: AnimationEvent) { if (isTurn(e) && e.target === (e.currentTarget as Element).firstElementChild) endTurn(t.id) }
 const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 function turnTo(i: number) {
   const l = leaves.value
   if (i < 0 || i >= l.length || i === page.value) return
-  if (!reduced() && !narrow.value) startTurn(props.campaign.id, page.value, i > page.value ? 'fwd' : 'back')
+  if (!reduced() && !narrow.value) {
+    const dir = i > page.value ? 'fwd' : 'back', now = performance.now()
+    // flipping through: not faster than one every TURN_GAP ms, nor more than MAX_TURNS in the air; turning the other
+    // way waits until the pages in the air have landed
+    if (turns.value.length && turns.value[0].dir !== dir) { queued = i; return }
+    if (turns.value.length >= MAX_TURNS || now - lastTurn < TURN_GAP) return
+    lastTurn = now
+    const t: Turn = { id: ++turnIds, from: page.value, to: i, dir, strips: turns.value.length ? STRIPS_QUICK : STRIPS, settled: false }
+    turns.value.push(t)
+    // (it ends when it has landed; this only in case its animation never ends)
+    timers.set(t.id, [window.setTimeout(() => endTurn(t.id), 4000)])
+  }
   page.value = i
   writeNow.value = null
   const x = l[i]
@@ -269,21 +297,25 @@ function remembered() { return lastOpenByCampaign }
         </template>
         <template v-else>
           <!-- while a page turns, the side it lands on still shows the page there until it's covered -->
-          <JournalPage :campaign="campaign" :leaf="turning?.dir === 'fwd' && leaves[turning.from] ? leaves[turning.from] : leaf" side="left"
-                       :num="(turning?.dir === 'fwd' ? turning.from : page) * 2 + 1" />
-          <JournalPage :campaign="campaign" :leaf="turning?.dir === 'back' && leaves[turning.from] ? leaves[turning.from] : leaf" side="right"
-                       :num="(turning?.dir === 'back' ? turning.from : page) * 2 + 1" :write-now="leaf.kind === 'session' && leaf.s.id === writeNow" />
+          <JournalPage :campaign="campaign" :leaf="oldest?.dir === 'fwd' && leaves[oldest.from] ? leaves[oldest.from] : leaf" side="left"
+                       :num="(oldest?.dir === 'fwd' ? oldest.from : page) * 2 + 1" />
+          <JournalPage :campaign="campaign" :leaf="oldest?.dir === 'back' && leaves[oldest.from] ? leaves[oldest.from] : leaf" side="right"
+                       :num="(oldest?.dir === 'back' ? oldest.from : page) * 2 + 1" :write-now="leaf.kind === 'session' && leaf.s.id === writeNow" />
           <!-- the page turning over: the one that was open, curling around the spine (in hinged strips), and the
                shadow it casts on the page it uncovers, then on the one it lands on -->
-          <template v-if="turning && leaves[turning.from]">
-            <div class="leaf-cast under" :class="turning.dir" aria-hidden="true" />
-            <div class="leaf-cast land" :class="turning.dir" aria-hidden="true" />
-            <div class="leaf" :class="turning.dir" :style="{ '--n': STRIPS }"
-                 @animationstart="onTurnStart" @animationend="e => isTurn(e) && endTurn()">
-              <LeafStrip :campaign="campaign" :leaf="leaves[turning.from]" :num="turning.from * 2 + 1" :back-leaf="leaf" :back-num="page * 2 + 1"
-                         :dir="turning.dir" :i="0" :n="STRIPS" />
-            </div>
-          </template>
+          <!-- (several at once when flipping through: in one 3D space, so the one further over lies above) -->
+          <div v-if="turns.length" class="leaves">
+            <template v-for="t in turns" :key="t.id">
+              <template v-if="leaves[t.from] && leaves[t.to]">
+                <div class="leaf-cast under" :class="t.dir" aria-hidden="true" />
+                <div class="leaf-cast land" :class="t.dir" aria-hidden="true" />
+                <div class="leaf" :class="t.dir" :style="{ '--n': t.strips }" @animationstart="onTurnStart(t, $event)" @animationend="onTurnEnd(t, $event)">
+                  <LeafStrip :campaign="campaign" :leaf="leaves[t.from]" :num="t.from * 2 + 1" :back-leaf="leaves[t.to]" :back-num="t.to * 2 + 1"
+                             :dir="t.dir" :i="0" :n="t.strips" />
+                </div>
+              </template>
+            </template>
+          </div>
         </template>
       </div>
       </div>

@@ -1364,6 +1364,11 @@ th.sortable:hover .sort-arrow:empty::after { content: '↕'; opacity: .5; }
 .world-actions, .world-new { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
 .world-new input { flex: 1; min-width: 10rem; }
 .world-new p { flex-basis: 100%; margin: .2rem 0 0; }
+/* the three ways to another world under the list: offline, a local session, online */
+.world-section { border-top: 1px solid var(--line); padding: .55rem 0 .35rem; }
+.world-section h5 { margin: 0 0 .15rem; font: 600 .95rem var(--serif); font-variant: small-caps; letter-spacing: .04em; color: var(--accent); }
+.world-section > p, .world-section .world-elsewhere { margin: .1rem 0 .4rem; }
+.world-section .world-elsewhere { margin-top: .45rem; }
 .brand-box { position: relative; }
 button.brand { background: none; border: none; padding: 0; cursor: pointer; }
 .brand-caret { font-size: .6em; color: var(--muted); }

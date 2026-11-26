@@ -12,6 +12,7 @@ import { DesktopBackend, DevBackend } from '../storage/backend'
 import { startSharing, syncStatus } from '../sync'
 import { takeCopies } from '../copyToWorld'
 import { PENDING_JOIN, PENDING_NEW_WORLD } from '../worlds'
+import { takeWorldFile } from '../pendingFile'
 import WorldList from './WorldList.vue'
 
 const ready = defineModel<boolean>('ready', { default: false })
@@ -35,7 +36,9 @@ async function readWorldFile(ev: Event) {
   const input = ev.target as HTMLInputElement
   const file = input.files?.[0]
   input.value = ''
-  if (!file) return
+  if (file) await useWorldFile(file)
+}
+async function useWorldFile(file: File) {
   startError.value = ''
   try {
     const b = JSON.parse(await file.text())
@@ -77,7 +80,13 @@ onMounted(async () => {
     sessionStorage.removeItem(PENDING_NEW_WORLD); sessionStorage.removeItem(PENDING_JOIN)
   } catch { /* asked on the start screen */ }
   // a joined world takes the 5e start in player mode; a new one asks for its start on the start screen
-  if (pending && phase.value === 'new-world') { worldName.value = pending; if (joining) await startWorld() }
+  if (pending && phase.value === 'new-world') {
+    worldName.value = pending
+    // (a world from a file: the file picked in the world list, read here; its name and who you are are still asked)
+    const file = await takeWorldFile()
+    if (file) await useWorldFile(file)
+    if (joining) await startWorld()
+  }
   // A world that follows a shared one: up to date on start, then every few minutes; a DM's: hosting, if they asked.
   else if (phase.value === 'ready') { await startSharing(); await takeCopies() }
   if (joining && syncStatus.note) syncStatus.note = `Joined. ${syncStatus.note}`
